@@ -1,0 +1,67 @@
+ate_messaging_suspension();
+```
+
+## Reporting System
+
+A report button is accessible from every profile (three-dot menu) and from within every conversation. Reporting a profile immediately hides that profile from the reporter. Three unique reports from different users triggers an automatic suspension pending admin review. Reporters receive notification of the resolution outcome.
+
+### Report Reasons (Predefined)
+
+```
+- fake_profile: "This profile appears to be fake or impersonating someone"
+- inappropriate_photos: "Photos contain inappropriate or offensive content"
+- harassment: "This user is sending harassing or abusive messages"
+- scam: "This user appears to be running a scam or asking for money"
+- underage: "This user appears to be under 18"
+- already_married: "This user is already married and misrepresenting themselves"
+- offensive_bio: "Bio contains offensive or inappropriate language"
+- other: "Other reason" (requires description)
+```
+
+### Auto-Suspension Trigger
+
+```sql
+CREATE OR REPLACE FUNCTION check_report_threshold()
+RETURNS trigger AS $$
+DECLARE
+  report_count integer;
+BEGIN
+  SELECT COUNT(DISTINCT reporter_id) INTO report_count
+  FROM reports
+  WHERE reported_user_id = NEW.reported_user_id
+    AND status = 'pending';
+
+  IF report_count >= 3 THEN
+    UPDATE profiles
+    SET visibility = 'suspended', suspended_reason = 'auto_multiple_reports'
+    WHERE user_id = NEW.reported_user_id;
+
+    -- Notify admins
+    INSERT INTO admin_notifications (type, message, related_user_id)
+    VALUES ('auto_suspension', 'User auto-suspended after 3 reports', NEW.reported_user_id);
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+## Blocking
+
+Blocking is silent. The blocked person is not notified. They cannot find the blocker in search, their interests disappear, and the chat is removed from both sides. Both parties can still report each other independently.
+
+## Anti-Fraud Measures
+
+Daily interest caps are enforced at the database level — they cannot be bypassed by any client-side manipulation. Profile view spikes (more than 100 views in one hour) are flagged for review. New accounts cannot activate profile boosts in their first seven days.
+
+### Daily Interest Cap Enforcement
+
+```sql
+CREATE OR REPLACE FUNCTION enforce_interest_limits()
+RETURNS trigger AS $$
+DECLARE
+  today_count integer;
+  daily_limit integer;
+  user_gender text;
+  user_sub_status text;
+  hours_since_approval double precision;

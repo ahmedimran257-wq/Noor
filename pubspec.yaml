@@ -1,0 +1,42 @@
+name: noor
+description: "NOOR (نور) — Premium Muslim Matrimony App"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # ── Design ────────────────────────────────────────────────
+  google_fonts: ^6.2.1            # Playfair Display + Inter
+  cupertino_icons: ^1.0.8
+
+  # ── State Management ──────────────────────────────────────
+  flutter_bloc: ^8.1.6
+  equatable: ^2.0.5
+
+  # ── Navigation ────────────────────────────────────────────
+  go_router: ^14.2.7
+
+  # ── Backend ───────────────────────────────────────────────
+  supabase_flutter: ^2.9.0
+
+  # ── Localization ──────────────────────────────────────────
+  intl: ^0.20.2
+
+  # ── Utilities ─────────────────────────────────────────────
+  shared_preferences: ^2.3.3      # Locale + theme persistence
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true                  # Enables flutter gen-l10n for AppLocalizations

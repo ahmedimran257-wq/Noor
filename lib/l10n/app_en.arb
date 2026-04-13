@@ -1,0 +1,250 @@
+{
+  "@@locale": "en",
+  "@@last_modified": "2026-04-11",
+
+  "appName": "NOOR",
+  "@appName": { "description": "App name" },
+
+  "appTagline": "Begin with bismillah",
+  "@appTagline": { "description": "Brand tagline on splash screen" },
+
+  "common_button_next": "Next",
+  "@common_button_next": {},
+  "common_button_back": "Back",
+  "@common_button_back": {},
+  "common_button_skip": "Skip",
+  "@common_button_skip": {},
+  "common_button_save": "Save",
+  "@common_button_save": {},
+  "common_button_cancel": "Cancel",
+  "@common_button_cancel": {},
+  "common_button_submit": "Submit",
+  "@common_button_submit": {},
+  "common_button_done": "Done",
+  "@common_button_done": {},
+  "common_button_retry": "Try Again",
+  "@common_button_retry": {},
+  "common_label_optional": "Optional",
+  "@common_label_optional": {},
+  "common_error_generic": "Something went wrong. Please try again.",
+  "@common_error_generic": {},
+  "common_error_noInternet": "No internet connection. Please check your connection.",
+  "@common_error_noInternet": {},
+
+  "splash_button_createProfile": "Create Profile",
+  "@splash_button_createProfile": { "description": "Primary CTA on splash screen" },
+  "splash_button_signIn": "Sign In",
+  "@splash_button_signIn": { "description": "Secondary action on splash screen" },
+
+  "legal_title": "Before you begin",
+  "@legal_title": {},
+  "legal_checkbox_age": "I confirm I am 18 years or older",
+  "@legal_checkbox_age": {},
+  "legal_checkbox_terms": "I agree to the Terms of Service and Privacy Policy",
+  "@legal_checkbox_terms": {},
+  "legal_button_continue": "Continue",
+  "@legal_button_continue": {},
+
+  "auth_label_phoneNumber": "Phone Number",
+  "@auth_label_phoneNumber": {},
+  "auth_hint_phoneNumber": "Enter your phone number",
+  "@auth_hint_phoneNumber": {},
+  "auth_button_sendOtp": "Send Verification Code",
+  "@auth_button_sendOtp": {},
+  "auth_label_enterOtp": "Enter the 6-digit code sent to",
+  "@auth_label_enterOtp": {},
+  "auth_button_verifyOtp": "Verify",
+  "@auth_button_verifyOtp": {},
+  "auth_button_resendOtp": "Resend Code",
+  "@auth_button_resendOtp": {},
+  "auth_label_resendIn": "Resend in {seconds}s",
+  "@auth_label_resendIn": {
+    "placeholders": {
+      "seconds": { "type": "int" }
+    }
+  },
+
+  "onboarding_label_step": "Step {current} of {total}",
+  "@onboarding_label_step": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total":   { "type": "int" }
+    }
+  },
+  "onboarding_profileForWhom_title": "Who is this profile for?",
+  "@onboarding_profileForWhom_title": {},
+  "onboarding_profileForWhom_myself": "Myself",
+  "@onboarding_profileForWhom_myself": {},
+  "onboarding_profileForWhom_myselfSub": "I am looking for a spouse",
+  "@onboarding_profileForWhom_myselfSub": {},
+  "onboarding_profileForWhom_guardian": "My son or daughter",
+  "@onboarding_profileForWhom_guardian": {},
+  "onboarding_profileForWhom_guardianSub": "I am a parent or guardian",
+  "@onboarding_profileForWhom_guardianSub": {},
+
+  "onboarding_basicIdentity_title": "Tell us about yourself",
+  "@onboarding_basicIdentity_title": {},
+  "onboarding_label_firstName": "First Name",
+  "@onboarding_label_firstName": {},
+  "onboarding_label_lastName": "Last Name",
+  "@onboarding_label_lastName": {},
+  "onboarding_label_dateOfBirth": "Date of Birth",
+  "@onboarding_label_dateOfBirth": {},
+  "onboarding_label_gender": "Gender",
+  "@onboarding_label_gender": {},
+  "onboarding_label_male": "Male",
+  "@onboarding_label_male": {},
+  "onboarding_label_female": "Female",
+  "@onboarding_label_female": {},
+  "onboarding_label_city": "City",
+  "@onboarding_label_city": {},
+  "onboarding_hint_searchCity": "Search your city…",
+  "@onboarding_hint_searchCity": {},
+  "onboarding_error_under18": "NOOR is for those 18 and older. We've made this requirement to protect everyone in our community.",
+  "@onboarding_error_under18": {},
+
+  "onboarding_islamicIdentity_title": "Your Islamic identity",
+  "@onboarding_islamicIdentity_title": {},
+  "onboarding_label_sect": "Sect",
+  "@onboarding_label_sect": {},
+  "onboarding_label_sunni": "Sunni",
+  "@onboarding_label_sunni": {},
+  "onboarding_label_shia": "Shia",
+  "@onboarding_label_shia": {},
+  "onboarding_label_preferNotToSay": "Prefer not to say",
+  "@onboarding_label_preferNotToSay": {},
+  "onboarding_label_deenLevel": "Deen Level",
+  "@onboarding_label_deenLevel": {},
+  "onboarding_label_practicing": "Practicing",
+  "@onboarding_label_practicing": {},
+  "onboarding_tooltip_practicing": "Follows all five pillars, prays regularly, halal lifestyle",
+  "@onboarding_tooltip_practicing": {},
+  "onboarding_label_moderate": "Moderate",
+  "@onboarding_label_moderate": {},
+  "onboarding_tooltip_moderate": "Values Islamic principles, prays regularly but not always, culturally Muslim",
+  "@onboarding_tooltip_moderate": {},
+  "onboarding_label_cultural": "Cultural Muslim",
+  "@onboarding_label_cultural": {},
+  "onboarding_tooltip_cultural": "Identifies as Muslim, celebrates occasions, may not pray regularly",
+  "@onboarding_tooltip_cultural": {},
+  "onboarding_label_praysFiveDaily": "I pray five times daily",
+  "@onboarding_label_praysFiveDaily": {},
+
+  "onboarding_background_title": "Education & Career",
+  "@onboarding_background_title": {},
+  "onboarding_label_educationLevel": "Education Level",
+  "@onboarding_label_educationLevel": {},
+  "onboarding_label_profession": "Profession",
+  "@onboarding_label_profession": {},
+  "onboarding_hint_profession": "e.g. Software Engineer, Teacher, Doctor",
+  "@onboarding_hint_profession": {},
+
+  "onboarding_about_title": "About yourself",
+  "@onboarding_about_title": {},
+  "onboarding_hint_bio": "Describe yourself with honesty and dignity.",
+  "@onboarding_hint_bio": {},
+  "onboarding_label_bioCount": "{count}/300",
+  "@onboarding_label_bioCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "onboarding_error_bioContactInfo": "Please remove contact information from your bio. External contact details are not allowed for your safety.",
+  "@onboarding_error_bioContactInfo": {},
+
+  "onboarding_photo_title": "Add your photos",
+  "@onboarding_photo_title": {},
+  "onboarding_photo_subtitle": "At least one photo is required. Your primary photo must include your face clearly.",
+  "@onboarding_photo_subtitle": {},
+  "onboarding_photo_verifySelfie": "Verification Selfie",
+  "@onboarding_photo_verifySelfie": {},
+  "onboarding_photo_verifySelfieHint": "Take a live photo to verify you are real",
+  "@onboarding_photo_verifySelfieHint": {},
+  "onboarding_error_noFace": "Please use a photo where your face is clearly visible.",
+  "@onboarding_error_noFace": {},
+  "onboarding_error_multipleFaces": "Group photos cannot be your primary photo.",
+  "@onboarding_error_multipleFaces": {},
+
+  "discovery_header_title": "NOOR",
+  "@discovery_header_title": {},
+  "discovery_label_profilesRemaining": "{count} profiles remaining today",
+  "@discovery_label_profilesRemaining": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "discovery_button_sendInterest": "Send Interest",
+  "@discovery_button_sendInterest": {},
+  "discovery_label_interestSent": "Interest Sent ✓",
+  "@discovery_label_interestSent": {},
+  "discovery_label_outsidePrefs": "Someone you might connect with",
+  "@discovery_label_outsidePrefs": {},
+
+  "ceremony_text_blessing": "May Allah bless this with goodness",
+  "@ceremony_text_blessing": {},
+
+  "chat_placeholder_typeMessage": "Type a message…",
+  "@chat_placeholder_typeMessage": {},
+  "chat_label_probation": "Messaging unlocks in {hours} hours. You can send Interests now.",
+  "@chat_label_probation": {
+    "placeholders": {
+      "hours": { "type": "int" }
+    }
+  },
+  "chat_label_subscribeToMessage": "Subscribe to unlock messaging. Women always message free on NOOR.",
+  "@chat_label_subscribeToMessage": {},
+  "chat_opener_1": "Assalamu Alaikum! I came across your profile and was genuinely impressed. May I introduce myself?",
+  "@chat_opener_1": {},
+  "chat_opener_2": "Bismillah. Your profile caught my attention. I would love to learn more about you.",
+  "@chat_opener_2": {},
+  "chat_opener_3": "Assalamu Alaikum. I believe we share similar values. Would you be open to getting to know each other?",
+  "@chat_opener_3": {},
+
+  "subscription_title": "Unlock NOOR",
+  "@subscription_title": {},
+  "subscription_subtitle": "Women message free. Men subscribe to connect.",
+  "@subscription_subtitle": {},
+  "subscription_button_monthly": "Subscribe — {price}/month",
+  "@subscription_button_monthly": {
+    "placeholders": {
+      "price": { "type": "String" }
+    }
+  },
+  "subscription_label_bestValue": "Best Value",
+  "@subscription_label_bestValue": {},
+
+  "profile_label_completeness": "Profile {percent}% complete",
+  "@profile_label_completeness": {
+    "placeholders": {
+      "percent": { "type": "int" }
+    }
+  },
+  "profile_nudge_completeness": "Profiles with 80%+ completeness receive 3× more interests.",
+  "@profile_nudge_completeness": {},
+
+  "interests_tab_received": "Received",
+  "@interests_tab_received": {},
+  "interests_tab_sent": "Sent",
+  "@interests_tab_sent": {},
+  "interests_button_accept": "Accept",
+  "@interests_button_accept": {},
+  "interests_button_decline": "Decline",
+  "@interests_button_decline": {},
+
+  "settings_title": "Settings",
+  "@settings_title": {},
+  "settings_section_account": "Account",
+  "@settings_section_account": {},
+  "settings_section_safety": "Safety",
+  "@settings_section_safety": {},
+  "settings_section_app": "App",
+  "@settings_section_app": {},
+  "settings_section_legal": "Legal",
+  "@settings_section_legal": {},
+  "settings_section_dangerZone": "Danger Zone",
+  "@settings_section_dangerZone": {},
+  "settings_button_deleteAccount": "Delete Account",
+  "@settings_button_deleteAccount": {},
+  "settings_label_deleteGrace": "Your profile will be hidden immediately. Your data will be permanently deleted after 30 days.",
+  "@settings_label_deleteGrace": {}
+}

@@ -1,0 +1,90 @@
+{
+  "@@locale": "ar",
+  "@@last_modified": "2026-04-11",
+
+  "appName": "نور",
+  "appTagline": "ابدأ بسم الله",
+
+  "common_button_next": "التالي",
+  "common_button_back": "رجوع",
+  "common_button_skip": "تخطي",
+  "common_button_save": "حفظ",
+  "common_button_cancel": "إلغاء",
+  "common_button_submit": "إرسال",
+  "common_button_done": "تم",
+  "common_button_retry": "حاول مرة أخرى",
+  "common_label_optional": "اختياري",
+  "common_error_generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+  "common_error_noInternet": "لا يوجد اتصال بالإنترنت.",
+
+  "splash_button_createProfile": "إنشاء ملف شخصي",
+  "splash_button_signIn": "تسجيل الدخول",
+
+  "legal_title": "قبل أن تبدأ",
+  "legal_checkbox_age": "أؤكد أنني بلغت 18 عامًا أو أكثر",
+  "legal_checkbox_terms": "أوافق على شروط الخدمة وسياسة الخصوصية",
+  "legal_button_continue": "متابعة",
+
+  "auth_label_phoneNumber": "رقم الهاتف",
+  "auth_hint_phoneNumber": "أدخل رقم هاتفك",
+  "auth_button_sendOtp": "إرسال رمز التحقق",
+  "auth_label_enterOtp": "أدخل الرمز المكوّن من 6 أرقام المرسل إلى",
+  "auth_button_verifyOtp": "تحقق",
+  "auth_button_resendOtp": "إعادة إرسال الرمز",
+  "auth_label_resendIn": "إعادة الإرسال خلال {seconds}ث",
+
+  "onboarding_label_step": "الخطوة {current} من {total}",
+  "onboarding_profileForWhom_title": "لمن هذا الملف الشخصي؟",
+  "onboarding_profileForWhom_myself": "لنفسي",
+  "onboarding_profileForWhom_myselfSub": "أبحث عن شريك/ة للزواج",
+  "onboarding_profileForWhom_guardian": "لابني أو ابنتي",
+  "onboarding_profileForWhom_guardianSub": "أنا ولي أمر",
+
+  "onboarding_basicIdentity_title": "أخبرنا عن نفسك",
+  "onboarding_label_firstName": "الاسم الأول",
+  "onboarding_label_lastName": "اسم العائلة",
+  "onboarding_label_dateOfBirth": "تاريخ الميلاد",
+  "onboarding_label_gender": "الجنس",
+  "onboarding_label_male": "ذكر",
+  "onboarding_label_female": "أنثى",
+  "onboarding_label_city": "المدينة",
+  "onboarding_hint_searchCity": "ابحث عن مدينتك…",
+  "onboarding_error_under18": "نور مخصص لمن هم في سن 18 عامًا أو أكثر.",
+
+  "onboarding_islamicIdentity_title": "هويتك الإسلامية",
+  "onboarding_label_deenLevel": "مستوى التديّن",
+  "onboarding_label_practicing": "مُلتزم",
+  "onboarding_label_moderate": "معتدل",
+  "onboarding_label_cultural": "مسلم ثقافي",
+  "onboarding_label_praysFiveDaily": "أصلي الصلوات الخمس يوميًا",
+
+  "onboarding_about_title": "عن نفسك",
+  "onboarding_hint_bio": "صِف نفسك بصدق وكرامة.",
+  "onboarding_label_bioCount": "{count}/300",
+
+  "onboarding_photo_title": "أضف صورك",
+  "onboarding_photo_subtitle": "مطلوبة صورة واحدة على الأقل تظهر فيها وجهك بوضوح.",
+  "onboarding_photo_verifySelfie": "صورة التحقق",
+  "onboarding_photo_verifySelfieHint": "التقط صورة مباشرة للتحقق من هويتك",
+
+  "discovery_header_title": "نور",
+  "discovery_button_sendInterest": "إرسال إشعار الاهتمام",
+  "discovery_label_interestSent": "تم الإرسال ✓",
+  "discovery_label_outsidePrefs": "شخص قد تتواصل معه",
+
+  "ceremony_text_blessing": "اسأل الله أن يبارك هذا بالخير",
+
+  "chat_placeholder_typeMessage": "اكتب رسالة…",
+  "chat_label_subscribeToMessage": "اشترك لفتح المراسلة. تراسل النساء مجانًا دائمًا في نور.",
+
+  "interests_tab_received": "المُستلَمة",
+  "interests_tab_sent": "المُرسَلة",
+  "interests_button_accept": "قبول",
+  "interests_button_decline": "رفض",
+
+  "subscription_title": "افتح نور",
+  "subscription_subtitle": "تراسل النساء مجانًا. يشترك الرجال للتواصل.",
+
+  "settings_title": "الإعدادات",
+  "settings_button_deleteAccount": "حذف الحساب"
+}
