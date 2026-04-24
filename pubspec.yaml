@@ -31,6 +31,8 @@ dependencies:
 
   # ── Utilities ─────────────────────────────────────────────
   shared_preferences: ^2.3.3      # Locale + theme persistence
+  image_picker: ^1.1.2            # Camera / Gallery photo picking
+  flutter_image_compress: ^2.3.0  # Compress before upload
 
 dev_dependencies:
   flutter_test:

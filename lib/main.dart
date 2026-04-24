@@ -21,6 +21,8 @@ import 'core/cubits/chat/chat_cubit.dart';
 import 'core/cubits/subscription/subscription_cubit.dart';
 import 'core/cubits/notification_prefs/notification_prefs_cubit.dart';
 import 'core/cubits/block_report/block_report_cubit.dart';
+import 'core/cubits/notifications/notifications_cubit.dart';
+import 'core/cubits/locale/locale_cubit.dart';
 import 'core/router/app_router.dart';
 
 /// Supported locales.
@@ -64,14 +66,16 @@ class NoorApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Create cubits at the top level so they outlive any individual screen.
-    final authCubit           = AuthCubit();
-    final onboardingCubit     = OnboardingCubit(authCubit: authCubit);
-    final interestsCubit      = InterestsCubit();
-    final discoveryFeedCubit  = DiscoveryFeedCubit();
-    final chatCubit           = ChatCubit();
-    final subscriptionCubit   = SubscriptionCubit();
+    final authCubit              = AuthCubit();
+    final onboardingCubit        = OnboardingCubit(authCubit: authCubit);
+    final interestsCubit         = InterestsCubit();
+    final discoveryFeedCubit     = DiscoveryFeedCubit();
+    final chatCubit              = ChatCubit();
+    final subscriptionCubit      = SubscriptionCubit();
     final notificationPrefsCubit = NotificationPrefsCubit();
-    final blockReportCubit    = BlockReportCubit();
+    final blockReportCubit       = BlockReportCubit();
+    final notificationsCubit     = NotificationsCubit();
+    final localeCubit            = LocaleCubit();
 
     // Kick off session check + subscription init immediately.
     authCubit.checkSession();
@@ -87,6 +91,8 @@ class NoorApp extends StatelessWidget {
         BlocProvider<SubscriptionCubit>.value(value: subscriptionCubit),
         BlocProvider<NotificationPrefsCubit>.value(value: notificationPrefsCubit),
         BlocProvider<BlockReportCubit>.value(value: blockReportCubit),
+        BlocProvider<NotificationsCubit>.value(value: notificationsCubit),
+        BlocProvider<LocaleCubit>.value(value: localeCubit),
       ],
       child: Builder(
         builder: (context) {
@@ -101,12 +107,14 @@ class NoorApp extends StatelessWidget {
                 onboardingCubit.initialize(startStep: state.onboardingStep);
               }
             },
-            child: MaterialApp.router(
+            child: BlocBuilder<LocaleCubit, Locale>(
+              builder: (context, locale) => MaterialApp.router(
               title:        'NOOR',
               debugShowCheckedModeBanner: false,
               theme:        AppTheme.darkTheme,
               darkTheme:    AppTheme.darkTheme,
               themeMode:    ThemeMode.dark,
+              locale:       locale,
 
               // ── Router ───────────────────────────────────
               routerConfig: router,
@@ -129,8 +137,8 @@ class NoorApp extends StatelessWidget {
 
               // ── RTL-aware directionality ──────────────────
               builder: (context, child) {
-                final locale  = Localizations.localeOf(context);
-                final isRtl   = _rtlLocales.contains(locale.languageCode);
+                final loc    = Localizations.localeOf(context);
+                final isRtl  = _rtlLocales.contains(loc.languageCode);
                 final textDir = isRtl ? TextDirection.rtl : TextDirection.ltr;
 
                 return Directionality(
@@ -139,7 +147,8 @@ class NoorApp extends StatelessWidget {
                 );
               },
             ),
-          );
+          ),
+        );
         },
       ),
     );

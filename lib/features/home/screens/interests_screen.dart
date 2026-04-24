@@ -1,16 +1,14 @@
 // lib/features/home/screens/interests_screen.dart
 // ============================================================
-// NOOR — Interests Inbox (Step 7 — Complete)
+// NOOR — Interests Inbox (Items 17, 18, 19, 21, 22, 26)
 //
-// Blueprint (Part 8):
-//   • Two tabs: Received / Sent
-//   • Received: avatar, name, age, city, time sent
-//     — Accept (gold) / Decline (outlined) buttons
-//     — Accepted → "Message" CTA (chat unlocked)
-//   • Sent: status pill (Pending / Accepted / Declined / Expired)
-//     — Withdraw button for pending
-//   • Mutual match modal: overlapping avatars + heart badge
-//     + 48h reflection note + "Message Now" CTA
+// Items implemented here:
+//   17 — Daily limit counter banner in Sent tab header (male only)
+//   18 — Expiry countdown on pending received cards
+//   19 — Withdraw confirm dialog on Sent tab
+//   21 — Match modal: remove 48h note, show "Bismillah" CTA
+//   22 — All cooling period text removed
+//   26 — NoorEmptyState on both tabs
 // ============================================================
 
 import 'dart:ui';
@@ -24,6 +22,7 @@ import '../../../core/mock/mock_profiles.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/noor_empty_state.dart';
 import 'chat_screen.dart';
 
 class InterestsScreen extends StatefulWidget {
@@ -49,7 +48,7 @@ class _InterestsScreenState extends State<InterestsScreen>
     super.dispose();
   }
 
-  // ── Mutual match ceremony modal ───────────────────────────
+  // ── Mutual match ceremony modal (Item 21 + 22) ───────────
 
   void _showMutualMatchModal(MockProfile profile) {
     HapticFeedback.mediumImpact();
@@ -88,46 +87,27 @@ class _InterestsScreenState extends State<InterestsScreen>
 
                     // Gold title
                     Text(
-                      'It\'s a Match!',
+                      'Mabrook!',
                       style: AppTypography.screenTitle.copyWith(
-                          color: AppColors.champagneGold, fontSize: 26),
+                          color: AppColors.champagneGold, fontSize: 28),
                     ),
-                    const SizedBox(height: AppDimensions.space8),
-
+                    const SizedBox(height: AppDimensions.space4),
                     Text(
-                      'You and ${profile.firstName} can now message each other.',
-                      style: AppTypography.bodyMuted,
-                      textAlign: TextAlign.center,
+                      'You have a mutual interest.',
+                      style: AppTypography.screenTitle.copyWith(
+                          color: AppColors.pearlWhite, fontSize: 18),
                     ),
-                    const SizedBox(height: AppDimensions.space16),
+                    const SizedBox(height: AppDimensions.space12),
 
-                    // 48-hour reflection note — blueprint requirement
-                    Container(
-                      padding: const EdgeInsets.all(AppDimensions.space12),
-                      decoration: BoxDecoration(
-                        color:        AppColors.champagneGold.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                        border:       Border.all(color: AppColors.goldBorder),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.access_time_rounded,
-                              color: AppColors.champagneGold, size: 16),
-                          const SizedBox(width: AppDimensions.space8),
-                          Expanded(
-                            child: Text(
-                              'A 48-hour reflection period applies before full messaging unlocks.',
-                              style: AppTypography.caption.copyWith(
-                                  color: AppColors.champagneGold,
-                                  fontStyle: FontStyle.italic),
-                            ),
-                          ),
-                        ],
-                      ),
+                    // Bismillah subtitle (Item 21 — replaces 48h note)
+                    Text(
+                      'Say bismillah and begin a conversation.',
+                      style: AppTypography.bodyMuted.copyWith(height: 1.6),
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: AppDimensions.space28),
 
-                    // Message Now CTA
+                    // Message Now CTA — gold, full width
                     SizedBox(
                       width:  double.infinity,
                       height: AppDimensions.buttonHeight,
@@ -144,7 +124,6 @@ class _InterestsScreenState extends State<InterestsScreen>
                         onPressed: () {
                           HapticFeedback.mediumImpact();
                           Navigator.of(context).pop();
-                          // Open / create conversation and navigate
                           final convId = context
                               .read<ChatCubit>()
                               .openOrCreateConversation(
@@ -159,7 +138,7 @@ class _InterestsScreenState extends State<InterestsScreen>
                             ),
                           );
                         },
-                        child: Text('Message ${profile.firstName}',
+                        child: Text('Message Now',
                             style: AppTypography.button),
                       ),
                     ),
@@ -184,11 +163,74 @@ class _InterestsScreenState extends State<InterestsScreen>
     );
   }
 
+  // ── Withdraw confirm dialog (Item 19) ─────────────────────
+
+  void _showWithdrawDialog(InterestEntry entry) {
+    HapticFeedback.selectionClick();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF13131A),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+          side: const BorderSide(color: AppColors.cardBorder),
+        ),
+        title: Text('Withdraw interest?',
+            style: AppTypography.bodyMedium.copyWith(
+                color: AppColors.pearlWhite, fontSize: 17)),
+        content: Text(
+          "They won't be notified.",
+          style: AppTypography.bodyMuted,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel',
+                style: AppTypography.caption.copyWith(
+                    color: AppColors.slateMist)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.read<InterestsCubit>().withdrawInterest(entry.id);
+            },
+            child: Text('Withdraw',
+                style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.softCoral, fontSize: 14)),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ── Build ────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<InterestsCubit, InterestsState>(
+    return BlocConsumer<InterestsCubit, InterestsState>(
+      listenWhen: (prev, curr) =>
+          !prev.limitError && curr.limitError,
+      listener: (context, state) {
+        // Item 17: show SnackBar when daily limit is hit
+        final isSubscribed = state.dailyLimit >= 20;
+        final msg = isSubscribed
+            ? 'Daily limit reached. Resets at midnight.'
+            : 'Daily limit reached. Resets at midnight. '
+              'Subscribe for 20 interests per day.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg, style: AppTypography.body),
+            backgroundColor: AppColors.surfaceGlassHover,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+              side: const BorderSide(color: AppColors.cardBorder),
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        context.read<InterestsCubit>().clearLimitError();
+      },
       builder: (context, state) {
         return Column(
           children: [
@@ -268,11 +310,10 @@ class _InterestsScreenState extends State<InterestsScreen>
                 children: [
                   // ── Received tab ──────────────────────────
                   state.displayReceived.isEmpty
-                      ? const _EmptyState(
-                          icon:    Icons.inbox_rounded,
-                          title:   'No interests yet',
-                          message:
-                              'When someone sends you an interest,\nit will appear here.',
+                      ? const NoorEmptyState(
+                          icon:     Icons.favorite_border_rounded,
+                          title:    'No interests yet',
+                          subtitle: 'When someone sends you an interest it appears here.',
                         )
                       : _ReceivedList(
                           entries:   state.displayReceived,
@@ -290,26 +331,101 @@ class _InterestsScreenState extends State<InterestsScreen>
                         ),
 
                   // ── Sent tab ──────────────────────────────
-                  state.sent.isEmpty
-                      ? const _EmptyState(
-                          icon:    Icons.send_rounded,
-                          title:   'No sent interests',
-                          message: 'Interests you send will appear here.',
-                        )
-                      : _SentList(
-                          entries:    state.sent,
-                          onWithdraw: (entry) {
-                            context
-                                .read<InterestsCubit>()
-                                .withdrawInterest(entry.id);
-                          },
-                        ),
+                  Column(
+                    children: [
+                      // Item 17: daily counter banner (male users only)
+                      // In production, check gender from AuthCubit.
+                      _DailyLimitBanner(state: state),
+
+                      Expanded(
+                        child: state.sent.isEmpty
+                            ? const NoorEmptyState(
+                                icon:     Icons.send_outlined,
+                                title:    "You haven't sent any interests",
+                                subtitle: 'Browse profiles and send your first interest.',
+                              )
+                            : _SentList(
+                                entries:    state.sent,
+                                onWithdraw: (entry) =>
+                                    _showWithdrawDialog(entry),
+                              ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
           ],
         );
       },
+    );
+  }
+}
+
+// ── Daily Limit Banner (Item 17) ──────────────────────────────
+
+class _DailyLimitBanner extends StatelessWidget {
+  const _DailyLimitBanner({required this.state});
+  final InterestsState state;
+
+  @override
+  Widget build(BuildContext context) {
+    // Blueprint: Women send interests free — no limit, no banner.
+    // We use 9999 as the "unlimited" sentinel for female users.
+    if (state.dailyLimit >= 9999) return const SizedBox.shrink();
+
+    final sent  = state.interestsSentToday;
+    final limit = state.dailyLimit;
+    final frac  = limit > 0 ? (sent / limit).clamp(0.0, 1.0) : 0.0;
+    final atLimit = state.isDailyLimitReached;
+
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppDimensions.space24, 0, AppDimensions.space24, AppDimensions.space12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                atLimit
+                    ? Icons.block_rounded
+                    : Icons.favorite_outline_rounded,
+                size:  14,
+                color: atLimit
+                    ? AppColors.softCoral
+                    : AppColors.champagneGold,
+              ),
+              const SizedBox(width: AppDimensions.space6),
+              Text(
+                '$sent of $limit interests sent today',
+                style: AppTypography.caption.copyWith(
+                  color: atLimit
+                      ? AppColors.softCoral
+                      : AppColors.champagneGold,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppDimensions.space6),
+          // Gold progress bar (3px height)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              value:            frac,
+              minHeight:        3,
+              backgroundColor:  AppColors.surfaceGlassHover,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                atLimit
+                    ? AppColors.softCoral
+                    : AppColors.champagneGold,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -491,6 +607,9 @@ class _ReceivedTile extends StatelessWidget {
             ],
           ),
 
+          // Item 18: Expiry countdown — shown below buttons for pending interests
+          if (isPending) _ExpiryRow(entry: entry),
+
           // Action buttons — pending only
           if (isPending) ...[
             const SizedBox(height: AppDimensions.space14),
@@ -578,6 +697,46 @@ class _ReceivedTile extends StatelessWidget {
   }
 }
 
+// ── Item 18: Expiry countdown row ─────────────────────────────
+
+class _ExpiryRow extends StatelessWidget {
+  const _ExpiryRow({required this.entry});
+  final InterestEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final hours = entry.hoursRemaining;
+    if (hours == null || hours > 72) return const SizedBox.shrink();
+
+    final isUrgent = hours < 24;
+    final color    = isUrgent ? AppColors.softCoral : const Color(0xFFFFBF47);
+    final icon     = isUrgent
+        ? Icons.warning_amber_rounded
+        : Icons.access_time_rounded;
+    final text     = isUrgent
+        ? 'Expires today'
+        : 'Expires in ${entry.daysRemaining} day${entry.daysRemaining == 1 ? '' : 's'}';
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppDimensions.space10),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 13),
+          const SizedBox(width: AppDimensions.space4),
+          Text(
+            text,
+            style: AppTypography.caption.copyWith(
+              color:      color,
+              fontWeight: FontWeight.w600,
+              fontSize:   11,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ── Sent list ─────────────────────────────────────────────────
 
 class _SentList extends StatelessWidget {
@@ -616,11 +775,11 @@ class _SentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p          = entry.profile;
-    final status     = entry.effectiveStatus;
-    final isPending  = status == InterestStatus.pending;
-    final isAccepted = status == InterestStatus.accepted;
-    final isExpired  = status == InterestStatus.expired;
+    final p           = entry.profile;
+    final status      = entry.effectiveStatus;
+    final isPending   = status == InterestStatus.pending;
+    final isAccepted  = status == InterestStatus.accepted;
+    final isExpired   = status == InterestStatus.expired;
     final isWithdrawn = status == InterestStatus.withdrawn;
 
     return AnimatedContainer(
@@ -673,25 +832,18 @@ class _SentTile extends StatelessWidget {
               const SizedBox(height: AppDimensions.space6),
 
               if (isPending)
+                // Item 19: Withdraw text button (AppColors.softCoral)
                 GestureDetector(
                   onTap: () {
                     HapticFeedback.selectionClick();
                     onWithdraw();
                   },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppDimensions.space10,
-                      vertical:   AppDimensions.space4,
-                    ),
-                    decoration: BoxDecoration(
-                      color:        AppColors.surfaceGlassHover,
-                      borderRadius:
-                          BorderRadius.circular(AppDimensions.radiusTiny),
-                      border:       Border.all(color: AppColors.cardBorder),
-                    ),
-                    child: Text(
-                      'Withdraw',
-                      style: AppTypography.caption.copyWith(fontSize: 11),
+                  child: Text(
+                    'Withdraw',
+                    style: AppTypography.caption.copyWith(
+                      color:      AppColors.softCoral,
+                      fontSize:   12,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 )
@@ -804,47 +956,6 @@ class _CountBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radiusTiny),
       ),
       child: Text('$count', style: AppTypography.badge),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({
-    required this.icon,
-    required this.title,
-    required this.message,
-  });
-  final IconData icon;
-  final String   title;
-  final String   message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppDimensions.space40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width:  80,
-              height: 80,
-              decoration: BoxDecoration(
-                color:        AppColors.surfaceGlass,
-                shape:        BoxShape.circle,
-                border:       Border.all(color: AppColors.cardBorder),
-              ),
-              child: Icon(icon, color: AppColors.slateMist, size: 36),
-            ),
-            const SizedBox(height: AppDimensions.space20),
-            Text(title, style: AppTypography.bodyMedium),
-            const SizedBox(height: AppDimensions.space8),
-            Text(message,
-                style: AppTypography.bodyMuted,
-                textAlign: TextAlign.center),
-          ],
-        ),
-      ),
     );
   }
 }

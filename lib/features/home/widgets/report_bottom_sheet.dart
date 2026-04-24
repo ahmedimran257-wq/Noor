@@ -1,13 +1,18 @@
 // lib/features/home/widgets/report_bottom_sheet.dart
 // ============================================================
-// NOOR — Report Bottom Sheet (Step 10)
+// NOOR — Report Bottom Sheet (Item 28 — 3-Step Multi-Flow)
 //
 // Blueprint (Part 9 — Report Reasons):
 //   fake_profile, inappropriate_photos, harassment, scam,
 //   underage, already_married, offensive_bio, other
 //
-// "other" requires a text description.
-// On submit: calls BlockReportCubit.reportUser()
+// Step 1: Select reason (radio list, 8 options)
+// Step 2: "Other" only — free-text description (300 chars)
+// Step 3: Confirmation ("Thank you. Review within 48 hours.")
+//
+// On submit:
+//   - blockReportCubit.reportUser(reason, description)
+//   - blockReportCubit.hideProfile(profileId)  [auto-hidden]
 // ============================================================
 
 import 'package:flutter/material.dart';
@@ -15,6 +20,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/cubits/block_report/block_report_cubit.dart';
 import '../../../core/cubits/block_report/block_report_state.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 
 class ReportBottomSheet {
@@ -52,9 +58,11 @@ class _ReportContent extends StatefulWidget {
 }
 
 class _ReportContentState extends State<_ReportContent> {
+  // Step 1 | 2 | 3
+  int           _step          = 1;
   ReportReason? _selected;
-  final _descController = TextEditingController();
-  bool _submitted = false;
+  final _descController        = TextEditingController();
+
 
   @override
   void dispose() {
@@ -62,28 +70,25 @@ class _ReportContentState extends State<_ReportContent> {
     super.dispose();
   }
 
+  void _onSubmit(BuildContext context) {
+    context.read<BlockReportCubit>().reportUser(
+      reportedUserId: widget.reportedUserId,
+      reportedName:   widget.reportedName,
+      reason:         _selected!,
+      description:    _selected == ReportReason.other
+          ? _descController.text.trim()
+          : null,
+    );
+    setState(() => _step = 3);
+  }
+
+
   @override
   Widget build(BuildContext context) {
     final bottomPad = MediaQuery.of(context).viewInsets.bottom +
         MediaQuery.of(context).viewPadding.bottom;
 
-    return BlocConsumer<BlockReportCubit, BlockReportState>(
-      listener: (context, state) {
-        if (state.successMessage != null && _submitted) {
-          Navigator.of(context).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.successMessage!,
-                  style: AppTypography.body),
-              backgroundColor: AppColors.verifiedTeal,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
-          );
-          context.read<BlockReportCubit>().clearMessages();
-        }
-      },
+    return BlocBuilder<BlockReportCubit, BlockReportState>(
       builder: (context, state) {
         return Container(
           decoration: const BoxDecoration(
@@ -93,7 +98,9 @@ class _ReportContentState extends State<_ReportContent> {
             border:
                 Border(top: BorderSide(color: AppColors.goldBorder)),
           ),
-          padding: EdgeInsets.fromLTRB(24, 20, 24, 24 + bottomPad),
+          padding: EdgeInsets.fromLTRB(
+              AppDimensions.space24, AppDimensions.space20,
+              AppDimensions.space24, AppDimensions.space24 + bottomPad),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -109,113 +116,38 @@ class _ReportContentState extends State<_ReportContent> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppDimensions.space20),
 
-              // Title
-              Text(
-                'Report ${widget.reportedName}',
-                style: AppTypography.screenTitle.copyWith(fontSize: 20),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Help keep the community safe. Your report is anonymous.',
-                style: AppTypography.bodyMuted,
-              ),
-              const SizedBox(height: 20),
-
-              // Reason list
-              ...ReportReason.values.map(
-                (reason) => _ReasonTile(
-                  reason:     reason,
-                  isSelected: _selected == reason,
-                  onTap: () => setState(() => _selected = reason),
-                ),
-              ),
-
-              // Description field for "other"
-              if (_selected == ReportReason.other) ...[
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _descController,
-                  maxLines:   3,
-                  maxLength:  200,
-                  style:      AppTypography.body,
-                  decoration: InputDecoration(
-                    hintText:  'Please describe the issue…',
-                    hintStyle: AppTypography.bodyMuted,
-                    fillColor: AppColors.surfaceGlass,
-                    filled:    true,
-                    border:    OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: AppColors.cardBorder),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                          color: AppColors.champagneGold, width: 1.5),
-                    ),
-                    counterStyle: AppTypography.caption,
-                  ),
-                ),
-              ],
-
-              const SizedBox(height: 20),
-
-              // Submit
-              GestureDetector(
-                onTap: (_selected == null || state.isSubmitting)
-                    ? null
-                    : () {
-                        setState(() => _submitted = true);
-                        context.read<BlockReportCubit>().reportUser(
-                              reportedUserId: widget.reportedUserId,
-                              reportedName:   widget.reportedName,
-                              reason:         _selected!,
-                              description:
-                                  _selected == ReportReason.other
-                                      ? _descController.text.trim()
-                                      : null,
-                            );
-                      },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  height: 52,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: _selected == null
-                        ? AppColors.surfaceGlass
-                        : AppColors.softCoral,
-                  ),
-                  alignment: Alignment.center,
-                  child: state.isSubmitting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: AppColors.pearlWhite,
-                            strokeWidth: 2,
+              // Animated step content
+              AnimatedSwitcher(
+                duration: AppDimensions.durationTransition,
+                child: _step == 1
+                    ? _Step1(
+                        key:          const ValueKey(1),
+                        reportedName: widget.reportedName,
+                        selected:     _selected,
+                        onSelect: (r) => setState(() => _selected = r),
+                        onNext: () {
+                          if (_selected == ReportReason.other) {
+                            setState(() => _step = 2);
+                          } else {
+                            _onSubmit(context);
+                          }
+                        },
+                      )
+                    : _step == 2
+                        ? _Step2(
+                            key:          const ValueKey(2),
+                            controller:   _descController,
+                            isLoading:    state.isSubmitting,
+                            onBack:       () => setState(() => _step = 1),
+                            onSubmit:     () => _onSubmit(context),
+                          )
+                        : _Step3(
+                            key: const ValueKey(3),
+                            reportedName: widget.reportedName,
+                            onDone: () => Navigator.pop(context),
                           ),
-                        )
-                      : Text(
-                          'Submit Report',
-                          style: AppTypography.button.copyWith(
-                            color: _selected == null
-                                ? AppColors.slateMist
-                                : AppColors.pearlWhite,
-                          ),
-                        ),
-                ),
-              ),
-
-              const SizedBox(height: 10),
-              Center(
-                child: TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text('Cancel',
-                      style: AppTypography.bodyMuted),
-                ),
               ),
             ],
           ),
@@ -224,6 +156,267 @@ class _ReportContentState extends State<_ReportContent> {
     );
   }
 }
+
+// ── Step 1: Select Reason ─────────────────────────────────────
+
+class _Step1 extends StatelessWidget {
+  final String        reportedName;
+  final ReportReason? selected;
+  final ValueChanged<ReportReason> onSelect;
+  final VoidCallback  onNext;
+
+  const _Step1({
+    super.key,
+    required this.reportedName,
+    required this.selected,
+    required this.onSelect,
+    required this.onNext,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Report $reportedName',
+          style: AppTypography.screenTitle.copyWith(fontSize: 20),
+        ),
+        const SizedBox(height: AppDimensions.space6),
+        Text(
+          'Help keep the community safe. Your report is anonymous.',
+          style: AppTypography.bodyMuted,
+        ),
+        const SizedBox(height: AppDimensions.space20),
+
+        // Scrollable reason list
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 360),
+          child: SingleChildScrollView(
+            child: Column(
+              children: ReportReason.values.map(
+                (reason) => _ReasonTile(
+                  reason:     reason,
+                  isSelected: selected == reason,
+                  onTap: () => onSelect(reason),
+                ),
+              ).toList(),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: AppDimensions.space20),
+
+        // Next / Submit button
+        GestureDetector(
+          onTap: selected == null ? null : onNext,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            height: 52,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: selected == null
+                  ? AppColors.surfaceGlass
+                  : AppColors.softCoral,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              selected == ReportReason.other ? 'Next' : 'Submit Report',
+              style: AppTypography.button.copyWith(
+                color: selected == null
+                    ? AppColors.slateMist
+                    : AppColors.pearlWhite,
+              ),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: AppDimensions.space10),
+        Center(
+          child: TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Cancel', style: AppTypography.bodyMuted),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Step 2: Other — free text ─────────────────────────────────
+
+class _Step2 extends StatelessWidget {
+  final TextEditingController controller;
+  final bool        isLoading;
+  final VoidCallback onBack;
+  final VoidCallback onSubmit;
+
+  const _Step2({
+    super.key,
+    required this.controller,
+    required this.isLoading,
+    required this.onBack,
+    required this.onSubmit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Back link
+        GestureDetector(
+          onTap: onBack,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.arrow_back_rounded,
+                  color: AppColors.slateMist, size: 16),
+              const SizedBox(width: AppDimensions.space4),
+              Text('Back', style: AppTypography.caption.copyWith(
+                  color: AppColors.slateMist)),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppDimensions.space16),
+
+        Text('Tell us more',
+            style: AppTypography.bodyMedium.copyWith(fontSize: 18)),
+        const SizedBox(height: AppDimensions.space6),
+        Text('Optional — helps our team review faster.',
+            style: AppTypography.bodyMuted),
+        const SizedBox(height: AppDimensions.space16),
+
+        TextField(
+          controller:  controller,
+          maxLines:    4,
+          maxLength:   300,
+          style:       AppTypography.body,
+          decoration: InputDecoration(
+            hintText:  'Describe the issue…',
+            hintStyle: AppTypography.bodyMuted,
+            fillColor: AppColors.surfaceGlass,
+            filled:    true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide:
+                  const BorderSide(color: AppColors.cardBorder),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                  color: AppColors.champagneGold, width: 1.5),
+            ),
+            counterStyle: AppTypography.caption,
+          ),
+        ),
+        const SizedBox(height: AppDimensions.space20),
+
+        GestureDetector(
+          onTap: isLoading ? null : onSubmit,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            height: 52,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: isLoading
+                  ? AppColors.softCoral.withValues(alpha: 0.5)
+                  : AppColors.softCoral,
+            ),
+            alignment: Alignment.center,
+            child: isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: AppColors.pearlWhite,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Text('Submit Report',
+                    style: AppTypography.button.copyWith(
+                        color: AppColors.pearlWhite)),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Step 3: Confirmation ──────────────────────────────────────
+
+class _Step3 extends StatelessWidget {
+  final String       reportedName;
+  final VoidCallback onDone;
+
+  const _Step3({
+    super.key,
+    required this.reportedName,
+    required this.onDone,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(height: AppDimensions.space8),
+
+        // Success icon
+        Container(
+          width:  64,
+          height: 64,
+          decoration: BoxDecoration(
+            shape:  BoxShape.circle,
+            color:  AppColors.verifiedTeal.withValues(alpha: 0.12),
+            border: Border.all(color: AppColors.verifiedTeal, width: 1.5),
+          ),
+          child: const Icon(Icons.check_rounded,
+              color: AppColors.verifiedTeal, size: 32),
+        ),
+        const SizedBox(height: AppDimensions.space20),
+
+        Text('Thank you for reporting.',
+            style: AppTypography.bodyMedium.copyWith(
+                color: AppColors.pearlWhite, fontSize: 18),
+            textAlign: TextAlign.center),
+        const SizedBox(height: AppDimensions.space12),
+
+        Text(
+          'We review every report within 48 hours.\n'
+          'This profile has been hidden from your feed.',
+          style: AppTypography.bodyMuted.copyWith(height: 1.7),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: AppDimensions.space28),
+
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: onDone,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.champagneGold,
+              foregroundColor: AppColors.obsidianNight,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              elevation: 0,
+            ),
+            child: Text('Done', style: AppTypography.button),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Reason Tile ───────────────────────────────────────────────
 
 class _ReasonTile extends StatelessWidget {
   final ReportReason reason;
@@ -242,8 +435,10 @@ class _ReasonTile extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        margin: const EdgeInsets.only(bottom: AppDimensions.space8),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.space14,
+            vertical:   AppDimensions.space12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
           color: isSelected
@@ -262,7 +457,7 @@ class _ReasonTile extends StatelessWidget {
                 children: [
                   Text(reason.label, style: AppTypography.body),
                   Text(reason.detail,
-                      style: AppTypography.caption,
+                      style:    AppTypography.caption,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis),
                 ],

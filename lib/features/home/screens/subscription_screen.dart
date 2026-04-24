@@ -1,20 +1,20 @@
 // lib/features/home/screens/subscription_screen.dart
 // ============================================================
-// NOOR — Subscription Screen (Step 9)
+// NOOR — Subscription Screen (Item 23 — Regional Pricing)
 //
 // Blueprint (Part 8):
-//   "Clean single-purpose screen. Header: 'Unlock NOOR.'
-//    Subtext: 'Women message free. Men subscribe to connect.'
-//    Two plan cards side by side: monthly and annual (labeled
-//    Best Value with a visual highlight). The price in local currency.
-//    A clear list of what's included.
-//    A single gold CTA button.
-//    Below: Restore Purchase, Privacy Policy, Terms.
-//    No upsell language. No fake urgency. No countdown timers."
+//   "The price in local currency."
+//
+// Item 23: PricingConfig reads country code from SharedPreferences
+//   'user_country_code' and applies the correct tier.
+//   Dynamic "Best value — save X%" on annual card.
+//   Billed annually / monthly note shown below price.
 // ============================================================
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/config/pricing_config.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/cubits/auth/auth_state.dart';
 import '../../../core/cubits/subscription/subscription_cubit.dart';
@@ -38,6 +38,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   late final Animation<double>   _headerFade;
   late final Animation<Offset>   _headerSlide;
 
+  // Pricing (loaded from SharedPreferences on initState)
+  PricingTier _pricing = PricingConfig.getForCountryCode('');
+
   @override
   void initState() {
     super.initState();
@@ -51,6 +54,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _headerAnim, curve: Curves.easeOutCubic));
     _headerAnim.forward();
+    _loadPricing();
+  }
+
+  Future<void> _loadPricing() async {
+    final prefs      = await SharedPreferences.getInstance();
+    final countryCode = prefs.getString('user_country_code') ?? '';
+    if (!mounted) return;
+    setState(() {
+      _pricing = PricingConfig.getForCountryCode(countryCode);
+    });
   }
 
   @override
@@ -62,7 +75,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   @override
   Widget build(BuildContext context) {
     // Blueprint Part 2: women never need to subscribe.
-    // If a female user somehow navigates here, show a clear message.
     final authState = context.watch<AuthCubit>().state;
     final gender = authState is AuthAuthenticated
         ? (authState.gender ?? 'male')
@@ -112,6 +124,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
 
                 // ── Plan Cards ──────────────────────────────
                 _PlanCards(
+                  pricing:      _pricing,
                   selectedPlan: _selectedPlan,
                   onSelect: (plan) => setState(() => _selectedPlan = plan),
                 ),
@@ -126,6 +139,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                 // ── CTA Button ──────────────────────────────
                 _CtaButton(
                   selectedPlan: _selectedPlan,
+                  pricing:      _pricing,
                   isLoading: state.isLoading,
                   onTap: () {
                     final planId = _selectedPlan == 'annual'
@@ -209,10 +223,12 @@ class _Header extends StatelessWidget {
 // ── Plan Cards ────────────────────────────────────────────────
 
 class _PlanCards extends StatelessWidget {
-  final String   selectedPlan;
+  final PricingTier pricing;
+  final String      selectedPlan;
   final void Function(String) onSelect;
 
   const _PlanCards({
+    required this.pricing,
     required this.selectedPlan,
     required this.onSelect,
   });
@@ -225,9 +241,11 @@ class _PlanCards extends StatelessWidget {
           child: _PlanCard(
             planId:    'monthly',
             label:     'Monthly',
-            price:     '₹249',
+            price:     pricing.monthlyPrice,
             period:    'per month',
+            billing:   'Billed monthly',
             isBest:    false,
+            savings:   null,
             isSelected: selectedPlan == 'monthly',
             onTap:     () => onSelect('monthly'),
           ),
@@ -237,9 +255,11 @@ class _PlanCards extends StatelessWidget {
           child: _PlanCard(
             planId:    'annual',
             label:     'Annual',
-            price:     '₹2,499',
-            period:    'per year · save 17%',
+            price:     pricing.annualPrice,
+            period:    'per year',
+            billing:   'Billed annually',
             isBest:    true,
+            savings:   pricing.savingsPercent,
             isSelected: selectedPlan == 'annual',
             onTap:     () => onSelect('annual'),
           ),
@@ -250,12 +270,14 @@ class _PlanCards extends StatelessWidget {
 }
 
 class _PlanCard extends StatelessWidget {
-  final String planId;
-  final String label;
-  final String price;
-  final String period;
-  final bool   isBest;
-  final bool   isSelected;
+  final String  planId;
+  final String  label;
+  final String  price;
+  final String  period;
+  final String  billing;
+  final bool    isBest;
+  final int?    savings;
+  final bool    isSelected;
   final VoidCallback onTap;
 
   const _PlanCard({
@@ -263,7 +285,9 @@ class _PlanCard extends StatelessWidget {
     required this.label,
     required this.price,
     required this.period,
+    required this.billing,
     required this.isBest,
+    required this.savings,
     required this.isSelected,
     required this.onTap,
   });
@@ -290,7 +314,7 @@ class _PlanCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Best Value badge
+            // Best Value badge with dynamic savings %
             if (isBest) ...[
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -299,7 +323,9 @@ class _PlanCard extends StatelessWidget {
                   color: AppColors.champagneGold,
                 ),
                 child: Text(
-                  'BEST VALUE',
+                  savings != null
+                      ? 'SAVE $savings%'
+                      : 'BEST VALUE',
                   style: AppTypography.sectionLabel.copyWith(
                     color: AppColors.obsidianNight,
                     fontWeight: FontWeight.w700,
@@ -325,10 +351,19 @@ class _PlanCard extends StatelessWidget {
                     : AppColors.pearlWhite,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(period,
-                style: AppTypography.caption
-                    .copyWith(fontSize: 11)),
+                style: AppTypography.caption.copyWith(fontSize: 11)),
+            const SizedBox(height: 4),
+            // Billing note (Billed annually / monthly)
+            Text(
+              billing,
+              style: AppTypography.caption.copyWith(
+                fontSize:   10,
+                color:      AppColors.slateMist.withValues(alpha: 0.7),
+                fontStyle:  FontStyle.italic,
+              ),
+            ),
 
             const SizedBox(height: 12),
 
@@ -388,7 +423,7 @@ class _IncludedFeatures extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'WHAT\'S INCLUDED',
+            "WHAT'S INCLUDED",
             style: AppTypography.sectionLabel,
           ),
           const SizedBox(height: 16),
@@ -433,12 +468,14 @@ class _FeatureRow extends StatelessWidget {
 // ── CTA Button ────────────────────────────────────────────────
 
 class _CtaButton extends StatelessWidget {
-  final String   selectedPlan;
-  final bool     isLoading;
+  final String      selectedPlan;
+  final PricingTier pricing;
+  final bool        isLoading;
   final VoidCallback onTap;
 
   const _CtaButton({
     required this.selectedPlan,
+    required this.pricing,
     required this.isLoading,
     required this.onTap,
   });
@@ -446,8 +483,8 @@ class _CtaButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = selectedPlan == 'annual'
-        ? 'Subscribe — ₹2,499 / year'
-        : 'Subscribe — ₹249 / month';
+        ? pricing.annualCta
+        : pricing.monthlyCta;
 
     return GestureDetector(
       onTap: isLoading ? null : onTap,
@@ -541,8 +578,6 @@ class _SecondaryLinks extends StatelessWidget {
 }
 
 // ── Free For Women Screen ─────────────────────────────────────
-// Blueprint Part 2: "Women message free."
-// Shown if a female user navigates to the subscription screen.
 
 class _FreeForWomenScreen extends StatelessWidget {
   @override

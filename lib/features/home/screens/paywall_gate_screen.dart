@@ -15,15 +15,29 @@
 // ============================================================
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/cubits/auth/auth_cubit.dart';
+import '../../../core/cubits/auth/auth_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import 'subscription_screen.dart';
 
+
 class PaywallGateSheet {
   /// Shows the paywall as a modal bottom sheet.
-  /// Only call this for male non-subscribers — gender gate is
-  /// enforced at the call site (chat_list_screen.dart).
+  ///
+  /// Blueprint: "Women always message free on NOOR."
+  /// This method is a no-op if the current user is female —
+  /// defence-in-depth on top of the call-site check in
+  /// chat_list_screen.dart and chat_screen.dart.
   static Future<void> show(BuildContext context) {
+    // Runtime guard: never show paywall to women.
+    final authState = context.read<AuthCubit>().state;
+    final gender = authState is AuthAuthenticated
+        ? (authState.gender ?? 'male')
+        : 'male';
+    if (gender == 'female') return Future.value();
+
     return showModalBottomSheet<void>(
       context:           context,
       isScrollControlled: true,
@@ -32,6 +46,7 @@ class PaywallGateSheet {
     );
   }
 }
+
 
 class _PaywallGateContent extends StatelessWidget {
   const _PaywallGateContent();

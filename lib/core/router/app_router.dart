@@ -29,15 +29,23 @@ import '../../features/onboarding/screens/photo_upload_screen.dart';
 import '../../features/onboarding/screens/profile_preview_screen.dart';
 import '../../features/onboarding/screens/welcome_screen.dart';
 import '../../features/home/home_screen.dart';
+import '../../features/home/screens/profile_views_screen.dart';
+import '../../features/home/screens/notifications_screen.dart';
+import '../../features/home/screens/delete_account_screen.dart';
+import '../../features/home/screens/block_list_screen.dart';
 
 // ── Route names ───────────────────────────────────────────────
 
 abstract final class AppRoutes {
-  static const splash       = '/';
-  static const legal        = '/legal';
-  static const phone        = '/phone';
-  static const onboarding   = '/onboarding';
-  static const home         = '/home';
+  static const splash         = '/';
+  static const legal          = '/legal';
+  static const phone          = '/phone';
+  static const onboarding     = '/onboarding';
+  static const home           = '/home';
+  static const profileViews   = '/profile-views';
+  static const notifications  = '/notifications';
+  static const deleteAccount  = '/delete-account';
+  static const blockList      = '/block-list';
 }
 
 // ── Screen index → route path mapping ────────────────────────
@@ -129,6 +137,36 @@ GoRouter buildAppRouter(BuildContext buildContext) {
         pageBuilder: (context, state) => _slidePage(
           key: state.pageKey,
           child: const HomeScreen(),
+        ),
+      ),
+
+      // ── Full-screen sub-screens ──────────────────────────
+      GoRoute(
+        path: AppRoutes.profileViews,
+        pageBuilder: (context, state) => _slidePage(
+          key: state.pageKey,
+          child: const ProfileViewsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.notifications,
+        pageBuilder: (context, state) => _slidePage(
+          key: state.pageKey,
+          child: const NotificationsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.deleteAccount,
+        pageBuilder: (context, state) => _slidePage(
+          key: state.pageKey,
+          child: const DeleteAccountScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.blockList,
+        pageBuilder: (context, state) => _slidePage(
+          key: state.pageKey,
+          child: const BlockListScreen(),
         ),
       ),
     ],

@@ -1,21 +1,26 @@
 // lib/features/home/screens/chat_screen.dart
 // ============================================================
-// NOOR — Individual Chat Screen (Step 8 — Complete)
+// NOOR — Individual Chat Screen (Item 25 — Persistent Openers)
 //
 // Blueprint (Part 8, Conversations):
 //   • Sent messages: gold-tinted bubble, right side
 //   • Received messages: surface color, left side
-//   • Reduced radius on inner corner (no tails)
 //   • Timestamps hidden by default → tap to reveal
 //   • First message: 3 suggested openers in italic Playfair
 //   • Text-only input (no photos/voice per Phase 1)
 //   • Status icons: queued (clock) / sent (✓) / delivered (✓✓)
-//   • Non-subscriber men see paywall gate
+//
+// Item 25:
+//   _showSuggestedOpeners: true until first message sent.
+//   Persists dismissal per conversationId in SharedPreferences.
+//   Key: 'openers_dismissed_$conversationId'
+//   Animates out with SizeTransition (300ms collapse).
 // ============================================================
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/cubits/chat/chat_cubit.dart';
 import '../../../core/cubits/chat/chat_state.dart';
 import '../../../core/theme/app_colors.dart';
@@ -41,29 +46,66 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatScreenState extends State<ChatScreen>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _inputCtrl   = TextEditingController();
   final ScrollController       _scrollCtrl = ScrollController();
   bool _canSend = false;
 
+  // Item 25: openers visibility + animation
+  bool _showSuggestedOpeners  = true;
+  late final AnimationController _openersAnim;
+  late final Animation<double>   _openersSize;
+
   @override
   void initState() {
     super.initState();
+    _openersAnim = AnimationController(
+      vsync:    this,
+      duration: const Duration(milliseconds: 300),
+      value:    1.0, // starts fully visible
+    );
+    _openersSize = CurvedAnimation(
+      parent: _openersAnim,
+      curve:  Curves.easeInOut,
+    );
     _inputCtrl.addListener(() {
       final can = _inputCtrl.text.trim().isNotEmpty;
       if (can != _canSend) setState(() => _canSend = can);
     });
-    // Mark conversation as read when opened
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ChatCubit>().markRead(widget.conversationId);
       _scrollToBottom();
+      _loadOpenersDismissed();
     });
+  }
+
+  Future<void> _loadOpenersDismissed() async {
+    final prefs     = await SharedPreferences.getInstance();
+    final dismissed = prefs.getBool(
+        'openers_dismissed_${widget.conversationId}') ?? false;
+    if (!mounted) return;
+    if (dismissed) {
+      setState(() => _showSuggestedOpeners = false);
+      _openersAnim.value = 0.0;
+    }
+  }
+
+  Future<void> _dismissOpeners() async {
+    if (!_showSuggestedOpeners) return;
+    await _openersAnim.reverse();
+    if (!mounted) return;
+    setState(() => _showSuggestedOpeners = false);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(
+        'openers_dismissed_${widget.conversationId}', true);
   }
 
   @override
   void dispose() {
     _inputCtrl.dispose();
     _scrollCtrl.dispose();
+    _openersAnim.dispose();
     super.dispose();
   }
 
@@ -89,6 +131,8 @@ class _ChatScreenState extends State<ChatScreen> {
     _inputCtrl.clear();
     setState(() => _canSend = false);
     HapticFeedback.selectionClick();
+    // Item 25: dismiss openers on first send
+    _dismissOpeners();
     await context.read<ChatCubit>().sendMessage(widget.conversationId, text);
     _scrollToBottom(animated: true);
   }
@@ -99,6 +143,8 @@ class _ChatScreenState extends State<ChatScreen> {
       TextPosition(offset: text.length),
     );
     setState(() => _canSend = true);
+    // Item 25: dismiss openers when a suggestion is tapped
+    _dismissOpeners();
   }
 
   // ── Build ────────────────────────────────────────────────
@@ -128,7 +174,7 @@ class _ChatScreenState extends State<ChatScreen> {
           );
         }
 
-        final isEmpty = conv.messages.isEmpty;
+        final hasMessages = conv.messages.isNotEmpty;
 
         return Scaffold(
           backgroundColor: AppColors.obsidianNight,
@@ -140,9 +186,8 @@ class _ChatScreenState extends State<ChatScreen> {
             children: [
               // ── Messages ─────────────────────────────────
               Expanded(
-                child: isEmpty
-                    ? _SuggestedOpeners(onSelect: _useOpener)
-                    : ListView.builder(
+                child: hasMessages
+                    ? ListView.builder(
                         controller:  _scrollCtrl,
                         padding: const EdgeInsets.symmetric(
                           horizontal: AppDimensions.space16,
@@ -162,12 +207,15 @@ class _ChatScreenState extends State<ChatScreen> {
                                     widget.conversationId, msg.id),
                           );
                         },
+                      )
+                    : _SuggestedOpenersArea(
+                        showOpeners: _showSuggestedOpeners,
+                        sizeAnim:    _openersSize,
+                        onSelect:    _useOpener,
                       ),
               ),
 
               // ── Input bar ────────────────────────────────
-              // Blueprint: "Non-subscriber men see paywall."
-              // mock: all users can message in Phase 1 demo.
               _InputBar(
                 controller: _inputCtrl,
                 canSend:    _canSend,
@@ -177,6 +225,51 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+// ── Suggested Openers Area (Item 25) ─────────────────────────
+
+class _SuggestedOpenersArea extends StatelessWidget {
+  const _SuggestedOpenersArea({
+    required this.showOpeners,
+    required this.sizeAnim,
+    required this.onSelect,
+  });
+  final bool                showOpeners;
+  final Animation<double>   sizeAnim;
+  final ValueChanged<String> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text('Begin with Bismillah', style: AppTypography.tagline),
+        const SizedBox(height: AppDimensions.space20),
+
+        // Collapses via SizeTransition when dismissed (Item 25)
+        SizeTransition(
+          sizeFactor:    sizeAnim,
+          axisAlignment: -1,
+          child: SizedBox(
+            height: 110,
+            child: ListView.separated(
+              scrollDirection:  Axis.horizontal,
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.space24),
+              itemCount:        _kSuggestedOpeners.length,
+              separatorBuilder: (_, __) =>
+                  const SizedBox(width: AppDimensions.space12),
+              itemBuilder: (_, i) => _OpenerCard(
+                text:     _kSuggestedOpeners[i],
+                onSelect: () => onSelect(_kSuggestedOpeners[i]),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -236,7 +329,7 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
           const SizedBox(width: AppDimensions.space12),
 
-          // Name + online indicator
+          // Name
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -276,41 +369,7 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-// ── Suggested openers ─────────────────────────────────────────
-
-class _SuggestedOpeners extends StatelessWidget {
-  const _SuggestedOpeners({required this.onSelect});
-  final ValueChanged<String> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          'Begin with Bismillah',
-          style: AppTypography.tagline,
-        ),
-        const SizedBox(height: AppDimensions.space20),
-        SizedBox(
-          height: 110,
-          child: ListView.separated(
-            scrollDirection:  Axis.horizontal,
-            padding: const EdgeInsets.symmetric(
-                horizontal: AppDimensions.space24),
-            itemCount:        _kSuggestedOpeners.length,
-            separatorBuilder: (_, __) =>
-                const SizedBox(width: AppDimensions.space12),
-            itemBuilder: (_, i) => _OpenerCard(
-              text:     _kSuggestedOpeners[i],
-              onSelect: () => onSelect(_kSuggestedOpeners[i]),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
+// ── Opener Card ───────────────────────────────────────────────
 
 class _OpenerCard extends StatelessWidget {
   const _OpenerCard({required this.text, required this.onSelect});
@@ -334,7 +393,6 @@ class _OpenerCard extends StatelessWidget {
         ),
         child: Text(
           text,
-          // Blueprint: "italic display font" for openers
           style: AppTypography.bio.copyWith(fontSize: 13),
           maxLines: 4,
           overflow: TextOverflow.ellipsis,
@@ -360,7 +418,6 @@ class _MessageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final isMe = message.isMe;
 
-    // Blueprint: "reduced radius on inner corner closest to sender"
     final radius = BorderRadius.only(
       topLeft:     Radius.circular(isMe ? AppDimensions.radiusButton : 6),
       topRight:    Radius.circular(isMe ? 6 : AppDimensions.radiusButton),
@@ -395,7 +452,6 @@ class _MessageBubble extends StatelessWidget {
                       vertical:   AppDimensions.space10,
                     ),
                     decoration: BoxDecoration(
-                      // Blueprint: "gold-tinted bubble" for sent
                       color: isMe
                           ? AppColors.champagneGold.withValues(alpha: 0.15)
                           : AppColors.surfaceGlassHover,

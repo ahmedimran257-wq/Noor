@@ -97,15 +97,27 @@ class NoorProfileCard extends StatelessWidget {
                     padding: const EdgeInsets.all(AppDimensions.space20),
                     child: Column(
                       children: [
-                        // Verified badge — top right
-                        if (isVerified)
-                          Align(
-                            alignment: AlignmentDirectional.topEnd,
-                            child: _VerifiedBadge(),
-                          ),
+                        // Top row: verified badge (left) + photo count pill (right)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Photo count pill — public, multiple photos
+                            if (!isPhotoPrivate && photoCount > 1)
+                              _PhotoCountPill(count: photoCount)
+                            else
+                              const SizedBox.shrink(),
+
+                            // Verified badge — top right
+                            if (isVerified)
+                              _VerifiedBadge()
+                            else
+                              const SizedBox.shrink(),
+                          ],
+                        ),
                         const Spacer(),
 
-                        // Name + location + chips — bottom
+                        // Names + location + chips — bottom
                         Align(
                           alignment: AlignmentDirectional.bottomStart,
                           child: Column(
@@ -129,7 +141,7 @@ class NoorProfileCard extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
 
-                              // Profession line (blueprint: "profession below name")
+                              // Profession line
                               if (profession != null) ...[
                                 const SizedBox(height: AppDimensions.space4),
                                 Text(
@@ -186,6 +198,17 @@ class NoorProfileCard extends StatelessWidget {
                     ),
                   ),
                 ),
+
+                // Item 20: frosted lock pill — private photos, bottom-center
+                if (isPhotoPrivate && photoCount > 0)
+                  Positioned(
+                    bottom: 90,  // above the action row
+                    left:   0,
+                    right:  0,
+                    child:  Center(
+                      child: _FrostedPhotoPill(photoCount: photoCount),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -350,6 +373,78 @@ class _VerifiedBadge extends StatelessWidget {
     );
   }
 }
+
+// Item 20: Frosted lock pill — private photos, bottom-centre of card
+class _FrostedPhotoPill extends StatelessWidget {
+  const _FrostedPhotoPill({required this.photoCount});
+  final int photoCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.space12,
+        vertical:   AppDimensions.space6,
+      ),
+      decoration: BoxDecoration(
+        color:        Colors.black.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.lock_outline_rounded,
+              color: Colors.white, size: 14),
+          const SizedBox(width: AppDimensions.space6),
+          Text(
+            '$photoCount photo${photoCount > 1 ? 's' : ''} · visible after acceptance',
+            style: AppTypography.caption.copyWith(
+              color:    Colors.white,
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Item 20: Camera count pill — public profiles with multiple photos
+class _PhotoCountPill extends StatelessWidget {
+  const _PhotoCountPill({required this.count});
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.space8,
+        vertical:   AppDimensions.space4,
+      ),
+      decoration: BoxDecoration(
+        color:        Colors.black.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.camera_alt_outlined,
+              color: Colors.white, size: 12),
+          const SizedBox(width: AppDimensions.space4),
+          Text(
+            '$count',
+            style: AppTypography.caption.copyWith(
+              color:    Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 
 class _InfoChip extends StatelessWidget {
   const _InfoChip({required this.label});

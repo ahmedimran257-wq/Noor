@@ -12,7 +12,7 @@
 //   • Free-tier counter: "12 profiles remaining today"
 //   • Dot indicator (max 7, sliding window)
 //   • Interest ceremony → cubit + overlay
-//   • Bookmark toggle with snackbar feedback
+//   • Bookmark toggle with persistence via BookmarkService
 // ============================================================
 
 import 'package:flutter/material.dart';
@@ -22,6 +22,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/cubits/discovery/discovery_feed_cubit.dart';
 import '../../../core/cubits/discovery/discovery_feed_state.dart';
 import '../../../core/cubits/interests/interests_cubit.dart';
+import '../../../core/services/bookmark_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
@@ -40,9 +41,10 @@ class DiscoveryFeedScreen extends StatefulWidget {
 
 class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
   late final PageController _pageCtrl;
-  int _currentPage = 0;
-  final Set<int> _sentInterests = {};
-  final Set<int> _bookmarked    = {};
+  int         _currentPage = 0;
+  final Set<int>    _sentInterests = {};
+  // Bookmarks now use profile IDs (String) for persistence
+  Set<String> _bookmarked = {};
 
   @override
   void initState() {
@@ -53,6 +55,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
     // Trigger initial load after first frame so cubit is available
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<DiscoveryFeedCubit>().loadInitial();
+      _loadBookmarks();
     });
   }
 
@@ -61,6 +64,11 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
     _pageCtrl.removeListener(_onScroll);
     _pageCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadBookmarks() async {
+    final ids = await BookmarkService.load();
+    if (mounted) setState(() => _bookmarked = ids);
   }
 
   void _onScroll() {
@@ -87,19 +95,23 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
 
   void _handleBookmark(int index, FeedProfile fp) {
     HapticFeedback.selectionClick();
+    final id = fp.profile.id;
     setState(() {
-      if (_bookmarked.contains(index)) {
-        _bookmarked.remove(index);
+      if (_bookmarked.contains(id)) {
+        _bookmarked.remove(id);
       } else {
-        _bookmarked.add(index);
+        _bookmarked.add(id);
       }
     });
+    // Persist updated bookmark set
+    BookmarkService.save(Set<String>.from(_bookmarked));
+
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
           content: Text(
-            _bookmarked.contains(index)
+            _bookmarked.contains(id)
                 ? '${fp.profile.firstName} saved'
                 : '${fp.profile.firstName} removed',
             style: AppTypography.body,
@@ -197,9 +209,9 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
       return const _EmptyFeed();
     }
 
-    final profiles = feedState.profiles;
+    final profiles     = feedState.profiles;
     final isLoadingMore = feedState.status == FeedStatus.loadingMore;
-    final itemCount = profiles.length + (isLoadingMore ? 1 : 0);
+    final itemCount    = profiles.length + (isLoadingMore ? 1 : 0);
 
     return PageView.builder(
       controller:   _pageCtrl,
@@ -220,6 +232,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
 
         final fp = profiles[index];
         final p  = fp.profile;
+
 
         return _cardPadding(
           child: Stack(
@@ -291,13 +304,14 @@ class _WildCardLabel extends StatelessWidget {
       decoration: BoxDecoration(
         color:        AppColors.champagneGold.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
-        border: Border.all(color: AppColors.champagneGold.withValues(alpha: 0.5)),
+        border: Border.all(
+            color: AppColors.champagneGold.withValues(alpha: 0.5)),
       ),
       child: Text(
         'Someone you might connect with',
         style: AppTypography.caption.copyWith(
-          color:     AppColors.champagneGold,
-          fontSize:  11,
+          color:        AppColors.champagneGold,
+          fontSize:     11,
           letterSpacing: 0.3,
         ),
       ),
@@ -320,7 +334,7 @@ class _FreeTierCounter extends StatelessWidget {
         vertical:   AppDimensions.space4,
       ),
       decoration: BoxDecoration(
-        color:        remaining <= 3
+        color: remaining <= 3
             ? AppColors.errorRed.withValues(alpha: 0.15)
             : AppColors.surfaceGlass,
         borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
@@ -331,7 +345,7 @@ class _FreeTierCounter extends StatelessWidget {
       child: Text(
         '$remaining profiles remaining',
         style: AppTypography.caption.copyWith(
-          color: remaining <= 3 ? AppColors.errorRed : AppColors.slateMist,
+          color:    remaining <= 3 ? AppColors.errorRed : AppColors.slateMist,
           fontSize: 11,
         ),
       ),
@@ -452,8 +466,9 @@ class _DotIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const maxDots = 7;
-    final start = (current - maxDots ~/ 2).clamp(0, (count - maxDots).clamp(0, count));
-    final end   = (start + maxDots).clamp(0, count);
+    final start =
+        (current - maxDots ~/ 2).clamp(0, (count - maxDots).clamp(0, count));
+    final end = (start + maxDots).clamp(0, count);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,

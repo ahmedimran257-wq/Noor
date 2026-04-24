@@ -1,25 +1,22 @@
 // lib/features/home/screens/settings_screen.dart
 // ============================================================
-// NOOR — Settings Screen (Step 10)
-//
-// Blueprint (Part 8 — Settings):
-//   Sections:
-//   1. Account  — phone, profile pause, photo privacy
-//   2. Notifications — per-category toggles (NotificationPrefsCubit)
-//   3. Guardian — guardian phone, message mirror
-//   4. Safety   — Block List (with unblock), Report History
-//   5. App      — Language (8 options), version, rate app
-//   6. Legal    — ToS, Privacy Policy
-//   7. Danger Zone — Delete Account (30-day grace), Contact Support
-//
-// IMPORTANT (blueprint): When account is soft-deleted:
-//   OneSignal.logout() MUST be called to prevent ghost notifications
-//   on recycled telecom numbers.
+// NOOR — Settings Screen
+// Sections:
+//   1. ACCOUNT   — phone, photo privacy
+//   2. NOTIFICATIONS — per-category toggles
+//   3. GUARDIAN  — full guardian mode with wali details (Feature 13)
+//   4. PRIVACY   — full privacy settings section (Feature 14)
+//   5. APP       — Language picker with LocaleCubit (Feature 16)
+//   6. SAFETY    — block list, report history
+//   7. LEGAL     — ToS, Privacy Policy
+//   8. DANGER ZONE — Delete Account full screen (Feature 15)
 // ============================================================
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../core/cubits/auth/auth_cubit.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../core/cubits/locale/locale_cubit.dart';
 import '../../../core/cubits/notification_prefs/notification_prefs_cubit.dart';
 import '../../../core/cubits/notification_prefs/notification_prefs_state.dart';
 import '../../../core/cubits/block_report/block_report_cubit.dart';
@@ -27,6 +24,55 @@ import '../../../core/cubits/block_report/block_report_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import 'delete_account_screen.dart';
+import 'block_list_screen.dart';
+
+
+// ── Languages ─────────────────────────────────────────────────
+
+class _LangOption {
+  const _LangOption({
+    required this.locale,
+    required this.nativeName,
+    required this.englishName,
+    this.isRtl = false,
+  });
+  final String locale;
+  final String nativeName;
+  final String englishName;
+  final bool   isRtl;
+}
+
+const _kLanguages = [
+  _LangOption(locale: 'en', nativeName: 'English',            englishName: 'English'),
+  _LangOption(locale: 'ar', nativeName: 'العربية',             englishName: 'Arabic',    isRtl: true),
+  _LangOption(locale: 'ur', nativeName: 'اردو',                englishName: 'Urdu',      isRtl: true),
+  _LangOption(locale: 'fr', nativeName: 'Français',            englishName: 'French'),
+  _LangOption(locale: 'de', nativeName: 'Deutsch',             englishName: 'German'),
+  _LangOption(locale: 'tr', nativeName: 'Türkçe',              englishName: 'Turkish'),
+  _LangOption(locale: 'id', nativeName: 'Bahasa Indonesia',    englishName: 'Indonesian'),
+  _LangOption(locale: 'ms', nativeName: 'Bahasa Melayu',       englishName: 'Malay'),
+];
+
+// ── Guardian prefs keys ───────────────────────────────────────
+
+const _kGuardianEnabled      = 'guardian_enabled';
+const _kGuardianName         = 'guardian_name';
+const _kGuardianPhone        = 'guardian_phone';
+const _kGuardianRelationship = 'guardian_relationship';
+const _kGuardianMirror       = 'mirror_messages';
+const _kGuardianCanReply     = 'guardian_can_reply';
+
+// ── Privacy prefs keys ────────────────────────────────────────
+
+const _kPhotoVisibility   = 'privacy_photo_visibility';
+const _kShowOnlineStatus  = 'privacy_show_online';
+const _kProfilePaused     = 'privacy_profile_paused';
+const _kProfileVisibility = 'privacy_who_can_see';
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN SCREEN
+// ═══════════════════════════════════════════════════════════════
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -37,13 +83,15 @@ class SettingsScreen extends StatelessWidget {
       backgroundColor: AppColors.obsidianNight,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back_ios_new_rounded,
               color: AppColors.pearlWhite, size: 20),
         ),
-        title: Text('Settings', style: AppTypography.screenTitle.copyWith(fontSize: 20)),
+        title: Text('Settings',
+            style: AppTypography.screenTitle.copyWith(fontSize: 20)),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
@@ -56,14 +104,6 @@ class SettingsScreen extends StatelessWidget {
               label: 'Phone Number',
               value: '+91 •••• ••7890',
               onTap: () {},
-            ),
-            _Divider(),
-            _ToggleTile(
-              icon:    Icons.pause_circle_outline_rounded,
-              label:   'Pause Profile',
-              caption: 'Hide your profile from discovery',
-              value:   false,
-              onChanged: (v) {},
             ),
             _Divider(),
             _NavTile(
@@ -144,36 +184,62 @@ class SettingsScreen extends StatelessWidget {
             ]),
           ),
 
-          // ── 3. GUARDIAN ───────────────────────────────────
+          // ── 3. GUARDIAN (Feature 13) ──────────────────────
           _SectionHeader('GUARDIAN'),
+          const _GuardianSection(),
+
+          // ── 4. PRIVACY (Feature 14) ───────────────────────
+          _SectionHeader('PRIVACY'),
+          const _PrivacySection(),
+
+          // ── 5. APP (Feature 16) ───────────────────────────
+          _SectionHeader('APP'),
           _SettingsCard(children: [
+            BlocBuilder<LocaleCubit, Locale>(
+              builder: (context, locale) {
+                final lang = _kLanguages
+                    .firstWhere((l) => l.locale == locale.languageCode,
+                        orElse: () => _kLanguages.first);
+                return _NavTile(
+                  icon:  Icons.language_rounded,
+                  label: 'Language',
+                  value: lang.englishName,
+                  onTap: () => _showLanguageSheet(context, lang),
+                );
+              },
+            ),
+            _Divider(),
             _NavTile(
-              icon:  Icons.supervisor_account_outlined,
-              label: 'Guardian Phone',
-              value: 'Not set',
+              icon:  Icons.star_outline_rounded,
+              label: 'Rate NOOR',
               onTap: () {},
             ),
             _Divider(),
-            _ToggleTile(
-              icon:    Icons.content_copy_outlined,
-              label:   'Message Mirror',
-              caption: 'Send copies of all messages to guardian',
-              value:   false,
-              onChanged: (v) {},
+            const _InfoTile(
+              icon:  Icons.info_outline_rounded,
+              label: 'Version',
+              value: '1.0.0 (build 1)',
             ),
           ]),
 
-          // ── 4. SAFETY ─────────────────────────────────────
+          // ── 6. SAFETY ─────────────────────────────────────
           _SectionHeader('SAFETY'),
           BlocBuilder<BlockReportCubit, BlockReportState>(
             builder: (context, brs) => _SettingsCard(children: [
               _NavTile(
                 icon:  Icons.block_rounded,
-                label: 'Block List',
+                label: 'Blocked Profiles',
                 value: brs.blockedUsers.isEmpty
-                    ? 'No blocked users'
+                    ? 'None'
                     : '${brs.blockedUsers.length} blocked',
-                onTap: () => _showBlockList(context, brs),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => BlocProvider.value(
+                      value: context.read<BlockReportCubit>(),
+                      child: const BlockListScreen(),
+                    ),
+                  ),
+                ),
               ),
               _Divider(),
               _NavTile(
@@ -187,30 +253,7 @@ class SettingsScreen extends StatelessWidget {
             ]),
           ),
 
-          // ── 5. APP ────────────────────────────────────────
-          _SectionHeader('APP'),
-          _SettingsCard(children: [
-            _NavTile(
-              icon:  Icons.language_rounded,
-              label: 'Language',
-              value: 'English',
-              onTap: () => _showLanguageSheet(context),
-            ),
-            _Divider(),
-            _NavTile(
-              icon:  Icons.star_outline_rounded,
-              label: 'Rate NOOR',
-              onTap: () {},
-            ),
-            _Divider(),
-            _InfoTile(
-              icon:  Icons.info_outline_rounded,
-              label: 'Version',
-              value: '1.0.0 (build 1)',
-            ),
-          ]),
-
-          // ── 6. LEGAL ──────────────────────────────────────
+          // ── 7. LEGAL ──────────────────────────────────────
           _SectionHeader('LEGAL'),
           _SettingsCard(children: [
             _NavTile(
@@ -226,7 +269,7 @@ class SettingsScreen extends StatelessWidget {
             ),
           ]),
 
-          // ── 7. DANGER ZONE ────────────────────────────────
+          // ── 8. DANGER ZONE (Feature 15) ──────────────────
           _SectionHeader('DANGER ZONE'),
           _SettingsCard(
             borderColor: AppColors.softCoral.withValues(alpha: 0.3),
@@ -239,11 +282,15 @@ class SettingsScreen extends StatelessWidget {
               ),
               _Divider(),
               _NavTile(
-                icon:      Icons.delete_forever_outlined,
-                label:     'Delete Account',
-                iconColor: AppColors.softCoral,
+                icon:       Icons.delete_forever_outlined,
+                label:      'Delete Account',
+                iconColor:  AppColors.softCoral,
                 labelColor: AppColors.softCoral,
-                onTap:     () => _showDeleteConfirm(context),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const DeleteAccountScreen(),
+                  ),
+                ),
               ),
             ],
           ),
@@ -261,8 +308,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  // ── Photo privacy sheet ───────────────────────────────────
-
+  // ── Photo privacy ──────────────────────────────────────────
   void _showPhotoPrivacySheet(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
@@ -276,158 +322,659 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  // ── Language sheet ────────────────────────────────────────
-
-  void _showLanguageSheet(BuildContext context) {
+  // ── Language sheet ─────────────────────────────────────────
+  void _showLanguageSheet(BuildContext context, _LangOption current) {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (_) => _SimplePickerSheet(
-        title:   'Language',
-        options: const [
-          'English', 'العربية', 'اردو',
-          'Bahasa Indonesia', 'Bahasa Melayu',
-          'Türkçe', 'Deutsch', 'Français',
-        ],
-        initial: 'English',
-        onSelect: (_) {},
+      builder: (sheetCtx) => BlocProvider.value(
+        value: context.read<LocaleCubit>(),
+        child: _LanguagePickerSheet(currentLocale: current.locale),
       ),
     );
   }
 
-  // ── Block list sheet ──────────────────────────────────────
 
-  void _showBlockList(BuildContext context, BlockReportState state) {
-    showModalBottomSheet<void>(
-      context:            context,
-      isScrollControlled: true,
-      backgroundColor:    Colors.transparent,
-      builder: (_) => BlocProvider.value(
-        value: context.read<BlockReportCubit>(),
-        child: _BlockListSheet(blocked: state.blockedUsers),
-      ),
-    );
-  }
-
-  // ── Report history sheet ──────────────────────────────────
 
   void _showReportHistory(BuildContext context, BlockReportState state) {
     showModalBottomSheet<void>(
-      context:            context,
+      context: context,
       isScrollControlled: true,
-      backgroundColor:    Colors.transparent,
+      backgroundColor: Colors.transparent,
       builder: (_) => _ReportHistorySheet(reports: state.reportHistory),
     );
   }
 
-  // ── Delete account confirm ────────────────────────────────
+  static String _fmtHour(int h) => '${h.toString().padLeft(2, '0')}:00';
+}
 
-  void _showDeleteConfirm(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF12121A),
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20)),
-        title: Text('Delete Account?',
-            style: AppTypography.screenTitle.copyWith(fontSize: 20)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+// ═══════════════════════════════════════════════════════════════
+// GUARDIAN SECTION (Feature 13)
+// ═══════════════════════════════════════════════════════════════
+
+class _GuardianSection extends StatefulWidget {
+  const _GuardianSection();
+
+  @override
+  State<_GuardianSection> createState() => _GuardianSectionState();
+}
+
+class _GuardianSectionState extends State<_GuardianSection> {
+  bool   _enabled      = false;
+  bool   _mirror       = false;
+  bool   _canReply     = false;
+  String _relationship = 'Father';
+  final  _nameCtrl     = TextEditingController();
+  final  _phoneCtrl    = TextEditingController();
+  bool   _saved        = false;
+
+  static const _relationships = ['Father', 'Mother', 'Brother', 'Uncle', 'Other'];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _phoneCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _enabled      = prefs.getBool(_kGuardianEnabled) ?? false;
+      _mirror       = prefs.getBool(_kGuardianMirror) ?? false;
+      _canReply     = prefs.getBool(_kGuardianCanReply) ?? false;
+      _relationship = prefs.getString(_kGuardianRelationship) ?? 'Father';
+      _nameCtrl.text  = prefs.getString(_kGuardianName) ?? '';
+      _phoneCtrl.text = prefs.getString(_kGuardianPhone) ?? '';
+    });
+  }
+
+  Future<void> _save() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kGuardianEnabled, _enabled);
+    await prefs.setString(_kGuardianName, _nameCtrl.text.trim());
+    await prefs.setString(_kGuardianPhone, _phoneCtrl.text.trim());
+    await prefs.setString(_kGuardianRelationship, _relationship);
+    await prefs.setBool(_kGuardianMirror, _mirror);
+    await prefs.setBool(_kGuardianCanReply, _canReply);
+    if (mounted) {
+      setState(() => _saved = true);
+      Future.delayed(const Duration(seconds: 2),
+          () { if (mounted) setState(() => _saved = false); });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _SettingsCard(children: [
+      // Guardian Mode master toggle
+      ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+        leading: const Icon(Icons.supervisor_account_outlined,
+            color: AppColors.champagneGold, size: 20),
+        title: Text('Guardian Mode', style: AppTypography.body),
+        subtitle: Text('Enable Wali oversight for messaging',
+            style: AppTypography.caption),
+        trailing: Switch(
+          value:              _enabled,
+          onChanged:          (v) => setState(() => _enabled = v),
+          activeThumbColor:   AppColors.obsidianNight,
+          activeTrackColor:   AppColors.champagneGold,
+          inactiveThumbColor: AppColors.slateMist,
+          inactiveTrackColor: AppColors.surfaceGlassHover,
+        ),
+      ),
+
+      // Expandable guardian details
+      AnimatedSize(
+        duration: AppDimensions.durationReveal,
+        curve:    Curves.easeOutCubic,
+        child: _enabled
+            ? Column(children: [
+                const _DividerFull(),
+                // Guardian name
+                _TextFieldTile(
+                  icon:        Icons.person_outline_rounded,
+                  hint:        'Guardian Name',
+                  controller:  _nameCtrl,
+                ),
+                const _DividerFull(),
+                // Guardian phone
+                _TextFieldTile(
+                  icon:          Icons.phone_outlined,
+                  hint:          'Guardian Phone',
+                  controller:    _phoneCtrl,
+                  keyboardType:  TextInputType.phone,
+                ),
+                const _DividerFull(),
+                // Relationship dropdown
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                  leading: const Icon(Icons.family_restroom_outlined,
+                      color: AppColors.slateMist, size: 20),
+                  title: Text('Relationship', style: AppTypography.body),
+                  trailing: DropdownButton<String>(
+                    value:           _relationship,
+                    dropdownColor:   const Color(0xFF1A1A25),
+                    underline:       const SizedBox.shrink(),
+                    style:           AppTypography.caption.copyWith(
+                        color: AppColors.champagneGold),
+                    icon: const Icon(Icons.expand_more_rounded,
+                        color: AppColors.slateMist, size: 16),
+                    items: _relationships.map((r) => DropdownMenuItem(
+                      value: r,
+                      child: Text(r, style: AppTypography.body),
+                    )).toList(),
+                    onChanged: (v) {
+                      if (v != null) setState(() => _relationship = v);
+                    },
+                  ),
+                ),
+                const _DividerFull(),
+                // Mirror messages toggle
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                  leading: const Icon(Icons.content_copy_outlined,
+                      color: AppColors.slateMist, size: 20),
+                  title: Text('Mirror Messages', style: AppTypography.body),
+                  subtitle: Text('Send copies of all messages to guardian',
+                      style: AppTypography.caption),
+                  trailing: Switch(
+                    value:              _mirror,
+                    onChanged:          (v) => setState(() => _mirror = v),
+                    activeThumbColor:   AppColors.obsidianNight,
+                    activeTrackColor:   AppColors.champagneGold,
+                    inactiveThumbColor: AppColors.slateMist,
+                    inactiveTrackColor: AppColors.surfaceGlassHover,
+                  ),
+                ),
+                const _DividerFull(),
+                // Guardian can reply toggle
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                  leading: const Icon(Icons.reply_outlined,
+                      color: AppColors.slateMist, size: 20),
+                  title: Text('Allow Guardian to Reply', style: AppTypography.body),
+                  subtitle: Text('Guardian may participate in conversations',
+                      style: AppTypography.caption),
+                  trailing: Switch(
+                    value:              _canReply,
+                    onChanged:          (v) => setState(() => _canReply = v),
+                    activeThumbColor:   AppColors.obsidianNight,
+                    activeTrackColor:   AppColors.champagneGold,
+                    inactiveThumbColor: AppColors.slateMist,
+                    inactiveTrackColor: AppColors.surfaceGlassHover,
+                  ),
+                ),
+                const _DividerFull(),
+                // Save button
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: SizedBox(
+                    width:  double.infinity,
+                    height: AppDimensions.buttonHeightSmall,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.champagneGold,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                        ),
+                      ),
+                      onPressed: _save,
+                      child: AnimatedSwitcher(
+                        duration: AppDimensions.durationTransition,
+                        child: _saved
+                            ? Row(
+                                key: const ValueKey('saved'),
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.check_rounded,
+                                      color: AppColors.obsidianNight, size: 16),
+                                  const SizedBox(width: 6),
+                                  Text('Saved',
+                                      style: AppTypography.button),
+                                ],
+                              )
+                            : Text('Save Guardian Settings',
+                                key: const ValueKey('save'),
+                                style: AppTypography.button),
+                      ),
+                    ),
+                  ),
+                ),
+              ])
+            : const SizedBox.shrink(),
+      ),
+    ]);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PRIVACY SECTION (Feature 14)
+// ═══════════════════════════════════════════════════════════════
+
+class _PrivacySection extends StatefulWidget {
+  const _PrivacySection();
+  @override
+  State<_PrivacySection> createState() => _PrivacySectionState();
+}
+
+class _PrivacySectionState extends State<_PrivacySection> {
+  // Defaults
+  String _photoVisibility   = 'Everyone';
+  bool   _showOnlineStatus  = true;
+  bool   _profilePaused     = false;
+  String _profileVisibility = 'All registered users';
+
+  // Animated save checkmark
+  final Map<String, bool> _savedIndicators = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _photoVisibility   = prefs.getString(_kPhotoVisibility) ?? 'Everyone';
+      _showOnlineStatus  = prefs.getBool(_kShowOnlineStatus) ?? true;
+      _profilePaused     = prefs.getBool(_kProfilePaused) ?? false;
+      _profileVisibility = prefs.getString(_kProfileVisibility) ?? 'All registered users';
+    });
+  }
+
+  Future<void> _persist(String key, dynamic value) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (value is bool)   { await prefs.setBool(key, value); }
+    if (value is String) { await prefs.setString(key, value); }
+    if (!mounted) return;
+    setState(() => _savedIndicators[key] = true);
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _savedIndicators[key] = false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(children: [
+      // ── Photo Visibility ───────────────────────────────────
+      _PrivacyCard(
+        label:    'PHOTO VISIBILITY',
+        subtitle: 'Who can see your photos',
+        saved:    _savedIndicators[_kPhotoVisibility] ?? false,
+        child: Column(children: [
+          const SizedBox(height: 8),
+          _RadioRow(
+            label:     'Everyone',
+            selected:  _photoVisibility == 'Everyone',
+            onTap: () { setState(() => _photoVisibility = 'Everyone'); _persist(_kPhotoVisibility, 'Everyone'); },
+          ),
+          _RadioRow(
+            label:     'Accepted interests only',
+            selected:  _photoVisibility == 'Accepted interests only',
+            onTap: () { setState(() => _photoVisibility = 'Accepted interests only'); _persist(_kPhotoVisibility, 'Accepted interests only'); },
+          ),
+        ]),
+      ),
+      const SizedBox(height: AppDimensions.space8),
+
+      // ── Online Status ──────────────────────────────────────
+      _PrivacyCard(
+        label:    'ONLINE STATUS',
+        subtitle: 'Show when you were last active',
+        saved:    _savedIndicators[_kShowOnlineStatus] ?? false,
+        child: _PrivacyToggle(
+          value:     _showOnlineStatus,
+          onChanged: (v) { setState(() => _showOnlineStatus = v); _persist(_kShowOnlineStatus, v); },
+        ),
+      ),
+      const SizedBox(height: AppDimensions.space8),
+
+      // ── Profile Pause ──────────────────────────────────────
+      _PrivacyCard(
+        label:    'PROFILE PAUSE',
+        subtitle: 'Hide your profile from search',
+        saved:    _savedIndicators[_kProfilePaused] ?? false,
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Your account will enter a 30-day grace period before permanent deletion. During this time you can reactivate by signing in.',
-              style: AppTypography.bodyMuted,
+            _PrivacyToggle(
+              value:     _profilePaused,
+              onChanged: (v) { setState(() => _profilePaused = v); _persist(_kProfilePaused, v); },
             ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: AppColors.softCoral.withValues(alpha: 0.10),
-                border: Border.all(
-                    color: AppColors.softCoral.withValues(alpha: 0.3)),
+            if (_profilePaused) ...[
+              const SizedBox(height: AppDimensions.space8),
+              Container(
+                padding: const EdgeInsets.all(AppDimensions.space12),
+                decoration: BoxDecoration(
+                  color:        const Color(0x1AF6C344),
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                  border:       Border.all(color: const Color(0x4AF6C344)),
+                ),
+                child: Row(children: [
+                  const Icon(Icons.visibility_off_outlined,
+                      color: Color(0xFFF6C344), size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Your profile is hidden. No one can find you.',
+                      style: AppTypography.caption.copyWith(
+                          color: const Color(0xFFF6C344)),
+                    ),
+                  ),
+                ]),
               ),
-              child: Text(
-                'All your matches, messages, and profile data will be permanently deleted after 30 days.',
-                style: AppTypography.caption.copyWith(
-                    color: AppColors.softCoral.withValues(alpha: 0.9)),
-              ),
-            ),
+            ],
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancel', style: AppTypography.body),
+      ),
+      const SizedBox(height: AppDimensions.space8),
+
+      // ── Who Can See My Profile ─────────────────────────────
+      _PrivacyCard(
+        label:    'WHO CAN SEE MY PROFILE',
+        subtitle: 'Controls who can browse your profile',
+        saved:    _savedIndicators[_kProfileVisibility] ?? false,
+        child: Column(children: [
+          const SizedBox(height: 8),
+          _RadioRow(
+            label:    'All registered users',
+            selected: _profileVisibility == 'All registered users',
+            onTap: () { setState(() => _profileVisibility = 'All registered users'); _persist(_kProfileVisibility, 'All registered users'); },
           ),
-          TextButton(
-            onPressed: () {
-              // Blueprint: MUST call OneSignal.logout() here
-              // to prevent ghost pushes on recycled numbers.
-              // Step 12: OneSignal.logout() + supabase signOut
-              Navigator.of(context).pop(); // close dialog
-              context.read<AuthCubit>().signOut();
-            },
-            child: Text('Delete Account',
-                style: AppTypography.body
-                    .copyWith(color: AppColors.softCoral)),
+          _RadioRow(
+            label:    'Subscribers only',
+            selected: _profileVisibility == 'Subscribers only',
+            onTap: () { setState(() => _profileVisibility = 'Subscribers only'); _persist(_kProfileVisibility, 'Subscribers only'); },
           ),
+        ]),
+      ),
+    ]);
+  }
+}
+
+class _PrivacyCard extends StatelessWidget {
+  const _PrivacyCard({
+    required this.label,
+    required this.subtitle,
+    required this.child,
+    required this.saved,
+  });
+  final String label;
+  final String subtitle;
+  final Widget child;
+  final bool   saved;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.space16),
+      decoration: BoxDecoration(
+        color:        AppColors.surfaceGlass,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+        border:       Border.all(color: AppColors.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Expanded(
+              child: Text(label, style: AppTypography.sectionLabel),
+            ),
+            AnimatedSwitcher(
+              duration: AppDimensions.durationTransition,
+              child: saved
+                  ? Row(
+                      key: const ValueKey('saved'),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.check_rounded,
+                            color: AppColors.verifiedTeal, size: 14),
+                        const SizedBox(width: 3),
+                        Text('Saved',
+                            style: AppTypography.caption.copyWith(
+                                color: AppColors.verifiedTeal, fontSize: 11)),
+                      ],
+                    )
+                  : const SizedBox.shrink(key: ValueKey('empty')),
+            ),
+          ]),
+          const SizedBox(height: 2),
+          Text(subtitle, style: AppTypography.caption),
+          child,
         ],
       ),
     );
   }
-
-  static String _fmtHour(int h) =>
-      '${h.toString().padLeft(2, '0')}:00';
 }
 
-// ── Section Header ────────────────────────────────────────────
+class _PrivacyToggle extends StatelessWidget {
+  const _PrivacyToggle({required this.value, required this.onChanged});
+  final bool             value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Switch(
+        value:              value,
+        onChanged:          onChanged,
+        activeThumbColor:   AppColors.obsidianNight,
+        activeTrackColor:   AppColors.champagneGold,
+        inactiveThumbColor: AppColors.slateMist,
+        inactiveTrackColor: AppColors.surfaceGlassHover,
+      ),
+    );
+  }
+}
+
+class _RadioRow extends StatelessWidget {
+  const _RadioRow({required this.label, required this.selected, required this.onTap});
+  final String       label;
+  final bool         selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap:    onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppDimensions.space10),
+        child: Row(children: [
+          AnimatedContainer(
+            duration: AppDimensions.durationTransition,
+            width: 22, height: 22,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: selected ? AppColors.champagneGold : Colors.transparent,
+              border: Border.all(
+                color: selected ? AppColors.champagneGold : AppColors.slateMist,
+                width: 2,
+              ),
+            ),
+            child: selected
+                ? const Icon(Icons.check_rounded,
+                    color: AppColors.obsidianNight, size: 14)
+                : null,
+          ),
+          const SizedBox(width: AppDimensions.space12),
+          Text(label, style: AppTypography.body),
+        ]),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LANGUAGE PICKER SHEET (Feature 16)
+// ═══════════════════════════════════════════════════════════════
+
+class _LanguagePickerSheet extends StatelessWidget {
+  const _LanguagePickerSheet({required this.currentLocale});
+  final String currentLocale;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPad = MediaQuery.of(context).viewPadding.bottom;
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF12121A),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(top: BorderSide(color: AppColors.cardBorder)),
+      ),
+      padding: EdgeInsets.fromLTRB(24, 20, 24, 24 + bottomPad),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                  color: AppColors.cardBorder,
+                  borderRadius: BorderRadius.circular(2)),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text('Language',
+              style: AppTypography.screenTitle.copyWith(fontSize: 20)),
+          const SizedBox(height: 16),
+          ..._kLanguages.map((lang) {
+            final isSelected = lang.locale == currentLocale;
+            return GestureDetector(
+              onTap: () async {
+                await context.read<LocaleCubit>().setLocale(Locale(lang.locale));
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Language updated to ${lang.englishName}',
+                          style: AppTypography.body),
+                      backgroundColor: AppColors.surfaceGlassHover,
+                      behavior:        SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusButton),
+                      ),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: isSelected ? AppColors.goldGlow : AppColors.surfaceGlass,
+                  border: Border.all(
+                    color: isSelected ? AppColors.champagneGold : AppColors.cardBorder,
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                ),
+                child: Row(children: [
+                  Expanded(
+                    child: lang.isRtl
+                        ? Directionality(
+                            textDirection: TextDirection.rtl,
+                            child: Row(children: [
+                              Text(lang.nativeName,
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    color: isSelected
+                                        ? AppColors.champagneGold
+                                        : AppColors.pearlWhite,
+                                  )),
+                              const SizedBox(width: 8),
+                              Text('(${lang.englishName})',
+                                  style: AppTypography.caption),
+                            ]),
+                          )
+                        : Row(children: [
+                            Text(lang.nativeName,
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: isSelected
+                                      ? AppColors.champagneGold
+                                      : AppColors.pearlWhite,
+                                )),
+                            if (lang.nativeName != lang.englishName) ...[
+                              const SizedBox(width: 8),
+                              Text('(${lang.englishName})',
+                                  style: AppTypography.caption),
+                            ],
+                          ]),
+                  ),
+                  if (isSelected)
+                    const Icon(Icons.check_rounded,
+                        color: AppColors.champagneGold, size: 18),
+                ]),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SHARED TILE & CARD WIDGETS
+// ═══════════════════════════════════════════════════════════════
 
 class _SectionHeader extends StatelessWidget {
   final String label;
   const _SectionHeader(this.label);
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 24, 0, 8),
-      child: Text(label, style: AppTypography.sectionLabel),
-    );
-  }
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(4, 24, 0, 8),
+    child: Text(label, style: AppTypography.sectionLabel),
+  );
 }
-
-// ── Settings Card Container ───────────────────────────────────
 
 class _SettingsCard extends StatelessWidget {
   final List<Widget> children;
   final Color?       borderColor;
-
   const _SettingsCard({required this.children, this.borderColor});
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-        color:  AppColors.surfaceGlass,
-        border: Border.all(color: borderColor ?? AppColors.cardBorder),
-      ),
-      child: Column(children: children),
-    );
-  }
+  Widget build(BuildContext context) => Container(
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+      color:  AppColors.surfaceGlass,
+      border: Border.all(color: borderColor ?? AppColors.cardBorder),
+    ),
+    child: Column(children: children),
+  );
 }
 
 class _Divider extends StatelessWidget {
   @override
   Widget build(BuildContext context) => const Divider(
-        color: AppColors.divider, height: 1,
-        indent: 52, endIndent: 16,
-      );
+    color: AppColors.divider, height: 1, indent: 52, endIndent: 16,
+  );
 }
 
-// ── Tile Types ────────────────────────────────────────────────
+class _DividerFull extends StatelessWidget {
+  const _DividerFull();
+  @override
+  Widget build(BuildContext context) =>
+      const Divider(color: AppColors.divider, height: 1);
+}
 
 class _NavTile extends StatelessWidget {
   final IconData   icon;
@@ -447,30 +994,26 @@ class _NavTile extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-      leading: Icon(icon, color: iconColor ?? AppColors.slateMist, size: 20),
-      title: Text(label,
-          style: AppTypography.body.copyWith(color: labelColor)),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (value != null)
-            Text(value!,
-                style: AppTypography.caption.copyWith(
-                  color: labelColor != null
-                      ? labelColor!.withValues(alpha: 0.7)
-                      : AppColors.slateMist,
-                )),
-          const SizedBox(width: 4),
-          Icon(Icons.chevron_right_rounded,
-              color: iconColor ?? AppColors.slateMist, size: 18),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ListTile(
+    onTap: onTap,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+    leading: Icon(icon, color: iconColor ?? AppColors.slateMist, size: 20),
+    title: Text(label, style: AppTypography.body.copyWith(color: labelColor)),
+    trailing: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (value != null)
+          Text(value!, style: AppTypography.caption.copyWith(
+            color: labelColor != null
+                ? labelColor!.withValues(alpha: 0.7)
+                : AppColors.slateMist,
+          )),
+        const SizedBox(width: 4),
+        Icon(Icons.chevron_right_rounded,
+            color: iconColor ?? AppColors.slateMist, size: 18),
+      ],
+    ),
+  );
 }
 
 class _ToggleTile extends StatelessWidget {
@@ -489,24 +1032,20 @@ class _ToggleTile extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-      leading:  Icon(icon, color: AppColors.slateMist, size: 20),
-      title:    Text(label, style: AppTypography.body),
-      subtitle: caption != null
-          ? Text(caption!, style: AppTypography.caption)
-          : null,
-      trailing: Switch(
-        value:              value,
-        onChanged:          onChanged,
-        activeThumbColor:    AppColors.obsidianNight,
-        activeTrackColor:    AppColors.champagneGold,
-        inactiveThumbColor: AppColors.slateMist,
-        inactiveTrackColor: AppColors.surfaceGlassHover,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ListTile(
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+    leading:  Icon(icon, color: AppColors.slateMist, size: 20),
+    title:    Text(label, style: AppTypography.body),
+    subtitle: caption != null ? Text(caption!, style: AppTypography.caption) : null,
+    trailing: Switch(
+      value:              value,
+      onChanged:          onChanged,
+      activeThumbColor:   AppColors.obsidianNight,
+      activeTrackColor:   AppColors.champagneGold,
+      inactiveThumbColor: AppColors.slateMist,
+      inactiveTrackColor: AppColors.surfaceGlassHover,
+    ),
+  );
 }
 
 class _InfoTile extends StatelessWidget {
@@ -514,134 +1053,51 @@ class _InfoTile extends StatelessWidget {
   final String   label;
   final String?  value;
 
-  const _InfoTile({
+  const _InfoTile({required this.icon, required this.label, this.value});
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+    leading: Icon(icon, color: AppColors.slateMist, size: 20),
+    title:   Text(label, style: AppTypography.body),
+    trailing: value != null ? Text(value!, style: AppTypography.caption) : null,
+  );
+}
+
+class _TextFieldTile extends StatelessWidget {
+  const _TextFieldTile({
     required this.icon,
-    required this.label,
-    this.value,
+    required this.hint,
+    required this.controller,
+    this.keyboardType,
   });
+  final IconData               icon;
+  final String                 hint;
+  final TextEditingController  controller;
+  final TextInputType?         keyboardType;
 
   @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-      leading: Icon(icon, color: AppColors.slateMist, size: 20),
-      title:   Text(label, style: AppTypography.body),
-      trailing: value != null
-          ? Text(value!, style: AppTypography.caption)
-          : null,
-    );
-  }
+  Widget build(BuildContext context) => ListTile(
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+    leading: Icon(icon, color: AppColors.slateMist, size: 20),
+    title: TextField(
+      controller:  controller,
+      keyboardType: keyboardType,
+      style:        AppTypography.body,
+      decoration:   InputDecoration(
+        hintText:       hint,
+        hintStyle:      AppTypography.bodyMuted,
+        border:         InputBorder.none,
+        isDense:        true,
+        contentPadding: EdgeInsets.zero,
+      ),
+    ),
+  );
 }
 
-// ── Block List Sheet ──────────────────────────────────────────
-
-class _BlockListSheet extends StatelessWidget {
-  final List<BlockedUser> blocked;
-  const _BlockListSheet({required this.blocked});
-
-  @override
-  Widget build(BuildContext context) {
-    final bottomPad = MediaQuery.of(context).viewPadding.bottom;
-    return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF12121A),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: AppColors.cardBorder)),
-      ),
-      padding: EdgeInsets.fromLTRB(24, 20, 24, 24 + bottomPad),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40, height: 4,
-              decoration: BoxDecoration(
-                  color: AppColors.cardBorder,
-                  borderRadius: BorderRadius.circular(2)),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text('Blocked Users',
-              style: AppTypography.screenTitle.copyWith(fontSize: 20)),
-          const SizedBox(height: 16),
-          if (blocked.isEmpty)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Text('No blocked users',
-                    style: AppTypography.bodyMuted),
-              ),
-            )
-          else
-            ...blocked.map((b) => _BlockedUserTile(user: b)),
-        ],
-      ),
-    );
-  }
-}
-
-class _BlockedUserTile extends StatelessWidget {
-  final BlockedUser user;
-  const _BlockedUserTile({required this.user});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: AppColors.surfaceGlass,
-          border: Border.all(color: AppColors.cardBorder),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40, height: 40,
-              decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.surfaceGlassHover),
-              child: const Icon(Icons.person_outline_rounded,
-                  color: AppColors.slateMist, size: 20),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('${user.name} ${user.lastInitial}.',
-                      style: AppTypography.bodyMedium),
-                  Text('Blocked ${_timeAgo(user.blockedAt)}',
-                      style: AppTypography.caption),
-                ],
-              ),
-            ),
-            TextButton(
-              onPressed: () => context
-                  .read<BlockReportCubit>()
-                  .unblockUser(user.userId),
-              child: Text('Unblock',
-                  style: AppTypography.caption.copyWith(
-                      color: AppColors.champagneGold,
-                      fontWeight: FontWeight.w600)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _timeAgo(DateTime dt) {
-    final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24)   return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
-  }
-}
 
 // ── Report History Sheet ──────────────────────────────────────
+
 
 class _ReportHistorySheet extends StatelessWidget {
   final List<ReportEntry> reports;
@@ -661,67 +1117,51 @@ class _ReportHistorySheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Container(
-              width: 40, height: 4,
-              decoration: BoxDecoration(
-                  color: AppColors.cardBorder,
-                  borderRadius: BorderRadius.circular(2)),
-            ),
-          ),
+          Center(child: Container(width: 40, height: 4,
+              decoration: BoxDecoration(color: AppColors.cardBorder,
+                  borderRadius: BorderRadius.circular(2)))),
           const SizedBox(height: 20),
           Text('Report History',
               style: AppTypography.screenTitle.copyWith(fontSize: 20)),
           const SizedBox(height: 16),
           if (reports.isEmpty)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Text('No reports submitted',
-                    style: AppTypography.bodyMuted),
-              ),
-            )
+            Center(child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Text('No reports submitted', style: AppTypography.bodyMuted),
+            ))
           else
             ...reports.map((r) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color:  AppColors.surfaceGlass,
+                  border: Border.all(color: AppColors.cardBorder),
+                ),
+                child: Row(children: [
+                  const Icon(Icons.flag_outlined,
+                      color: AppColors.softCoral, size: 18),
+                  const SizedBox(width: 10),
+                  Expanded(child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(r.reportedName, style: AppTypography.bodyMedium),
+                      Text(r.reason.label, style: AppTypography.caption),
+                    ],
+                  )),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: AppColors.surfaceGlass,
-                      border: Border.all(color: AppColors.cardBorder),
+                      borderRadius: BorderRadius.circular(6),
+                      color: AppColors.surfaceGlassHover,
                     ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.flag_outlined,
-                            color: AppColors.softCoral, size: 18),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(r.reportedName,
-                                  style: AppTypography.bodyMedium),
-                              Text(r.reason.label,
-                                  style: AppTypography.caption),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(6),
-                            color: AppColors.surfaceGlassHover,
-                          ),
-                          child: Text('Pending',
-                              style: AppTypography.caption
-                                  .copyWith(fontSize: 10)),
-                        ),
-                      ],
-                    ),
+                    child: Text('Pending',
+                        style: AppTypography.caption.copyWith(fontSize: 10)),
                   ),
-                )),
+                ]),
+              ),
+            )),
         ],
       ),
     );
@@ -751,10 +1191,7 @@ class _SimplePickerSheetState extends State<_SimplePickerSheet> {
   late String _selected;
 
   @override
-  void initState() {
-    super.initState();
-    _selected = widget.initial;
-  }
+  void initState() { super.initState(); _selected = widget.initial; }
 
   @override
   Widget build(BuildContext context) {
@@ -770,58 +1207,46 @@ class _SimplePickerSheetState extends State<_SimplePickerSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Container(
-              width: 40, height: 4,
-              decoration: BoxDecoration(
-                  color: AppColors.cardBorder,
-                  borderRadius: BorderRadius.circular(2)),
-            ),
-          ),
+          Center(child: Container(width: 40, height: 4,
+              decoration: BoxDecoration(color: AppColors.cardBorder,
+                  borderRadius: BorderRadius.circular(2)))),
           const SizedBox(height: 20),
           Text(widget.title,
               style: AppTypography.screenTitle.copyWith(fontSize: 20)),
           const SizedBox(height: 16),
           ...widget.options.map((opt) => GestureDetector(
-                onTap: () {
-                  setState(() => _selected = opt);
-                  widget.onSelect(opt);
-                  Navigator.of(context).pop();
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    color: _selected == opt
-                        ? AppColors.goldGlow
-                        : AppColors.surfaceGlass,
-                    border: Border.all(
+            onTap: () {
+              setState(() => _selected = opt);
+              widget.onSelect(opt);
+              Navigator.of(context).pop();
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: _selected == opt ? AppColors.goldGlow : AppColors.surfaceGlass,
+                border: Border.all(
+                  color: _selected == opt
+                      ? AppColors.champagneGold
+                      : AppColors.cardBorder,
+                  width: _selected == opt ? 1.5 : 1,
+                ),
+              ),
+              child: Row(children: [
+                Expanded(child: Text(opt,
+                    style: AppTypography.body.copyWith(
                       color: _selected == opt
                           ? AppColors.champagneGold
-                          : AppColors.cardBorder,
-                      width: _selected == opt ? 1.5 : 1,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(opt,
-                            style: AppTypography.body.copyWith(
-                              color: _selected == opt
-                                  ? AppColors.champagneGold
-                                  : AppColors.pearlWhite,
-                            )),
-                      ),
-                      if (_selected == opt)
-                        const Icon(Icons.check_rounded,
-                            color: AppColors.champagneGold, size: 18),
-                    ],
-                  ),
-                ),
-              )),
+                          : AppColors.pearlWhite,
+                    ))),
+                if (_selected == opt)
+                  const Icon(Icons.check_rounded,
+                      color: AppColors.champagneGold, size: 18),
+              ]),
+            ),
+          )),
         ],
       ),
     );

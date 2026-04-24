@@ -341,35 +341,10 @@ class _ChatEmptyState extends StatelessWidget {
               style: AppTypography.bodyMuted,
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: AppDimensions.space28),
-            Container(
-              padding: const EdgeInsets.all(AppDimensions.space16),
-              decoration: BoxDecoration(
-                color:        AppColors.champagneGold.withValues(alpha: 0.07),
-                borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                border:       Border.all(color: AppColors.goldBorder),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.access_time_rounded,
-                      color: AppColors.champagneGold,
-                      size: AppDimensions.iconSizeMedium),
-                  const SizedBox(width: AppDimensions.space12),
-                  Expanded(
-                    child: Text(
-                      'New members may message after a 48-hour reflection period.',
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.champagneGold.withValues(alpha: 0.85),
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),
     );
   }
 }
+
