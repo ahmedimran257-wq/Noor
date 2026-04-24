@@ -1,0 +1,151 @@
+// lib/features/home/screens/paywall_gate_screen.dart
+// ============================================================
+// NOOR — Paywall Gate (Step 9)
+//
+// Shown as a bottom sheet when a male non-subscriber tries
+// to open a chat conversation.
+//
+// Blueprint (Part 8):
+//   "Non-subscriber men who try to open a chat see:
+//    'Subscribe to unlock messaging. Women always message
+//     free on NOOR.' The price shown is in their local currency."
+//
+// Usage:
+//   PaywallGateSheet.show(context);
+// ============================================================
+
+import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
+import 'subscription_screen.dart';
+
+class PaywallGateSheet {
+  /// Shows the paywall as a modal bottom sheet.
+  /// Only call this for male non-subscribers — gender gate is
+  /// enforced at the call site (chat_list_screen.dart).
+  static Future<void> show(BuildContext context) {
+    return showModalBottomSheet<void>(
+      context:           context,
+      isScrollControlled: true,
+      backgroundColor:   Colors.transparent,
+      builder:           (_) => const _PaywallGateContent(),
+    );
+  }
+}
+
+class _PaywallGateContent extends StatelessWidget {
+  const _PaywallGateContent();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF12121A),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(
+          top: BorderSide(color: AppColors.goldBorder, width: 1),
+        ),
+      ),
+      padding: EdgeInsets.fromLTRB(
+        24, 20, 24,
+        24 + MediaQuery.of(context).viewPadding.bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.cardBorder,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 28),
+
+          // Lock icon with gold ring
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.goldGlow,
+              border: Border.all(color: AppColors.goldBorder, width: 1.5),
+            ),
+            child: const Icon(
+              Icons.lock_outline_rounded,
+              color: AppColors.champagneGold,
+              size: 32,
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          Text(
+            'Subscribe to Unlock Messaging',
+            style: AppTypography.screenTitle.copyWith(fontSize: 22),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 10),
+
+          Text(
+            'Women always message free on NOOR.\nMen subscribe to start conversations.',
+            style: AppTypography.bodyMuted.copyWith(height: 1.6),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+
+          // Price highlight
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: AppColors.goldGlow,
+              border: Border.all(color: AppColors.goldBorder),
+            ),
+            child: Text(
+              'Starting from ₹249 / month',
+              style: AppTypography.bodyMedium
+                  .copyWith(color: AppColors.champagneGold),
+            ),
+          ),
+
+          const SizedBox(height: 28),
+
+          // Subscribe CTA
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const SubscriptionScreen(),
+                ),
+              );
+            },
+            child: Container(
+              height: 54,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                color: AppColors.champagneGold,
+              ),
+              alignment: Alignment.center,
+              child: Text('See Plans', style: AppTypography.button),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Not Now
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'Not Now',
+              style: AppTypography.bodyMuted,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

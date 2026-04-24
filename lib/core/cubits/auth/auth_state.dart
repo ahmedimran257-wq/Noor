@@ -38,16 +38,19 @@ class AuthAuthenticated extends AuthState {
   const AuthAuthenticated({
     required this.userId,
     required this.onboardingStep,
+    this.gender, // null until onboarding step 0 (ProfileForWhom) completes
   });
 
-  final String userId;
+  final String  userId;
   /// 0–13: still in onboarding. 14: onboarding complete.
-  final int onboardingStep;
+  final int     onboardingStep;
+  /// 'male' | 'female' | null (unknown until onboarding sets it)
+  final String? gender;
 
   bool get isOnboardingComplete => onboardingStep >= 14;
 
   @override
-  List<Object?> get props => [userId, onboardingStep];
+  List<Object?> get props => [userId, onboardingStep, gender];
 }
 
 /// Session check found no active session.

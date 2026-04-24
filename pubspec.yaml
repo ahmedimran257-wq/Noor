@@ -40,3 +40,9 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true                  # Enables flutter gen-l10n for AppLocalizations
+
+  # ── Assets ───────────────────────────────────────────────────
+  # Add local asset paths here when needed, e.g.:
+  # assets:
+  #   - assets/images/
+  #   - assets/icons/

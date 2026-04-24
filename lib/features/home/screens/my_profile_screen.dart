@@ -7,9 +7,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
+import '../../../core/cubits/auth/auth_state.dart';
+import '../../../core/cubits/subscription/subscription_cubit.dart';
+import '../../../core/cubits/subscription/subscription_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import 'edit_profile_screen.dart';
+import 'settings_screen.dart';
+import 'subscription_screen.dart';
 
 class MyProfileScreen extends StatelessWidget {
   const MyProfileScreen({super.key});
@@ -31,19 +37,26 @@ class MyProfileScreen extends StatelessWidget {
               children: [
                 Text('My Profile', style: AppTypography.screenTitle),
                 const Spacer(),
-                // Settings icon
-                Container(
-                  width:  AppDimensions.minTouchTarget,
-                  height: AppDimensions.minTouchTarget,
-                  decoration: BoxDecoration(
-                    color:        AppColors.surfaceGlass,
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                    border:       Border.all(color: AppColors.cardBorder),
+                // Settings icon — navigates to SettingsScreen
+                GestureDetector(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const SettingsScreen(),
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.settings_outlined,
-                    color: AppColors.slateMist,
-                    size:  AppDimensions.iconSizeLarge,
+                  child: Container(
+                    width:  AppDimensions.minTouchTarget,
+                    height: AppDimensions.minTouchTarget,
+                    decoration: BoxDecoration(
+                      color:        AppColors.surfaceGlass,
+                      borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                      border:       Border.all(color: AppColors.cardBorder),
+                    ),
+                    child: const Icon(
+                      Icons.settings_outlined,
+                      color: AppColors.slateMist,
+                      size:  AppDimensions.iconSizeLarge,
+                    ),
                   ),
                 ),
               ],
@@ -57,10 +70,16 @@ class MyProfileScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space24),
             child: _ProfilePreviewCard(),
           ),
+          const SizedBox(height: AppDimensions.space20),
 
-          const SizedBox(height: AppDimensions.space28),
+          // Subscription status card (mock gender = 'male' until Step 12)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space24),
+            child: _SubscriptionCard(),
+          ),
 
-          // Edit profile button
+          const SizedBox(height: AppDimensions.space20),
+
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space24),
             child: SizedBox(
@@ -83,13 +102,13 @@ class MyProfileScreen extends StatelessWidget {
                   style: AppTypography.buttonSecondary,
                 ),
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Profile editing will be available in Step 6.',
-                        style: AppTypography.body,
+                  Navigator.of(context).push(
+                    PageRouteBuilder(
+                      transitionDuration: AppDimensions.durationReveal,
+                      pageBuilder: (context, animation, _) => FadeTransition(
+                        opacity: animation,
+                        child: const EditProfileScreen(),
                       ),
-                      backgroundColor: AppColors.surfaceGlassHover,
                     ),
                   );
                 },
@@ -186,6 +205,181 @@ class MyProfileScreen extends StatelessWidget {
           const SizedBox(height: AppDimensions.space40),
         ],
       ),
+    );
+  }
+}
+
+// ── Subscription Status Card ──────────────────────────────────
+
+class _SubscriptionCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    // Blueprint Part 2: women message free — no subscription card for them.
+    // Read gender from AuthState (mock default 'male'; real value set in Step 12).
+    final authState = context.watch<AuthCubit>().state;
+    final gender = authState is AuthAuthenticated
+        ? (authState.gender ?? 'male')
+        : 'male';
+
+    if (gender == 'female') return const SizedBox.shrink();
+
+    return BlocBuilder<SubscriptionCubit, SubscriptionState>(
+      builder: (context, state) {
+        return switch (state.status) {
+          SubscriptionStatus.active => _buildActiveCard(context, state),
+          SubscriptionStatus.grace  => _buildGraceCard(context, state),
+          SubscriptionStatus.none   => _buildUpgradeCard(context),
+        };
+      },
+    );
+  }
+
+  Widget _buildActiveCard(BuildContext context, SubscriptionState state) {
+    final expiry = state.expiresAt;
+    final expiryStr = expiry != null
+        ? 'Renews ${_fmtDate(expiry)}'
+        : 'Active';
+
+    return _CardShell(
+      borderColor: AppColors.verifiedTeal,
+      glowColor: AppColors.verifiedTeal.withValues(alpha: 0.12),
+      child: Row(
+        children: [
+          const Icon(Icons.workspace_premium_rounded,
+              color: AppColors.verifiedTeal, size: 26),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('NOOR Premium · Active',
+                    style: AppTypography.bodyMedium
+                        .copyWith(color: AppColors.verifiedTeal)),
+                const SizedBox(height: 2),
+                Text(expiryStr, style: AppTypography.caption),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGraceCard(BuildContext context, SubscriptionState state) {
+    return _CardShell(
+      borderColor: const Color(0xFFF6C344),
+      glowColor: const Color(0x1AF6C344),
+      child: Row(
+        children: [
+          const Icon(Icons.warning_amber_rounded,
+              color: Color(0xFFF6C344), size: 26),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Payment Issue',
+                    style: AppTypography.bodyMedium
+                        .copyWith(color: Color(0xFFF6C344))),
+                const SizedBox(height: 2),
+                Text('Your subscription is in a grace period.',
+                    style: AppTypography.caption),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                  builder: (_) => const SubscriptionScreen()),
+            ),
+            child: Text('Fix',
+                style: AppTypography.captionMedium
+                    .copyWith(color: Color(0xFFF6C344))),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUpgradeCard(BuildContext context) {
+    return _CardShell(
+      borderColor: AppColors.goldBorder,
+      glowColor: AppColors.goldGlow,
+      child: Row(
+        children: [
+          const Icon(Icons.lock_outline_rounded,
+              color: AppColors.champagneGold, size: 26),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Upgrade to NOOR Premium',
+                    style: AppTypography.bodyMedium
+                        .copyWith(color: AppColors.champagneGold)),
+                const SizedBox(height: 2),
+                Text('Unlock messaging from ₹249/mo',
+                    style: AppTypography.caption),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                  builder: (_) => const SubscriptionScreen()),
+            ),
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: AppColors.champagneGold,
+              ),
+              child: Text('See Plans',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.obsidianNight,
+                    fontWeight: FontWeight.w600,
+                  )),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _fmtDate(DateTime dt) =>
+      '${dt.day} ${_months[dt.month - 1]} ${dt.year}';
+
+  static const _months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+}
+
+class _CardShell extends StatelessWidget {
+  final Widget child;
+  final Color  borderColor;
+  final Color  glowColor;
+
+  const _CardShell({
+    required this.child,
+    required this.borderColor,
+    required this.glowColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+        color: AppColors.surfaceGlass,
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(color: glowColor, blurRadius: 16, spreadRadius: 1),
+        ],
+      ),
+      child: child,
     );
   }
 }

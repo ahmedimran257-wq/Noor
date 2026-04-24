@@ -16,6 +16,11 @@ import 'core/cubits/auth/auth_cubit.dart';
 import 'core/cubits/auth/auth_state.dart';
 import 'core/cubits/onboarding/onboarding_cubit.dart';
 import 'core/cubits/interests/interests_cubit.dart';
+import 'core/cubits/discovery/discovery_feed_cubit.dart';
+import 'core/cubits/chat/chat_cubit.dart';
+import 'core/cubits/subscription/subscription_cubit.dart';
+import 'core/cubits/notification_prefs/notification_prefs_cubit.dart';
+import 'core/cubits/block_report/block_report_cubit.dart';
 import 'core/router/app_router.dart';
 
 /// Supported locales.
@@ -59,18 +64,29 @@ class NoorApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Create cubits at the top level so they outlive any individual screen.
-    final authCubit        = AuthCubit();
-    final onboardingCubit  = OnboardingCubit(authCubit: authCubit);
-    final interestsCubit   = InterestsCubit();
+    final authCubit           = AuthCubit();
+    final onboardingCubit     = OnboardingCubit(authCubit: authCubit);
+    final interestsCubit      = InterestsCubit();
+    final discoveryFeedCubit  = DiscoveryFeedCubit();
+    final chatCubit           = ChatCubit();
+    final subscriptionCubit   = SubscriptionCubit();
+    final notificationPrefsCubit = NotificationPrefsCubit();
+    final blockReportCubit    = BlockReportCubit();
 
-    // Kick off session check immediately.
+    // Kick off session check + subscription init immediately.
     authCubit.checkSession();
+    subscriptionCubit.initialize();
 
     return MultiBlocProvider(
       providers: [
         BlocProvider<AuthCubit>.value(value: authCubit),
         BlocProvider<OnboardingCubit>.value(value: onboardingCubit),
         BlocProvider<InterestsCubit>.value(value: interestsCubit),
+        BlocProvider<DiscoveryFeedCubit>.value(value: discoveryFeedCubit),
+        BlocProvider<ChatCubit>.value(value: chatCubit),
+        BlocProvider<SubscriptionCubit>.value(value: subscriptionCubit),
+        BlocProvider<NotificationPrefsCubit>.value(value: notificationPrefsCubit),
+        BlocProvider<BlockReportCubit>.value(value: blockReportCubit),
       ],
       child: Builder(
         builder: (context) {

@@ -43,7 +43,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     // Sync the step into AuthCubit so the router can redirect correctly
     _authCubit.updateOnboardingStep(nextStep);
 
-    if (nextStep >= 14) {
+    if (nextStep >= 11) {
       emit(const OnboardingComplete());
     } else {
       emit(OnboardingSaved(step: nextStep, data: updatedData));

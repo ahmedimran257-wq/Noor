@@ -1,0 +1,611 @@
+// lib/features/home/screens/subscription_screen.dart
+// ============================================================
+// NOOR — Subscription Screen (Step 9)
+//
+// Blueprint (Part 8):
+//   "Clean single-purpose screen. Header: 'Unlock NOOR.'
+//    Subtext: 'Women message free. Men subscribe to connect.'
+//    Two plan cards side by side: monthly and annual (labeled
+//    Best Value with a visual highlight). The price in local currency.
+//    A clear list of what's included.
+//    A single gold CTA button.
+//    Below: Restore Purchase, Privacy Policy, Terms.
+//    No upsell language. No fake urgency. No countdown timers."
+// ============================================================
+
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/cubits/auth/auth_cubit.dart';
+import '../../../core/cubits/auth/auth_state.dart';
+import '../../../core/cubits/subscription/subscription_cubit.dart';
+import '../../../core/cubits/subscription/subscription_state.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
+
+class SubscriptionScreen extends StatefulWidget {
+  const SubscriptionScreen({super.key});
+
+  @override
+  State<SubscriptionScreen> createState() => _SubscriptionScreenState();
+}
+
+class _SubscriptionScreenState extends State<SubscriptionScreen>
+    with SingleTickerProviderStateMixin {
+  // 'monthly' or 'annual'
+  String _selectedPlan = 'monthly';
+
+  late final AnimationController _headerAnim;
+  late final Animation<double>   _headerFade;
+  late final Animation<Offset>   _headerSlide;
+
+  @override
+  void initState() {
+    super.initState();
+    _headerAnim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    _headerFade = CurvedAnimation(parent: _headerAnim, curve: Curves.easeOut);
+    _headerSlide = Tween<Offset>(
+      begin: const Offset(0, 0.18),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _headerAnim, curve: Curves.easeOutCubic));
+    _headerAnim.forward();
+  }
+
+  @override
+  void dispose() {
+    _headerAnim.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Blueprint Part 2: women never need to subscribe.
+    // If a female user somehow navigates here, show a clear message.
+    final authState = context.watch<AuthCubit>().state;
+    final gender = authState is AuthAuthenticated
+        ? (authState.gender ?? 'male')
+        : 'male';
+
+    if (gender == 'female') return _FreeForWomenScreen();
+
+    return BlocConsumer<SubscriptionCubit, SubscriptionState>(
+      listener: (context, state) {
+        if (state.successMessage != null) {
+          _showSuccess(context, state.successMessage!);
+          context.read<SubscriptionCubit>().clearMessages();
+        }
+        if (state.error != null) {
+          _showError(context, state.error!);
+          context.read<SubscriptionCubit>().clearMessages();
+        }
+      },
+      builder: (context, state) {
+        return Scaffold(
+          backgroundColor: AppColors.obsidianNight,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                  color: AppColors.pearlWhite, size: 20),
+            ),
+          ),
+          body: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // ── Header ──────────────────────────────────
+                SlideTransition(
+                  position: _headerSlide,
+                  child: FadeTransition(
+                    opacity: _headerFade,
+                    child: _Header(),
+                  ),
+                ),
+
+                const SizedBox(height: 36),
+
+                // ── Plan Cards ──────────────────────────────
+                _PlanCards(
+                  selectedPlan: _selectedPlan,
+                  onSelect: (plan) => setState(() => _selectedPlan = plan),
+                ),
+
+                const SizedBox(height: 28),
+
+                // ── What's included ─────────────────────────
+                _IncludedFeatures(),
+
+                const SizedBox(height: 36),
+
+                // ── CTA Button ──────────────────────────────
+                _CtaButton(
+                  selectedPlan: _selectedPlan,
+                  isLoading: state.isLoading,
+                  onTap: () {
+                    final planId = _selectedPlan == 'annual'
+                        ? SubscriptionCubit.annualProductId
+                        : SubscriptionCubit.monthlyProductId;
+                    context.read<SubscriptionCubit>().purchase(planId);
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
+                // ── Secondary links ─────────────────────────
+                _SecondaryLinks(
+                  isLoading: state.isLoading,
+                  onRestore: () => context.read<SubscriptionCubit>().restore(),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showSuccess(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: AppTypography.body),
+        backgroundColor: AppColors.verifiedTeal,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  void _showError(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: AppTypography.body),
+        backgroundColor: AppColors.softCoral,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+}
+
+// ── Header ────────────────────────────────────────────────────
+
+class _Header extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Gold crown icon
+        Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.goldGlow,
+            border: Border.all(color: AppColors.goldBorder, width: 1.5),
+          ),
+          child: const Icon(Icons.workspace_premium_rounded,
+              color: AppColors.champagneGold, size: 28),
+        ),
+        const SizedBox(height: 20),
+        Text('Unlock NOOR', style: AppTypography.screenTitle),
+        const SizedBox(height: 8),
+        Text(
+          'Women message free.\nMen subscribe to connect.',
+          style: AppTypography.bodyMuted.copyWith(height: 1.6),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Plan Cards ────────────────────────────────────────────────
+
+class _PlanCards extends StatelessWidget {
+  final String   selectedPlan;
+  final void Function(String) onSelect;
+
+  const _PlanCards({
+    required this.selectedPlan,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _PlanCard(
+            planId:    'monthly',
+            label:     'Monthly',
+            price:     '₹249',
+            period:    'per month',
+            isBest:    false,
+            isSelected: selectedPlan == 'monthly',
+            onTap:     () => onSelect('monthly'),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _PlanCard(
+            planId:    'annual',
+            label:     'Annual',
+            price:     '₹2,499',
+            period:    'per year · save 17%',
+            isBest:    true,
+            isSelected: selectedPlan == 'annual',
+            onTap:     () => onSelect('annual'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PlanCard extends StatelessWidget {
+  final String planId;
+  final String label;
+  final String price;
+  final String period;
+  final bool   isBest;
+  final bool   isSelected;
+  final VoidCallback onTap;
+
+  const _PlanCard({
+    required this.planId,
+    required this.label,
+    required this.price,
+    required this.period,
+    required this.isBest,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final borderColor = isSelected
+        ? AppColors.champagneGold
+        : AppColors.cardBorder;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: isSelected
+              ? AppColors.goldGlow
+              : AppColors.surfaceGlass,
+          border: Border.all(color: borderColor, width: isSelected ? 1.5 : 1),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Best Value badge
+            if (isBest) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(6),
+                  color: AppColors.champagneGold,
+                ),
+                child: Text(
+                  'BEST VALUE',
+                  style: AppTypography.sectionLabel.copyWith(
+                    color: AppColors.obsidianNight,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 9,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+            ] else
+              const SizedBox(height: 23), // align with badge row
+
+            Text(label,
+                style: AppTypography.captionMedium
+                    .copyWith(color: AppColors.slateMist)),
+            const SizedBox(height: 6),
+            Text(
+              price,
+              style: AppTypography.screenTitle.copyWith(
+                fontSize: 22,
+                color: isSelected
+                    ? AppColors.champagneGold
+                    : AppColors.pearlWhite,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(period,
+                style: AppTypography.caption
+                    .copyWith(fontSize: 11)),
+
+            const SizedBox(height: 12),
+
+            // Selection indicator
+            Center(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.champagneGold
+                        : AppColors.cardBorder,
+                    width: isSelected ? 0 : 1.5,
+                  ),
+                  color: isSelected
+                      ? AppColors.champagneGold
+                      : Colors.transparent,
+                ),
+                child: isSelected
+                    ? const Icon(Icons.check_rounded,
+                        size: 12, color: AppColors.obsidianNight)
+                    : null,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Included Features ─────────────────────────────────────────
+
+class _IncludedFeatures extends StatelessWidget {
+  static const _features = [
+    (Icons.all_inclusive_rounded,       'Unlimited profile browsing'),
+    (Icons.favorite_rounded,            '20 interests per day'),
+    (Icons.chat_bubble_outline_rounded, 'Full messaging access'),
+    (Icons.visibility_rounded,          'See who liked your profile'),
+    (Icons.tune_rounded,                'Advanced filters — income & distance'),
+    (Icons.rocket_launch_outlined,      'One profile boost per week'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: AppColors.surfaceGlass,
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'WHAT\'S INCLUDED',
+            style: AppTypography.sectionLabel,
+          ),
+          const SizedBox(height: 16),
+          ..._features.map((f) => _FeatureRow(icon: f.$1, label: f.$2)),
+        ],
+      ),
+    );
+  }
+}
+
+class _FeatureRow extends StatelessWidget {
+  final IconData icon;
+  final String   label;
+
+  const _FeatureRow({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.goldGlow,
+            ),
+            child: Icon(icon, color: AppColors.champagneGold, size: 16),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(label, style: AppTypography.body.copyWith(fontSize: 14)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── CTA Button ────────────────────────────────────────────────
+
+class _CtaButton extends StatelessWidget {
+  final String   selectedPlan;
+  final bool     isLoading;
+  final VoidCallback onTap;
+
+  const _CtaButton({
+    required this.selectedPlan,
+    required this.isLoading,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final label = selectedPlan == 'annual'
+        ? 'Subscribe — ₹2,499 / year'
+        : 'Subscribe — ₹249 / month';
+
+    return GestureDetector(
+      onTap: isLoading ? null : onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        height: 56,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          color: isLoading
+              ? AppColors.champagneGold.withValues(alpha: 0.5)
+              : AppColors.champagneGold,
+        ),
+        alignment: Alignment.center,
+        child: isLoading
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  color: AppColors.obsidianNight,
+                  strokeWidth: 2.5,
+                ),
+              )
+            : Text(label, style: AppTypography.button),
+      ),
+    );
+  }
+}
+
+// ── Secondary Links ───────────────────────────────────────────
+
+class _SecondaryLinks extends StatelessWidget {
+  final bool     isLoading;
+  final VoidCallback onRestore;
+
+  const _SecondaryLinks({
+    required this.isLoading,
+    required this.onRestore,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        TextButton(
+          onPressed: isLoading ? null : onRestore,
+          child: Text(
+            'Restore Purchase',
+            style: AppTypography.caption
+                .copyWith(color: AppColors.champagneGold),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextButton(
+              onPressed: () {},
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: Size.zero,
+              ),
+              child: Text('Privacy Policy',
+                  style: AppTypography.caption
+                      .copyWith(fontSize: 12)),
+            ),
+            Text('·',
+                style:
+                    AppTypography.caption.copyWith(color: AppColors.slateMist)),
+            TextButton(
+              onPressed: () {},
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: Size.zero,
+              ),
+              child: Text('Terms of Service',
+                  style: AppTypography.caption
+                      .copyWith(fontSize: 12)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Subscription auto-renews unless cancelled 24h before renewal.\nWomen always message free on NOOR.',
+          style: AppTypography.caption
+              .copyWith(fontSize: 11, height: 1.5),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+}
+
+// ── Free For Women Screen ─────────────────────────────────────
+// Blueprint Part 2: "Women message free."
+// Shown if a female user navigates to the subscription screen.
+
+class _FreeForWomenScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.obsidianNight,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: AppColors.pearlWhite, size: 20),
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.verifiedTeal.withValues(alpha: 0.12),
+                border: Border.all(
+                    color: AppColors.verifiedTeal, width: 1.5),
+              ),
+              child: const Icon(Icons.favorite_rounded,
+                  color: AppColors.verifiedTeal, size: 36),
+            ),
+            const SizedBox(height: 28),
+            Text(
+              'You Message Free',
+              style: AppTypography.screenTitle,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'NOOR is free for women — forever.\nYou can message, connect, and find your match without any subscription.',
+              style: AppTypography.bodyMuted.copyWith(height: 1.7),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 36),
+            GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: Container(
+                height: 52,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.verifiedTeal),
+                  color: AppColors.verifiedTeal.withValues(alpha: 0.10),
+                ),
+                alignment: Alignment.center,
+                child: Text('Go Back',
+                    style: AppTypography.button
+                        .copyWith(color: AppColors.verifiedTeal)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

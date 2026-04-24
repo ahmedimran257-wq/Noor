@@ -1,19 +1,30 @@
 // lib/features/home/screens/interests_screen.dart
 // ============================================================
-// NOOR — Interests Inbox
-// Two tabs: Received / Sent
-// Each row represents an InterestEntry from InterestsCubit.
+// NOOR — Interests Inbox (Step 7 — Complete)
+//
+// Blueprint (Part 8):
+//   • Two tabs: Received / Sent
+//   • Received: avatar, name, age, city, time sent
+//     — Accept (gold) / Decline (outlined) buttons
+//     — Accepted → "Message" CTA (chat unlocked)
+//   • Sent: status pill (Pending / Accepted / Declined / Expired)
+//     — Withdraw button for pending
+//   • Mutual match modal: overlapping avatars + heart badge
+//     + 48h reflection note + "Message Now" CTA
 // ============================================================
 
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/cubits/interests/interests_cubit.dart';
 import '../../../core/cubits/interests/interests_state.dart';
+import '../../../core/cubits/chat/chat_cubit.dart';
 import '../../../core/mock/mock_profiles.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
-import 'dart:ui'; // For ImageFilter
+import 'chat_screen.dart';
 
 class InterestsScreen extends StatefulWidget {
   const InterestsScreen({super.key});
@@ -38,97 +49,133 @@ class _InterestsScreenState extends State<InterestsScreen>
     super.dispose();
   }
 
+  // ── Mutual match ceremony modal ───────────────────────────
+
   void _showMutualMatchModal(MockProfile profile) {
+    HapticFeedback.mediumImpact();
     showDialog(
       context: context,
-      barrierColor: AppColors.obsidianNight.withValues(alpha: 0.8),
+      barrierColor: AppColors.obsidianNight.withValues(alpha: 0.85),
       builder: (context) => BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Center(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space24),
-            child: Container(
-              padding: const EdgeInsets.all(AppDimensions.space32),
-              decoration: BoxDecoration(
-                color:        AppColors.surfaceGlass,
-                borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-                border:       Border.all(color: AppColors.goldBorder),
-                boxShadow: [
-                  BoxShadow(
-                    color:       AppColors.goldGlow,
-                    blurRadius:  32,
-                    spreadRadius: 8,
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Overlapping Avatars Simulation
-                  SizedBox(
-                    height: 80,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Positioned(
-                          left: 40,
-                          child: CircleAvatar(
-                            radius: 40,
-                            backgroundColor: AppColors.surfaceGlassHover,
-                            child: const Icon(Icons.person, color: AppColors.slateMist, size: 40),
-                          ),
-                        ),
-                        Positioned(
-                          right: 40,
-                          child: CircleAvatar(
-                            radius: 40,
-                            backgroundColor: AppColors.surfaceGlassHover,
-                            child: const Icon(Icons.person, color: AppColors.slateMist, size: 40),
-                          ),
-                        ),
-                        // Heart badge in the middle
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.obsidianNight,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.champagneGold, width: 2),
-                          ),
-                          child: const Icon(Icons.favorite, color: AppColors.champagneGold, size: 24),
-                        ),
-                      ],
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.space24),
+            child: Material(
+              color:        Colors.transparent,
+              borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+              child: Container(
+                padding: const EdgeInsets.all(AppDimensions.space32),
+                decoration: BoxDecoration(
+                  color:        const Color(0xFF13131A),
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+                  border:       Border.all(color: AppColors.goldBorder, width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color:       AppColors.goldGlow,
+                      blurRadius:  40,
+                      spreadRadius: 8,
                     ),
-                  ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Overlapping avatars + heart centre badge
+                    _MatchAvatarPair(),
+                    const SizedBox(height: AppDimensions.space24),
 
-                  const SizedBox(height: AppDimensions.space24),
-                  
-                  Text('Mutual Match!', style: AppTypography.screenTitle.copyWith(color: AppColors.champagneGold)),
-                  const SizedBox(height: AppDimensions.space12),
-                  
-                  Text(
-                    'You and ${profile.firstName} can now message each other. Remember the 48-hour reflection period.',
-                    style: AppTypography.bodyMuted,
-                    textAlign: TextAlign.center,
-                  ),
+                    // Gold title
+                    Text(
+                      'It\'s a Match!',
+                      style: AppTypography.screenTitle.copyWith(
+                          color: AppColors.champagneGold, fontSize: 26),
+                    ),
+                    const SizedBox(height: AppDimensions.space8),
 
-                  const SizedBox(height: AppDimensions.space32),
+                    Text(
+                      'You and ${profile.firstName} can now message each other.',
+                      style: AppTypography.bodyMuted,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppDimensions.space16),
 
-                  SizedBox(
-                    width: double.infinity,
-                    height: AppDimensions.buttonHeight,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.champagneGold,
-                        foregroundColor: AppColors.obsidianNight,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                        ),
+                    // 48-hour reflection note — blueprint requirement
+                    Container(
+                      padding: const EdgeInsets.all(AppDimensions.space12),
+                      decoration: BoxDecoration(
+                        color:        AppColors.champagneGold.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                        border:       Border.all(color: AppColors.goldBorder),
                       ),
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Text('Continue', style: AppTypography.button),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.access_time_rounded,
+                              color: AppColors.champagneGold, size: 16),
+                          const SizedBox(width: AppDimensions.space8),
+                          Expanded(
+                            child: Text(
+                              'A 48-hour reflection period applies before full messaging unlocks.',
+                              style: AppTypography.caption.copyWith(
+                                  color: AppColors.champagneGold,
+                                  fontStyle: FontStyle.italic),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: AppDimensions.space28),
+
+                    // Message Now CTA
+                    SizedBox(
+                      width:  double.infinity,
+                      height: AppDimensions.buttonHeight,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.champagneGold,
+                          foregroundColor: AppColors.obsidianNight,
+                          shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(AppDimensions.radiusButton),
+                          ),
+                          elevation: 0,
+                        ),
+                        onPressed: () {
+                          HapticFeedback.mediumImpact();
+                          Navigator.of(context).pop();
+                          // Open / create conversation and navigate
+                          final convId = context
+                              .read<ChatCubit>()
+                              .openOrCreateConversation(
+                                  profile.firstName, profile.lastNameInitial);
+                          Navigator.of(context).push(
+                            PageRouteBuilder(
+                              transitionDuration: AppDimensions.durationReveal,
+                              pageBuilder: (ctx, anim, _) => FadeTransition(
+                                opacity: anim,
+                                child: ChatScreen(conversationId: convId),
+                              ),
+                            ),
+                          );
+                        },
+                        child: Text('Message ${profile.firstName}',
+                            style: AppTypography.button),
+                      ),
+                    ),
+                    const SizedBox(height: AppDimensions.space12),
+
+                    // Maybe later
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text(
+                        'Maybe later',
+                        style: AppTypography.caption.copyWith(
+                            color: AppColors.slateMist),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -137,36 +184,31 @@ class _InterestsScreenState extends State<InterestsScreen>
     );
   }
 
+  // ── Build ────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<InterestsCubit, InterestsState>(
       builder: (context, state) {
-        // We only show pending or explicitly accepted/declined in received tab
-        final pendingReceived = state.received.where((e) => e.status == InterestStatus.pending).toList();
-        final respondedReceived = state.received.where((e) => e.status == InterestStatus.accepted || e.status == InterestStatus.declined).toList();
-        final displayReceived = [...pendingReceived, ...respondedReceived];
-
         return Column(
           children: [
             // Header
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppDimensions.space24,
-                AppDimensions.space16,
-                AppDimensions.space24,
-                0,
+                AppDimensions.space24, AppDimensions.space16,
+                AppDimensions.space24, 0,
               ),
               child: Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: Text('Interests', style: AppTypography.screenTitle),
               ),
             ),
-
             const SizedBox(height: AppDimensions.space16),
 
             // Tab bar
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space24),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.space24),
               child: Container(
                 decoration: BoxDecoration(
                   color:        AppColors.surfaceGlass,
@@ -174,26 +216,29 @@ class _InterestsScreenState extends State<InterestsScreen>
                   border:       Border.all(color: AppColors.cardBorder),
                 ),
                 child: TabBar(
-                  controller:       _tabCtrl,
-                  labelStyle:       AppTypography.bodyMedium.copyWith(fontSize: 14),
+                  controller:          _tabCtrl,
+                  labelStyle:          AppTypography.bodyMedium.copyWith(fontSize: 14),
                   unselectedLabelStyle: AppTypography.bodyMuted.copyWith(fontSize: 14),
-                  labelColor:       AppColors.champagneGold,
+                  labelColor:          AppColors.champagneGold,
                   unselectedLabelColor: AppColors.slateMist,
-                  indicatorSize:    TabBarIndicatorSize.tab,
+                  indicatorSize:       TabBarIndicatorSize.tab,
                   indicator: BoxDecoration(
                     color:        AppColors.champagneGold.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusButton - 2),
+                    borderRadius: BorderRadius.circular(
+                        AppDimensions.radiusButton - 2),
                     border: Border.all(color: AppColors.goldBorder),
                   ),
-                  dividerColor:     Colors.transparent,
+                  dividerColor: Colors.transparent,
                   tabs: [
                     Tab(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Text('Received'),
-                          const SizedBox(width: AppDimensions.space6),
-                          _CountBadge(count: pendingReceived.length),
+                          if (state.pendingReceived.isNotEmpty) ...[
+                            const SizedBox(width: AppDimensions.space6),
+                            _CountBadge(count: state.pendingReceived.length),
+                          ],
                         ],
                       ),
                     ),
@@ -202,8 +247,11 @@ class _InterestsScreenState extends State<InterestsScreen>
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Text('Sent'),
-                          const SizedBox(width: AppDimensions.space6),
-                          _CountBadge(count: state.sent.where((e) => e.status == InterestStatus.pending).length),
+                          if (state.sent.any((e) =>
+                              e.effectiveStatus == InterestStatus.accepted)) ...[
+                            const SizedBox(width: AppDimensions.space6),
+                            const _NewBadge(),
+                          ],
                         ],
                       ),
                     ),
@@ -211,7 +259,6 @@ class _InterestsScreenState extends State<InterestsScreen>
                 ),
               ),
             ),
-
             const SizedBox(height: AppDimensions.space16),
 
             // Tab content
@@ -219,59 +266,42 @@ class _InterestsScreenState extends State<InterestsScreen>
               child: TabBarView(
                 controller: _tabCtrl,
                 children: [
-                  // Received
-                  displayReceived.isEmpty
+                  // ── Received tab ──────────────────────────
+                  state.displayReceived.isEmpty
                       ? const _EmptyState(
                           icon:    Icons.inbox_rounded,
                           title:   'No interests yet',
-                          message: 'When someone sends you an interest,\nit will appear here.',
+                          message:
+                              'When someone sends you an interest,\nit will appear here.',
                         )
-                      : ListView.separated(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppDimensions.space24,
-                            vertical:   AppDimensions.space4,
-                          ),
-                          itemCount: displayReceived.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: AppDimensions.space12),
-                          itemBuilder: (context, i) {
-                            final entry = displayReceived[i];
-                            return _ReceivedInterestTile(
-                              entry: entry,
-                              onAccept: () {
-                                context.read<InterestsCubit>().acceptInterest(entry.id);
-                                _showMutualMatchModal(entry.profile);
-                              },
-                              onDecline: () {
-                                context.read<InterestsCubit>().declineInterest(entry.id);
-                              },
-                            );
+                      : _ReceivedList(
+                          entries:   state.displayReceived,
+                          onAccept:  (entry) {
+                            context
+                                .read<InterestsCubit>()
+                                .acceptInterest(entry.id);
+                            _showMutualMatchModal(entry.profile);
+                          },
+                          onDecline: (entry) {
+                            context
+                                .read<InterestsCubit>()
+                                .declineInterest(entry.id);
                           },
                         ),
 
-                  // Sent
+                  // ── Sent tab ──────────────────────────────
                   state.sent.isEmpty
                       ? const _EmptyState(
                           icon:    Icons.send_rounded,
                           title:   'No sent interests',
                           message: 'Interests you send will appear here.',
                         )
-                      : ListView.separated(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppDimensions.space24,
-                            vertical:   AppDimensions.space4,
-                          ),
-                          itemCount: state.sent.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: AppDimensions.space12),
-                          itemBuilder: (context, i) {
-                            final entry = state.sent[i];
-                            return _SentInterestTile(
-                              entry: entry,
-                              onWithdraw: () {
-                                context.read<InterestsCubit>().withdrawInterest(entry.id);
-                              },
-                            );
+                      : _SentList(
+                          entries:    state.sent,
+                          onWithdraw: (entry) {
+                            context
+                                .read<InterestsCubit>()
+                                .withdrawInterest(entry.id);
                           },
                         ),
                 ],
@@ -284,26 +314,121 @@ class _InterestsScreenState extends State<InterestsScreen>
   }
 }
 
-// ── Received Tile ─────────────────────────────────────────────
+// ── Avatar pair widget for match modal ───────────────────────
 
-class _ReceivedInterestTile extends StatelessWidget {
-  const _ReceivedInterestTile({
+class _MatchAvatarPair extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 80,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned(
+            left: 30,
+            child: _Avatar(border: AppColors.champagneGold),
+          ),
+          Positioned(
+            right: 30,
+            child: _Avatar(border: AppColors.champagneGold),
+          ),
+          // Heart badge
+          Container(
+            padding: const EdgeInsets.all(AppDimensions.space8),
+            decoration: BoxDecoration(
+              color:  const Color(0xFF13131A),
+              shape:  BoxShape.circle,
+              border: Border.all(color: AppColors.champagneGold, width: 2),
+            ),
+            child: const Icon(
+              Icons.favorite_rounded,
+              color: AppColors.champagneGold,
+              size:  20,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Avatar extends StatelessWidget {
+  const _Avatar({required this.border});
+  final Color border;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width:  60,
+      height: 60,
+      decoration: BoxDecoration(
+        shape:  BoxShape.circle,
+        color:  AppColors.surfaceGlassHover,
+        border: Border.all(color: border, width: 2),
+      ),
+      child: const Icon(
+        Icons.person_rounded,
+        color: AppColors.slateMist,
+        size:  30,
+      ),
+    );
+  }
+}
+
+// ── Received list ─────────────────────────────────────────────
+
+class _ReceivedList extends StatelessWidget {
+  const _ReceivedList({
+    required this.entries,
+    required this.onAccept,
+    required this.onDecline,
+  });
+  final List<InterestEntry>          entries;
+  final ValueChanged<InterestEntry>  onAccept;
+  final ValueChanged<InterestEntry>  onDecline;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.space24,
+        vertical:   AppDimensions.space4,
+      ),
+      itemCount:      entries.length,
+      separatorBuilder: (_, __) =>
+          const SizedBox(height: AppDimensions.space12),
+      itemBuilder: (_, i) {
+        final entry = entries[i];
+        return _ReceivedTile(
+          entry:     entry,
+          onAccept:  () => onAccept(entry),
+          onDecline: () => onDecline(entry),
+        );
+      },
+    );
+  }
+}
+
+class _ReceivedTile extends StatelessWidget {
+  const _ReceivedTile({
     required this.entry,
     required this.onAccept,
     required this.onDecline,
   });
-
-  final InterestEntry  entry;
-  final VoidCallback   onAccept;
-  final VoidCallback   onDecline;
+  final InterestEntry entry;
+  final VoidCallback  onAccept;
+  final VoidCallback  onDecline;
 
   @override
   Widget build(BuildContext context) {
-    final p = entry.profile;
-    final isAccepted = entry.status == InterestStatus.accepted;
-    final isDeclined = entry.status == InterestStatus.declined;
+    final p          = entry.profile;
+    final status     = entry.effectiveStatus;
+    final isAccepted = status == InterestStatus.accepted;
+    final isDeclined = status == InterestStatus.declined;
+    final isPending  = status == InterestStatus.pending;
 
-    return Container(
+    return AnimatedContainer(
+      duration: AppDimensions.durationTransition,
       padding: const EdgeInsets.all(AppDimensions.space16),
       decoration: BoxDecoration(
         color:        AppColors.surfaceGlass,
@@ -319,22 +444,14 @@ class _ReceivedInterestTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Top row: avatar + name/city + time
           Row(
             children: [
-              // Avatar placeholder
-              Container(
-                width:  52,
-                height: 52,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color:  AppColors.surfaceGlassHover,
-                  border: Border.all(color: AppColors.goldBorder),
-                ),
-                child: const Icon(
-                  Icons.person_outline_rounded,
-                  color: AppColors.slateMist,
-                  size:  28,
-                ),
+              _CircleAvatar(
+                borderColor: isAccepted
+                    ? AppColors.champagneGold
+                    : AppColors.cardBorder,
+                opacity: isDeclined ? 0.5 : 1.0,
               ),
               const SizedBox(width: AppDimensions.space12),
               Expanded(
@@ -343,77 +460,115 @@ class _ReceivedInterestTile extends StatelessWidget {
                   children: [
                     Text(
                       '${p.firstName} ${p.lastNameInitial}.',
-                      style: AppTypography.bodyMedium,
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: isDeclined
+                            ? AppColors.slateMist
+                            : AppColors.pearlWhite,
+                      ),
                     ),
                     const SizedBox(height: AppDimensions.space2),
                     Text(
                       '${p.age} · ${p.cityName}',
                       style: AppTypography.caption,
                     ),
+                    if (p.occupation != null)
+                      Text(p.occupation!, style: AppTypography.caption),
                   ],
                 ),
               ),
-              Text(entry.timeAgo, style: AppTypography.caption),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(entry.timeAgo, style: AppTypography.caption),
+                  const SizedBox(height: AppDimensions.space4),
+                  if (isAccepted)
+                    _StatusPill(
+                        label: '✓ Matched', color: AppColors.champagneGold),
+                  if (isDeclined)
+                    _StatusPill(label: 'Declined', color: AppColors.slateMist),
+                ],
+              ),
             ],
           ),
 
-          if (!isAccepted && !isDeclined) ...[
-            const SizedBox(height: AppDimensions.space12),
+          // Action buttons — pending only
+          if (isPending) ...[
+            const SizedBox(height: AppDimensions.space14),
             Row(
               children: [
-                // Decline
                 Expanded(
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
-                      side:         const BorderSide(color: AppColors.cardBorder),
+                      side: const BorderSide(color: AppColors.cardBorder),
                       foregroundColor: AppColors.slateMist,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusButton),
                       ),
                     ),
-                    onPressed: onDecline,
-                    child: const Text('Decline'),
+                    onPressed: () {
+                      HapticFeedback.selectionClick();
+                      onDecline();
+                    },
+                    child: Text('Decline', style: AppTypography.bodyMuted),
                   ),
                 ),
                 const SizedBox(width: AppDimensions.space12),
-                // Accept
                 Expanded(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.champagneGold,
                       foregroundColor: AppColors.obsidianNight,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusButton),
                       ),
+                      elevation: 0,
                     ),
-                    onPressed: onAccept,
+                    onPressed: () {
+                      HapticFeedback.mediumImpact();
+                      onAccept();
+                    },
                     child: Text('Accept', style: AppTypography.button),
                   ),
                 ),
               ],
             ),
-          ] else ...[
-            const SizedBox(height: AppDimensions.space10),
-            AnimatedContainer(
-              duration: AppDimensions.durationTransition,
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppDimensions.space12,
-                vertical:   AppDimensions.space6,
-              ),
-              decoration: BoxDecoration(
-                color: isAccepted
-                    ? AppColors.champagneGold.withValues(alpha: 0.12)
-                    : AppColors.surfaceGlass,
-                borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
-                border: Border.all(
-                  color: isAccepted ? AppColors.goldBorder : AppColors.cardBorder,
+          ],
+
+          // Message CTA — accepted only
+          if (isAccepted) ...[
+            const SizedBox(height: AppDimensions.space12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.champagneGold),
+                  foregroundColor: AppColors.champagneGold,
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.circular(AppDimensions.radiusButton),
+                  ),
                 ),
-              ),
-              child: Text(
-                isAccepted ? '✓ Accepted — you can now chat' : 'Declined',
-                style: AppTypography.caption.copyWith(
-                  color: isAccepted ? AppColors.champagneGold : AppColors.slateMist,
-                ),
+                icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
+                label: Text('Message ${p.firstName}',
+                    style: AppTypography.buttonSecondary),
+                onPressed: () {
+                  HapticFeedback.selectionClick();
+                  final convId = context
+                      .read<ChatCubit>()
+                      .openOrCreateConversation(
+                          p.firstName, p.lastNameInitial);
+                  Navigator.of(context).push(
+                    PageRouteBuilder(
+                      transitionDuration: AppDimensions.durationReveal,
+                      pageBuilder: (ctx, anim, _) => FadeTransition(
+                        opacity: anim,
+                        child: ChatScreen(conversationId: convId),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ],
@@ -423,108 +578,133 @@ class _ReceivedInterestTile extends StatelessWidget {
   }
 }
 
-// ── Sent Tile ─────────────────────────────────────────────────
+// ── Sent list ─────────────────────────────────────────────────
 
-class _SentInterestTile extends StatelessWidget {
-  const _SentInterestTile({
-    required this.entry,
+class _SentList extends StatelessWidget {
+  const _SentList({
+    required this.entries,
     required this.onWithdraw,
   });
-  
-  final InterestEntry entry;
-  final VoidCallback onWithdraw;
+  final List<InterestEntry>         entries;
+  final ValueChanged<InterestEntry> onWithdraw;
 
   @override
   Widget build(BuildContext context) {
-    final p = entry.profile;
-    final isWithdrawn = entry.status == InterestStatus.withdrawn;
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.space24,
+        vertical:   AppDimensions.space4,
+      ),
+      itemCount:      entries.length,
+      separatorBuilder: (_, __) =>
+          const SizedBox(height: AppDimensions.space12),
+      itemBuilder: (_, i) {
+        final entry = entries[i];
+        return _SentTile(
+          entry:      entry,
+          onWithdraw: () => onWithdraw(entry),
+        );
+      },
+    );
+  }
+}
 
-    return Container(
+class _SentTile extends StatelessWidget {
+  const _SentTile({required this.entry, required this.onWithdraw});
+  final InterestEntry entry;
+  final VoidCallback  onWithdraw;
+
+  @override
+  Widget build(BuildContext context) {
+    final p          = entry.profile;
+    final status     = entry.effectiveStatus;
+    final isPending  = status == InterestStatus.pending;
+    final isAccepted = status == InterestStatus.accepted;
+    final isExpired  = status == InterestStatus.expired;
+    final isWithdrawn = status == InterestStatus.withdrawn;
+
+    return AnimatedContainer(
+      duration: AppDimensions.durationTransition,
       padding: const EdgeInsets.all(AppDimensions.space16),
       decoration: BoxDecoration(
         color:        AppColors.surfaceGlass,
         borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-        border:       Border.all(color: AppColors.cardBorder),
+        border: Border.all(
+          color: isAccepted
+              ? AppColors.goldBorder
+              : AppColors.cardBorder,
+        ),
       ),
       child: Row(
         children: [
-          Container(
-            width:  52,
-            height: 52,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color:  AppColors.surfaceGlassHover,
-              border: Border.all(color: AppColors.cardBorder),
-            ),
-            child: const Icon(
-              Icons.person_outline_rounded,
-              color: AppColors.slateMist,
-              size:  28,
-            ),
+          _CircleAvatar(
+            borderColor: isAccepted
+                ? AppColors.champagneGold
+                : AppColors.cardBorder,
+            opacity: (isWithdrawn || isExpired) ? 0.5 : 1.0,
           ),
           const SizedBox(width: AppDimensions.space12),
+
+          // Name + info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   '${p.firstName} ${p.lastNameInitial}.',
-                  style: AppTypography.bodyMedium,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: (isWithdrawn || isExpired)
+                        ? AppColors.slateMist
+                        : AppColors.pearlWhite,
+                  ),
                 ),
                 const SizedBox(height: AppDimensions.space2),
-                Text('${p.age} · ${p.cityName}', style: AppTypography.caption),
+                Text('${p.age} · ${p.cityName}',
+                    style: AppTypography.caption),
               ],
             ),
           ),
+
+          // Right side: time + status pill / withdraw
           Column(
-             crossAxisAlignment: CrossAxisAlignment.end,
-             children: [
-               Text(entry.timeAgo, style: AppTypography.caption),
-               const SizedBox(height: AppDimensions.space4),
-               
-               if (!isWithdrawn)
-                InkWell(
-                  onTap: onWithdraw,
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusTiny),
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(entry.timeAgo, style: AppTypography.caption),
+              const SizedBox(height: AppDimensions.space6),
+
+              if (isPending)
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    onWithdraw();
+                  },
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: AppDimensions.space8,
+                      horizontal: AppDimensions.space10,
                       vertical:   AppDimensions.space4,
                     ),
                     decoration: BoxDecoration(
                       color:        AppColors.surfaceGlassHover,
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusTiny),
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusTiny),
                       border:       Border.all(color: AppColors.cardBorder),
                     ),
                     child: Text(
                       'Withdraw',
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.slateMist,
-                        fontSize: 11,
-                      ),
+                      style: AppTypography.caption.copyWith(fontSize: 11),
                     ),
                   ),
                 )
-               else
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppDimensions.space8,
-                    vertical:   AppDimensions.space4,
-                  ),
-                  decoration: BoxDecoration(
-                    color:        AppColors.surfaceGlass,
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusTiny),
-                    border:       Border.all(color: AppColors.cardBorder),
-                  ),
-                  child: Text(
-                    'Withdrawn',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.slateMist,
-                      fontSize: 11,
-                    ),
-                  ),
-                ),
-             ],
+              else if (isAccepted)
+                _StatusPill(
+                    label: '✓ Accepted', color: AppColors.champagneGold)
+              else if (isExpired)
+                _StatusPill(label: 'Expired', color: AppColors.slateMist)
+              else if (isWithdrawn)
+                _StatusPill(label: 'Withdrawn', color: AppColors.slateMist)
+              else
+                _StatusPill(label: 'Declined', color: AppColors.softCoral),
+            ],
           ),
         ],
       ),
@@ -532,7 +712,101 @@ class _SentInterestTile extends StatelessWidget {
   }
 }
 
-// ── Empty State ───────────────────────────────────────────────
+// ── Shared widgets ────────────────────────────────────────────
+
+class _CircleAvatar extends StatelessWidget {
+  const _CircleAvatar({
+    required this.borderColor,
+    this.opacity = 1.0,
+  });
+  final Color  borderColor;
+  final double opacity;
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: opacity,
+      child: Container(
+        width:  52,
+        height: 52,
+        decoration: BoxDecoration(
+          shape:  BoxShape.circle,
+          color:  AppColors.surfaceGlassHover,
+          border: Border.all(color: borderColor),
+        ),
+        child: const Icon(
+          Icons.person_outline_rounded,
+          color: AppColors.slateMist,
+          size:  28,
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.label, required this.color});
+  final String label;
+  final Color  color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.space8,
+        vertical:   AppDimensions.space4,
+      ),
+      decoration: BoxDecoration(
+        color:        color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusTiny),
+        border:       Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Text(
+        label,
+        style: AppTypography.caption.copyWith(
+          color:    color,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+class _NewBadge extends StatelessWidget {
+  const _NewBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color:        AppColors.champagneGold,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusTiny),
+      ),
+      child: Text('new',
+          style: AppTypography.badge.copyWith(fontSize: 10)),
+    );
+  }
+}
+
+class _CountBadge extends StatelessWidget {
+  const _CountBadge({required this.count});
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    if (count == 0) return const SizedBox.shrink();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color:        AppColors.champagneGold,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusTiny),
+      ),
+      child: Text('$count', style: AppTypography.badge),
+    );
+  }
+}
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState({
@@ -565,32 +839,11 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: AppDimensions.space20),
             Text(title, style: AppTypography.bodyMedium),
             const SizedBox(height: AppDimensions.space8),
-            Text(message, style: AppTypography.bodyMuted, textAlign: TextAlign.center),
+            Text(message,
+                style: AppTypography.bodyMuted,
+                textAlign: TextAlign.center),
           ],
         ),
-      ),
-    );
-  }
-}
-
-// ── Count Badge ───────────────────────────────────────────────
-
-class _CountBadge extends StatelessWidget {
-  const _CountBadge({required this.count});
-  final int count;
-
-  @override
-  Widget build(BuildContext context) {
-    if (count == 0) return const SizedBox.shrink();
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color:        AppColors.champagneGold,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusTiny),
-      ),
-      child: Text(
-        '$count',
-        style: AppTypography.badge,
       ),
     );
   }

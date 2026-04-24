@@ -1,27 +1,34 @@
 // lib/features/home/screens/discovery_feed_screen.dart
 // ============================================================
-// NOOR — Discovery Feed
-// The heart of the app. Horizontally paged NoorProfileCard carousel.
+// NOOR — Discovery Feed (Step 5 — Blueprint Complete)
 //
-// Layout:
-//   • PageView.builder with viewportFraction: 0.88 (adjacent card peek)
-//   • Card scale: focused = 1.0, adjacent = 0.95 (AnimatedScale in card)
-//   • Quick-filter bar above cards
-//   • Dot indicator below cards
+// Blueprint requirements (Part 8):
+//   • Horizontal paged carousel — one card at a time
+//   • viewportFraction 0.88 → adjacent cards peek at 0.95 scale
+//   • Cursor-based pagination via DiscoveryFeedCubit
+//   • Skeleton loaders on initial load AND page-load-more
+//   • Filter bar (horizontal scrollable chips)
+//   • Every 10th card: "Someone you might connect with" label
+//   • Free-tier counter: "12 profiles remaining today"
+//   • Dot indicator (max 7, sliding window)
+//   • Interest ceremony → cubit + overlay
+//   • Bookmark toggle with snackbar feedback
 // ============================================================
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../core/mock/mock_profiles.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../../core/cubits/discovery/discovery_feed_cubit.dart';
+import '../../../core/cubits/discovery/discovery_feed_state.dart';
+import '../../../core/cubits/interests/interests_cubit.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../core/cubits/interests/interests_cubit.dart';
 import '../../../core/widgets/cards/noor_profile_card.dart';
+import '../../../core/widgets/loaders/noor_shimmer.dart';
 import '../widgets/discovery_filter_bar.dart';
 import '../widgets/interest_ceremony_overlay.dart';
-import '../../../core/widgets/loaders/noor_shimmer.dart';
 import 'profile_detail_screen.dart';
 
 class DiscoveryFeedScreen extends StatefulWidget {
@@ -33,62 +40,52 @@ class DiscoveryFeedScreen extends StatefulWidget {
 
 class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
   late final PageController _pageCtrl;
-  int    _currentPage     = 0;
-  bool   _isLoadingMore   = false;
-  final  Set<int> _sentInterests  = {};
-  final  Set<int> _bookmarked     = {};
-
-  final List<MockProfile> _profiles = List.of(kMockProfiles);
+  int _currentPage = 0;
+  final Set<int> _sentInterests = {};
+  final Set<int> _bookmarked    = {};
 
   @override
   void initState() {
     super.initState();
-    _pageCtrl = PageController(viewportFraction: 0.88, initialPage: 0);
-    _pageCtrl.addListener(() {
-      final page = _pageCtrl.page?.round() ?? 0;
-      if (page != _currentPage) {
-        setState(() => _currentPage = page);
-        
-        // Trigger pagination load when approaching the end
-        if (page >= _profiles.length - 2 && !_isLoadingMore) {
-          _fetchMoreProfiles();
-        }
-      }
+    _pageCtrl = PageController(viewportFraction: 0.88);
+    _pageCtrl.addListener(_onScroll);
+
+    // Trigger initial load after first frame so cubit is available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<DiscoveryFeedCubit>().loadInitial();
     });
   }
 
   @override
   void dispose() {
+    _pageCtrl.removeListener(_onScroll);
     _pageCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _fetchMoreProfiles() async {
-    setState(() => _isLoadingMore = true);
-    
-    // Simulate network latency for cursor pagination
-    await Future.delayed(const Duration(milliseconds: 1500));
-    
-    if (mounted) {
-      setState(() {
-        // Append another batch of profiles to simulate infinite feed
-        _profiles.addAll(kMockProfiles);
-        _isLoadingMore = false;
-      });
+  void _onScroll() {
+    final page = _pageCtrl.page?.round() ?? 0;
+    if (page != _currentPage) {
+      setState(() => _currentPage = page);
+      context.read<DiscoveryFeedCubit>().recordProfileView();
+    }
+
+    // Trigger pagination when 2 cards from the end
+    final feedState = context.read<DiscoveryFeedCubit>().state;
+    final total = feedState.profiles.length;
+    if (page >= total - 2 && feedState.status == FeedStatus.loaded) {
+      context.read<DiscoveryFeedCubit>().loadMore();
     }
   }
 
-  Future<void> _handleSendInterest(int index) async {
+  Future<void> _handleSendInterest(int index, FeedProfile fp) async {
     setState(() => _sentInterests.add(index));
-    context.read<InterestsCubit>().sendInterest(_profiles[index]);
+    context.read<InterestsCubit>().sendInterest(fp.profile);
     HapticFeedback.mediumImpact();
-    await showInterestCeremony(
-      context,
-      firstName: _profiles[index].firstName,
-    );
+    await showInterestCeremony(context, firstName: fp.profile.firstName);
   }
 
-  void _handleBookmark(int index) {
+  void _handleBookmark(int index, FeedProfile fp) {
     HapticFeedback.selectionClick();
     setState(() {
       if (_bookmarked.contains(index)) {
@@ -97,37 +94,35 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
         _bookmarked.add(index);
       }
     });
-    // Brief gold flash feedback
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
           content: Text(
             _bookmarked.contains(index)
-                ? '${_profiles[index].firstName} saved'
-                : '${_profiles[index].firstName} removed',
+                ? '${fp.profile.firstName} saved'
+                : '${fp.profile.firstName} removed',
             style: AppTypography.body,
           ),
           backgroundColor: AppColors.surfaceGlassHover,
-          behavior:        SnackBarBehavior.floating,
+          behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-            side:         const BorderSide(color: AppColors.cardBorder),
+            side: const BorderSide(color: AppColors.cardBorder),
           ),
           duration: const Duration(seconds: 1),
         ),
       );
   }
 
-  void _openProfile(int index) {
-    final p = _profiles[index];
+  void _openProfile(int index, FeedProfile fp) {
     Navigator.of(context).push(
       PageRouteBuilder(
         transitionDuration: AppDimensions.durationReveal,
         pageBuilder: (context, animation, _) => FadeTransition(
           opacity: animation,
           child: ProfileDetailScreen(
-            profile:        p,
+            profile:        fp.profile,
             heroTag:        'profile_card_$index',
             isInterestSent: _sentInterests.contains(index),
             onInterestSent: () => setState(() => _sentInterests.add(index)),
@@ -137,102 +132,214 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
     );
   }
 
+  // ── Build ─────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // ── Top app bar ───────────────────────────────────
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppDimensions.space24,
-            AppDimensions.space16,
-            AppDimensions.space24,
-            AppDimensions.space12,
-          ),
-          child: Row(
+    return BlocBuilder<DiscoveryFeedCubit, DiscoveryFeedState>(
+      builder: (context, feedState) {
+        return Column(
+          children: [
+            // ── Top app bar ─────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppDimensions.space24,
+                AppDimensions.space16,
+                AppDimensions.space24,
+                AppDimensions.space12,
+              ),
+              child: Row(
+                children: [
+                  Text('نور', style: AppTypography.wordmark.copyWith(fontSize: 26)),
+                  const SizedBox(width: AppDimensions.space8),
+                  Text('NOOR', style: AppTypography.wordmark),
+                  const Spacer(),
+                  // Free-tier counter badge
+                  if (feedState.status == FeedStatus.loaded ||
+                      feedState.status == FeedStatus.loadingMore)
+                    _FreeTierCounter(remaining: feedState.remainingToday),
+                  const SizedBox(width: AppDimensions.space12),
+                  _NotificationButton(),
+                ],
+              ),
+            ),
+
+            // ── Filter bar ──────────────────────────────────
+            const DiscoveryFilterBar(),
+            const SizedBox(height: AppDimensions.space16),
+
+            // ── Card carousel ────────────────────────────────
+            Expanded(child: _buildCarousel(feedState)),
+
+            // ── Dot indicator ────────────────────────────────
+            const SizedBox(height: AppDimensions.space16),
+            if (feedState.status != FeedStatus.initial &&
+                feedState.status != FeedStatus.loading)
+              _DotIndicator(
+                count:   feedState.profiles.length,
+                current: _currentPage,
+              ),
+            const SizedBox(height: AppDimensions.space20),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildCarousel(DiscoveryFeedState feedState) {
+    // Full-screen skeleton on initial load
+    if (feedState.status == FeedStatus.initial ||
+        feedState.status == FeedStatus.loading) {
+      return _InitialShimmer();
+    }
+
+    if (feedState.status == FeedStatus.empty) {
+      return const _EmptyFeed();
+    }
+
+    final profiles = feedState.profiles;
+    final isLoadingMore = feedState.status == FeedStatus.loadingMore;
+    final itemCount = profiles.length + (isLoadingMore ? 1 : 0);
+
+    return PageView.builder(
+      controller:   _pageCtrl,
+      itemCount:    itemCount,
+      onPageChanged: (page) => setState(() => _currentPage = page),
+      itemBuilder:  (context, index) {
+        final focused = index == _currentPage;
+
+        // Skeleton card at the end while loading more
+        if (index >= profiles.length) {
+          return _cardPadding(
+            child: Transform.scale(
+              scale: focused ? 1.0 : 0.95,
+              child: const NoorProfileCardShimmer(),
+            ),
+          );
+        }
+
+        final fp = profiles[index];
+        final p  = fp.profile;
+
+        return _cardPadding(
+          child: Stack(
+            clipBehavior: Clip.none,
             children: [
-              Text('نور', style: AppTypography.wordmark.copyWith(fontSize: 26)),
-              const SizedBox(width: AppDimensions.space8),
-              Text('NOOR', style: AppTypography.wordmark),
-              const Spacer(),
-              _NotificationButton(),
+              // Main card (with Hero for shared-element to detail)
+              Hero(
+                tag: 'profile_card_$index',
+                child: NoorProfileCard(
+                  firstName:       p.firstName,
+                  lastNameInitial: p.lastNameInitial,
+                  age:             p.age,
+                  cityName:        p.cityName,
+                  sect:            p.sect,
+                  deenLevel:       p.deenLevel,
+                  profession:      p.occupation,
+                  photoUrl:        p.photoUrl,
+                  photoCount:      p.photoCount,
+                  isPhotoPrivate:  p.isPhotoPrivate,
+                  isVerified:      p.isVerified,
+                  isFocused:       focused,
+                  isInterestSent:  _sentInterests.contains(index),
+                  onTap:           () => _openProfile(index, fp),
+                  onSendInterest:  _sentInterests.contains(index)
+                      ? null
+                      : () => _handleSendInterest(index, fp),
+                  onBookmark:      () => _handleBookmark(index, fp),
+                ),
+              ),
+
+              // Wild-card label — "Someone you might connect with"
+              if (fp.isWildCard)
+                Positioned(
+                  top:   -12,
+                  left:  AppDimensions.space12,
+                  right: AppDimensions.space12,
+                  child: Center(
+                    child: _WildCardLabel(),
+                  ),
+                ),
             ],
           ),
-        ),
+        );
+      },
+    );
+  }
 
-        // ── Filter bar ────────────────────────────────────
-        const DiscoveryFilterBar(),
-        const SizedBox(height: AppDimensions.space16),
-
-        // ── Card carousel ─────────────────────────────────
-        Expanded(
-          child: PageView.builder(
-            controller:   _pageCtrl,
-            itemCount:    _profiles.length + (_isLoadingMore ? 1 : 0),
-            onPageChanged: (page) => setState(() => _currentPage = page),
-            itemBuilder:  (context, index) {
-              final focused  = index == _currentPage;
-              
-              if (index >= _profiles.length) {
-                // Skeleton loading state for pagination
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppDimensions.space6,
-                    vertical:   AppDimensions.space4,
-                  ),
-                  child: Transform.scale(
-                    scale: focused ? 1.0 : 0.95,
-                    child: const NoorProfileCardShimmer(),
-                  ),
-                );
-              }
-
-              final p = _profiles[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppDimensions.space6,
-                  vertical:   AppDimensions.space4,
-                ),
-                child: Hero(
-                  tag: 'profile_card_$index',
-                  child: NoorProfileCard(
-                    firstName:      p.firstName,
-                    lastNameInitial: p.lastNameInitial,
-                    age:            p.age,
-                    cityName:       p.cityName,
-                    sect:           p.sect,
-                    deenLevel:      p.deenLevel,
-                    photoUrl:       p.photoUrl,
-                    photoCount:     p.photoCount,
-                    isPhotoPrivate: p.isPhotoPrivate,
-                    isVerified:     p.isVerified,
-                    isFocused:      focused,
-                    isInterestSent: _sentInterests.contains(index),
-                    onTap:          () => _openProfile(index),
-                    onSendInterest: _sentInterests.contains(index)
-                        ? null
-                        : () => _handleSendInterest(index),
-                    onBookmark:     () => _handleBookmark(index),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-
-        // ── Dot indicator ─────────────────────────────────
-        const SizedBox(height: AppDimensions.space16),
-        _DotIndicator(
-          count:   _profiles.length,
-          current: _currentPage,
-        ),
-        const SizedBox(height: AppDimensions.space20),
-      ],
+  Widget _cardPadding({required Widget child}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.space6,
+        vertical:   AppDimensions.space4,
+      ),
+      child: child,
     );
   }
 }
 
-// ── Notification button ───────────────────────────────────────
+// ── Wild-card Label ───────────────────────────────────────────
+
+class _WildCardLabel extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.space12,
+        vertical:   AppDimensions.space4,
+      ),
+      decoration: BoxDecoration(
+        color:        AppColors.champagneGold.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+        border: Border.all(color: AppColors.champagneGold.withValues(alpha: 0.5)),
+      ),
+      child: Text(
+        'Someone you might connect with',
+        style: AppTypography.caption.copyWith(
+          color:     AppColors.champagneGold,
+          fontSize:  11,
+          letterSpacing: 0.3,
+        ),
+      ),
+    );
+  }
+}
+
+// ── Free-Tier Counter Badge ───────────────────────────────────
+
+class _FreeTierCounter extends StatelessWidget {
+  const _FreeTierCounter({required this.remaining});
+  final int remaining;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: AppDimensions.durationTransition,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.space10,
+        vertical:   AppDimensions.space4,
+      ),
+      decoration: BoxDecoration(
+        color:        remaining <= 3
+            ? AppColors.errorRed.withValues(alpha: 0.15)
+            : AppColors.surfaceGlass,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+        border: Border.all(
+          color: remaining <= 3 ? AppColors.errorRed : AppColors.cardBorder,
+        ),
+      ),
+      child: Text(
+        '$remaining profiles remaining',
+        style: AppTypography.caption.copyWith(
+          color: remaining <= 3 ? AppColors.errorRed : AppColors.slateMist,
+          fontSize: 11,
+        ),
+      ),
+    );
+  }
+}
+
+// ── Notification Button ───────────────────────────────────────
 
 class _NotificationButton extends StatelessWidget {
   @override
@@ -257,6 +364,84 @@ class _NotificationButton extends StatelessWidget {
   }
 }
 
+// ── Initial Shimmer (3-card stack) ────────────────────────────
+
+class _InitialShimmer extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return PageView(
+      controller: PageController(viewportFraction: 0.88),
+      children: const [
+        Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppDimensions.space6,
+            vertical:   AppDimensions.space4,
+          ),
+          child: NoorProfileCardShimmer(),
+        ),
+        Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppDimensions.space6,
+            vertical:   AppDimensions.space4,
+          ),
+          child: NoorProfileCardShimmer(),
+        ),
+        Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppDimensions.space6,
+            vertical:   AppDimensions.space4,
+          ),
+          child: NoorProfileCardShimmer(),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Empty Feed State ──────────────────────────────────────────
+
+class _EmptyFeed extends StatelessWidget {
+  const _EmptyFeed();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppDimensions.space32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(AppDimensions.space24),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.goldBorder, width: 2),
+              ),
+              child: const Icon(
+                Icons.explore_outlined,
+                color: AppColors.champagneGold,
+                size:  48,
+              ),
+            ),
+            const SizedBox(height: AppDimensions.space24),
+            Text(
+              'You\'ve seen everyone nearby',
+              style: AppTypography.screenTitle.copyWith(fontSize: 20),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppDimensions.space12),
+            Text(
+              'Try expanding your search filters\nor check back tomorrow.',
+              style: AppTypography.bodyMuted,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ── Dot Indicator ─────────────────────────────────────────────
 
 class _DotIndicator extends StatelessWidget {
@@ -266,7 +451,6 @@ class _DotIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Show at most 7 dots; use a sliding window
     const maxDots = 7;
     final start = (current - maxDots ~/ 2).clamp(0, (count - maxDots).clamp(0, count));
     final end   = (start + maxDots).clamp(0, count);
@@ -281,7 +465,7 @@ class _DotIndicator extends StatelessWidget {
             width:    i == current ? 20 : 6,
             height:   6,
             decoration: BoxDecoration(
-              color:        i == current
+              color: i == current
                   ? AppColors.champagneGold
                   : AppColors.slateMist.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(3),

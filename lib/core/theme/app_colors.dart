@@ -56,6 +56,9 @@ abstract final class AppColors {
   /// Error/warning color. Dignified — not a harsh Material red.
   static const Color softCoral = Color(0xFFE67E7E);
 
+  /// Alias used by UI components that need a clear error/danger signal.
+  static const Color errorRed  = softCoral;
+
   // ── Derived / Utility ─────────────────────────────────────
 
   /// Received chat message bubble background.

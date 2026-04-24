@@ -48,7 +48,11 @@ class MockProfile {
   final List<String>? interests;
   final int? partnerAgeMin;
   final int? partnerAgeMax;
+
+  /// Stable mock ID — derived from name. Replaced by real UUID in Step 12.
+  String get id => '${firstName.toLowerCase()}_${lastNameInitial.toLowerCase()}';
 }
+
 
 /// Static list of 8 mock profiles for the Discovery Feed demo.
 const List<MockProfile> kMockProfiles = [

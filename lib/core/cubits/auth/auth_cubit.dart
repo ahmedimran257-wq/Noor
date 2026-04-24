@@ -54,10 +54,12 @@ class AuthCubit extends Cubit<AuthState> {
     emit(const AuthLoading());
     await Future.delayed(const Duration(milliseconds: 1000));
 
-    // Mock: always succeeds, starts at onboarding step 0
+    // Mock: always succeeds. Gender defaults to 'male' for demo.
+    // Step 12: read gender from Supabase users table after session exchange.
     emit(const AuthAuthenticated(
       userId:          'mock-user-id-001',
       onboardingStep:  0,
+      gender:          'male', // hard-coded for mock — replaced in Step 12
     ));
   }
 
@@ -72,12 +74,28 @@ class AuthCubit extends Cubit<AuthState> {
   // ── Update onboarding step locally (called by OnboardingCubit) ───
 
   /// Updates the cached onboarding step after each step is saved.
-  void updateOnboardingStep(int step) {
+  /// Also propagates gender once the ProfileForWhom screen sets it.
+  void updateOnboardingStep(int step, {String? gender}) {
     final current = state;
     if (current is AuthAuthenticated) {
       emit(AuthAuthenticated(
         userId:         current.userId,
         onboardingStep: step,
+        gender:         gender ?? current.gender,
+      ));
+    }
+  }
+
+  /// Called by ProfileForWhomScreen after gender is selected.
+  /// Sets gender on AuthAuthenticated so all downstream widgets
+  /// (subscription gate, profile card) read the correct value.
+  void setGender(String gender) {
+    final current = state;
+    if (current is AuthAuthenticated) {
+      emit(AuthAuthenticated(
+        userId:         current.userId,
+        onboardingStep: current.onboardingStep,
+        gender:         gender,
       ));
     }
   }

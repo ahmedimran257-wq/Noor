@@ -1,7 +1,16 @@
 // lib/core/cubits/interests/interests_cubit.dart
 // ============================================================
-// NOOR — Interests Cubit (Mock)
-// Manages the mock data state for the Interests Lifecycle.
+// NOOR — Interests Cubit (Step 7 — Complete Lifecycle)
+//
+// Blueprint lifecycle:
+//   send → PENDING
+//   accept → ACCEPTED + match created
+//   decline → DECLINED
+//   withdraw → WITHDRAWN (silent, while PENDING)
+//   14 days → EXPIRED (computed on InterestEntry)
+//
+// sendInterest() is called from discovery_feed_screen when the
+// user taps "Send Interest" on a card or from ProfileDetailScreen.
 // ============================================================
 
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -13,68 +22,137 @@ class InterestsCubit extends Cubit<InterestsState> {
     _initMockData();
   }
 
+  // ── Init mock data ────────────────────────────────────────
+
   void _initMockData() {
-    // Populate with some initial mock data
+    final now = DateTime.now();
+
     final initialReceived = [
-      InterestEntry(id: 'r1', profile: kMockProfiles[2], timeAgo: '2h ago'),
-      InterestEntry(id: 'r2', profile: kMockProfiles[4], timeAgo: '1d ago'),
-      InterestEntry(id: 'r3', profile: kMockProfiles[6], timeAgo: '3d ago'),
+      InterestEntry(
+        id:      'r1',
+        profile: kMockProfiles[2],
+        timeAgo: '2h ago',
+        sentAt:  now.subtract(const Duration(hours: 2)),
+      ),
+      InterestEntry(
+        id:      'r2',
+        profile: kMockProfiles[4],
+        timeAgo: '1d ago',
+        sentAt:  now.subtract(const Duration(days: 1)),
+      ),
+      InterestEntry(
+        id:      'r3',
+        profile: kMockProfiles[6],
+        timeAgo: '3d ago',
+        sentAt:  now.subtract(const Duration(days: 3)),
+      ),
     ];
 
     final initialSent = [
-      InterestEntry(id: 's1', profile: kMockProfiles[0], timeAgo: 'Yesterday'),
-      InterestEntry(id: 's2', profile: kMockProfiles[3], timeAgo: '2d ago'),
+      InterestEntry(
+        id:      's1',
+        profile: kMockProfiles[0],
+        timeAgo: 'Yesterday',
+        sentAt:  now.subtract(const Duration(days: 1)),
+        status:  InterestStatus.pending,
+      ),
+      InterestEntry(
+        id:      's2',
+        profile: kMockProfiles[3],
+        timeAgo: '2d ago',
+        sentAt:  now.subtract(const Duration(days: 2)),
+        status:  InterestStatus.pending,
+      ),
     ];
 
-    emit(InterestsState(received: initialReceived, sent: initialSent, matches: const []));
+    emit(InterestsState(
+      received: initialReceived,
+      sent:     initialSent,
+      matches:  const [],
+    ));
   }
 
-  // ── Actions ──────────────────────────────────────────────────
+  // ── Received actions ──────────────────────────────────────
 
+  /// Accept an incoming interest → creates a match, unlocks chat.
   void acceptInterest(String id) {
-    final updatedReceived = List<InterestEntry>.from(state.received);
-    final index = updatedReceived.indexWhere((e) => e.id == id);
-    if (index == -1) return;
+    final updated = List<InterestEntry>.from(state.received);
+    final idx = updated.indexWhere((e) => e.id == id);
+    if (idx == -1) return;
 
-    final acceptedEntry = updatedReceived[index].copyWith(status: InterestStatus.accepted);
-    updatedReceived[index] = acceptedEntry;
+    final accepted = updated[idx].copyWith(status: InterestStatus.accepted);
+    updated[idx] = accepted;
 
-    final updatedMatches = List<InterestEntry>.from(state.matches)..add(acceptedEntry);
+    final updatedMatches = List<InterestEntry>.from(state.matches)
+      ..add(accepted);
 
-    emit(state.copyWith(received: updatedReceived, matches: updatedMatches));
+    emit(state.copyWith(received: updated, matches: updatedMatches));
   }
 
+  /// Decline an incoming interest.
+  void declineInterest(String id) {
+    final updated = List<InterestEntry>.from(state.received);
+    final idx = updated.indexWhere((e) => e.id == id);
+    if (idx == -1) return;
+
+    updated[idx] = updated[idx].copyWith(status: InterestStatus.declined);
+    emit(state.copyWith(received: updated));
+  }
+
+  // ── Sent actions ──────────────────────────────────────────
+
+  /// Send an interest from the discovery feed or profile detail.
+  /// Adds to the sent list immediately for UI feedback.
   void sendInterest(MockProfile profile) {
-    final newEntry = InterestEntry(
-      id: 's_${DateTime.now().millisecondsSinceEpoch}',
+    // Prevent duplicate sends to the same profile
+    final alreadySent = state.sent.any(
+      (e) => e.profile.firstName == profile.firstName,
+    );
+    if (alreadySent) return;
+
+    final entry = InterestEntry(
+      id:      'sent_${DateTime.now().millisecondsSinceEpoch}',
       profile: profile,
       timeAgo: 'Just now',
-      status: InterestStatus.pending,
+      sentAt:  DateTime.now(),
+      status:  InterestStatus.pending,
     );
 
-    final updatedSent = List<InterestEntry>.from(state.sent);
-    updatedSent.insert(0, newEntry);
-
-    emit(state.copyWith(sent: updatedSent));
+    final updated = [entry, ...state.sent];
+    emit(state.copyWith(sent: updated));
   }
 
-  void declineInterest(String id) {
-    final updatedReceived = List<InterestEntry>.from(state.received);
-    final index = updatedReceived.indexWhere((e) => e.id == id);
-    if (index == -1) return;
-
-    updatedReceived[index] = updatedReceived[index].copyWith(status: InterestStatus.declined);
-
-    emit(state.copyWith(received: updatedReceived));
-  }
-
+  /// Withdraw a pending sent interest (silent — no notification to recipient).
   void withdrawInterest(String id) {
-    final updatedSent = List<InterestEntry>.from(state.sent);
-    final index = updatedSent.indexWhere((e) => e.id == id);
-    if (index == -1) return;
+    final updated = List<InterestEntry>.from(state.sent);
+    final idx = updated.indexWhere((e) => e.id == id);
+    if (idx == -1) return;
 
-    updatedSent[index] = updatedSent[index].copyWith(status: InterestStatus.withdrawn);
+    // Blueprint: "The user can withdraw a pending interest silently."
+    updated[idx] = updated[idx].copyWith(status: InterestStatus.withdrawn);
+    emit(state.copyWith(sent: updated));
+  }
 
-    emit(state.copyWith(sent: updatedSent));
+  // ── Simulation helpers ────────────────────────────────────
+
+  /// Simulate the remote side accepting one of our sent interests.
+  /// Used for demo purposes (e.g., a test button or auto-trigger).
+  void simulateAcceptance(String sentId) {
+    final updated = List<InterestEntry>.from(state.sent);
+    final idx = updated.indexWhere((e) => e.id == sentId);
+    if (idx == -1) return;
+
+    updated[idx] = updated[idx].copyWith(status: InterestStatus.accepted);
+    emit(state.copyWith(sent: updated));
+  }
+
+  /// Simulate the remote side declining.
+  void simulateDecline(String sentId) {
+    final updated = List<InterestEntry>.from(state.sent);
+    final idx = updated.indexWhere((e) => e.id == sentId);
+    if (idx == -1) return;
+
+    updated[idx] = updated[idx].copyWith(status: InterestStatus.declined);
+    emit(state.copyWith(sent: updated));
   }
 }

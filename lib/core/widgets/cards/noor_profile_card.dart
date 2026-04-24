@@ -27,6 +27,7 @@ class NoorProfileCard extends StatelessWidget {
     required this.cityName,
     this.sect,
     this.deenLevel,
+    this.profession,
     this.photoUrl,
     this.photoCount = 0,
     this.isPhotoPrivate = false,
@@ -44,6 +45,7 @@ class NoorProfileCard extends StatelessWidget {
   final String cityName;
   final String? sect;
   final String? deenLevel;
+  final String? profession;   // blueprint: shown on card below location
   final String? photoUrl;
   final int photoCount;
   final bool isPhotoPrivate;
@@ -126,6 +128,19 @@ class NoorProfileCard extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
+
+                              // Profession line (blueprint: "profession below name")
+                              if (profession != null) ...[
+                                const SizedBox(height: AppDimensions.space4),
+                                Text(
+                                  profession!,
+                                  style: AppTypography.caption.copyWith(
+                                    color: AppColors.pearlWhite.withValues(alpha: 0.7),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
 
                               // Chips row
                               if (sect != null || deenLevel != null) ...[

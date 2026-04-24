@@ -227,6 +227,17 @@ class _CeremonyOverlayState extends State<_CeremonyOverlay>
                       'to ${widget.firstName}',
                       style: AppTypography.bodyMuted,
                     ),
+                    const SizedBox(height: AppDimensions.space8),
+                    Text(
+                      'May Allah bless this with goodness',
+                      style: AppTypography.caption.copyWith(
+                        color:       AppColors.champagneGold.withValues(alpha: 0.7),
+                        fontSize:    13,
+                        fontStyle:   FontStyle.italic,
+                        letterSpacing: 0.2,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ],
                 ),
               ),
