@@ -23,10 +23,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/cubits/discovery/discovery_feed_cubit.dart';
 import '../../../core/cubits/discovery/discovery_filter.dart';
+import '../../../core/cubits/subscription/subscription_cubit.dart';
+import '../../../core/cubits/subscription/subscription_state.dart';
 import '../../../core/services/filter_preset_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../screens/subscription_screen.dart';
 
 // ── Sheet entry point (called from DiscoveryFilterBar) ────────
 
@@ -433,18 +436,20 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                     ),
                     const SizedBox(height: 20),
 
-                    // ── DISTANCE ───────────────────────────────
+                    // ── DISTANCE (Premium) ──────────────────────
                     _SectionLabel(key: _distanceKey, label: 'DISTANCE'),
                     const SizedBox(height: 8),
-                    _MultiChipGroup(
-                      options: const [
-                        'Same City', '50km', '100km',
-                        'Same Country', 'Anywhere',
-                      ],
-                      selected: _draft.distanceLabel,
-                      onChanged: (v) => setState(() => _draft = _draft.copyWith(
-                        distanceLabel: v, clearDistanceLabel: v == null,
-                      )),
+                    _SubscriberGate(
+                      child: _MultiChipGroup(
+                        options: const [
+                          'Same City', '50km', '100km',
+                          'Same Country', 'Anywhere',
+                        ],
+                        selected: _draft.distanceLabel,
+                        onChanged: (v) => setState(() => _draft = _draft.copyWith(
+                          distanceLabel: v, clearDistanceLabel: v == null,
+                        )),
+                      ),
                     ),
                     const SizedBox(height: 32),
                   ],
@@ -794,6 +799,70 @@ class _SheetTextField extends StatelessWidget {
           contentPadding: const EdgeInsets.symmetric(
               horizontal: AppDimensions.space12, vertical: 0),
         ),
+      ),
+    );
+  }
+}
+
+// ── Subscriber Gate ───────────────────────────────────────────
+// Shows a lock overlay on premium filter sections (Distance)
+// for non-subscribers. Tapping navigates to SubscriptionScreen.
+
+class _SubscriberGate extends StatelessWidget {
+  const _SubscriberGate({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final subState = context.watch<SubscriptionCubit>().state;
+    if (subState.isActive) return child;
+
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => const SubscriptionScreen(),
+          ),
+        );
+      },
+      child: Stack(
+        children: [
+          // Show the actual content dimmed
+          IgnorePointer(
+            child: Opacity(opacity: 0.3, child: child),
+          ),
+          // Lock overlay
+          Positioned.fill(
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.space16,
+                  vertical: AppDimensions.space10,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceGlass,
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+                  border: Border.all(color: AppColors.goldBorder),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.lock_outline_rounded,
+                        color: AppColors.champagneGold, size: 16),
+                    const SizedBox(width: AppDimensions.space8),
+                    Text(
+                      'Subscribe to unlock',
+                      style: AppTypography.chipLabel.copyWith(
+                        color: AppColors.champagneGold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -81,7 +81,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _deenLevel      = d.deenLevel;
     _praysFive      = d.praysFiveDaily ?? false;
     _hijabStyle     = d.hijabStyle;
-    _hasBeard       = d.hasBrard ?? false;
+    _hasBeard       = d.hasBeard ?? false;
     _educationLabel = d.educationLabel;
     _familyType     = d.familyType;
     _siblingCount   = d.siblingCount ?? 0;
@@ -118,7 +118,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       deenLevel:          _deenLevel,
       praysFiveDaily:     _praysFive,
       hijabStyle:         _hijabStyle,
-      hasBrard:           _hasBeard,
+      hasBeard:           _hasBeard,
       educationLabel:     _educationLabel,
       familyType:         _familyType,
       siblingCount:       _siblingCount,

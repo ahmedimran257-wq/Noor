@@ -40,6 +40,18 @@ class SubscriptionState extends Equatable {
       status == SubscriptionStatus.active ||
       status == SubscriptionStatus.grace;
 
+  /// Alias used by filter/boost gates.
+  bool get isActive => isSubscribed;
+
+  /// Premium features — require subscription for ALL users.
+  bool canUseAdvancedFilters(String gender) => isActive;
+  bool canBoostProfile(String gender) => isActive;
+  bool canSaveMultipleFilterPresets(String gender) => isActive;
+  bool canSeeFullViewersList(String gender) => isActive;
+
+  /// Basic viewer count (not full list) is free for all.
+  bool canSeeViewerCount(String gender) => true;
+
   SubscriptionState copyWith({
     SubscriptionStatus? status,
     DateTime?           expiresAt,

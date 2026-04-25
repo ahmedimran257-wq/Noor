@@ -203,12 +203,15 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                     ],
 
                     // Islamic Background
-                    if (p.sect != null || p.deenLevel != null) ...[
+                    if (p.sect != null || p.deenLevel != null ||
+                        p.motherTongue != null || p.smokingStatus != null) ...[
                       _SectionHeader(label: 'Islamic Life'),
                       const SizedBox(height: AppDimensions.space12),
                       _DetailGrid(items: [
                         if (p.sect      != null) _DetailItem(label: 'Sect',       value: p.sect!),
                         if (p.deenLevel != null) _DetailItem(label: 'Deen Level', value: _formatDeen(p.deenLevel!)),
+                        if (p.motherTongue != null) _DetailItem(label: 'Mother Tongue', value: p.motherTongue!),
+                        if (p.smokingStatus != null) _DetailItem(label: 'Smoking', value: p.smokingStatus!),
                       ]),
                       const SizedBox(height: AppDimensions.space28),
                     ],
@@ -585,6 +588,16 @@ class _NameBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Height display helper
+    String? heightStr;
+    if (profile.heightCm != null) {
+      final cm = profile.heightCm!;
+      final totalInches = cm / 2.54;
+      final feet = totalInches ~/ 12;
+      final inches = totalInches.round() % 12;
+      heightStr = '$cm cm ($feet ft $inches in)';
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -602,7 +615,11 @@ class _NameBlock extends StatelessWidget {
         ),
         const SizedBox(height: AppDimensions.space8),
         Text(
-          '${profile.age} · ${profile.cityName}',
+          [
+            '${profile.age}',
+            profile.cityName,
+            if (heightStr != null) heightStr,
+          ].join(' · '),
           style: AppTypography.body.copyWith(color: AppColors.slateMist),
         ),
       ],

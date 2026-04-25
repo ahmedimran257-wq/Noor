@@ -74,13 +74,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Blueprint Part 2: women never need to subscribe.
+    // Blueprint Part 2: detect gender for differentiated messaging.
     final authState = context.watch<AuthCubit>().state;
     final gender = authState is AuthAuthenticated
         ? (authState.gender ?? 'male')
         : 'male';
-
-    if (gender == 'female') return _FreeForWomenScreen();
+    final isFemale = gender == 'female';
 
     return BlocConsumer<SubscriptionCubit, SubscriptionState>(
       listener: (context, state) {
@@ -116,7 +115,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                   position: _headerSlide,
                   child: FadeTransition(
                     opacity: _headerFade,
-                    child: _Header(),
+                    child: _Header(isFemale: isFemale),
                   ),
                 ),
 
@@ -132,7 +131,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                 const SizedBox(height: 28),
 
                 // ── What's included ─────────────────────────
-                _IncludedFeatures(),
+                _IncludedFeatures(isFemale: isFemale),
 
                 const SizedBox(height: 36),
 
@@ -191,6 +190,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
 // ── Header ────────────────────────────────────────────────────
 
 class _Header extends StatelessWidget {
+  const _Header({this.isFemale = false});
+  final bool isFemale;
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -209,10 +211,15 @@ class _Header extends StatelessWidget {
               color: AppColors.champagneGold, size: 28),
         ),
         const SizedBox(height: 20),
-        Text('Unlock NOOR', style: AppTypography.screenTitle),
+        Text(
+          isFemale ? 'Unlock Premium' : 'Unlock NOOR',
+          style: AppTypography.screenTitle,
+        ),
         const SizedBox(height: 8),
         Text(
-          'Women message free.\nMen subscribe to connect.',
+          isFemale
+              ? 'You already message free.\nUnlock advanced features.'
+              : 'Women message free.\nMen subscribe to connect.',
           style: AppTypography.bodyMuted.copyWith(height: 1.6),
         ),
       ],
@@ -401,7 +408,10 @@ class _PlanCard extends StatelessWidget {
 // ── Included Features ─────────────────────────────────────────
 
 class _IncludedFeatures extends StatelessWidget {
-  static const _features = [
+  const _IncludedFeatures({this.isFemale = false});
+  final bool isFemale;
+
+  static const _maleFeatures = [
     (Icons.all_inclusive_rounded,       'Unlimited profile browsing'),
     (Icons.favorite_rounded,            '20 interests per day'),
     (Icons.chat_bubble_outline_rounded, 'Full messaging access'),
@@ -410,8 +420,17 @@ class _IncludedFeatures extends StatelessWidget {
     (Icons.rocket_launch_outlined,      'One profile boost per week'),
   ];
 
+  static const _femaleFeatures = [
+    (Icons.tune_rounded,                'Advanced filters (distance, income)'),
+    (Icons.rocket_launch_outlined,      'Weekly profile boost'),
+    (Icons.visibility_rounded,          'See everyone who viewed your profile'),
+    (Icons.bookmark_border_rounded,     'Save multiple filter presets'),
+    (Icons.trending_up_rounded,         'Priority in search results'),
+  ];
+
   @override
   Widget build(BuildContext context) {
+    final features = isFemale ? _femaleFeatures : _maleFeatures;
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
@@ -427,7 +446,7 @@ class _IncludedFeatures extends StatelessWidget {
             style: AppTypography.sectionLabel,
           ),
           const SizedBox(height: 16),
-          ..._features.map((f) => _FeatureRow(icon: f.$1, label: f.$2)),
+          ...features.map((f) => _FeatureRow(icon: f.$1, label: f.$2)),
         ],
       ),
     );
@@ -579,68 +598,5 @@ class _SecondaryLinks extends StatelessWidget {
 
 // ── Free For Women Screen ─────────────────────────────────────
 
-class _FreeForWomenScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.obsidianNight,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: AppColors.pearlWhite, size: 20),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.verifiedTeal.withValues(alpha: 0.12),
-                border: Border.all(
-                    color: AppColors.verifiedTeal, width: 1.5),
-              ),
-              child: const Icon(Icons.favorite_rounded,
-                  color: AppColors.verifiedTeal, size: 36),
-            ),
-            const SizedBox(height: 28),
-            Text(
-              'You Message Free',
-              style: AppTypography.screenTitle,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'NOOR is free for women — forever.\nYou can message, connect, and find your match without any subscription.',
-              style: AppTypography.bodyMuted.copyWith(height: 1.7),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 36),
-            GestureDetector(
-              onTap: () => Navigator.of(context).pop(),
-              child: Container(
-                height: 52,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.verifiedTeal),
-                  color: AppColors.verifiedTeal.withValues(alpha: 0.10),
-                ),
-                alignment: Alignment.center,
-                child: Text('Go Back',
-                    style: AppTypography.button
-                        .copyWith(color: AppColors.verifiedTeal)),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+// _FreeForWomenScreen removed — women now see the main subscription
+// screen with differentiated messaging (isFemale: true).

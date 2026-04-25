@@ -27,6 +27,12 @@ class MockProfile {
     // Partner preferences
     this.partnerAgeMin,
     this.partnerAgeMax,
+    // New fields
+    this.heightCm,
+    this.complexion,
+    this.motherTongue,
+    this.smokingStatus,
+    this.isGuardianProfile = false,
   });
 
   final String firstName;
@@ -48,6 +54,11 @@ class MockProfile {
   final List<String>? interests;
   final int? partnerAgeMin;
   final int? partnerAgeMax;
+  final int? heightCm;
+  final String? complexion;
+  final String? motherTongue;
+  final String? smokingStatus;
+  final bool isGuardianProfile;
 
   /// Stable mock ID — derived from name. Replaced by real UUID in Step 12.
   String get id => '${firstName.toLowerCase()}_${lastNameInitial.toLowerCase()}';
@@ -75,6 +86,10 @@ const List<MockProfile> kMockProfiles = [
     interests: ['Reading', 'Travel', 'Calligraphy', 'Cooking'],
     partnerAgeMin: 28,
     partnerAgeMax: 35,
+    heightCm: 163,
+    complexion: 'Medium',
+    motherTongue: 'Arabic',
+    smokingStatus: 'Non-smoker',
   ),
   MockProfile(
     firstName: 'Zainab',
@@ -95,6 +110,10 @@ const List<MockProfile> kMockProfiles = [
     interests: ['Medicine', 'Photography', 'Travel', 'Poetry'],
     partnerAgeMin: 26,
     partnerAgeMax: 33,
+    heightCm: 158,
+    complexion: 'Fair',
+    motherTongue: 'Urdu',
+    smokingStatus: 'Non-smoker',
   ),
   MockProfile(
     firstName: 'Mariam',
@@ -115,6 +134,10 @@ const List<MockProfile> kMockProfiles = [
     interests: ['Hiking', 'Cooking', 'Technology', 'Reading'],
     partnerAgeMin: 30,
     partnerAgeMax: 37,
+    heightCm: 165,
+    complexion: 'Olive',
+    motherTongue: 'English',
+    smokingStatus: 'Non-smoker',
   ),
   MockProfile(
     firstName: 'Nadia',
@@ -135,6 +158,10 @@ const List<MockProfile> kMockProfiles = [
     interests: ['Architecture', 'Art', 'Cooking', 'Languages'],
     partnerAgeMin: 27,
     partnerAgeMax: 34,
+    heightCm: 160,
+    complexion: 'Medium',
+    motherTongue: 'Malay',
+    smokingStatus: 'Non-smoker',
   ),
   MockProfile(
     firstName: 'Sara',
@@ -155,6 +182,10 @@ const List<MockProfile> kMockProfiles = [
     interests: ['Education', 'Reading', 'Calligraphy', 'Travel'],
     partnerAgeMin: 30,
     partnerAgeMax: 38,
+    heightCm: 167,
+    complexion: 'Fair',
+    motherTongue: 'Turkish',
+    smokingStatus: 'Non-smoker',
   ),
   MockProfile(
     firstName: 'Amira',
@@ -175,6 +206,10 @@ const List<MockProfile> kMockProfiles = [
     interests: ['Design', 'Photography', 'Music', 'Travel'],
     partnerAgeMin: 24,
     partnerAgeMax: 30,
+    heightCm: 155,
+    complexion: 'Medium',
+    motherTongue: 'Arabic',
+    smokingStatus: 'Non-smoker',
   ),
   MockProfile(
     firstName: 'Hana',
@@ -195,6 +230,10 @@ const List<MockProfile> kMockProfiles = [
     interests: ['Finance', 'Cooking', 'Reading', 'Yoga'],
     partnerAgeMin: 29,
     partnerAgeMax: 36,
+    heightCm: 170,
+    complexion: 'Olive',
+    motherTongue: 'Arabic',
+    smokingStatus: 'Non-smoker',
   ),
   MockProfile(
     firstName: 'Layla',
@@ -215,5 +254,9 @@ const List<MockProfile> kMockProfiles = [
     interests: ['Law', 'Running', 'Travel', 'Cooking'],
     partnerAgeMin: 27,
     partnerAgeMax: 35,
+    heightCm: 162,
+    complexion: 'Fair',
+    motherTongue: 'English',
+    smokingStatus: 'Non-smoker',
   ),
 ];

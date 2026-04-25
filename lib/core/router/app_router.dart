@@ -13,11 +13,14 @@ import 'package:go_router/go_router.dart';
 
 import '../cubits/auth/auth_cubit.dart';
 import '../cubits/auth/auth_state.dart';
+import '../cubits/onboarding/onboarding_cubit.dart';
+import '../models/onboarding_data.dart';
 
 import '../../features/onboarding/screens/splash_brand_screen.dart';
 import '../../features/onboarding/screens/legal_gate_screen.dart';
 import '../../features/onboarding/screens/phone_verification_screen.dart';
 import '../../features/onboarding/screens/profile_for_whom_screen.dart';
+import '../../features/onboarding/screens/guardian_details_screen.dart';
 import '../../features/onboarding/screens/basic_identity_screen.dart';
 import '../../features/onboarding/screens/islamic_identity_screen.dart';
 import '../../features/onboarding/screens/background_screen.dart';
@@ -183,8 +186,47 @@ GoRouter buildAppRouter(BuildContext buildContext) {
 }
 
 // ── Route → Screen mapping ────────────────────────────────────
+//
+// Guardian branch:
+//   Step 0  → ProfileForWhomScreen        (picks 'myself' OR 'guardian')
+//   Step 1  → GuardianDetailsScreen        (only when profileFor == guardian)
+//   Step 2  → BasicIdentityScreen          (guardian: candidate's identity)
+//   …
+//   Step 11 → WelcomeScreen
+//
+// Myself branch:
+//   Step 0  → ProfileForWhomScreen
+//   Step 1  → BasicIdentityScreen
+//   …
+//   Step 10 → WelcomeScreen
+//
+// The cubit marks step complete at >= 12 (guardian) / >= 11 (myself).
+// We detect the branch via OnboardingCubit.currentData.profileFor.
 
 Widget _screenForStep(BuildContext context, int step) {
+  final isGuardian = context.read<OnboardingCubit>().currentData.profileFor
+      == ProfileFor.guardian;
+
+  if (isGuardian) {
+    // Guardian path — one extra step inserted at position 1
+    switch (step) {
+      case 0:  return const ProfileForWhomScreen();
+      case 1:  return const GuardianDetailsScreen();
+      case 2:  return const BasicIdentityScreen();
+      case 3:  return const IslamicIdentityScreen();
+      case 4:  return const BackgroundScreen();
+      case 5:  return const IncomeScreen();
+      case 6:  return const FamilyScreen();
+      case 7:  return const AboutYourselfScreen();
+      case 8:  return const PartnerPreferencesScreen();
+      case 9:  return const PhotoUploadScreen();
+      case 10: return const ProfilePreviewScreen();
+      case 11: return const WelcomeScreen();
+      default: return const ProfileForWhomScreen();
+    }
+  }
+
+  // Default (myself) path
   switch (step) {
     case 0:  return const ProfileForWhomScreen();
     case 1:  return const BasicIdentityScreen();

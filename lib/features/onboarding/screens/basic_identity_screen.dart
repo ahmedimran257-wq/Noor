@@ -1,9 +1,8 @@
 // lib/features/onboarding/screens/basic_identity_screen.dart
 // ============================================================
 // NOOR — Basic Identity Screen (Onboarding Step 1)
-// First name, last name, date of birth, gender, city search.
-// City list: 300+ cities with country auto-fill.
-// Under-18 DOB is blocked with a kind message.
+// First name, last name, date of birth, gender, city search,
+// height stepper, complexion (optional), mother tongue, smoking.
 // ============================================================
 
 import 'package:flutter/material.dart';
@@ -305,6 +304,36 @@ const _kCities = <Map<String, String>>[
   {'name': 'Ufa',           'country': 'RU', 'countryName': 'Russia'},
 ];
 
+// ── Mother Tongue options ─────────────────────────────────────
+
+const _kMotherTongues = <String>[
+  'Arabic', 'Urdu', 'Hindi', 'Bengali', 'Tamil', 'Telugu', 'Malayalam',
+  'Kannada', 'Marathi', 'Punjabi', 'Sindhi', 'Pashto', 'Balochi',
+  'English', 'Turkish', 'Indonesian', 'Malay', 'Hausa', 'Yoruba',
+  'Persian', 'Kurdish', 'Somali', 'Other',
+];
+
+// ── Complexion options ─────────────────────────────────────────
+
+const _kComplexions = <String>[
+  'Fair', 'Medium', 'Olive', 'Dark', 'Prefer not to say',
+];
+
+// ── Smoking status options ────────────────────────────────────
+
+const _kSmokingOptions = <String>[
+  'Non-smoker', 'Occasional', 'Trying to quit', 'Prefer not to say',
+];
+
+// ── Height helpers ────────────────────────────────────────────
+
+String _heightDisplay(int cm) {
+  final totalInches = cm / 2.54;
+  final feet        = totalInches ~/ 12;
+  final inches      = totalInches.round() % 12;
+  return '$cm cm  ($feet ft $inches in)';
+}
+
 // ── Screen ────────────────────────────────────────────────────
 
 class BasicIdentityScreen extends StatefulWidget {
@@ -329,6 +358,12 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
   String? _selectedCountryName;
   bool    _showSuggestions = false;
 
+  // New fields
+  int     _heightCm     = 165;
+  String? _complexion;
+  String? _motherTongue;
+  String? _smokingStatus;
+
   /// City is valid if user either (a) picked from suggestions, or
   /// (b) typed at least 2 characters as a free-text city name.
   String get _effectiveCity => _selectedCity ?? _cityCtrl.text.trim();
@@ -339,7 +374,9 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       _dob != null &&
       _dobError.isEmpty &&
       _gender != null &&
-      _effectiveCity.length >= 2;
+      _effectiveCity.length >= 2 &&
+      _motherTongue != null &&
+      _smokingStatus != null;
 
   @override
   void dispose() {
@@ -402,16 +439,38 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
         .toList();
   }
 
+  void _showMotherTonguePicker() {
+    showModalBottomSheet<void>(
+      context:            context,
+      backgroundColor:    const Color(0xFF12121A),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => _MotherTonguePicker(
+        selected:   _motherTongue,
+        onSelected: (v) {
+          setState(() => _motherTongue = v);
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+
   void _advance() {
     final cityName = _effectiveCity;
     final data = context.read<OnboardingCubit>().currentData.copyWith(
-      firstName:   _firstNameCtrl.text.trim(),
-      lastName:    _lastNameCtrl.text.trim(),
-      dateOfBirth: _dob,
-      gender:      _gender,
-      cityName:    cityName,
-      cityId:      _selectedCityId ?? cityName.toLowerCase(),
-      countryCode: _selectedCountryCode ?? 'XX',
+      firstName:    _firstNameCtrl.text.trim(),
+      lastName:     _lastNameCtrl.text.trim(),
+      dateOfBirth:  _dob,
+      gender:       _gender,
+      cityName:     cityName,
+      cityId:       _selectedCityId ?? cityName.toLowerCase(),
+      countryCode:  _selectedCountryCode ?? 'XX',
+      heightCm:     _heightCm,
+      complexion:   _complexion,
+      motherTongue: _motherTongue,
+      smokingStatus: _smokingStatus,
     );
 
     // ── Gender propagation ────────────────────────────────────
@@ -635,6 +694,97 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                 ],
               ],
 
+              const SizedBox(height: AppDimensions.space28),
+
+              // ── HEIGHT ─────────────────────────────────────────────
+              Text('YOUR HEIGHT', style: AppTypography.sectionLabel),
+              const SizedBox(height: AppDimensions.space12),
+              _HeightStepper(
+                heightCm: _heightCm,
+                onChanged: (v) => setState(() => _heightCm = v),
+              ),
+
+              const SizedBox(height: AppDimensions.space24),
+
+              // ── COMPLEXION (Optional) ──────────────────────────────
+              Text('COMPLEXION  (Optional)', style: AppTypography.sectionLabel),
+              const SizedBox(height: AppDimensions.space12),
+              Wrap(
+                spacing:    AppDimensions.space8,
+                runSpacing: AppDimensions.space8,
+                children: _kComplexions.map((o) => _SelectChip(
+                  label:      o,
+                  isSelected: _complexion == o,
+                  onTap: () => setState(() =>
+                      _complexion = _complexion == o ? null : o),
+                )).toList(),
+              ),
+
+              const SizedBox(height: AppDimensions.space24),
+
+              // ── MOTHER TONGUE (Required) ───────────────────────────
+              Text('MOTHER TONGUE', style: AppTypography.sectionLabel),
+              const SizedBox(height: AppDimensions.space12),
+              GestureDetector(
+                onTap: _showMotherTonguePicker,
+                child: Container(
+                  height: AppDimensions.buttonHeight,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppDimensions.space16,
+                  ),
+                  decoration: BoxDecoration(
+                    color:        AppColors.surfaceGlass,
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                    border: Border.all(
+                      color: _motherTongue != null
+                          ? AppColors.champagneGold
+                          : AppColors.cardBorder,
+                      width: _motherTongue != null
+                          ? AppDimensions.borderFocus
+                          : AppDimensions.borderThin,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.translate_rounded,
+                          color: _motherTongue != null
+                              ? AppColors.champagneGold
+                              : AppColors.slateMist,
+                          size: AppDimensions.iconSizeMedium),
+                      const SizedBox(width: AppDimensions.space12),
+                      Expanded(
+                        child: Text(
+                          _motherTongue ?? 'Select language',
+                          style: AppTypography.inputText.copyWith(
+                            color: _motherTongue != null
+                                ? AppColors.pearlWhite
+                                : AppColors.slateMist,
+                          ),
+                        ),
+                      ),
+                      Icon(Icons.expand_more_rounded,
+                          color: AppColors.slateMist),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: AppDimensions.space24),
+
+              // ── SMOKING (Required) ─────────────────────────────────
+              Text('SMOKING', style: AppTypography.sectionLabel),
+              const SizedBox(height: AppDimensions.space12),
+              Wrap(
+                spacing:    AppDimensions.space8,
+                runSpacing: AppDimensions.space8,
+                children: _kSmokingOptions.map((o) => _SelectChip(
+                  label:      o,
+                  isSelected: _smokingStatus == o,
+                  onTap: () => setState(() =>
+                      _smokingStatus = _smokingStatus == o ? null : o),
+                )).toList(),
+              ),
+
               const SizedBox(height: AppDimensions.space32),
             ],
           ),
@@ -690,6 +840,293 @@ class _GenderPill extends StatelessWidget {
                       ? AppColors.champagneGold
                       : AppColors.pearlWhite,
                 )),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Height Stepper ────────────────────────────────────────────
+
+class _HeightStepper extends StatelessWidget {
+  const _HeightStepper({
+    required this.heightCm,
+    required this.onChanged,
+  });
+  final int heightCm;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.space16,
+        vertical:   AppDimensions.space12,
+      ),
+      decoration: BoxDecoration(
+        color:        AppColors.surfaceGlass,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+        border:       Border.all(color: AppColors.goldBorder),
+      ),
+      child: Row(
+        children: [
+          // Minus button
+          _StepperButton(
+            icon:    Icons.remove_rounded,
+            onTap:   heightCm > 140 ? () => onChanged(heightCm - 1) : null,
+          ),
+          const SizedBox(width: AppDimensions.space12),
+
+          // Height display
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '$heightCm cm',
+                  style: AppTypography.bodyMedium.copyWith(
+                    color:      AppColors.champagneGold,
+                    fontSize:   22,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _feetInchDisplay(heightCm),
+                  style: AppTypography.caption,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(width: AppDimensions.space12),
+          // Plus button
+          _StepperButton(
+            icon:  Icons.add_rounded,
+            onTap: heightCm < 210 ? () => onChanged(heightCm + 1) : null,
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _feetInchDisplay(int cm) {
+    final totalInches = cm / 2.54;
+    final feet        = totalInches ~/ 12;
+    final inches      = totalInches.round() % 12;
+    return '$feet ft $inches in';
+  }
+}
+
+class _StepperButton extends StatelessWidget {
+  const _StepperButton({required this.icon, required this.onTap});
+  final IconData     icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width:  40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: enabled
+              ? AppColors.champagneGold.withValues(alpha: 0.12)
+              : AppColors.surfaceGlassHover,
+          shape:  BoxShape.circle,
+          border: Border.all(
+            color: enabled ? AppColors.goldBorder : AppColors.cardBorder,
+          ),
+        ),
+        child: Icon(icon,
+          color: enabled ? AppColors.champagneGold : AppColors.slateMist,
+          size:  20,
+        ),
+      ),
+    );
+  }
+}
+
+// ── Select Chip ───────────────────────────────────────────────
+
+class _SelectChip extends StatelessWidget {
+  const _SelectChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: AppDimensions.durationTransition,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.space16,
+          vertical:   AppDimensions.space10,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.champagneGold.withValues(alpha: 0.12)
+              : AppColors.surfaceGlass,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+          border: Border.all(
+            color: isSelected ? AppColors.champagneGold : AppColors.cardBorder,
+            width: isSelected ? AppDimensions.borderFocus : AppDimensions.borderThin,
+          ),
+        ),
+        child: Text(
+          label,
+          style: AppTypography.chipLabel.copyWith(
+            color: isSelected ? AppColors.champagneGold : AppColors.pearlWhite,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Mother Tongue Picker sheet ────────────────────────────────
+
+class _MotherTonguePicker extends StatefulWidget {
+  const _MotherTonguePicker({
+    required this.selected,
+    required this.onSelected,
+  });
+  final String? selected;
+  final ValueChanged<String> onSelected;
+
+  @override
+  State<_MotherTonguePicker> createState() => _MotherTonguePickerState();
+}
+
+class _MotherTonguePickerState extends State<_MotherTonguePicker> {
+  final _searchCtrl = TextEditingController();
+  List<String> _filtered = List.unmodifiable(_kMotherTongues);
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onSearch(String q) {
+    final lower = q.trim().toLowerCase();
+    setState(() {
+      _filtered = lower.isEmpty
+          ? List.unmodifiable(_kMotherTongues)
+          : _kMotherTongues
+              .where((l) => l.toLowerCase().contains(lower))
+              .toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(bottom: bottom),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: AppDimensions.space16),
+            // Drag handle
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color:        AppColors.slateMist.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: AppDimensions.space16),
+            Text('Mother Tongue', style: AppTypography.bodyMedium),
+            const SizedBox(height: AppDimensions.space12),
+
+            // Search field
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.space16,
+              ),
+              child: TextField(
+                controller:  _searchCtrl,
+                onChanged:   _onSearch,
+                autofocus:   false,
+                style:       AppTypography.inputText,
+                decoration: InputDecoration(
+                  hintText:  'Search language',
+                  hintStyle: AppTypography.inputLabel,
+                  prefixIcon: const Icon(
+                    Icons.search_rounded,
+                    color: AppColors.slateMist,
+                    size:  20,
+                  ),
+                  filled:         true,
+                  fillColor:      AppColors.surfaceGlass,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: AppDimensions.space12,
+                    vertical:   AppDimensions.space10,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                    borderSide:   const BorderSide(color: AppColors.cardBorder),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                    borderSide:   const BorderSide(color: AppColors.cardBorder),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                    borderSide:   const BorderSide(
+                      color: AppColors.champagneGold,
+                      width: AppDimensions.borderFocus,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: AppDimensions.space8),
+            Flexible(
+              child: _filtered.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.all(AppDimensions.space24),
+                      child: Text(
+                        'No languages found.',
+                        style: AppTypography.bodyMuted,
+                        textAlign: TextAlign.center,
+                      ),
+                    )
+                  : ListView.builder(
+                      shrinkWrap:  true,
+                      physics:     const BouncingScrollPhysics(),
+                      itemCount:   _filtered.length,
+                      itemBuilder: (_, i) {
+                        final lang       = _filtered[i];
+                        final isSelected = lang == widget.selected;
+                        return ListTile(
+                          title: Text(lang, style: AppTypography.body),
+                          trailing: isSelected
+                              ? const Icon(Icons.check_rounded,
+                                  color: AppColors.champagneGold, size: 20)
+                              : null,
+                          selected:      isSelected,
+                          selectedColor: AppColors.champagneGold,
+                          onTap:         () => widget.onSelected(lang),
+                        );
+                      },
+                    ),
+            ),
+            const SizedBox(height: AppDimensions.space16),
           ],
         ),
       ),

@@ -60,7 +60,7 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
       deenLevel:     _deenLevel,
       praysFiveDaily: _praysFive,
       hijabStyle:    _hijab,
-      hasBrard:      _beard,
+      hasBeard:      _beard,
     );
     context.read<OnboardingCubit>().saveAndAdvance(data);
   }

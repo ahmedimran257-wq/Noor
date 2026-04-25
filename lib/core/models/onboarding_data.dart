@@ -46,6 +46,10 @@ class OnboardingData {
     this.cityId,
     this.cityName,
     this.countryCode,
+    this.heightCm,
+    this.complexion,
+    this.motherTongue,
+    this.smokingStatus,
 
     // Step 5 — Islamic identity
     this.sect,
@@ -53,7 +57,7 @@ class OnboardingData {
     this.deenLevel,
     this.praysFiveDaily,
     this.hijabStyle,    // women only
-    this.hasBrard,      // men only
+    this.hasBeard,      // men only
 
     // Step 6 — Background
     this.educationRank,
@@ -100,33 +104,40 @@ class OnboardingData {
     this.phone,
     this.guardianName,
     this.guardianRelationship,
+    this.isGuardianMode = false,
+    this.guardianPhone,
+    this.guardianPhoneCountryCode,
   });
 
   // Step 3
   final ProfileFor? profileFor;
 
   // Step 4
-  final String? firstName;
-  final String? lastName;
+  final String?   firstName;
+  final String?   lastName;
   final DateTime? dateOfBirth;
-  final Gender? gender;
-  final String? cityId;
-  final String? cityName;
-  final String? countryCode;
+  final Gender?   gender;
+  final String?   cityId;
+  final String?   cityName;
+  final String?   countryCode;
+  final int?      heightCm;          // e.g. 165
+  final String?   complexion;        // 'Fair', 'Medium', 'Olive', 'Dark', 'Prefer not to say'
+  final String?   motherTongue;      // e.g. 'Urdu', 'Hindi', 'Arabic'
+  final String?   smokingStatus;     // 'Non-smoker', 'Occasional', 'Regular', 'Trying to quit'
 
   // Step 5
-  final Sect? sect;
-  final String? subSect;
+  final Sect?    sect;
+  final String?  subSect;
   final DeenLevel? deenLevel;
-  final bool? praysFiveDaily;
-  final String? hijabStyle;
-  final bool? hasBrard;
+  final bool?    praysFiveDaily;
+  final String?  hijabStyle;
+  final bool?    hasBeard;
 
   // Step 6
-  final int? educationRank;
-  final String? educationLabel;
-  final String? fieldOfStudy;
-  final String? profession;
+  final int?              educationRank;
+  final String?           educationLabel;
+  final String?           fieldOfStudy;
+  final String?           profession;
   final EmploymentStatus? employmentStatus;
 
   // Step 7
@@ -135,29 +146,29 @@ class OnboardingData {
   final String? incomeVisibility;
 
   // Step 8
-  final FamilyType? familyType;
-  final int? siblingCount;
-  final bool? isEldestChild;
-  final String? parentsStatus;
+  final FamilyType?    familyType;
+  final int?           siblingCount;
+  final bool?          isEldestChild;
+  final String?        parentsStatus;
   final MaritalStatus? maritalStatus;
-  final bool? hasChildren;
-  final int? childrenCount;
+  final bool?          hasChildren;
+  final int?           childrenCount;
 
   // Step 9
-  final String? bio;
+  final String?       bio;
   final List<String>? interests;
   final List<String>? languages;
 
   // Step 10
-  final int? preferredAgeMin;
-  final int? preferredAgeMax;
+  final int?                preferredAgeMin;
+  final int?                preferredAgeMax;
   final LocationPreference? locationPreference;
-  final String? preferredSect;
-  final String? preferredDeenLevel;
-  final int? minEducationRank;
-  final bool? openToDivorced;
-  final bool? openToWidowed;
-  final bool? openToWithChildren;
+  final String?             preferredSect;
+  final String?             preferredDeenLevel;
+  final int?                minEducationRank;
+  final bool?               openToDivorced;
+  final bool?               openToWidowed;
+  final bool?               openToWithChildren;
 
   // Step 11
   final List<String>? photoLocalPaths;
@@ -167,102 +178,119 @@ class OnboardingData {
   final String? phone;
   final String? guardianName;
   final String? guardianRelationship;
+  final bool    isGuardianMode;
+  final String? guardianPhone;
+  final String? guardianPhoneCountryCode;
 
   OnboardingData copyWith({
     ProfileFor? profileFor,
-    String? firstName,
-    String? lastName,
-    DateTime? dateOfBirth,
-    Gender? gender,
-    String? cityId,
-    String? cityName,
-    String? countryCode,
-    Sect? sect,
-    String? subSect,
-    DeenLevel? deenLevel,
-    bool? praysFiveDaily,
-    String? hijabStyle,
-    bool? hasBrard,
-    int? educationRank,
-    String? educationLabel,
-    String? fieldOfStudy,
-    String? profession,
+    String?     firstName,
+    String?     lastName,
+    DateTime?   dateOfBirth,
+    Gender?     gender,
+    String?     cityId,
+    String?     cityName,
+    String?     countryCode,
+    int?        heightCm,
+    String?     complexion,
+    String?     motherTongue,
+    String?     smokingStatus,
+    Sect?       sect,
+    String?     subSect,
+    DeenLevel?  deenLevel,
+    bool?       praysFiveDaily,
+    String?     hijabStyle,
+    bool?       hasBeard,
+    int?        educationRank,
+    String?     educationLabel,
+    String?     fieldOfStudy,
+    String?     profession,
     EmploymentStatus? employmentStatus,
-    String? incomeBracketId,
-    String? incomeBracketLabel,
-    String? incomeVisibility,
+    String?     incomeBracketId,
+    String?     incomeBracketLabel,
+    String?     incomeVisibility,
     FamilyType? familyType,
-    int? siblingCount,
-    bool? isEldestChild,
-    String? parentsStatus,
+    int?        siblingCount,
+    bool?       isEldestChild,
+    String?     parentsStatus,
     MaritalStatus? maritalStatus,
-    bool? hasChildren,
-    int? childrenCount,
-    String? bio,
+    bool?       hasChildren,
+    int?        childrenCount,
+    String?     bio,
     List<String>? interests,
     List<String>? languages,
-    int? preferredAgeMin,
-    int? preferredAgeMax,
+    int?        preferredAgeMin,
+    int?        preferredAgeMax,
     LocationPreference? locationPreference,
-    String? preferredSect,
-    String? preferredDeenLevel,
-    int? minEducationRank,
-    bool? openToDivorced,
-    bool? openToWidowed,
-    bool? openToWithChildren,
+    String?     preferredSect,
+    String?     preferredDeenLevel,
+    int?        minEducationRank,
+    bool?       openToDivorced,
+    bool?       openToWidowed,
+    bool?       openToWithChildren,
     List<String>? photoLocalPaths,
     PhotoPrivacy? photoPrivacy,
-    String? phone,
-    String? guardianName,
-    String? guardianRelationship,
+    String?     phone,
+    String?     guardianName,
+    String?     guardianRelationship,
+    bool?       isGuardianMode,
+    String?     guardianPhone,
+    String?     guardianPhoneCountryCode,
   }) {
     return OnboardingData(
-      profileFor:         profileFor          ?? this.profileFor,
-      firstName:          firstName           ?? this.firstName,
-      lastName:           lastName            ?? this.lastName,
-      dateOfBirth:        dateOfBirth         ?? this.dateOfBirth,
-      gender:             gender              ?? this.gender,
-      cityId:             cityId              ?? this.cityId,
-      cityName:           cityName            ?? this.cityName,
-      countryCode:        countryCode         ?? this.countryCode,
-      sect:               sect                ?? this.sect,
-      subSect:            subSect             ?? this.subSect,
-      deenLevel:          deenLevel           ?? this.deenLevel,
-      praysFiveDaily:     praysFiveDaily      ?? this.praysFiveDaily,
-      hijabStyle:         hijabStyle          ?? this.hijabStyle,
-      hasBrard:           hasBrard            ?? this.hasBrard,
-      educationRank:      educationRank       ?? this.educationRank,
-      educationLabel:     educationLabel      ?? this.educationLabel,
-      fieldOfStudy:       fieldOfStudy        ?? this.fieldOfStudy,
-      profession:         profession          ?? this.profession,
-      employmentStatus:   employmentStatus    ?? this.employmentStatus,
-      incomeBracketId:    incomeBracketId     ?? this.incomeBracketId,
-      incomeBracketLabel: incomeBracketLabel  ?? this.incomeBracketLabel,
-      incomeVisibility:   incomeVisibility    ?? this.incomeVisibility,
-      familyType:         familyType          ?? this.familyType,
-      siblingCount:       siblingCount        ?? this.siblingCount,
-      isEldestChild:      isEldestChild       ?? this.isEldestChild,
-      parentsStatus:      parentsStatus       ?? this.parentsStatus,
-      maritalStatus:      maritalStatus       ?? this.maritalStatus,
-      hasChildren:        hasChildren         ?? this.hasChildren,
-      childrenCount:      childrenCount       ?? this.childrenCount,
-      bio:                bio                 ?? this.bio,
-      interests:          interests           ?? this.interests,
-      languages:          languages           ?? this.languages,
-      preferredAgeMin:    preferredAgeMin     ?? this.preferredAgeMin,
-      preferredAgeMax:    preferredAgeMax     ?? this.preferredAgeMax,
-      locationPreference: locationPreference  ?? this.locationPreference,
-      preferredSect:      preferredSect       ?? this.preferredSect,
-      preferredDeenLevel: preferredDeenLevel  ?? this.preferredDeenLevel,
-      minEducationRank:   minEducationRank    ?? this.minEducationRank,
-      openToDivorced:     openToDivorced      ?? this.openToDivorced,
-      openToWidowed:      openToWidowed       ?? this.openToWidowed,
-      openToWithChildren: openToWithChildren  ?? this.openToWithChildren,
-      photoLocalPaths:    photoLocalPaths     ?? this.photoLocalPaths,
-      photoPrivacy:       photoPrivacy        ?? this.photoPrivacy,
-      phone:              phone               ?? this.phone,
-      guardianName:       guardianName        ?? this.guardianName,
-      guardianRelationship: guardianRelationship ?? this.guardianRelationship,
+      profileFor:              profileFor              ?? this.profileFor,
+      firstName:               firstName               ?? this.firstName,
+      lastName:                lastName                ?? this.lastName,
+      dateOfBirth:             dateOfBirth             ?? this.dateOfBirth,
+      gender:                  gender                  ?? this.gender,
+      cityId:                  cityId                  ?? this.cityId,
+      cityName:                cityName                ?? this.cityName,
+      countryCode:             countryCode             ?? this.countryCode,
+      heightCm:                heightCm                ?? this.heightCm,
+      complexion:              complexion              ?? this.complexion,
+      motherTongue:            motherTongue            ?? this.motherTongue,
+      smokingStatus:           smokingStatus           ?? this.smokingStatus,
+      sect:                    sect                    ?? this.sect,
+      subSect:                 subSect                 ?? this.subSect,
+      deenLevel:               deenLevel               ?? this.deenLevel,
+      praysFiveDaily:          praysFiveDaily          ?? this.praysFiveDaily,
+      hijabStyle:              hijabStyle              ?? this.hijabStyle,
+      hasBeard:                hasBeard                ?? this.hasBeard,
+      educationRank:           educationRank           ?? this.educationRank,
+      educationLabel:          educationLabel          ?? this.educationLabel,
+      fieldOfStudy:            fieldOfStudy            ?? this.fieldOfStudy,
+      profession:              profession              ?? this.profession,
+      employmentStatus:        employmentStatus        ?? this.employmentStatus,
+      incomeBracketId:         incomeBracketId         ?? this.incomeBracketId,
+      incomeBracketLabel:      incomeBracketLabel      ?? this.incomeBracketLabel,
+      incomeVisibility:        incomeVisibility        ?? this.incomeVisibility,
+      familyType:              familyType              ?? this.familyType,
+      siblingCount:            siblingCount            ?? this.siblingCount,
+      isEldestChild:           isEldestChild           ?? this.isEldestChild,
+      parentsStatus:           parentsStatus           ?? this.parentsStatus,
+      maritalStatus:           maritalStatus           ?? this.maritalStatus,
+      hasChildren:             hasChildren             ?? this.hasChildren,
+      childrenCount:           childrenCount           ?? this.childrenCount,
+      bio:                     bio                     ?? this.bio,
+      interests:               interests               ?? this.interests,
+      languages:               languages               ?? this.languages,
+      preferredAgeMin:         preferredAgeMin         ?? this.preferredAgeMin,
+      preferredAgeMax:         preferredAgeMax         ?? this.preferredAgeMax,
+      locationPreference:      locationPreference      ?? this.locationPreference,
+      preferredSect:           preferredSect           ?? this.preferredSect,
+      preferredDeenLevel:      preferredDeenLevel      ?? this.preferredDeenLevel,
+      minEducationRank:        minEducationRank        ?? this.minEducationRank,
+      openToDivorced:          openToDivorced          ?? this.openToDivorced,
+      openToWidowed:           openToWidowed           ?? this.openToWidowed,
+      openToWithChildren:      openToWithChildren      ?? this.openToWithChildren,
+      photoLocalPaths:         photoLocalPaths         ?? this.photoLocalPaths,
+      photoPrivacy:            photoPrivacy            ?? this.photoPrivacy,
+      phone:                   phone                   ?? this.phone,
+      guardianName:            guardianName            ?? this.guardianName,
+      guardianRelationship:    guardianRelationship    ?? this.guardianRelationship,
+      isGuardianMode:          isGuardianMode          ?? this.isGuardianMode,
+      guardianPhone:           guardianPhone           ?? this.guardianPhone,
+      guardianPhoneCountryCode: guardianPhoneCountryCode ?? this.guardianPhoneCountryCode,
     );
   }
 

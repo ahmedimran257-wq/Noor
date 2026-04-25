@@ -43,7 +43,12 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     // Sync the step into AuthCubit so the router can redirect correctly
     _authCubit.updateOnboardingStep(nextStep);
 
-    if (nextStep >= 11) {
+    // Guardian path has one extra step (GuardianDetailsScreen at step 1),
+    // so it completes at step >= 12; the myself path completes at >= 11.
+    final isGuardian = updatedData.profileFor == ProfileFor.guardian;
+    final completeAt = isGuardian ? 12 : 11;
+
+    if (nextStep >= completeAt) {
       emit(const OnboardingComplete());
     } else {
       emit(OnboardingSaved(step: nextStep, data: updatedData));

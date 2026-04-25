@@ -28,29 +28,35 @@ class InterestsCubit extends Cubit<InterestsState> {
   // ── Init mock data ────────────────────────────────────────
 
   void _initMockData() {
-    // Guard against an undersized mock list
-    if (kMockProfiles.length < 7) return;
+    if (kMockProfiles.isEmpty) return;
 
     final now = DateTime.now();
+
+    // Safe access with fallback to first profile
+    final p0 = kMockProfiles.first;
+    final p2 = kMockProfiles.elementAtOrNull(2) ?? p0;
+    final p3 = kMockProfiles.elementAtOrNull(3) ?? p0;
+    final p4 = kMockProfiles.elementAtOrNull(4) ?? p0;
+    final p6 = kMockProfiles.elementAtOrNull(6) ?? p0;
 
     final initialReceived = [
       InterestEntry(
         id:        'r1',
-        profile:   kMockProfiles[2],
+        profile:   p2,
         timeAgo:   '2h ago',
         sentAt:    now.subtract(const Duration(hours: 2)),
         createdAt: now.subtract(const Duration(hours: 2)),
       ),
       InterestEntry(
         id:        'r2',
-        profile:   kMockProfiles[4],
+        profile:   p4,
         timeAgo:   '1d ago',
         sentAt:    now.subtract(const Duration(days: 1)),
         createdAt: now.subtract(const Duration(days: 9)),   // expires in 5 days
       ),
       InterestEntry(
         id:        'r3',
-        profile:   kMockProfiles[6],
+        profile:   p6,
         timeAgo:   '3d ago',
         sentAt:    now.subtract(const Duration(days: 3)),
         createdAt: now.subtract(const Duration(days: 11)),  // expires in ~3 days
@@ -60,7 +66,7 @@ class InterestsCubit extends Cubit<InterestsState> {
     final initialSent = [
       InterestEntry(
         id:        's1',
-        profile:   kMockProfiles[0],
+        profile:   p0,
         timeAgo:   'Yesterday',
         sentAt:    now.subtract(const Duration(days: 1)),
         createdAt: now.subtract(const Duration(days: 1)),
@@ -68,7 +74,7 @@ class InterestsCubit extends Cubit<InterestsState> {
       ),
       InterestEntry(
         id:        's2',
-        profile:   kMockProfiles[3],
+        profile:   p3,
         timeAgo:   '2d ago',
         sentAt:    now.subtract(const Duration(days: 2)),
         createdAt: now.subtract(const Duration(days: 12)),  // expires in ~2 days
