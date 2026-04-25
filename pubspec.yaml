@@ -34,6 +34,10 @@ dependencies:
   image_picker: ^1.1.2            # Camera / Gallery photo picking
   flutter_image_compress: ^2.3.0  # Compress before upload
 
+  # ── Animations & Images ───────────────────────────────────
+  flutter_animate: ^4.5.2         # Declarative micro-animations
+  cached_network_image: ^3.4.1    # Network image caching
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -44,7 +48,6 @@ flutter:
   generate: true                  # Enables flutter gen-l10n for AppLocalizations
 
   # ── Assets ───────────────────────────────────────────────────
-  # Add local asset paths here when needed, e.g.:
-  # assets:
+  # Add local asset paths here when needed, e.g.:\n  # assets:
   #   - assets/images/
   #   - assets/icons/

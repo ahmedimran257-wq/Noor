@@ -45,7 +45,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   DeenLevel? _deenLevel;
   bool       _praysFive      = false;
   String?    _hijabStyle;
-  bool       _hasBrard       = false;
+  bool       _hasBeard       = false;
 
   // Education & career
   String?    _educationLabel;
@@ -81,7 +81,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _deenLevel      = d.deenLevel;
     _praysFive      = d.praysFiveDaily ?? false;
     _hijabStyle     = d.hijabStyle;
-    _hasBrard       = d.hasBrard ?? false;
+    _hasBeard       = d.hasBrard ?? false;
     _educationLabel = d.educationLabel;
     _familyType     = d.familyType;
     _siblingCount   = d.siblingCount ?? 0;
@@ -118,7 +118,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       deenLevel:          _deenLevel,
       praysFiveDaily:     _praysFive,
       hijabStyle:         _hijabStyle,
-      hasBrard:           _hasBrard,
+      hasBrard:           _hasBeard,
       educationLabel:     _educationLabel,
       familyType:         _familyType,
       siblingCount:       _siblingCount,
@@ -130,9 +130,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       openToWithChildren: _openToHasChildren,
       interests:          _interests,
     );
-    // saveAndAdvance stores data in cubit state (mock save).
-    // We do NOT advance step — we just persist the data.
-    cubit.markActive(cubit.currentStep, updated);
+    // updateProfile stores data without advancing the step.
+    cubit.updateProfile(updated);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -288,8 +287,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   const SizedBox(height: AppDimensions.space12),
                   _ToggleRow(
                     label:     'Has a beard',
-                    value:     _hasBrard,
-                    onChanged: (v) => setState(() => _hasBrard = v),
+                    value:     _hasBeard,
+                    onChanged: (v) => setState(() => _hasBeard = v),
                   ),
                 ],
                 const SizedBox(height: AppDimensions.space28),

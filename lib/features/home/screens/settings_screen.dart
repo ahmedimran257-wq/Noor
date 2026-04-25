@@ -14,6 +14,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/cubits/locale/locale_cubit.dart';
@@ -21,9 +22,11 @@ import '../../../core/cubits/notification_prefs/notification_prefs_cubit.dart';
 import '../../../core/cubits/notification_prefs/notification_prefs_state.dart';
 import '../../../core/cubits/block_report/block_report_cubit.dart';
 import '../../../core/cubits/block_report/block_report_state.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import 'edit_profile_screen.dart';
 import 'delete_account_screen.dart';
 import 'block_list_screen.dart';
 
@@ -99,6 +102,12 @@ class SettingsScreen extends StatelessWidget {
           // ── 1. ACCOUNT ────────────────────────────────────
           _SectionHeader('ACCOUNT'),
           _SettingsCard(children: [
+            _NavTile(
+              icon:  Icons.edit_outlined,
+              label: 'Edit Profile',
+              onTap: () => context.push('/edit-profile'),
+            ),
+            _Divider(),
             _NavTile(
               icon:  Icons.phone_outlined,
               label: 'Phone Number',
@@ -226,20 +235,13 @@ class SettingsScreen extends StatelessWidget {
           _SectionHeader('SAFETY'),
           BlocBuilder<BlockReportCubit, BlockReportState>(
             builder: (context, brs) => _SettingsCard(children: [
-              _NavTile(
+           _NavTile(
                 icon:  Icons.block_rounded,
                 label: 'Blocked Profiles',
                 value: brs.blockedUsers.isEmpty
                     ? 'None'
                     : '${brs.blockedUsers.length} blocked',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => BlocProvider.value(
-                      value: context.read<BlockReportCubit>(),
-                      child: const BlockListScreen(),
-                    ),
-                  ),
-                ),
+                onTap: () => context.push(AppRoutes.blockList),
               ),
               _Divider(),
               _NavTile(
@@ -286,11 +288,7 @@ class SettingsScreen extends StatelessWidget {
                 label:      'Delete Account',
                 iconColor:  AppColors.softCoral,
                 labelColor: AppColors.softCoral,
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const DeleteAccountScreen(),
-                  ),
-                ),
+                onTap: () => context.push(AppRoutes.deleteAccount),
               ),
             ],
           ),

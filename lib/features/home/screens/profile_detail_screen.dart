@@ -20,6 +20,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/mock/mock_profiles.dart';
 import '../../../core/cubits/block_report/block_report_cubit.dart';
+import '../../../core/services/bookmark_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
@@ -56,6 +57,11 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   void initState() {
     super.initState();
     _interestSent = widget.isInterestSent;
+    // Load persisted bookmark state
+    BookmarkService.load().then((ids) {
+      if (mounted) setState(() =>
+        _bookmarked = ids.contains(widget.profile.id));
+    });
   }
 
   // ── Actions ────────────────────────────────────────────────
@@ -70,6 +76,12 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   void _handleBookmark() {
     HapticFeedback.selectionClick();
     setState(() => _bookmarked = !_bookmarked);
+    // Persist the updated bookmark set
+    BookmarkService.load().then((ids) {
+      if (_bookmarked) ids.add(widget.profile.id);
+      else ids.remove(widget.profile.id);
+      BookmarkService.save(ids);
+    });
   }
 
   void _handleShare() {

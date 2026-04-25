@@ -22,6 +22,7 @@ import '../../../core/services/bookmark_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/noor_empty_state.dart';
 import 'edit_profile_screen.dart';
 import 'settings_screen.dart';
 import 'subscription_screen.dart';
@@ -316,14 +317,12 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
 
           const SizedBox(height: AppDimensions.space28),
 
-          // Saved profiles
-          if (_bookmarked.isNotEmpty) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: _SavedProfilesSection(bookmarked: _bookmarked),
-            ),
-            const SizedBox(height: AppDimensions.space20),
-          ],
+          // Saved profiles section — always shown (empty state if none)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: _SavedProfilesSection(bookmarked: _bookmarked),
+          ),
+          const SizedBox(height: AppDimensions.space20),
 
           // Settings sections
           _SettingsSection(
@@ -961,48 +960,95 @@ class _SavedProfilesSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final saved = kMockProfiles.where((p) => bookmarked.contains(p.id)).toList();
-    if (saved.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('SAVED PROFILES', style: AppTypography.sectionLabel),
-        const SizedBox(height: AppDimensions.space10),
-        Container(
-          decoration: BoxDecoration(
-            color:        AppColors.surfaceGlass,
-            borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-            border:       Border.all(color: AppColors.cardBorder),
-          ),
-          child: Column(children: saved.asMap().entries.map((e) {
-            final p = e.value;
-            final isLast = e.key == saved.length - 1;
-            return Column(children: [
-              ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 4),
-                leading: Container(
-                  width: 44, height: 44,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.surfaceGlassHover,
-                    border: Border.all(color: AppColors.goldBorder, width: 1.5),
+        const SizedBox(height: AppDimensions.space12),
+        if (saved.isEmpty)
+          NoorEmptyState(
+            icon:     Icons.bookmark_border_rounded,
+            title:    'No saved profiles yet',
+            subtitle: 'Tap the bookmark icon on any\nprofile to save it here.',
+          )
+        else
+          SizedBox(
+            height: 120,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount:       saved.length,
+              separatorBuilder: (_, __) =>
+                  const SizedBox(width: AppDimensions.space12),
+              itemBuilder: (context, i) {
+                final p = saved[i];
+                return GestureDetector(
+                  onTap: () {
+                    // Navigate to profile detail — reuse Navigator push
+                    // (go_router not wired for arbitrary profile IDs)
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const SizedBox.shrink(),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: 90,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 10),
+                    decoration: BoxDecoration(
+                      color:        AppColors.surfaceGlass,
+                      borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                      border:       Border.all(color: AppColors.cardBorder),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Avatar circle — 52 px
+                        Container(
+                          width:  52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.surfaceGlassHover,
+                            border: Border.all(
+                                color: AppColors.goldBorder, width: 1.5),
+                          ),
+                          child: const Icon(
+                            Icons.person_outline_rounded,
+                            color: AppColors.slateMist,
+                            size:  24,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        // Name
+                        Text(
+                          p.firstName,
+                          style: AppTypography.caption.copyWith(
+                            color:      AppColors.pearlWhite,
+                            fontWeight: FontWeight.w600,
+                            fontSize:   12,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                        const SizedBox(height: 2),
+                        // City
+                        Text(
+                          p.cityName,
+                          style: AppTypography.caption.copyWith(
+                            fontSize: 10,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ],
+                    ),
                   ),
-                  child: const Icon(Icons.person_outline_rounded,
-                      color: AppColors.slateMist, size: 22),
-                ),
-                title: Text('${p.firstName} ${p.lastNameInitial}.',
-                    style: AppTypography.bodyMedium),
-                subtitle: Text('${p.age} · ${p.cityName}',
-                    style: AppTypography.caption),
-                trailing: const Icon(Icons.bookmark_rounded,
-                    color: AppColors.champagneGold, size: 20),
-              ),
-              if (!isLast)
-                const Divider(color: AppColors.divider, height: 1, indent: 16),
-            ]);
-          }).toList()),
-        ),
+                );
+              },
+            ),
+          ),
       ],
     );
   }

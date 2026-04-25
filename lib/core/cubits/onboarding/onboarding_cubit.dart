@@ -66,6 +66,12 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     }
   }
 
+  /// Updates the profile data in-place without advancing the step.
+  /// Use this from EditProfileScreen so saving doesn't bump the onboarding flow.
+  void updateProfile(OnboardingData data) {
+    emit(OnboardingActive(step: _currentStep, data: data));
+  }
+
   /// Called by screens after router pushes the next page to mark active again.
   void markActive(int step, OnboardingData data) {
     emit(OnboardingActive(step: step, data: data));

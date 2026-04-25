@@ -106,6 +106,13 @@ class NoorApp extends StatelessWidget {
               if (state is AuthAuthenticated && !state.isOnboardingComplete) {
                 onboardingCubit.initialize(startStep: state.onboardingStep);
               }
+              // Set the daily interest limit based on gender + subscription status.
+              if (state is AuthAuthenticated) {
+                interestsCubit.setDailyLimitForGender(
+                  gender: state.gender ?? 'male',
+                  isSubscribed: context.read<SubscriptionCubit>().state.isSubscribed,
+                );
+              }
             },
             child: BlocBuilder<LocaleCubit, Locale>(
               builder: (context, locale) => MaterialApp.router(

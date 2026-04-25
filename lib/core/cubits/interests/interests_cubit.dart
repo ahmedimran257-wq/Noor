@@ -28,6 +28,9 @@ class InterestsCubit extends Cubit<InterestsState> {
   // ── Init mock data ────────────────────────────────────────
 
   void _initMockData() {
+    // Guard against an undersized mock list
+    if (kMockProfiles.length < 7) return;
+
     final now = DateTime.now();
 
     final initialReceived = [

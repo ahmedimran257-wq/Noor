@@ -29,6 +29,7 @@ import '../../features/onboarding/screens/photo_upload_screen.dart';
 import '../../features/onboarding/screens/profile_preview_screen.dart';
 import '../../features/onboarding/screens/welcome_screen.dart';
 import '../../features/home/home_screen.dart';
+import '../../features/home/screens/edit_profile_screen.dart';
 import '../../features/home/screens/profile_views_screen.dart';
 import '../../features/home/screens/notifications_screen.dart';
 import '../../features/home/screens/delete_account_screen.dart';
@@ -42,6 +43,7 @@ abstract final class AppRoutes {
   static const phone          = '/phone';
   static const onboarding     = '/onboarding';
   static const home           = '/home';
+  static const editProfile    = '/edit-profile';
   static const profileViews   = '/profile-views';
   static const notifications  = '/notifications';
   static const deleteAccount  = '/delete-account';
@@ -141,6 +143,13 @@ GoRouter buildAppRouter(BuildContext buildContext) {
       ),
 
       // ── Full-screen sub-screens ──────────────────────────
+      GoRoute(
+        path: AppRoutes.editProfile,
+        pageBuilder: (context, state) => _slidePage(
+          key: state.pageKey,
+          child: const EditProfileScreen(),
+        ),
+      ),
       GoRoute(
         path: AppRoutes.profileViews,
         pageBuilder: (context, state) => _slidePage(
