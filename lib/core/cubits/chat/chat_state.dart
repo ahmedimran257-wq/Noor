@@ -8,6 +8,7 @@
 //   • Messages: sent (gold-tinted right) / received (surface left)
 //   • Message status: queued | sent | delivered | read
 //   • Timestamps hidden by default; revealed on tap
+//   • Respectful closure: isMatchClosed + closureMessage per conversation
 // ============================================================
 
 import 'package:equatable/equatable.dart';
@@ -64,6 +65,8 @@ class Conversation extends Equatable {
     required this.messages,
     this.unreadCount = 0,
     this.matchId,
+    this.isMatchClosed = false,
+    this.closureMessage,
   });
 
   final String           id;
@@ -72,6 +75,8 @@ class Conversation extends Equatable {
   final List<ChatMessage> messages;
   final int              unreadCount;
   final String?          matchId;
+  final bool             isMatchClosed;   // true when respectful closure sent
+  final String?          closureMessage;  // the pre-written closing message
 
   ChatMessage? get lastMessage =>
       messages.isEmpty ? null : messages.last;
@@ -95,20 +100,24 @@ class Conversation extends Equatable {
   Conversation copyWith({
     List<ChatMessage>? messages,
     int?               unreadCount,
+    bool?              isMatchClosed,
+    String?            closureMessage,
   }) {
     return Conversation(
       id:                id,
       matchName:         matchName,
       matchLastInitial:  matchLastInitial,
-      messages:          messages ?? this.messages,
-      unreadCount:       unreadCount ?? this.unreadCount,
+      messages:          messages       ?? this.messages,
+      unreadCount:       unreadCount    ?? this.unreadCount,
       matchId:           matchId,
+      isMatchClosed:     isMatchClosed  ?? this.isMatchClosed,
+      closureMessage:    closureMessage ?? this.closureMessage,
     );
   }
 
   @override
   List<Object?> get props =>
-      [id, matchName, matchLastInitial, messages, unreadCount];
+      [id, matchName, matchLastInitial, messages, unreadCount, isMatchClosed, closureMessage];
 }
 
 // ── Chat State ────────────────────────────────────────────────

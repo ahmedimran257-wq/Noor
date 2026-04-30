@@ -2,6 +2,7 @@
 // ============================================================
 // NOOR — Family Background Screen (Onboarding Step 5)
 // Family type, sibling count, parents status, marital history.
+// Phase 2: Post-marriage living expectations added.
 // ============================================================
 
 import 'package:flutter/material.dart';
@@ -20,34 +21,47 @@ const _kParentsStatuses = [
   'Father deceased', 'Mother deceased', 'Both deceased',
 ];
 
+// Living expectation options
+const _kLivingOptions = [
+  (value: 'with_inlaws', title: 'With In-Laws',
+   subtitle: 'I expect to live with my spouse\'s or my own family.'),
+  (value: 'separate', title: 'Separate Home',
+   subtitle: 'I prefer we have our own independent home.'),
+  (value: 'open_to_discussion', title: 'Open to Discussion',
+   subtitle: 'I am flexible and happy to discuss what works for both.'),
+];
+
 class FamilyScreen extends StatefulWidget {
   const FamilyScreen({super.key});
-
   @override
   State<FamilyScreen> createState() => _FamilyScreenState();
 }
 
 class _FamilyScreenState extends State<FamilyScreen> {
   FamilyType?    _familyType;
-  int            _siblings       = 0;
+  int            _siblings      = 0;
   bool?          _isEldest;
   String?        _parentsStatus;
-  MaritalStatus  _marital        = MaritalStatus.neverMarried;
+  MaritalStatus  _marital       = MaritalStatus.neverMarried;
   bool?          _hasChildren;
-  int            _childrenCount  = 0;
+  int            _childrenCount = 0;
+  String?        _livingExpectation; // Phase 2
 
   bool get _canProceed =>
-      _familyType != null && _parentsStatus != null;
+      _familyType != null &&
+      _parentsStatus != null &&
+      _livingExpectation != null; // Phase 2: required
 
   void _advance() {
     final data = context.read<OnboardingCubit>().currentData.copyWith(
-      familyType:    _familyType,
-      siblingCount:  _siblings,
-      isEldestChild: _isEldest,
-      parentsStatus: _parentsStatus,
-      maritalStatus: _marital,
-      hasChildren:   _hasChildren,
-      childrenCount: _hasChildren == true ? _childrenCount : 0,
+      familyType:         _familyType,
+      siblingCount:       _siblings,
+      isEldestChild:      _isEldest,
+      parentsStatus:      _parentsStatus,
+      maritalStatus:      _marital,
+      hasChildren:        _hasChildren,
+      childrenCount:      _hasChildren == true ? _childrenCount : 0,
+      livingExpectation:  _livingExpectation, // TODO (backend): write to partner_preferences table
     );
     context.read<OnboardingCubit>().saveAndAdvance(data);
   }
@@ -78,24 +92,21 @@ class _FamilyScreenState extends State<FamilyScreen> {
               const SizedBox(height: AppDimensions.space12),
               Row(children: [
                 _FamilyTypeCard(
-                  icon:       Icons.home_outlined,
-                  label:      'Nuclear',
+                  icon: Icons.home_outlined, label: 'Nuclear',
                   isSelected: _familyType == FamilyType.nuclear,
-                  onTap:      () => setState(() => _familyType = FamilyType.nuclear),
+                  onTap: () => setState(() => _familyType = FamilyType.nuclear),
                 ),
                 const SizedBox(width: AppDimensions.space8),
                 _FamilyTypeCard(
-                  icon:       Icons.people_outline_rounded,
-                  label:      'Joint',
+                  icon: Icons.people_outline_rounded, label: 'Joint',
                   isSelected: _familyType == FamilyType.joint,
-                  onTap:      () => setState(() => _familyType = FamilyType.joint),
+                  onTap: () => setState(() => _familyType = FamilyType.joint),
                 ),
                 const SizedBox(width: AppDimensions.space8),
                 _FamilyTypeCard(
-                  icon:       Icons.groups_outlined,
-                  label:      'Extended',
+                  icon: Icons.groups_outlined, label: 'Extended',
                   isSelected: _familyType == FamilyType.extended,
-                  onTap:      () => setState(() => _familyType = FamilyType.extended),
+                  onTap: () => setState(() => _familyType = FamilyType.extended),
                 ),
               ]),
 
@@ -104,12 +115,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
               // Siblings
               _Label('NUMBER OF SIBLINGS'),
               const SizedBox(height: AppDimensions.space12),
-              _Stepper(
-                value:     _siblings,
-                min:       0,
-                max:       15,
-                onChanged: (v) => setState(() => _siblings = v),
-              ),
+              _Stepper(value: _siblings, min: 0, max: 15, onChanged: (v) => setState(() => _siblings = v)),
 
               const SizedBox(height: AppDimensions.space20),
 
@@ -118,8 +124,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
               const SizedBox(height: AppDimensions.space8),
               _InlinePills(
                 options: const ['Yes', 'No'],
-                selected: _isEldest == null ? null
-                    : (_isEldest! ? 'Yes' : 'No'),
+                selected: _isEldest == null ? null : (_isEldest! ? 'Yes' : 'No'),
                 onSelected: (v) => setState(() => _isEldest = v == 'Yes'),
               ),
 
@@ -138,13 +143,10 @@ class _FamilyScreenState extends State<FamilyScreen> {
                     child: AnimatedContainer(
                       duration: AppDimensions.durationTransition,
                       padding: const EdgeInsets.symmetric(
-                        horizontal: AppDimensions.space14,
-                        vertical:   AppDimensions.space8,
+                        horizontal: AppDimensions.space14, vertical: AppDimensions.space8,
                       ),
                       decoration: BoxDecoration(
-                        color: isSel
-                            ? AppColors.champagneGold.withValues(alpha: 0.1)
-                            : AppColors.surfaceGlass,
+                        color: isSel ? AppColors.champagneGold.withValues(alpha: 0.1) : AppColors.surfaceGlass,
                         borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
                         border: Border.all(
                           color: isSel ? AppColors.champagneGold : AppColors.cardBorder,
@@ -169,10 +171,10 @@ class _FamilyScreenState extends State<FamilyScreen> {
                 selected: _marital == MaritalStatus.neverMarried ? 'No'
                     : _marital == MaritalStatus.divorced ? 'Divorced' : 'Widowed',
                 onSelected: (v) => setState(() {
-                  _marital      = v == 'No' ? MaritalStatus.neverMarried
-                                : v == 'Divorced' ? MaritalStatus.divorced
-                                : MaritalStatus.widowed;
-                  _hasChildren  = null;
+                  _marital       = v == 'No' ? MaritalStatus.neverMarried
+                                 : v == 'Divorced' ? MaritalStatus.divorced
+                                 : MaritalStatus.widowed;
+                  _hasChildren   = null;
                   _childrenCount = 0;
                 }),
               ),
@@ -184,24 +186,40 @@ class _FamilyScreenState extends State<FamilyScreen> {
                 const SizedBox(height: AppDimensions.space8),
                 _InlinePills(
                   options: const ['Yes', 'No'],
-                  selected: _hasChildren == null ? null
-                      : (_hasChildren! ? 'Yes' : 'No'),
-                  onSelected: (v) => setState(() {
-                    _hasChildren = v == 'Yes';
-                  }),
+                  selected: _hasChildren == null ? null : (_hasChildren! ? 'Yes' : 'No'),
+                  onSelected: (v) => setState(() { _hasChildren = v == 'Yes'; }),
                 ),
                 if (_hasChildren == true) ...[
                   const SizedBox(height: AppDimensions.space16),
                   _Label('HOW MANY?'),
                   const SizedBox(height: AppDimensions.space8),
                   _Stepper(
-                    value:     _childrenCount,
-                    min:       1,
-                    max:       10,
+                    value: _childrenCount, min: 1, max: 10,
                     onChanged: (v) => setState(() => _childrenCount = v),
                   ),
                 ],
               ],
+
+              // ── POST-MARRIAGE LIVING (Phase 2) ─────────────
+              const SizedBox(height: AppDimensions.space28),
+              _Label('POST-MARRIAGE LIVING EXPECTATIONS'),
+              const SizedBox(height: AppDimensions.space4),
+              Text(
+                'Where do you expect to live after marriage?',
+                style: AppTypography.caption,
+              ),
+              const SizedBox(height: AppDimensions.space12),
+              // TODO (backend): write livingExpectation to partner_preferences table.
+              ..._kLivingOptions.map((opt) => Padding(
+                padding: const EdgeInsets.only(bottom: AppDimensions.space8),
+                child: _LivingCard(
+                  title:      opt.title,
+                  subtitle:   opt.subtitle,
+                  value:      opt.value,
+                  isSelected: _livingExpectation == opt.value,
+                  onTap:      () => setState(() => _livingExpectation = opt.value),
+                ),
+              )),
 
               const SizedBox(height: AppDimensions.space32),
             ],
@@ -212,24 +230,70 @@ class _FamilyScreenState extends State<FamilyScreen> {
   }
 }
 
+// ── Living expectation card ───────────────────────────────────
+
+class _LivingCard extends StatelessWidget {
+  const _LivingCard({
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.isSelected,
+    required this.onTap,
+  });
+  final String title;
+  final String subtitle;
+  final String value;
+  final bool   isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: AppDimensions.durationTransition,
+        padding: const EdgeInsets.all(AppDimensions.space16),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.champagneGold.withValues(alpha: 0.08)
+              : AppColors.surfaceGlass,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+          border: Border.all(
+            color: isSelected ? AppColors.champagneGold : AppColors.cardBorder,
+            width: isSelected ? AppDimensions.borderFocus : AppDimensions.borderThin,
+          ),
+        ),
+        child: Row(children: [
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: AppTypography.bodyMedium.copyWith(
+              color: isSelected ? AppColors.champagneGold : AppColors.pearlWhite,
+            )),
+            const SizedBox(height: AppDimensions.space4),
+            Text(subtitle, style: AppTypography.caption),
+          ])),
+          if (isSelected)
+            Container(
+              width: 20, height: 20,
+              decoration: const BoxDecoration(color: AppColors.champagneGold, shape: BoxShape.circle),
+              child: const Icon(Icons.check_rounded, color: AppColors.obsidianNight, size: 14),
+            ),
+        ]),
+      ),
+    );
+  }
+}
+
 // ── Sub-widgets ───────────────────────────────────────────────
 
 class _Label extends StatelessWidget {
   const _Label(this.text);
   final String text;
-
   @override
-  Widget build(BuildContext context) =>
-      Text(text, style: AppTypography.sectionLabel);
+  Widget build(BuildContext context) => Text(text, style: AppTypography.sectionLabel);
 }
 
 class _FamilyTypeCard extends StatelessWidget {
-  const _FamilyTypeCard({
-    required this.icon,
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
+  const _FamilyTypeCard({required this.icon, required this.label, required this.isSelected, required this.onTap});
   final IconData icon;
   final String label;
   final bool isSelected;
@@ -244,26 +308,18 @@ class _FamilyTypeCard extends StatelessWidget {
           duration: AppDimensions.durationTransition,
           padding: const EdgeInsets.symmetric(vertical: AppDimensions.space16),
           decoration: BoxDecoration(
-            color: isSelected
-                ? AppColors.champagneGold.withValues(alpha: 0.08)
-                : AppColors.surfaceGlass,
+            color: isSelected ? AppColors.champagneGold.withValues(alpha: 0.08) : AppColors.surfaceGlass,
             borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
             border: Border.all(
               color: isSelected ? AppColors.champagneGold : AppColors.cardBorder,
               width: isSelected ? AppDimensions.borderFocus : AppDimensions.borderThin,
             ),
           ),
-          child: Column(
-            children: [
-              Icon(icon,
-                  color: isSelected ? AppColors.champagneGold : AppColors.slateMist,
-                  size: AppDimensions.iconSizeLarge),
-              const SizedBox(height: AppDimensions.space6),
-              Text(label, style: AppTypography.caption.copyWith(
-                color: isSelected ? AppColors.champagneGold : AppColors.pearlWhite,
-              )),
-            ],
-          ),
+          child: Column(children: [
+            Icon(icon, color: isSelected ? AppColors.champagneGold : AppColors.slateMist, size: AppDimensions.iconSizeLarge),
+            const SizedBox(height: AppDimensions.space6),
+            Text(label, style: AppTypography.caption.copyWith(color: isSelected ? AppColors.champagneGold : AppColors.pearlWhite)),
+          ]),
         ),
       ),
     );
@@ -271,45 +327,20 @@ class _FamilyTypeCard extends StatelessWidget {
 }
 
 class _Stepper extends StatelessWidget {
-  const _Stepper({
-    required this.value,
-    required this.min,
-    required this.max,
-    required this.onChanged,
-  });
-  final int value;
-  final int min;
-  final int max;
+  const _Stepper({required this.value, required this.min, required this.max, required this.onChanged});
+  final int value, min, max;
   final ValueChanged<int> onChanged;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 52,
-      decoration: BoxDecoration(
-        color:        AppColors.surfaceGlass,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-        border:       Border.all(color: AppColors.cardBorder),
-      ),
-      child: Row(
-        children: [
-          _StepperBtn(
-            icon:    Icons.remove_rounded,
-            onTap:   value > min ? () => onChanged(value - 1) : null,
-          ),
-          Expanded(
-            child: Center(
-              child: Text('$value', style: AppTypography.userName.copyWith(
-                fontSize: 20,
-              )),
-            ),
-          ),
-          _StepperBtn(
-            icon:    Icons.add_rounded,
-            onTap:   value < max ? () => onChanged(value + 1) : null,
-          ),
-        ],
-      ),
+      decoration: BoxDecoration(color: AppColors.surfaceGlass, borderRadius: BorderRadius.circular(AppDimensions.radiusButton), border: Border.all(color: AppColors.cardBorder)),
+      child: Row(children: [
+        _StepperBtn(icon: Icons.remove_rounded, onTap: value > min ? () => onChanged(value - 1) : null),
+        Expanded(child: Center(child: Text('$value', style: AppTypography.userName.copyWith(fontSize: 20)))),
+        _StepperBtn(icon: Icons.add_rounded, onTap: value < max ? () => onChanged(value + 1) : null),
+      ]),
     );
   }
 }
@@ -323,24 +354,13 @@ class _StepperBtn extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: 52, height: 52,
-        child: Icon(
-          icon,
-          color: onTap != null ? AppColors.champagneGold : AppColors.slateMist,
-          size: AppDimensions.iconSizeLarge,
-        ),
-      ),
+      child: SizedBox(width: 52, height: 52, child: Icon(icon, color: onTap != null ? AppColors.champagneGold : AppColors.slateMist, size: AppDimensions.iconSizeLarge)),
     );
   }
 }
 
 class _InlinePills extends StatelessWidget {
-  const _InlinePills({
-    required this.options,
-    required this.selected,
-    required this.onSelected,
-  });
+  const _InlinePills({required this.options, required this.selected, required this.onSelected});
   final List<String> options;
   final String? selected;
   final ValueChanged<String> onSelected;
@@ -355,28 +375,16 @@ class _InlinePills extends StatelessWidget {
           onTap: () => onSelected(o),
           child: AnimatedContainer(
             duration: AppDimensions.durationTransition,
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppDimensions.space16,
-              vertical:   AppDimensions.space10,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space16, vertical: AppDimensions.space10),
             decoration: BoxDecoration(
-              color: isSel
-                  ? AppColors.champagneGold.withValues(alpha: 0.12)
-                  : AppColors.surfaceGlass,
+              color: isSel ? AppColors.champagneGold.withValues(alpha: 0.12) : AppColors.surfaceGlass,
               borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
-              border: Border.all(
-                color: isSel ? AppColors.champagneGold : AppColors.cardBorder,
-                width: isSel ? AppDimensions.borderFocus : AppDimensions.borderThin,
-              ),
+              border: Border.all(color: isSel ? AppColors.champagneGold : AppColors.cardBorder, width: isSel ? AppDimensions.borderFocus : AppDimensions.borderThin),
             ),
-            child: Text(o, style: AppTypography.chipLabel.copyWith(
-              color: isSel ? AppColors.champagneGold : AppColors.pearlWhite,
-            )),
+            child: Text(o, style: AppTypography.chipLabel.copyWith(color: isSel ? AppColors.champagneGold : AppColors.pearlWhite)),
           ),
         );
       }).toList(),
     );
   }
 }
-
-

@@ -89,10 +89,14 @@ class ProfilePreviewScreen extends StatelessWidget {
                           title:   'Basic Info',
                           editStep: 1,
                           rows: [
-                            _PreviewRow('Name',   data.displayName.isNotEmpty ? data.displayName : '—'),
-                            _PreviewRow('Age',    data.age?.toString() ?? '—'),
-                            _PreviewRow('City',   data.cityName ?? '—'),
-                            _PreviewRow('Gender', data.gender == Gender.male ? 'Male' : 'Female'),
+                            _PreviewRow('Name',      data.displayName.isNotEmpty ? data.displayName : '—'),
+                            _PreviewRow('Age',       data.age?.toString() ?? '—'),
+                            _PreviewRow('City',      data.cityName ?? '—'),
+                            _PreviewRow('Gender',    data.gender == Gender.male ? 'Male' : 'Female'),
+                            if (data.community != null)
+                              _PreviewRow('Community', data.community!),
+                            if (data.motherTongue != null)
+                              _PreviewRow('Mother Tongue', data.motherTongue!),
                           ],
                         ),
                         const SizedBox(height: AppDimensions.space16),
@@ -107,6 +111,14 @@ class ProfilePreviewScreen extends StatelessWidget {
                                 : (data.praysFiveDaily! ? 'Yes' : 'No')),
                             if (data.gender == Gender.female)
                               _PreviewRow('Hijab', data.hijabStyle ?? '—'),
+                            if (data.dietType != null)
+                              _PreviewRow('Diet', _dietLabel(data.dietType!)),
+                            if (data.smokingHabit != null)
+                              _PreviewRow('Smoking', data.smokingHabit!),
+                            if (data.vapingHabit != null)
+                              _PreviewRow('Vaping', data.vapingHabit!),
+                            if (data.hookahHabit != null)
+                              _PreviewRow('Hookah', data.hookahHabit!),
                           ],
                         ),
                         const SizedBox(height: AppDimensions.space16),
@@ -126,8 +138,10 @@ class ProfilePreviewScreen extends StatelessWidget {
                           editStep: 5,
                           rows: [
                             _PreviewRow('Family type', _familyLabel(data.familyType)),
-                            _PreviewRow('Siblings', data.siblingCount?.toString() ?? '—'),
-                            _PreviewRow('Marital', _maritalLabel(data.maritalStatus)),
+                            _PreviewRow('Siblings',    data.siblingCount?.toString() ?? '—'),
+                            _PreviewRow('Marital',     _maritalLabel(data.maritalStatus)),
+                            if (data.livingExpectation != null)
+                              _PreviewRow('Post-Marriage Living', _livingLabel(data.livingExpectation!)),
                           ],
                         ),
                         const SizedBox(height: AppDimensions.space16),
@@ -247,6 +261,26 @@ class ProfilePreviewScreen extends StatelessWidget {
       case MaritalStatus.divorced:     return 'Divorced';
       case MaritalStatus.widowed:      return 'Widowed';
       case null:                       return '—';
+    }
+  }
+
+  String _dietLabel(String code) {
+    switch (code) {
+      case 'zabiha_strict':  return 'Strict Zabiha';
+      case 'halal_only':     return 'Halal only';
+      case 'eats_anything':  return 'Eats anything halal';
+      case 'vegetarian':     return 'Vegetarian';
+      case 'vegan':          return 'Vegan';
+      default:               return code;
+    }
+  }
+
+  String _livingLabel(String code) {
+    switch (code) {
+      case 'with_inlaws':        return 'With In-Laws';
+      case 'separate':           return 'Separate Home';
+      case 'open_to_discussion': return 'Open to Discussion';
+      default:                   return code;
     }
   }
 }

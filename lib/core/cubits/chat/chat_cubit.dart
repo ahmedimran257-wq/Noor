@@ -8,6 +8,7 @@
 //   • markRead() — zeroes unread count
 //   • toggleTimestamp() — tap-to-reveal per message
 //   • simulateReply() — fake incoming reply for UX demo
+//   • closeMatch() — respectful closure (mock, no backend call)
 //
 // Real implementation wires Supabase Realtime Broadcast
 // (channel: 'match:{match_id}') and sqflite offline queue.
@@ -132,6 +133,12 @@ class ChatCubit extends Cubit<ChatState> {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
 
+    // Do not allow sending in a closed match
+    final conv = state.conversations
+        .where((c) => c.id == conversationId)
+        .firstOrNull;
+    if (conv?.isMatchClosed == true) return;
+
     _msgCounter++;
     final msgId = 'msg_$_msgCounter';
     final sent  = ChatMessage(
@@ -178,6 +185,36 @@ class ChatCubit extends Cubit<ChatState> {
     emit(state.copyWith(conversations: updated));
   }
 
+  /// Respectfully close a match with a pre-written Islamic message.
+  /// Appends the closure message to chat and marks the conversation closed.
+  ///
+  // TODO (backend): replace with Supabase RPC call:
+  // await supabase.rpc('close_match', params: {
+  //   'match_id': conversationId,
+  //   'user_id': currentUserId,
+  //   'message': message,
+  // });
+  void closeMatch(String conversationId, String message) {
+    _msgCounter++;
+    final closureMsg = ChatMessage(
+      id:     'msg_$_msgCounter',
+      text:   message,
+      sentAt: DateTime.now(),
+      isMe:   true,
+      status: MessageStatus.sent,
+    );
+
+    final updated = state.conversations.map((c) {
+      if (c.id != conversationId) return c;
+      return c.copyWith(
+        messages:       [...c.messages, closureMsg],
+        isMatchClosed:  true,
+        closureMessage: message,
+      );
+    }).toList();
+    emit(state.copyWith(conversations: updated));
+  }
+
   // ── Internal helpers ──────────────────────────────────────
 
   void _appendMessage(String convId, ChatMessage msg) {
@@ -203,10 +240,11 @@ class ChatCubit extends Cubit<ChatState> {
   }
 
   void _simulateReply(String convId) {
+    // Do not reply to a closed match
     final conv = state.conversations
         .where((c) => c.id == convId)
         .firstOrNull;
-    if (conv == null) return;
+    if (conv == null || conv.isMatchClosed) return;
 
     final replies = [
       'JazakAllah khair for sharing that, mashAllah.',

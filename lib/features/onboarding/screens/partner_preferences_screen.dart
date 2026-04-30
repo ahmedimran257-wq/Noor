@@ -2,7 +2,7 @@
 // ============================================================
 // NOOR — Partner Preferences Screen (Onboarding Step 7)
 // Age range slider, location preference, sect/deen/education prefs,
-// openness toggles.
+// openness toggles, living arrangement preference (Phase 2).
 // ============================================================
 
 import 'package:flutter/material.dart';
@@ -23,6 +23,14 @@ const _kLocationPrefLabels = {
   LocationPreference.diaspora:     'Diaspora mode',
 };
 
+// Living arrangement preference options (Phase 2)
+const _kLivingPrefOptions = [
+  (value: 'no_preference', label: 'No Preference'),
+  (value: 'with_inlaws',   label: 'With Family'),
+  (value: 'separate',      label: 'Separate Home'),
+  (value: 'open_to_discussion', label: 'Open to Discussion'),
+];
+
 class PartnerPreferencesScreen extends StatefulWidget {
   const PartnerPreferencesScreen({super.key});
 
@@ -41,13 +49,10 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
   bool                _openToDivorced   = false;
   bool                _openToWidowed    = false;
   bool                _openToChildren   = false;
+  String              _preferredLiving  = 'no_preference'; // Phase 2
 
-  static const _sectOptions = [
-    'Any', 'Sunni', 'Shia', 'Same as mine',
-  ];
-  static const _deenOptions = [
-    'Any', 'Practicing', 'Moderate', 'Cultural Muslim',
-  ];
+  static const _sectOptions = ['Any', 'Sunni', 'Shia', 'Same as mine'];
+  static const _deenOptions = ['Any', 'Practicing', 'Moderate', 'Cultural Muslim'];
   static const _eduRanks = [
     (rank: 1, label: 'Any'),
     (rank: 2, label: 'Secondary +'),
@@ -58,16 +63,18 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
   ];
 
   void _advance() {
+    // TODO (backend): write preferredLivingExpectation to partner_preferences table.
     final data = context.read<OnboardingCubit>().currentData.copyWith(
-      preferredAgeMin:    _ageMin.round(),
-      preferredAgeMax:    _ageMax.round(),
-      locationPreference: _location,
-      preferredSect:      _prefSect,
-      preferredDeenLevel: _prefDeen,
-      minEducationRank:   _minEduRank,
-      openToDivorced:     _openToDivorced,
-      openToWidowed:      _openToWidowed,
-      openToWithChildren: _openToChildren,
+      preferredAgeMin:            _ageMin.round(),
+      preferredAgeMax:            _ageMax.round(),
+      locationPreference:         _location,
+      preferredSect:              _prefSect,
+      preferredDeenLevel:         _prefDeen,
+      minEducationRank:           _minEduRank,
+      openToDivorced:             _openToDivorced,
+      openToWidowed:              _openToWidowed,
+      openToWithChildren:         _openToChildren,
+      preferredLivingExpectation: _preferredLiving,
     );
     context.read<OnboardingCubit>().saveAndAdvance(data);
   }
@@ -78,11 +85,8 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
       builder: (context, state) {
         final isLoading = state is OnboardingLoading;
         return OnboardingScaffold(
-          step:         7,
-          ctaLabel:     'Continue',
-          onCta:        _advance,
-          isCtaEnabled: true,
-          isCtaLoading: isLoading,
+          step: 7, ctaLabel: 'Continue', onCta: _advance,
+          isCtaEnabled: true, isCtaLoading: isLoading,
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -99,43 +103,29 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    '${_ageMin.round()} – ${_ageMax.round()} years',
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.champagneGold,
-                    ),
-                  ),
+                  Text('${_ageMin.round()} – ${_ageMax.round()} years',
+                      style: AppTypography.bodyMedium.copyWith(color: AppColors.champagneGold)),
                   Text('18 – 60', style: AppTypography.caption),
                 ],
               ),
               const SizedBox(height: AppDimensions.space8),
               SliderTheme(
                 data: SliderTheme.of(context).copyWith(
-                  trackHeight:            3,
-                  activeTrackColor:       AppColors.champagneGold,
-                  inactiveTrackColor:     AppColors.progressBarBase,
-                  thumbColor:             AppColors.champagneGold,
-                  overlayColor:           AppColors.goldGlow,
-                  valueIndicatorColor:    AppColors.champagneGold,
-                  valueIndicatorTextStyle: AppTypography.caption.copyWith(
-                    color: AppColors.obsidianNight,
-                  ),
+                  trackHeight: 3,
+                  activeTrackColor: AppColors.champagneGold,
+                  inactiveTrackColor: AppColors.progressBarBase,
+                  thumbColor: AppColors.champagneGold,
+                  overlayColor: AppColors.goldGlow,
+                  valueIndicatorColor: AppColors.champagneGold,
+                  valueIndicatorTextStyle: AppTypography.caption.copyWith(color: AppColors.obsidianNight),
                 ),
                 child: RangeSlider(
                   values: RangeValues(_ageMin, _ageMax),
-                  min:    18,
-                  max:    60,
-                  divisions: 42,
-                  labels: RangeLabels(
-                    _ageMin.round().toString(),
-                    _ageMax.round().toString(),
-                  ),
+                  min: 18, max: 60, divisions: 42,
+                  labels: RangeLabels(_ageMin.round().toString(), _ageMax.round().toString()),
                   onChanged: (v) {
-                    if (v.end - v.start < 3) return; // minimum 3yr gap
-                    setState(() {
-                      _ageMin = v.start;
-                      _ageMax = v.end;
-                    });
+                    if (v.end - v.start < 3) return;
+                    setState(() { _ageMin = v.start; _ageMax = v.end; });
                   },
                 ),
               ),
@@ -146,16 +136,12 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
               _Label('LOCATION'),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
-                spacing: AppDimensions.space8,
-                runSpacing: AppDimensions.space8,
+                spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
                 children: LocationPreference.values.map((pref) {
                   final isSel = _location == pref;
                   return GestureDetector(
                     onTap: () => setState(() => _location = pref),
-                    child: _PrefChip(
-                      label:      _kLocationPrefLabels[pref]!,
-                      isSelected: isSel,
-                    ),
+                    child: _PrefChip(label: _kLocationPrefLabels[pref]!, isSelected: isSel),
                   );
                 }).toList(),
               ),
@@ -166,14 +152,10 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
               _Label('SECT PREFERENCE'),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
-                spacing: AppDimensions.space8,
-                runSpacing: AppDimensions.space8,
+                spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
                 children: _sectOptions.map((s) => GestureDetector(
                   onTap: () => setState(() => _prefSect = s),
-                  child: _PrefChip(
-                    label:      s,
-                    isSelected: _prefSect == s,
-                  ),
+                  child: _PrefChip(label: s, isSelected: _prefSect == s),
                 )).toList(),
               ),
 
@@ -183,14 +165,10 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
               _Label('DEEN LEVEL PREFERENCE'),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
-                spacing: AppDimensions.space8,
-                runSpacing: AppDimensions.space8,
+                spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
                 children: _deenOptions.map((d) => GestureDetector(
                   onTap: () => setState(() => _prefDeen = d),
-                  child: _PrefChip(
-                    label:      d,
-                    isSelected: _prefDeen == d,
-                  ),
+                  child: _PrefChip(label: d, isSelected: _prefDeen == d),
                 )).toList(),
               ),
 
@@ -200,14 +178,10 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
               _Label('MINIMUM EDUCATION'),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
-                spacing: AppDimensions.space8,
-                runSpacing: AppDimensions.space8,
+                spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
                 children: _eduRanks.map((e) => GestureDetector(
                   onTap: () => setState(() => _minEduRank = e.rank),
-                  child: _PrefChip(
-                    label:      e.label,
-                    isSelected: _minEduRank == e.rank,
-                  ),
+                  child: _PrefChip(label: e.label, isSelected: _minEduRank == e.rank),
                 )).toList(),
               ),
 
@@ -217,21 +191,34 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
               _Label('OPENNESS'),
               const SizedBox(height: AppDimensions.space12),
               _OpenTile(
-                label:     'Open to someone previously divorced',
-                value:     _openToDivorced,
+                label: 'Open to someone previously divorced',
+                value: _openToDivorced,
                 onChanged: (v) => setState(() => _openToDivorced = v),
               ),
               const SizedBox(height: AppDimensions.space8),
               _OpenTile(
-                label:     'Open to someone previously widowed',
-                value:     _openToWidowed,
+                label: 'Open to someone previously widowed',
+                value: _openToWidowed,
                 onChanged: (v) => setState(() => _openToWidowed = v),
               ),
               const SizedBox(height: AppDimensions.space8),
               _OpenTile(
-                label:     'Open to someone with children',
-                value:     _openToChildren,
+                label: 'Open to someone with children',
+                value: _openToChildren,
                 onChanged: (v) => setState(() => _openToChildren = v),
+              ),
+
+              // ── LIVING ARRANGEMENT PREFERENCE (Phase 2) ────
+              const SizedBox(height: AppDimensions.space24),
+              _Label('LIVING ARRANGEMENT PREFERENCE'),
+              const SizedBox(height: AppDimensions.space12),
+              // TODO (backend): write preferredLivingExpectation to partner_preferences table.
+              Wrap(
+                spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
+                children: _kLivingPrefOptions.map((opt) => GestureDetector(
+                  onTap: () => setState(() => _preferredLiving = opt.value),
+                  child: _PrefChip(label: opt.label, isSelected: _preferredLiving == opt.value),
+                )).toList(),
               ),
 
               const SizedBox(height: AppDimensions.space32),
@@ -248,10 +235,8 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
 class _Label extends StatelessWidget {
   const _Label(this.text);
   final String text;
-
   @override
-  Widget build(BuildContext context) =>
-      Text(text, style: AppTypography.sectionLabel);
+  Widget build(BuildContext context) => Text(text, style: AppTypography.sectionLabel);
 }
 
 class _PrefChip extends StatelessWidget {
@@ -263,14 +248,9 @@ class _PrefChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: AppDimensions.durationTransition,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.space16,
-        vertical:   AppDimensions.space10,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space16, vertical: AppDimensions.space10),
       decoration: BoxDecoration(
-        color: isSelected
-            ? AppColors.champagneGold.withValues(alpha: 0.12)
-            : AppColors.surfaceGlass,
+        color: isSelected ? AppColors.champagneGold.withValues(alpha: 0.12) : AppColors.surfaceGlass,
         borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
         border: Border.all(
           color: isSelected ? AppColors.champagneGold : AppColors.cardBorder,
@@ -285,11 +265,7 @@ class _PrefChip extends StatelessWidget {
 }
 
 class _OpenTile extends StatelessWidget {
-  const _OpenTile({
-    required this.label,
-    required this.value,
-    required this.onChanged,
-  });
+  const _OpenTile({required this.label, required this.value, required this.onChanged});
   final String label;
   final bool value;
   final ValueChanged<bool> onChanged;
@@ -299,45 +275,35 @@ class _OpenTile extends StatelessWidget {
     return GestureDetector(
       onTap: () => onChanged(!value),
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppDimensions.space16,
-          vertical:   AppDimensions.space14,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space16, vertical: AppDimensions.space14),
         decoration: BoxDecoration(
-          color:        AppColors.surfaceGlass,
+          color: AppColors.surfaceGlass,
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          border:       Border.all(color: AppColors.cardBorder),
+          border: Border.all(color: AppColors.cardBorder),
         ),
-        child: Row(
-          children: [
-            Expanded(child: Text(label, style: AppTypography.body)),
-            AnimatedContainer(
+        child: Row(children: [
+          Expanded(child: Text(label, style: AppTypography.body)),
+          AnimatedContainer(
+            duration: AppDimensions.durationTransition,
+            width: 48, height: 28, padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              color: value ? AppColors.champagneGold : AppColors.surfaceGlassHover,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: AnimatedAlign(
               duration: AppDimensions.durationTransition,
-              width:  48,
-              height: 28,
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
-                color: value ? AppColors.champagneGold : AppColors.surfaceGlassHover,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: AnimatedAlign(
-                duration: AppDimensions.durationTransition,
-                alignment: value
-                    ? AlignmentDirectional.centerEnd
-                    : AlignmentDirectional.centerStart,
-                child: Container(
-                  width: 22, height: 22,
-                  decoration: BoxDecoration(
-                    color: value ? AppColors.obsidianNight : AppColors.slateMist,
-                    shape: BoxShape.circle,
-                  ),
+              alignment: value ? AlignmentDirectional.centerEnd : AlignmentDirectional.centerStart,
+              child: Container(
+                width: 22, height: 22,
+                decoration: BoxDecoration(
+                  color: value ? AppColors.obsidianNight : AppColors.slateMist,
+                  shape: BoxShape.circle,
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ]),
       ),
     );
   }
 }
-

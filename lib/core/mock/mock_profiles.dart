@@ -27,12 +27,16 @@ class MockProfile {
     // Partner preferences
     this.partnerAgeMin,
     this.partnerAgeMax,
-    // New fields
+    // Existing fields
     this.heightCm,
     this.complexion,
     this.motherTongue,
     this.smokingStatus,
     this.isGuardianProfile = false,
+    // New fields (Phase 2)
+    this.community,
+    this.dietType,
+    this.livingExpectation,
   });
 
   final String firstName;
@@ -59,6 +63,10 @@ class MockProfile {
   final String? motherTongue;
   final String? smokingStatus;
   final bool isGuardianProfile;
+  // New fields
+  final String? community;         // e.g. 'Syed', 'Pathan'
+  final String? dietType;          // e.g. 'zabiha_strict', 'halal_only'
+  final String? livingExpectation; // e.g. 'open_to_discussion', 'separate'
 
   /// Stable mock ID — derived from name. Replaced by real UUID in Step 12.
   String get id => '${firstName.toLowerCase()}_${lastNameInitial.toLowerCase()}';
@@ -90,6 +98,9 @@ const List<MockProfile> kMockProfiles = [
     complexion: 'Medium',
     motherTongue: 'Arabic',
     smokingStatus: 'Non-smoker',
+    community: 'Syed',
+    dietType: 'zabiha_strict',
+    livingExpectation: 'open_to_discussion',
   ),
   MockProfile(
     firstName: 'Zainab',
@@ -114,6 +125,9 @@ const List<MockProfile> kMockProfiles = [
     complexion: 'Fair',
     motherTongue: 'Urdu',
     smokingStatus: 'Non-smoker',
+    community: 'Qureshi',
+    dietType: 'halal_only',
+    livingExpectation: 'separate',
   ),
   MockProfile(
     firstName: 'Mariam',
@@ -138,6 +152,9 @@ const List<MockProfile> kMockProfiles = [
     complexion: 'Olive',
     motherTongue: 'English',
     smokingStatus: 'Non-smoker',
+    community: 'South Asian',
+    dietType: 'halal_only',
+    livingExpectation: 'open_to_discussion',
   ),
   MockProfile(
     firstName: 'Nadia',
@@ -162,6 +179,9 @@ const List<MockProfile> kMockProfiles = [
     complexion: 'Medium',
     motherTongue: 'Malay',
     smokingStatus: 'Non-smoker',
+    community: 'Malay',
+    dietType: 'halal_only',
+    livingExpectation: 'with_inlaws',
   ),
   MockProfile(
     firstName: 'Sara',
@@ -186,6 +206,9 @@ const List<MockProfile> kMockProfiles = [
     complexion: 'Fair',
     motherTongue: 'Turkish',
     smokingStatus: 'Non-smoker',
+    community: 'Turkish',
+    dietType: 'zabiha_strict',
+    livingExpectation: 'separate',
   ),
   MockProfile(
     firstName: 'Amira',
@@ -210,6 +233,9 @@ const List<MockProfile> kMockProfiles = [
     complexion: 'Medium',
     motherTongue: 'Arabic',
     smokingStatus: 'Non-smoker',
+    community: 'Egyptian Arab',
+    dietType: 'halal_only',
+    livingExpectation: 'open_to_discussion',
   ),
   MockProfile(
     firstName: 'Hana',
@@ -234,6 +260,9 @@ const List<MockProfile> kMockProfiles = [
     complexion: 'Olive',
     motherTongue: 'Arabic',
     smokingStatus: 'Non-smoker',
+    community: 'Moroccan',
+    dietType: 'zabiha_strict',
+    livingExpectation: 'separate',
   ),
   MockProfile(
     firstName: 'Layla',
@@ -258,5 +287,8 @@ const List<MockProfile> kMockProfiles = [
     complexion: 'Fair',
     motherTongue: 'English',
     smokingStatus: 'Non-smoker',
+    community: 'Arab',
+    dietType: 'halal_only',
+    livingExpectation: 'open_to_discussion',
   ),
 ];

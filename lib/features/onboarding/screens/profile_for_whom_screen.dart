@@ -1,7 +1,7 @@
 // lib/features/onboarding/screens/profile_for_whom_screen.dart
 // ============================================================
 // NOOR — Profile For Whom Screen (Onboarding Step 0)
-// Two selectable cards: "Myself" vs "My son or daughter".
+// Four selectable cards: Myself / Son or Daughter / Sibling / Ward.
 // Auto-advances 300ms after selection.
 // ============================================================
 
@@ -23,15 +23,21 @@ class ProfileForWhomScreen extends StatefulWidget {
 }
 
 class _ProfileForWhomScreenState extends State<ProfileForWhomScreen> {
-  ProfileFor? _selected;
+  String? _selectedValue; // 'self','parent','sibling','guardian'
 
-  void _select(ProfileFor value) async {
-    setState(() => _selected = value);
+  // TODO (backend): persist profileCreatorRelation to Supabase profiles table.
+  void _select(String value) async {
+    setState(() => _selectedValue = value);
     await Future.delayed(const Duration(milliseconds: 300));
     if (!mounted) return;
     final cubit   = context.read<OnboardingCubit>();
     final current = cubit.currentData;
-    cubit.saveAndAdvance(current.copyWith(profileFor: value));
+    cubit.saveAndAdvance(current.copyWith(
+      profileFor: value == 'self'
+          ? ProfileFor.myself
+          : ProfileFor.guardian,
+      profileCreatorRelation: value,
+    ));
   }
 
   @override
@@ -53,22 +59,41 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen> {
                   title:    'Who is this profile for?',
                   subtitle: 'You can update this later from settings.',
                 ),
-                const SizedBox(height: AppDimensions.space48),
+                const SizedBox(height: AppDimensions.space32),
 
                 _SelectionCard(
-                  icon:        Icons.person_outline_rounded,
-                  title:       'Myself',
-                  subtitle:    'I am looking for a spouse',
-                  isSelected:  _selected == ProfileFor.myself,
-                  onTap:       () => _select(ProfileFor.myself),
+                  icon:       Icons.person_outline_rounded,
+                  title:      'Myself',
+                  subtitle:   'I am looking for a spouse',
+                  isSelected: _selectedValue == 'self',
+                  onTap:      () => _select('self'),
                 ),
                 const SizedBox(height: AppDimensions.space16),
+
                 _SelectionCard(
-                  icon:        Icons.family_restroom_rounded,
-                  title:       'My son or daughter',
-                  subtitle:    'I am a parent or guardian',
-                  isSelected:  _selected == ProfileFor.guardian,
-                  onTap:       () => _select(ProfileFor.guardian),
+                  icon:       Icons.family_restroom_rounded,
+                  title:      'My son or daughter',
+                  subtitle:   'I am a parent creating this profile',
+                  isSelected: _selectedValue == 'parent',
+                  onTap:      () => _select('parent'),
+                ),
+                const SizedBox(height: AppDimensions.space16),
+
+                _SelectionCard(
+                  icon:       Icons.people_outline_rounded,
+                  title:      'My brother or sister',
+                  subtitle:   'I am helping my sibling find a match',
+                  isSelected: _selectedValue == 'sibling',
+                  onTap:      () => _select('sibling'),
+                ),
+                const SizedBox(height: AppDimensions.space16),
+
+                _SelectionCard(
+                  icon:       Icons.shield_outlined,
+                  title:      'My ward',
+                  subtitle:   'I am a guardian managing this profile',
+                  isSelected: _selectedValue == 'guardian',
+                  onTap:      () => _select('guardian'),
                 ),
 
                 const Spacer(),
