@@ -114,6 +114,20 @@ class AppLocalizationsUr extends AppLocalizations {
       'میں والدین یا سرپرست ہوں';
 
   @override
+  String get onboarding_profileForWhom_sibling => 'میرے بھائی یا بہن کے لیے';
+
+  @override
+  String get onboarding_profileForWhom_siblingSub =>
+      'میں اپنے بہن/بھائی کا رشتہ ڈھونڈ رہا/رہی ہوں';
+
+  @override
+  String get onboarding_profileForWhom_ward => 'میرے زیرِ کفالت کے لیے';
+
+  @override
+  String get onboarding_profileForWhom_wardSub =>
+      'میں سرپرست ہوں اور یہ پروفائل منظم کر رہا/رہی ہوں';
+
+  @override
   String get onboarding_basicIdentity_title => 'اپنے بارے میں بتائیں';
 
   @override
@@ -186,6 +200,112 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String get onboarding_label_praysFiveDaily =>
       'میں پانچ وقت نماز پڑھتا/پڑھتی ہوں';
+
+  @override
+  String get onboarding_label_community => 'آپ کی برادری / قوم';
+
+  @override
+  String get onboarding_label_community_parent => 'ان کی برادری / قوم';
+
+  @override
+  String get onboarding_label_motherTongue => 'مادری زبان';
+
+  @override
+  String get onboarding_label_diet => 'غذائی ترجیح';
+
+  @override
+  String get onboarding_diet_zabihaStrict => 'پکی ذبیحہ';
+
+  @override
+  String get onboarding_diet_halalOnly => 'صرف حلال';
+
+  @override
+  String get onboarding_diet_eatsAnything => 'کوئی بھی حلال چیز';
+
+  @override
+  String get onboarding_diet_vegetarian => 'سبزی خور';
+
+  @override
+  String get onboarding_diet_vegan => 'خالص سبزی خور';
+
+  @override
+  String get onboarding_label_smoking => 'تمباکو نوشی';
+
+  @override
+  String get onboarding_label_vaping => 'ویپنگ / ای سگریٹ';
+
+  @override
+  String get onboarding_label_hookah => 'حقہ / شیشہ';
+
+  @override
+  String get onboarding_habit_never => 'کبھی نہیں';
+
+  @override
+  String get onboarding_habit_occasionally => 'کبھی کبھار';
+
+  @override
+  String get onboarding_habit_frequently => 'اکثر';
+
+  @override
+  String get onboarding_habit_preferNotToSay => 'بتانا نہیں چاہتا/چاہتی';
+
+  @override
+  String get onboarding_label_livingExpectation => 'شادی کے بعد رہائش کی توقع';
+
+  @override
+  String get onboarding_living_withInlaws => 'سسرال کے ساتھ';
+
+  @override
+  String get onboarding_living_withInlawsSub =>
+      'میں سسرال یا اپنے گھر والوں کے ساتھ رہنے کا ارادہ رکھتا/رکھتی ہوں۔';
+
+  @override
+  String get onboarding_living_separate => 'الگ گھر';
+
+  @override
+  String get onboarding_living_separateSub =>
+      'میں چاہتا/چاہتی ہوں کہ ہمارا اپنا الگ گھر ہو۔';
+
+  @override
+  String get onboarding_living_openToDiscussion => 'بات چیت سے طے کریں';
+
+  @override
+  String get onboarding_living_openToDiscussionSub =>
+      'میں لچکدار ہوں اور دونوں کے لیے مناسب حل پر بات کرنے کو تیار ہوں۔';
+
+  @override
+  String get onboarding_label_preferredLiving => 'رہائش کی ترجیح';
+
+  @override
+  String get onboarding_preferredLiving_noPreference => 'کوئی ترجیح نہیں';
+
+  @override
+  String get copy_prayer_self => 'کیا آپ پانچ وقت نماز پڑھتے/پڑھتی ہیں؟';
+
+  @override
+  String get copy_prayer_parent => 'کیا آپ کا بچہ پانچ وقت نماز پڑھتا ہے؟';
+
+  @override
+  String get copy_prayer_sibling =>
+      'کیا آپ کا بہن/بھائی پانچ وقت نماز پڑھتا ہے؟';
+
+  @override
+  String get copy_hijab_self => 'کیا آپ حجاب کرتی ہیں؟';
+
+  @override
+  String get copy_hijab_parent => 'کیا آپ کی بیٹی حجاب کرتی ہے؟';
+
+  @override
+  String get copy_hijab_sibling => 'کیا آپ کی بہن حجاب کرتی ہے؟';
+
+  @override
+  String get copy_beard_self => 'کیا آپ داڑھی رکھتے ہیں؟';
+
+  @override
+  String get copy_beard_parent => 'کیا آپ کے بیٹے کی داڑھی ہے؟';
+
+  @override
+  String get copy_beard_sibling => 'کیا آپ کے بھائی کی داڑھی ہے؟';
 
   @override
   String get onboarding_background_title => 'Education & Career';
@@ -281,6 +401,49 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String get chat_opener_3 =>
       'Assalamu Alaikum. I believe we share similar values. Would you be open to getting to know each other?';
+
+  @override
+  String get chat_endMatch_title => 'یہ میچ ختم کریں';
+
+  @override
+  String get chat_endMatch_subtitle =>
+      'ایک باعزت پیغام منتخب کریں۔ دوسرے شخص کو مطلع کیا جائے گا۔';
+
+  @override
+  String get chat_endMatch_button => 'بھیجیں اور میچ ختم کریں';
+
+  @override
+  String get chat_matchClosed_banner =>
+      'یہ میچ باعزت طریقے سے بند کر دیا گیا ہے۔';
+
+  @override
+  String get chat_closure_1 =>
+      'السلام علیکم۔ گہرے غور و فکر کے بعد میں محسوس کرتا/کرتی ہوں کہ یہ ہمارے لیے مناسب رشتہ نہیں ہے۔ اللہ آپ کو بہترین شریکِ حیات عطا فرمائے۔ جزاک اللہ خیراً۔';
+
+  @override
+  String get chat_closure_2 =>
+      'السلام علیکم۔ میں آپ سے ایمانداری اور احترام کے ساتھ بات کرنا چاہتا/چاہتی تھا/تھی۔ مجھے نہیں لگتا ہم مناسب جوڑ ہیں، لیکن اللہ سے دعا ہے کہ آپ کے لیے بہتر دروازے کھولے۔';
+
+  @override
+  String get chat_closure_3 =>
+      'السلام علیکم۔ سچے غور کے بعد محسوس ہوتا ہے کہ ہم شاید مطابقت نہیں رکھتے۔ آپ کے لیے دعا ہے۔ وقت دینے پر جزاک اللہ خیراً۔';
+
+  @override
+  String get chat_closure_4 =>
+      'السلام علیکم۔ میں نے ہماری گفتگو پر غور کیا اور یہ میچ بند کرنا بہتر سمجھتا/سمجھتی ہوں۔ آپ کے لیے بہترین کی دعا کرتا/کرتی ہوں۔';
+
+  @override
+  String get chat_closure_5 =>
+      'السلام علیکم۔ غائب ہونے کی بجائے شفاف رہنا چاہتا/چاہتی تھا/تھی۔ اللہ آپ کو ہر خوشی عطا فرمائے۔';
+
+  @override
+  String get filter_label_motherTongue => 'مادری زبان';
+
+  @override
+  String get filter_label_community => 'برادری / قوم';
+
+  @override
+  String get filter_label_livingExpectation => 'شادی کے بعد رہائش';
 
   @override
   String get subscription_title => 'نور کو کھولیں';

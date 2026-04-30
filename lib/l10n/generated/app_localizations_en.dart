@@ -112,6 +112,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'I am a parent or guardian';
 
   @override
+  String get onboarding_profileForWhom_sibling => 'My brother or sister';
+
+  @override
+  String get onboarding_profileForWhom_siblingSub =>
+      'I am helping my sibling find a match';
+
+  @override
+  String get onboarding_profileForWhom_ward => 'My ward';
+
+  @override
+  String get onboarding_profileForWhom_wardSub =>
+      'I am a guardian managing this profile';
+
+  @override
   String get onboarding_basicIdentity_title => 'Tell us about yourself';
 
   @override
@@ -183,6 +197,113 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboarding_label_praysFiveDaily => 'I pray five times daily';
+
+  @override
+  String get onboarding_label_community => 'Your community / biradari';
+
+  @override
+  String get onboarding_label_community_parent => 'Their community / biradari';
+
+  @override
+  String get onboarding_label_motherTongue => 'Mother tongue';
+
+  @override
+  String get onboarding_label_diet => 'Diet';
+
+  @override
+  String get onboarding_diet_zabihaStrict => 'Strict Zabiha';
+
+  @override
+  String get onboarding_diet_halalOnly => 'Halal only';
+
+  @override
+  String get onboarding_diet_eatsAnything => 'Eats anything halal';
+
+  @override
+  String get onboarding_diet_vegetarian => 'Vegetarian';
+
+  @override
+  String get onboarding_diet_vegan => 'Vegan';
+
+  @override
+  String get onboarding_label_smoking => 'Smoking';
+
+  @override
+  String get onboarding_label_vaping => 'Vaping / E-cigarettes';
+
+  @override
+  String get onboarding_label_hookah => 'Hookah / Shisha';
+
+  @override
+  String get onboarding_habit_never => 'Never';
+
+  @override
+  String get onboarding_habit_occasionally => 'Occasionally';
+
+  @override
+  String get onboarding_habit_frequently => 'Frequently';
+
+  @override
+  String get onboarding_habit_preferNotToSay => 'Prefer not to say';
+
+  @override
+  String get onboarding_label_livingExpectation =>
+      'Post-marriage living expectations';
+
+  @override
+  String get onboarding_living_withInlaws => 'With In-Laws';
+
+  @override
+  String get onboarding_living_withInlawsSub =>
+      'I expect to live with my spouse\'s or my own family.';
+
+  @override
+  String get onboarding_living_separate => 'Separate Home';
+
+  @override
+  String get onboarding_living_separateSub =>
+      'I prefer we have our own independent home.';
+
+  @override
+  String get onboarding_living_openToDiscussion => 'Open to Discussion';
+
+  @override
+  String get onboarding_living_openToDiscussionSub =>
+      'I am flexible and happy to discuss what works for both.';
+
+  @override
+  String get onboarding_label_preferredLiving =>
+      'Living arrangement preference';
+
+  @override
+  String get onboarding_preferredLiving_noPreference => 'No Preference';
+
+  @override
+  String get copy_prayer_self => 'Do you pray five times daily?';
+
+  @override
+  String get copy_prayer_parent => 'Does your child pray five times daily?';
+
+  @override
+  String get copy_prayer_sibling => 'Does your sibling pray five times daily?';
+
+  @override
+  String get copy_hijab_self => 'Do you observe hijab?';
+
+  @override
+  String get copy_hijab_parent => 'Does your daughter observe hijab?';
+
+  @override
+  String get copy_hijab_sibling => 'Does your sister observe hijab?';
+
+  @override
+  String get copy_beard_self => 'Do you have a beard?';
+
+  @override
+  String get copy_beard_parent => 'Does your son have a beard?';
+
+  @override
+  String get copy_beard_sibling => 'Does your brother have a beard?';
 
   @override
   String get onboarding_background_title => 'Education & Career';
@@ -278,6 +399,49 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get chat_opener_3 =>
       'Assalamu Alaikum. I believe we share similar values. Would you be open to getting to know each other?';
+
+  @override
+  String get chat_endMatch_title => 'End this match';
+
+  @override
+  String get chat_endMatch_subtitle =>
+      'Choose a respectful message to close this conversation. The other person will be notified.';
+
+  @override
+  String get chat_endMatch_button => 'Send & End Match';
+
+  @override
+  String get chat_matchClosed_banner =>
+      'This match has been respectfully closed.';
+
+  @override
+  String get chat_closure_1 =>
+      'Assalamu Alaikum. After thoughtful reflection, I feel this may not be the right match for us. I sincerely wish you all the best and pray that Allah blesses you with a wonderful partner. JazakAllah khair.';
+
+  @override
+  String get chat_closure_2 =>
+      'Assalamu Alaikum. I wanted to be honest and respectful with you. I do not think we are the right match, but I pray that Allah opens better doors for you. Wishing you all the best.';
+
+  @override
+  String get chat_closure_3 =>
+      'Assalamu Alaikum. After sincere consideration, I feel we may not be compatible. I hope you find someone truly right for you. May Allah make it easy for you. JazakAllah khair for your time.';
+
+  @override
+  String get chat_closure_4 =>
+      'Assalamu Alaikum. I have reflected on our conversations and feel it is best to close this match at this time. I have nothing but respect for you and I make dua that Allah blesses you with the best.';
+
+  @override
+  String get chat_closure_5 =>
+      'Assalamu Alaikum. I wanted to be transparent with you rather than fade away. I do not see this progressing further, but I truly appreciate your time and wish you every happiness. May Allah bless you.';
+
+  @override
+  String get filter_label_motherTongue => 'Mother Tongue';
+
+  @override
+  String get filter_label_community => 'Community / Biradari';
+
+  @override
+  String get filter_label_livingExpectation => 'Post-Marriage Living';
 
   @override
   String get subscription_title => 'Unlock NOOR';

@@ -109,6 +109,20 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_profileForWhom_guardianSub => 'أنا ولي أمر';
 
   @override
+  String get onboarding_profileForWhom_sibling => 'لأخي أو أختي';
+
+  @override
+  String get onboarding_profileForWhom_siblingSub =>
+      'أساعد شقيقي/شقيقتي في إيجاد شريك';
+
+  @override
+  String get onboarding_profileForWhom_ward => 'لمن أرعاه';
+
+  @override
+  String get onboarding_profileForWhom_wardSub =>
+      'أنا وصي وأدير هذا الملف الشخصي';
+
+  @override
   String get onboarding_basicIdentity_title => 'أخبرنا عن نفسك';
 
   @override
@@ -180,6 +194,110 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get onboarding_label_praysFiveDaily => 'أصلي الصلوات الخمس يوميًا';
+
+  @override
+  String get onboarding_label_community => 'مجتمعك / بيرادري';
+
+  @override
+  String get onboarding_label_community_parent => 'مجتمعهم / بيرادري';
+
+  @override
+  String get onboarding_label_motherTongue => 'اللغة الأم';
+
+  @override
+  String get onboarding_label_diet => 'النظام الغذائي';
+
+  @override
+  String get onboarding_diet_zabihaStrict => 'ذبيحة إسلامية صارمة';
+
+  @override
+  String get onboarding_diet_halalOnly => 'حلال فقط';
+
+  @override
+  String get onboarding_diet_eatsAnything => 'يأكل أي شيء حلال';
+
+  @override
+  String get onboarding_diet_vegetarian => 'نباتي';
+
+  @override
+  String get onboarding_diet_vegan => 'نباتي صارم';
+
+  @override
+  String get onboarding_label_smoking => 'التدخين';
+
+  @override
+  String get onboarding_label_vaping => 'السجائر الإلكترونية';
+
+  @override
+  String get onboarding_label_hookah => 'الشيشة';
+
+  @override
+  String get onboarding_habit_never => 'أبداً';
+
+  @override
+  String get onboarding_habit_occasionally => 'أحياناً';
+
+  @override
+  String get onboarding_habit_frequently => 'كثيراً';
+
+  @override
+  String get onboarding_habit_preferNotToSay => 'أفضل عدم الإجابة';
+
+  @override
+  String get onboarding_label_livingExpectation => 'توقعات السكن بعد الزواج';
+
+  @override
+  String get onboarding_living_withInlaws => 'مع الأسرة';
+
+  @override
+  String get onboarding_living_withInlawsSub =>
+      'أتوقع العيش مع عائلة الزوج/الزوجة أو مع عائلتي.';
+
+  @override
+  String get onboarding_living_separate => 'مسكن مستقل';
+
+  @override
+  String get onboarding_living_separateSub => 'أفضل أن يكون لنا مسكن مستقل.';
+
+  @override
+  String get onboarding_living_openToDiscussion => 'قابل للنقاش';
+
+  @override
+  String get onboarding_living_openToDiscussionSub =>
+      'أنا مرن وسعيد بمناقشة ما يناسب كلينا.';
+
+  @override
+  String get onboarding_label_preferredLiving => 'تفضيل ترتيب السكن';
+
+  @override
+  String get onboarding_preferredLiving_noPreference => 'لا تفضيل';
+
+  @override
+  String get copy_prayer_self => 'هل تصلي خمس مرات يومياً؟';
+
+  @override
+  String get copy_prayer_parent => 'هل يصلي طفلك خمس مرات يومياً؟';
+
+  @override
+  String get copy_prayer_sibling => 'هل يصلي أخوك/أختك خمس مرات يومياً؟';
+
+  @override
+  String get copy_hijab_self => 'هل ترتدين الحجاب؟';
+
+  @override
+  String get copy_hijab_parent => 'هل ترتدي ابنتك الحجاب؟';
+
+  @override
+  String get copy_hijab_sibling => 'هل ترتدي أختك الحجاب؟';
+
+  @override
+  String get copy_beard_self => 'هل تُطلق لحيتك؟';
+
+  @override
+  String get copy_beard_parent => 'هل يُطلق ابنك لحيته؟';
+
+  @override
+  String get copy_beard_sibling => 'هل يُطلق أخوك لحيته؟';
 
   @override
   String get onboarding_background_title => 'Education & Career';
@@ -274,6 +392,48 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get chat_opener_3 =>
       'Assalamu Alaikum. I believe we share similar values. Would you be open to getting to know each other?';
+
+  @override
+  String get chat_endMatch_title => 'إنهاء هذا التطابق';
+
+  @override
+  String get chat_endMatch_subtitle =>
+      'اختر رسالة محترمة لإغلاق هذه المحادثة. سيتم إخطار الشخص الآخر.';
+
+  @override
+  String get chat_endMatch_button => 'إرسال وإنهاء التطابق';
+
+  @override
+  String get chat_matchClosed_banner => 'تم إغلاق هذا التطابق باحترام.';
+
+  @override
+  String get chat_closure_1 =>
+      'السلام عليكم. بعد تأمل عميق، أشعر أن هذا قد لا يكون التطابق المناسب لنا. أتمنى لك كل التوفيق وأدعو الله أن يبارك لك في شريك رائع. جزاك الله خيرًا.';
+
+  @override
+  String get chat_closure_2 =>
+      'السلام عليكم. أردت أن أكون صادقاً ومحترماً معك. لا أعتقد أننا التطابق المناسب، لكنني أدعو أن يفتح الله لك أبواباً أفضل. مع أطيب الأمنيات.';
+
+  @override
+  String get chat_closure_3 =>
+      'السلام عليكم. بعد تفكير صادق، أشعر أننا قد لا نكون متوافقين. آمل أن تجد الشخص المناسب لك. جزاك الله خيرًا على وقتك.';
+
+  @override
+  String get chat_closure_4 =>
+      'السلام عليكم. تأملت في محادثاتنا وأرى أنه من الأفضل إغلاق هذا التطابق. لدي كل الاحترام لك وأدعو الله أن يبارك لك بأفضل ما تستحق.';
+
+  @override
+  String get chat_closure_5 =>
+      'السلام عليكم. أردت أن أكون شفافاً معك بدلاً من الاختفاء. لا أرى هذا يسير للأمام، لكنني أقدر وقتك وأتمنى لك كل السعادة. بارك الله فيك.';
+
+  @override
+  String get filter_label_motherTongue => 'اللغة الأم';
+
+  @override
+  String get filter_label_community => 'المجتمع / البيرادري';
+
+  @override
+  String get filter_label_livingExpectation => 'السكن بعد الزواج';
 
   @override
   String get subscription_title => 'افتح نور';

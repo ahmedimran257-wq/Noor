@@ -292,6 +292,30 @@ abstract class AppLocalizations {
   /// **'I am a parent or guardian'**
   String get onboarding_profileForWhom_guardianSub;
 
+  /// No description provided for @onboarding_profileForWhom_sibling.
+  ///
+  /// In en, this message translates to:
+  /// **'My brother or sister'**
+  String get onboarding_profileForWhom_sibling;
+
+  /// No description provided for @onboarding_profileForWhom_siblingSub.
+  ///
+  /// In en, this message translates to:
+  /// **'I am helping my sibling find a match'**
+  String get onboarding_profileForWhom_siblingSub;
+
+  /// No description provided for @onboarding_profileForWhom_ward.
+  ///
+  /// In en, this message translates to:
+  /// **'My ward'**
+  String get onboarding_profileForWhom_ward;
+
+  /// No description provided for @onboarding_profileForWhom_wardSub.
+  ///
+  /// In en, this message translates to:
+  /// **'I am a guardian managing this profile'**
+  String get onboarding_profileForWhom_wardSub;
+
   /// No description provided for @onboarding_basicIdentity_title.
   ///
   /// In en, this message translates to:
@@ -429,6 +453,210 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'I pray five times daily'**
   String get onboarding_label_praysFiveDaily;
+
+  /// No description provided for @onboarding_label_community.
+  ///
+  /// In en, this message translates to:
+  /// **'Your community / biradari'**
+  String get onboarding_label_community;
+
+  /// No description provided for @onboarding_label_community_parent.
+  ///
+  /// In en, this message translates to:
+  /// **'Their community / biradari'**
+  String get onboarding_label_community_parent;
+
+  /// No description provided for @onboarding_label_motherTongue.
+  ///
+  /// In en, this message translates to:
+  /// **'Mother tongue'**
+  String get onboarding_label_motherTongue;
+
+  /// No description provided for @onboarding_label_diet.
+  ///
+  /// In en, this message translates to:
+  /// **'Diet'**
+  String get onboarding_label_diet;
+
+  /// No description provided for @onboarding_diet_zabihaStrict.
+  ///
+  /// In en, this message translates to:
+  /// **'Strict Zabiha'**
+  String get onboarding_diet_zabihaStrict;
+
+  /// No description provided for @onboarding_diet_halalOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Halal only'**
+  String get onboarding_diet_halalOnly;
+
+  /// No description provided for @onboarding_diet_eatsAnything.
+  ///
+  /// In en, this message translates to:
+  /// **'Eats anything halal'**
+  String get onboarding_diet_eatsAnything;
+
+  /// No description provided for @onboarding_diet_vegetarian.
+  ///
+  /// In en, this message translates to:
+  /// **'Vegetarian'**
+  String get onboarding_diet_vegetarian;
+
+  /// No description provided for @onboarding_diet_vegan.
+  ///
+  /// In en, this message translates to:
+  /// **'Vegan'**
+  String get onboarding_diet_vegan;
+
+  /// No description provided for @onboarding_label_smoking.
+  ///
+  /// In en, this message translates to:
+  /// **'Smoking'**
+  String get onboarding_label_smoking;
+
+  /// No description provided for @onboarding_label_vaping.
+  ///
+  /// In en, this message translates to:
+  /// **'Vaping / E-cigarettes'**
+  String get onboarding_label_vaping;
+
+  /// No description provided for @onboarding_label_hookah.
+  ///
+  /// In en, this message translates to:
+  /// **'Hookah / Shisha'**
+  String get onboarding_label_hookah;
+
+  /// No description provided for @onboarding_habit_never.
+  ///
+  /// In en, this message translates to:
+  /// **'Never'**
+  String get onboarding_habit_never;
+
+  /// No description provided for @onboarding_habit_occasionally.
+  ///
+  /// In en, this message translates to:
+  /// **'Occasionally'**
+  String get onboarding_habit_occasionally;
+
+  /// No description provided for @onboarding_habit_frequently.
+  ///
+  /// In en, this message translates to:
+  /// **'Frequently'**
+  String get onboarding_habit_frequently;
+
+  /// No description provided for @onboarding_habit_preferNotToSay.
+  ///
+  /// In en, this message translates to:
+  /// **'Prefer not to say'**
+  String get onboarding_habit_preferNotToSay;
+
+  /// No description provided for @onboarding_label_livingExpectation.
+  ///
+  /// In en, this message translates to:
+  /// **'Post-marriage living expectations'**
+  String get onboarding_label_livingExpectation;
+
+  /// No description provided for @onboarding_living_withInlaws.
+  ///
+  /// In en, this message translates to:
+  /// **'With In-Laws'**
+  String get onboarding_living_withInlaws;
+
+  /// No description provided for @onboarding_living_withInlawsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'I expect to live with my spouse\'s or my own family.'**
+  String get onboarding_living_withInlawsSub;
+
+  /// No description provided for @onboarding_living_separate.
+  ///
+  /// In en, this message translates to:
+  /// **'Separate Home'**
+  String get onboarding_living_separate;
+
+  /// No description provided for @onboarding_living_separateSub.
+  ///
+  /// In en, this message translates to:
+  /// **'I prefer we have our own independent home.'**
+  String get onboarding_living_separateSub;
+
+  /// No description provided for @onboarding_living_openToDiscussion.
+  ///
+  /// In en, this message translates to:
+  /// **'Open to Discussion'**
+  String get onboarding_living_openToDiscussion;
+
+  /// No description provided for @onboarding_living_openToDiscussionSub.
+  ///
+  /// In en, this message translates to:
+  /// **'I am flexible and happy to discuss what works for both.'**
+  String get onboarding_living_openToDiscussionSub;
+
+  /// No description provided for @onboarding_label_preferredLiving.
+  ///
+  /// In en, this message translates to:
+  /// **'Living arrangement preference'**
+  String get onboarding_label_preferredLiving;
+
+  /// No description provided for @onboarding_preferredLiving_noPreference.
+  ///
+  /// In en, this message translates to:
+  /// **'No Preference'**
+  String get onboarding_preferredLiving_noPreference;
+
+  /// No description provided for @copy_prayer_self.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you pray five times daily?'**
+  String get copy_prayer_self;
+
+  /// No description provided for @copy_prayer_parent.
+  ///
+  /// In en, this message translates to:
+  /// **'Does your child pray five times daily?'**
+  String get copy_prayer_parent;
+
+  /// No description provided for @copy_prayer_sibling.
+  ///
+  /// In en, this message translates to:
+  /// **'Does your sibling pray five times daily?'**
+  String get copy_prayer_sibling;
+
+  /// No description provided for @copy_hijab_self.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you observe hijab?'**
+  String get copy_hijab_self;
+
+  /// No description provided for @copy_hijab_parent.
+  ///
+  /// In en, this message translates to:
+  /// **'Does your daughter observe hijab?'**
+  String get copy_hijab_parent;
+
+  /// No description provided for @copy_hijab_sibling.
+  ///
+  /// In en, this message translates to:
+  /// **'Does your sister observe hijab?'**
+  String get copy_hijab_sibling;
+
+  /// No description provided for @copy_beard_self.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you have a beard?'**
+  String get copy_beard_self;
+
+  /// No description provided for @copy_beard_parent.
+  ///
+  /// In en, this message translates to:
+  /// **'Does your son have a beard?'**
+  String get copy_beard_parent;
+
+  /// No description provided for @copy_beard_sibling.
+  ///
+  /// In en, this message translates to:
+  /// **'Does your brother have a beard?'**
+  String get copy_beard_sibling;
 
   /// No description provided for @onboarding_background_title.
   ///
@@ -585,6 +813,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Assalamu Alaikum. I believe we share similar values. Would you be open to getting to know each other?'**
   String get chat_opener_3;
+
+  /// No description provided for @chat_endMatch_title.
+  ///
+  /// In en, this message translates to:
+  /// **'End this match'**
+  String get chat_endMatch_title;
+
+  /// No description provided for @chat_endMatch_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a respectful message to close this conversation. The other person will be notified.'**
+  String get chat_endMatch_subtitle;
+
+  /// No description provided for @chat_endMatch_button.
+  ///
+  /// In en, this message translates to:
+  /// **'Send & End Match'**
+  String get chat_endMatch_button;
+
+  /// No description provided for @chat_matchClosed_banner.
+  ///
+  /// In en, this message translates to:
+  /// **'This match has been respectfully closed.'**
+  String get chat_matchClosed_banner;
+
+  /// No description provided for @chat_closure_1.
+  ///
+  /// In en, this message translates to:
+  /// **'Assalamu Alaikum. After thoughtful reflection, I feel this may not be the right match for us. I sincerely wish you all the best and pray that Allah blesses you with a wonderful partner. JazakAllah khair.'**
+  String get chat_closure_1;
+
+  /// No description provided for @chat_closure_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Assalamu Alaikum. I wanted to be honest and respectful with you. I do not think we are the right match, but I pray that Allah opens better doors for you. Wishing you all the best.'**
+  String get chat_closure_2;
+
+  /// No description provided for @chat_closure_3.
+  ///
+  /// In en, this message translates to:
+  /// **'Assalamu Alaikum. After sincere consideration, I feel we may not be compatible. I hope you find someone truly right for you. May Allah make it easy for you. JazakAllah khair for your time.'**
+  String get chat_closure_3;
+
+  /// No description provided for @chat_closure_4.
+  ///
+  /// In en, this message translates to:
+  /// **'Assalamu Alaikum. I have reflected on our conversations and feel it is best to close this match at this time. I have nothing but respect for you and I make dua that Allah blesses you with the best.'**
+  String get chat_closure_4;
+
+  /// No description provided for @chat_closure_5.
+  ///
+  /// In en, this message translates to:
+  /// **'Assalamu Alaikum. I wanted to be transparent with you rather than fade away. I do not see this progressing further, but I truly appreciate your time and wish you every happiness. May Allah bless you.'**
+  String get chat_closure_5;
+
+  /// No description provided for @filter_label_motherTongue.
+  ///
+  /// In en, this message translates to:
+  /// **'Mother Tongue'**
+  String get filter_label_motherTongue;
+
+  /// No description provided for @filter_label_community.
+  ///
+  /// In en, this message translates to:
+  /// **'Community / Biradari'**
+  String get filter_label_community;
+
+  /// No description provided for @filter_label_livingExpectation.
+  ///
+  /// In en, this message translates to:
+  /// **'Post-Marriage Living'**
+  String get filter_label_livingExpectation;
 
   /// No description provided for @subscription_title.
   ///

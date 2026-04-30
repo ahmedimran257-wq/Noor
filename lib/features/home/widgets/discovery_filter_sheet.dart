@@ -86,6 +86,10 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
   final _childrenKey  = GlobalKey();
   final _verifiedKey  = GlobalKey();
   final _distanceKey  = GlobalKey();
+  // Phase 2
+  final _tongueKey    = GlobalKey();
+  final _communityKey = GlobalKey();
+  final _livingKey    = GlobalKey();
 
   @override
   void initState() {
@@ -121,6 +125,9 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
       'children'  => _childrenKey,
       'verified'  => _verifiedKey,
       'distance'  => _distanceKey,
+      'tongue'    => _tongueKey,
+      'community' => _communityKey,
+      'living'    => _livingKey,
       _           => _genderKey,
     };
     final ctx = key.currentContext;
@@ -450,6 +457,64 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                           distanceLabel: v, clearDistanceLabel: v == null,
                         )),
                       ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // ── MOTHER TONGUE ───────────────────────────
+                    _SectionLabel(key: _tongueKey, label: 'MOTHER TONGUE'),
+                    const SizedBox(height: 8),
+                    _DropdownRow(
+                      value: _draft.motherTongue ?? 'Any',
+                      options: const [
+                        'Any', 'Arabic', 'Urdu', 'Bengali', 'Punjabi',
+                        'English', 'Turkish', 'Malay', 'Indonesian',
+                        'Hausa', 'Somali', 'French', 'Other',
+                      ],
+                      onChanged: (v) => setState(() => _draft = _draft.copyWith(
+                        motherTongue: v == 'Any' ? null : v,
+                        clearMotherTongue: v == 'Any',
+                      )),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // ── COMMUNITY / BIRADARI ────────────────────
+                    _SectionLabel(key: _communityKey, label: 'COMMUNITY / BIRADARI'),
+                    const SizedBox(height: 8),
+                    _DropdownRow(
+                      value: _draft.community ?? 'Any',
+                      options: const [
+                        'Any', 'Syed', 'Pathan', 'Qureshi', 'Memon',
+                        'Rajput', 'Ansari', 'Sheikh', 'Arain', 'Arab',
+                        'Malay', 'Turkish', 'Hausa', 'Other',
+                      ],
+                      onChanged: (v) => setState(() => _draft = _draft.copyWith(
+                        community: v == 'Any' ? null : v,
+                        clearCommunity: v == 'Any',
+                      )),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // ── LIVING EXPECTATION ──────────────────────
+                    _SectionLabel(key: _livingKey, label: 'POST-MARRIAGE LIVING'),
+                    const SizedBox(height: 8),
+                    _MultiChipGroup(
+                      options: const [
+                        'Any',
+                        'with_inlaws',
+                        'separate',
+                        'open_to_discussion',
+                      ],
+                      optionLabels: const [
+                        'Any',
+                        'With In-Laws',
+                        'Separate Home',
+                        'Open to Discussion',
+                      ],
+                      selected: _draft.livingExpectation,
+                      onChanged: (v) => setState(() => _draft = _draft.copyWith(
+                        livingExpectation: v,
+                        clearLivingExpectation: v == null,
+                      )),
                     ),
                     const SizedBox(height: 32),
                   ],
