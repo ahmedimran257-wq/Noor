@@ -18,6 +18,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/mock/mock_profiles.dart';
 import '../../../core/cubits/block_report/block_report_cubit.dart';
 import '../../../core/services/bookmark_service.dart';
@@ -437,12 +438,11 @@ class _PublicSlide extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (photoUrl != null && index == 0) {
-      return Image.network(
-        photoUrl!,
+      return CachedNetworkImage(
+        imageUrl: photoUrl!,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const _PersonPlaceholder(),
-        loadingBuilder: (ctx, child, chunk) =>
-            chunk == null ? child : const _PersonPlaceholder(),
+        errorWidget: (_, __, ___) => const _PersonPlaceholder(),
+        placeholder: (_, __) => const _PersonPlaceholder(),
       );
     }
     return const _PersonPlaceholder();

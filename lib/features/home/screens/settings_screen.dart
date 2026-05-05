@@ -29,6 +29,7 @@ import '../../../core/theme/app_typography.dart';
 import 'edit_profile_screen.dart';
 import 'delete_account_screen.dart';
 import 'block_list_screen.dart';
+import 'legal_doc_screen.dart';
 
 
 // ── Languages ─────────────────────────────────────────────────
@@ -112,7 +113,7 @@ class SettingsScreen extends StatelessWidget {
               icon:  Icons.phone_outlined,
               label: 'Phone Number',
               value: '+91 •••• ••7890',
-              onTap: () {},
+              onTap: () => _showInfoSnackbar(context, 'Phone number change will be available soon.'),
             ),
             _Divider(),
             _NavTile(
@@ -221,7 +222,7 @@ class SettingsScreen extends StatelessWidget {
             _NavTile(
               icon:  Icons.star_outline_rounded,
               label: 'Rate NOOR',
-              onTap: () {},
+              onTap: () => _showInfoSnackbar(context, 'Rating will be available on app store launch.'),
             ),
             _Divider(),
             const _InfoTile(
@@ -261,13 +262,17 @@ class SettingsScreen extends StatelessWidget {
             _NavTile(
               icon:  Icons.description_outlined,
               label: 'Terms of Service',
-              onTap: () {},
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const LegalDocScreen(type: 'tos')),
+              ),
             ),
             _Divider(),
             _NavTile(
               icon:  Icons.privacy_tip_outlined,
               label: 'Privacy Policy',
-              onTap: () {},
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const LegalDocScreen(type: 'privacy')),
+              ),
             ),
           ]),
 
@@ -280,7 +285,7 @@ class SettingsScreen extends StatelessWidget {
                 icon:      Icons.support_agent_rounded,
                 label:     'Contact Support',
                 iconColor: AppColors.slateMist,
-                onTap:     () {},
+                onTap:     () => _showSupportDialog(context),
               ),
               _Divider(),
               _NavTile(
@@ -345,6 +350,92 @@ class SettingsScreen extends StatelessWidget {
   }
 
   static String _fmtHour(int h) => '${h.toString().padLeft(2, '0')}:00';
+
+  // ── Helper snackbar ─────────────────────────────────────────
+  static void _showInfoSnackbar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: AppTypography.body),
+        backgroundColor: AppColors.surfaceGlassHover,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: AppColors.cardBorder),
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  // ── Support dialog ──────────────────────────────────────────
+  static void _showSupportDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF12121A),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+          side: const BorderSide(color: AppColors.cardBorder),
+        ),
+        title: Row(
+          children: [
+            const Icon(Icons.support_agent_rounded,
+                color: AppColors.champagneGold, size: 20),
+            const SizedBox(width: 10),
+            Text('Contact Support', style: AppTypography.bodyMedium),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'For any questions, concerns, or feedback:',
+              style: AppTypography.body.copyWith(height: 1.5),
+            ),
+            const SizedBox(height: AppDimensions.space16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppDimensions.space16),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceGlass,
+                borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                border: Border.all(color: AppColors.cardBorder),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.email_outlined,
+                          color: AppColors.champagneGold, size: 16),
+                      const SizedBox(width: 8),
+                      Text('support@noor.app',
+                          style: AppTypography.bodyMedium.copyWith(
+                              color: AppColors.champagneGold)),
+                    ],
+                  ),
+                  const SizedBox(height: AppDimensions.space8),
+                  Text(
+                    'We aim to respond within 48 hours.',
+                    style: AppTypography.caption,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Close',
+                style: AppTypography.caption.copyWith(
+                    color: AppColors.champagneGold)),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════

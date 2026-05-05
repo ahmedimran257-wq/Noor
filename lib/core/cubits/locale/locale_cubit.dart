@@ -16,10 +16,23 @@ class LocaleCubit extends Cubit<Locale> {
 
   static const _kKey = 'app_locale';
 
+  /// Supported language codes — must match main.dart _supportedLocales.
+  static const _supported = {'en', 'ar', 'ur', 'ms', 'id', 'tr', 'de', 'fr'};
+
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    final code  = prefs.getString(_kKey) ?? 'en';
-    if (!isClosed) emit(Locale(code));
+    final saved = prefs.getString(_kKey);
+
+    if (saved != null) {
+      // User has previously chosen a locale
+      if (!isClosed) emit(Locale(saved));
+    } else {
+      // First launch: detect device locale, fall back to 'en' if unsupported
+      final deviceCode =
+          WidgetsBinding.instance.platformDispatcher.locale.languageCode;
+      final code = _supported.contains(deviceCode) ? deviceCode : 'en';
+      if (!isClosed) emit(Locale(code));
+    }
   }
 
   Future<void> setLocale(Locale locale) async {

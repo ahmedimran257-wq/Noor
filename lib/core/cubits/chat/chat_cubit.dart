@@ -165,6 +165,11 @@ class ChatCubit extends Cubit<ChatState> {
 
   /// Mark all messages in a conversation as read.
   void markRead(String conversationId) {
+    // Guard: verify conversation exists to prevent race conditions
+    // when user rapidly switches between conversations.
+    final exists = state.conversations.any((c) => c.id == conversationId);
+    if (!exists) return;
+
     final updated = state.conversations.map((c) {
       if (c.id != conversationId) return c;
       return c.copyWith(unreadCount: 0);

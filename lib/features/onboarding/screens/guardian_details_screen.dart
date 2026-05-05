@@ -84,6 +84,9 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
   // Candidate's gender — required
   Gender? _candidateGender;
 
+  // Guardian name
+  final   _nameCtrl     = TextEditingController();
+
   // Guardian phone
   _CC     _selectedCode = _kCodes.first;          // India by default
   final   _phoneCtrl    = TextEditingController();
@@ -93,11 +96,13 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
 
   bool get _canProceed =>
       _candidateGender != null &&
+      _nameCtrl.text.trim().length >= 2 &&
       _phoneCtrl.text.trim().length >= 7 &&
       _relationship != null;
 
   @override
   void dispose() {
+    _nameCtrl.dispose();
     _phoneCtrl.dispose();
     super.dispose();
   }
@@ -131,6 +136,7 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
     final updated = context.read<OnboardingCubit>().currentData.copyWith(
       gender:                  _candidateGender,
       isGuardianMode:          true,
+      guardianName:            _nameCtrl.text.trim(),
       guardianPhone:           guardianPhone,
       guardianPhoneCountryCode: _selectedCode.dialCode,
       guardianRelationship:    _relationship,
@@ -244,6 +250,43 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
                   ),
                 ),
               ],
+
+              const SizedBox(height: AppDimensions.space28),
+
+              // ── Guardian name ────────────────────────────────────
+              Text('YOUR NAME', style: AppTypography.sectionLabel),
+              const SizedBox(height: AppDimensions.space8),
+              Text(
+                'Your name as the guardian of this profile.',
+                style: AppTypography.caption,
+              ),
+              const SizedBox(height: AppDimensions.space12),
+              Container(
+                height: AppDimensions.buttonHeight,
+                decoration: BoxDecoration(
+                  color:        AppColors.surfaceGlass,
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                  border:       Border.all(color: AppColors.cardBorder),
+                ),
+                child: TextField(
+                  controller:   _nameCtrl,
+                  keyboardType: TextInputType.name,
+                  textCapitalization: TextCapitalization.words,
+                  style:        AppTypography.inputText,
+                  onChanged:    (_) => setState(() {}),
+                  decoration: InputDecoration(
+                    hintText:       'Full name',
+                    hintStyle:      AppTypography.inputText.copyWith(
+                                      color: AppColors.slateMist),
+                    border:         InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppDimensions.space16,
+                    ),
+                    prefixIcon: const Icon(Icons.person_outline_rounded,
+                        color: AppColors.slateMist, size: 20),
+                  ),
+                ),
+              ),
 
               const SizedBox(height: AppDimensions.space28),
 

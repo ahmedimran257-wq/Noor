@@ -42,12 +42,12 @@ class AuthAuthenticated extends AuthState {
   });
 
   final String  userId;
-  /// 0–13: still in onboarding. 14: onboarding complete.
+  /// 0–11: still in onboarding (female-myself shortest). ≥12: complete.
   final int     onboardingStep;
   /// 'male' | 'female' | null (unknown until onboarding sets it)
   final String? gender;
 
-  bool get isOnboardingComplete => onboardingStep >= 14;
+  bool get isOnboardingComplete => onboardingStep >= 12;
 
   @override
   List<Object?> get props => [userId, onboardingStep, gender];

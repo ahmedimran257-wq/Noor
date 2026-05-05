@@ -6,6 +6,8 @@
 //         Auth-gated routing with mock OTP flow.
 // ============================================================
 
+import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -43,6 +45,62 @@ const _rtlLocales = {'ar', 'ur'};
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ── Global Error Handling ──────────────────────────────────
+
+  // Catch Flutter framework errors (layout, painting, etc.)
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    debugPrint('Flutter Error: ${details.exception}');
+  };
+
+  // Replace the ugly red error screen with a styled fallback
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    return Material(
+      color: const Color(0xFF0A0A0F), // AppColors.obsidianNight
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline_rounded,
+                  color: Color(0xFFE67E7E), size: 48),
+              const SizedBox(height: 16),
+              const Text(
+                'Something went wrong',
+                style: TextStyle(
+                  color: Color(0xFFF5F5F7),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                kDebugMode
+                    ? details.exception.toString()
+                    : 'Please restart the app.',
+                style: const TextStyle(
+                  color: Color(0xFF8E8E93),
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  };
+
+  // Catch async errors not caught by Flutter framework
+  ui.PlatformDispatcher.instance.onError = (error, stack) {
+    debugPrint('Async Error: $error\n$stack');
+    return true; // Prevent app crash
+  };
 
   // Status bar: transparent, light icons (dark background)
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(

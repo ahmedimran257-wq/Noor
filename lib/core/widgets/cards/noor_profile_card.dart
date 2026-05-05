@@ -13,6 +13,7 @@
 // ============================================================
 
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimensions.dart';
 import '../../theme/app_typography.dart';
@@ -235,14 +236,11 @@ class _PhotoLayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Image.network(
-      url,
+    return CachedNetworkImage(
+      imageUrl: url,
       fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => const _PhotoError(),
-      loadingBuilder: (context, child, chunk) {
-        if (chunk == null) return child;
-        return Container(color: AppColors.surfaceGlassHover);
-      },
+      errorWidget: (_, __, ___) => const _PhotoError(),
+      placeholder: (_, __) => Container(color: AppColors.surfaceGlassHover),
     );
   }
 }

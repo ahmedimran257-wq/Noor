@@ -1,10 +1,16 @@
 // lib/core/cubits/onboarding/onboarding_cubit.dart
 // ============================================================
 // NOOR — Onboarding Cubit
-// Manages the 14-step onboarding flow.
+// Manages the multi-step onboarding flow.
 // Each step: locally validates → emits OnboardingLoading →
 //            mock-saves → emits OnboardingSaved.
 // The router listens and pushes the next screen.
+//
+// Completion thresholds (gender × guardian):
+//   Male   + Myself   → completeAt 13
+//   Female + Myself   → completeAt 12
+//   Male   + Guardian → completeAt 14
+//   Female + Guardian → completeAt 13
 // ============================================================
 
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -43,10 +49,14 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     // Sync the step into AuthCubit so the router can redirect correctly
     _authCubit.updateOnboardingStep(nextStep);
 
-    // Guardian path has one extra step (GuardianDetailsScreen at step 1),
-    // so it completes at step >= 12; the myself path completes at >= 11.
+    // Gender × guardian branching determines completion threshold:
+    //   Male   + Myself   → 13 steps (0–12)
+    //   Female + Myself   → 12 steps (0–11)
+    //   Male   + Guardian → 14 steps (0–13)
+    //   Female + Guardian → 13 steps (0–12)
     final isGuardian = updatedData.profileFor == ProfileFor.guardian;
-    final completeAt = isGuardian ? 12 : 11;
+    final isMale     = updatedData.gender == Gender.male;
+    final completeAt = (isMale ? 13 : 12) + (isGuardian ? 1 : 0);
 
     if (nextStep >= completeAt) {
       emit(const OnboardingComplete());

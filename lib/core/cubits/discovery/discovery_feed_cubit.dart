@@ -8,16 +8,23 @@
 //   • Free-tier counter
 //   • Sector / Deen / Age / Verified / FamilyType filters
 //     applied in-memory against the mock pool
+//
+// Filter persistence: active filter is saved to SharedPreferences
+// so it survives app restarts.
 // ============================================================
 
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../mock/mock_profiles.dart';
 import 'discovery_feed_state.dart';
 
 class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   DiscoveryFeedCubit() : super(const DiscoveryFeedState());
 
-  static const _batchSize = 8;
+  static const _batchSize  = 8;
+  static const _kFilterKey = 'discovery_active_filter';
 
   // Extended mock pool (5 rotations for infinite-scroll demo)
   static final List<MockProfile> _pool = [
@@ -33,20 +40,27 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   // ── Public API ────────────────────────────────────────────
 
   /// Initial page load — shows skeleton loaders first.
+  /// Also restores saved filter from SharedPreferences.
   Future<void> loadInitial() async {
     if (state.status != FeedStatus.initial) return;
     emit(state.copyWith(status: FeedStatus.loading));
+
+    // Restore saved filter
+    final savedFilter = await _loadFilterFromPrefs();
+    final filter = savedFilter ?? state.activeFilter;
+
     await Future.delayed(const Duration(milliseconds: 1200));
 
     _cursor = 0;
-    final filtered = _applyFilter(_pool, state.activeFilter);
+    final filtered = _applyFilter(_pool, filter);
     final batch    = _nextBatch(filtered, offset: 0);
 
     if (!isClosed) {
       emit(state.copyWith(
-        status:   batch.isEmpty ? FeedStatus.empty : FeedStatus.loaded,
-        profiles: batch,
-        hasMore:  _cursor < filtered.length,
+        status:       batch.isEmpty ? FeedStatus.empty : FeedStatus.loaded,
+        profiles:     batch,
+        hasMore:      _cursor < filtered.length,
+        activeFilter: filter,
       ));
     }
   }
@@ -74,6 +88,10 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   /// Apply new filters — resets the feed and reloads from cursor 0.
   Future<void> applyFilter(DiscoveryFilter filter) async {
     emit(state.copyWith(status: FeedStatus.loading, activeFilter: filter));
+
+    // Persist the filter
+    await _saveFilterToPrefs(filter);
+
     await Future.delayed(const Duration(milliseconds: 800));
 
     _cursor = 0;
@@ -95,6 +113,72 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   void recordProfileView() {
     if (!isClosed) {
       emit(state.copyWith(profilesViewedToday: state.profilesViewedToday + 1));
+    }
+  }
+
+  // ── Filter Persistence ────────────────────────────────────
+
+  Future<DiscoveryFilter?> _loadFilterFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw   = prefs.getString(_kFilterKey);
+      if (raw == null || raw.isEmpty) return null;
+
+      final j = jsonDecode(raw) as Map<String, dynamic>;
+      return DiscoveryFilter(
+        ageMin:             j['ageMin'] as int?,
+        ageMax:             j['ageMax'] as int?,
+        sect:               j['sect'] as String?,
+        deenLevel:          j['deenLevel'] as String?,
+        verifiedOnly:       (j['verifiedOnly'] as bool?) ?? false,
+        activeRecentlyOnly: (j['activeRecentlyOnly'] as bool?) ?? false,
+        maxDistanceKm:      j['maxDistanceKm'] as int?,
+        familyType:         j['familyType'] as String?,
+        openToDivorced:     (j['openToDivorced'] as bool?) ?? false,
+        genderPref:         j['genderPref'] as String?,
+        maritalStatus:      j['maritalStatus'] as String?,
+        hasChildren:        j['hasChildren'] as String?,
+        educationMin:       j['educationMin'] as String?,
+        distanceLabel:      j['distanceLabel'] as String?,
+        motherTongue:       j['motherTongue'] as String?,
+        community:          j['community'] as String?,
+        livingExpectation:  j['livingExpectation'] as String?,
+      );
+    } catch (e) {
+      debugPrint('DiscoveryFeedCubit: failed to load filter: $e');
+      return null;
+    }
+  }
+
+  Future<void> _saveFilterToPrefs(DiscoveryFilter f) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (!f.isActive) {
+        await prefs.remove(_kFilterKey);
+        return;
+      }
+      final json = jsonEncode({
+        'ageMin':             f.ageMin,
+        'ageMax':             f.ageMax,
+        'sect':               f.sect,
+        'deenLevel':          f.deenLevel,
+        'verifiedOnly':       f.verifiedOnly,
+        'activeRecentlyOnly': f.activeRecentlyOnly,
+        'maxDistanceKm':      f.maxDistanceKm,
+        'familyType':         f.familyType,
+        'openToDivorced':     f.openToDivorced,
+        'genderPref':         f.genderPref,
+        'maritalStatus':      f.maritalStatus,
+        'hasChildren':        f.hasChildren,
+        'educationMin':       f.educationMin,
+        'distanceLabel':      f.distanceLabel,
+        'motherTongue':       f.motherTongue,
+        'community':          f.community,
+        'livingExpectation':  f.livingExpectation,
+      });
+      await prefs.setString(_kFilterKey, json);
+    } catch (e) {
+      debugPrint('DiscoveryFeedCubit: failed to save filter: $e');
     }
   }
 

@@ -2,7 +2,7 @@
 // ============================================================
 // NOOR — Onboarding Data Accumulator
 // An immutable value object that accumulates all onboarding
-// field values across all 14 steps using copyWith().
+// field values across all steps using copyWith().
 // ============================================================
 
 /// Who the profile is being created for.
@@ -107,6 +107,24 @@ class OnboardingData {
     this.photoLocalPaths,
     this.photoPrivacy,
 
+    // Islamic marriage details (both genders)
+    this.quranMemorization,      // 'none','some_surahs','partial','hafiz'
+    this.religiousEducation,     // 'self_taught','madrasa','islamic_uni','alim_course','none'
+    this.marriageTimeline,       // 'asap','6_months','1_year','2_plus_years','not_sure'
+    this.willingToRelocate,      // 'yes','no','open_to_discussion'
+
+    // Female-specific
+    this.niqabPreference,        // 'wears_niqab','open_to_niqab','no_niqab','prefer_not_to_say'
+    this.mahrExpectation,        // 'no_preference','modest','moderate','high','to_discuss'
+    this.willingToWorkAfterMarriage, // true/false/null
+
+    // Male-specific
+    this.mahrBudget,             // 'modest','moderate','generous','to_discuss'
+    this.canProvideHousing,      // true/false
+    this.canProvideMaintenance,  // true/false
+    this.debtStatus,             // 'no_debt','manageable','significant','prefer_not_to_say'
+    this.religiousLeadership,    // 'leads_prayer','learning','not_yet','prefer_not_to_say'
+
     // Meta
     this.phone,
     this.guardianName,
@@ -115,6 +133,8 @@ class OnboardingData {
     this.guardianPhone,
     this.guardianPhoneCountryCode,
     this.profileCreatorRelation,
+    this.guardianEmail,
+    this.guardianAuthorityScope,  // 'full','advisory','limited'
   });
 
   // Step 3
@@ -189,6 +209,24 @@ class OnboardingData {
   final List<String>? photoLocalPaths;
   final PhotoPrivacy? photoPrivacy;
 
+  // Islamic marriage details (both genders)
+  final String? quranMemorization;
+  final String? religiousEducation;
+  final String? marriageTimeline;
+  final String? willingToRelocate;
+
+  // Female-specific
+  final String? niqabPreference;
+  final String? mahrExpectation;
+  final bool?   willingToWorkAfterMarriage;
+
+  // Male-specific
+  final String? mahrBudget;
+  final bool?   canProvideHousing;
+  final bool?   canProvideMaintenance;
+  final String? debtStatus;
+  final String? religiousLeadership;
+
   // Meta
   final String? phone;
   final String? guardianName;
@@ -197,6 +235,8 @@ class OnboardingData {
   final String? guardianPhone;
   final String? guardianPhoneCountryCode;
   final String? profileCreatorRelation; // 'self','parent','sibling','guardian'
+  final String? guardianEmail;
+  final String? guardianAuthorityScope;
 
   OnboardingData copyWith({
     ProfileFor? profileFor,
@@ -253,6 +293,18 @@ class OnboardingData {
     String?     preferredLivingExpectation,
     List<String>? photoLocalPaths,
     PhotoPrivacy? photoPrivacy,
+    String?     quranMemorization,
+    String?     religiousEducation,
+    String?     marriageTimeline,
+    String?     willingToRelocate,
+    String?     niqabPreference,
+    String?     mahrExpectation,
+    bool?       willingToWorkAfterMarriage,
+    String?     mahrBudget,
+    bool?       canProvideHousing,
+    bool?       canProvideMaintenance,
+    String?     debtStatus,
+    String?     religiousLeadership,
     String?     phone,
     String?     guardianName,
     String?     guardianRelationship,
@@ -260,6 +312,8 @@ class OnboardingData {
     String?     guardianPhone,
     String?     guardianPhoneCountryCode,
     String?     profileCreatorRelation,
+    String?     guardianEmail,
+    String?     guardianAuthorityScope,
   }) {
     return OnboardingData(
       profileFor:               profileFor               ?? this.profileFor,
@@ -316,6 +370,18 @@ class OnboardingData {
       preferredLivingExpectation: preferredLivingExpectation ?? this.preferredLivingExpectation,
       photoLocalPaths:          photoLocalPaths          ?? this.photoLocalPaths,
       photoPrivacy:             photoPrivacy             ?? this.photoPrivacy,
+      quranMemorization:        quranMemorization        ?? this.quranMemorization,
+      religiousEducation:       religiousEducation       ?? this.religiousEducation,
+      marriageTimeline:         marriageTimeline         ?? this.marriageTimeline,
+      willingToRelocate:        willingToRelocate        ?? this.willingToRelocate,
+      niqabPreference:          niqabPreference          ?? this.niqabPreference,
+      mahrExpectation:          mahrExpectation          ?? this.mahrExpectation,
+      willingToWorkAfterMarriage: willingToWorkAfterMarriage ?? this.willingToWorkAfterMarriage,
+      mahrBudget:               mahrBudget               ?? this.mahrBudget,
+      canProvideHousing:        canProvideHousing        ?? this.canProvideHousing,
+      canProvideMaintenance:    canProvideMaintenance    ?? this.canProvideMaintenance,
+      debtStatus:               debtStatus               ?? this.debtStatus,
+      religiousLeadership:      religiousLeadership      ?? this.religiousLeadership,
       phone:                    phone                    ?? this.phone,
       guardianName:             guardianName             ?? this.guardianName,
       guardianRelationship:     guardianRelationship     ?? this.guardianRelationship,
@@ -323,6 +389,8 @@ class OnboardingData {
       guardianPhone:            guardianPhone            ?? this.guardianPhone,
       guardianPhoneCountryCode: guardianPhoneCountryCode ?? this.guardianPhoneCountryCode,
       profileCreatorRelation:   profileCreatorRelation   ?? this.profileCreatorRelation,
+      guardianEmail:            guardianEmail            ?? this.guardianEmail,
+      guardianAuthorityScope:   guardianAuthorityScope   ?? this.guardianAuthorityScope,
     );
   }
 

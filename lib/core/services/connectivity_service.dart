@@ -1,0 +1,82 @@
+// lib/core/services/connectivity_service.dart
+// ============================================================
+// NOOR — Connectivity Service
+// Lightweight connectivity checker using dart:io.
+// No extra dependency needed — uses InternetAddress.lookup().
+//
+// Usage:
+//   final service = ConnectivityService();
+//   service.connectivityStream.listen((isOnline) { ... });
+//   final online = await service.checkNow();
+//   service.dispose(); // when done
+//
+// Step 12: Replace with connectivity_plus for better platform
+// support if needed.
+// ============================================================
+
+import 'dart:async';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+
+class ConnectivityService {
+  ConnectivityService({
+    this.checkInterval = const Duration(seconds: 30),
+  }) {
+    _startPolling();
+  }
+
+  final Duration checkInterval;
+
+  final _controller = StreamController<bool>.broadcast();
+  Timer? _timer;
+  bool _lastKnownState = true;
+
+  /// Stream of connectivity changes (true = online, false = offline).
+  Stream<bool> get connectivityStream => _controller.stream;
+
+  /// Whether the device was online at last check.
+  bool get isOnline => _lastKnownState;
+
+  /// Immediately check connectivity and return result.
+  Future<bool> checkNow() async {
+    try {
+      final result = await InternetAddress.lookup('google.com')
+          .timeout(const Duration(seconds: 5));
+      final online = result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+      _updateState(online);
+      return online;
+    } on SocketException catch (_) {
+      _updateState(false);
+      return false;
+    } on TimeoutException catch (_) {
+      _updateState(false);
+      return false;
+    } catch (e) {
+      debugPrint('ConnectivityService: unexpected error: $e');
+      _updateState(false);
+      return false;
+    }
+  }
+
+  void _startPolling() {
+    // Initial check
+    checkNow();
+    // Periodic checks
+    _timer = Timer.periodic(checkInterval, (_) => checkNow());
+  }
+
+  void _updateState(bool online) {
+    if (online != _lastKnownState) {
+      _lastKnownState = online;
+      if (!_controller.isClosed) {
+        _controller.add(online);
+      }
+    }
+  }
+
+  /// Stop polling and close the stream.
+  void dispose() {
+    _timer?.cancel();
+    _controller.close();
+  }
+}
