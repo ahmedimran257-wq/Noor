@@ -308,14 +308,7 @@ const _kCities = <Map<String, String>>[
   {'name': 'Ufa',           'country': 'RU', 'countryName': 'Russia'},
 ];
 
-// ── Mother Tongue options ─────────────────────────────────────
 
-const _kMotherTongues = <String>[
-  'Arabic', 'Urdu', 'Hindi', 'Bengali', 'Tamil', 'Telugu', 'Malayalam',
-  'Kannada', 'Marathi', 'Punjabi', 'Sindhi', 'Pashto', 'Balochi',
-  'English', 'Turkish', 'Indonesian', 'Malay', 'Hausa', 'Yoruba',
-  'Persian', 'Kurdish', 'Somali', 'Other',
-];
 
 // ── Complexion options ─────────────────────────────────────────
 
@@ -329,14 +322,7 @@ const _kSmokingOptions = <String>[
   'Non-smoker', 'Occasional', 'Trying to quit', 'Prefer not to say',
 ];
 
-// ── Height helpers ────────────────────────────────────────────
 
-String _heightDisplay(int cm) {
-  final totalInches = cm / 2.54;
-  final feet        = totalInches ~/ 12;
-  final inches      = totalInches.round() % 12;
-  return '$cm cm  ($feet ft $inches in)';
-}
 
 // ── Screen ────────────────────────────────────────────────────
 

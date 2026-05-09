@@ -33,10 +33,18 @@ class MockProfile {
     this.motherTongue,
     this.smokingStatus,
     this.isGuardianProfile = false,
-    // New fields (Phase 2)
+    // Phase 2 fields
     this.community,
     this.dietType,
     this.livingExpectation,
+    // Phase 7 fields — Islamic marriage details
+    this.quranMemorization,
+    this.religiousEducation,
+    this.marriageTimeline,
+    this.willingToRelocate,
+    // Phase 9 audit fields — filter support
+    this.gender,
+    this.hasChildren = false,
   });
 
   final String firstName;
@@ -63,10 +71,17 @@ class MockProfile {
   final String? motherTongue;
   final String? smokingStatus;
   final bool isGuardianProfile;
-  // New fields
-  final String? community;         // e.g. 'Syed', 'Pathan'
-  final String? dietType;          // e.g. 'zabiha_strict', 'halal_only'
-  final String? livingExpectation; // e.g. 'open_to_discussion', 'separate'
+  // Phase 2 fields
+  final String? community;
+  final String? dietType;
+  final String? livingExpectation;
+  final String? quranMemorization;   // 'none','some_surahs','partial','hafiz'
+  final String? religiousEducation;  // 'self_taught','madrasa','islamic_uni','alim_course','none'
+  final String? marriageTimeline;    // 'asap','6_months','1_year','2_plus_years','not_sure'
+  final String? willingToRelocate;   // 'yes','no','open_to_discussion'
+  // Phase 9 audit fields
+  final String? gender;              // 'male','female'
+  final bool hasChildren;
 
   /// Stable mock ID — derived from name. Replaced by real UUID in Step 12.
   String get id => '${firstName.toLowerCase()}_${lastNameInitial.toLowerCase()}';
@@ -101,6 +116,11 @@ const List<MockProfile> kMockProfiles = [
     community: 'Syed',
     dietType: 'zabiha_strict',
     livingExpectation: 'open_to_discussion',
+    quranMemorization: 'partial',
+    religiousEducation: 'islamic_uni',
+    marriageTimeline: '6_months',
+    willingToRelocate: 'open_to_discussion',
+    gender: 'female',
   ),
   MockProfile(
     firstName: 'Zainab',
@@ -128,6 +148,11 @@ const List<MockProfile> kMockProfiles = [
     community: 'Qureshi',
     dietType: 'halal_only',
     livingExpectation: 'separate',
+    quranMemorization: 'some_surahs',
+    religiousEducation: 'self_taught',
+    marriageTimeline: '1_year',
+    willingToRelocate: 'no',
+    gender: 'female',
   ),
   MockProfile(
     firstName: 'Mariam',
@@ -155,6 +180,11 @@ const List<MockProfile> kMockProfiles = [
     community: 'South Asian',
     dietType: 'halal_only',
     livingExpectation: 'open_to_discussion',
+    quranMemorization: 'some_surahs',
+    religiousEducation: 'self_taught',
+    marriageTimeline: 'asap',
+    willingToRelocate: 'yes',
+    gender: 'female',
   ),
   MockProfile(
     firstName: 'Nadia',
@@ -182,6 +212,11 @@ const List<MockProfile> kMockProfiles = [
     community: 'Malay',
     dietType: 'halal_only',
     livingExpectation: 'with_inlaws',
+    quranMemorization: 'none',
+    religiousEducation: 'madrasa',
+    marriageTimeline: '1_year',
+    willingToRelocate: 'open_to_discussion',
+    gender: 'female',
   ),
   MockProfile(
     firstName: 'Sara',
@@ -209,6 +244,11 @@ const List<MockProfile> kMockProfiles = [
     community: 'Turkish',
     dietType: 'zabiha_strict',
     livingExpectation: 'separate',
+    quranMemorization: 'hafiz',
+    religiousEducation: 'alim_course',
+    marriageTimeline: '6_months',
+    willingToRelocate: 'no',
+    gender: 'female',
   ),
   MockProfile(
     firstName: 'Amira',
@@ -236,6 +276,11 @@ const List<MockProfile> kMockProfiles = [
     community: 'Egyptian Arab',
     dietType: 'halal_only',
     livingExpectation: 'open_to_discussion',
+    quranMemorization: 'some_surahs',
+    religiousEducation: 'self_taught',
+    marriageTimeline: '2_plus_years',
+    willingToRelocate: 'yes',
+    gender: 'female',
   ),
   MockProfile(
     firstName: 'Hana',
@@ -263,6 +308,11 @@ const List<MockProfile> kMockProfiles = [
     community: 'Moroccan',
     dietType: 'zabiha_strict',
     livingExpectation: 'separate',
+    quranMemorization: 'partial',
+    religiousEducation: 'islamic_uni',
+    marriageTimeline: 'asap',
+    willingToRelocate: 'open_to_discussion',
+    gender: 'female',
   ),
   MockProfile(
     firstName: 'Layla',
@@ -290,5 +340,10 @@ const List<MockProfile> kMockProfiles = [
     community: 'Arab',
     dietType: 'halal_only',
     livingExpectation: 'open_to_discussion',
+    quranMemorization: 'some_surahs',
+    religiousEducation: 'madrasa',
+    marriageTimeline: '1_year',
+    willingToRelocate: 'yes',
+    gender: 'female',
   ),
 ];

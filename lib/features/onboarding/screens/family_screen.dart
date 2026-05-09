@@ -46,6 +46,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
   bool?          _hasChildren;
   int            _childrenCount = 0;
   String?        _livingExpectation; // Phase 2
+  String?        _willingToRelocate; // Phase 5.3
 
   bool get _canProceed =>
       _familyType != null &&
@@ -61,7 +62,8 @@ class _FamilyScreenState extends State<FamilyScreen> {
       maritalStatus:      _marital,
       hasChildren:        _hasChildren,
       childrenCount:      _hasChildren == true ? _childrenCount : 0,
-      livingExpectation:  _livingExpectation, // TODO (backend): write to partner_preferences table
+      livingExpectation:  _livingExpectation,
+      willingToRelocate:  _willingToRelocate,
     );
     context.read<OnboardingCubit>().saveAndAdvance(data);
   }
@@ -220,6 +222,50 @@ class _FamilyScreenState extends State<FamilyScreen> {
                   onTap:      () => setState(() => _livingExpectation = opt.value),
                 ),
               )),
+
+              // ── WILLING TO RELOCATE (Phase 5.3) ────────────
+              const SizedBox(height: AppDimensions.space28),
+              _Label('WILLING TO RELOCATE'),
+              const SizedBox(height: AppDimensions.space4),
+              Text(
+                'Would you relocate for marriage?',
+                style: AppTypography.caption,
+              ),
+              const SizedBox(height: AppDimensions.space12),
+              Wrap(
+                spacing: AppDimensions.space8,
+                runSpacing: AppDimensions.space8,
+                children: {
+                  'yes': 'Yes',
+                  'no': 'No',
+                  'open_to_discussion': 'Open to Discussion',
+                }.entries.map((e) {
+                  final isSel = _willingToRelocate == e.key;
+                  return GestureDetector(
+                    onTap: () => setState(() => _willingToRelocate = e.key),
+                    child: AnimatedContainer(
+                      duration: AppDimensions.durationTransition,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppDimensions.space16,
+                        vertical: AppDimensions.space10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSel
+                            ? AppColors.champagneGold.withValues(alpha: 0.12)
+                            : AppColors.surfaceGlass,
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+                        border: Border.all(
+                          color: isSel ? AppColors.champagneGold : AppColors.cardBorder,
+                          width: isSel ? AppDimensions.borderFocus : AppDimensions.borderThin,
+                        ),
+                      ),
+                      child: Text(e.value, style: AppTypography.chipLabel.copyWith(
+                        color: isSel ? AppColors.champagneGold : AppColors.pearlWhite,
+                      )),
+                    ),
+                  );
+                }).toList(),
+              ),
 
               const SizedBox(height: AppDimensions.space32),
             ],

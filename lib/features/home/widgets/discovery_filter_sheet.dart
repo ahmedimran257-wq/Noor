@@ -24,7 +24,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/cubits/discovery/discovery_feed_cubit.dart';
 import '../../../core/cubits/discovery/discovery_filter.dart';
 import '../../../core/cubits/subscription/subscription_cubit.dart';
-import '../../../core/cubits/subscription/subscription_state.dart';
 import '../../../core/services/filter_preset_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';

@@ -205,13 +205,16 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
                     // Islamic Background
                     if (p.sect != null || p.deenLevel != null ||
-                        p.motherTongue != null || p.smokingStatus != null) ...[
+                        p.motherTongue != null || p.smokingStatus != null ||
+                        p.quranMemorization != null || p.religiousEducation != null) ...[
                       _SectionHeader(label: 'Islamic Life'),
                       const SizedBox(height: AppDimensions.space12),
                       _DetailGrid(items: [
                         if (p.sect      != null) _DetailItem(label: 'Sect',       value: p.sect!),
                         if (p.deenLevel != null) _DetailItem(label: 'Deen Level', value: _formatDeen(p.deenLevel!)),
                         if (p.motherTongue != null) _DetailItem(label: 'Mother Tongue', value: p.motherTongue!),
+                        if (p.quranMemorization != null) _DetailItem(label: 'Quran', value: _formatQuran(p.quranMemorization!)),
+                        if (p.religiousEducation != null) _DetailItem(label: 'Religious Education', value: _formatReligiousEdu(p.religiousEducation!)),
                         if (p.smokingStatus != null) _DetailItem(label: 'Smoking', value: p.smokingStatus!),
                       ]),
                       const SizedBox(height: AppDimensions.space28),
@@ -230,12 +233,16 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                     ],
 
                     // Family — blueprint section 5 of 6
-                    if (p.familyType != null || p.maritalStatus != null) ...[
-                      _SectionHeader(label: 'Family'),
+                    if (p.familyType != null || p.maritalStatus != null ||
+                        p.marriageTimeline != null || p.willingToRelocate != null) ...[
+                      _SectionHeader(label: 'Family & Future'),
                       const SizedBox(height: AppDimensions.space12),
                       _DetailGrid(items: [
                         if (p.familyType    != null) _DetailItem(label: 'Family Type',    value: p.familyType!),
                         if (p.maritalStatus != null) _DetailItem(label: 'Marital Status', value: p.maritalStatus!),
+                        if (p.marriageTimeline != null) _DetailItem(label: 'Timeline', value: _formatTimeline(p.marriageTimeline!)),
+                        if (p.willingToRelocate != null) _DetailItem(label: 'Relocate', value: _formatRelocate(p.willingToRelocate!)),
+                        if (p.livingExpectation != null) _DetailItem(label: 'Living', value: _formatLiving(p.livingExpectation!)),
                       ]),
                       const SizedBox(height: AppDimensions.space28),
                     ],
@@ -312,6 +319,56 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
       case 'moderate':   return 'Moderate';
       case 'cultural':   return 'Cultural';
       default:           return raw;
+    }
+  }
+
+  String _formatQuran(String raw) {
+    switch (raw) {
+      case 'none':        return 'None';
+      case 'some_surahs': return 'Some Surahs';
+      case 'partial':     return 'Partial';
+      case 'hafiz':       return 'Hafiz';
+      default:            return raw;
+    }
+  }
+
+  String _formatReligiousEdu(String raw) {
+    switch (raw) {
+      case 'self_taught': return 'Self-taught';
+      case 'madrasa':     return 'Madrasa';
+      case 'islamic_uni': return 'Islamic University';
+      case 'alim_course': return 'Alim Course';
+      case 'none':        return 'None';
+      default:            return raw;
+    }
+  }
+
+  String _formatTimeline(String raw) {
+    switch (raw) {
+      case 'asap':         return 'ASAP';
+      case '6_months':     return '6 Months';
+      case '1_year':       return '1 Year';
+      case '2_plus_years': return '2+ Years';
+      case 'not_sure':     return 'Not Sure';
+      default:             return raw;
+    }
+  }
+
+  String _formatRelocate(String raw) {
+    switch (raw) {
+      case 'yes':                return 'Yes';
+      case 'no':                 return 'No';
+      case 'open_to_discussion': return 'Open';
+      default:                   return raw;
+    }
+  }
+
+  String _formatLiving(String raw) {
+    switch (raw) {
+      case 'with_inlaws':        return 'With In-Laws';
+      case 'separate':           return 'Separate';
+      case 'open_to_discussion': return 'Flexible';
+      default:                   return raw;
     }
   }
 }

@@ -26,6 +26,7 @@ import 'core/cubits/block_report/block_report_cubit.dart';
 import 'core/cubits/notifications/notifications_cubit.dart';
 import 'core/cubits/locale/locale_cubit.dart';
 import 'core/router/app_router.dart';
+import 'l10n/generated/app_localizations.dart';
 
 /// Supported locales.
 /// Adding a locale here activates it in the language picker.
@@ -187,6 +188,7 @@ class NoorApp extends StatelessWidget {
               // ── Localizations ─────────────────────────────
               supportedLocales: _supportedLocales,
               localizationsDelegates: const [
+                AppLocalizations.delegate,
                 GlobalMaterialLocalizations.delegate,
                 GlobalWidgetsLocalizations.delegate,
                 GlobalCupertinoLocalizations.delegate,

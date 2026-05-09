@@ -26,9 +26,7 @@ import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
-import 'edit_profile_screen.dart';
-import 'delete_account_screen.dart';
-import 'block_list_screen.dart';
+import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import 'legal_doc_screen.dart';
 
 
@@ -109,11 +107,17 @@ class SettingsScreen extends StatelessWidget {
               onTap: () => context.push('/edit-profile'),
             ),
             _Divider(),
-            _NavTile(
-              icon:  Icons.phone_outlined,
-              label: 'Phone Number',
-              value: '+91 •••• ••7890',
-              onTap: () => _showInfoSnackbar(context, 'Phone number change will be available soon.'),
+            Builder(
+              builder: (ctx) {
+                final phone = ctx.read<OnboardingCubit>().currentData.phone;
+                final masked = _maskPhone(phone);
+                return _NavTile(
+                  icon:  Icons.phone_outlined,
+                  label: 'Phone Number',
+                  value: masked,
+                  onTap: () => _showInfoSnackbar(context, 'Phone number change will be available soon.'),
+                );
+              },
             ),
             _Divider(),
             _NavTile(
@@ -365,6 +369,17 @@ class SettingsScreen extends StatelessWidget {
         duration: const Duration(seconds: 2),
       ),
     );
+  }
+
+  // ── Phone masking helper ───────────────────────────────────
+  static String _maskPhone(String? phone) {
+    if (phone == null || phone.isEmpty) return '•••• ••••';
+    final digits = phone.replaceAll(RegExp(r'[^\d+]'), '');
+    if (digits.length <= 4) return '•••• ••••';
+    final last4 = digits.substring(digits.length - 4);
+    final prefix = digits.substring(0, digits.length - 4);
+    final masked = prefix.replaceAll(RegExp(r'\d'), '•');
+    return '$masked$last4';
   }
 
   // ── Support dialog ──────────────────────────────────────────

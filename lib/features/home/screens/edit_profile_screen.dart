@@ -54,6 +54,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   FamilyType? _familyType;
   int         _siblingCount  = 0;
   String?     _parentsStatus;
+  String?     _marriageTimeline;
+  String?     _willingToRelocate;
 
   // Partner preferences
   double _partnerAgeMin = 22;
@@ -86,6 +88,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _familyType     = d.familyType;
     _siblingCount   = d.siblingCount ?? 0;
     _parentsStatus  = d.parentsStatus;
+    _marriageTimeline  = d.marriageTimeline;
+    _willingToRelocate = d.willingToRelocate;
     _partnerAgeMin  = (d.preferredAgeMin ?? 22).toDouble();
     _partnerAgeMax  = (d.preferredAgeMax ?? 35).toDouble();
     _openToDivorced    = d.openToDivorced ?? false;
@@ -123,6 +127,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       familyType:         _familyType,
       siblingCount:       _siblingCount,
       parentsStatus:      _parentsStatus,
+      marriageTimeline:   _marriageTimeline,
+      willingToRelocate:  _willingToRelocate,
       preferredAgeMin:    _partnerAgeMin.round(),
       preferredAgeMax:    _partnerAgeMax.round(),
       openToDivorced:     _openToDivorced,
@@ -366,6 +372,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     'Both passed away',
                   ],
                   onChanged: (v) => setState(() => _parentsStatus = v),
+                ),
+                const SizedBox(height: AppDimensions.space12),
+                _DropdownField(
+                  label:    'Marriage Timeline',
+                  value:    _marriageTimeline ?? 'not_sure',
+                  options:  const ['asap', '6_months', '1_year', '2_plus_years', 'not_sure'],
+                  optionLabels: const ['ASAP', '6 Months', '1 Year', '2+ Years', 'Not Sure'],
+                  onChanged: (v) => setState(() => _marriageTimeline = v),
+                ),
+                const SizedBox(height: AppDimensions.space12),
+                _DropdownField(
+                  label:    'Willing to Relocate',
+                  value:    _willingToRelocate ?? 'open_to_discussion',
+                  options:  const ['yes', 'no', 'open_to_discussion'],
+                  optionLabels: const ['Yes', 'No', 'Open to Discussion'],
+                  onChanged: (v) => setState(() => _willingToRelocate = v),
                 ),
                 const SizedBox(height: AppDimensions.space28),
 

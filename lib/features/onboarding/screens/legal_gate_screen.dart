@@ -14,6 +14,7 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/buttons/noor_primary_button.dart';
 import '../../../core/router/app_router.dart';
+import '../../home/screens/legal_doc_screen.dart';
 
 class LegalGateScreen extends StatefulWidget {
   const LegalGateScreen({super.key});
@@ -111,7 +112,9 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
                             ),
                             recognizer: TapGestureRecognizer()
                               ..onTap = () {
-                                // TODO: open ToS bottom sheet / web view
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(builder: (_) => const LegalDocScreen(type: 'tos')),
+                                );
                               },
                           ),
                           TextSpan(
@@ -125,7 +128,9 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
                             ),
                             recognizer: TapGestureRecognizer()
                               ..onTap = () {
-                                // TODO: open Privacy Policy
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(builder: (_) => const LegalDocScreen(type: 'privacy')),
+                                );
                               },
                           ),
                           TextSpan(

@@ -111,6 +111,12 @@ class ProfilePreviewScreen extends StatelessWidget {
                                 : (data.praysFiveDaily! ? 'Yes' : 'No')),
                             if (data.gender == Gender.female)
                               _PreviewRow('Hijab', data.hijabStyle ?? '—'),
+                            if (data.quranMemorization != null)
+                              _PreviewRow('Quran', _quranLabel(data.quranMemorization!)),
+                            if (data.religiousEducation != null)
+                              _PreviewRow('Religious Education', _religiousEduLabel(data.religiousEducation!)),
+                            if (data.gender == Gender.male && data.religiousLeadership != null)
+                              _PreviewRow('Leadership', _leadershipLabel(data.religiousLeadership!)),
                             if (data.dietType != null)
                               _PreviewRow('Diet', _dietLabel(data.dietType!)),
                             if (data.smokingHabit != null)
@@ -142,6 +148,10 @@ class ProfilePreviewScreen extends StatelessWidget {
                             _PreviewRow('Marital',     _maritalLabel(data.maritalStatus)),
                             if (data.livingExpectation != null)
                               _PreviewRow('Post-Marriage Living', _livingLabel(data.livingExpectation!)),
+                            if (data.willingToRelocate != null)
+                              _PreviewRow('Willing to Relocate', _relocateLabel(data.willingToRelocate!)),
+                            if (data.marriageTimeline != null)
+                              _PreviewRow('Marriage Timeline', _timelineLabel(data.marriageTimeline!)),
                           ],
                         ),
                         const SizedBox(height: AppDimensions.space16),
@@ -281,6 +291,57 @@ class ProfilePreviewScreen extends StatelessWidget {
       case 'separate':           return 'Separate Home';
       case 'open_to_discussion': return 'Open to Discussion';
       default:                   return code;
+    }
+  }
+
+  String _quranLabel(String code) {
+    switch (code) {
+      case 'none':        return 'None';
+      case 'some_surahs': return 'Some Surahs';
+      case 'partial':     return 'Partial';
+      case 'hafiz':       return 'Hafiz';
+      default:            return code;
+    }
+  }
+
+  String _religiousEduLabel(String code) {
+    switch (code) {
+      case 'self_taught':   return 'Self-taught';
+      case 'madrasa':       return 'Madrasa';
+      case 'islamic_uni':   return 'Islamic University';
+      case 'alim_course':   return 'Alim Course';
+      case 'none':          return 'None';
+      default:              return code;
+    }
+  }
+
+  String _leadershipLabel(String code) {
+    switch (code) {
+      case 'leads_prayer':      return 'Leads Prayer';
+      case 'learning':          return 'Learning';
+      case 'not_yet':           return 'Not Yet';
+      case 'prefer_not_to_say': return 'Prefer Not to Say';
+      default:                  return code;
+    }
+  }
+
+  String _relocateLabel(String code) {
+    switch (code) {
+      case 'yes':                return 'Yes';
+      case 'no':                 return 'No';
+      case 'open_to_discussion': return 'Open to Discussion';
+      default:                   return code;
+    }
+  }
+
+  String _timelineLabel(String code) {
+    switch (code) {
+      case 'asap':          return 'As soon as possible';
+      case '6_months':      return 'Within 6 months';
+      case '1_year':        return 'Within a year';
+      case '2_plus_years':  return '2+ years';
+      case 'not_sure':      return 'Not sure yet';
+      default:              return code;
     }
   }
 }

@@ -143,6 +143,9 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         motherTongue:       j['motherTongue'] as String?,
         community:          j['community'] as String?,
         livingExpectation:  j['livingExpectation'] as String?,
+        quranMemorization:  j['quranMemorization'] as String?,
+        marriageTimeline:   j['marriageTimeline'] as String?,
+        willingToRelocate:  j['willingToRelocate'] as String?,
       );
     } catch (e) {
       debugPrint('DiscoveryFeedCubit: failed to load filter: $e');
@@ -175,6 +178,9 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         'motherTongue':       f.motherTongue,
         'community':          f.community,
         'livingExpectation':  f.livingExpectation,
+        'quranMemorization':  f.quranMemorization,
+        'marriageTimeline':   f.marriageTimeline,
+        'willingToRelocate':  f.willingToRelocate,
       });
       await prefs.setString(_kFilterKey, json);
     } catch (e) {
@@ -195,6 +201,15 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       if (f.ageMax != null && p.age > f.ageMax!) return false;
       if (f.familyType != null && f.familyType!.isNotEmpty && p.familyType != f.familyType) return false;
       if (!f.openToDivorced && p.maritalStatus != null && p.maritalStatus != 'Never Married') return false;
+      // Phase 7 filters
+      if (f.quranMemorization != null && f.quranMemorization!.isNotEmpty && p.quranMemorization != f.quranMemorization) return false;
+      if (f.marriageTimeline != null && f.marriageTimeline!.isNotEmpty && p.marriageTimeline != f.marriageTimeline) return false;
+      if (f.willingToRelocate != null && f.willingToRelocate!.isNotEmpty && p.willingToRelocate != f.willingToRelocate) return false;
+      if (f.motherTongue != null && f.motherTongue!.isNotEmpty && p.motherTongue != f.motherTongue) return false;
+      if (f.community != null && f.community!.isNotEmpty && p.community != f.community) return false;
+      if (f.livingExpectation != null && f.livingExpectation!.isNotEmpty && p.livingExpectation != f.livingExpectation) return false;
+      if (f.genderPref != null && f.genderPref!.isNotEmpty && p.gender != f.genderPref) return false;
+      if (f.hasChildren != null && f.hasChildren == 'no' && p.hasChildren) return false;
       return true;
     }).toList();
   }

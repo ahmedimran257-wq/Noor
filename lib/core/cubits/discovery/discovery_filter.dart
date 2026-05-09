@@ -31,6 +31,10 @@ class DiscoveryFilter {
     this.motherTongue,
     this.community,
     this.livingExpectation,
+    // Phase 7
+    this.quranMemorization,
+    this.marriageTimeline,
+    this.willingToRelocate,
   });
 
   final int?    ageMin;
@@ -55,6 +59,11 @@ class DiscoveryFilter {
   final String? community;          // e.g. 'Syed', 'Pathan', 'Arab'
   final String? livingExpectation;  // 'with_inlaws' | 'separate' | 'open_to_discussion'
 
+  // Phase 7
+  final String? quranMemorization;  // 'none','some_surahs','partial','hafiz'
+  final String? marriageTimeline;   // 'asap','6_months','1_year','2_plus_years','not_sure'
+  final String? willingToRelocate;  // 'yes','no','open_to_discussion'
+
   // Whether any filter is active
   bool get isActive =>
       ageMin != null ||
@@ -73,7 +82,10 @@ class DiscoveryFilter {
       distanceLabel != null ||
       motherTongue != null ||
       community != null ||
-      livingExpectation != null;
+      livingExpectation != null ||
+      quranMemorization != null ||
+      marriageTimeline != null ||
+      willingToRelocate != null;
 
   int get activeCount {
     int count = 0;
@@ -93,6 +105,9 @@ class DiscoveryFilter {
     if (motherTongue != null) count++;
     if (community != null) count++;
     if (livingExpectation != null) count++;
+    if (quranMemorization != null) count++;
+    if (marriageTimeline != null) count++;
+    if (willingToRelocate != null) count++;
     return count;
   }
 
@@ -114,6 +129,9 @@ class DiscoveryFilter {
     String? motherTongue,
     String? community,
     String? livingExpectation,
+    String? quranMemorization,
+    String? marriageTimeline,
+    String? willingToRelocate,
     // Nulling sentinels
     bool clearSect              = false,
     bool clearDeenLevel         = false,
@@ -128,6 +146,9 @@ class DiscoveryFilter {
     bool clearMotherTongue      = false,
     bool clearCommunity         = false,
     bool clearLivingExpectation = false,
+    bool clearQuranMemorization = false,
+    bool clearMarriageTimeline  = false,
+    bool clearWillingToRelocate = false,
   }) {
     return DiscoveryFilter(
       ageMin:             clearAgeRange          ? null : (ageMin           ?? this.ageMin),
@@ -147,6 +168,9 @@ class DiscoveryFilter {
       motherTongue:       clearMotherTongue      ? null : (motherTongue     ?? this.motherTongue),
       community:          clearCommunity         ? null : (community        ?? this.community),
       livingExpectation:  clearLivingExpectation ? null : (livingExpectation ?? this.livingExpectation),
+      quranMemorization:  clearQuranMemorization ? null : (quranMemorization ?? this.quranMemorization),
+      marriageTimeline:   clearMarriageTimeline  ? null : (marriageTimeline  ?? this.marriageTimeline),
+      willingToRelocate:  clearWillingToRelocate ? null : (willingToRelocate ?? this.willingToRelocate),
     );
   }
 

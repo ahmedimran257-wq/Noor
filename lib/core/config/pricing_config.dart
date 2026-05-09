@@ -169,6 +169,7 @@ abstract final class PricingConfig {
     billingNote:     'Billed monthly',
   );
 
+  // ignore: unused_field
   static const _tierStandard = PricingTier(
     monthlyPrice:    '\$9.99',
     annualPrice:     '\$79.99',

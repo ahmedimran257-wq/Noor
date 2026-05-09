@@ -33,6 +33,7 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
   bool?      _praysFive;
   String?    _hijab;
   bool?      _beard;
+  String?    _religiousLeadership; // male-only
   String?    _dietType;
   String?    _smokingHabit;
   String?    _vapingHabit;
@@ -72,6 +73,7 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
     final data = context.read<OnboardingCubit>().currentData.copyWith(
       sect: _sect, subSect: _subSect, deenLevel: _deenLevel,
       praysFiveDaily: _praysFive, hijabStyle: _hijab, hasBeard: _beard,
+      religiousLeadership: _religiousLeadership,
       dietType: _dietType, smokingHabit: _smokingHabit,
       vapingHabit: _vapingHabit, hookahHabit: _hookahHabit,
     );
@@ -174,6 +176,24 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
                     onTap: () => setState(() {
                       if (o == 'Prefer not to say') { _beard = null; } else { _beard = o == 'Yes'; }
                     }),
+                  )).toList(),
+                ),
+                const SizedBox(height: AppDimensions.space20),
+                _SectionTitle('RELIGIOUS LEADERSHIP'),
+                const SizedBox(height: AppDimensions.space4),
+                Text('Can you lead congregational prayers?', style: AppTypography.caption),
+                const SizedBox(height: AppDimensions.space12),
+                Wrap(
+                  spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
+                  children: {
+                    'leads_prayer': 'Leads Prayer',
+                    'learning': 'Learning',
+                    'not_yet': 'Not Yet',
+                    'prefer_not_to_say': 'Prefer Not to Say',
+                  }.entries.map((e) => _SelectChip(
+                    label: e.value,
+                    isSelected: _religiousLeadership == e.key,
+                    onTap: () => setState(() => _religiousLeadership = e.key),
                   )).toList(),
                 ),
               ],

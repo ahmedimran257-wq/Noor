@@ -7,6 +7,7 @@
 //   • Authenticated, onboarding complete   → /home
 // ============================================================
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -330,11 +331,11 @@ class _AuthStateListenable extends ChangeNotifier {
     _subscription = cubit.stream.listen((_) => notifyListeners());
   }
 
-  late final Object _subscription;
+  late final StreamSubscription<dynamic> _subscription;
 
   @override
   void dispose() {
-    (_subscription as dynamic).cancel();
+    _subscription.cancel();
     super.dispose();
   }
 }
