@@ -26,8 +26,6 @@ import '../../features/onboarding/screens/basic_identity_screen.dart';
 import '../../features/onboarding/screens/islamic_identity_screen.dart';
 import '../../features/onboarding/screens/islamic_marriage_details_screen.dart';
 import '../../features/onboarding/screens/background_screen.dart';
-import '../../features/onboarding/screens/income_screen.dart';
-import '../../features/onboarding/screens/provider_readiness_screen.dart';
 import '../../features/onboarding/screens/family_screen.dart';
 import '../../features/onboarding/screens/about_yourself_screen.dart';
 import '../../features/onboarding/screens/partner_preferences_screen.dart';
@@ -129,7 +127,7 @@ GoRouter buildAppRouter(BuildContext buildContext) {
         ),
       ),
 
-      // ── Onboarding steps 0–13 ───────────────────────────
+      // ── Onboarding steps 0–11 ───────────────────────────
       GoRoute(
         path: '${AppRoutes.onboarding}/:step',
         pageBuilder: (context, state) {
@@ -199,30 +197,19 @@ GoRouter buildAppRouter(BuildContext buildContext) {
 
 // ── Route → Screen mapping ────────────────────────────────────
 //
-// Myself (male) path — 13 steps (completes at ≥ 13):
+// Myself path — 11 steps (completes at ≥ 11):
 //   0  ProfileForWhom → 1 BasicIdentity → 2 IslamicIdentity →
-//   3  IslamicMarriageDetails → 4 Background → 5 Income →
-//   6  ProviderReadiness → 7 Family → 8 AboutYourself →
-//   9  PartnerPreferences → 10 PhotoUpload → 11 ProfilePreview → 12 Welcome
-//
-// Myself (female) path — 12 steps (completes at ≥ 12):
-//   0  ProfileForWhom → 1 BasicIdentity → 2 IslamicIdentity →
-//   3  IslamicMarriageDetails → 4 Background → 5 Income →
-//   6  Family → 7 AboutYourself → 8 PartnerPreferences →
-//   9  PhotoUpload → 10 ProfilePreview → 11 Welcome
+//   3  IslamicMarriageDetails → 4 Background → 5 Family →
+//   6  AboutYourself → 7 PartnerPreferences → 8 PhotoUpload →
+//   9  ProfilePreview → 10 Welcome
 //
 // Guardian paths add +1 step (GuardianDetails at step 1).
-//
-// Gender is read from OnboardingCubit.currentData.gender.
-// ProfileFor is read for guardian detection.
 
 Widget _screenForStep(BuildContext context, int step) {
   final data       = context.read<OnboardingCubit>().currentData;
   final isGuardian = data.profileFor == ProfileFor.guardian;
-  final isMale     = data.gender == Gender.male;
 
   if (isGuardian) {
-    // Guardian path — GuardianDetails inserted at step 1
     switch (step) {
       case 0:  return const ProfileForWhomScreen();
       case 1:  return const GuardianDetailsScreen();
@@ -230,26 +217,12 @@ Widget _screenForStep(BuildContext context, int step) {
       case 3:  return const IslamicIdentityScreen();
       case 4:  return const IslamicMarriageDetailsScreen();
       case 5:  return const BackgroundScreen();
-      case 6:  return const IncomeScreen();
-      case 7:  return isMale
-                   ? const ProviderReadinessScreen()
-                   : const FamilyScreen();
-      case 8:  return isMale
-                   ? const FamilyScreen()
-                   : const AboutYourselfScreen();
-      case 9:  return isMale
-                   ? const AboutYourselfScreen()
-                   : const PartnerPreferencesScreen();
-      case 10: return isMale
-                   ? const PartnerPreferencesScreen()
-                   : const PhotoUploadScreen();
-      case 11: return isMale
-                   ? const PhotoUploadScreen()
-                   : const ProfilePreviewScreen();
-      case 12: return isMale
-                   ? const ProfilePreviewScreen()
-                   : const WelcomeScreen();
-      case 13: return const WelcomeScreen(); // male guardian only
+      case 6:  return const FamilyScreen();
+      case 7:  return const AboutYourselfScreen();
+      case 8:  return const PartnerPreferencesScreen();
+      case 9:  return const PhotoUploadScreen();
+      case 10: return const ProfilePreviewScreen();
+      case 11: return const WelcomeScreen();
       default: return const ProfileForWhomScreen();
     }
   }
@@ -261,26 +234,12 @@ Widget _screenForStep(BuildContext context, int step) {
     case 2:  return const IslamicIdentityScreen();
     case 3:  return const IslamicMarriageDetailsScreen();
     case 4:  return const BackgroundScreen();
-    case 5:  return const IncomeScreen();
-    case 6:  return isMale
-                 ? const ProviderReadinessScreen()
-                 : const FamilyScreen();
-    case 7:  return isMale
-                 ? const FamilyScreen()
-                 : const AboutYourselfScreen();
-    case 8:  return isMale
-                 ? const AboutYourselfScreen()
-                 : const PartnerPreferencesScreen();
-    case 9:  return isMale
-                 ? const PartnerPreferencesScreen()
-                 : const PhotoUploadScreen();
-    case 10: return isMale
-                 ? const PhotoUploadScreen()
-                 : const ProfilePreviewScreen();
-    case 11: return isMale
-                 ? const ProfilePreviewScreen()
-                 : const WelcomeScreen();
-    case 12: return const WelcomeScreen(); // male only
+    case 5:  return const FamilyScreen();
+    case 6:  return const AboutYourselfScreen();
+    case 7:  return const PartnerPreferencesScreen();
+    case 8:  return const PhotoUploadScreen();
+    case 9:  return const ProfilePreviewScreen();
+    case 10: return const WelcomeScreen();
     default: return const ProfileForWhomScreen();
   }
 }

@@ -1,7 +1,8 @@
 // lib/features/onboarding/screens/background_screen.dart
 // ============================================================
 // NOOR — Background & Education Screen (Onboarding Step 3)
-// Education level (7 ranks), field of study, profession, employment status.
+// Education level (7 ranks), field of study, profession,
+// employment status, income bracket (optional).
 // ============================================================
 
 import 'package:flutter/material.dart';
@@ -40,6 +41,27 @@ const _kEmploymentOptions = [
   (value: EmploymentStatus.notWorking,    label: 'Not working'),
 ];
 
+// ── Income brackets (merged from income_screen) ───────────────
+class _IncomeBracket {
+  const _IncomeBracket(this.id, this.label);
+  final String id;
+  final String label;
+}
+
+const _kIncomeBrackets = <_IncomeBracket>[
+  _IncomeBracket('in_1', '< \u20B93 Lakh/year'),
+  _IncomeBracket('in_2', '\u20B93 \u2013 6 Lakh/year'),
+  _IncomeBracket('in_3', '\u20B96 \u2013 12 Lakh/year'),
+  _IncomeBracket('in_4', '\u20B912 \u2013 25 Lakh/year'),
+  _IncomeBracket('in_5', '> \u20B925 Lakh/year'),
+];
+
+const _kVisibilityOptions = [
+  (id: 'hidden',      label: 'Keep private'),
+  (id: 'bracket',     label: 'Show bracket to everyone'),
+  (id: 'after_match', label: 'Show only after mutual interest'),
+];
+
 class BackgroundScreen extends StatefulWidget {
   const BackgroundScreen({super.key});
 
@@ -52,6 +74,9 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
   final _studyCtrl      = TextEditingController();
   final _professionCtrl = TextEditingController();
   EmploymentStatus? _employment;
+  _IncomeBracket? _incomeBracket;
+  String _incomeVisibility = 'bracket';
+  bool _showIncome = false;
 
   bool get _canProceed =>
       _education != null && _employment != null;
@@ -74,6 +99,9 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
                            ? _professionCtrl.text.trim()
                            : null,
       employmentStatus: _employment,
+      incomeBracketId:    _incomeBracket?.id,
+      incomeBracketLabel: _incomeBracket?.label,
+      incomeVisibility:   _incomeVisibility,
     );
     context.read<OnboardingCubit>().saveAndAdvance(data);
   }
@@ -84,11 +112,13 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
       builder: (context, state) {
         final isLoading = state is OnboardingLoading;
         return OnboardingScaffold(
-          step:         3,
+          step:         4,
           ctaLabel:     'Continue',
           onCta:        _advance,
           isCtaEnabled: _canProceed,
           isCtaLoading: isLoading,
+          skipLabel:    'I\'ll do this later',
+          onSkip:       () => context.read<OnboardingCubit>().skipStep(),
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -177,6 +207,141 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
                   );
                 }).toList(),
               ),
+              const SizedBox(height: AppDimensions.space28),
+
+              // ── INCOME (Optional, collapsible) ───────────────
+              GestureDetector(
+                onTap: () => setState(() => _showIncome = !_showIncome),
+                child: Container(
+                  padding: const EdgeInsets.all(AppDimensions.space16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceGlass,
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                    border: Border.all(color: AppColors.cardBorder),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.account_balance_wallet_outlined,
+                          color: AppColors.slateMist, size: 20),
+                      const SizedBox(width: AppDimensions.space12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('INCOME RANGE  (Optional)',
+                                style: AppTypography.sectionLabel),
+                            const SizedBox(height: 2),
+                            Text('Many people skip this — it\'s entirely optional.',
+                                style: AppTypography.caption),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        _showIncome
+                            ? Icons.expand_less_rounded
+                            : Icons.expand_more_rounded,
+                        color: AppColors.slateMist,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              if (_showIncome) ...[
+                const SizedBox(height: AppDimensions.space16),
+                Text('INCOME BRACKET (INR)', style: AppTypography.sectionLabel),
+                const SizedBox(height: AppDimensions.space12),
+                ..._kIncomeBrackets.map((b) => Padding(
+                  padding: const EdgeInsets.only(bottom: AppDimensions.space8),
+                  child: GestureDetector(
+                    onTap: () => setState(() =>
+                        _incomeBracket = _incomeBracket?.id == b.id ? null : b),
+                    child: AnimatedContainer(
+                      duration: AppDimensions.durationTransition,
+                      padding: const EdgeInsets.all(AppDimensions.space16),
+                      decoration: BoxDecoration(
+                        color: _incomeBracket?.id == b.id
+                            ? AppColors.champagneGold.withValues(alpha: 0.08)
+                            : AppColors.surfaceGlass,
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                        border: Border.all(
+                          color: _incomeBracket?.id == b.id
+                              ? AppColors.champagneGold
+                              : AppColors.cardBorder,
+                          width: _incomeBracket?.id == b.id
+                              ? AppDimensions.borderFocus
+                              : AppDimensions.borderThin,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(b.label, style: AppTypography.body),
+                          ),
+                          if (_incomeBracket?.id == b.id)
+                            const Icon(Icons.check_rounded,
+                                color: AppColors.champagneGold, size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                )),
+                const SizedBox(height: AppDimensions.space16),
+                Text('WHO CAN SEE THIS?', style: AppTypography.sectionLabel),
+                const SizedBox(height: AppDimensions.space12),
+                ..._kVisibilityOptions.map((opt) => Padding(
+                  padding: const EdgeInsets.only(bottom: AppDimensions.space8),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _incomeVisibility = opt.id),
+                    child: AnimatedContainer(
+                      duration: AppDimensions.durationTransition,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppDimensions.space16,
+                        vertical:   AppDimensions.space12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _incomeVisibility == opt.id
+                            ? AppColors.surfaceGlassHover
+                            : AppColors.surfaceGlass,
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                        border: Border.all(
+                          color: _incomeVisibility == opt.id
+                              ? AppColors.champagneGold
+                              : AppColors.cardBorder,
+                          width: _incomeVisibility == opt.id
+                              ? AppDimensions.borderFocus
+                              : AppDimensions.borderThin,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          AnimatedContainer(
+                            duration: AppDimensions.durationTransition,
+                            width:  20, height: 20,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _incomeVisibility == opt.id
+                                  ? AppColors.champagneGold
+                                  : AppColors.transparent,
+                              border: Border.all(
+                                color: _incomeVisibility == opt.id
+                                    ? AppColors.champagneGold
+                                    : AppColors.slateMist,
+                              ),
+                            ),
+                            child: _incomeVisibility == opt.id
+                                ? const Icon(Icons.circle,
+                                    size: 10, color: AppColors.obsidianNight)
+                                : null,
+                          ),
+                          const SizedBox(width: AppDimensions.space12),
+                          Text(opt.label, style: AppTypography.body),
+                        ],
+                      ),
+                    ),
+                  ),
+                )),
+              ],
 
               const SizedBox(height: AppDimensions.space32),
             ],

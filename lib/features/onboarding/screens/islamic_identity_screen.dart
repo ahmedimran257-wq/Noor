@@ -17,8 +17,6 @@ import '../../../core/utils/copy_engine.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
 
-bool _mockShowSect    = true;
-bool _mockShowSubSect = true;
 
 class IslamicIdentityScreen extends StatefulWidget {
   const IslamicIdentityScreen({super.key});
@@ -38,6 +36,7 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
   String?    _smokingHabit;
   String?    _vapingHabit;
   String?    _hookahHabit;
+  String?    _isRevert; // Phase 1 addition
 
   static const _subSects = [
     'Hanafi', 'Shafi\'i', 'Maliki', 'Hanbali',
@@ -76,6 +75,7 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
       religiousLeadership: _religiousLeadership,
       dietType: _dietType, smokingHabit: _smokingHabit,
       vapingHabit: _vapingHabit, hookahHabit: _hookahHabit,
+      isRevert: _isRevert,
     );
     context.read<OnboardingCubit>().saveAndAdvance(data);
   }
@@ -95,36 +95,53 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
               const StepHeader(title: 'Your faith', subtitle: 'This helps match you with someone compatible.'),
               const SizedBox(height: AppDimensions.space32),
 
-              if (_mockShowSect) ...[
-                _SectionTitle('SECT'),
+              _SectionTitle('SECT'),
+              const SizedBox(height: AppDimensions.space12),
+              _ChipGroup<Sect>(
+                options: [Sect.sunni, Sect.shia, Sect.preferNotToSay, Sect.other],
+                selected: _sect,
+                label: (s) {
+                  switch (s) {
+                    case Sect.sunni:          return 'Sunni';
+                    case Sect.shia:           return 'Shia';
+                    case Sect.preferNotToSay: return 'Prefer not to say';
+                    case Sect.other:          return 'Other';
+                  }
+                },
+                onSelected: (s) => setState(() { _sect = s; _subSect = null; }),
+              ),
+              const SizedBox(height: AppDimensions.space20),
+              if (_sect == Sect.sunni) ...[
+                _SectionTitle('SCHOOL OF THOUGHT  (Optional)'),
                 const SizedBox(height: AppDimensions.space12),
-                _ChipGroup<Sect>(
-                  options: [Sect.sunni, Sect.shia, Sect.preferNotToSay, Sect.other],
-                  selected: _sect,
-                  label: (s) {
-                    switch (s) {
-                      case Sect.sunni:          return 'Sunni';
-                      case Sect.shia:           return 'Shia';
-                      case Sect.preferNotToSay: return 'Prefer not to say';
-                      case Sect.other:          return 'Other';
-                    }
-                  },
-                  onSelected: (s) => setState(() { _sect = s; _subSect = null; }),
+                Wrap(
+                  spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
+                  children: _subSects.map((s) => _SelectChip(
+                    label: s, isSelected: _subSect == s,
+                    onTap: () => setState(() => _subSect = _subSect == s ? null : s),
+                  )).toList(),
                 ),
                 const SizedBox(height: AppDimensions.space20),
-                if (_sect == Sect.sunni && _mockShowSubSect) ...[
-                  _SectionTitle('SCHOOL OF THOUGHT  (Optional)'),
-                  const SizedBox(height: AppDimensions.space12),
-                  Wrap(
-                    spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
-                    children: _subSects.map((s) => _SelectChip(
-                      label: s, isSelected: _subSect == s,
-                      onTap: () => setState(() => _subSect = _subSect == s ? null : s),
-                    )).toList(),
-                  ),
-                  const SizedBox(height: AppDimensions.space20),
-                ],
               ],
+
+              // ── REVERT / CONVERT STATUS ──────────────────
+              _SectionTitle('REVERT / CONVERT  (Optional)'),
+              const SizedBox(height: AppDimensions.space4),
+              Text('Are you a revert (convert) to Islam?', style: AppTypography.caption),
+              const SizedBox(height: AppDimensions.space12),
+              Wrap(
+                spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
+                children: {
+                  'yes': 'Yes',
+                  'no': 'No',
+                  'prefer_not_to_say': 'Prefer not to say',
+                }.entries.map((e) => _SelectChip(
+                  label: e.value,
+                  isSelected: _isRevert == e.key,
+                  onTap: () => setState(() => _isRevert = e.key),
+                )).toList(),
+              ),
+              const SizedBox(height: AppDimensions.space20),
 
               _SectionTitle('DEEN LEVEL'),
               const SizedBox(height: AppDimensions.space12),
@@ -216,8 +233,13 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
               ),
               const SizedBox(height: AppDimensions.space20),
 
-              _SectionTitle('SMOKING'),
+              // ── SUBSTANCE USE ─────────────────────────────
+              const SizedBox(height: AppDimensions.space20),
+              _SectionTitle('SUBSTANCE USE'),
               const SizedBox(height: AppDimensions.space12),
+
+              Text('Smoking', style: AppTypography.caption),
+              const SizedBox(height: AppDimensions.space8),
               Wrap(
                 spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
                 children: _habitOptions.map((o) => _SelectChip(
@@ -225,10 +247,10 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
                   onTap: () => setState(() => _smokingHabit = o),
                 )).toList(),
               ),
-              const SizedBox(height: AppDimensions.space20),
+              const SizedBox(height: AppDimensions.space16),
 
-              _SectionTitle('VAPING / E-CIGARETTES'),
-              const SizedBox(height: AppDimensions.space12),
+              Text('Vaping / E-Cigarettes', style: AppTypography.caption),
+              const SizedBox(height: AppDimensions.space8),
               Wrap(
                 spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
                 children: _habitOptions.map((o) => _SelectChip(
@@ -236,10 +258,10 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
                   onTap: () => setState(() => _vapingHabit = o),
                 )).toList(),
               ),
-              const SizedBox(height: AppDimensions.space20),
+              const SizedBox(height: AppDimensions.space16),
 
-              _SectionTitle('HOOKAH / SHISHA'),
-              const SizedBox(height: AppDimensions.space12),
+              Text('Hookah / Shisha', style: AppTypography.caption),
+              const SizedBox(height: AppDimensions.space8),
               Wrap(
                 spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
                 children: _habitOptions.map((o) => _SelectChip(

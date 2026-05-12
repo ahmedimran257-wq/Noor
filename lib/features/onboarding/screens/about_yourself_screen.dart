@@ -111,6 +111,8 @@ class _AboutYourselfScreenState extends State<AboutYourselfScreen> {
     context.read<OnboardingCubit>().saveAndAdvance(data);
   }
 
+  void _skip() => context.read<OnboardingCubit>().skipStep();
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<OnboardingCubit, OnboardingState>(
@@ -122,6 +124,8 @@ class _AboutYourselfScreenState extends State<AboutYourselfScreen> {
           onCta:        _advance,
           isCtaEnabled: _canProceed,
           isCtaLoading: isLoading,
+          skipLabel:    'I\'ll do this later',
+          onSkip:       _skip,
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

@@ -6,11 +6,9 @@
 //            mock-saves → emits OnboardingSaved.
 // The router listens and pushes the next screen.
 //
-// Completion thresholds (gender × guardian):
-//   Male   + Myself   → completeAt 13
-//   Female + Myself   → completeAt 12
-//   Male   + Guardian → completeAt 14
-//   Female + Guardian → completeAt 13
+// Completion thresholds:
+//   Myself   → completeAt 11
+//   Guardian → completeAt 12
 // ============================================================
 
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -49,14 +47,11 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     // Sync the step into AuthCubit so the router can redirect correctly
     _authCubit.updateOnboardingStep(nextStep);
 
-    // Gender × guardian branching determines completion threshold:
-    //   Male   + Myself   → 13 steps (0–12)
-    //   Female + Myself   → 12 steps (0–11)
-    //   Male   + Guardian → 14 steps (0–13)
-    //   Female + Guardian → 13 steps (0–12)
+    // Completion thresholds:
+    //   Myself   → 11 steps (0–10)
+    //   Guardian → 12 steps (0–11)
     final isGuardian = updatedData.profileFor == ProfileFor.guardian;
-    final isMale     = updatedData.gender == Gender.male;
-    final completeAt = (isMale ? 13 : 12) + (isGuardian ? 1 : 0);
+    final completeAt = isGuardian ? 12 : 11;
 
     if (nextStep >= completeAt) {
       emit(const OnboardingComplete());

@@ -135,6 +135,13 @@ class OnboardingData {
     this.profileCreatorRelation,
     this.guardianEmail,
     this.guardianAuthorityScope,  // 'full','advisory','limited'
+
+    // Phase 1 additions
+    this.isRevert,               // 'yes','no','prefer_not_to_say'
+    this.polygamyStatus,         // male: 'first_marriage','currently_married','prefer_not_to_say'
+    this.polygamyAcceptance,     // female: 'yes','no','open_to_discussion','prefer_not_to_say'
+    this.specialNeeds,           // 'none','physical','hearing','visual','other','prefer_not_to_say'
+    this.residencyStatus,        // 'citizen','permanent_resident','work_visa','student_visa','other','prefer_not_to_say'
   });
 
   // Step 3
@@ -238,6 +245,13 @@ class OnboardingData {
   final String? guardianEmail;
   final String? guardianAuthorityScope;
 
+  // Phase 1 additions
+  final String? isRevert;
+  final String? polygamyStatus;
+  final String? polygamyAcceptance;
+  final String? specialNeeds;
+  final String? residencyStatus;
+
   OnboardingData copyWith({
     ProfileFor? profileFor,
     String?     firstName,
@@ -314,6 +328,11 @@ class OnboardingData {
     String?     profileCreatorRelation,
     String?     guardianEmail,
     String?     guardianAuthorityScope,
+    String?     isRevert,
+    String?     polygamyStatus,
+    String?     polygamyAcceptance,
+    String?     specialNeeds,
+    String?     residencyStatus,
   }) {
     return OnboardingData(
       profileFor:               profileFor               ?? this.profileFor,
@@ -391,6 +410,11 @@ class OnboardingData {
       profileCreatorRelation:   profileCreatorRelation   ?? this.profileCreatorRelation,
       guardianEmail:            guardianEmail            ?? this.guardianEmail,
       guardianAuthorityScope:   guardianAuthorityScope   ?? this.guardianAuthorityScope,
+      isRevert:                 isRevert                 ?? this.isRevert,
+      polygamyStatus:           polygamyStatus           ?? this.polygamyStatus,
+      polygamyAcceptance:       polygamyAcceptance       ?? this.polygamyAcceptance,
+      specialNeeds:             specialNeeds             ?? this.specialNeeds,
+      residencyStatus:          residencyStatus          ?? this.residencyStatus,
     );
   }
 

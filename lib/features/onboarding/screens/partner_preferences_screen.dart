@@ -50,7 +50,7 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
   bool                _openToWidowed    = false;
   bool                _openToChildren   = false;
   String              _preferredLiving  = 'no_preference'; // Phase 2
-  String?             _preferredMarriageTimeline; // Phase 5.3
+  // _preferredMarriageTimeline removed — collected in Marriage & Deen Details screen
 
   static const _sectOptions = ['Any', 'Sunni', 'Shia', 'Same as mine'];
   static const _deenOptions = ['Any', 'Practicing', 'Moderate', 'Cultural Muslim'];
@@ -75,7 +75,6 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
       openToWidowed:              _openToWidowed,
       openToWithChildren:         _openToChildren,
       preferredLivingExpectation: _preferredLiving,
-      marriageTimeline:          _preferredMarriageTimeline,
     );
     context.read<OnboardingCubit>().saveAndAdvance(data);
   }
@@ -209,26 +208,7 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
                 onChanged: (v) => setState(() => _openToChildren = v),
               ),
 
-              // ── MARRIAGE TIMELINE PREFERENCE (Phase 5.3) ────
-              const SizedBox(height: AppDimensions.space24),
-              _Label('MARRIAGE TIMELINE'),
-              const SizedBox(height: AppDimensions.space12),
-              Wrap(
-                spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
-                children: {
-                  'asap': 'As soon as possible',
-                  '6_months': 'Within 6 months',
-                  '1_year': 'Within a year',
-                  '2_plus_years': '2+ years',
-                  'not_sure': 'Not sure yet',
-                }.entries.map((e) => GestureDetector(
-                  onTap: () => setState(() => _preferredMarriageTimeline = e.key),
-                  child: _PrefChip(
-                    label: e.value,
-                    isSelected: _preferredMarriageTimeline == e.key,
-                  ),
-                )).toList(),
-              ),
+
 
               // ── LIVING ARRANGEMENT PREFERENCE (Phase 2) ────
               const SizedBox(height: AppDimensions.space24),

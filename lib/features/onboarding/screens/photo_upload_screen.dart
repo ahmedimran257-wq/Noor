@@ -4,7 +4,7 @@
 // 4-slot grid. Slot 0 = primary photo (required to proceed).
 // Real image picking via image_picker (Camera / Gallery).
 // Compression via flutter_image_compress (webp, 800px, q82).
-// Mock face detection: file size > 20KB → face found.
+// On-device face detection via Google ML Kit (free, no API cost).
 // Photo privacy toggle for women.
 // ============================================================
 
@@ -14,6 +14,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
+import 'package:path_provider/path_provider.dart' show getTemporaryDirectory;
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_state.dart';
 import '../../../core/models/onboarding_data.dart';
@@ -23,12 +25,44 @@ import '../../../core/theme/app_typography.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
 
-// ── Face detection result ─────────────────────────────────────
+// ── Face detection ─────────────────────────────────────────
 
 enum _FaceResult { found, notFound }
 
-_FaceResult _mockFaceDetect(Uint8List bytes) =>
-    bytes.length > 20 * 1024 ? _FaceResult.found : _FaceResult.notFound;
+/// On-device face detection using Google ML Kit (zero API cost).
+/// Writes bytes to a temp file, runs FaceDetector, cleans up.
+Future<_FaceResult> _detectFace(Uint8List bytes) async {
+  try {
+    final tempDir = await getTemporaryDirectory();
+    final tempFile = File('${tempDir.path}/noor_face_check_${DateTime.now().millisecondsSinceEpoch}.webp');
+    await tempFile.writeAsBytes(bytes);
+
+    final inputImage = InputImage.fromFilePath(tempFile.path);
+    final detector = FaceDetector(
+      options: FaceDetectorOptions(
+        enableClassification: false,
+        enableLandmarks: false,
+        enableContours: false,
+        enableTracking: false,
+        performanceMode: FaceDetectorMode.fast,
+      ),
+    );
+
+    final faces = await detector.processImage(inputImage);
+    await detector.close();
+
+    // Clean up temp file
+    if (await tempFile.exists()) {
+      await tempFile.delete();
+    }
+
+    return faces.isNotEmpty ? _FaceResult.found : _FaceResult.notFound;
+  } catch (_) {
+    // If ML Kit fails (e.g. missing native libs in emulator),
+    // allow the photo through and let backend moderation catch it.
+    return _FaceResult.found;
+  }
+}
 
 // ── Screen ────────────────────────────────────────────────────
 
@@ -107,10 +141,17 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
     }
   }
 
-  void _setSlot(int index, Uint8List bytes) {
-    final face = _mockFaceDetect(bytes);
+  Future<void> _setSlot(int index, Uint8List bytes) async {
+    // Show loading while face detection runs
     setState(() {
       _bytes[index] = bytes;
+      _faces[index] = null; // pending
+    });
+
+    final face = await _detectFace(bytes);
+    if (!mounted) return;
+
+    setState(() {
       _faces[index] = face;
     });
 
@@ -123,7 +164,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
             const SizedBox(width: AppDimensions.space8),
             Expanded(
               child: Text(
-                'No face visible — please retry',
+                'No face visible — please retry with a clear face photo',
                 style: AppTypography.body,
               ),
             ),

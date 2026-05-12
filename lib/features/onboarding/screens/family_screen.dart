@@ -40,13 +40,17 @@ class FamilyScreen extends StatefulWidget {
 class _FamilyScreenState extends State<FamilyScreen> {
   FamilyType?    _familyType;
   int            _siblings      = 0;
-  bool?          _isEldest;
   String?        _parentsStatus;
   MaritalStatus  _marital       = MaritalStatus.neverMarried;
   bool?          _hasChildren;
   int            _childrenCount = 0;
   String?        _livingExpectation; // Phase 2
   String?        _willingToRelocate; // Phase 5.3
+  String?        _polygamyStatus;    // Phase 1 — male optional
+  String?        _polygamyAcceptance; // Phase 1 — female optional
+
+  Gender? get _gender =>
+      context.read<OnboardingCubit>().currentData.gender;
 
   bool get _canProceed =>
       _familyType != null &&
@@ -57,13 +61,14 @@ class _FamilyScreenState extends State<FamilyScreen> {
     final data = context.read<OnboardingCubit>().currentData.copyWith(
       familyType:         _familyType,
       siblingCount:       _siblings,
-      isEldestChild:      _isEldest,
       parentsStatus:      _parentsStatus,
       maritalStatus:      _marital,
       hasChildren:        _hasChildren,
       childrenCount:      _hasChildren == true ? _childrenCount : 0,
       livingExpectation:  _livingExpectation,
       willingToRelocate:  _willingToRelocate,
+      polygamyStatus:     _gender == Gender.male ? _polygamyStatus : null,
+      polygamyAcceptance: _gender == Gender.female ? _polygamyAcceptance : null,
     );
     context.read<OnboardingCubit>().saveAndAdvance(data);
   }
@@ -79,6 +84,8 @@ class _FamilyScreenState extends State<FamilyScreen> {
           onCta:        _advance,
           isCtaEnabled: _canProceed,
           isCtaLoading: isLoading,
+          skipLabel:    'I\'ll do this later',
+          onSkip:       () => context.read<OnboardingCubit>().skipStep(),
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -119,18 +126,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
               const SizedBox(height: AppDimensions.space12),
               _Stepper(value: _siblings, min: 0, max: 15, onChanged: (v) => setState(() => _siblings = v)),
 
-              const SizedBox(height: AppDimensions.space20),
 
-              // Eldest child
-              _Label('ARE YOU THE ELDEST CHILD?'),
-              const SizedBox(height: AppDimensions.space8),
-              _InlinePills(
-                options: const ['Yes', 'No'],
-                selected: _isEldest == null ? null : (_isEldest! ? 'Yes' : 'No'),
-                onSelected: (v) => setState(() => _isEldest = v == 'Yes'),
-              ),
-
-              const SizedBox(height: AppDimensions.space20),
 
               // Parents status
               _Label('PARENTS\' MARITAL STATUS'),
@@ -266,6 +262,38 @@ class _FamilyScreenState extends State<FamilyScreen> {
                   );
                 }).toList(),
               ),
+
+              // ── POLYGAMY (Optional, gender-specific) ───────
+              if (_gender == Gender.male) ...[
+                const SizedBox(height: AppDimensions.space28),
+                _Label('POLYGAMY STATUS  (Optional)'),
+                const SizedBox(height: AppDimensions.space4),
+                Text(
+                  'Are you currently married and looking for an additional spouse?',
+                  style: AppTypography.caption,
+                ),
+                const SizedBox(height: AppDimensions.space12),
+                _InlinePills(
+                  options: const ['No, this is my first', 'Yes, currently married', 'Prefer not to say'],
+                  selected: _polygamyStatus,
+                  onSelected: (v) => setState(() => _polygamyStatus = v),
+                ),
+              ],
+              if (_gender == Gender.female) ...[
+                const SizedBox(height: AppDimensions.space28),
+                _Label('POLYGAMY ACCEPTANCE  (Optional)'),
+                const SizedBox(height: AppDimensions.space4),
+                Text(
+                  'Would you consider being a co-wife?',
+                  style: AppTypography.caption,
+                ),
+                const SizedBox(height: AppDimensions.space12),
+                _InlinePills(
+                  options: const ['Yes', 'No', 'Open to discussion', 'Prefer not to say'],
+                  selected: _polygamyAcceptance,
+                  onSelected: (v) => setState(() => _polygamyAcceptance = v),
+                ),
+              ],
 
               const SizedBox(height: AppDimensions.space32),
             ],

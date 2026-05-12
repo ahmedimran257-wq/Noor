@@ -1,10 +1,10 @@
 // lib/features/onboarding/screens/islamic_marriage_details_screen.dart
 // ============================================================
-// NOOR — Islamic Marriage Details Screen
+// NOOR — Marriage & Deen Details Screen
 // Collects: quranMemorization, religiousEducation,
-//           marriageTimeline, willingToRelocate,
+//           marriageTimeline,
 //           + gender-specific: niqab/mahr/work (female),
-//             mahr budget/religious leadership (male)
+//             mahr budget + provider readiness (male)
 // ============================================================
 
 import 'package:flutter/material.dart';
@@ -32,7 +32,6 @@ class _IslamicMarriageDetailsScreenState
   String? _quranMemorization;
   String? _religiousEducation;
   String? _marriageTimeline;
-  String? _willingToRelocate;
 
   // Female-specific
   String? _niqabPreference;
@@ -41,25 +40,28 @@ class _IslamicMarriageDetailsScreenState
 
   // Male-specific
   String? _mahrBudget;
-  String? _religiousLeadership;
+  bool?   _canProvideHousing;
+  bool?   _canProvideMaintenance;
+  String? _debtStatus;
 
   bool get _isFemale =>
       context.read<OnboardingCubit>().currentData.gender == Gender.female;
 
   bool get _canProceed =>
-      _marriageTimeline != null && _willingToRelocate != null;
+      _marriageTimeline != null;
 
   void _advance() {
     final data = context.read<OnboardingCubit>().currentData.copyWith(
       quranMemorization:         _quranMemorization,
       religiousEducation:        _religiousEducation,
       marriageTimeline:          _marriageTimeline,
-      willingToRelocate:         _willingToRelocate,
       niqabPreference:           _isFemale ? _niqabPreference : null,
       mahrExpectation:           _isFemale ? _mahrExpectation : null,
       willingToWorkAfterMarriage: _isFemale ? _willingToWorkAfterMarriage : null,
       mahrBudget:                !_isFemale ? _mahrBudget : null,
-      religiousLeadership:       !_isFemale ? _religiousLeadership : null,
+      canProvideHousing:         !_isFemale ? _canProvideHousing : null,
+      canProvideMaintenance:     !_isFemale ? _canProvideMaintenance : null,
+      debtStatus:                !_isFemale ? _debtStatus : null,
     );
     context.read<OnboardingCubit>().saveAndAdvance(data);
   }
@@ -70,12 +72,14 @@ class _IslamicMarriageDetailsScreenState
       builder: (context, state) {
         final isLoading = state is OnboardingLoading;
         return OnboardingScaffold(
-          step:         state is OnboardingActive ? state.step : 3,
-          totalSteps:   12,
+          step:         3,
+          totalSteps:   10,
           ctaLabel:     'Continue',
           onCta:        _advance,
           isCtaEnabled: _canProceed,
           isCtaLoading: isLoading,
+          skipLabel:    'I\'ll do this later',
+          onSkip:       () => context.read<OnboardingCubit>().skipStep(),
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -118,16 +122,6 @@ class _IslamicMarriageDetailsScreenState
                 '2_plus_years':  '2+ years',
                 'not_sure':      'Not sure yet',
               }, (v) => setState(() => _marriageTimeline = v)),
-
-              const SizedBox(height: AppDimensions.space24),
-
-              // ── Willing to Relocate ───────────────────────────
-              _buildSection('WILLING TO RELOCATE', null),
-              _buildChipRow(_willingToRelocate, {
-                'yes':               'Yes',
-                'no':                'No',
-                'open_to_discussion': 'Open to discussion',
-              }, (v) => setState(() => _willingToRelocate = v)),
 
               const SizedBox(height: AppDimensions.space24),
 
@@ -191,13 +185,82 @@ class _IslamicMarriageDetailsScreenState
     }, (v) => setState(() => _mahrBudget = v)),
     const SizedBox(height: AppDimensions.space24),
 
-    _buildSection('RELIGIOUS LEADERSHIP', 'Can you lead prayer at home?'),
-    _buildChipRow(_religiousLeadership, {
-      'leads_prayer':      'Yes, regularly',
-      'learning':          'Learning',
-      'not_yet':           'Not yet',
+    // ── Provider Readiness (merged from standalone screen) ────
+    _buildSection('PROVIDER READINESS', null),
+    Container(
+      padding: const EdgeInsets.all(AppDimensions.space16),
+      decoration: BoxDecoration(
+        color: AppColors.champagneGold.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+        border: Border.all(color: AppColors.goldBorder),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.auto_awesome_outlined,
+              color: AppColors.champagneGold, size: 18),
+          const SizedBox(width: AppDimensions.space12),
+          Expanded(
+            child: Text(
+              '"The best of you are the best to your wives." — Prophet Muhammad \u{FDFA}\n\n'
+              'Being honest about your readiness helps build a strong foundation.',
+              style: AppTypography.caption.copyWith(height: 1.6),
+            ),
+          ),
+        ],
+      ),
+    ),
+    const SizedBox(height: AppDimensions.space16),
+
+    _buildSection('HOUSING', 'Can you provide a separate living space?'),
+    _buildChipRow(
+      _canProvideHousing == null ? null : (_canProvideHousing! ? 'yes' : 'no'),
+      {'yes': 'Yes', 'no': 'No'},
+      (v) => setState(() => _canProvideHousing = v == 'yes'),
+    ),
+    const SizedBox(height: AppDimensions.space16),
+
+    _buildSection('FINANCIAL MAINTENANCE', 'Are you able to provide for a spouse financially?'),
+    _buildChipRow(
+      _canProvideMaintenance == null ? null : (_canProvideMaintenance! ? 'yes' : 'no'),
+      {'yes': 'Yes', 'no': 'No'},
+      (v) => setState(() => _canProvideMaintenance = v == 'yes'),
+    ),
+    const SizedBox(height: AppDimensions.space16),
+
+    _buildSection('DEBT STATUS', 'Your current financial obligations.'),
+    _buildChipRow(_debtStatus, {
+      'no_debt':          'No debt',
+      'manageable':       'Manageable debt',
+      'significant':      'Significant debt',
       'prefer_not_to_say': 'Prefer not to say',
-    }, (v) => setState(() => _religiousLeadership = v)),
+    }, (v) => setState(() => _debtStatus = v)),
+    const SizedBox(height: AppDimensions.space16),
+
+    // Privacy notice
+    Container(
+      padding: const EdgeInsets.all(AppDimensions.space16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceGlass,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.lock_outline_rounded,
+              color: AppColors.slateMist, size: 16),
+          const SizedBox(width: AppDimensions.space10),
+          Expanded(
+            child: Text(
+              'These details are not shown on your public profile. '
+              'They are shared privately during the acceptance stage.',
+              style: AppTypography.caption.copyWith(height: 1.6),
+            ),
+          ),
+        ],
+      ),
+    ),
     const SizedBox(height: AppDimensions.space24),
   ];
 

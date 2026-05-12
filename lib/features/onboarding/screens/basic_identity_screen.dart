@@ -3,7 +3,8 @@
 // NOOR — Basic Identity Screen (Onboarding Step 1)
 // First name, last name, date of birth, gender, city search,
 // height stepper, complexion (optional), community (optional),
-// mother tongue (required, country-based), smoking.
+// mother tongue (required, country-based),
+// residency status (optional), special needs (optional).
 // Phase 2: DemographicsConfig + CopyEngine integrated.
 // ============================================================
 
@@ -316,10 +317,16 @@ const _kComplexions = <String>[
   'Fair', 'Medium', 'Olive', 'Dark', 'Prefer not to say',
 ];
 
-// ── Smoking status options ────────────────────────────────────
+// ── Residency status options ──────────────────────────────────
 
-const _kSmokingOptions = <String>[
-  'Non-smoker', 'Occasional', 'Trying to quit', 'Prefer not to say',
+const _kResidencyOptions = <String>[
+  'Citizen', 'Permanent Resident', 'Work Visa', 'Student Visa', 'Other', 'Prefer not to say',
+];
+
+// ── Special needs options ─────────────────────────────────────
+
+const _kSpecialNeedsOptions = <String>[
+  'None', 'Physical disability', 'Hearing impairment', 'Visual impairment', 'Other', 'Prefer not to say',
 ];
 
 
@@ -352,8 +359,9 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
   int     _heightCm     = 165;
   String? _complexion;
   String? _motherTongue;
-  String? _smokingStatus;
   String? _community; // Phase 2 — optional
+  String? _residencyStatus; // Phase 1 — optional
+  String? _specialNeeds;    // Phase 1 — optional
 
   /// City is valid if user either (a) picked from suggestions, or
   /// (b) typed at least 2 characters as a free-text city name.
@@ -380,8 +388,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       _dobError.isEmpty &&
       _gender != null &&
       _effectiveCity.length >= 2 &&
-      _motherTongue != null &&
-      _smokingStatus != null;
+      _motherTongue != null;
 
   @override
   void dispose() {
@@ -494,11 +501,12 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       cityName:     cityName,
       cityId:       _selectedCityId ?? cityName.toLowerCase(),
       countryCode:  _selectedCountryCode ?? 'XX',
-      heightCm:     _heightCm,
-      complexion:   _complexion,
-      motherTongue: _motherTongue,
-      smokingStatus: _smokingStatus,
-      community:    _community,
+      heightCm:        _heightCm,
+      complexion:      _complexion,
+      motherTongue:    _motherTongue,
+      community:       _community,
+      residencyStatus: _residencyStatus,
+      specialNeeds:    _specialNeeds,
     );
 
     // ── Gender propagation ────────────────────────────────────
@@ -834,19 +842,57 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                 ),
               ),
 
-              const SizedBox(height: AppDimensions.space24),
+              const SizedBox(height: AppDimensions.space28),
 
-              // ── SMOKING (Required) ─────────────────────────────────
-              Text('SMOKING', style: AppTypography.sectionLabel),
+              // ── RESIDENCY STATUS (Optional) ─────────────────────────
+              Text('RESIDENCY STATUS  (Optional)', style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
                 spacing:    AppDimensions.space8,
                 runSpacing: AppDimensions.space8,
-                children: _kSmokingOptions.map((o) => _SelectChip(
+                children: _kResidencyOptions.map((o) => _SelectChip(
                   label:      o,
-                  isSelected: _smokingStatus == o,
+                  isSelected: _residencyStatus == o,
                   onTap: () => setState(() =>
-                      _smokingStatus = _smokingStatus == o ? null : o),
+                      _residencyStatus = _residencyStatus == o ? null : o),
+                )).toList(),
+              ),
+
+              const SizedBox(height: AppDimensions.space28),
+
+              // ── SPECIAL NEEDS (Optional) ─────────────────────────────
+              Text('SPECIAL NEEDS  (Optional)', style: AppTypography.sectionLabel),
+              const SizedBox(height: AppDimensions.space4),
+              Container(
+                padding: const EdgeInsets.all(AppDimensions.space10),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceGlass,
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+                  border: Border.all(color: AppColors.cardBorder),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.lock_outline_rounded,
+                        color: AppColors.slateMist, size: 14),
+                    const SizedBox(width: AppDimensions.space8),
+                    Expanded(
+                      child: Text(
+                        'This is only shared after mutual interest.',
+                        style: AppTypography.caption,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppDimensions.space12),
+              Wrap(
+                spacing:    AppDimensions.space8,
+                runSpacing: AppDimensions.space8,
+                children: _kSpecialNeedsOptions.map((o) => _SelectChip(
+                  label:      o,
+                  isSelected: _specialNeeds == o,
+                  onTap: () => setState(() =>
+                      _specialNeeds = _specialNeeds == o ? null : o),
                 )).toList(),
               ),
 
