@@ -31,7 +31,9 @@ class MockProfile {
     this.heightCm,
     this.complexion,
     this.motherTongue,
-    this.smokingStatus,
+    this.smokingHabit,
+    this.vapingHabit,
+    this.hookahHabit,
     this.isGuardianProfile = false,
     // Phase 2 fields
     this.community,
@@ -69,7 +71,9 @@ class MockProfile {
   final int? heightCm;
   final String? complexion;
   final String? motherTongue;
-  final String? smokingStatus;
+  final String? smokingHabit;
+  final String? vapingHabit;
+  final String? hookahHabit;
   final bool isGuardianProfile;
   // Phase 2 fields
   final String? community;
@@ -112,7 +116,7 @@ const List<MockProfile> kMockProfiles = [
     heightCm: 163,
     complexion: 'Medium',
     motherTongue: 'Arabic',
-    smokingStatus: 'Non-smoker',
+    smokingHabit: 'Never',
     community: 'Syed',
     dietType: 'zabiha_strict',
     livingExpectation: 'open_to_discussion',
@@ -144,7 +148,7 @@ const List<MockProfile> kMockProfiles = [
     heightCm: 158,
     complexion: 'Fair',
     motherTongue: 'Urdu',
-    smokingStatus: 'Non-smoker',
+    smokingHabit: 'Never',
     community: 'Qureshi',
     dietType: 'halal_only',
     livingExpectation: 'separate',
@@ -176,7 +180,7 @@ const List<MockProfile> kMockProfiles = [
     heightCm: 165,
     complexion: 'Olive',
     motherTongue: 'English',
-    smokingStatus: 'Non-smoker',
+    smokingHabit: 'Never',
     community: 'South Asian',
     dietType: 'halal_only',
     livingExpectation: 'open_to_discussion',
@@ -208,7 +212,7 @@ const List<MockProfile> kMockProfiles = [
     heightCm: 160,
     complexion: 'Medium',
     motherTongue: 'Malay',
-    smokingStatus: 'Non-smoker',
+    smokingHabit: 'Never',
     community: 'Malay',
     dietType: 'halal_only',
     livingExpectation: 'with_inlaws',
@@ -240,7 +244,7 @@ const List<MockProfile> kMockProfiles = [
     heightCm: 167,
     complexion: 'Fair',
     motherTongue: 'Turkish',
-    smokingStatus: 'Non-smoker',
+    smokingHabit: 'Never',
     community: 'Turkish',
     dietType: 'zabiha_strict',
     livingExpectation: 'separate',
@@ -272,7 +276,7 @@ const List<MockProfile> kMockProfiles = [
     heightCm: 155,
     complexion: 'Medium',
     motherTongue: 'Arabic',
-    smokingStatus: 'Non-smoker',
+    smokingHabit: 'Never',
     community: 'Egyptian Arab',
     dietType: 'halal_only',
     livingExpectation: 'open_to_discussion',
@@ -304,7 +308,7 @@ const List<MockProfile> kMockProfiles = [
     heightCm: 170,
     complexion: 'Olive',
     motherTongue: 'Arabic',
-    smokingStatus: 'Non-smoker',
+    smokingHabit: 'Never',
     community: 'Moroccan',
     dietType: 'zabiha_strict',
     livingExpectation: 'separate',
@@ -336,7 +340,7 @@ const List<MockProfile> kMockProfiles = [
     heightCm: 162,
     complexion: 'Fair',
     motherTongue: 'English',
-    smokingStatus: 'Non-smoker',
+    smokingHabit: 'Never',
     community: 'Arab',
     dietType: 'halal_only',
     livingExpectation: 'open_to_discussion',

@@ -205,7 +205,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
                     // Islamic Background
                     if (p.sect != null || p.deenLevel != null ||
-                        p.motherTongue != null || p.smokingStatus != null ||
+                        p.motherTongue != null || p.smokingHabit != null ||
                         p.quranMemorization != null || p.religiousEducation != null) ...[
                       _SectionHeader(label: 'Islamic Life'),
                       const SizedBox(height: AppDimensions.space12),
@@ -215,7 +215,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                         if (p.motherTongue != null) _DetailItem(label: 'Mother Tongue', value: p.motherTongue!),
                         if (p.quranMemorization != null) _DetailItem(label: 'Quran', value: _formatQuran(p.quranMemorization!)),
                         if (p.religiousEducation != null) _DetailItem(label: 'Religious Education', value: _formatReligiousEdu(p.religiousEducation!)),
-                        if (p.smokingStatus != null) _DetailItem(label: 'Smoking', value: p.smokingStatus!),
+                        if (p.smokingHabit != null) _DetailItem(label: 'Smoking', value: p.smokingHabit!),
+                        if (p.vapingHabit != null) _DetailItem(label: 'Vaping', value: p.vapingHabit!),
+                        if (p.hookahHabit != null) _DetailItem(label: 'Hookah', value: p.hookahHabit!),
                       ]),
                       const SizedBox(height: AppDimensions.space28),
                     ],

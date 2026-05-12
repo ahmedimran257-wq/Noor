@@ -151,49 +151,53 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
   Widget build(BuildContext context) {
     return BlocBuilder<DiscoveryFeedCubit, DiscoveryFeedState>(
       builder: (context, feedState) {
-        return Column(
-          children: [
-            // ── Top app bar ─────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppDimensions.space24,
-                AppDimensions.space16,
-                AppDimensions.space24,
-                AppDimensions.space12,
+        return RefreshIndicator(
+          color: AppColors.champagneGold,
+          backgroundColor: AppColors.obsidianNight,
+          onRefresh: () async {
+            context.read<DiscoveryFeedCubit>().loadInitial();
+            // Wait a bit for the cubit to emit new state
+            await Future.delayed(const Duration(milliseconds: 800));
+          },
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppDimensions.space24,
+                    AppDimensions.space16,
+                    AppDimensions.space24,
+                    AppDimensions.space12,
+                  ),
+                  child: Row(
+                    children: [
+                      Text('نور', style: AppTypography.wordmark.copyWith(fontSize: 26)),
+                      const SizedBox(width: AppDimensions.space8),
+                      Text('NOOR', style: AppTypography.wordmark),
+                      const Spacer(),
+                      // Free-tier counter badge
+                      if (feedState.status == FeedStatus.loaded ||
+                          feedState.status == FeedStatus.loadingMore)
+                        _FreeTierCounter(remaining: feedState.remainingToday),
+                      const SizedBox(width: AppDimensions.space12),
+                      _NotificationButton(),
+                    ],
+                  ),
+                ),
               ),
-              child: Row(
-                children: [
-                  Text('نور', style: AppTypography.wordmark.copyWith(fontSize: 26)),
-                  const SizedBox(width: AppDimensions.space8),
-                  Text('NOOR', style: AppTypography.wordmark),
-                  const Spacer(),
-                  // Free-tier counter badge
-                  if (feedState.status == FeedStatus.loaded ||
-                      feedState.status == FeedStatus.loadingMore)
-                    _FreeTierCounter(remaining: feedState.remainingToday),
-                  const SizedBox(width: AppDimensions.space12),
-                  _NotificationButton(),
-                ],
+
+              // ── Filter bar ──────────────────────────────────
+              const SliverToBoxAdapter(child: DiscoveryFilterBar()),
+              const SliverToBoxAdapter(child: SizedBox(height: AppDimensions.space16)),
+
+              // ── Card carousel ────────────────────────────────
+              SliverFillRemaining(
+                hasScrollBody: true,
+                child: _buildCarousel(feedState),
               ),
-            ),
-
-            // ── Filter bar ──────────────────────────────────
-            const DiscoveryFilterBar(),
-            const SizedBox(height: AppDimensions.space16),
-
-            // ── Card carousel ────────────────────────────────
-            Expanded(child: _buildCarousel(feedState)),
-
-            // ── Dot indicator ────────────────────────────────
-            const SizedBox(height: AppDimensions.space16),
-            if (feedState.status != FeedStatus.initial &&
-                feedState.status != FeedStatus.loading)
-              _DotIndicator(
-                count:   feedState.profiles.length,
-                current: _currentPage,
-              ),
-            const SizedBox(height: AppDimensions.space20),
-          ],
+            ],
+          ),
         );
       },
     );

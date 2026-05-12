@@ -97,6 +97,10 @@ class ProfilePreviewScreen extends StatelessWidget {
                               _PreviewRow('Community', data.community!),
                             if (data.motherTongue != null)
                               _PreviewRow('Mother Tongue', data.motherTongue!),
+                            if (data.residencyStatus != null)
+                              _PreviewRow('Residency', _capitalize(data.residencyStatus!)),
+                            if (data.specialNeeds != null && data.specialNeeds != 'none')
+                              _PreviewRow('Special Needs', _capitalize(data.specialNeeds!)),
                           ],
                         ),
                         const SizedBox(height: AppDimensions.space16),
@@ -107,6 +111,8 @@ class ProfilePreviewScreen extends StatelessWidget {
                           rows: [
                             _PreviewRow('Sect',       _sectLabel(data.sect)),
                             _PreviewRow('Deen Level', _deenLabel(data.deenLevel)),
+                            if (data.isRevert != null && data.isRevert != 'no')
+                              _PreviewRow('Revert', _capitalize(data.isRevert!)),
                             _PreviewRow('Prays 5x',   data.praysFiveDaily == null ? '—'
                                 : (data.praysFiveDaily! ? 'Yes' : 'No')),
                             if (data.gender == Gender.female)
@@ -131,7 +137,7 @@ class ProfilePreviewScreen extends StatelessWidget {
 
                         _PreviewSection(
                           title:   'Background',
-                          editStep: 3,
+                          editStep: 4,
                           rows: [
                             _PreviewRow('Education', data.educationLabel ?? '—'),
                             _PreviewRow('Profession', data.profession ?? '—'),
@@ -152,6 +158,10 @@ class ProfilePreviewScreen extends StatelessWidget {
                               _PreviewRow('Willing to Relocate', _relocateLabel(data.willingToRelocate!)),
                             if (data.marriageTimeline != null)
                               _PreviewRow('Marriage Timeline', _timelineLabel(data.marriageTimeline!)),
+                            if (data.gender == Gender.male && data.polygamyStatus != null)
+                              _PreviewRow('Polygamy', _capitalize(data.polygamyStatus!)),
+                            if (data.gender == Gender.female && data.polygamyAcceptance != null)
+                              _PreviewRow('Co-wife Acceptance', _capitalize(data.polygamyAcceptance!)),
                           ],
                         ),
                         const SizedBox(height: AppDimensions.space16),
@@ -343,6 +353,15 @@ class ProfilePreviewScreen extends StatelessWidget {
       case 'not_sure':      return 'Not sure yet';
       default:              return code;
     }
+  }
+
+  /// Converts snake_case codes to Title Case labels.
+  String _capitalize(String code) {
+    return code
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((w) => w.isEmpty ? '' : '${w[0].toUpperCase()}${w.substring(1)}')
+        .join(' ');
   }
 }
 
