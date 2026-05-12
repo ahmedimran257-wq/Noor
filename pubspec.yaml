@@ -25,6 +25,11 @@ dependencies:
 
   # ── Backend ───────────────────────────────────────────────
   supabase_flutter: ^2.9.0
+  firebase_core: ^3.8.0           # Firebase initialization
+  firebase_auth: ^5.3.2          # Phone OTP auth
+  purchases_flutter: ^6.26.0     # RevenueCat subscriptions
+  onesignal_flutter: ^3.1.2      # Push notifications
+  uuid: ^4.5.1                   # Device ID generation
 
   # ── Localization ──────────────────────────────────────────
   intl: ^0.20.2

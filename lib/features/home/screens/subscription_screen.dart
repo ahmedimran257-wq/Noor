@@ -58,11 +58,21 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   }
 
   Future<void> _loadPricing() async {
-    final prefs      = await SharedPreferences.getInstance();
-    final countryCode = prefs.getString('user_country_code') ?? '';
+    // First try to get from Auth state (if already authenticated)
+    final authState = context.read<AuthCubit>().state;
+    String? countryCode;
+
+    if (authState is AuthAuthenticated && authState.countryCode != null) {
+      countryCode = authState.countryCode;
+    } else {
+      // Fallback to SharedPreferences (for users still in onboarding)
+      final prefs = await SharedPreferences.getInstance();
+      countryCode = prefs.getString('user_country_code');
+    }
+
     if (!mounted) return;
     setState(() {
-      _pricing = PricingConfig.getForCountryCode(countryCode);
+      _pricing = PricingConfig.getForCountryCode(countryCode ?? '');
     });
   }
 

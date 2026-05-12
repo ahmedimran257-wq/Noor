@@ -38,7 +38,8 @@ class AuthAuthenticated extends AuthState {
   const AuthAuthenticated({
     required this.userId,
     required this.onboardingStep,
-    this.gender, // null until onboarding step 0 (ProfileForWhom) completes
+    this.gender,
+    this.countryCode,
   });
 
   final String  userId;
@@ -46,11 +47,13 @@ class AuthAuthenticated extends AuthState {
   final int     onboardingStep;
   /// 'male' | 'female' | null (unknown until onboarding sets it)
   final String? gender;
+  /// Country code for regional pricing (e.g., 'IN', 'US', 'AE')
+  final String? countryCode;
 
   bool get isOnboardingComplete => onboardingStep >= 12;
 
   @override
-  List<Object?> get props => [userId, onboardingStep, gender];
+  List<Object?> get props => [userId, onboardingStep, gender, countryCode];
 }
 
 /// Session check found no active session.

@@ -10,16 +10,17 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../core/config/demographics_config.dart';
+import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_state.dart';
-import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/models/onboarding_data.dart';
-import '../../../core/config/demographics_config.dart';
-import '../../../core/utils/copy_engine.dart';
-
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/copy_engine.dart';
 import '../../../core/widgets/inputs/noor_text_field.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
@@ -491,7 +492,8 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
     );
   }
 
-  void _advance() {
+  void _advance() async {
+    final countryCode = _selectedCountryCode ?? 'XX';
     final cityName = _effectiveCity;
     final data = context.read<OnboardingCubit>().currentData.copyWith(
       firstName:    _firstNameCtrl.text.trim(),
@@ -500,7 +502,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       gender:       _gender,
       cityName:     cityName,
       cityId:       _selectedCityId ?? cityName.toLowerCase(),
-      countryCode:  _selectedCountryCode ?? 'XX',
+      countryCode:  countryCode,
       heightCm:        _heightCm,
       complexion:      _complexion,
       motherTongue:    _motherTongue,
@@ -509,7 +511,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       specialNeeds:    _specialNeeds,
     );
 
-    // ── Gender propagation ────────────────────────────────────
+    // ── Gender & Country propagation ──────────────────────────
     // Blueprint: "Women always message/interest free."
     // Propagate gender to AuthCubit NOW so all subscription gates,
     // daily-limit banners, and boost sections read the correct value
@@ -519,7 +521,16 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
           _gender == Gender.female ? 'female' : 'male');
     }
 
-    context.read<OnboardingCubit>().saveAndAdvance(data);
+    // Save country code for regional pricing (subscription screen)
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_country_code', countryCode);
+    if (mounted) {
+      context.read<AuthCubit>().setCountryCode(countryCode);
+    }
+
+    if (mounted) {
+      context.read<OnboardingCubit>().saveAndAdvance(data);
+    }
   }
 
   @override
