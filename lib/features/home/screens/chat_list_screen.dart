@@ -6,7 +6,7 @@
 //   • Sorted by most recent message
 //   • Unread → gold left border + heavier name weight + gold badge
 //   • Avatar placeholder + name + last message preview + time
-//   • Empty state with 48h probation notice
+//   • Empty state with encouraging message
 // ============================================================
 
 import 'package:flutter/material.dart';

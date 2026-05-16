@@ -1,7 +1,7 @@
 // lib/features/onboarding/screens/welcome_screen.dart
 // ============================================================
 // NOOR — Welcome Screen (Onboarding Step 10 → Complete)
-// Celebration animation + 48-hour probation notice.
+// Celebration animation + community guidelines.
 // "Start Browsing" routes to /home.
 // ============================================================
 
@@ -153,7 +153,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
                       const SizedBox(height: AppDimensions.space40),
 
-                      // Probation notice
+                      // Community guidelines notice
                       Container(
                         padding: const EdgeInsets.all(AppDimensions.space16),
                         decoration: BoxDecoration(
@@ -182,16 +182,16 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Safety period active',
+                                    'You\'re in a safe space',
                                     style: AppTypography.captionMedium.copyWith(
                                       color: AppColors.verifiedTeal,
                                     ),
                                   ),
                                   const SizedBox(height: AppDimensions.space4),
                                   Text(
-                                    'New members can browse and send interests immediately. '
-                                    'Chat messages unlock after 48 hours — '
-                                    'our standard protection for the community.',
+                                    'All profiles are reviewed for safety. '
+                                    'Browse, send interests, and start meaningful '
+                                    'conversations with sincerity.',
                                     style: AppTypography.caption,
                                   ),
                                 ],

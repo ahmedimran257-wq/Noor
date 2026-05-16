@@ -30,7 +30,7 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
   DeenLevel? _deenLevel;
   bool?      _praysFive;
   String?    _hijab;
-  bool?      _beard;
+  String?    _beardStyle;  // 'yes','no','prefer_not_to_say' — maps to profiles.beard
   String?    _religiousLeadership; // male-only
   String?    _dietType;
   String?    _smokingHabit;
@@ -71,7 +71,7 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
   void _advance() {
     final data = context.read<OnboardingCubit>().currentData.copyWith(
       sect: _sect, subSect: _subSect, deenLevel: _deenLevel,
-      praysFiveDaily: _praysFive, hijabStyle: _hijab, hasBeard: _beard,
+      praysFiveDaily: _praysFive, hijabStyle: _hijab, beardStyle: _beardStyle,
       religiousLeadership: _religiousLeadership,
       dietType: _dietType, smokingHabit: _smokingHabit,
       vapingHabit: _vapingHabit, hookahHabit: _hookahHabit,
@@ -187,12 +187,14 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
                 const SizedBox(height: AppDimensions.space12),
                 Wrap(
                   spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
-                  children: ['Yes', 'No', 'Prefer not to say'].map((o) => _SelectChip(
-                    label: o,
-                    isSelected: o == 'Prefer not to say' ? _beard == null && _praysFive != null : _beard == (o == 'Yes'),
-                    onTap: () => setState(() {
-                      if (o == 'Prefer not to say') { _beard = null; } else { _beard = o == 'Yes'; }
-                    }),
+                children: {
+                  'yes': 'Yes',
+                  'no': 'No',
+                  'prefer_not_to_say': 'Prefer not to say',
+                }.entries.map((e) => _SelectChip(
+                    label: e.value,
+                    isSelected: _beardStyle == e.key,
+                    onTap: () => setState(() => _beardStyle = e.key),
                   )).toList(),
                 ),
                 const SizedBox(height: AppDimensions.space20),

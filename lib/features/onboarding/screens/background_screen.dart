@@ -44,16 +44,16 @@ const _kEmploymentOptions = [
 // ── Income brackets (merged from income_screen) ───────────────
 class _IncomeBracket {
   const _IncomeBracket(this.id, this.label);
-  final String id;
+  final int id;       // matches income_brackets(id) integer PK
   final String label;
 }
 
 const _kIncomeBrackets = <_IncomeBracket>[
-  _IncomeBracket('in_1', '< \u20B93 Lakh/year'),
-  _IncomeBracket('in_2', '\u20B93 \u2013 6 Lakh/year'),
-  _IncomeBracket('in_3', '\u20B96 \u2013 12 Lakh/year'),
-  _IncomeBracket('in_4', '\u20B912 \u2013 25 Lakh/year'),
-  _IncomeBracket('in_5', '> \u20B925 Lakh/year'),
+  _IncomeBracket(1, '< \u20B93 Lakh/year'),
+  _IncomeBracket(2, '\u20B93 \u2013 6 Lakh/year'),
+  _IncomeBracket(3, '\u20B96 \u2013 12 Lakh/year'),
+  _IncomeBracket(4, '\u20B912 \u2013 25 Lakh/year'),
+  _IncomeBracket(5, '> \u20B925 Lakh/year'),
 ];
 
 const _kVisibilityOptions = [

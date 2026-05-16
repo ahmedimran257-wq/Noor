@@ -43,8 +43,26 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
     }
   }
 
-  void _confirm() {
+  Future<void> _confirm() async {
     HapticFeedback.mediumImpact();
+
+    // TODO (backend-wiring): Replace this with real Supabase + RevenueCat calls
+    // when the repository layer is implemented.
+    //
+    // Production flow:
+    //   1. supabase.from('users').update({
+    //        'deletion_status': 'pending',
+    //        'deletion_reason': _reason,
+    //        'deletion_requested_at': DateTime.now().toUtc().toIso8601String(),
+    //      }).eq('id', userId);
+    //   2. RevenueCat: Purchases.logOut() to detach subscription
+    //   3. OneSignal: OneSignal.logout() to stop push notifications
+    //   4. supabase.auth.signOut() → triggers router redirect
+    //
+    // The server-side cron (purge_deleted_users in 008_cron_jobs.sql)
+    // handles final hard-delete after the 30-day grace period.
+
+    // For now: sign out (mock mode)
     context.read<AuthCubit>().signOut();
   }
 

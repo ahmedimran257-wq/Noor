@@ -57,8 +57,8 @@ class OnboardingData {
     this.subSect,
     this.deenLevel,
     this.praysFiveDaily,
-    this.hijabStyle,    // women only
-    this.hasBeard,      // men only
+    this.hijabStyle,    // women only — maps to profiles.hijab text
+    this.beardStyle,    // men only  — maps to profiles.beard text ('yes','no','prefer_not_to_say')
     this.dietType,
     this.smokingHabit,
     this.vapingHabit,
@@ -72,7 +72,7 @@ class OnboardingData {
     this.employmentStatus,
 
     // Step 7 — Income
-    this.incomeBracketId,
+    this.incomeBracketId,        // int FK → income_brackets(id)
     this.incomeBracketLabel,
     this.incomeVisibility,
 
@@ -152,7 +152,7 @@ class OnboardingData {
   final String?   lastName;
   final DateTime? dateOfBirth;
   final Gender?   gender;
-  final String?   cityId;
+  final String?   cityId;              // UUID string — matches cities(id) uuid
   final String?   cityName;
   final String?   countryCode;
   final int?      heightCm;          // e.g. 165
@@ -166,8 +166,8 @@ class OnboardingData {
   final String?  subSect;
   final DeenLevel? deenLevel;
   final bool?    praysFiveDaily;
-  final String?  hijabStyle;
-  final bool?    hasBeard;
+  final String?  hijabStyle;         // maps to profiles.hijab text
+  final String?  beardStyle;         // maps to profiles.beard text ('yes','no','prefer_not_to_say')
   final String?  dietType;       // 'zabiha_strict','halal_only','eats_anything','vegetarian','vegan'
   final String?  smokingHabit;   // 'never','occasionally','frequently','prefer_not'
   final String?  vapingHabit;    // 'never','occasionally','frequently','prefer_not'
@@ -181,7 +181,7 @@ class OnboardingData {
   final EmploymentStatus? employmentStatus;
 
   // Step 7
-  final String? incomeBracketId;
+  final int?    incomeBracketId;      // int FK → income_brackets(id)
   final String? incomeBracketLabel;
   final String? incomeVisibility;
 
@@ -271,7 +271,7 @@ class OnboardingData {
     DeenLevel?  deenLevel,
     bool?       praysFiveDaily,
     String?     hijabStyle,
-    bool?       hasBeard,
+    String?     beardStyle,
     String?     dietType,
     String?     smokingHabit,
     String?     vapingHabit,
@@ -281,7 +281,7 @@ class OnboardingData {
     String?     fieldOfStudy,
     String?     profession,
     EmploymentStatus? employmentStatus,
-    String?     incomeBracketId,
+    int?        incomeBracketId,
     String?     incomeBracketLabel,
     String?     incomeVisibility,
     FamilyType? familyType,
@@ -353,7 +353,7 @@ class OnboardingData {
       deenLevel:                deenLevel                ?? this.deenLevel,
       praysFiveDaily:           praysFiveDaily           ?? this.praysFiveDaily,
       hijabStyle:               hijabStyle               ?? this.hijabStyle,
-      hasBeard:                 hasBeard                 ?? this.hasBeard,
+      beardStyle:               beardStyle               ?? this.beardStyle,
       dietType:                 dietType                 ?? this.dietType,
       smokingHabit:             smokingHabit             ?? this.smokingHabit,
       vapingHabit:              vapingHabit              ?? this.vapingHabit,
@@ -416,6 +416,17 @@ class OnboardingData {
       specialNeeds:             specialNeeds             ?? this.specialNeeds,
       residencyStatus:          residencyStatus          ?? this.residencyStatus,
     );
+  }
+
+  /// Maps the Flutter MaritalStatus enum to the DB `previously_married` text column.
+  /// DB values: 'no', 'divorced', 'widowed'
+  String? get previouslyMarried {
+    if (maritalStatus == null) return null;
+    switch (maritalStatus!) {
+      case MaritalStatus.neverMarried: return 'no';
+      case MaritalStatus.divorced:     return 'divorced';
+      case MaritalStatus.widowed:      return 'widowed';
+    }
   }
 
   /// Returns the user's computed age from DOB, or null.

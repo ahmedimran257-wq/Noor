@@ -198,7 +198,8 @@ CREATE INDEX idx_matches_user_b ON matches(user_b);
 -- ------------------------------------------------------------
 -- MESSAGES
 -- Text-only in Phase 1. Guarded by two BEFORE INSERT triggers:
--- trg_enforce_probation and trg_assert_messaging_allowed.
+-- trg_assert_messaging_allowed.
+-- NOTE: trg_enforce_probation has been DROPPED in migration 011.
 -- ------------------------------------------------------------
 CREATE TABLE messages (
   id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -216,7 +217,8 @@ CREATE INDEX idx_messages_match_time ON messages(match_id, created_at);
 CREATE INDEX idx_messages_sender     ON messages(sender_id, created_at);
 CREATE INDEX idx_messages_unread     ON messages(receiver_id, read_at) WHERE read_at IS NULL;
 
--- Guard 1: 48-hour probation — blocks new accounts from sending messages
+-- Guard 1: 48-hour probation — REMOVED in migration 011_high_priority_fixes.sql
+-- Kept here for audit history. The trigger and function are DROPped in migration 011.
 CREATE OR REPLACE FUNCTION enforce_probation_period()
 RETURNS trigger AS $$
 DECLARE
@@ -275,7 +277,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- Runs AFTER probation check — order matters
+-- Runs as the only BEFORE INSERT trigger (probation removed in 011)
 CREATE TRIGGER trg_assert_messaging_allowed
   BEFORE INSERT ON messages
   FOR EACH ROW

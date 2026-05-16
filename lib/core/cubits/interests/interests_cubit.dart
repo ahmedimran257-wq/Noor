@@ -96,21 +96,17 @@ class InterestsCubit extends Cubit<InterestsState> {
 
   /// Call once gender + subscription status are known.
   ///
-  /// Blueprint:
-  ///   female              → unlimited (no banner shown)
+  /// Limits (aligned with DB trigger `enforce_interest_limits`):
+  ///   female              → 10 per day (banner hidden in UI)
   ///   male, no sub        → 3 per day
   ///   male, subscribed    → 20 per day
-  ///
-  /// We use 9999 as sentinel for "unlimited" so the math in
-  /// isDailyLimitReached / remainingToday still works without
-  /// special-casing it everywhere.
   void setDailyLimitForGender({
     required String gender,
     required bool   isSubscribed,
   }) {
     final int limit;
     if (gender == 'female') {
-      limit = 9999; // unlimited — blueprint: women send interests free
+      limit = 10; // DB enforces 10; UI hides the limit banner for women
     } else if (isSubscribed) {
       limit = 20;
     } else {

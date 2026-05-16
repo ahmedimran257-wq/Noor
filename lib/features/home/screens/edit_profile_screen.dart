@@ -45,7 +45,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   DeenLevel? _deenLevel;
   bool       _praysFive      = false;
   String?    _hijabStyle;
-  bool       _hasBeard       = false;
+  String?    _beardStyle;           // 'yes','no','prefer_not_to_say'
 
   // Education & career
   String?    _educationLabel;
@@ -83,7 +83,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _deenLevel      = d.deenLevel;
     _praysFive      = d.praysFiveDaily ?? false;
     _hijabStyle     = d.hijabStyle;
-    _hasBeard       = d.hasBeard ?? false;
+    _beardStyle     = d.beardStyle;
     _educationLabel = d.educationLabel;
     _familyType     = d.familyType;
     _siblingCount   = d.siblingCount ?? 0;
@@ -122,7 +122,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       deenLevel:          _deenLevel,
       praysFiveDaily:     _praysFive,
       hijabStyle:         _hijabStyle,
-      hasBeard:           _hasBeard,
+      beardStyle:         _beardStyle,
       educationLabel:     _educationLabel,
       familyType:         _familyType,
       siblingCount:       _siblingCount,
@@ -291,10 +291,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 // Male-only: beard toggle
                 if (_gender == Gender.male) ...[
                   const SizedBox(height: AppDimensions.space12),
-                  _ToggleRow(
-                    label:     'Has a beard',
-                    value:     _hasBeard,
-                    onChanged: (v) => setState(() => _hasBeard = v),
+                  _DropdownField(
+                    label:    'Beard',
+                    value:    _beardStyle ?? 'prefer_not_to_say',
+                    options:  const ['yes', 'no', 'prefer_not_to_say'],
+                    optionLabels: const ['Yes', 'No', 'Prefer not to say'],
+                    onChanged: (v) => setState(() => _beardStyle = v),
                   ),
                 ],
                 const SizedBox(height: AppDimensions.space28),
