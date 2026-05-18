@@ -713,10 +713,10 @@ packages:
     dependency: "direct main"
     description:
       name: onesignal_flutter
-      sha256: "78b09360343f96d4ccd1b7d38eaadb36b6e923f69adfd36fc97ac5f0e961a663"
+      sha256: "8b96061c197b01d79d96b34632d277bfe55a314565265a6e021ab34954976517"
       url: "https://pub.dev"
     source: hosted
-    version: "3.5.4"
+    version: "5.5.4"
   package_config:
     dependency: transitive
     description:
@@ -833,10 +833,10 @@ packages:
     dependency: "direct main"
     description:
       name: purchases_flutter
-      sha256: "83f58c4ef331c06af0548b009632ec2c45b119b87bf02a74f8f77a40e0f64bad"
+      sha256: "8d34712aa3201f675eeccaacf45c0b7b025575fc9d0378b2619bb61246e76064"
       url: "https://pub.dev"
     source: hosted
-    version: "6.30.2"
+    version: "8.11.0"
   realtime_client:
     dependency: transitive
     description:
