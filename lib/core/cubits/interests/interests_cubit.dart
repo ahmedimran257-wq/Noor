@@ -16,6 +16,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'interests_state.dart';
 import '../../mock/mock_profiles.dart';
+import '../../utils/content_filter.dart';
 
 class InterestsCubit extends Cubit<InterestsState> {
   InterestsCubit() : super(const InterestsState()) {
@@ -188,7 +189,8 @@ class InterestsCubit extends Cubit<InterestsState> {
   /// Send an interest from the discovery feed or profile detail.
   /// Returns true on success, false if daily limit reached.
   /// Item 17: enforces daily limit and persists count.
-  Future<bool> sendInterest(MockProfile profile) async {
+  /// D1: optional [note] attached to the interest.
+  Future<bool> sendInterest(MockProfile profile, {String? note}) async {
     // Check reset first
     final today = _dateOnly(DateTime.now());
     if (state.lastResetDate == null ||
@@ -218,6 +220,7 @@ class InterestsCubit extends Cubit<InterestsState> {
       sentAt:    now,
       createdAt: now,
       status:    InterestStatus.pending,
+      note:      note?.isNotEmpty == true ? ContentFilter.redact(note!) : null,
     );
 
     final updated        = [entry, ...state.sent];

@@ -88,8 +88,17 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       context.read<OnboardingCubit>().currentData.gender;
 
   /// Shows bottom sheet to pick source, then picks + compresses + scans.
+  /// For slot 3 (verification selfie), forces camera — no gallery access.
   Future<void> _pickPhoto(int index) async {
-    final source = await _showSourceSheet();
+    final ImageSource? source;
+
+    // T1: Enforce proof-of-life selfie — slot 3 is camera-only
+    if (index == 3) {
+      source = ImageSource.camera;
+    } else {
+      source = await _showSourceSheet();
+    }
+
     if (source == null) return;
     if (!mounted) return;
 

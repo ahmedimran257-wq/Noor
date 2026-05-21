@@ -23,6 +23,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/cubits/discovery/discovery_feed_cubit.dart';
 import '../../../core/cubits/discovery/discovery_feed_state.dart';
 import '../../../core/cubits/interests/interests_cubit.dart';
+import '../../../core/cubits/onboarding/onboarding_cubit.dart';
+import '../../../core/cubits/subscription/subscription_cubit.dart';
+import '../../../core/models/onboarding_data.dart';
 import '../../../core/services/bookmark_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
@@ -31,6 +34,8 @@ import '../../../core/widgets/cards/noor_profile_card.dart';
 import '../../../core/widgets/loaders/noor_shimmer.dart';
 import '../widgets/discovery_filter_bar.dart';
 import '../widgets/interest_ceremony_overlay.dart';
+import '../widgets/interest_note_sheet.dart';
+import 'paywall_gate_screen.dart';
 import 'profile_detail_screen.dart';
 
 class DiscoveryFeedScreen extends StatefulWidget {
@@ -43,7 +48,7 @@ class DiscoveryFeedScreen extends StatefulWidget {
 class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
   late final PageController _pageCtrl;
   int         _currentPage = 0;
-  final Set<int>    _sentInterests = {};
+  final Set<String> _sentInterests = {};
   // Bookmarks now use profile IDs (String) for persistence
   Set<String> _bookmarked = {};
 
@@ -88,8 +93,18 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
   }
 
   Future<void> _handleSendInterest(int index, FeedProfile fp) async {
-    setState(() => _sentInterests.add(index));
-    context.read<InterestsCubit>().sendInterest(fp.profile);
+    // G2: Show note sheet before sending (consistent with profile detail)
+    final note = await showInterestNoteSheet(
+      context,
+      firstName: fp.profile.firstName,
+    );
+    if (note == null || !mounted) return; // cancelled
+
+    setState(() => _sentInterests.add(fp.profile.id));
+    context.read<InterestsCubit>().sendInterest(
+      fp.profile,
+      note: note.isNotEmpty ? note : null,
+    );
     HapticFeedback.mediumImpact();
     await showInterestCeremony(context, firstName: fp.profile.firstName);
   }
@@ -137,8 +152,8 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
           child: ProfileDetailScreen(
             profile:        fp.profile,
             heroTag:        'profile_card_$index',
-            isInterestSent: _sentInterests.contains(index),
-            onInterestSent: () => setState(() => _sentInterests.add(index)),
+            isInterestSent: _sentInterests.contains(fp.profile.id),
+            onInterestSent: () => setState(() => _sentInterests.add(fp.profile.id)),
           ),
         ),
       ),
@@ -214,8 +229,26 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
       return const _EmptyFeed();
     }
 
+    // G11 (D5): Profile completeness gate — ≤40% → nudge to complete
+    final onbData = context.read<OnboardingCubit>().currentData;
+    final completeness = _quickCompleteness(onbData);
+    if (completeness <= 40) {
+      return _IncompleteProfileGate(score: completeness);
+    }
+
     final profiles     = feedState.profiles;
     final isLoadingMore = feedState.status == FeedStatus.loadingMore;
+
+    // M9: Check free-tier browse limit for non-subscribers
+    final subState = context.read<SubscriptionCubit>().state;
+    final isLimited = feedState.isFreeTierLimitReached && !subState.isSubscribed;
+
+    if (isLimited) {
+      return _FreeTierLimitReached(
+        onUpgrade: () => PaywallGateSheet.show(context),
+      );
+    }
+
     final itemCount    = profiles.length + (isLoadingMore ? 1 : 0);
 
     return PageView.builder(
@@ -258,10 +291,11 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
                   photoCount:      p.photoCount,
                   isPhotoPrivate:  p.isPhotoPrivate,
                   isVerified:      p.isVerified,
+                  lastActiveLabel: fp.lastActiveLabel,
                   isFocused:       focused,
-                  isInterestSent:  _sentInterests.contains(index),
+                  isInterestSent:  _sentInterests.contains(p.id),
                   onTap:           () => _openProfile(index, fp),
-                  onSendInterest:  _sentInterests.contains(index)
+                  onSendInterest:  _sentInterests.contains(p.id)
                       ? null
                       : () => _handleSendInterest(index, fp),
                   onBookmark:      () => _handleBookmark(index, fp),
@@ -464,37 +498,162 @@ class _EmptyFeed extends StatelessWidget {
   }
 }
 
-// ── Dot Indicator ─────────────────────────────────────────────
-
-class _DotIndicator extends StatelessWidget {
-  const _DotIndicator({required this.count, required this.current});
-  final int count;
-  final int current;
+// ── M9: Free-Tier Browse Limit ────────────────────────────────
+class _FreeTierLimitReached extends StatelessWidget {
+  const _FreeTierLimitReached({required this.onUpgrade});
+  final VoidCallback onUpgrade;
 
   @override
   Widget build(BuildContext context) {
-    const maxDots = 7;
-    final start =
-        (current - maxDots ~/ 2).clamp(0, (count - maxDots).clamp(0, count));
-    final end = (start + maxDots).clamp(0, count);
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        for (int i = start; i < end; i++)
-          AnimatedContainer(
-            duration: AppDimensions.durationTransition,
-            margin:   const EdgeInsets.symmetric(horizontal: 3),
-            width:    i == current ? 20 : 6,
-            height:   6,
-            decoration: BoxDecoration(
-              color: i == current
-                  ? AppColors.champagneGold
-                  : AppColors.slateMist.withValues(alpha: 0.4),
-              borderRadius: BorderRadius.circular(3),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppDimensions.space40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width:  100,
+              height: 100,
+              decoration: BoxDecoration(
+                color:  AppColors.champagneGold.withValues(alpha: 0.1),
+                shape:  BoxShape.circle,
+                border: Border.all(color: AppColors.goldBorder),
+                boxShadow: [
+                  BoxShadow(
+                    color:        AppColors.goldGlow,
+                    blurRadius:   24,
+                    spreadRadius: 4,
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.lock_clock_rounded,
+                color: AppColors.champagneGold,
+                size:  44,
+              ),
             ),
-          ),
-      ],
+            const SizedBox(height: AppDimensions.space28),
+            Text(
+              'Daily limit reached',
+              style: AppTypography.screenTitle.copyWith(fontSize: 22),
+            ),
+            const SizedBox(height: AppDimensions.space12),
+            Text(
+              'You\'ve browsed 15 profiles today.\nUpgrade to unlock unlimited browsing.',
+              style: AppTypography.bodyMuted,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppDimensions.space24),
+            GestureDetector(
+              onTap: onUpgrade,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.space24,
+                  vertical:   AppDimensions.space14,
+                ),
+                decoration: BoxDecoration(
+                  color:        AppColors.champagneGold,
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                ),
+                child: Text('Upgrade Now', style: AppTypography.button),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── G11 (D5): Profile Completeness Gate ───────────────────────
+
+/// Lightweight completeness score (mirrors MyProfileScreen logic).
+int _quickCompleteness(OnboardingData d) {
+  int score = 0;
+  if (d.photoLocalPaths != null && d.photoLocalPaths!.isNotEmpty) score += 25;
+  if ((d.bio?.length ?? 0) >= 50) score += 15;
+  if (d.sect != null && d.deenLevel != null) score += 15;
+  if ((d.educationLabel != null || d.educationRank != null) &&
+      (d.profession?.isNotEmpty ?? false)) score += 10;
+  if (d.familyType != null) score += 10;
+  if (d.preferredAgeMin != null && d.preferredAgeMax != null) score += 10;
+  if (d.photoLocalPaths != null && d.photoLocalPaths!.length >= 2) score += 8;
+  if (d.incomeBracketId != null) score += 4;
+  if (d.languages != null && d.languages!.isNotEmpty) score += 3;
+  return score.clamp(0, 100);
+}
+
+class _IncompleteProfileGate extends StatelessWidget {
+  const _IncompleteProfileGate({required this.score});
+  final int score;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Circular progress
+            SizedBox(
+              width: 100, height: 100,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                    width: 100, height: 100,
+                    child: CircularProgressIndicator(
+                      value:           score / 100,
+                      strokeWidth:     5,
+                      backgroundColor: AppColors.surfaceGlassHover,
+                      valueColor:      const AlwaysStoppedAnimation(AppColors.champagneGold),
+                    ),
+                  ),
+                  Text(
+                    '$score%',
+                    style: AppTypography.screenTitle.copyWith(
+                      color:    AppColors.champagneGold,
+                      fontSize: 22,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppDimensions.space24),
+            Text(
+              'Complete Your Profile',
+              style: AppTypography.screenTitle.copyWith(fontSize: 20),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppDimensions.space8),
+            Text(
+              'Profiles above 40% get 3× more interests.\n'
+              'Complete your profile to start browsing.',
+              style: AppTypography.bodyMuted,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppDimensions.space24),
+            SizedBox(
+              width:  double.infinity,
+              height: AppDimensions.buttonHeight,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.champagneGold,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                  ),
+                  elevation: 0,
+                ),
+                icon: const Icon(Icons.edit_outlined,
+                    color: AppColors.obsidianNight, size: 18),
+                label: Text('Complete Profile', style: AppTypography.button),
+                onPressed: () => context.go('/home/profile'),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

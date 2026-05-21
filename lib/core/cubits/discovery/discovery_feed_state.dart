@@ -15,13 +15,27 @@ class FeedProfile extends Equatable {
   const FeedProfile({
     required this.profile,
     this.isWildCard = false,
+    this.lastActiveAt,
   });
 
   final MockProfile profile;
   final bool isWildCard;
+  final DateTime? lastActiveAt;
+
+  /// G1: Human-readable last-active label computed from DateTime.
+  String get lastActiveLabel {
+    final t = lastActiveAt;
+    if (t == null) return '';
+    final diff = DateTime.now().difference(t);
+    if (diff.inMinutes < 5)  return 'Online now';
+    if (diff.inMinutes < 60) return 'Active ${diff.inMinutes}m ago';
+    if (diff.inHours < 24)   return 'Active ${diff.inHours}h ago';
+    if (diff.inDays < 7)     return 'Active ${diff.inDays}d ago';
+    return 'Active ${diff.inDays ~/ 7}w ago';
+  }
 
   @override
-  List<Object?> get props => [profile, isWildCard];
+  List<Object?> get props => [profile, isWildCard, lastActiveAt];
 }
 
 class DiscoveryFeedState extends Equatable {

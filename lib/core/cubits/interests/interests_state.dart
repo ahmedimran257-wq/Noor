@@ -31,6 +31,7 @@ class InterestEntry extends Equatable {
     required this.sentAt,
     required this.createdAt,   // Item 18: expiry tracking
     this.status = InterestStatus.pending,
+    this.note,                 // D1: optional interest note
   });
 
   final String         id;
@@ -39,6 +40,7 @@ class InterestEntry extends Equatable {
   final DateTime       sentAt;
   final DateTime       createdAt;  // Item 18
   final InterestStatus status;
+  final String?        note;       // D1: personal interest note
 
   /// Item 18: Interest expires 14 days after creation.
   DateTime get expiresAt => createdAt.add(const Duration(days: 14));
@@ -69,6 +71,7 @@ class InterestEntry extends Equatable {
   InterestEntry copyWith({
     InterestStatus? status,
     String?         timeAgo,
+    String?         note,
   }) {
     return InterestEntry(
       id:        id,
@@ -77,11 +80,12 @@ class InterestEntry extends Equatable {
       sentAt:    sentAt,
       createdAt: createdAt,
       status:    status    ?? this.status,
+      note:      note      ?? this.note,
     );
   }
 
   @override
-  List<Object?> get props => [id, profile, timeAgo, sentAt, createdAt, status];
+  List<Object?> get props => [id, profile, timeAgo, sentAt, createdAt, status, note];
 }
 
 class InterestsState extends Equatable {

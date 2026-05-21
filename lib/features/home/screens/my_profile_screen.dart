@@ -372,6 +372,13 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
           ),
           const SizedBox(height: AppDimensions.space16),
 
+          // D4: "I Found My Match" — graceful profile deactivation
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: _IFoundMyMatchButton(),
+          ),
+          const SizedBox(height: AppDimensions.space16),
+
           // Sign out
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -1145,6 +1152,171 @@ class _SettingsTileState extends State<_SettingsTile> {
               : const Icon(Icons.chevron_right_rounded,
                   color: AppColors.slateMist,
                   size: AppDimensions.iconSizeMedium),
+    );
+  }
+}
+
+// ── D4: "I Found My Match" ────────────────────────────────────
+
+class _IFoundMyMatchButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => _showConfirmation(context),
+      child: Container(
+        width:   double.infinity,
+        padding: const EdgeInsets.all(AppDimensions.space16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+          gradient: LinearGradient(
+            colors: [
+              AppColors.champagneGold.withValues(alpha: 0.12),
+              AppColors.champagneGold.withValues(alpha: 0.04),
+            ],
+            begin: Alignment.topLeft,
+            end:   Alignment.bottomRight,
+          ),
+          border: Border.all(color: AppColors.goldBorder),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(AppDimensions.space8),
+              decoration: BoxDecoration(
+                color:  AppColors.champagneGold.withValues(alpha: 0.15),
+                shape:  BoxShape.circle,
+                border: Border.all(color: AppColors.goldBorder),
+              ),
+              child: const Icon(
+                Icons.favorite_rounded,
+                color: AppColors.champagneGold,
+                size:  AppDimensions.iconSizeMedium,
+              ),
+            ),
+            const SizedBox(width: AppDimensions.space12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('I Found My Match',
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppColors.champagneGold,
+                    ),
+                  ),
+                  const SizedBox(height: AppDimensions.space4),
+                  Text('Alhamdulillah! Deactivate your profile.',
+                    style: AppTypography.caption,
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded,
+                color: AppColors.champagneGold,
+                size: AppDimensions.iconSizeMedium),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showConfirmation(BuildContext context) {
+    showModalBottomSheet<void>(
+      context:         context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        margin:  const EdgeInsets.all(AppDimensions.space16),
+        padding: const EdgeInsets.all(AppDimensions.space24),
+        decoration: BoxDecoration(
+          color:        const Color(0xFF13131A),
+          borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+          border:       Border.all(color: AppColors.goldBorder),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(child: Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.cardBorder,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            )),
+            const SizedBox(height: AppDimensions.space24),
+            const Icon(Icons.favorite_rounded,
+                color: AppColors.champagneGold, size: 48),
+            const SizedBox(height: AppDimensions.space16),
+            Text('Alhamdulillah!',
+              style: AppTypography.screenTitle.copyWith(
+                color: AppColors.champagneGold, fontSize: 24,
+              ),
+            ),
+            const SizedBox(height: AppDimensions.space8),
+            Text(
+              'May Allah bless your union with\nlove, mercy, and barakah.',
+              style: AppTypography.bodyMuted,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppDimensions.space6),
+            Text(
+              'Your profile will be hidden from searches.\nYou can reactivate anytime.',
+              style: AppTypography.caption,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppDimensions.space24),
+            SizedBox(
+              width:  double.infinity,
+              height: AppDimensions.buttonHeight,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.champagneGold,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                  ),
+                  elevation: 0,
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                  // Deactivate + sign out
+                  context.read<AuthCubit>().signOut();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Your profile has been deactivated. Mubarak!',
+                        style: AppTypography.body,
+                      ),
+                      backgroundColor: AppColors.surfaceGlassHover,
+                      behavior:        SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                        side: const BorderSide(color: AppColors.goldBorder),
+                      ),
+                    ),
+                  );
+                },
+                child: Text('Confirm & Deactivate', style: AppTypography.button),
+              ),
+            ),
+            const SizedBox(height: AppDimensions.space8),
+            SizedBox(
+              width:  double.infinity,
+              height: AppDimensions.buttonHeightSmall,
+              child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  side:  const BorderSide(color: AppColors.cardBorder),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                  ),
+                ),
+                onPressed: () => Navigator.pop(context),
+                child: Text('Cancel',
+                    style: AppTypography.button.copyWith(
+                        color: AppColors.slateMist)),
+              ),
+            ),
+            const SizedBox(height: AppDimensions.space8),
+          ],
+        ),
+      ),
     );
   }
 }

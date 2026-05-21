@@ -14,17 +14,24 @@
 // ============================================================
 
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../mock/mock_profiles.dart';
+import '../block_report/block_report_cubit.dart';
 import 'discovery_feed_state.dart';
 
 class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
-  DiscoveryFeedCubit() : super(const DiscoveryFeedState());
+  DiscoveryFeedCubit({this.blockReportCubit}) : super(const DiscoveryFeedState());
 
-  static const _batchSize  = 8;
-  static const _kFilterKey = 'discovery_active_filter';
+  /// Optional reference to BlockReportCubit for filtering blocked profiles.
+  final BlockReportCubit? blockReportCubit;
+
+  static const _batchSize       = 8;
+  static const _kFilterKey       = 'discovery_active_filter';
+  static const _kViewCountKey    = 'discovery_views_today';
+  static const _kViewResetKey    = 'discovery_views_reset_date';
 
   // Extended mock pool (5 rotations for infinite-scroll demo)
   static final List<MockProfile> _pool = [
@@ -40,7 +47,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   // ── Public API ────────────────────────────────────────────
 
   /// Initial page load — shows skeleton loaders first.
-  /// Also restores saved filter from SharedPreferences.
+  /// Also restores saved filter and browse counter from SharedPreferences.
   Future<void> loadInitial() async {
     if (state.status != FeedStatus.initial) return;
     emit(state.copyWith(status: FeedStatus.loading));
@@ -48,6 +55,9 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     // Restore saved filter
     final savedFilter = await _loadFilterFromPrefs();
     final filter = savedFilter ?? state.activeFilter;
+
+    // G5: Restore persisted browse counter (daily reset)
+    final restoredViews = await _restoreBrowseCounter();
 
     await Future.delayed(const Duration(milliseconds: 1200));
 
@@ -57,10 +67,11 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
 
     if (!isClosed) {
       emit(state.copyWith(
-        status:       batch.isEmpty ? FeedStatus.empty : FeedStatus.loaded,
-        profiles:     batch,
-        hasMore:      _cursor < filtered.length,
-        activeFilter: filter,
+        status:              batch.isEmpty ? FeedStatus.empty : FeedStatus.loaded,
+        profiles:            batch,
+        hasMore:             _cursor < filtered.length,
+        activeFilter:        filter,
+        profilesViewedToday: restoredViews,
       ));
     }
   }
@@ -112,7 +123,45 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
 
   void recordProfileView() {
     if (!isClosed) {
-      emit(state.copyWith(profilesViewedToday: state.profilesViewedToday + 1));
+      final newCount = state.profilesViewedToday + 1;
+      emit(state.copyWith(profilesViewedToday: newCount));
+      _persistBrowseCounter(newCount);
+    }
+  }
+
+  // ── G5: Browse Counter Persistence ──────────────────────────
+
+  Future<int> _restoreBrowseCounter() async {
+    try {
+      final prefs   = await SharedPreferences.getInstance();
+      final savedDate = prefs.getString(_kViewResetKey);
+      if (savedDate == null) return 0;
+
+      final saved = DateTime.tryParse(savedDate);
+      final today = DateTime.now();
+      // Same calendar day → restore count
+      if (saved != null &&
+          saved.year == today.year &&
+          saved.month == today.month &&
+          saved.day == today.day) {
+        return prefs.getInt(_kViewCountKey) ?? 0;
+      }
+      // New day → reset
+      await prefs.remove(_kViewCountKey);
+      await prefs.remove(_kViewResetKey);
+      return 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  Future<void> _persistBrowseCounter(int count) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_kViewCountKey, count);
+      await prefs.setString(_kViewResetKey, DateTime.now().toIso8601String());
+    } catch (_) {
+      // Best-effort persistence
     }
   }
 
@@ -191,28 +240,40 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   // ── Internal helpers ──────────────────────────────────────
 
   /// Apply filter predicate to the full mock pool.
+  /// T3: Also excludes profiles in BlockReportCubit.hiddenProfileIds.
   List<MockProfile> _applyFilter(List<MockProfile> pool, DiscoveryFilter f) {
-    if (!f.isActive) return pool;
+    // T3: Get hidden profile IDs from BlockReportCubit
+    final hidden = blockReportCubit?.state.hiddenProfileIds ?? <String>{};
+
     return pool.where((p) {
-      if (f.sect != null && f.sect!.isNotEmpty && p.sect != f.sect) return false;
-      if (f.deenLevel != null && f.deenLevel!.isNotEmpty && p.deenLevel != f.deenLevel) return false;
-      if (f.verifiedOnly && !p.isVerified) return false;
-      if (f.ageMin != null && p.age < f.ageMin!) return false;
-      if (f.ageMax != null && p.age > f.ageMax!) return false;
-      if (f.familyType != null && f.familyType!.isNotEmpty && p.familyType != f.familyType) return false;
-      if (!f.openToDivorced && p.maritalStatus != null && p.maritalStatus != 'Never Married') return false;
-      // Phase 7 filters
-      if (f.quranMemorization != null && f.quranMemorization!.isNotEmpty && p.quranMemorization != f.quranMemorization) return false;
-      if (f.marriageTimeline != null && f.marriageTimeline!.isNotEmpty && p.marriageTimeline != f.marriageTimeline) return false;
-      if (f.willingToRelocate != null && f.willingToRelocate!.isNotEmpty && p.willingToRelocate != f.willingToRelocate) return false;
-      if (f.motherTongue != null && f.motherTongue!.isNotEmpty && p.motherTongue != f.motherTongue) return false;
-      if (f.community != null && f.community!.isNotEmpty && p.community != f.community) return false;
-      if (f.livingExpectation != null && f.livingExpectation!.isNotEmpty && p.livingExpectation != f.livingExpectation) return false;
-      if (f.genderPref != null && f.genderPref!.isNotEmpty && p.gender != f.genderPref) return false;
-      if (f.hasChildren != null && f.hasChildren == 'no' && p.hasChildren) return false;
+      // T3: Blocked profiles filtered from discovery feed
+      if (hidden.isNotEmpty && hidden.contains(p.id)) return false;
+
+      // Standard filters (only applied when filter is active)
+      if (f.isActive) {
+        if (f.sect != null && f.sect!.isNotEmpty && p.sect != f.sect) return false;
+        if (f.deenLevel != null && f.deenLevel!.isNotEmpty && p.deenLevel != f.deenLevel) return false;
+        if (f.verifiedOnly && !p.isVerified) return false;
+        if (f.ageMin != null && p.age < f.ageMin!) return false;
+        if (f.ageMax != null && p.age > f.ageMax!) return false;
+        if (f.familyType != null && f.familyType!.isNotEmpty && p.familyType != f.familyType) return false;
+        if (!f.openToDivorced && p.maritalStatus != null && p.maritalStatus != 'Never Married') return false;
+        // Phase 7 filters
+        if (f.quranMemorization != null && f.quranMemorization!.isNotEmpty && p.quranMemorization != f.quranMemorization) return false;
+        if (f.marriageTimeline != null && f.marriageTimeline!.isNotEmpty && p.marriageTimeline != f.marriageTimeline) return false;
+        if (f.willingToRelocate != null && f.willingToRelocate!.isNotEmpty && p.willingToRelocate != f.willingToRelocate) return false;
+        if (f.motherTongue != null && f.motherTongue!.isNotEmpty && p.motherTongue != f.motherTongue) return false;
+        if (f.community != null && f.community!.isNotEmpty && p.community != f.community) return false;
+        if (f.livingExpectation != null && f.livingExpectation!.isNotEmpty && p.livingExpectation != f.livingExpectation) return false;
+        if (f.genderPref != null && f.genderPref!.isNotEmpty && p.gender != f.genderPref) return false;
+        if (f.hasChildren != null && f.hasChildren == 'no' && p.hasChildren) return false;
+      }
       return true;
     }).toList();
   }
+
+  // G1: Seeded RNG for consistent but varied lastActiveAt values
+  static final _rng = math.Random(42);
 
   /// Produce next batch with wild-card injection every 10th profile.
   List<FeedProfile> _nextBatch(List<MockProfile> filtered, {required int offset}) {
@@ -220,11 +281,18 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
 
     final end  = (_cursor + _batchSize).clamp(0, filtered.length);
     final list = <FeedProfile>[];
+    final now  = DateTime.now();
 
     for (int i = _cursor; i < end; i++) {
       final feedIndex = offset + (i - _cursor);
       final isWild    = feedIndex > 0 && (feedIndex + 1) % 10 == 0;
-      list.add(FeedProfile(profile: filtered[i], isWildCard: isWild));
+      // G1: Generate realistic lastActiveAt (0 min → 5 days ago)
+      final minutesAgo = _rng.nextInt(7200); // 0–5 days in minutes
+      list.add(FeedProfile(
+        profile:      filtered[i],
+        isWildCard:   isWild,
+        lastActiveAt: now.subtract(Duration(minutes: minutesAgo)),
+      ));
     }
     _cursor = end;
     return list;

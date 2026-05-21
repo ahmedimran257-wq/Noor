@@ -17,11 +17,12 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 
-const _kSuggestedOpeners = [
-  'Assalamu Alaikum! I came across your profile and was genuinely impressed. May I introduce myself?',
-  'Bismillah. Your profile caught my attention. I would love to learn more about you.',
-  'Assalamu Alaikum. I believe we share similar values. Would you be open to getting to know each other?',
-  'Assalamu Alaikum! Your dedication to deen resonated with me. May Allah bless this conversation with goodness.',
+/// G12: Profile-aware openers — include the match's name.
+List<String> _buildOpeners(String name) => [
+  'Assalamu Alaikum $name! I came across your profile and was genuinely impressed. May I introduce myself?',
+  'Bismillah. Your profile caught my attention, $name. I would love to learn more about you.',
+  'Assalamu Alaikum $name. I believe we share similar values. Would you be open to getting to know each other?',
+  'Assalamu Alaikum $name! Your dedication to deen resonated with me. May Allah bless this conversation with goodness.',
 ];
 
 // Pre-written Islamic closure messages
@@ -204,6 +205,7 @@ class _ChatScreenState extends State<ChatScreen>
                         showOpeners: _showSuggestedOpeners,
                         sizeAnim:   _openersSize,
                         onSelect:   _useOpener,
+                        matchName:  conv.matchName,
                       ),
               ),
 
@@ -386,13 +388,20 @@ class _EndMatchSheetState extends State<_EndMatchSheet> {
 // ── Suggested Openers Area ────────────────────────────────────
 
 class _SuggestedOpenersArea extends StatelessWidget {
-  const _SuggestedOpenersArea({required this.showOpeners, required this.sizeAnim, required this.onSelect});
+  const _SuggestedOpenersArea({
+    required this.showOpeners,
+    required this.sizeAnim,
+    required this.onSelect,
+    required this.matchName,
+  });
   final bool               showOpeners;
   final Animation<double>  sizeAnim;
   final ValueChanged<String> onSelect;
+  final String             matchName;
 
   @override
   Widget build(BuildContext context) {
+    final openers = _buildOpeners(matchName);
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -405,10 +414,10 @@ class _SuggestedOpenersArea extends StatelessWidget {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space24),
-              itemCount: _kSuggestedOpeners.length,
+              itemCount: openers.length,
               separatorBuilder: (_, __) => const SizedBox(width: AppDimensions.space12),
               itemBuilder: (_, i) => _OpenerCard(
-                text: _kSuggestedOpeners[i], onSelect: () => onSelect(_kSuggestedOpeners[i]),
+                text: openers[i], onSelect: () => onSelect(openers[i]),
               ),
             ),
           ),

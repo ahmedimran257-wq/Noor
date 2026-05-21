@@ -11,8 +11,10 @@
 //   Guardian → completeAt 12
 // ============================================================
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../models/onboarding_data.dart';
+import '../../services/profile_write_service.dart';
 import '../auth/auth_cubit.dart';
 import 'onboarding_state.dart';
 
@@ -34,24 +36,36 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   // ── Step Advance ──────────────────────────────────────────
 
   /// Saves the partial data for the current step and advances to next.
-  /// In production: writes to Supabase profiles table before emitting saved.
+  /// In production: writes to Supabase profiles table via ProfileWriteService.
+  /// In mock mode: simulates a delay.
   Future<void> saveAndAdvance(OnboardingData updatedData) async {
     final currentStep = _currentStep;
     emit(OnboardingLoading(step: currentStep, data: updatedData));
 
-    // Mock: simulate Supabase write latency
-    await Future.delayed(const Duration(milliseconds: 600));
+    // Persist to Supabase (or mock delay if not configured)
+    final isGuardianPath = updatedData.profileFor == ProfileFor.guardian;
+    final success = await ProfileWriteService.saveStep(
+      step: currentStep,
+      data: updatedData,
+      isGuardianPath: isGuardianPath,
+    );
+
+    if (!success) {
+      debugPrint('OnboardingCubit: Failed to save step $currentStep, proceeding anyway');
+    }
 
     final nextStep = currentStep + 1;
 
     // Sync the step into AuthCubit so the router can redirect correctly
     _authCubit.updateOnboardingStep(nextStep);
 
+    // Also update the onboarding_step in the DB
+    await ProfileWriteService.updateOnboardingStep(nextStep);
+
     // Completion thresholds:
     //   Myself   → 11 steps (0–10)
     //   Guardian → 12 steps (0–11)
-    final isGuardian = updatedData.profileFor == ProfileFor.guardian;
-    final completeAt = isGuardian ? 12 : 11;
+    final completeAt = isGuardianPath ? 12 : 11;
 
     if (nextStep >= completeAt) {
       emit(const OnboardingComplete());

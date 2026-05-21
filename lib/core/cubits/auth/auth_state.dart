@@ -43,14 +43,15 @@ class AuthAuthenticated extends AuthState {
   });
 
   final String  userId;
-  /// 0–11: still in onboarding (female-myself shortest). ≥12: complete.
+  /// 0–10: still in onboarding (myself shortest). ≥11: complete.
+  /// Myself path: 11 steps (0–10), Guardian path: 12 steps (0–11).
   final int     onboardingStep;
   /// 'male' | 'female' | null (unknown until onboarding sets it)
   final String? gender;
   /// Country code for regional pricing (e.g., 'IN', 'US', 'AE')
   final String? countryCode;
 
-  bool get isOnboardingComplete => onboardingStep >= 12;
+  bool get isOnboardingComplete => onboardingStep >= 11;
 
   @override
   List<Object?> get props => [userId, onboardingStep, gender, countryCode];

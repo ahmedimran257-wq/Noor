@@ -12,29 +12,12 @@ import '../../../core/cubits/onboarding/onboarding_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/content_filter.dart';
 import '../../../core/widgets/inputs/noor_text_field.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
 
-// ── Content filter ────────────────────────────────────────────
-class _ContentFilter {
-  static final _phone  = RegExp(r'(\+?\d[\d\s\-]{7,}\d)');
-  static final _email  = RegExp(r'[\w.+-]+@[\w-]+\.[\w.]+');
-  static final _url    = RegExp(r'(https?://|www\.)\S+');
-  static final _social = RegExp(
-    r'(@[\w.]+|(?:instagram|insta|snap|snapchat|whatsapp|telegram|'
-    r'facebook|fb|twitter|tiktok|linkedin)[\s.:/@]*[\w.]+)',
-    caseSensitive: false,
-  );
-
-  static String? validate(String text) {
-    if (_phone.hasMatch(text))  return 'Phone numbers cannot be shared in the bio.';
-    if (_email.hasMatch(text))  return 'Email addresses cannot be shared in the bio.';
-    if (_url.hasMatch(text))    return 'External links cannot be shared in the bio.';
-    if (_social.hasMatch(text)) return 'Social media handles cannot be shared in the bio.';
-    return null;
-  }
-}
+// Content filter uses shared utility (see lib/core/utils/content_filter.dart)
 
 // ── Interest categories ───────────────────────────────────────
 const _kInterestCategories = [
@@ -78,7 +61,7 @@ class _AboutYourselfScreenState extends State<AboutYourselfScreen> {
 
   void _onBioChanged(String text) {
     setState(() {
-      _bioError = _ContentFilter.validate(text) ?? '';
+      _bioError = ContentFilter.validate(text) ?? '';
     });
   }
 

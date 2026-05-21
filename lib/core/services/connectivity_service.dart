@@ -19,10 +19,25 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 
 class ConnectivityService {
-  ConnectivityService({
+  ConnectivityService._({
     this.checkInterval = const Duration(seconds: 30),
   }) {
     _startPolling();
+  }
+
+  /// Singleton instance — call [initialize] in main() before use.
+  static ConnectivityService? _instance;
+  static ConnectivityService get instance {
+    assert(_instance != null, 'ConnectivityService.initialize() must be called first');
+    return _instance!;
+  }
+
+  /// Create the singleton. Safe to call multiple times (idempotent).
+  static ConnectivityService initialize({
+    Duration checkInterval = const Duration(seconds: 30),
+  }) {
+    _instance ??= ConnectivityService._(checkInterval: checkInterval);
+    return _instance!;
   }
 
   final Duration checkInterval;

@@ -59,19 +59,40 @@ class ChatListScreen extends StatelessWidget {
                         style: AppTypography.badge.copyWith(fontSize: 11),
                       ),
                     ),
-                  // Search icon
-                  Container(
-                    width:  AppDimensions.minTouchTarget,
-                    height: AppDimensions.minTouchTarget,
-                    decoration: BoxDecoration(
-                      color:        AppColors.surfaceGlass,
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                      border:       Border.all(color: AppColors.cardBorder),
-                    ),
-                    child: const Icon(
-                      Icons.search_rounded,
-                      color: AppColors.slateMist,
-                      size:  AppDimensions.iconSizeLarge,
+                  // Search icon — TD3: wrapped in GestureDetector
+                  GestureDetector(
+                    onTap: () {
+                      ScaffoldMessenger.of(context)
+                        ..clearSnackBars()
+                        ..showSnackBar(
+                          SnackBar(
+                            content: Text('Search coming soon',
+                                style: AppTypography.body),
+                            backgroundColor: AppColors.surfaceGlassHover,
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 1),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                  AppDimensions.radiusButton),
+                              side: const BorderSide(
+                                  color: AppColors.cardBorder),
+                            ),
+                          ),
+                        );
+                    },
+                    child: Container(
+                      width:  AppDimensions.minTouchTarget,
+                      height: AppDimensions.minTouchTarget,
+                      decoration: BoxDecoration(
+                        color:        AppColors.surfaceGlass,
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                        border:       Border.all(color: AppColors.cardBorder),
+                      ),
+                      child: const Icon(
+                        Icons.search_rounded,
+                        color: AppColors.slateMist,
+                        size:  AppDimensions.iconSizeLarge,
+                      ),
                     ),
                   ),
                 ],

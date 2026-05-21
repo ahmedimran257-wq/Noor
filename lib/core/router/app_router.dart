@@ -18,6 +18,8 @@ import '../cubits/onboarding/onboarding_cubit.dart';
 import '../models/onboarding_data.dart';
 
 import '../../features/onboarding/screens/splash_brand_screen.dart';
+import '../../features/onboarding/screens/assalam_animation_screen.dart';
+import '../../features/onboarding/screens/language_selection_screen.dart';
 import '../../features/onboarding/screens/legal_gate_screen.dart';
 import '../../features/onboarding/screens/phone_verification_screen.dart';
 import '../../features/onboarding/screens/profile_for_whom_screen.dart';
@@ -44,6 +46,8 @@ import '../../features/home/screens/subscription_screen.dart';
 
 abstract final class AppRoutes {
   static const splash         = '/';
+  static const assalam        = '/assalam';
+  static const languageSelect = '/language';
   static const legal          = '/legal';
   static const phone          = '/phone';
   static const onboarding     = '/onboarding';
@@ -64,9 +68,11 @@ String onboardingPathForStep(int step) {
 
 // ── Router factory ────────────────────────────────────────────
 
-GoRouter buildAppRouter(BuildContext buildContext) {
+GoRouter buildAppRouter(BuildContext buildContext, {
+  String initialLocation = AppRoutes.splash,
+}) {
   return GoRouter(
-    initialLocation: AppRoutes.splash,
+    initialLocation: initialLocation,
     refreshListenable: _AuthStateListenable(buildContext.read<AuthCubit>()),
     redirect: (context, state) {
       final authState = context.read<AuthCubit>().state;
@@ -79,8 +85,10 @@ GoRouter buildAppRouter(BuildContext buildContext) {
 
       // Unauthenticated: always go to splash
       if (authState is AuthUnauthenticated || authState is AuthOtpSent) {
-        if (location == AppRoutes.splash ||
-            location == AppRoutes.legal  ||
+        if (location == AppRoutes.assalam        ||
+            location == AppRoutes.languageSelect ||
+            location == AppRoutes.splash         ||
+            location == AppRoutes.legal          ||
             location == AppRoutes.phone) {
           return null; // allow these pages
         }
@@ -105,6 +113,20 @@ GoRouter buildAppRouter(BuildContext buildContext) {
     },
     routes: [
       // ── Pre-auth screens ────────────────────────────────
+      GoRoute(
+        path: AppRoutes.assalam,
+        pageBuilder: (context, state) => _slidePage(
+          key: state.pageKey,
+          child: const AssalamAnimationScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.languageSelect,
+        pageBuilder: (context, state) => _slidePage(
+          key: state.pageKey,
+          child: const LanguageSelectionScreen(),
+        ),
+      ),
       GoRoute(
         path: AppRoutes.splash,
         pageBuilder: (context, state) => _slidePage(

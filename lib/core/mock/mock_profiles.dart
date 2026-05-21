@@ -47,6 +47,8 @@ class MockProfile {
     // Phase 9 audit fields — filter support
     this.gender,
     this.hasChildren = false,
+    // D3: Last active timestamp for recency display
+    this.lastActiveAt,
   });
 
   final String firstName;
@@ -86,9 +88,23 @@ class MockProfile {
   // Phase 9 audit fields
   final String? gender;              // 'male','female'
   final bool hasChildren;
+  // D3: Last active timestamp
+  final DateTime? lastActiveAt;
 
   /// Stable mock ID — derived from name. Replaced by real UUID in Step 12.
   String get id => '${firstName.toLowerCase()}_${lastNameInitial.toLowerCase()}';
+
+  /// Human-readable last-active label
+  String get lastActiveLabel {
+    final t = lastActiveAt;
+    if (t == null) return '';
+    final diff = DateTime.now().difference(t);
+    if (diff.inMinutes < 5)  return 'Online now';
+    if (diff.inMinutes < 60) return 'Active ${diff.inMinutes}m ago';
+    if (diff.inHours < 24)   return 'Active ${diff.inHours}h ago';
+    if (diff.inDays < 7)     return 'Active ${diff.inDays}d ago';
+    return 'Active ${diff.inDays ~/ 7}w ago';
+  }
 }
 
 

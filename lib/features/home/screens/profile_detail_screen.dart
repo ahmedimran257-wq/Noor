@@ -21,11 +21,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/mock/mock_profiles.dart';
 import '../../../core/cubits/block_report/block_report_cubit.dart';
+import '../../../core/cubits/interests/interests_cubit.dart';
+import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/services/bookmark_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../widgets/interest_ceremony_overlay.dart';
+import '../widgets/interest_note_sheet.dart';
 import '../widgets/report_bottom_sheet.dart';
 
 class ProfileDetailScreen extends StatefulWidget {
@@ -68,8 +71,21 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   // ── Actions ────────────────────────────────────────────────
 
   Future<void> _handleSendInterest() async {
+    // D1: Show note sheet before sending
+    final note = await showInterestNoteSheet(
+      context,
+      firstName: widget.profile.firstName,
+    );
+    // null = user cancelled
+    if (note == null || !mounted) return;
+
     setState(() => _interestSent = true);
     widget.onInterestSent();
+    // M6: Sync interest to cubit so feed state stays consistent
+    context.read<InterestsCubit>().sendInterest(
+      widget.profile,
+      note: note.isNotEmpty ? note : null,
+    );
     HapticFeedback.mediumImpact();
     await showInterestCeremony(context, firstName: widget.profile.firstName);
   }
@@ -87,12 +103,16 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
   void _handleShare() {
     HapticFeedback.selectionClick();
+    // TD4: Copy a share link to clipboard
+    final shareText = 'Check out ${widget.profile.firstName} on NOOR — '
+        'noor.app/profile/${widget.profile.id}';
+    Clipboard.setData(ClipboardData(text: shareText));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content:         const Text('Share link copied'),
+        content:         const Text('Profile link copied to clipboard'),
         backgroundColor: AppColors.surfaceGlassHover,
         behavior:        SnackBarBehavior.floating,
-        duration:        const Duration(seconds: 1),
+        duration:        const Duration(seconds: 2),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
           side: const BorderSide(color: AppColors.cardBorder),
@@ -721,6 +741,8 @@ class _VerifiedPill extends StatelessWidget {
 // Blueprint: "A compatibility indicator shows how many of the profile
 // owner's stated preferences match the viewer's profile —
 // 'You match 4 of their 5 preferences.'"
+//
+// TD7: Now uses the viewer's own OnboardingData for real comparison.
 
 class _CompatibilityIndicator extends StatelessWidget {
   const _CompatibilityIndicator({required this.profile});
@@ -728,21 +750,53 @@ class _CompatibilityIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Mock calculation — counts non-null preference fields
-    final totalPrefs = [
-      profile.partnerAgeMin,
-      profile.partnerAgeMax,
-      profile.sect,
-      profile.deenLevel,
-      profile.education,
-    ].where((v) => v != null).length;
+    // Read the viewer's own profile data
+    final myData = context.read<OnboardingCubit>().currentData;
 
-    // Simulate matching 70-85% of preferences
-    final matched = totalPrefs > 0 ? ((totalPrefs * 0.8).round()).clamp(0, totalPrefs) : 0;
+    // Build preference check list: (hasPreference, doesViewerMatch)
+    final checks = <bool>[];
+
+    // 1. Age preference
+    if (profile.partnerAgeMin != null && profile.partnerAgeMax != null) {
+      final myDob = myData.dateOfBirth;
+      if (myDob != null) {
+        final myAge = DateTime.now().difference(myDob).inDays ~/ 365;
+        checks.add(myAge >= profile.partnerAgeMin! && myAge <= profile.partnerAgeMax!);
+      } else {
+        checks.add(false); // can't determine
+      }
+    }
+
+    // 2. Sect preference
+    if (profile.sect != null) {
+      final mySect = myData.sect?.name;
+      checks.add(mySect != null && mySect.toLowerCase() == profile.sect!.toLowerCase());
+    }
+
+    // 3. Deen level preference
+    if (profile.deenLevel != null) {
+      final myDeen = myData.deenLevel?.name;
+      checks.add(myDeen != null && myDeen.toLowerCase() == profile.deenLevel!.toLowerCase());
+    }
+
+    // 4. Education preference
+    if (profile.education != null) {
+      final myEdu = myData.educationLabel;
+      checks.add(myEdu != null && myEdu.isNotEmpty);
+    }
+
+    // 5. Family type preference
+    if (profile.familyType != null) {
+      final myFamily = myData.familyType?.name;
+      checks.add(myFamily != null && myFamily.toLowerCase() == profile.familyType!.toLowerCase());
+    }
+
+    final totalPrefs = checks.length;
+    final matched = checks.where((b) => b).length;
 
     if (totalPrefs == 0) return const SizedBox.shrink();
 
-    final fraction = totalPrefs > 0 ? matched / totalPrefs : 0.0;
+    final fraction = matched / totalPrefs;
 
     return Container(
       padding: const EdgeInsets.all(AppDimensions.space16),

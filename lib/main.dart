@@ -12,9 +12,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/theme/app_theme.dart';
 import 'core/services/supabase_service.dart';
+import 'core/services/connectivity_service.dart';
 import 'core/cubits/auth/auth_cubit.dart';
 import 'core/cubits/auth/auth_state.dart';
 import 'core/cubits/onboarding/onboarding_cubit.dart';
@@ -38,7 +40,7 @@ const _supportedLocales = [
   Locale('ms'),   // Malay
   Locale('id'),   // Indonesian
   Locale('tr'),   // Turkish
-  Locale('de'),   // German
+  Locale('bn'),   // Bengali
   Locale('fr'),   // French
 ];
 
@@ -121,11 +123,21 @@ void main() async {
     DeviceOrientation.portraitUp,
   ]);
 
-  runApp(const NoorApp());
+  // ── Determine initial route ──────────────────────────────────
+  // Use a dedicated key (not 'app_locale') to track whether the
+  // first-install intro has been completed. app_locale may exist
+  // from the settings screen or previous dev sessions.
+  final prefs       = await SharedPreferences.getInstance();
+  final introSeen   = prefs.getBool('noor_intro_completed') ?? false;
+  final initialLoc  = introSeen ? AppRoutes.splash : AppRoutes.assalam;
+
+  runApp(NoorApp(initialLocation: initialLoc));
 }
 
 class NoorApp extends StatelessWidget {
-  const NoorApp({super.key});
+  const NoorApp({super.key, required this.initialLocation});
+
+  final String initialLocation;
 
   @override
   Widget build(BuildContext context) {
@@ -133,17 +145,20 @@ class NoorApp extends StatelessWidget {
     final authCubit              = AuthCubit();
     final onboardingCubit        = OnboardingCubit(authCubit: authCubit);
     final interestsCubit         = InterestsCubit();
-    final discoveryFeedCubit     = DiscoveryFeedCubit();
+    final blockReportCubit       = BlockReportCubit();
+    final discoveryFeedCubit     = DiscoveryFeedCubit(blockReportCubit: blockReportCubit);
     final chatCubit              = ChatCubit();
     final subscriptionCubit      = SubscriptionCubit();
     final notificationPrefsCubit = NotificationPrefsCubit();
-    final blockReportCubit       = BlockReportCubit();
     final notificationsCubit     = NotificationsCubit();
     final localeCubit            = LocaleCubit();
 
     // Kick off session check + subscription init immediately.
     authCubit.checkSession();
     subscriptionCubit.initialize();
+
+    // TD5: Start connectivity monitoring
+    ConnectivityService.initialize();
 
     return MultiBlocProvider(
       providers: [
@@ -161,7 +176,7 @@ class NoorApp extends StatelessWidget {
       child: Builder(
         builder: (context) {
           // Build router after providers are available in context.
-          final router = buildAppRouter(context);
+          final router = buildAppRouter(context, initialLocation: initialLocation);
 
           return BlocListener<AuthCubit, AuthState>(
             listener: (context, state) {

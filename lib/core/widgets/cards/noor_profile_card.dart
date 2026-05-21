@@ -38,6 +38,7 @@ class NoorProfileCard extends StatelessWidget {
     this.onSendInterest,
     this.onBookmark,
     this.isInterestSent = false,
+    this.lastActiveLabel,
   });
 
   final String firstName;
@@ -56,6 +57,7 @@ class NoorProfileCard extends StatelessWidget {
   final VoidCallback? onSendInterest;
   final VoidCallback? onBookmark;
   final bool isInterestSent;
+  final String? lastActiveLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -112,6 +114,8 @@ class NoorProfileCard extends StatelessWidget {
                             // Verified badge — top right
                             if (isVerified)
                               _VerifiedBadge()
+                            else if (lastActiveLabel != null && lastActiveLabel!.isNotEmpty)
+                              _LastActivePill(label: lastActiveLabel!)
                             else
                               const SizedBox.shrink(),
                           ],
@@ -536,6 +540,50 @@ class _IconActionButton extends StatelessWidget {
           color: AppColors.pearlWhite,
           size:  AppDimensions.iconSizeMedium,
         ),
+      ),
+    );
+  }
+}
+
+// D3: Last active indicator pill — shown in top-right when not verified
+class _LastActivePill extends StatelessWidget {
+  const _LastActivePill({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final isOnline = label == 'Online now';
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.space8,
+        vertical:   AppDimensions.space4,
+      ),
+      decoration: BoxDecoration(
+        color:        Colors.black.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6, height: 6,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isOnline
+                  ? const Color(0xFF4ADE80) // green
+                  : AppColors.slateMist,
+            ),
+          ),
+          const SizedBox(width: AppDimensions.space4),
+          Text(
+            label,
+            style: AppTypography.caption.copyWith(
+              color:    Colors.white,
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }

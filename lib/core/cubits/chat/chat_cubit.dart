@@ -16,6 +16,7 @@
 
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../utils/content_filter.dart';
 import 'chat_state.dart';
 
 class ChatCubit extends Cubit<ChatState> {
@@ -129,6 +130,7 @@ class ChatCubit extends Cubit<ChatState> {
   }
 
   /// Send a message. Transitions: queued → sent after 400ms.
+  /// T2: Content filter applied — contact info is redacted before sending.
   Future<void> sendMessage(String conversationId, String text) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
@@ -139,11 +141,14 @@ class ChatCubit extends Cubit<ChatState> {
         .firstOrNull;
     if (conv?.isMatchClosed == true) return;
 
+    // T2: Redact contact info (phone, email, social, URLs)
+    final filtered = ContentFilter.redact(trimmed);
+
     _msgCounter++;
     final msgId = 'msg_$_msgCounter';
     final sent  = ChatMessage(
       id:     msgId,
-      text:   trimmed,
+      text:   filtered,
       sentAt: DateTime.now(),
       isMe:   true,
       status: MessageStatus.queued,

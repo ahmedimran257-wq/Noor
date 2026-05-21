@@ -607,6 +607,40 @@ class _ReceivedTile extends StatelessWidget {
             ],
           ),
 
+          // G3: Display sender's interest note
+          if (entry.note != null && entry.note!.isNotEmpty) ...[
+            const SizedBox(height: AppDimensions.space10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppDimensions.space12),
+              decoration: BoxDecoration(
+                color:        AppColors.champagneGold.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                border:       Border.all(
+                  color: AppColors.goldBorder.withValues(alpha: 0.4),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.format_quote_rounded,
+                      color: AppColors.champagneGold.withValues(alpha: 0.5),
+                      size: 16),
+                  const SizedBox(width: AppDimensions.space8),
+                  Expanded(
+                    child: Text(
+                      entry.note!,
+                      style: AppTypography.caption.copyWith(
+                        color:  AppColors.pearlWhite.withValues(alpha: 0.85),
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           // Item 18: Expiry countdown — shown below buttons for pending interests
           if (isPending) _ExpiryRow(entry: entry),
 
