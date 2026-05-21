@@ -40,15 +40,15 @@ const kEuropeDemographics = <String, Map<String, List<String>>>{
   },
   'BA': {
     'communities': ['Bosniak', 'Other'],
-    'languages': ['Bosnian', 'Other'],
+    'languages': ['Bosnian', 'Croatian', 'Serbian', 'Other'],
   },
   'AL': {
     'communities': ['Albanian', 'Other'],
-    'languages': ['Albanian', 'Other'],
+    'languages': ['Albanian', 'Turkish', 'Romani', 'Other'],
   },
   'RU': {
     'communities': ['Tatar', 'Chechen', 'Dagestani', 'Bashkir', 'Other'],
-    'languages': ['Russian', 'Tatar', 'Chechen', 'Other'],
+    'languages': ['Russian', 'Tatar', 'Chechen', 'Avar', 'Circassian', 'Bashkir', 'Other'],
   },
   'IE': {
     'communities': ['South Asian', 'Arab', 'Somali', 'Other'],

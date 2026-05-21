@@ -18,7 +18,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/cubits/discovery/discovery_feed_cubit.dart';
 import '../../../core/cubits/discovery/discovery_feed_state.dart';
@@ -37,6 +36,8 @@ import '../widgets/interest_ceremony_overlay.dart';
 import '../widgets/interest_note_sheet.dart';
 import 'paywall_gate_screen.dart';
 import 'profile_detail_screen.dart';
+import 'notifications_screen.dart';
+import '../../../features/home/home_screen.dart';
 
 class DiscoveryFeedScreen extends StatefulWidget {
   const DiscoveryFeedScreen({super.key});
@@ -400,7 +401,11 @@ class _NotificationButton extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
-        context.push('/notifications');
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => const NotificationsScreen(),
+          ),
+        );
       },
       child: Container(
         width:  AppDimensions.minTouchTarget,
@@ -648,7 +653,11 @@ class _IncompleteProfileGate extends StatelessWidget {
                 icon: const Icon(Icons.edit_outlined,
                     color: AppColors.obsidianNight, size: 18),
                 label: Text('Complete Profile', style: AppTypography.button),
-                onPressed: () => context.go('/home/profile'),
+                onPressed: () {
+                  // Switch to Profile tab (index 3) via HomeScreen
+                  final homeState = context.findAncestorStateOfType<HomeScreenState>();
+                  homeState?.switchToTab(3);
+                },
               ),
             ),
           ],

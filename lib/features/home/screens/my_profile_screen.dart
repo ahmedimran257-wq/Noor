@@ -24,6 +24,8 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/noor_empty_state.dart';
 import 'edit_profile_screen.dart';
+import 'delete_account_screen.dart';
+import 'legal_doc_screen.dart';
 import 'settings_screen.dart';
 import 'subscription_screen.dart';
 import 'profile_views_screen.dart';
@@ -332,11 +334,21 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                 icon:     Icons.visibility_outlined,
                 label:    'Profile Visibility',
                 trailing: 'Public',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const SettingsScreen(initialSection: 'privacy'),
+                  ),
+                ),
               ),
               _SettingsItem(
                 icon:     Icons.photo_library_outlined,
                 label:    'Photo Privacy',
                 trailing: 'After Acceptance',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const SettingsScreen(initialSection: 'privacy'),
+                  ),
+                ),
               ),
             ],
           ),
@@ -363,10 +375,29 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
               _SettingsItem(
                 icon:  Icons.help_outline_rounded,
                 label: 'Help & Support',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const SettingsScreen(initialSection: 'help'),
+                  ),
+                ),
               ),
               _SettingsItem(
                 icon:  Icons.privacy_tip_outlined,
                 label: 'Privacy Policy',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const LegalDocScreen(type: 'privacy'),
+                  ),
+                ),
+              ),
+              _SettingsItem(
+                icon:  Icons.delete_outline_rounded,
+                label: 'Delete Account',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const DeleteAccountScreen(),
+                  ),
+                ),
               ),
             ],
           ),
@@ -1105,12 +1136,14 @@ class _SettingsItem {
     this.trailing,
     this.isToggle = false,
     this.isOn     = false,
+    this.onTap,
   });
   final IconData icon;
   final String   label;
   final String?  trailing;
   final bool     isToggle;
   final bool     isOn;
+  final VoidCallback? onTap;
 }
 
 class _SettingsTile extends StatefulWidget {
@@ -1129,6 +1162,7 @@ class _SettingsTileState extends State<_SettingsTile> {
   Widget build(BuildContext context) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      onTap: widget.item.onTap,
       leading: Icon(widget.item.icon, color: AppColors.slateMist,
           size: AppDimensions.iconSizeMedium),
       title: Text(widget.item.label, style: AppTypography.body),

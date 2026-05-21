@@ -77,16 +77,21 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   /// Moves back one step (local-only, no Supabase write needed).
   void goBack() {
     final current = state;
+    int? newStep;
+    OnboardingData? data;
+
     if (current is OnboardingActive && current.step > 0) {
-      emit(OnboardingActive(
-        step: current.step - 1,
-        data: current.data,
-      ));
+      newStep = current.step - 1;
+      data = current.data;
     } else if (current is OnboardingSaved && current.step > 1) {
-      emit(OnboardingActive(
-        step: current.step - 1,
-        data: current.data,
-      ));
+      newStep = current.step - 1;
+      data = current.data;
+    }
+
+    if (newStep != null && data != null) {
+      // Update AuthCubit so the router redirect navigates to the previous screen
+      _authCubit.updateOnboardingStep(newStep);
+      emit(OnboardingActive(step: newStep, data: data));
     }
   }
 

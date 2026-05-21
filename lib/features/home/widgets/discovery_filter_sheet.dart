@@ -431,14 +431,16 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                     ),
                     const SizedBox(height: 20),
 
-                    // ── VERIFIED ONLY ──────────────────────────
+                    // ── VERIFIED ONLY (Premium) ─────────────
                     _SectionLabel(key: _verifiedKey, label: 'VERIFIED ONLY'),
                     const SizedBox(height: 8),
-                    _ToggleRow(
-                      label:     'Show verified profiles only',
-                      value:     _draft.verifiedOnly,
-                      onChanged: (v) => setState(() =>
-                          _draft = _draft.copyWith(verifiedOnly: v)),
+                    _SubscriberGate(
+                      child: _ToggleRow(
+                        label:     'Show verified profiles only',
+                        value:     _draft.verifiedOnly,
+                        onChanged: (v) => setState(() =>
+                            _draft = _draft.copyWith(verifiedOnly: v)),
+                      ),
                     ),
                     const SizedBox(height: 20),
 
@@ -459,61 +461,67 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                     ),
                     const SizedBox(height: 20),
 
-                    // ── MOTHER TONGUE ───────────────────────────
+                    // ── MOTHER TONGUE (Premium) ─────────────
                     _SectionLabel(key: _tongueKey, label: 'MOTHER TONGUE'),
                     const SizedBox(height: 8),
-                    _DropdownRow(
-                      value: _draft.motherTongue ?? 'Any',
-                      options: const [
-                        'Any', 'Arabic', 'Urdu', 'Bengali', 'Punjabi',
-                        'English', 'Turkish', 'Malay', 'Indonesian',
-                        'Hausa', 'Somali', 'French', 'Other',
-                      ],
-                      onChanged: (v) => setState(() => _draft = _draft.copyWith(
-                        motherTongue: v == 'Any' ? null : v,
-                        clearMotherTongue: v == 'Any',
-                      )),
+                    _SubscriberGate(
+                      child: _DropdownRow(
+                        value: _draft.motherTongue ?? 'Any',
+                        options: const [
+                          'Any', 'Arabic', 'Urdu', 'Bengali', 'Punjabi',
+                          'English', 'Turkish', 'Malay', 'Indonesian',
+                          'Hausa', 'Somali', 'French', 'Other',
+                        ],
+                        onChanged: (v) => setState(() => _draft = _draft.copyWith(
+                          motherTongue: v == 'Any' ? null : v,
+                          clearMotherTongue: v == 'Any',
+                        )),
+                      ),
                     ),
                     const SizedBox(height: 20),
 
-                    // ── COMMUNITY / BIRADARI ────────────────────
+                    // ── COMMUNITY / BIRADARI (Premium) ──────
                     _SectionLabel(key: _communityKey, label: 'COMMUNITY / BIRADARI'),
                     const SizedBox(height: 8),
-                    _DropdownRow(
-                      value: _draft.community ?? 'Any',
-                      options: const [
-                        'Any', 'Syed', 'Pathan', 'Qureshi', 'Memon',
-                        'Rajput', 'Ansari', 'Sheikh', 'Arain', 'Arab',
-                        'Malay', 'Turkish', 'Hausa', 'Other',
-                      ],
-                      onChanged: (v) => setState(() => _draft = _draft.copyWith(
-                        community: v == 'Any' ? null : v,
-                        clearCommunity: v == 'Any',
-                      )),
+                    _SubscriberGate(
+                      child: _DropdownRow(
+                        value: _draft.community ?? 'Any',
+                        options: const [
+                          'Any', 'Syed', 'Pathan', 'Qureshi', 'Memon',
+                          'Rajput', 'Ansari', 'Sheikh', 'Arain', 'Arab',
+                          'Malay', 'Turkish', 'Hausa', 'Other',
+                        ],
+                        onChanged: (v) => setState(() => _draft = _draft.copyWith(
+                          community: v == 'Any' ? null : v,
+                          clearCommunity: v == 'Any',
+                        )),
+                      ),
                     ),
                     const SizedBox(height: 20),
 
-                    // ── LIVING EXPECTATION ──────────────────────
+                    // ── LIVING EXPECTATION (Premium) ────────
                     _SectionLabel(key: _livingKey, label: 'POST-MARRIAGE LIVING'),
                     const SizedBox(height: 8),
-                    _MultiChipGroup(
-                      options: const [
-                        'Any',
-                        'with_inlaws',
-                        'separate',
-                        'open_to_discussion',
-                      ],
-                      optionLabels: const [
-                        'Any',
-                        'With In-Laws',
-                        'Separate Home',
-                        'Open to Discussion',
-                      ],
-                      selected: _draft.livingExpectation,
-                      onChanged: (v) => setState(() => _draft = _draft.copyWith(
-                        livingExpectation: v,
-                        clearLivingExpectation: v == null,
-                      )),
+                    _SubscriberGate(
+                      child: _MultiChipGroup(
+                        options: const [
+                          'Any',
+                          'with_inlaws',
+                          'separate',
+                          'open_to_discussion',
+                        ],
+                        optionLabels: const [
+                          'Any',
+                          'With In-Laws',
+                          'Separate Home',
+                          'Open to Discussion',
+                        ],
+                        selected: _draft.livingExpectation,
+                        onChanged: (v) => setState(() => _draft = _draft.copyWith(
+                          livingExpectation: v,
+                          clearLivingExpectation: v == null,
+                        )),
+                      ),
                     ),
                     const SizedBox(height: 32),
                   ],

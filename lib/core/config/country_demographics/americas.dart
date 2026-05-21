@@ -4,7 +4,7 @@
 const kAmericasDemographics = <String, Map<String, List<String>>>{
   'US': {
     'communities': ['South Asian', 'Arab', 'Somali', 'Turkish', 'African American Muslim', 'Indonesian', 'Hispanic Muslim', 'Other'],
-    'languages': ['English', 'Arabic', 'Urdu', 'Somali', 'Bengali', 'Turkish', 'Spanish', 'Other'],
+    'languages': ['English', 'Arabic', 'Urdu', 'Somali', 'Bengali', 'Turkish', 'Spanish', 'Portuguese', 'Indonesian', 'French', 'Other'],
   },
   'CA': {
     'communities': ['South Asian', 'Arab', 'Somali', 'Afghan', 'Turkish', 'Bosnian', 'Other'],

@@ -13,6 +13,7 @@ import '../../../core/models/onboarding_data.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/validation_snackbar.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
 
@@ -57,6 +58,14 @@ class _FamilyScreenState extends State<FamilyScreen> {
       _parentsStatus != null &&
       _livingExpectation != null; // Phase 2: required
 
+  void _showValidation() {
+    final missing = <String>[];
+    if (_familyType == null) missing.add('Family type');
+    if (_parentsStatus == null) missing.add('Parents\' marital status');
+    if (_livingExpectation == null) missing.add('Post-marriage living expectations');
+    showValidationSnackbar(context, missing);
+  }
+
   void _advance() {
     final data = context.read<OnboardingCubit>().currentData.copyWith(
       familyType:         _familyType,
@@ -84,6 +93,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
           onCta:        _advance,
           isCtaEnabled: _canProceed,
           isCtaLoading: isLoading,
+          onCtaDisabledTap: _showValidation,
           skipLabel:    'I\'ll do this later',
           onSkip:       () => context.read<OnboardingCubit>().skipStep(),
           body: Column(

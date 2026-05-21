@@ -21,6 +21,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/copy_engine.dart';
+import '../../../core/utils/validation_snackbar.dart';
 import '../../../core/widgets/inputs/noor_text_field.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
@@ -391,6 +392,18 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       _effectiveCity.length >= 2 &&
       _motherTongue != null;
 
+  void _showValidation() {
+    final missing = <String>[];
+    if (_firstNameCtrl.text.trim().isEmpty) missing.add('First name');
+    if (_lastNameCtrl.text.trim().isEmpty) missing.add('Last name');
+    if (_dob == null) missing.add('Date of birth');
+    if (_dobError.isNotEmpty) missing.add('Valid date of birth (18+)');
+    if (_gender == null) missing.add('Gender');
+    if (_effectiveCity.length < 2) missing.add('City');
+    if (_motherTongue == null) missing.add('Mother tongue');
+    showValidationSnackbar(context, missing);
+  }
+
   @override
   void dispose() {
     _firstNameCtrl.dispose();
@@ -544,6 +557,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
           onCta:         _advance,
           isCtaEnabled:  _canProceed,
           isCtaLoading:  isLoading,
+          onCtaDisabledTap: _showValidation,
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

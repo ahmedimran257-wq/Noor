@@ -98,11 +98,25 @@ GoRouter buildAppRouter(BuildContext buildContext, {
       // Authenticated
       if (authState is AuthAuthenticated) {
         if (authState.isOnboardingComplete) {
-          // Fully onboarded — go to home unless already there
-          if (location.startsWith(AppRoutes.home)) return null;
+          // Fully onboarded — go to home unless already there or on sub-routes
+          if (location.startsWith(AppRoutes.home) ||
+              location == AppRoutes.editProfile ||
+              location == AppRoutes.profileViews ||
+              location == AppRoutes.notifications ||
+              location == AppRoutes.deleteAccount ||
+              location == AppRoutes.blockList ||
+              location == AppRoutes.subscription) return null;
           return AppRoutes.home;
         } else {
-          // Still onboarding — go to correct step
+          // Still onboarding — allow current step and any previous step (back nav)
+          if (location.startsWith(AppRoutes.onboarding)) {
+            final locStep = int.tryParse(
+              location.replaceFirst('${AppRoutes.onboarding}/', ''),
+            );
+            if (locStep != null && locStep <= authState.onboardingStep) {
+              return null; // allow back navigation
+            }
+          }
           final targetPath = onboardingPathForStep(authState.onboardingStep);
           if (location == targetPath) return null;
           return targetPath;

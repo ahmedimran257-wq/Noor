@@ -7,7 +7,8 @@
 // ============================================================
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
@@ -27,6 +28,7 @@ class OnboardingScaffold extends StatelessWidget {
     this.onSkip,
     this.totalSteps = 10,
     this.onBack,
+    this.onCtaDisabledTap,
   });
 
   /// 0-indexed position in the form steps (used for progress bar).
@@ -40,6 +42,8 @@ class OnboardingScaffold extends StatelessWidget {
   final VoidCallback? onSkip;
   final int totalSteps;
   final VoidCallback? onBack;
+  /// Called when CTA is tapped while disabled — use to show validation feedback.
+  final VoidCallback? onCtaDisabledTap;
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +61,7 @@ class OnboardingScaffold extends StatelessWidget {
               child: Row(
                 children: [
                   // Back button (RTL-aware)
-                  _BackButton(onBack: onBack ?? () => context.pop()),
+                  _BackButton(onBack: onBack ?? () => context.read<OnboardingCubit>().goBack()),
                   const SizedBox(width: AppDimensions.space16),
                   // Progress bar fills remaining width
                   Expanded(
@@ -92,10 +96,13 @@ class OnboardingScaffold extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  NoorPrimaryButton(
-                    label:     ctaLabel,
-                    onTap:     isCtaEnabled ? onCta : null,
-                    isLoading: isCtaLoading,
+                  GestureDetector(
+                    onTap: isCtaEnabled ? null : onCtaDisabledTap,
+                    child: NoorPrimaryButton(
+                      label:     ctaLabel,
+                      onTap:     isCtaEnabled ? onCta : null,
+                      isLoading: isCtaLoading,
+                    ),
                   ),
                   if (skipLabel != null && onSkip != null) ...[
                     const SizedBox(height: AppDimensions.space12),

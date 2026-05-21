@@ -14,6 +14,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/inputs/noor_text_field.dart';
+import '../../../core/utils/validation_snackbar.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
 
@@ -81,6 +82,13 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
   bool get _canProceed =>
       _education != null && _employment != null;
 
+  void _showValidation() {
+    final missing = <String>[];
+    if (_education == null) missing.add('Education level');
+    if (_employment == null) missing.add('Employment status');
+    showValidationSnackbar(context, missing);
+  }
+
   @override
   void dispose() {
     _studyCtrl.dispose();
@@ -117,6 +125,7 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
           onCta:        _advance,
           isCtaEnabled: _canProceed,
           isCtaLoading: isLoading,
+          onCtaDisabledTap: _showValidation,
           skipLabel:    'I\'ll do this later',
           onSkip:       () => context.read<OnboardingCubit>().skipStep(),
           body: Column(

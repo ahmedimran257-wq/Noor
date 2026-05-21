@@ -4,7 +4,7 @@
 const kOceaniaDemographics = <String, Map<String, List<String>>>{
   'AU': {
     'communities': ['Lebanese', 'Turkish', 'Afghan', 'South Asian', 'Somali', 'Indonesian', 'Bosnian', 'Other'],
-    'languages': ['English', 'Arabic', 'Turkish', 'Urdu', 'Somali', 'Other'],
+    'languages': ['English', 'Arabic', 'Turkish', 'Urdu', 'Somali', 'Indonesian', 'Bengali', 'Dari', 'Other'],
   },
   'NZ': {
     'communities': ['South Asian', 'Somali', 'Arab', 'Other'],

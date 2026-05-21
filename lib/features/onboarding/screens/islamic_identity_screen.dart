@@ -14,6 +14,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/copy_engine.dart';
+import '../../../core/utils/validation_snackbar.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
 
@@ -38,10 +39,59 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
   String?    _hookahHabit;
   String?    _isRevert; // Phase 1 addition
 
-  static const _subSects = [
-    'Hanafi', 'Shafi\'i', 'Maliki', 'Hanbali',
-    'Salafi', 'Ahle Hadith', 'Deobandi', 'Barelvi', 'Other',
-  ];
+  /// Country-aware sub-sects: returns expanded list based on user's country.
+  List<String> get _subSects {
+    final code = context.read<OnboardingCubit>().currentData.countryCode ?? '';
+    // Common across all regions
+    const common = ['Hanafi', 'Shafi\'i', 'Maliki', 'Hanbali'];
+    // Regional additions
+    const southAsia = [
+      'Deobandi', 'Barelvi', 'Ahle Hadith', 'Salafi',
+      'Tablighi Jamaat', 'Jamaat-e-Islami', 'Ahle Sunnat',
+      'Minhaj-ul-Quran', 'Dawat-e-Islami',
+    ];
+    const mena = [
+      'Salafi', 'Ash\'ari', 'Maturidi', 'Athari',
+      'Sufi (Qadri)', 'Sufi (Naqshbandi)', 'Sufi (Chishti)',
+      'Ibadi', 'Zahiri',
+    ];
+    const seAsia = [
+      'Nahdlatul Ulama', 'Muhammadiyah', 'Salafi',
+      'Tabligh', 'Persis',
+    ];
+    const africa = [
+      'Tijaniyyah', 'Mouridiyyah', 'Qadiriyyah',
+      'Salafi', 'Izala',
+    ];
+    const shia = [
+      'Ithna Ashari (Twelver)', 'Ismaili', 'Zaydi',
+      'Jafari', 'Bohra (Dawoodi)', 'Bohra (Sulaymani)',
+      'Alawi',
+    ];
+
+    final extras = <String>{};
+    switch (code.toUpperCase()) {
+      case 'PK': case 'IN': case 'BD': case 'LK': case 'AF': case 'NP':
+        extras.addAll(southAsia);
+      case 'SA': case 'AE': case 'QA': case 'KW': case 'BH': case 'OM':
+      case 'EG': case 'JO': case 'LB': case 'SY': case 'IQ': case 'YE':
+      case 'DZ': case 'MA': case 'TN': case 'LY': case 'SD': case 'TR':
+      case 'IR': case 'PS':
+        extras.addAll(mena);
+      case 'ID': case 'MY': case 'BN': case 'SG': case 'PH': case 'TH': case 'MM':
+        extras.addAll(seAsia);
+      case 'NG': case 'GH': case 'SN': case 'ML': case 'NE': case 'SO':
+      case 'KE': case 'TZ': case 'ET': case 'ZA':
+        extras.addAll(africa);
+      default:
+        extras.addAll(['Salafi', 'Sufi', 'Ash\'ari', 'Maturidi']);
+    }
+
+    // If Shia selected, show shia sub-sects instead
+    if (_sect == Sect.shia) return [...shia, 'Other', 'Prefer not to say'];
+
+    return [...common, ...extras, 'Other', 'Prefer not to say'];
+  }
   static const _hijabOptions = ['Always', 'Sometimes', 'No', 'Prefer not to say'];
   static const _deenTooltips = {
     'Practicing': 'Actively follows Islamic obligations: prayers, fasting, halal diet.',
@@ -61,6 +111,17 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
       _deenLevel    != null && _praysFive != null &&
       _dietType     != null && _smokingHabit != null &&
       _vapingHabit  != null && _hookahHabit  != null;
+
+  void _showValidation() {
+    final missing = <String>[];
+    if (_deenLevel == null) missing.add('Deen level');
+    if (_praysFive == null) missing.add('Five daily prayers');
+    if (_dietType == null) missing.add('Diet type');
+    if (_smokingHabit == null) missing.add('Smoking habit');
+    if (_vapingHabit == null) missing.add('Vaping habit');
+    if (_hookahHabit == null) missing.add('Hookah habit');
+    showValidationSnackbar(context, missing);
+  }
 
   Gender? get _gender => context.read<OnboardingCubit>().currentData.gender;
 
@@ -88,6 +149,7 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
         return OnboardingScaffold(
           step: 2, ctaLabel: 'Continue', onCta: _advance,
           isCtaEnabled: _canProceed, isCtaLoading: isLoading,
+          onCtaDisabledTap: _showValidation,
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

@@ -12,7 +12,8 @@ const kSouthAsiaDemographics = <String, Map<String, List<String>>>{
     'languages': [
       'Urdu', 'Hindi', 'Bengali', 'Tamil', 'Telugu',
       'Malayalam', 'Kannada', 'Marathi', 'Gujarati', 'Punjabi',
-      'Kashmiri', 'Sindhi', 'Konkani', 'Other',
+      'Kashmiri', 'Sindhi', 'Konkani', 'Assamese', 'Odia',
+      'Bhojpuri', 'Dogri', 'Maithili', 'Tulu', 'Other',
     ],
   },
   'PK': {
@@ -23,7 +24,8 @@ const kSouthAsiaDemographics = <String, Map<String, List<String>>>{
     ],
     'languages': [
       'Urdu', 'Punjabi', 'Sindhi', 'Pashto', 'Balochi',
-      'Saraiki', 'Brahui', 'Hindko', 'Other',
+      'Saraiki', 'Brahui', 'Hindko', 'Shina', 'Burushaski',
+      'Khowar', 'Pothohari', 'Other',
     ],
   },
   'BD': {

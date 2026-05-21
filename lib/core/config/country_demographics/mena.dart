@@ -32,7 +32,7 @@ const kMenaDemographics = <String, Map<String, List<String>>>{
   },
   'IQ': {
     'communities': ['Iraqi Arab', 'Kurdish', 'Turkmen', 'Other'],
-    'languages': ['Arabic', 'Kurdish', 'Turkmen', 'Other'],
+    'languages': ['Arabic', 'Kurdish (Sorani)', 'Kurdish (Kurmanji)', 'Turkmen', 'Assyrian', 'Other'],
   },
   'SY': {
     'communities': ['Syrian Arab', 'Kurdish', 'Turkmen', 'Other'],
@@ -56,19 +56,19 @@ const kMenaDemographics = <String, Map<String, List<String>>>{
   },
   'LY': {
     'communities': ['Libyan Arab', 'Berber', 'Tuareg', 'Other'],
-    'languages': ['Arabic', 'Berber', 'Other'],
+    'languages': ['Arabic', 'Amazigh (Berber)', 'Hassaniya', 'Other'],
   },
   'SD': {
     'communities': ['Sudanese Arab', 'Nubian', 'Beja', 'Fur', 'Other'],
-    'languages': ['Arabic', 'English', 'Nubian', 'Other'],
+    'languages': ['Arabic', 'English', 'Nubian', 'Beja', 'Fur', 'Other'],
   },
   'DZ': {
     'communities': ['Algerian Arab', 'Kabyle', 'Berber', 'Other'],
-    'languages': ['Arabic', 'French', 'Berber', 'Other'],
+    'languages': ['Arabic', 'French', 'Amazigh (Kabyle)', 'Tamazight', 'Other'],
   },
   'MA': {
     'communities': ['Moroccan Arab', 'Berber', 'Riffian', 'Other'],
-    'languages': ['Arabic', 'French', 'Berber', 'Other'],
+    'languages': ['Arabic', 'French', 'Amazigh (Tashelhit)', 'Tarifight', 'Other'],
   },
   'TN': {
     'communities': ['Tunisian Arab', 'Berber', 'Other'],

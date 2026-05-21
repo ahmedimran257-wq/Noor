@@ -13,6 +13,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/content_filter.dart';
+import '../../../core/utils/validation_snackbar.dart';
 import '../../../core/widgets/inputs/noor_text_field.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
@@ -33,6 +34,17 @@ const _kLanguages = [
   'English', 'Arabic', 'Urdu', 'Hindi', 'Malay', 'Indonesian',
   'Turkish', 'French', 'German', 'Bengali', 'Punjabi', 'Tamil',
   'Persian', 'Swahili', 'Hausa', 'Pashto', 'Sindhi',
+  'Somali', 'Kurdish', 'Dari', 'Javanese', 'Sundanese',
+  'Tagalog', 'Thai', 'Burmese', 'Rohingya',
+  'Wolof', 'Fulani', 'Amazigh (Berber)', 'Mandinka',
+  'Uzbek', 'Kazakh', 'Tajik', 'Kyrgyz', 'Tatar',
+  'Bosnian', 'Albanian', 'Chechen',
+  'Dutch', 'Swedish', 'Norwegian', 'Italian', 'Spanish', 'Portuguese',
+  'Gujarati', 'Marathi', 'Malayalam', 'Telugu', 'Kannada',
+  'Assamese', 'Odia', 'Saraiki', 'Balochi',
+  'Amharic', 'Tigrinya', 'Yoruba', 'Igbo',
+  'Chinese (Mandarin)', 'Russian', 'Japanese', 'Korean',
+  'Other',
 ];
 
 class AboutYourselfScreen extends StatefulWidget {
@@ -52,6 +64,13 @@ class _AboutYourselfScreenState extends State<AboutYourselfScreen> {
   static const _maxInterests = 6;
 
   bool get _canProceed => _bioError.isEmpty && _bioCtrl.text.trim().isNotEmpty;
+
+  void _showValidation() {
+    final missing = <String>[];
+    if (_bioCtrl.text.trim().isEmpty) missing.add('Bio');
+    if (_bioError.isNotEmpty) missing.add('Fix bio content issue');
+    showValidationSnackbar(context, missing);
+  }
 
   @override
   void dispose() {
@@ -107,6 +126,7 @@ class _AboutYourselfScreenState extends State<AboutYourselfScreen> {
           onCta:        _advance,
           isCtaEnabled: _canProceed,
           isCtaLoading: isLoading,
+          onCtaDisabledTap: _showValidation,
           skipLabel:    'I\'ll do this later',
           onSkip:       _skip,
           body: Column(

@@ -4,7 +4,7 @@
 const kSoutheastAsiaDemographics = <String, Map<String, List<String>>>{
   'ID': {
     'communities': ['Javanese', 'Sundanese', 'Madurese', 'Bugis', 'Betawi', 'Minangkabau', 'Acehnese', 'Other'],
-    'languages': ['Indonesian', 'Javanese', 'Sundanese', 'Madurese', 'Acehnese', 'Other'],
+    'languages': ['Indonesian', 'Javanese', 'Sundanese', 'Madurese', 'Acehnese', 'Minangkabau', 'Bugis', 'Betawi', 'Other'],
   },
   'MY': {
     'communities': ['Malay', 'Indian Muslim', 'Arab', 'Bugis', 'Other'],
@@ -20,7 +20,7 @@ const kSoutheastAsiaDemographics = <String, Map<String, List<String>>>{
   },
   'PH': {
     'communities': ['Moro', 'Maranao', 'Tausug', 'Maguindanao', 'Other'],
-    'languages': ['Filipino', 'English', 'Maranao', 'Tausug', 'Other'],
+    'languages': ['Filipino', 'English', 'Maranao', 'Tausug', 'Maguindanao', 'Yakan', 'Other'],
   },
   'TH': {
     'communities': ['Thai Malay', 'Cham', 'Other'],

@@ -76,8 +76,42 @@ const _kProfileVisibility = 'privacy_who_can_see';
 // MAIN SCREEN
 // ═══════════════════════════════════════════════════════════════
 
-class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
+class SettingsScreen extends StatefulWidget {
+  const SettingsScreen({super.key, this.initialSection});
+  
+  /// Optional section to scroll to on open: 'privacy', 'help', 'account', etc.
+  final String? initialSection;
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  final _privacyKey  = GlobalKey();
+  final _helpKey     = GlobalKey();
+  final _accountKey  = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialSection != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToSection());
+    }
+  }
+
+  void _scrollToSection() {
+    GlobalKey? key;
+    switch (widget.initialSection) {
+      case 'privacy':  key = _privacyKey;
+      case 'help':     key = _helpKey;
+      case 'account':  key = _accountKey;
+    }
+    if (key?.currentContext != null) {
+      Scrollable.ensureVisible(key!.currentContext!,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOutCubic);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +133,7 @@ class SettingsScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
         children: [
           // ── 1. ACCOUNT ────────────────────────────────────
-          _SectionHeader('ACCOUNT'),
+          _SectionHeader('ACCOUNT', key: _accountKey),
           _SettingsCard(children: [
             _NavTile(
               icon:  Icons.edit_outlined,
@@ -115,7 +149,7 @@ class SettingsScreen extends StatelessWidget {
                   icon:  Icons.phone_outlined,
                   label: 'Phone Number',
                   value: masked,
-                  onTap: () => _showInfoSnackbar(context, 'Phone number change will be available soon.'),
+                  onTap: () => _showInfoSnackbar(context, 'Phone number cannot be changed. Contact support for help.'),
                 );
               },
             ),
@@ -203,7 +237,7 @@ class SettingsScreen extends StatelessWidget {
           const _GuardianSection(),
 
           // ── 4. PRIVACY (Feature 14) ───────────────────────
-          _SectionHeader('PRIVACY'),
+          _SectionHeader('PRIVACY', key: _privacyKey),
           const _PrivacySection(),
 
           // ── 5. APP (Feature 16) ───────────────────────────
@@ -226,7 +260,7 @@ class SettingsScreen extends StatelessWidget {
             _NavTile(
               icon:  Icons.star_outline_rounded,
               label: 'Rate NOOR',
-              onTap: () => _showInfoSnackbar(context, 'Rating will be available on app store launch.'),
+              onTap: () => _showInfoSnackbar(context, 'Rating will be available once NOOR launches on the app store.'),
             ),
             _Divider(),
             const _InfoTile(
@@ -261,7 +295,7 @@ class SettingsScreen extends StatelessWidget {
           ),
 
           // ── 7. LEGAL ──────────────────────────────────────
-          _SectionHeader('LEGAL'),
+          _SectionHeader('LEGAL', key: _helpKey),
           _SettingsCard(children: [
             _NavTile(
               icon:  Icons.description_outlined,
@@ -1041,7 +1075,7 @@ class _LanguagePickerSheet extends StatelessWidget {
 
 class _SectionHeader extends StatelessWidget {
   final String label;
-  const _SectionHeader(this.label);
+  const _SectionHeader(this.label, {super.key});
 
   @override
   Widget build(BuildContext context) => Padding(

@@ -17,11 +17,18 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> {
   int _currentTab = 0;
+
+  /// Allows child widgets (e.g. DiscoveryFeedScreen) to switch tabs programmatically.
+  void switchToTab(int index) {
+    if (index >= 0 && index < _screens.length) {
+      setState(() => _currentTab = index);
+    }
+  }
 
   static const _screens = [
     DiscoveryFeedScreen(),

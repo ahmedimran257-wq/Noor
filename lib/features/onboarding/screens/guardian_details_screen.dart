@@ -24,6 +24,7 @@ import '../../../core/models/onboarding_data.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/validation_snackbar.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
 
@@ -100,6 +101,15 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
       _phoneCtrl.text.trim().length >= 7 &&
       _relationship != null;
 
+  void _showValidation() {
+    final missing = <String>[];
+    if (_candidateGender == null) missing.add('Candidate gender');
+    if (_nameCtrl.text.trim().length < 2) missing.add('Your name');
+    if (_phoneCtrl.text.trim().length < 7) missing.add('Phone number');
+    if (_relationship == null) missing.add('Relationship to candidate');
+    showValidationSnackbar(context, missing);
+  }
+
   @override
   void dispose() {
     _nameCtrl.dispose();
@@ -156,6 +166,7 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
           onCta:        _advance,
           isCtaEnabled: _canProceed,
           isCtaLoading: isLoading,
+          onCtaDisabledTap: _showValidation,
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

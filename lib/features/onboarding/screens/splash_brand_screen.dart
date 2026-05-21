@@ -263,6 +263,33 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
               ],
             ),
           ),
+
+          // ── Back button (top-left, visible after animations) ──
+          SafeArea(
+            child: FadeTransition(
+              opacity: _buttonsOpacity,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 12, top: 8),
+                child: GestureDetector(
+                  onTap: () => context.go(AppRoutes.languageSelect),
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceGlass,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.cardBorder),
+                    ),
+                    child: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: AppColors.pearlWhite,
+                      size: 18,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );

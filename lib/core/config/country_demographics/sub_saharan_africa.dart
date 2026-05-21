@@ -4,7 +4,7 @@
 const kSubSaharanAfricaDemographics = <String, Map<String, List<String>>>{
   'NG': {
     'communities': ['Hausa', 'Fulani', 'Yoruba Muslim', 'Kanuri', 'Nupe', 'Tiv', 'Other'],
-    'languages': ['Hausa', 'Yoruba', 'English', 'Fulfulde', 'Kanuri', 'Other'],
+    'languages': ['Hausa', 'Yoruba', 'English', 'Fulfulde', 'Kanuri', 'Igbo', 'Nupe', 'Other'],
   },
   'SO': {
     'communities': ['Somali', 'Bantu', 'Other'],
@@ -28,11 +28,11 @@ const kSubSaharanAfricaDemographics = <String, Map<String, List<String>>>{
   },
   'SN': {
     'communities': ['Wolof', 'Serer', 'Fulani', 'Mandinka', 'Other'],
-    'languages': ['French', 'Wolof', 'Fulfulde', 'Other'],
+    'languages': ['French', 'Wolof', 'Fulfulde', 'Mandinka', 'Serer', 'Other'],
   },
   'ML': {
     'communities': ['Bambara', 'Fulani', 'Songhai', 'Tuareg', 'Other'],
-    'languages': ['French', 'Bambara', 'Fulfulde', 'Other'],
+    'languages': ['French', 'Bambara', 'Fulfulde', 'Songhai', 'Tamasheq', 'Other'],
   },
   'ZA': {
     'communities': ['Cape Malay', 'Indian Muslim', 'Somali', 'Other'],

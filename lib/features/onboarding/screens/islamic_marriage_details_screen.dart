@@ -16,6 +16,7 @@ import '../../../core/models/onboarding_data.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/validation_snackbar.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
 
@@ -50,6 +51,12 @@ class _IslamicMarriageDetailsScreenState
   bool get _canProceed =>
       _marriageTimeline != null;
 
+  void _showValidation() {
+    final missing = <String>[];
+    if (_marriageTimeline == null) missing.add('Marriage timeline');
+    showValidationSnackbar(context, missing);
+  }
+
   void _advance() {
     final data = context.read<OnboardingCubit>().currentData.copyWith(
       quranMemorization:         _quranMemorization,
@@ -78,6 +85,7 @@ class _IslamicMarriageDetailsScreenState
           onCta:        _advance,
           isCtaEnabled: _canProceed,
           isCtaLoading: isLoading,
+          onCtaDisabledTap: _showValidation,
           skipLabel:    'I\'ll do this later',
           onSkip:       () => context.read<OnboardingCubit>().skipStep(),
           body: Column(
