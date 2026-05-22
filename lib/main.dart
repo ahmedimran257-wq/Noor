@@ -12,7 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/theme/app_theme.dart';
 import 'core/services/supabase_service.dart';
@@ -42,10 +41,49 @@ const _supportedLocales = [
   Locale('tr'),   // Turkish
   Locale('bn'),   // Bengali
   Locale('fr'),   // French
+  Locale('hi'),   // Hindi
+  Locale('ta'),   // Tamil
+  Locale('te'),   // Telugu
+  Locale('ml'),   // Malayalam
+  Locale('kn'),   // Kannada
+  Locale('mr'),   // Marathi
+  Locale('gu'),   // Gujarati
+  Locale('pa'),   // Punjabi
+  Locale('fa'),   // Persian (RTL)
+  Locale('ps'),   // Pashto  (RTL)
+  Locale('sw'),   // Swahili
+  Locale('so'),   // Somali
+  Locale('ha'),   // Hausa
+  Locale('de'),   // German
+  Locale('nl'),   // Dutch
+  Locale('sv'),   // Swedish
+  Locale('no'),   // Norwegian
+  Locale('ru'),   // Russian
+  Locale('bs'),   // Bosnian
+  Locale('sq'),   // Albanian
+  Locale('az'),   // Azerbaijani
+  Locale('pt'),   // Portuguese
+  Locale('es'),   // Spanish
+  Locale('am'),   // Amharic
+  Locale('ku'),   // Kurdish (RTL)
+  Locale('uz'),   // Uzbek
+  Locale('tg'),   // Tajik
+  Locale('tk'),   // Turkmen
+  Locale('kk'),   // Kazakh
+  Locale('ky'),   // Kyrgyz
+  Locale('my'),   // Burmese
+  Locale('th'),   // Thai
+  Locale('tl'),   // Filipino
+  Locale('jv'),   // Javanese
+  Locale('si'),   // Sinhala
+  Locale('ne'),   // Nepali
+  Locale('wo'),   // Wolof
+  Locale('yo'),   // Yoruba
+  Locale('af'),   // Afrikaans
 ];
 
 /// RTL locales — drives WidgetsApp directionality.
-const _rtlLocales = {'ar', 'ur'};
+const _rtlLocales = {'ar', 'ur', 'fa', 'ps', 'ku'};
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -123,71 +161,102 @@ void main() async {
     DeviceOrientation.portraitUp,
   ]);
 
-  // ── Determine initial route ──────────────────────────────────
-  // Use a dedicated key (not 'app_locale') to track whether the
-  // first-install intro has been completed. app_locale may exist
-  // from the settings screen or previous dev sessions.
-  final prefs       = await SharedPreferences.getInstance();
-  final introSeen   = prefs.getBool('noor_intro_completed') ?? false;
-  final initialLoc  = introSeen ? AppRoutes.splash : AppRoutes.assalam;
-
-  runApp(NoorApp(initialLocation: initialLoc));
+  // ── Always start with Assalam animation ─────────────────────
+  // The assalam greeting screen plays every time the app opens.
+  // After the animation, it auto-navigates to:
+  //   • /language  (first install — intro not yet completed)
+  //   • /splash    (returning user — intro already completed)
+  runApp(NoorApp(initialLocation: AppRoutes.assalam));
 }
 
-class NoorApp extends StatelessWidget {
+class NoorApp extends StatefulWidget {
   const NoorApp({super.key, required this.initialLocation});
 
   final String initialLocation;
 
   @override
-  Widget build(BuildContext context) {
-    // Create cubits at the top level so they outlive any individual screen.
-    final authCubit              = AuthCubit();
-    final onboardingCubit        = OnboardingCubit(authCubit: authCubit);
-    final interestsCubit         = InterestsCubit();
-    final blockReportCubit       = BlockReportCubit();
-    final discoveryFeedCubit     = DiscoveryFeedCubit(blockReportCubit: blockReportCubit);
-    final chatCubit              = ChatCubit();
-    final subscriptionCubit      = SubscriptionCubit();
-    final notificationPrefsCubit = NotificationPrefsCubit();
-    final notificationsCubit     = NotificationsCubit();
-    final localeCubit            = LocaleCubit();
+  State<NoorApp> createState() => _NoorAppState();
+}
+
+class _NoorAppState extends State<NoorApp> {
+  /// Guard: ensures onboarding cubit is initialized only once per auth session.
+  /// Without this, every updateOnboardingStep() call re-triggers the
+  /// BlocListener which calls initialize() and wipes all accumulated form data.
+  bool _onboardingInitialized = false;
+
+  // Create cubits at the top level so they outlive any individual screen.
+  late final AuthCubit              _authCubit;
+  late final OnboardingCubit        _onboardingCubit;
+  late final InterestsCubit         _interestsCubit;
+  late final BlockReportCubit       _blockReportCubit;
+  late final DiscoveryFeedCubit     _discoveryFeedCubit;
+  late final ChatCubit              _chatCubit;
+  late final SubscriptionCubit      _subscriptionCubit;
+  late final NotificationPrefsCubit _notificationPrefsCubit;
+  late final NotificationsCubit     _notificationsCubit;
+  late final LocaleCubit            _localeCubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _authCubit              = AuthCubit();
+    _onboardingCubit        = OnboardingCubit(authCubit: _authCubit);
+    _interestsCubit         = InterestsCubit();
+    _blockReportCubit       = BlockReportCubit();
+    _discoveryFeedCubit     = DiscoveryFeedCubit(blockReportCubit: _blockReportCubit);
+    _chatCubit              = ChatCubit();
+    _subscriptionCubit      = SubscriptionCubit();
+    _notificationPrefsCubit = NotificationPrefsCubit();
+    _notificationsCubit     = NotificationsCubit();
+    _localeCubit            = LocaleCubit();
 
     // Kick off session check + subscription init immediately.
-    authCubit.checkSession();
-    subscriptionCubit.initialize();
+    _authCubit.checkSession();
+    _subscriptionCubit.initialize();
 
     // TD5: Start connectivity monitoring
     ConnectivityService.initialize();
+  }
+
+  @override
+  Widget build(BuildContext context) {
 
     return MultiBlocProvider(
       providers: [
-        BlocProvider<AuthCubit>.value(value: authCubit),
-        BlocProvider<OnboardingCubit>.value(value: onboardingCubit),
-        BlocProvider<InterestsCubit>.value(value: interestsCubit),
-        BlocProvider<DiscoveryFeedCubit>.value(value: discoveryFeedCubit),
-        BlocProvider<ChatCubit>.value(value: chatCubit),
-        BlocProvider<SubscriptionCubit>.value(value: subscriptionCubit),
-        BlocProvider<NotificationPrefsCubit>.value(value: notificationPrefsCubit),
-        BlocProvider<BlockReportCubit>.value(value: blockReportCubit),
-        BlocProvider<NotificationsCubit>.value(value: notificationsCubit),
-        BlocProvider<LocaleCubit>.value(value: localeCubit),
+        BlocProvider<AuthCubit>.value(value: _authCubit),
+        BlocProvider<OnboardingCubit>.value(value: _onboardingCubit),
+        BlocProvider<InterestsCubit>.value(value: _interestsCubit),
+        BlocProvider<DiscoveryFeedCubit>.value(value: _discoveryFeedCubit),
+        BlocProvider<ChatCubit>.value(value: _chatCubit),
+        BlocProvider<SubscriptionCubit>.value(value: _subscriptionCubit),
+        BlocProvider<NotificationPrefsCubit>.value(value: _notificationPrefsCubit),
+        BlocProvider<BlockReportCubit>.value(value: _blockReportCubit),
+        BlocProvider<NotificationsCubit>.value(value: _notificationsCubit),
+        BlocProvider<LocaleCubit>.value(value: _localeCubit),
       ],
       child: Builder(
         builder: (context) {
           // Build router after providers are available in context.
-          final router = buildAppRouter(context, initialLocation: initialLocation);
+          final router = buildAppRouter(context, initialLocation: widget.initialLocation);
 
           return BlocListener<AuthCubit, AuthState>(
             listener: (context, state) {
-              // When the user authenticates for the first time, initialize
-              // the onboarding cubit from the correct step.
-              if (state is AuthAuthenticated && !state.isOnboardingComplete) {
-                onboardingCubit.initialize(startStep: state.onboardingStep);
+              // Reset the guard when user signs out so re-login triggers
+              // a fresh initialization of the onboarding cubit.
+              if (state is AuthUnauthenticated) {
+                _onboardingInitialized = false;
+              }
+              // Initialize the onboarding cubit ONCE when the user first
+              // authenticates. Without the _onboardingInitialized guard,
+              // every saveAndAdvance() → updateOnboardingStep() call
+              // re-triggers this listener and wipes accumulated form data.
+              if (state is AuthAuthenticated && !state.isOnboardingComplete && !_onboardingInitialized) {
+                _onboardingInitialized = true;
+                _onboardingCubit.initialize(startStep: state.onboardingStep);
               }
               // Set the daily interest limit based on gender + subscription status.
               if (state is AuthAuthenticated) {
-                interestsCubit.setDailyLimitForGender(
+                _interestsCubit.setDailyLimitForGender(
                   gender: state.gender ?? 'male',
                   isSubscribed: context.read<SubscriptionCubit>().state.isSubscribed,
                 );

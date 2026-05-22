@@ -42,31 +42,69 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
   /// Country-aware sub-sects: returns expanded list based on user's country.
   List<String> get _subSects {
     final code = context.read<OnboardingCubit>().currentData.countryCode ?? '';
-    // Common across all regions
+    // Common madhabs — universal across all Sunni regions
     const common = ['Hanafi', 'Shafi\'i', 'Maliki', 'Hanbali'];
-    // Regional additions
+
+    // ── Regional Sunni movements / schools ──────────────────
     const southAsia = [
       'Deobandi', 'Barelvi', 'Ahle Hadith', 'Salafi',
       'Tablighi Jamaat', 'Jamaat-e-Islami', 'Ahle Sunnat',
       'Minhaj-ul-Quran', 'Dawat-e-Islami',
+      'Ahl-e-Quran', 'Jamiat Ulema-e-Hind',
+      'Sufi (Chishti)', 'Sufi (Qadri)', 'Sufi (Naqshbandi)',
+      'Sufi (Suhrawardi)', 'Sufi (Sabiri)',
     ];
     const mena = [
       'Salafi', 'Ash\'ari', 'Maturidi', 'Athari',
-      'Sufi (Qadri)', 'Sufi (Naqshbandi)', 'Sufi (Chishti)',
+      'Sufi (Qadri)', 'Sufi (Naqshbandi)', 'Sufi (Shadhili)',
+      'Sufi (Rifai)', 'Sufi (Badawi)',
       'Ibadi', 'Zahiri',
+      'Muslim Brotherhood', 'Tabligh',
+    ];
+    const turkey = [
+      'Maturidi', 'Ash\'ari',
+      'Sufi (Naqshbandi)', 'Sufi (Mevlevi)',
+      'Sufi (Qadri)', 'Sufi (Halveti)',
+      'Gülen Movement', 'Süleymancı', 'İsmailağa',
+      'Diyanet', 'Salafi',
     ];
     const seAsia = [
       'Nahdlatul Ulama', 'Muhammadiyah', 'Salafi',
-      'Tabligh', 'Persis',
+      'Tabligh', 'Persis', 'Al-Irsyad',
+      'Sufi (Qadri)', 'Sufi (Naqshbandi)',
+      'LDII', 'Hidayatullah',
     ];
     const africa = [
       'Tijaniyyah', 'Mouridiyyah', 'Qadiriyyah',
-      'Salafi', 'Izala',
+      'Salafi', 'Izala', 'Sanusiyyah',
+      'Sufi (Shadhili)', 'Sufi (Darqawi)',
+      'Tablighi Jamaat', 'Ahmadiyya Muslim',
     ];
+    const centralAsia = [
+      'Maturidi', 'Sufi (Naqshbandi)', 'Sufi (Yasawi)',
+      'Sufi (Qadri)', 'Salafi', 'Tabligh',
+      'Hanafi (traditional)', 'Jadidism',
+    ];
+    const balkans = [
+      'Maturidi', 'Ash\'ari',
+      'Sufi (Naqshbandi)', 'Sufi (Bektashi)', 'Sufi (Halveti)',
+      'Sufi (Qadri)', 'Sufi (Rifai)',
+      'Salafi', 'Tabligh',
+    ];
+    const western = [
+      'Salafi', 'Sufi', 'Ash\'ari', 'Maturidi', 'Athari',
+      'Tablighi Jamaat', 'Muslim Brotherhood',
+      'Progressive Muslim', 'Traditional Sunni',
+    ];
+
+    // ── Shia sub-sects ──────────────────────────────────────
     const shia = [
-      'Ithna Ashari (Twelver)', 'Ismaili', 'Zaydi',
-      'Jafari', 'Bohra (Dawoodi)', 'Bohra (Sulaymani)',
-      'Alawi',
+      'Ithna Ashari (Twelver)', 'Usuli', 'Akhbari',
+      'Ismaili (Nizari)', 'Ismaili (Mustali)',
+      'Bohra (Dawoodi)', 'Bohra (Sulaymani)', 'Bohra (Alavi)',
+      'Zaydi',
+      'Jafari', 'Alawi / Alevi',
+      'Druze',
     ];
 
     final extras = <String>{};
@@ -75,16 +113,26 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
         extras.addAll(southAsia);
       case 'SA': case 'AE': case 'QA': case 'KW': case 'BH': case 'OM':
       case 'EG': case 'JO': case 'LB': case 'SY': case 'IQ': case 'YE':
-      case 'DZ': case 'MA': case 'TN': case 'LY': case 'SD': case 'TR':
+      case 'DZ': case 'MA': case 'TN': case 'LY': case 'SD':
       case 'IR': case 'PS':
         extras.addAll(mena);
+      case 'TR':
+        extras.addAll(turkey);
       case 'ID': case 'MY': case 'BN': case 'SG': case 'PH': case 'TH': case 'MM':
         extras.addAll(seAsia);
       case 'NG': case 'GH': case 'SN': case 'ML': case 'NE': case 'SO':
       case 'KE': case 'TZ': case 'ET': case 'ZA':
         extras.addAll(africa);
+      case 'UZ': case 'TJ': case 'KZ': case 'KG': case 'TM': case 'AZ':
+        extras.addAll(centralAsia);
+      case 'BA': case 'XK': case 'AL': case 'MK':
+        extras.addAll(balkans);
+      case 'GB': case 'US': case 'CA': case 'AU': case 'NZ':
+      case 'DE': case 'FR': case 'NL': case 'BE': case 'SE': case 'NO':
+      case 'IE': case 'IT': case 'ES': case 'RU':
+        extras.addAll(western);
       default:
-        extras.addAll(['Salafi', 'Sufi', 'Ash\'ari', 'Maturidi']);
+        extras.addAll(western);
     }
 
     // If Shia selected, show shia sub-sects instead
@@ -173,8 +221,10 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
                 onSelected: (s) => setState(() { _sect = s; _subSect = null; }),
               ),
               const SizedBox(height: AppDimensions.space20),
-              if (_sect == Sect.sunni) ...[
-                _SectionTitle('SCHOOL OF THOUGHT  (Optional)'),
+              if (_sect == Sect.sunni || _sect == Sect.shia) ...[
+                _SectionTitle(_sect == Sect.shia
+                    ? 'SCHOOL OF THOUGHT  (Optional)'
+                    : 'SCHOOL OF THOUGHT  (Optional)'),
                 const SizedBox(height: AppDimensions.space12),
                 Wrap(
                   spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,

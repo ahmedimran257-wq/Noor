@@ -83,7 +83,10 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     if (current is OnboardingActive && current.step > 0) {
       newStep = current.step - 1;
       data = current.data;
-    } else if (current is OnboardingSaved && current.step > 1) {
+    } else if (current is OnboardingSaved && current.step > 0) {
+      newStep = current.step - 1;
+      data = current.data;
+    } else if (current is OnboardingLoading && current.step > 0) {
       newStep = current.step - 1;
       data = current.data;
     }

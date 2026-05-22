@@ -97,6 +97,9 @@ GoRouter buildAppRouter(BuildContext buildContext, {
 
       // Authenticated
       if (authState is AuthAuthenticated) {
+        // Always allow the assalam greeting animation (it auto-navigates away)
+        if (location == AppRoutes.assalam) return null;
+
         if (authState.isOnboardingComplete) {
           // Fully onboarded — go to home unless already there or on sub-routes
           if (location.startsWith(AppRoutes.home) ||
@@ -108,15 +111,9 @@ GoRouter buildAppRouter(BuildContext buildContext, {
               location == AppRoutes.subscription) return null;
           return AppRoutes.home;
         } else {
-          // Still onboarding — allow current step and any previous step (back nav)
-          if (location.startsWith(AppRoutes.onboarding)) {
-            final locStep = int.tryParse(
-              location.replaceFirst('${AppRoutes.onboarding}/', ''),
-            );
-            if (locStep != null && locStep <= authState.onboardingStep) {
-              return null; // allow back navigation
-            }
-          }
+          // Still onboarding — always navigate to the current step.
+          // goBack() already updates authState.onboardingStep to the
+          // lower step, so the redirect naturally handles back-nav too.
           final targetPath = onboardingPathForStep(authState.onboardingStep);
           if (location == targetPath) return null;
           return targetPath;

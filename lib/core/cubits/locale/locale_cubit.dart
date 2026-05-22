@@ -17,7 +17,14 @@ class LocaleCubit extends Cubit<Locale> {
   static const _kKey = 'app_locale';
 
   /// Supported language codes — must match main.dart _supportedLocales.
-  static const _supported = {'en', 'ar', 'ur', 'ms', 'id', 'tr', 'bn', 'fr'};
+  /// Covers all languages across the app's 75+ country demographics.
+  static const _supported = {
+    'en', 'ar', 'ur', 'ms', 'id', 'tr', 'bn', 'fr', 'hi', 'ta', 'te',
+    'ml', 'kn', 'mr', 'gu', 'pa', 'fa', 'ps', 'sw', 'so', 'ha', 'de',
+    'nl', 'sv', 'no', 'ru', 'bs', 'sq', 'az', 'pt', 'es', 'am', 'ku',
+    'uz', 'tg', 'tk', 'kk', 'ky', 'my', 'th', 'tl', 'jv', 'si', 'ne',
+    'wo', 'yo', 'af',
+  };
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();

@@ -19,6 +19,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
@@ -146,10 +147,20 @@ class _AssalamAnimationScreenState extends State<AssalamAnimationScreen>
     if (status == AnimationStatus.completed) _navigate();
   }
 
-  void _navigate() {
+  void _navigate() async {
     if (_navigated || !mounted) return;
     _navigated = true;
-    context.go(AppRoutes.languageSelect);
+    // Check if this is the first launch or a returning user
+    final prefs = await SharedPreferences.getInstance();
+    final introCompleted = prefs.getBool('noor_intro_completed') ?? false;
+    if (!mounted) return;
+    if (introCompleted) {
+      // Returning user → go straight to splash (Create Profile / Sign In)
+      context.go(AppRoutes.splash);
+    } else {
+      // First launch → go to language selection
+      context.go(AppRoutes.languageSelect);
+    }
   }
 
   @override

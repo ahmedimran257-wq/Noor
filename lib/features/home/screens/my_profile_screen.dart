@@ -7,6 +7,7 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
@@ -360,11 +361,21 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                 icon: Icons.notifications_outlined,
                 label: 'New Interests',
                 isToggle: true, isOn: true,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const SettingsScreen(),
+                  ),
+                ),
               ),
               _SettingsItem(
                 icon: Icons.chat_bubble_outline_rounded,
                 label: 'New Messages',
                 isToggle: true, isOn: true,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const SettingsScreen(),
+                  ),
+                ),
               ),
             ],
           ),
@@ -1162,14 +1173,23 @@ class _SettingsTileState extends State<_SettingsTile> {
   Widget build(BuildContext context) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      onTap: widget.item.onTap,
+      onTap: widget.item.onTap != null
+          ? () {
+              HapticFeedback.selectionClick();
+              widget.item.onTap!();
+            }
+          : null,
+      splashColor: AppColors.champagneGold.withValues(alpha: 0.08),
       leading: Icon(widget.item.icon, color: AppColors.slateMist,
           size: AppDimensions.iconSizeMedium),
       title: Text(widget.item.label, style: AppTypography.body),
       trailing: widget.item.isToggle
           ? Switch(
               value: _isOn,
-              onChanged: (v) => setState(() => _isOn = v),
+              onChanged: (v) {
+                HapticFeedback.selectionClick();
+                setState(() => _isOn = v);
+              },
               activeThumbColor:   AppColors.obsidianNight,
               activeTrackColor:   AppColors.champagneGold,
               inactiveThumbColor: AppColors.slateMist,
