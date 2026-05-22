@@ -1,0 +1,168 @@
+// ============================================================
+// EDGE FUNCTION: validate-photo-upload
+// supabase/functions/validate-photo-upload/index.ts
+//
+// Fixes Audit Finding 9.1 (Medium):
+//   Photo upload quota race condition. A user could request 4 URLs,
+//   use them, delete a photo, and request another — bypassing quota.
+//
+// Registered as a Supabase Storage webhook on ObjectCreated events
+// in the 'profile-photos' bucket. Validates the final file commit
+// against the photos table count, rolling back if count > 4.
+// ============================================================
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders } from "../_shared/cors.ts";
+
+const SUPABASE_URL         = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+const BUCKET_NAME = "profile-photos";
+const MAX_PHOTOS  = 4;
+
+interface StorageWebhookPayload {
+  type: "ObjectCreated" | "ObjectDeleted";
+  record: {
+    name: string;        // e.g. "user-uuid/photo-uuid.webp"
+    bucket_id: string;
+    owner: string;
+    metadata: Record<string, unknown>;
+  };
+}
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  try {
+    const payload = await req.json() as StorageWebhookPayload;
+
+    // Only process ObjectCreated events
+    if (payload.type !== "ObjectCreated") {
+      return new Response(JSON.stringify({ action: "ignored" }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const storagePath = payload.record.name;
+
+    // Extract user_id from the storage path (format: {user_id}/{filename}.webp)
+    const pathParts = storagePath.split("/");
+    if (pathParts.length < 2) {
+      console.warn(`[validate-photo-upload] Invalid storage path: ${storagePath}`);
+      return new Response(JSON.stringify({ action: "invalid_path" }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const userId = pathParts[0];
+
+    const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    // Get the user's profile
+    const { data: profile, error: profileError } = await adminClient
+      .from("profiles")
+      .select("id")
+      .eq("user_id", userId)
+      .single();
+
+    if (profileError || !profile) {
+      console.error(`[validate-photo-upload] Profile not found for user ${userId}`);
+      // Delete the uploaded file — no valid profile
+      await adminClient.storage.from(BUCKET_NAME).remove([storagePath]);
+      return new Response(JSON.stringify({ action: "deleted_orphan" }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Count ALL photos for this profile (active + pending_upload)
+    const { count, error: countError } = await adminClient
+      .from("photos")
+      .select("id", { count: "exact", head: true })
+      .eq("profile_id", profile.id);
+
+    if (countError) {
+      console.error(`[validate-photo-upload] Count error: ${countError.message}`);
+      return new Response(JSON.stringify({ action: "count_error" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if ((count ?? 0) > MAX_PHOTOS) {
+      console.warn(
+        `[validate-photo-upload] ❌ Quota exceeded for user ${userId}: ` +
+        `${count} photos (max ${MAX_PHOTOS}). Rolling back upload.`
+      );
+
+      // Delete the uploaded file from storage
+      await adminClient.storage.from(BUCKET_NAME).remove([storagePath]);
+
+      // Delete the corresponding photos row
+      await adminClient
+        .from("photos")
+        .delete()
+        .eq("profile_id", profile.id)
+        .eq("storage_path", storagePath);
+
+      // Flag for admin review
+      await adminClient.from("admin_notifications").insert({
+        type:            "quota_violation",
+        message:         `User ${userId} attempted to exceed photo quota (${count}/${MAX_PHOTOS}). Upload rolled back.`,
+        related_user_id: userId,
+      });
+
+      return new Response(
+        JSON.stringify({
+          action: "rolled_back",
+          reason: `Photo quota exceeded (${count}/${MAX_PHOTOS})`,
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Quota OK — activate the photo if it's still in pending_upload
+    const { error: updateError } = await adminClient
+      .from("photos")
+      .update({ status: "active" })
+      .eq("profile_id", profile.id)
+      .eq("storage_path", storagePath)
+      .eq("status", "pending_upload");
+
+    if (updateError) {
+      console.warn(
+        `[validate-photo-upload] Could not activate photo: ${updateError.message}`
+      );
+    } else {
+      console.log(
+        `[validate-photo-upload] ✅ Photo activated for user ${userId}: ${storagePath}`
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ action: "validated", photo_count: count }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  } catch (err) {
+    console.error("[validate-photo-upload] Error:", err);
+    return new Response(
+      JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+});

@@ -1,20 +1,18 @@
 // lib/features/home/screens/subscription_screen.dart
 // ============================================================
-// NOOR — Subscription Screen (Item 23 — Regional Pricing)
+// NOOR — Subscription Screen (RevenueCat Dynamic Pricing)
 //
 // Blueprint (Part 8):
 //   "The price in local currency."
 //
-// Item 23: PricingConfig reads country code from SharedPreferences
-//   'user_country_code' and applies the correct tier.
-//   Dynamic "Best value — save X%" on annual card.
-//   Billed annually / monthly note shown below price.
+// Pricing is fetched exclusively from RevenueCat Offerings.
+// No hardcoded fallback — shows error state if unavailable.
+// Dynamic "Best value — save X%" on annual card.
 // ============================================================
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../../core/config/pricing_config.dart';
+import '../../../core/services/subscription_service.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/cubits/auth/auth_state.dart';
 import '../../../core/cubits/subscription/subscription_cubit.dart';
@@ -38,8 +36,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   late final Animation<double>   _headerFade;
   late final Animation<Offset>   _headerSlide;
 
-  // Pricing (loaded from SharedPreferences on initState)
-  PricingTier _pricing = PricingConfig.getForCountryCode('');
+  // Pricing (loaded from RevenueCat via SubscriptionService)
+  DisplayPricing _pricing = DisplayPricing.unavailable();
 
   @override
   void initState() {
@@ -58,21 +56,17 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   }
 
   Future<void> _loadPricing() async {
-    // First try to get from Auth state (if already authenticated)
-    final authState = context.read<AuthCubit>().state;
-    String? countryCode;
+    // Get pricing from RevenueCat via SubscriptionService
+    final service = SubscriptionService.instance;
+    final pricing = service.currentPricing;
 
-    if (authState is AuthAuthenticated && authState.countryCode != null) {
-      countryCode = authState.countryCode;
-    } else {
-      // Fallback to SharedPreferences (for users still in onboarding)
-      final prefs = await SharedPreferences.getInstance();
-      countryCode = prefs.getString('user_country_code');
+    if (pricing != null && mounted) {
+      setState(() => _pricing = pricing);
     }
 
-    if (!mounted) return;
-    setState(() {
-      _pricing = PricingConfig.getForCountryCode(countryCode ?? '');
+    // Listen for pricing updates (e.g., retry succeeds)
+    service.pricingStream.listen((updated) {
+      if (mounted) setState(() => _pricing = updated);
     });
   }
 
@@ -240,7 +234,7 @@ class _Header extends StatelessWidget {
 // ── Plan Cards ────────────────────────────────────────────────
 
 class _PlanCards extends StatelessWidget {
-  final PricingTier pricing;
+  final DisplayPricing pricing;
   final String      selectedPlan;
   final void Function(String) onSelect;
 
@@ -497,9 +491,9 @@ class _FeatureRow extends StatelessWidget {
 // ── CTA Button ────────────────────────────────────────────────
 
 class _CtaButton extends StatelessWidget {
-  final String      selectedPlan;
-  final PricingTier pricing;
-  final bool        isLoading;
+  final String         selectedPlan;
+  final DisplayPricing pricing;
+  final bool           isLoading;
   final VoidCallback onTap;
 
   const _CtaButton({
