@@ -111,7 +111,16 @@ GoRouter buildAppRouter(BuildContext buildContext, {
               location == AppRoutes.subscription) return null;
           return AppRoutes.home;
         } else {
-          // Still onboarding — always navigate to the current step.
+          // Still onboarding — allow pre-auth screens that come before
+          // the onboarding flow (language selection, splash, legal, phone)
+          // so the first-install sequence isn't short-circuited.
+          if (location == AppRoutes.languageSelect ||
+              location == AppRoutes.splash ||
+              location == AppRoutes.legal ||
+              location == AppRoutes.phone) {
+            return null;
+          }
+          // Otherwise navigate to the current onboarding step.
           // goBack() already updates authState.onboardingStep to the
           // lower step, so the redirect naturally handles back-nav too.
           final targetPath = onboardingPathForStep(authState.onboardingStep);
