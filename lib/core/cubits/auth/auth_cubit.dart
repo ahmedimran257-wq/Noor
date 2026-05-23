@@ -35,12 +35,15 @@ class AuthCubit extends Cubit<AuthState> {
           final prefs = await SharedPreferences.getInstance();
           final countryCode = prefs.getString('user_country_code');
 
-          // TODO: Load actual gender and onboarding_step from Supabase
+          // Load gender from users table and onboarding state from profiles
+          final authData = await _loadUserProfile(userId);
+
           emit(AuthAuthenticated(
             userId: userId,
-            onboardingStep: 0, // TODO: Load from profiles table
-            gender: null,       // TODO: Load from users table
+            onboardingStep: authData.onboardingStep,
+            gender: authData.gender,
             countryCode: countryCode,
+            isGuardianPath: authData.isGuardianPath,
           ));
           return;
         }
@@ -130,12 +133,25 @@ class AuthCubit extends Cubit<AuthState> {
     // Use mock user ID if not set (mock mode or failed real auth)
     userId ??= 'mock-user-id-001';
 
-    emit(AuthAuthenticated(
-      userId:          userId,
-      onboardingStep:  0,
-      gender:          'male', // TODO: Load from Supabase users table
-      countryCode:     countryCode,
-    ));
+    if (_isRealMode) {
+      // Real mode: load actual gender and onboarding step from DB
+      final authData = await _loadUserProfile(userId);
+      emit(AuthAuthenticated(
+        userId:          userId,
+        onboardingStep:  authData.onboardingStep,
+        gender:          authData.gender,
+        countryCode:     countryCode,
+        isGuardianPath:  authData.isGuardianPath,
+      ));
+    } else {
+      // Mock mode: new user starts at step 0, gender set during onboarding
+      emit(AuthAuthenticated(
+        userId:          userId,
+        onboardingStep:  0,
+        gender:          null,
+        countryCode:     countryCode,
+      ));
+    }
   }
 
   // ── Sign Out ──────────────────────────────────────────────
@@ -204,4 +220,60 @@ class AuthCubit extends Cubit<AuthState> {
       ));
     }
   }
+
+  // ── DB Profile Loader ────────────────────────────────────
+
+  /// Loads gender, onboarding_step, and guardian mode from Supabase.
+  /// Returns safe defaults if the user/profile rows don't exist yet.
+  Future<_UserProfileData> _loadUserProfile(String userId) async {
+    String? gender;
+    int onboardingStep = 0;
+    bool isGuardianPath = false;
+
+    try {
+      // Load gender from users table
+      final userRow = await SupabaseService.client
+          .from('users')
+          .select('gender')
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (userRow != null) {
+        gender = userRow['gender'] as String?;
+      }
+
+      // Load onboarding step and guardian mode from profiles table
+      final profileRow = await SupabaseService.client
+          .from('profiles')
+          .select('onboarding_step, guardian_mode')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      if (profileRow != null) {
+        onboardingStep = (profileRow['onboarding_step'] as int?) ?? 0;
+        final guardianMode = profileRow['guardian_mode'] as String?;
+        isGuardianPath = guardianMode != null && guardianMode != 'none';
+      }
+    } catch (e) {
+      debugPrint('AuthCubit: Error loading user profile: $e');
+    }
+
+    return _UserProfileData(
+      gender: gender,
+      onboardingStep: onboardingStep,
+      isGuardianPath: isGuardianPath,
+    );
+  }
+}
+
+/// Internal data holder for profile loading results.
+class _UserProfileData {
+  const _UserProfileData({
+    required this.gender,
+    required this.onboardingStep,
+    required this.isGuardianPath,
+  });
+  final String? gender;
+  final int onboardingStep;
+  final bool isGuardianPath;
 }
