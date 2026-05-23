@@ -120,6 +120,9 @@ class _AboutYourselfScreenState extends State<AboutYourselfScreen> {
     return BlocBuilder<OnboardingCubit, OnboardingState>(
       builder: (context, state) {
         final isLoading = state is OnboardingLoading;
+        final data = context.read<OnboardingCubit>().currentData;
+        final isGuardian = data.isGuardianMode;
+        final relation = data.profileCreatorRelation ?? 'ward';
         return OnboardingScaffold(
           ctaLabel:     'Continue',
           onCta:        _advance,
@@ -132,18 +135,20 @@ class _AboutYourselfScreenState extends State<AboutYourselfScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: AppDimensions.space32),
-              const StepHeader(
-                title:    'About you',
+              StepHeader(
+                title:    isGuardian ? 'About your $relation' : 'About you',
                 subtitle: 'Write with honesty and dignity.',
               ),
               const SizedBox(height: AppDimensions.space32),
 
               // Bio field
-              Text('YOUR BIO', style: AppTypography.sectionLabel),
+              Text(isGuardian ? 'THEIR BIO' : 'YOUR BIO', style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space8),
               NoorTextField(
                 controller:      _bioCtrl,
-                hint:            'Describe yourself with honesty and dignity.',
+                hint:            isGuardian
+                    ? 'Describe your $relation with honesty and dignity.'
+                    : 'Describe yourself with honesty and dignity.',
                 maxLength:       _maxBio,
                 maxLines:        5,
                 minLines:        4,

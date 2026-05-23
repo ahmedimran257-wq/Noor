@@ -84,6 +84,9 @@ class _FamilyScreenState extends State<FamilyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final obData = context.read<OnboardingCubit>().currentData;
+    final isGuardian = obData.isGuardianMode;
+    final relation = obData.profileCreatorRelation ?? 'ward';
     return BlocBuilder<OnboardingCubit, OnboardingState>(
       builder: (context, state) {
         final isLoading = state is OnboardingLoading;
@@ -99,9 +102,11 @@ class _FamilyScreenState extends State<FamilyScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: AppDimensions.space32),
-              const StepHeader(
-                title:    'Family background',
-                subtitle: 'Family compatibility is central to lasting marriages.',
+              StepHeader(
+                title:    isGuardian ? 'Family background' : 'Family background',
+                subtitle: isGuardian
+                    ? 'Tell us about your $relation\'s family.'
+                    : 'Family compatibility is central to lasting marriages.',
               ),
               const SizedBox(height: AppDimensions.space32),
 
@@ -171,7 +176,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
               const SizedBox(height: AppDimensions.space24),
 
               // Previously married
-              _Label('PREVIOUSLY MARRIED?'),
+              _Label(isGuardian ? 'PREVIOUSLY MARRIED?' : 'PREVIOUSLY MARRIED?'),
               const SizedBox(height: AppDimensions.space8),
               _InlinePills(
                 options: const ['No', 'Divorced', 'Widowed'],
@@ -189,7 +194,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
               // Children (if previously married)
               if (_marital != MaritalStatus.neverMarried) ...[
                 const SizedBox(height: AppDimensions.space20),
-                _Label('DO YOU HAVE CHILDREN?'),
+                _Label(isGuardian ? 'DO THEY HAVE CHILDREN?' : 'DO YOU HAVE CHILDREN?'),
                 const SizedBox(height: AppDimensions.space8),
                 _InlinePills(
                   options: const ['Yes', 'No'],
@@ -212,7 +217,9 @@ class _FamilyScreenState extends State<FamilyScreen> {
               _Label('POST-MARRIAGE LIVING EXPECTATIONS'),
               const SizedBox(height: AppDimensions.space4),
               Text(
-                'Where do you expect to live after marriage?',
+                isGuardian
+                    ? 'Where does your $relation expect to live after marriage?'
+                    : 'Where do you expect to live after marriage?',
                 style: AppTypography.caption,
               ),
               const SizedBox(height: AppDimensions.space12),
@@ -233,7 +240,9 @@ class _FamilyScreenState extends State<FamilyScreen> {
               _Label('WILLING TO RELOCATE'),
               const SizedBox(height: AppDimensions.space4),
               Text(
-                'Would you relocate for marriage?',
+                isGuardian
+                    ? 'Would your $relation relocate for marriage?'
+                    : 'Would you relocate for marriage?',
                 style: AppTypography.caption,
               ),
               const SizedBox(height: AppDimensions.space12),
@@ -278,7 +287,9 @@ class _FamilyScreenState extends State<FamilyScreen> {
                 _Label('POLYGAMY STATUS  (Optional)'),
                 const SizedBox(height: AppDimensions.space4),
                 Text(
-                  'Are you currently married and looking for an additional spouse?',
+                  isGuardian
+                      ? 'Is your $relation currently married and looking for an additional spouse?'
+                      : 'Are you currently married and looking for an additional spouse?',
                   style: AppTypography.caption,
                 ),
                 const SizedBox(height: AppDimensions.space12),
@@ -293,7 +304,9 @@ class _FamilyScreenState extends State<FamilyScreen> {
                 _Label('POLYGAMY ACCEPTANCE  (Optional)'),
                 const SizedBox(height: AppDimensions.space4),
                 Text(
-                  'Would you consider being a co-wife?',
+                  isGuardian
+                      ? 'Would your $relation consider being a co-wife?'
+                      : 'Would you consider being a co-wife?',
                   style: AppTypography.caption,
                 ),
                 const SizedBox(height: AppDimensions.space12),

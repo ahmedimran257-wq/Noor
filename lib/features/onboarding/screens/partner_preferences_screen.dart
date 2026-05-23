@@ -81,6 +81,9 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final obData = context.read<OnboardingCubit>().currentData;
+    final isGuardian = obData.isGuardianMode;
+    final relation = obData.profileCreatorRelation ?? 'ward';
     return BlocBuilder<OnboardingCubit, OnboardingState>(
       builder: (context, state) {
         final isLoading = state is OnboardingLoading;
@@ -91,9 +94,11 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: AppDimensions.space32),
-              const StepHeader(
+              StepHeader(
                 title:    'Partner preferences',
-                subtitle: 'These are preferences, not hard filters.',
+                subtitle: isGuardian
+                    ? 'Set preferences for your $relation\'s ideal match.'
+                    : 'These are preferences, not hard filters.',
               ),
               const SizedBox(height: AppDimensions.space32),
 

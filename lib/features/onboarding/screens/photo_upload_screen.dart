@@ -254,6 +254,9 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
     return BlocBuilder<OnboardingCubit, OnboardingState>(
       builder: (context, state) {
         final isLoading = state is OnboardingLoading;
+        final obData = context.read<OnboardingCubit>().currentData;
+        final isGuardian = obData.isGuardianMode;
+        final relation = obData.profileCreatorRelation ?? 'ward';
         return OnboardingScaffold(
           ctaLabel:     'Continue',
           onCta:        _advance,
@@ -263,9 +266,11 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: AppDimensions.space32),
-              const StepHeader(
-                title:    'Add your photos',
-                subtitle: 'At least one photo is required. Maximum four.',
+              StepHeader(
+                title:    isGuardian ? 'Add their photos' : 'Add your photos',
+                subtitle: isGuardian
+                    ? 'Add photos of your $relation. At least one is required.'
+                    : 'At least one photo is required. Maximum four.',
               ),
               const SizedBox(height: AppDimensions.space24),
 

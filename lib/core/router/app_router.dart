@@ -111,13 +111,11 @@ GoRouter buildAppRouter(BuildContext buildContext, {
               location == AppRoutes.subscription) return null;
           return AppRoutes.home;
         } else {
-          // Still onboarding — allow pre-auth screens that come before
-          // the onboarding flow (language selection, splash, legal, phone)
-          // so the first-install sequence isn't short-circuited.
-          if (location == AppRoutes.languageSelect ||
-              location == AppRoutes.splash ||
-              location == AppRoutes.legal ||
-              location == AppRoutes.phone) {
+          // Still onboarding — allow the language selection screen so
+          // the first-install sequence isn't short-circuited.
+          // Other pre-auth screens (splash, legal, phone) should redirect
+          // to the onboarding step once the user is authenticated.
+          if (location == AppRoutes.languageSelect) {
             return null;
           }
           // Otherwise navigate to the current onboarding step.

@@ -25,6 +25,7 @@ class ProfilePreviewScreen extends StatelessWidget {
         final cubit    = context.read<OnboardingCubit>();
         final data     = cubit.currentData;
         final isLoading = state is OnboardingLoading;
+        final isGuardian = data.isGuardianMode;
 
         return Scaffold(
           backgroundColor: AppColors.obsidianNight,
@@ -212,7 +213,9 @@ class ProfilePreviewScreen extends StatelessWidget {
                               const SizedBox(width: AppDimensions.space12),
                               Expanded(
                                 child: Text(
-                                  'This is exactly how others will see your profile.',
+                                  isGuardian
+                                      ? 'This is exactly how others will see their profile.'
+                                      : 'This is exactly how others will see your profile.',
                                   style: AppTypography.caption,
                                 ),
                               ),
@@ -404,7 +407,7 @@ class _PhotoPreviewCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    data.displayName.isNotEmpty ? data.displayName : 'Your Name',
+                    data.displayName.isNotEmpty ? data.displayName : (data.isGuardianMode ? 'Their Name' : 'Your Name'),
                     style: AppTypography.userName,
                   ),
                   if (data.age != null && data.cityName != null)

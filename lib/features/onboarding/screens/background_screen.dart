@@ -116,6 +116,9 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final obData = context.read<OnboardingCubit>().currentData;
+    final isGuardian = obData.isGuardianMode;
+    final relation = obData.profileCreatorRelation ?? 'ward';
     return BlocBuilder<OnboardingCubit, OnboardingState>(
       builder: (context, state) {
         final isLoading = state is OnboardingLoading;
@@ -131,9 +134,11 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: AppDimensions.space32),
-              const StepHeader(
-                title:    'Your background',
-                subtitle: 'Helps find professionally compatible matches.',
+              StepHeader(
+                title:    isGuardian ? 'Their background' : 'Your background',
+                subtitle: isGuardian
+                    ? 'Tell us about your $relation\'s education and career.'
+                    : 'Helps find professionally compatible matches.',
               ),
               const SizedBox(height: AppDimensions.space32),
 
