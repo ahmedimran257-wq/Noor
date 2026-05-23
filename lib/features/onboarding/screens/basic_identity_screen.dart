@@ -365,6 +365,26 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
   String? _residencyStatus; // Phase 1 — optional
   String? _specialNeeds;    // Phase 1 — optional
 
+  // Guardian mode — derived from previous screens
+  bool _isGuardianMode = false;
+  bool _genderLocked   = false;  // true if gender was pre-filled by guardian flow
+  String _candidateLabel = '';   // 'son', 'daughter', 'brother', 'sister'
+
+  @override
+  void initState() {
+    super.initState();
+    final data = context.read<OnboardingCubit>().currentData;
+    _isGuardianMode = data.isGuardianMode;
+    _candidateLabel = data.profileCreatorRelation ?? 'self';
+
+    // If guardian mode set the gender on guardian_details_screen,
+    // pre-fill it here and lock the selector.
+    if (_isGuardianMode && data.gender != null) {
+      _gender = data.gender;
+      _genderLocked = true;
+    }
+  }
+
   /// City is valid if user either (a) picked from suggestions, or
   /// (b) typed at least 2 characters as a free-text city name.
   String get _effectiveCity => _selectedCity ?? _cityCtrl.text.trim();
@@ -394,7 +414,8 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
 
   void _showValidation() {
     final missing = <String>[];
-    if (_firstNameCtrl.text.trim().isEmpty) missing.add('First name');
+    final nameSubject = _isGuardianMode ? "Candidate's first" : 'First';
+    if (_firstNameCtrl.text.trim().isEmpty) missing.add('$nameSubject name');
     if (_lastNameCtrl.text.trim().isEmpty) missing.add('Last name');
     if (_dob == null) missing.add('Date of birth');
     if (_dobError.isNotEmpty) missing.add('Valid date of birth (18+)');
@@ -437,7 +458,9 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
     setState(() {
       _dob      = picked;
       _dobError = age < 18
-          ? 'You must be 18 or older to use NOOR. We look forward to welcoming you then.'
+          ? _isGuardianMode
+              ? 'Your $_candidateLabel must be 18 or older to use NOOR.'
+              : 'You must be 18 or older to use NOOR. We look forward to welcoming you then.'
           : '';
     });
   }
@@ -552,7 +575,6 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       builder: (context, state) {
         final isLoading = state is OnboardingLoading;
         return OnboardingScaffold(
-          step:          1,
           ctaLabel:      'Continue',
           onCta:         _advance,
           isCtaEnabled:  _canProceed,
@@ -562,9 +584,44 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: AppDimensions.space32),
-              const StepHeader(
-                title:    'Tell us about yourself',
-                subtitle: 'This is what others will see on your profile.',
+
+              // Guardian mode banner
+              if (_isGuardianMode) ...[
+                Container(
+                  padding: const EdgeInsets.all(AppDimensions.space14),
+                  decoration: BoxDecoration(
+                    color:        AppColors.champagneGold.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                    border:       Border.all(color: AppColors.goldBorder),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.shield_outlined,
+                          color: AppColors.champagneGold, size: 16),
+                      const SizedBox(width: AppDimensions.space10),
+                      Expanded(
+                        child: Text(
+                          'You are filling this as a guardian. '
+                          'These details are about your $_candidateLabel.',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.champagneGold,
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppDimensions.space20),
+              ],
+
+              StepHeader(
+                title: _isGuardianMode
+                    ? 'Tell us about your $_candidateLabel'
+                    : 'Tell us about yourself',
+                subtitle: _isGuardianMode
+                    ? 'This is what others will see on their profile.'
+                    : 'This is what others will see on your profile.',
               ),
               const SizedBox(height: AppDimensions.space32),
 
@@ -574,7 +631,9 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                   Expanded(
                     child: NoorTextField(
                       controller:         _firstNameCtrl,
-                      label:              'First name',
+                      label:              _isGuardianMode
+                                              ? "Candidate's first name"
+                                              : 'First name',
                       textCapitalization: TextCapitalization.words,
                       textInputAction:    TextInputAction.next,
                       onChanged:          (_) => setState(() {}),
@@ -584,7 +643,9 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                   Expanded(
                     child: NoorTextField(
                       controller:         _lastNameCtrl,
-                      label:              'Last name',
+                      label:              _isGuardianMode
+                                              ? 'Last name'
+                                              : 'Last name',
                       textCapitalization: TextCapitalization.words,
                       textInputAction:    TextInputAction.next,
                       onChanged:          (_) => setState(() {}),
@@ -636,34 +697,79 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space20),
 
               // Gender
-              Text('GENDER', style: AppTypography.sectionLabel),
-              const SizedBox(height: AppDimensions.space8),
-              Row(
-                children: [
-                  Expanded(
-                    child: _GenderPill(
-                      label:      'Male',
-                      icon:       Icons.male_rounded,
-                      isSelected: _gender == Gender.male,
-                      onTap:      () => setState(() => _gender = Gender.male),
-                    ),
-                  ),
-                  const SizedBox(width: AppDimensions.space12),
-                  Expanded(
-                    child: _GenderPill(
-                      label:      'Female',
-                      icon:       Icons.female_rounded,
-                      isSelected: _gender == Gender.female,
-                      onTap:      () => setState(() => _gender = Gender.female),
-                    ),
-                  ),
-                ],
+              Text(
+                _isGuardianMode ? "CANDIDATE'S GENDER" : 'GENDER',
+                style: AppTypography.sectionLabel,
               ),
+              const SizedBox(height: AppDimensions.space8),
+              if (_genderLocked) ...[
+                // Gender is pre-set by guardian flow — show read-only
+                Container(
+                  height: AppDimensions.buttonHeight,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppDimensions.space16,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.champagneGold.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                    border: Border.all(color: AppColors.champagneGold),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _gender == Gender.male
+                            ? Icons.male_rounded
+                            : Icons.female_rounded,
+                        color: AppColors.champagneGold,
+                        size: 20,
+                      ),
+                      const SizedBox(width: AppDimensions.space12),
+                      Text(
+                        _gender == Gender.male ? 'Male' : 'Female',
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppColors.champagneGold,
+                        ),
+                      ),
+                      const Spacer(),
+                      const Icon(
+                        Icons.lock_outline_rounded,
+                        color: AppColors.slateMist,
+                        size: 14,
+                      ),
+                    ],
+                  ),
+                ),
+              ] else ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: _GenderPill(
+                        label:      'Male',
+                        icon:       Icons.male_rounded,
+                        isSelected: _gender == Gender.male,
+                        onTap:      () => setState(() => _gender = Gender.male),
+                      ),
+                    ),
+                    const SizedBox(width: AppDimensions.space12),
+                    Expanded(
+                      child: _GenderPill(
+                        label:      'Female',
+                        icon:       Icons.female_rounded,
+                        isSelected: _gender == Gender.female,
+                        onTap:      () => setState(() => _gender = Gender.female),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
 
               const SizedBox(height: AppDimensions.space20),
 
               // City search
-              Text('YOUR CITY', style: AppTypography.sectionLabel),
+              Text(
+                _isGuardianMode ? "THEIR CITY" : 'YOUR CITY',
+                style: AppTypography.sectionLabel,
+              ),
               const SizedBox(height: AppDimensions.space8),
               NoorTextField(
                 controller:         _cityCtrl,
@@ -795,7 +901,8 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space28),
 
               // ── HEIGHT ─────────────────────────────────────────────
-              Text('YOUR HEIGHT', style: AppTypography.sectionLabel),
+              Text(_isGuardianMode ? 'THEIR HEIGHT' : 'YOUR HEIGHT',
+                  style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
               _HeightStepper(
                 heightCm: _heightCm,

@@ -79,8 +79,6 @@ class _IslamicMarriageDetailsScreenState
       builder: (context, state) {
         final isLoading = state is OnboardingLoading;
         return OnboardingScaffold(
-          step:         3,
-          totalSteps:   10,
           ctaLabel:     'Continue',
           onCta:        _advance,
           isCtaEnabled: _canProceed,

@@ -121,7 +121,6 @@ class _AboutYourselfScreenState extends State<AboutYourselfScreen> {
       builder: (context, state) {
         final isLoading = state is OnboardingLoading;
         return OnboardingScaffold(
-          step:         6,
           ctaLabel:     'Continue',
           onCta:        _advance,
           isCtaEnabled: _canProceed,

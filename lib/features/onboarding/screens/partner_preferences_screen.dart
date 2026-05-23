@@ -85,7 +85,7 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
       builder: (context, state) {
         final isLoading = state is OnboardingLoading;
         return OnboardingScaffold(
-          step: 7, ctaLabel: 'Continue', onCta: _advance,
+          ctaLabel: 'Continue', onCta: _advance,
           isCtaEnabled: true, isCtaLoading: isLoading,
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

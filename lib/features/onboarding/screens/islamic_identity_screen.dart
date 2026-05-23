@@ -195,7 +195,7 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
       builder: (context, state) {
         final isLoading = state is OnboardingLoading;
         return OnboardingScaffold(
-          step: 2, ctaLabel: 'Continue', onCta: _advance,
+          ctaLabel: 'Continue', onCta: _advance,
           isCtaEnabled: _canProceed, isCtaLoading: isLoading,
           onCtaDisabledTap: _showValidation,
           body: Column(

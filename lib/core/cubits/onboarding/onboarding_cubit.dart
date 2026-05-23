@@ -57,7 +57,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     final nextStep = currentStep + 1;
 
     // Sync the step into AuthCubit so the router can redirect correctly
-    _authCubit.updateOnboardingStep(nextStep);
+    _authCubit.updateOnboardingStep(nextStep, isGuardianPath: isGuardianPath);
 
     // Also update the onboarding_step in the DB
     await ProfileWriteService.updateOnboardingStep(nextStep);

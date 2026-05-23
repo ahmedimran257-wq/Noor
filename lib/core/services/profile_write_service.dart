@@ -70,6 +70,21 @@ class ProfileWriteService {
             }, onConflict: 'profile_id');
       }
 
+      // Guardian phone: encrypt via set_guardian_phone() SECURITY DEFINER RPC
+      // This must happen AFTER the profiles upsert so the profile row exists.
+      if (isGuardianPath && step == 1 && data.guardianPhone != null) {
+        final profileRes = await SupabaseService.client
+            .from('profiles')
+            .select('id')
+            .eq('user_id', _userId!)
+            .single();
+
+        await SupabaseService.client.rpc('set_guardian_phone', params: {
+          'p_profile_id': profileRes['id'],
+          'p_phone': data.guardianPhone,
+        });
+      }
+
       debugPrint('ProfileWriteService: Step $step saved (${fields.length} fields)');
       return true;
     } catch (e) {
@@ -111,7 +126,7 @@ class ProfileWriteService {
         'guardian_email': data.guardianEmail,
         'guardian_authority_scope': data.guardianAuthorityScope,
         'guardian_phone_country_code': data.guardianPhoneCountryCode,
-        'guardian_mode': 'active',
+        'guardian_mode': data.guardianMode ?? 'passive',
         'profile_creator_relation': data.profileCreatorRelation,
       });
     }

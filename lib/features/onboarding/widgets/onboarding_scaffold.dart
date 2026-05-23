@@ -9,6 +9,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
+import '../../../core/models/onboarding_data.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
@@ -18,7 +19,7 @@ import 'onboarding_progress_bar.dart';
 class OnboardingScaffold extends StatelessWidget {
   const OnboardingScaffold({
     super.key,
-    required this.step,
+    this.step,
     required this.body,
     required this.ctaLabel,
     required this.onCta,
@@ -26,13 +27,14 @@ class OnboardingScaffold extends StatelessWidget {
     this.isCtaLoading = false,
     this.skipLabel,
     this.onSkip,
-    this.totalSteps = 10,
+    this.totalSteps,
     this.onBack,
     this.onCtaDisabledTap,
   });
 
   /// 0-indexed position in the form steps (used for progress bar).
-  final int step;
+  /// If null, reads from [OnboardingCubit.currentStep].
+  final int? step;
   final Widget body;
   final String ctaLabel;
   final VoidCallback? onCta;
@@ -40,13 +42,20 @@ class OnboardingScaffold extends StatelessWidget {
   final bool isCtaLoading;
   final String? skipLabel;
   final VoidCallback? onSkip;
-  final int totalSteps;
+  /// Total steps for progress bar. If null, computed from guardian/myself path:
+  ///   Guardian → 12 steps (0–11), Myself → 11 steps (0–10).
+  final int? totalSteps;
   final VoidCallback? onBack;
   /// Called when CTA is tapped while disabled — use to show validation feedback.
   final VoidCallback? onCtaDisabledTap;
 
   @override
   Widget build(BuildContext context) {
+    final cubit = context.read<OnboardingCubit>();
+    final resolvedStep = step ?? cubit.currentStep;
+    final isGuardian = cubit.currentData.profileFor == ProfileFor.guardian;
+    final resolvedTotal = totalSteps ?? (isGuardian ? 12 : 11);
+
     return Scaffold(
       backgroundColor: AppColors.obsidianNight,
       body: SafeArea(
@@ -66,8 +75,8 @@ class OnboardingScaffold extends StatelessWidget {
                   // Progress bar fills remaining width
                   Expanded(
                     child: OnboardingProgressBar(
-                      currentStep: step,
-                      totalSteps:  totalSteps,
+                      currentStep: resolvedStep,
+                      totalSteps:  resolvedTotal,
                     ),
                   ),
                 ],

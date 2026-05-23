@@ -120,7 +120,6 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
       builder: (context, state) {
         final isLoading = state is OnboardingLoading;
         return OnboardingScaffold(
-          step:         4,
           ctaLabel:     'Continue',
           onCta:        _advance,
           isCtaEnabled: _canProceed,

@@ -255,7 +255,6 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       builder: (context, state) {
         final isLoading = state is OnboardingLoading;
         return OnboardingScaffold(
-          step:         8,
           ctaLabel:     'Continue',
           onCta:        _advance,
           isCtaEnabled: _hasPrimary && !_uploading,

@@ -40,6 +40,7 @@ class AuthAuthenticated extends AuthState {
     required this.onboardingStep,
     this.gender,
     this.countryCode,
+    this.isGuardianPath = false,
   });
 
   final String  userId;
@@ -50,11 +51,15 @@ class AuthAuthenticated extends AuthState {
   final String? gender;
   /// Country code for regional pricing (e.g., 'IN', 'US', 'AE')
   final String? countryCode;
+  /// Whether the user is on the guardian onboarding path.
+  /// Guardian path has 12 steps (0–11), myself path has 11 steps (0–10).
+  final bool isGuardianPath;
 
-  bool get isOnboardingComplete => onboardingStep >= 11;
+  /// Completion threshold: guardians complete at step 12, myself at 11.
+  bool get isOnboardingComplete => onboardingStep >= (isGuardianPath ? 12 : 11);
 
   @override
-  List<Object?> get props => [userId, onboardingStep, gender, countryCode];
+  List<Object?> get props => [userId, onboardingStep, gender, countryCode, isGuardianPath];
 }
 
 /// Session check found no active session.

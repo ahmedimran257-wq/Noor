@@ -160,13 +160,14 @@ class AuthCubit extends Cubit<AuthState> {
 
   /// Updates the cached onboarding step after each step is saved.
   /// Also propagates gender once the ProfileForWhom screen sets it.
-  void updateOnboardingStep(int step, {String? gender}) {
+  void updateOnboardingStep(int step, {String? gender, bool? isGuardianPath}) {
     final current = state;
     if (current is AuthAuthenticated) {
       emit(AuthAuthenticated(
         userId:         current.userId,
         onboardingStep: step,
         gender:         gender ?? current.gender,
+        isGuardianPath: isGuardianPath ?? current.isGuardianPath,
       ));
     }
   }
@@ -182,6 +183,7 @@ class AuthCubit extends Cubit<AuthState> {
         onboardingStep: current.onboardingStep,
         gender:         gender,
         countryCode:    current.countryCode,
+        isGuardianPath: current.isGuardianPath,
       ));
     }
   }
@@ -198,6 +200,7 @@ class AuthCubit extends Cubit<AuthState> {
         onboardingStep: current.onboardingStep,
         gender:         current.gender,
         countryCode:    countryCode,
+        isGuardianPath: current.isGuardianPath,
       ));
     }
   }

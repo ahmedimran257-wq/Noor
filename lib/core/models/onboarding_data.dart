@@ -135,6 +135,7 @@ class OnboardingData {
     this.profileCreatorRelation,
     this.guardianEmail,
     this.guardianAuthorityScope,  // 'full','advisory','limited'
+    this.guardianMode,            // 'passive','active'
 
     // Phase 1 additions
     this.isRevert,               // 'yes','no','prefer_not_to_say'
@@ -241,9 +242,10 @@ class OnboardingData {
   final bool    isGuardianMode;
   final String? guardianPhone;
   final String? guardianPhoneCountryCode;
-  final String? profileCreatorRelation; // 'self','parent','sibling','guardian'
+  final String? profileCreatorRelation; // 'self','son','daughter','brother','sister'
   final String? guardianEmail;
   final String? guardianAuthorityScope;
+  final String? guardianMode;            // 'passive' or 'active'
 
   // Phase 1 additions
   final String? isRevert;
@@ -328,6 +330,7 @@ class OnboardingData {
     String?     profileCreatorRelation,
     String?     guardianEmail,
     String?     guardianAuthorityScope,
+    String?     guardianMode,
     String?     isRevert,
     String?     polygamyStatus,
     String?     polygamyAcceptance,
@@ -410,6 +413,7 @@ class OnboardingData {
       profileCreatorRelation:   profileCreatorRelation   ?? this.profileCreatorRelation,
       guardianEmail:            guardianEmail            ?? this.guardianEmail,
       guardianAuthorityScope:   guardianAuthorityScope   ?? this.guardianAuthorityScope,
+      guardianMode:             guardianMode             ?? this.guardianMode,
       isRevert:                 isRevert                 ?? this.isRevert,
       polygamyStatus:           polygamyStatus           ?? this.polygamyStatus,
       polygamyAcceptance:       polygamyAcceptance       ?? this.polygamyAcceptance,

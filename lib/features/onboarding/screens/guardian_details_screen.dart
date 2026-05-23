@@ -2,11 +2,20 @@
 // ============================================================
 // NOOR — Guardian Details Screen (Onboarding Step 0.5)
 //
-// Shown when user selects "My son or daughter" in ProfileForWhomScreen.
-// Collects:
-//   1. Candidate gender (son / daughter)
-//   2. Guardian's own phone number + country code
-//   3. Relationship to candidate (Father / Mother / Brother / Sister / Other)
+// Shown when user selects Guardian → Son/Daughter/Brother/Sister
+// in ProfileForWhomScreen. The candidate's gender and the
+// guardian's relationship are ALREADY KNOWN from the previous
+// selection:
+//
+//   "Son"      → gender=male,   relation=parent
+//   "Daughter" → gender=female, relation=parent
+//   "Brother"  → gender=male,   relation=sibling
+//   "Sister"   → gender=female, relation=sibling
+//
+// This screen collects ONLY what we still need:
+//   1. Guardian's name
+//   2. Guardian's phone number (for verification)
+//   3. Guardian mode preference (passive / active)
 //
 // Blueprint (Part 4):
 //   "Guardian profiles are created by a wali or parent.
@@ -28,7 +37,7 @@ import '../../../core/utils/validation_snackbar.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
 
-// ── Country codes (shared, kept minimal here — full list in phone_verification)
+// ── Country codes ─────────────────────────────────────────────
 
 class _CC {
   const _CC(this.flag, this.name, this.dialCode);
@@ -66,12 +75,6 @@ const _kCodes = <_CC>[
   _CC('🇸🇬', 'Singapore',    '+65'),
 ];
 
-// ── Relationship options ──────────────────────────────────────
-
-const _kRelationships = <String>[
-  'Father', 'Mother', 'Brother', 'Sister', 'Other',
-];
-
 // ── Screen ────────────────────────────────────────────────────
 
 class GuardianDetailsScreen extends StatefulWidget {
@@ -82,31 +85,65 @@ class GuardianDetailsScreen extends StatefulWidget {
 }
 
 class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
-  // Candidate's gender — required
-  Gender? _candidateGender;
-
   // Guardian name
   final   _nameCtrl     = TextEditingController();
 
   // Guardian phone
-  _CC     _selectedCode = _kCodes.first;          // India by default
+  _CC     _selectedCode = _kCodes.first;
   final   _phoneCtrl    = TextEditingController();
 
-  // Relationship
-  String? _relationship;
+  // Guardian mode preference
+  String _guardianMode = 'passive';  // 'passive' or 'active'
+
+  // Derived from previous screen — NOT asked again
+  late Gender _candidateGender;
+  late String _guardianRelationship;
+  late String _candidateLabel;
 
   bool get _canProceed =>
-      _candidateGender != null &&
       _nameCtrl.text.trim().length >= 2 &&
-      _phoneCtrl.text.trim().length >= 7 &&
-      _relationship != null;
+      _phoneCtrl.text.trim().length >= 7;
+
+  @override
+  void initState() {
+    super.initState();
+    // Derive gender and relationship from profileCreatorRelation
+    // set on the previous screen (profile_for_whom_screen.dart)
+    final data = context.read<OnboardingCubit>().currentData;
+    final relation = data.profileCreatorRelation ?? 'son';
+
+    switch (relation) {
+      case 'son':
+        _candidateGender = Gender.male;
+        _guardianRelationship = 'parent';
+        _candidateLabel = 'son';
+        break;
+      case 'daughter':
+        _candidateGender = Gender.female;
+        _guardianRelationship = 'parent';
+        _candidateLabel = 'daughter';
+        break;
+      case 'brother':
+        _candidateGender = Gender.male;
+        _guardianRelationship = 'sibling';
+        _candidateLabel = 'brother';
+        break;
+      case 'sister':
+        _candidateGender = Gender.female;
+        _guardianRelationship = 'sibling';
+        _candidateLabel = 'sister';
+        break;
+      default:
+        _candidateGender = Gender.male;
+        _guardianRelationship = 'guardian';
+        _candidateLabel = 'ward';
+    }
+  }
 
   void _showValidation() {
     final missing = <String>[];
-    if (_candidateGender == null) missing.add('Candidate gender');
     if (_nameCtrl.text.trim().length < 2) missing.add('Your name');
     if (_phoneCtrl.text.trim().length < 7) missing.add('Phone number');
-    if (_relationship == null) missing.add('Relationship to candidate');
     showValidationSnackbar(context, missing);
   }
 
@@ -144,12 +181,13 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
     context.read<AuthCubit>().setGender(gender);
 
     final updated = context.read<OnboardingCubit>().currentData.copyWith(
-      gender:                  _candidateGender,
-      isGuardianMode:          true,
-      guardianName:            _nameCtrl.text.trim(),
-      guardianPhone:           guardianPhone,
+      gender:                   _candidateGender,
+      isGuardianMode:           true,
+      guardianName:             _nameCtrl.text.trim(),
+      guardianPhone:            guardianPhone,
       guardianPhoneCountryCode: _selectedCode.dialCode,
-      guardianRelationship:    _relationship,
+      guardianRelationship:     _guardianRelationship,
+      guardianMode:             _guardianMode,
     );
     context.read<OnboardingCubit>().saveAndAdvance(updated);
   }
@@ -160,8 +198,6 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
       builder: (context, state) {
         final isLoading = state is OnboardingLoading;
         return OnboardingScaffold(
-          step:         1,       // visual slot in progress bar (0.5 → 1)
-          totalSteps:   10,
           ctaLabel:     'Continue',
           onCta:        _advance,
           isCtaEnabled: _canProceed,
@@ -188,8 +224,8 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
                     const SizedBox(width: AppDimensions.space12),
                     Expanded(
                       child: Text(
-                        'As a guardian you are entrusted with this journey. '
-                        'All details will be shown as the candidate\'s profile.',
+                        'You are creating a profile for your $_candidateLabel. '
+                        'All profile details on the next screens will describe them, not you.',
                         style: AppTypography.caption.copyWith(height: 1.6),
                       ),
                     ),
@@ -200,67 +236,67 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
               const SizedBox(height: AppDimensions.space28),
 
               const StepHeader(
-                title:    'Guardian profile details',
-                subtitle: 'Tell us about the person you\'re registering for.',
+                title:    'Your guardian details',
+                subtitle: 'Tell us about yourself as the guardian.',
               ),
               const SizedBox(height: AppDimensions.space32),
 
-              // ── Candidate gender ────────────────────────────────
-              Text('PROFILE FOR A', style: AppTypography.sectionLabel),
+              // ── Candidate summary (read-only, derived) ──────────
+              Text('CREATING PROFILE FOR', style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _GenderCard(
-                      icon:       Icons.male_rounded,
-                      label:      'Son',
-                      subtitle:   'Creating a profile for your son',
-                      isSelected: _candidateGender == Gender.male,
-                      onTap:      () => setState(() => _candidateGender = Gender.male),
-                    ),
-                  ),
-                  const SizedBox(width: AppDimensions.space12),
-                  Expanded(
-                    child: _GenderCard(
-                      icon:       Icons.female_rounded,
-                      label:      'Daughter',
-                      subtitle:   'Creating a profile for your daughter',
-                      isSelected: _candidateGender == Gender.female,
-                      onTap:      () => setState(() => _candidateGender = Gender.female),
-                    ),
-                  ),
-                ],
-              ),
-
-              // Messaging note for daughters (women message free)
-              if (_candidateGender == Gender.female) ...[
-                const SizedBox(height: AppDimensions.space12),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppDimensions.space14,
-                    vertical:   AppDimensions.space10,
-                  ),
-                  decoration: BoxDecoration(
-                    color:        AppColors.verifiedTeal.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
-                    border:       Border.all(color: AppColors.verifiedTeal.withValues(alpha: 0.4)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.favorite_rounded,
-                          color: AppColors.verifiedTeal, size: 14),
-                      const SizedBox(width: AppDimensions.space8),
-                      Expanded(
-                        child: Text(
-                          'Women always message free on NOOR.',
-                          style: AppTypography.caption.copyWith(
-                              color: AppColors.verifiedTeal),
-                        ),
-                      ),
-                    ],
-                  ),
+              Container(
+                padding: const EdgeInsets.all(AppDimensions.space16),
+                decoration: BoxDecoration(
+                  color:        AppColors.surfaceGlass,
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                  border:       Border.all(color: AppColors.cardBorder),
                 ),
-              ],
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppColors.champagneGold.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        _candidateGender == Gender.male
+                            ? Icons.male_rounded
+                            : Icons.female_rounded,
+                        color: AppColors.champagneGold,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: AppDimensions.space14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'My ${_candidateLabel[0].toUpperCase()}${_candidateLabel.substring(1)}',
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: AppColors.champagneGold,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _candidateGender == Gender.male
+                                ? 'Male candidate'
+                                : 'Female candidate • Women message free',
+                            style: AppTypography.caption,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.check_circle_rounded,
+                      color: AppColors.verifiedTeal,
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ),
 
               const SizedBox(height: AppDimensions.space28),
 
@@ -268,7 +304,7 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
               Text('YOUR NAME', style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space8),
               Text(
-                'Your name as the guardian of this profile.',
+                'Your name as the guardian. This is shown to matches.',
                 style: AppTypography.caption,
               ),
               const SizedBox(height: AppDimensions.space12),
@@ -305,7 +341,7 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
               Text('YOUR PHONE NUMBER', style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space8),
               Text(
-                'We may contact you for candidate verification purposes.',
+                'For account verification. Not shown on the profile.',
                 style: AppTypography.caption,
               ),
               const SizedBox(height: AppDimensions.space12),
@@ -374,24 +410,34 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
 
               const SizedBox(height: AppDimensions.space28),
 
-              // ── Relationship ────────────────────────────────────
-              Text('YOUR RELATIONSHIP TO CANDIDATE',
-                  style: AppTypography.sectionLabel),
+              // ── Guardian mode ───────────────────────────────────
+              Text('GUARDIAN INVOLVEMENT', style: AppTypography.sectionLabel),
+              const SizedBox(height: AppDimensions.space8),
+              Text(
+                'How involved do you want to be in conversations?',
+                style: AppTypography.caption,
+              ),
               const SizedBox(height: AppDimensions.space12),
-              Wrap(
-                spacing:    AppDimensions.space8,
-                runSpacing: AppDimensions.space8,
-                children: _kRelationships
-                    .map((r) => _RelChip(
-                          label:      r,
-                          isSelected: _relationship == r,
-                          onTap: () =>
-                              setState(() => _relationship = r),
-                        ))
-                    .toList(),
+
+              _ModeCard(
+                icon:        Icons.visibility_outlined,
+                title:       'Observe only',
+                subtitle:    'See all chats in real-time, but only your '
+                             '$_candidateLabel can send messages.',
+                isSelected:  _guardianMode == 'passive',
+                onTap:       () => setState(() => _guardianMode = 'passive'),
+              ),
+              const SizedBox(height: AppDimensions.space10),
+              _ModeCard(
+                icon:        Icons.shield_outlined,
+                title:       'Active guardian',
+                subtitle:    'See chats, approve matches, and send messages '
+                             'on behalf of your $_candidateLabel.',
+                isSelected:  _guardianMode == 'active',
+                onTap:       () => setState(() => _guardianMode = 'active'),
               ),
 
-              const SizedBox(height: AppDimensions.space32),
+              const SizedBox(height: AppDimensions.space28),
 
               // ── Privacy note ────────────────────────────────────
               Container(
@@ -409,8 +455,9 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
                     const SizedBox(width: AppDimensions.space10),
                     Expanded(
                       child: Text(
-                        'Your guardian phone number is not shown on the public profile. '
-                        'It is only used for account verification.',
+                        'Your phone number is encrypted and never shown publicly. '
+                        'Potential matches will see "${_candidateLabel[0].toUpperCase()}'
+                        "${_candidateLabel.substring(1)}'s Guardian\" on the profile.",
                         style: AppTypography.caption.copyWith(height: 1.6),
                       ),
                     ),
@@ -427,20 +474,21 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
   }
 }
 
-// ── Gender Card ───────────────────────────────────────────────
+// ── Guardian Mode Card ────────────────────────────────────────
 
-class _GenderCard extends StatelessWidget {
-  const _GenderCard({
+class _ModeCard extends StatelessWidget {
+  const _ModeCard({
     required this.icon,
-    required this.label,
+    required this.title,
     required this.subtitle,
     required this.isSelected,
     required this.onTap,
   });
-  final IconData icon;
-  final String   label;
-  final String   subtitle;
-  final bool     isSelected;
+
+  final IconData     icon;
+  final String       title;
+  final String       subtitle;
+  final bool         isSelected;
   final VoidCallback onTap;
 
   @override
@@ -449,90 +497,83 @@ class _GenderCard extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: AppDimensions.durationTransition,
-        padding:  const EdgeInsets.all(AppDimensions.space16),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.all(AppDimensions.space16),
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.champagneGold.withValues(alpha: 0.08)
               : AppColors.surfaceGlass,
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
           border: Border.all(
-            color: isSelected ? AppColors.champagneGold : AppColors.cardBorder,
-            width: isSelected ? AppDimensions.borderFocus : AppDimensions.borderThin,
+            color: isSelected
+                ? AppColors.champagneGold
+                : AppColors.cardBorder,
+            width: isSelected
+                ? AppDimensions.borderFocus
+                : AppDimensions.borderThin,
           ),
         ),
-        child: Column(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width:  52,
-              height: 52,
+              width:  40,
+              height: 40,
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppColors.champagneGold.withValues(alpha: 0.15)
                     : AppColors.surfaceGlassHover,
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon,
+              child: Icon(
+                icon,
                 color: isSelected
                     ? AppColors.champagneGold
                     : AppColors.slateMist,
-                size: 26),
+                size: 20,
+              ),
             ),
-            const SizedBox(height: AppDimensions.space10),
-            Text(label,
-                style: AppTypography.bodyMedium.copyWith(
-                  color: isSelected
-                      ? AppColors.champagneGold
-                      : AppColors.pearlWhite,
-                )),
-            const SizedBox(height: AppDimensions.space4),
-            Text(
-              subtitle,
-              style: AppTypography.caption,
-              textAlign: TextAlign.center,
+            const SizedBox(width: AppDimensions.space14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: isSelected
+                          ? AppColors.champagneGold
+                          : AppColors.pearlWhite,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: AppTypography.caption.copyWith(height: 1.5),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppDimensions.space8),
+            AnimatedOpacity(
+              opacity:  isSelected ? 1.0 : 0.0,
+              duration: AppDimensions.durationTransition,
+              child: Container(
+                width:  22,
+                height: 22,
+                decoration: const BoxDecoration(
+                  color: AppColors.champagneGold,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_rounded,
+                  color: AppColors.obsidianNight,
+                  size:  14,
+                ),
+              ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-// ── Relationship chip ─────────────────────────────────────────
-
-class _RelChip extends StatelessWidget {
-  const _RelChip({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-  final String label;
-  final bool   isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: AppDimensions.durationTransition,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppDimensions.space16,
-          vertical:   AppDimensions.space10,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.champagneGold.withValues(alpha: 0.12)
-              : AppColors.surfaceGlass,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
-          border: Border.all(
-            color: isSelected ? AppColors.champagneGold : AppColors.cardBorder,
-            width: isSelected ? AppDimensions.borderFocus : AppDimensions.borderThin,
-          ),
-        ),
-        child: Text(label,
-            style: AppTypography.chipLabel.copyWith(
-              color: isSelected ? AppColors.champagneGold : AppColors.pearlWhite,
-            )),
       ),
     );
   }
