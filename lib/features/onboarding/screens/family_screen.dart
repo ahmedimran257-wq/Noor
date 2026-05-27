@@ -50,6 +50,22 @@ class _FamilyScreenState extends State<FamilyScreen> {
   String?        _polygamyStatus;    // Phase 1 — male optional
   String?        _polygamyAcceptance; // Phase 1 — female optional
 
+  @override
+  void initState() {
+    super.initState();
+    final data = context.read<OnboardingCubit>().currentData;
+    _familyType = data.familyType;
+    _siblings = data.siblingCount ?? 0;
+    _parentsStatus = data.parentsStatus;
+    _marital = data.maritalStatus ?? MaritalStatus.neverMarried;
+    _hasChildren = data.hasChildren;
+    _childrenCount = data.childrenCount ?? 0;
+    _livingExpectation = data.livingExpectation;
+    _willingToRelocate = data.willingToRelocate;
+    _polygamyStatus = data.polygamyStatus;
+    _polygamyAcceptance = data.polygamyAcceptance;
+  }
+
   Gender? get _gender =>
       context.read<OnboardingCubit>().currentData.gender;
 

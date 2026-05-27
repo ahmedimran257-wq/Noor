@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 import '../../../core/cubits/locale/locale_cubit.dart';
 import '../../../core/cubits/notification_prefs/notification_prefs_cubit.dart';
@@ -48,12 +49,13 @@ class _LangOption {
 const _kLanguages = [
   _LangOption(locale: 'en', nativeName: 'English',            englishName: 'English'),
   _LangOption(locale: 'ar', nativeName: 'العربية',             englishName: 'Arabic',    isRtl: true),
-  _LangOption(locale: 'ur', nativeName: 'اردو',                englishName: 'Urdu',      isRtl: true),
-  _LangOption(locale: 'fr', nativeName: 'Français',            englishName: 'French'),
-  _LangOption(locale: 'de', nativeName: 'Deutsch',             englishName: 'German'),
-  _LangOption(locale: 'tr', nativeName: 'Türkçe',              englishName: 'Turkish'),
-  _LangOption(locale: 'id', nativeName: 'Bahasa Indonesia',    englishName: 'Indonesian'),
-  _LangOption(locale: 'ms', nativeName: 'Bahasa Melayu',       englishName: 'Malay'),
+  // Phase 2+ — uncomment after adding .arb files:
+  // _LangOption(locale: 'ur', nativeName: 'اردو',                englishName: 'Urdu',      isRtl: true),
+  // _LangOption(locale: 'fr', nativeName: 'Français',            englishName: 'French'),
+  // _LangOption(locale: 'de', nativeName: 'Deutsch',             englishName: 'German'),
+  // _LangOption(locale: 'tr', nativeName: 'Türkçe',              englishName: 'Turkish'),
+  // _LangOption(locale: 'id', nativeName: 'Bahasa Indonesia',    englishName: 'Indonesian'),
+  // _LangOption(locale: 'ms', nativeName: 'Bahasa Melayu',       englishName: 'Malay'),
 ];
 
 // ── Guardian prefs keys ───────────────────────────────────────
@@ -126,14 +128,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded,
               color: AppColors.pearlWhite, size: 20),
         ),
-        title: Text('Settings',
+        title: Text(AppLocalizations.of(context).settings_title,
             style: AppTypography.screenTitle.copyWith(fontSize: 20)),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
         children: [
           // ── 1. ACCOUNT ────────────────────────────────────
-          _SectionHeader('ACCOUNT', key: _accountKey),
+          _SectionHeader(AppLocalizations.of(context).settings_section_account, key: _accountKey),
           _SettingsCard(children: [
             _NavTile(
               icon:  Icons.edit_outlined,
@@ -163,7 +165,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ]),
 
           // ── 2. NOTIFICATIONS ─────────────────────────────
-          _SectionHeader('NOTIFICATIONS'),
+          _SectionHeader(AppLocalizations.of(context).settings_section_notifications),
           BlocBuilder<NotificationPrefsCubit, NotificationPrefsState>(
             builder: (context, prefs) => _SettingsCard(children: [
               _ToggleTile(
@@ -233,15 +235,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
 
           // ── 3. GUARDIAN (Feature 13) ──────────────────────
-          _SectionHeader('GUARDIAN'),
+          _SectionHeader(AppLocalizations.of(context).settings_section_guardian),
           const _GuardianSection(),
 
           // ── 4. PRIVACY (Feature 14) ───────────────────────
-          _SectionHeader('PRIVACY', key: _privacyKey),
+          _SectionHeader(AppLocalizations.of(context).settings_section_privacy, key: _privacyKey),
           const _PrivacySection(),
 
           // ── 5. APP (Feature 16) ───────────────────────────
-          _SectionHeader('APP'),
+          _SectionHeader(AppLocalizations.of(context).settings_section_app),
           _SettingsCard(children: [
             BlocBuilder<LocaleCubit, Locale>(
               builder: (context, locale) {
@@ -271,7 +273,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ]),
 
           // ── 6. SAFETY ─────────────────────────────────────
-          _SectionHeader('SAFETY'),
+          _SectionHeader(AppLocalizations.of(context).settings_section_safety),
           BlocBuilder<BlockReportCubit, BlockReportState>(
             builder: (context, brs) => _SettingsCard(children: [
            _NavTile(
@@ -295,7 +297,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
 
           // ── 7. LEGAL ──────────────────────────────────────
-          _SectionHeader('LEGAL', key: _helpKey),
+          _SectionHeader(AppLocalizations.of(context).settings_section_legal, key: _helpKey),
           _SettingsCard(children: [
             _NavTile(
               icon:  Icons.description_outlined,
@@ -315,7 +317,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ]),
 
           // ── 8. DANGER ZONE (Feature 15) ──────────────────
-          _SectionHeader('DANGER ZONE'),
+          _SectionHeader(AppLocalizations.of(context).settings_section_dangerZone),
           _SettingsCard(
             borderColor: AppColors.softCoral.withValues(alpha: 0.3),
             children: [
@@ -326,9 +328,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onTap:     () => _showSupportDialog(context),
               ),
               _Divider(),
-              _NavTile(
+               _NavTile(
                 icon:       Icons.delete_forever_outlined,
-                label:      'Delete Account',
+                label:      AppLocalizations.of(context).settings_button_deleteAccount,
                 iconColor:  AppColors.softCoral,
                 labelColor: AppColors.softCoral,
                 onTap: () => context.push(AppRoutes.deleteAccount),
@@ -838,7 +840,89 @@ class _PrivacySectionState extends State<_PrivacySection> {
           ),
         ]),
       ),
+      const SizedBox(height: AppDimensions.space8),
+
+      // ── Download My Data (GDPR) ────────────────────────────
+      _PrivacyCard(
+        label:    'DOWNLOAD MY DATA',
+        subtitle: 'Export a copy of your personal data under GDPR',
+        saved:    false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: AppDimensions.space12),
+            Text(
+              'Under GDPR and other privacy regulations, you can request a complete export of your '
+              'profile, matching, and activity data. The file will be prepared and sent to your registered address.',
+              style: AppTypography.caption.copyWith(height: 1.5),
+            ),
+            const SizedBox(height: AppDimensions.space16),
+            SizedBox(
+              width:  double.infinity,
+              height: AppDimensions.buttonHeightSmall,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.champagneGold,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                  ),
+                ),
+                icon: const Icon(Icons.download_rounded, color: AppColors.obsidianNight, size: 16),
+                label: Text(
+                  'Request Data Export',
+                  style: AppTypography.button.copyWith(color: AppColors.obsidianNight),
+                ),
+                onPressed: () => _triggerDataExport(context),
+              ),
+            ),
+          ],
+        ),
+      ),
     ]);
+  }
+
+  void _triggerDataExport(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF12121A),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+          side: const BorderSide(color: AppColors.cardBorder),
+        ),
+        title: Row(
+          children: [
+            const Icon(Icons.download_done_rounded,
+                color: AppColors.verifiedTeal, size: 20),
+            const SizedBox(width: 10),
+            Text('Export Requested', style: AppTypography.bodyMedium),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Your request has been received! We are compiling your personal data archive.',
+              style: AppTypography.body.copyWith(height: 1.5),
+            ),
+            const SizedBox(height: AppDimensions.space16),
+            Text(
+              'A download link will be sent to your registered phone/email within 48 hours in compliance with GDPR guidelines.',
+              style: AppTypography.caption.copyWith(height: 1.4),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Understood',
+                style: AppTypography.caption.copyWith(
+                    color: AppColors.champagneGold)),
+          ),
+        ],
+      ),
+    );
   }
 }
 

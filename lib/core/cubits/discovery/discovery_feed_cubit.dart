@@ -19,6 +19,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../mock/mock_profiles.dart';
+import '../../services/supabase_service.dart';
 import '../block_report/block_report_cubit.dart';
 import 'discovery_feed_state.dart';
 
@@ -33,14 +34,59 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   static const _kViewCountKey    = 'discovery_views_today';
   static const _kViewResetKey    = 'discovery_views_reset_date';
 
-  // Extended mock pool (5 rotations for infinite-scroll demo)
-  static final List<MockProfile> _pool = [
-    ...kMockProfiles,
-    ...kMockProfiles.reversed,
-    ...kMockProfiles,
-    ...kMockProfiles.reversed,
-    ...kMockProfiles,
-  ];
+  // Extended mock pool with UNIQUE IDs for each rotation (Fixed Flaw 19)
+  static final List<MockProfile> _pool = _generateUniquePool();
+
+  static List<MockProfile> _generateUniquePool() {
+    final list = <MockProfile>[];
+    for (int rotation = 0; rotation < 5; rotation++) {
+      final baseList = rotation.isEven ? kMockProfiles : kMockProfiles.reversed.toList();
+      for (final p in baseList) {
+        if (rotation == 0) {
+          list.add(p);
+        } else {
+          list.add(MockProfile(
+            firstName: p.firstName,
+            lastNameInitial: '${p.lastNameInitial}_$rotation',
+            age: p.age,
+            cityName: p.cityName,
+            sect: p.sect,
+            deenLevel: p.deenLevel,
+            photoUrl: p.photoUrl,
+            photoCount: p.photoCount,
+            isPhotoPrivate: p.isPhotoPrivate,
+            isVerified: p.isVerified,
+            occupation: p.occupation,
+            education: p.education,
+            bio: p.bio,
+            languages: p.languages,
+            maritalStatus: p.maritalStatus,
+            familyType: p.familyType,
+            interests: p.interests,
+            partnerAgeMin: p.partnerAgeMin,
+            partnerAgeMax: p.partnerAgeMax,
+            heightCm: p.heightCm,
+            complexion: p.complexion,
+            motherTongue: p.motherTongue,
+            smokingHabit: p.smokingHabit,
+            vapingHabit: p.vapingHabit,
+            hookahHabit: p.hookahHabit,
+            community: p.community,
+            dietType: p.dietType,
+            livingExpectation: p.livingExpectation,
+            quranMemorization: p.quranMemorization,
+            religiousEducation: p.religiousEducation,
+            marriageTimeline: p.marriageTimeline,
+            willingToRelocate: p.willingToRelocate,
+            gender: p.gender,
+            hasChildren: p.hasChildren,
+            lastActiveAt: p.lastActiveAt,
+          ));
+        }
+      }
+    }
+    return list;
+  }
 
   int _cursor = 0;
 
@@ -62,7 +108,8 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     await Future.delayed(const Duration(milliseconds: 1200));
 
     _cursor = 0;
-    final filtered = _applyFilter(_pool, filter);
+    final activePool = await _getPool();
+    final filtered = _applyFilter(activePool, filter);
     final batch    = _nextBatch(filtered, offset: 0);
 
     if (!isClosed) {
@@ -84,7 +131,8 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     emit(state.copyWith(status: FeedStatus.loadingMore));
     await Future.delayed(const Duration(milliseconds: 1400));
 
-    final filtered = _applyFilter(_pool, state.activeFilter);
+    final activePool = await _getPool();
+    final filtered = _applyFilter(activePool, state.activeFilter);
     final batch    = _nextBatch(filtered, offset: state.profiles.length);
 
     if (!isClosed) {
@@ -106,7 +154,8 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     await Future.delayed(const Duration(milliseconds: 800));
 
     _cursor = 0;
-    final filtered = _applyFilter(_pool, filter);
+    final activePool = await _getPool();
+    final filtered = _applyFilter(activePool, filter);
     final batch    = _nextBatch(filtered, offset: 0);
 
     if (!isClosed) {
@@ -296,5 +345,73 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     }
     _cursor = end;
     return list;
+  }
+
+  /// Fetches candidates pool. In real mode (Supabase configured), loads from
+  /// the materialized view `discovery_pool` and maps to MockProfile instances (Flaw 14).
+  /// Falls back to local unique mock pool when in mock mode.
+  Future<List<MockProfile>> _getPool() async {
+    if (SupabaseService.isInitialized) {
+      try {
+        final currentUserId = SupabaseService.currentUserId;
+        if (currentUserId != null) {
+          final response = await SupabaseService.client
+              .from('discovery_pool')
+              .select()
+              .neq('user_id', currentUserId);
+          
+          if (response != null) {
+            final list = response as List<dynamic>;
+            return list.map((row) => _mapDbToMockProfile(row as Map<String, dynamic>)).toList();
+          }
+        }
+      } catch (e) {
+        debugPrint('DiscoveryFeedCubit: Error fetching from Supabase, falling back to mock: $e');
+      }
+    }
+    return _pool;
+  }
+
+  static MockProfile _mapDbToMockProfile(Map<String, dynamic> row) {
+    final gender = row['gender'] as String?;
+    final photoUrl = row['photo_url'] as String?;
+    final photoCount = (row['photo_count'] as num?)?.toInt() ?? 0;
+    final photoPrivacy = row['photo_privacy'] as String?;
+
+    return MockProfile(
+      firstName: (row['first_name'] as String?) ?? 'Noor User',
+      lastNameInitial: (row['last_name_initial'] as String?) ?? '',
+      age: (row['age'] as num?)?.toInt() ?? 25,
+      cityName: (row['city_name'] as String?) ?? 'Unknown',
+      sect: (row['sect'] as String?)?.toUpperCase() ?? 'SUNNI',
+      deenLevel: (row['deen_level'] as String?) ?? 'moderate',
+      photoUrl: photoUrl,
+      photoCount: photoCount,
+      isPhotoPrivate: photoPrivacy == 'mutual_only',
+      isVerified: (row['is_verified'] as bool?) ?? false,
+      occupation: (row['profession'] as String?) ?? 'Professional',
+      education: (row['education_level'] as String?) ?? 'Graduate',
+      bio: (row['bio'] as String?) ?? '',
+      languages: row['languages'] != null ? List<String>.from(row['languages'] as Iterable) : null,
+      maritalStatus: (row['previously_married'] as String?) == 'no' ? 'Never Married' : ((row['previously_married'] as String?) ?? 'Never Married'),
+      familyType: (row['family_type'] as String?) ?? 'Nuclear',
+      interests: row['interests'] != null ? List<String>.from(row['interests'] as Iterable) : null,
+      partnerAgeMin: (row['preferred_age_min'] as num?)?.toInt(),
+      partnerAgeMax: (row['preferred_age_max'] as num?)?.toInt(),
+      heightCm: (row['height_cm'] as num?)?.toInt(),
+      complexion: (row['complexion'] as String?),
+      motherTongue: (row['mother_tongue'] as String?),
+      smokingHabit: (row['smoking_habit'] as String?),
+      community: (row['community'] as String?),
+      dietType: (row['diet_type'] as String?),
+      livingExpectation: (row['living_expectation'] as String?),
+      quranMemorization: (row['quran_memorization'] as String?),
+      religiousEducation: (row['religious_education'] as String?),
+      marriageTimeline: (row['marriage_timeline'] as String?),
+      willingToRelocate: (row['willing_to_relocate'] as String?),
+      gender: gender,
+      hasChildren: (row['children_count'] as int? ?? 0) > 0,
+      lastActiveAt: row['last_active_at'] != null ? DateTime.tryParse(row['last_active_at'] as String) : null,
+    );
   }
 }

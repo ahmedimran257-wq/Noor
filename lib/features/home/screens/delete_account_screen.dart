@@ -14,6 +14,7 @@ import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 class DeleteAccountScreen extends StatefulWidget {
   const DeleteAccountScreen({super.key});
@@ -91,7 +92,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
           ),
         ),
         title: Text(
-          'Delete Account',
+          AppLocalizations.of(context).deleteAccount_title,
           style: AppTypography.screenTitle.copyWith(
               fontSize: 20, color: AppColors.softCoral),
         ),

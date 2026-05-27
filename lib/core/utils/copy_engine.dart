@@ -12,13 +12,16 @@
 class CopyEngine {
   CopyEngine._();
 
+  /// Resolves creator relation default and handles backend mapping.
+  // TODO (backend): wire to profileCreatorRelation from Supabase profiles table.
+  static String _getRelation(String? creatorRelation) => creatorRelation ?? 'self';
+
   // ── Islamic practice questions ──────────────────────────────
 
   /// Returns the correct hijab / dress question for the screen context.
-  // TODO (backend): wire to profileCreatorRelation from Supabase profiles table.
   static String hijabQuestion(String? creatorRelation, String? gender) {
     if (gender == 'male') return 'Does he observe Islamic dress / beard?';
-    switch (creatorRelation) {
+    switch (_getRelation(creatorRelation)) {
       case 'parent':
         return 'Does your daughter observe hijab?';
       case 'sibling':
@@ -31,9 +34,8 @@ class CopyEngine {
   }
 
   /// Returns the correct beard question for the screen context.
-  // TODO (backend): wire to profileCreatorRelation from Supabase profiles table.
   static String beardQuestion(String? creatorRelation) {
-    switch (creatorRelation) {
+    switch (_getRelation(creatorRelation)) {
       case 'parent':
         return 'Does your son have a beard?';
       case 'sibling':
@@ -46,9 +48,8 @@ class CopyEngine {
   }
 
   /// Returns the correct five-times prayer question for the screen context.
-  // TODO (backend): wire to profileCreatorRelation from Supabase profiles table.
   static String prayerQuestion(String? creatorRelation) {
-    switch (creatorRelation) {
+    switch (_getRelation(creatorRelation)) {
       case 'parent':
       case 'guardian':
         return 'Does your child pray five times daily?';
@@ -62,9 +63,8 @@ class CopyEngine {
   // ── Bio prompts ─────────────────────────────────────────────
 
   /// Returns the correct bio prompt for the screen context.
-  // TODO (backend): wire to profileCreatorRelation from Supabase profiles table.
   static String bioPrompt(String? creatorRelation) {
-    switch (creatorRelation) {
+    switch (_getRelation(creatorRelation)) {
       case 'parent':
         return 'Describe your child with honesty and dignity.';
       case 'sibling':
@@ -79,9 +79,8 @@ class CopyEngine {
   // ── Identity labels ─────────────────────────────────────────
 
   /// Returns the correct community / biradari field label.
-  // TODO (backend): wire to profileCreatorRelation from Supabase profiles table.
   static String communityQuestion(String? creatorRelation) {
-    switch (creatorRelation) {
+    switch (_getRelation(creatorRelation)) {
       case 'parent':
       case 'guardian':
         return 'Their community / biradari';

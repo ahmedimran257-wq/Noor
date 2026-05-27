@@ -66,5 +66,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>NOOR requires camera access to let you capture a verification selfie and upload profile photos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>NOOR requires access to your photo library to let you choose and upload profile photos.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>NOOR requires Face ID permission to securely authenticate and protect your private account data.</string>
 </dict>
 </plist>

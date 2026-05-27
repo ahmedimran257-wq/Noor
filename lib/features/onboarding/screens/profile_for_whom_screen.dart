@@ -44,6 +44,17 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
       parent: _expandCtrl,
       curve: Curves.easeOutCubic,
     );
+
+    final data = context.read<OnboardingCubit>().currentData;
+    if (data.profileFor != null) {
+      _selectedCategory = data.profileFor == ProfileFor.myself ? 'self' : 'guardian';
+    }
+    if (data.profileCreatorRelation != null && data.profileCreatorRelation != 'self') {
+      _selectedRelation = data.profileCreatorRelation;
+    }
+    if (_selectedCategory == 'guardian') {
+      _expandCtrl.value = 1.0;
+    }
   }
 
   @override

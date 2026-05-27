@@ -50,6 +50,22 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
   bool                _openToWidowed    = false;
   bool                _openToChildren   = false;
   String              _preferredLiving  = 'no_preference'; // Phase 2
+
+  @override
+  void initState() {
+    super.initState();
+    final data = context.read<OnboardingCubit>().currentData;
+    _ageMin = data.preferredAgeMin?.toDouble() ?? 22;
+    _ageMax = data.preferredAgeMax?.toDouble() ?? 32;
+    _location = data.locationPreference ?? LocationPreference.sameCountry;
+    _prefSect = data.preferredSect;
+    _prefDeen = data.preferredDeenLevel;
+    _minEduRank = data.minEducationRank;
+    _openToDivorced = data.openToDivorced ?? false;
+    _openToWidowed = data.openToWidowed ?? false;
+    _openToChildren = data.openToWithChildren ?? false;
+    _preferredLiving = data.preferredLivingExpectation ?? 'no_preference';
+  }
   // _preferredMarriageTimeline removed — collected in Marriage & Deen Details screen
 
   static const _sectOptions = ['Any', 'Sunni', 'Shia', 'Same as mine'];

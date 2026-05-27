@@ -15,7 +15,7 @@ class ContentFilter {
 
   // ── Patterns ──────────────────────────────────────────────
 
-  static final _phone = RegExp(r'(\+?\d[\d\s\-]{7,}\d)');
+  static final _phone = RegExp(r'(\+?\d[\d\s\-\.]{6,}\d)');
   static final _email = RegExp(r'[\w.+-]+@[\w-]+\.[\w.]+');
   static final _url = RegExp(r'(https?://|www\.)\S+');
   static final _social = RegExp(

@@ -120,23 +120,36 @@ class ProfileWriteService {
 
     // Guardian details (only on guardian path, step 1)
     if (isGuardianPath && step == 1) {
+      // Map 'parent' / 'sibling' / 'guardian' relation to accepted DB constraint ('other' if parent/sibling)
+      String? dbRelation = 'other';
+      if (data.guardianRelationship == 'guardian') {
+        dbRelation = 'other';
+      }
+
       return _compactMap({
         'guardian_name': data.guardianName,
-        'guardian_relationship': data.guardianRelationship,
+        'guardian_relationship': dbRelation,
         'guardian_email': data.guardianEmail,
         'guardian_authority_scope': data.guardianAuthorityScope,
         'guardian_phone_country_code': data.guardianPhoneCountryCode,
         'guardian_mode': data.guardianMode ?? 'passive',
-        'profile_creator_relation': data.profileCreatorRelation,
+        'profile_creator_relation': data.profileCreatorRelation == 'son' || data.profileCreatorRelation == 'daughter'
+            ? 'parent'
+            : (data.profileCreatorRelation == 'brother' || data.profileCreatorRelation == 'sister' ? 'sibling' : data.profileCreatorRelation),
       });
     }
 
     switch (effectiveStep) {
       // Step 0 — ProfileForWhom (no DB fields, just local state)
       case 0:
+        final relation = data.profileCreatorRelation ??
+              (data.profileFor == ProfileFor.myself ? 'self' : 'guardian');
+        final dbRelation = relation == 'son' || relation == 'daughter'
+            ? 'parent'
+            : (relation == 'brother' || relation == 'sister' ? 'sibling' : relation);
+
         return _compactMap({
-          'profile_creator_relation': data.profileCreatorRelation ??
-              (data.profileFor == ProfileFor.myself ? 'self' : 'guardian'),
+          'profile_creator_relation': dbRelation,
         });
 
       // Step 1 — Basic Identity
@@ -153,6 +166,7 @@ class ProfileWriteService {
           'mother_tongue': data.motherTongue,
           'community': data.community,
           'residency_status': data.residencyStatus,
+          'special_needs': data.specialNeeds, // Fixed Flaw 22: Written in step 1
         });
 
       // Step 2 — Islamic Identity
@@ -209,6 +223,8 @@ class ProfileWriteService {
           'field_of_study': data.fieldOfStudy,
           'profession': data.profession,
           'employment_status': _employmentStatusToString(data.employmentStatus),
+          'income_bracket': data.incomeBracketId, // Fixed Flaw 16: Persisted
+          'income_visibility': data.incomeVisibility, // Fixed Flaw 16: Persisted
         });
 
       // Step 5 — Family
@@ -221,7 +237,7 @@ class ProfileWriteService {
           'previously_married': data.previouslyMarried,
           'children_count': data.childrenCount,
           'living_expectation': data.livingExpectation,
-          'special_needs': data.specialNeeds,
+          // Fixed Flaw 22: 'special_needs' removed here since it is in step 1
         });
 
       // Step 6 — About Yourself
@@ -276,7 +292,241 @@ class ProfileWriteService {
       'open_to_has_children': data.openToWithChildren,
       'preferred_living_expectation': data.preferredLivingExpectation,
       'diaspora_mode': data.locationPreference == LocationPreference.diaspora,
+      'location_preference': data.locationPreference?.name, // Fixed Flaw 21: Persist LocationPreference name
     });
+  }
+
+  /// Loads profile data from Supabase for the current user to restore onboarding state.
+  static Future<OnboardingData?> loadProfile() async {
+    if (!_canWrite || _userId == null) return null;
+
+    try {
+      // 1. Fetch profiles table row
+      final profileRes = await SupabaseService.client
+          .from('profiles')
+          .select()
+          .eq('user_id', _userId!)
+          .maybeSingle();
+
+      if (profileRes == null) return null;
+
+      // 2. Fetch profile_preferences table row if it exists
+      Map<String, dynamic>? prefRes;
+      try {
+        prefRes = await SupabaseService.client
+            .from('profile_preferences')
+            .select()
+            .eq('profile_id', profileRes['id'])
+            .maybeSingle();
+      } catch (e) {
+        debugPrint('ProfileWriteService: Preferences row not found or error: $e');
+      }
+
+      // 3. Construct and return OnboardingData
+      return _mapDbToOnboardingData(profileRes, prefRes);
+    } catch (e) {
+      debugPrint('ProfileWriteService: Error loading profile: $e');
+      return null;
+    }
+  }
+
+  static OnboardingData _mapDbToOnboardingData(
+    Map<String, dynamic> p,
+    Map<String, dynamic>? pr,
+  ) {
+    final creatorRel = p['profile_creator_relation'] as String?;
+    final guardianMode = p['guardian_mode'] as String?;
+    final isGuardian = creatorRel != 'self' && (guardianMode != null && guardianMode != 'none');
+
+    // Parse date of birth
+    DateTime? dob;
+    if (p['date_of_birth'] != null) {
+      dob = DateTime.tryParse(p['date_of_birth'] as String);
+    }
+
+    // Parse gender
+    Gender? gender;
+    if (p['gender'] != null) {
+      gender = p['gender'] == 'female' ? Gender.female : Gender.male;
+    }
+
+    // Parse complexion
+    String? complexionVal = p['complexion'] as String?;
+    String? complexion;
+    if (complexionVal != null) {
+      switch (complexionVal) {
+        case 'fair': complexion = 'Fair'; break;
+        case 'medium': complexion = 'Medium'; break;
+        case 'olive': complexion = 'Olive'; break;
+        case 'dark': complexion = 'Dark'; break;
+        case 'prefer_not_to_say': complexion = 'Prefer not to say'; break;
+        default: complexion = complexionVal;
+      }
+    }
+
+    // Parse sect
+    Sect? sect;
+    if (p['sect'] != null) {
+      switch (p['sect'] as String) {
+        case 'sunni': sect = Sect.sunni; break;
+        case 'shia': sect = Sect.shia; break;
+        case 'prefer_not_to_say': sect = Sect.preferNotToSay; break;
+        case 'other': sect = Sect.other; break;
+      }
+    }
+
+    // Parse deenLevel
+    DeenLevel? deen;
+    if (p['deen_level'] != null) {
+      switch (p['deen_level'] as String) {
+        case 'practicing': deen = DeenLevel.practicing; break;
+        case 'moderate': deen = DeenLevel.moderate; break;
+        case 'cultural': deen = DeenLevel.cultural; break;
+      }
+    }
+
+    // Parse employmentStatus
+    EmploymentStatus? empStatus;
+    if (p['employment_status'] != null) {
+      switch (p['employment_status'] as String) {
+        case 'employed': empStatus = EmploymentStatus.employed; break;
+        case 'self_employed': empStatus = EmploymentStatus.selfEmployed; break;
+        case 'student': empStatus = EmploymentStatus.student; break;
+        case 'not_working': empStatus = EmploymentStatus.notWorking; break;
+      }
+    }
+
+    // Parse familyType
+    FamilyType? famType;
+    if (p['family_type'] != null) {
+      switch (p['family_type'] as String) {
+        case 'nuclear': famType = FamilyType.nuclear; break;
+        case 'joint': famType = FamilyType.joint; break;
+        case 'extended': famType = FamilyType.extended; break;
+      }
+    }
+
+    // Parse maritalStatus
+    MaritalStatus? marStatus;
+    final previouslyMarried = p['previously_married'] as String?;
+    if (previouslyMarried != null) {
+      switch (previouslyMarried) {
+        case 'no': marStatus = MaritalStatus.neverMarried; break;
+        case 'divorced': marStatus = MaritalStatus.divorced; break;
+        case 'widowed': marStatus = MaritalStatus.widowed; break;
+      }
+    }
+
+    // Parse LocationPreference
+    LocationPreference? locPref;
+    if (pr != null) {
+      final locPrefStr = pr['location_preference'] as String?;
+      if (locPrefStr != null) {
+        try {
+          locPref = LocationPreference.values.byName(locPrefStr);
+        } catch (_) {}
+      }
+      if (locPref == null) {
+        final diaspora = pr['diaspora_mode'] as bool? ?? false;
+        if (diaspora) {
+          locPref = LocationPreference.diaspora;
+        }
+      }
+    }
+
+    // Map profile_creator_relation back
+    String? profileCreatorRelation = creatorRel;
+    String? guardianRelationship;
+    if (isGuardian) {
+      if (creatorRel == 'parent') {
+        profileCreatorRelation = gender == Gender.female ? 'daughter' : 'son';
+        guardianRelationship = 'parent';
+      } else if (creatorRel == 'sibling') {
+        profileCreatorRelation = gender == Gender.female ? 'sister' : 'brother';
+        guardianRelationship = 'sibling';
+      } else if (creatorRel == 'guardian') {
+        profileCreatorRelation = 'guardian';
+        guardianRelationship = 'guardian';
+      }
+    }
+
+    return OnboardingData(
+      profileFor: isGuardian ? ProfileFor.guardian : ProfileFor.myself,
+      firstName: p['first_name'] as String?,
+      lastName: p['last_name'] as String?,
+      dateOfBirth: dob,
+      gender: gender,
+      cityId: p['city_id'] as String?,
+      cityName: null, // Resolves locally in BasicIdentityScreen via _kCities
+      countryCode: p['country_code'] as String?,
+      heightCm: p['height_cm'] as int?,
+      complexion: complexion,
+      motherTongue: p['mother_tongue'] as String?,
+      community: p['community'] as String?,
+      residencyStatus: p['residency_status'] as String?,
+      sect: sect,
+      subSect: p['sub_sect'] as String?,
+      deenLevel: deen,
+      praysFiveDaily: p['prays_five_daily'] as bool?,
+      hijabStyle: p['hijab'] as String?,
+      beardStyle: p['beard'] as String?,
+      dietType: p['diet_type'] as String?,
+      smokingHabit: p['smoking_habit'] as String?,
+      vapingHabit: p['vaping_habit'] as String?,
+      hookahHabit: p['hookah_habit'] as String?,
+      educationRank: p['education_rank'] as int?,
+      educationLabel: p['education_level'] as String?,
+      fieldOfStudy: p['field_of_study'] as String?,
+      profession: p['profession'] as String?,
+      employmentStatus: empStatus,
+      incomeBracketId: p['income_bracket'] as int?,
+      incomeVisibility: p['income_visibility'] as String?,
+      familyType: famType,
+      siblingCount: p['sibling_count'] as int?,
+      isEldestChild: p['is_eldest_child'] as bool?,
+      parentsStatus: p['parents_status'] as String?,
+      maritalStatus: marStatus,
+      hasChildren: (p['children_count'] as int? ?? 0) > 0,
+      childrenCount: p['children_count'] as int?,
+      livingExpectation: p['living_expectation'] as String?,
+      bio: p['bio'] as String?,
+      interests: p['interests'] != null ? List<String>.from(p['interests'] as Iterable) : null,
+      languages: p['languages'] != null ? List<String>.from(p['languages'] as Iterable) : null,
+      preferredAgeMin: pr?['preferred_age_min'] as int?,
+      preferredAgeMax: pr?['preferred_age_max'] as int?,
+      locationPreference: locPref,
+      preferredSect: pr?['sect_preference'] as String?,
+      preferredDeenLevel: pr?['deen_preference'] as String?,
+      minEducationRank: pr?['min_education_rank'] as int?,
+      openToDivorced: pr?['open_to_divorced'] as bool?,
+      openToWidowed: pr?['open_to_widowed'] as bool?,
+      openToWithChildren: pr?['open_to_has_children'] as bool?,
+      preferredLivingExpectation: pr?['preferred_living_expectation'] as String?,
+      photoPrivacy: p['photo_privacy'] == 'mutual_only' ? PhotoPrivacy.mutualOnly : PhotoPrivacy.publicAll,
+      quranMemorization: p['quran_memorization'] as String?,
+      religiousEducation: p['religious_education'] as String?,
+      marriageTimeline: p['marriage_timeline'] as String?,
+      willingToRelocate: p['willing_to_relocate'] as String?,
+      niqabPreference: p['niqab_preference'] as String?,
+      mahrExpectation: p['mahr_expectation'] as String?,
+      willingToWorkAfterMarriage: p['willing_to_work_after_marriage'] as bool?,
+      mahrBudget: p['mahr_budget'] as String?,
+      canProvideHousing: p['can_provide_housing'] as bool?,
+      canProvideMaintenance: p['can_provide_maintenance'] as bool?,
+      debtStatus: p['debt_status'] as String?,
+      religiousLeadership: p['religious_leadership'] as String?,
+      guardianName: p['guardian_name'] as String?,
+      guardianRelationship: guardianRelationship,
+      guardianPhoneCountryCode: p['guardian_phone_country_code'] as String?,
+      profileCreatorRelation: profileCreatorRelation,
+      guardianEmail: p['guardian_email'] as String?,
+      guardianAuthorityScope: p['guardian_authority_scope'] as String?,
+      guardianMode: guardianMode,
+      isRevert: p['is_revert'] as String?,
+      polygamyStatus: p['polygamy_status'] as String?,
+      polygamyAcceptance: p['polygamy_acceptance'] as String?,
+      specialNeeds: p['special_needs'] as String?,
+    );
   }
 
   // ── Enum → String converters ──────────────────────────────

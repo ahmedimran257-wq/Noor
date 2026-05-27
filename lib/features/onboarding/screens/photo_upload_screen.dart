@@ -80,8 +80,41 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
   final List<Uint8List?> _bytes     = [null, null, null, null];
   // Face detection result per slot
   final List<_FaceResult?> _faces   = [null, null, null, null];
+  // Temp file paths for each slot
+  final List<String?> _paths        = [null, null, null, null];
   bool _uploading = false;
   PhotoPrivacy _privacy = PhotoPrivacy.publicAll;
+
+  @override
+  void initState() {
+    super.initState();
+    final data = context.read<OnboardingCubit>().currentData;
+    _privacy = data.photoPrivacy ?? PhotoPrivacy.publicAll;
+    if (data.photoLocalPaths != null) {
+      for (final path in data.photoLocalPaths!) {
+        final file = File(path);
+        if (file.existsSync()) {
+          final fileName = file.path.split('/').last.split('\\').last;
+          final match = RegExp(r'noor_photo_slot_(\d+)').firstMatch(fileName);
+          if (match != null) {
+            final idx = int.parse(match.group(1)!);
+            if (idx >= 0 && idx < 4) {
+              final bytes = file.readAsBytesSync();
+              _bytes[idx] = bytes;
+              _paths[idx] = path;
+              _detectFace(bytes).then((face) {
+                if (mounted) {
+                  setState(() {
+                    _faces[idx] = face;
+                  });
+                }
+              });
+            }
+          }
+        }
+      }
+    }
+  }
 
   bool get _hasPrimary => _bytes[0] != null;
   Gender? get _gender =>
@@ -151,6 +184,11 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
   }
 
   Future<void> _setSlot(int index, Uint8List bytes) async {
+    final tempDir = await getTemporaryDirectory();
+    final file = File('${tempDir.path}/noor_photo_slot_$index.webp');
+    await file.writeAsBytes(bytes);
+    _paths[index] = file.path;
+
     // Show loading while face detection runs
     setState(() {
       _bytes[index] = bytes;
@@ -230,17 +268,25 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
   }
 
   void _removePhoto(int index) {
+    if (_paths[index] != null) {
+      final file = File(_paths[index]!);
+      if (file.existsSync()) {
+        try {
+          file.deleteSync();
+        } catch (_) {}
+      }
+    }
     setState(() {
       _bytes[index] = null;
       _faces[index] = null;
+      _paths[index] = null;
     });
   }
 
   void _advance() {
-    // Store non-null paths as their index strings (mock path list)
     final paths = <String>[];
     for (int i = 0; i < 4; i++) {
-      if (_bytes[i] != null) paths.add('local://slot_$i');
+      if (_paths[i] != null) paths.add(_paths[i]!);
     }
     final data = context.read<OnboardingCubit>().currentData.copyWith(
       photoLocalPaths: paths,
@@ -260,7 +306,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         return OnboardingScaffold(
           ctaLabel:     'Continue',
           onCta:        _advance,
-          isCtaEnabled: _hasPrimary && !_uploading,
+          isCtaEnabled: _hasPrimary && !_uploading && _faces[0] == _FaceResult.found,
           isCtaLoading: isLoading,
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -333,6 +379,18 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
                 children: const [
                   Expanded(child: Center(
                     child: _SlotLabel('Primary photo', isRequired: true),
+                  )),
+                  SizedBox(width: AppDimensions.space12),
+                  Expanded(child: Center(
+                    child: _SlotLabel('Photo 2', isRequired: false),
+                  )),
+                ],
+              ),
+              const SizedBox(height: AppDimensions.space4),
+              Row(
+                children: const [
+                  Expanded(child: Center(
+                    child: _SlotLabel('Photo 3', isRequired: false),
                   )),
                   SizedBox(width: AppDimensions.space12),
                   Expanded(child: Center(
@@ -507,7 +565,7 @@ class _EmptySlot extends StatelessWidget {
         Icon(
           isPrimary
               ? Icons.add_photo_alternate_outlined
-              : Icons.add_photo_alternate_outlined,
+              : Icons.add_a_photo_outlined,
           color: isPrimary ? AppColors.champagneGold : AppColors.slateMist,
           size:  AppDimensions.iconSizeXLarge,
         ),

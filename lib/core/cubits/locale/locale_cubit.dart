@@ -16,14 +16,17 @@ class LocaleCubit extends Cubit<Locale> {
 
   static const _kKey = 'app_locale';
 
-  /// Supported language codes — must match main.dart _supportedLocales.
-  /// Covers all languages across the app's 75+ country demographics.
+  /// Supported language codes — must match available .arb files.
+  /// Only ship locales that have actual translations.
+  ///
+  /// Phase 2+ expansion (add .arb files first, then uncomment):
+  //  'ur', 'ms', 'id', 'tr', 'bn', 'fr', 'hi', 'ta', 'te',
+  //  'ml', 'kn', 'mr', 'gu', 'pa', 'fa', 'ps', 'sw', 'so', 'ha', 'de',
+  //  'nl', 'sv', 'no', 'ru', 'bs', 'sq', 'az', 'pt', 'es', 'am', 'ku',
+  //  'uz', 'tg', 'tk', 'kk', 'ky', 'my', 'th', 'tl', 'jv', 'si', 'ne',
+  //  'wo', 'yo', 'af',
   static const _supported = {
-    'en', 'ar', 'ur', 'ms', 'id', 'tr', 'bn', 'fr', 'hi', 'ta', 'te',
-    'ml', 'kn', 'mr', 'gu', 'pa', 'fa', 'ps', 'sw', 'so', 'ha', 'de',
-    'nl', 'sv', 'no', 'ru', 'bs', 'sq', 'az', 'pt', 'es', 'am', 'ku',
-    'uz', 'tg', 'tk', 'kk', 'ky', 'my', 'th', 'tl', 'jv', 'si', 'ne',
-    'wo', 'yo', 'af',
+    'en', 'ar',
   };
 
   Future<void> _load() async {

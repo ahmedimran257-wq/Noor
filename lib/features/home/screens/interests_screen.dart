@@ -23,6 +23,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/noor_empty_state.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import 'chat_screen.dart';
 
 class InterestsScreen extends StatefulWidget {
@@ -242,7 +243,7 @@ class _InterestsScreenState extends State<InterestsScreen>
               ),
               child: Align(
                 alignment: AlignmentDirectional.centerStart,
-                child: Text('Interests', style: AppTypography.screenTitle),
+                child: Text(AppLocalizations.of(context).interests_title, style: AppTypography.screenTitle),
               ),
             ),
             const SizedBox(height: AppDimensions.space16),
@@ -276,7 +277,7 @@ class _InterestsScreenState extends State<InterestsScreen>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text('Received'),
+                          Text(AppLocalizations.of(context).interests_tab_received),
                           if (state.pendingReceived.isNotEmpty) ...[
                             const SizedBox(width: AppDimensions.space6),
                             _CountBadge(count: state.pendingReceived.length),
@@ -288,7 +289,7 @@ class _InterestsScreenState extends State<InterestsScreen>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text('Sent'),
+                          Text(AppLocalizations.of(context).interests_tab_sent),
                           if (state.sent.any((e) =>
                               e.effectiveStatus == InterestStatus.accepted)) ...[
                             const SizedBox(width: AppDimensions.space6),
@@ -663,7 +664,7 @@ class _ReceivedTile extends StatelessWidget {
                       HapticFeedback.selectionClick();
                       onDecline();
                     },
-                    child: Text('Decline', style: AppTypography.bodyMuted),
+                    child: Text(AppLocalizations.of(context).interests_button_decline, style: AppTypography.bodyMuted),
                   ),
                 ),
                 const SizedBox(width: AppDimensions.space12),
@@ -682,7 +683,7 @@ class _ReceivedTile extends StatelessWidget {
                       HapticFeedback.mediumImpact();
                       onAccept();
                     },
-                    child: Text('Accept', style: AppTypography.button),
+                    child: Text(AppLocalizations.of(context).interests_button_accept, style: AppTypography.button),
                   ),
                 ),
               ],

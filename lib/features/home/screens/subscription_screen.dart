@@ -10,6 +10,7 @@
 // Dynamic "Best value — save X%" on annual card.
 // ============================================================
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/services/subscription_service.dart';
@@ -19,6 +20,7 @@ import '../../../core/cubits/subscription/subscription_cubit.dart';
 import '../../../core/cubits/subscription/subscription_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import 'legal_doc_screen.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
@@ -38,6 +40,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
 
   // Pricing (loaded from RevenueCat via SubscriptionService)
   DisplayPricing _pricing = DisplayPricing.unavailable();
+  StreamSubscription<DisplayPricing>? _pricingSub;
 
   @override
   void initState() {
@@ -65,13 +68,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     }
 
     // Listen for pricing updates (e.g., retry succeeds)
-    service.pricingStream.listen((updated) {
+    _pricingSub = service.pricingStream.listen((updated) {
       if (mounted) setState(() => _pricing = updated);
     });
   }
 
   @override
   void dispose() {
+    _pricingSub?.cancel();
     _headerAnim.dispose();
     super.dispose();
   }
@@ -564,7 +568,7 @@ class _SecondaryLinks extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             TextButton(
-              onPressed: () {},
+              onPressed: () => _openLegalPage(context, 'Privacy Policy'),
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 minimumSize: Size.zero,
@@ -577,7 +581,7 @@ class _SecondaryLinks extends StatelessWidget {
                 style:
                     AppTypography.caption.copyWith(color: AppColors.slateMist)),
             TextButton(
-              onPressed: () {},
+              onPressed: () => _openLegalPage(context, 'Terms of Service'),
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 minimumSize: Size.zero,
@@ -596,6 +600,15 @@ class _SecondaryLinks extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
       ],
+    );
+  }
+
+  // TODO (legal): Replace with url_launcher or in-app WebView
+  // once Privacy Policy and Terms of Service URLs are hosted.
+  static void _openLegalPage(BuildContext context, String title) {
+    final type = title.toLowerCase().contains('privacy') ? 'privacy' : 'tos';
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => LegalDocScreen(type: type)),
     );
   }
 }

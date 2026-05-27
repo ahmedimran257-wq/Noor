@@ -138,6 +138,27 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
         _guardianRelationship = 'guardian';
         _candidateLabel = 'ward';
     }
+
+    if (data.guardianName != null) {
+      _nameCtrl.text = data.guardianName!;
+    }
+    if (data.guardianPhoneCountryCode != null) {
+      _selectedCode = _kCodes.firstWhere(
+        (c) => c.dialCode == data.guardianPhoneCountryCode,
+        orElse: () => _kCodes.first,
+      );
+    }
+    if (data.guardianPhone != null && data.guardianPhoneCountryCode != null) {
+      final dial = data.guardianPhoneCountryCode!;
+      if (data.guardianPhone!.startsWith(dial)) {
+        _phoneCtrl.text = data.guardianPhone!.substring(dial.length);
+      } else {
+        _phoneCtrl.text = data.guardianPhone!;
+      }
+    }
+    if (data.guardianMode != null) {
+      _guardianMode = data.guardianMode!;
+    }
   }
 
   void _showValidation() {
@@ -188,6 +209,7 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
       guardianPhoneCountryCode: _selectedCode.dialCode,
       guardianRelationship:     _guardianRelationship,
       guardianMode:             _guardianMode,
+      guardianAuthorityScope:   _guardianMode == 'active' ? 'full' : 'advisory', // Fixed Flaw 15: Set dynamically
     );
     context.read<OnboardingCubit>().saveAndAdvance(updated);
   }

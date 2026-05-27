@@ -1,6 +1,6 @@
 {
   "@@locale": "ar",
-  "@@last_modified": "2026-04-11",
+  "@@last_modified": "2026-05-27",
 
   "appName": "نور",
   "appTagline": "ابدأ بسم الله",
@@ -56,10 +56,17 @@
   "onboarding_error_under18": "نور مخصص لمن هم في سن 18 عامًا أو أكثر.",
 
   "onboarding_islamicIdentity_title": "هويتك الإسلامية",
+  "onboarding_label_sect": "المذهب",
+  "onboarding_label_sunni": "سني",
+  "onboarding_label_shia": "شيعي",
+  "onboarding_label_preferNotToSay": "أفضل عدم الإجابة",
   "onboarding_label_deenLevel": "مستوى التديّن",
   "onboarding_label_practicing": "مُلتزم",
+  "onboarding_tooltip_practicing": "يلتزم بأركان الإسلام الخمسة، يصلي بانتظام، يعيش حياة حلال",
   "onboarding_label_moderate": "معتدل",
+  "onboarding_tooltip_moderate": "يقدّر المبادئ الإسلامية، يصلي بانتظام لكن ليس دائمًا، مسلم ثقافيًا",
   "onboarding_label_cultural": "مسلم ثقافي",
+  "onboarding_tooltip_cultural": "يعرّف نفسه كمسلم، يحتفل بالمناسبات، قد لا يصلي بانتظام",
   "onboarding_label_praysFiveDaily": "أصلي الصلوات الخمس يوميًا",
 
   "onboarding_label_community": "مجتمعك / بيرادري",
@@ -101,16 +108,25 @@
   "copy_beard_parent": "هل يُطلق ابنك لحيته؟",
   "copy_beard_sibling": "هل يُطلق أخوك لحيته؟",
 
+  "onboarding_background_title": "التعليم والمهنة",
+  "onboarding_label_educationLevel": "المستوى التعليمي",
+  "onboarding_label_profession": "المهنة",
+  "onboarding_hint_profession": "مثال: مهندس برمجيات، معلم، طبيب",
+
   "onboarding_about_title": "عن نفسك",
   "onboarding_hint_bio": "صِف نفسك بصدق وكرامة.",
   "onboarding_label_bioCount": "{count}/300",
+  "onboarding_error_bioContactInfo": "يرجى إزالة معلومات الاتصال من نبذتك. لا يُسمح بمعلومات الاتصال الخارجية لحمايتك.",
 
   "onboarding_photo_title": "أضف صورك",
   "onboarding_photo_subtitle": "مطلوبة صورة واحدة على الأقل تظهر فيها وجهك بوضوح.",
   "onboarding_photo_verifySelfie": "صورة التحقق",
   "onboarding_photo_verifySelfieHint": "التقط صورة مباشرة للتحقق من هويتك",
+  "onboarding_error_noFace": "يرجى استخدام صورة يظهر فيها وجهك بوضوح.",
+  "onboarding_error_multipleFaces": "لا يمكن أن تكون صورة جماعية هي صورتك الأساسية.",
 
   "discovery_header_title": "نور",
+  "discovery_label_profilesRemaining": "{count} ملفات متبقية اليوم",
   "discovery_button_sendInterest": "إرسال إشعار الاهتمام",
   "discovery_label_interestSent": "تم الإرسال ✓",
   "discovery_label_outsidePrefs": "شخص قد تتواصل معه",
@@ -118,7 +134,12 @@
   "ceremony_text_blessing": "اسأل الله أن يبارك هذا بالخير",
 
   "chat_placeholder_typeMessage": "اكتب رسالة…",
+  "chat_label_probation": "تُفتح المراسلة خلال {hours} ساعة. يمكنك إرسال إشعارات الاهتمام الآن.",
   "chat_label_subscribeToMessage": "اشترك لفتح المراسلة. تراسل النساء مجانًا دائمًا في نور.",
+  "chat_opener_1": "السلام عليكم! لفت انتباهي ملفك الشخصي وأعجبني حقاً. هل تسمح لي بتقديم نفسي؟",
+  "chat_opener_2": "بسم الله. لفت ملفك الشخصي انتباهي. أود أن أعرف المزيد عنك.",
+  "chat_opener_3": "السلام عليكم. أعتقد أننا نتشارك قيمًا متشابهة. هل تقبل أن نتعرف على بعضنا البعض؟",
+
   "chat_endMatch_title": "إنهاء هذا التطابق",
   "chat_endMatch_subtitle": "اختر رسالة محترمة لإغلاق هذه المحادثة. سيتم إخطار الشخص الآخر.",
   "chat_endMatch_button": "إرسال وإنهاء التطابق",
@@ -133,14 +154,37 @@
   "filter_label_community": "المجتمع / البيرادري",
   "filter_label_livingExpectation": "السكن بعد الزواج",
 
+  "subscription_title": "افتح نور",
+  "subscription_subtitle": "تراسل النساء مجانًا. يشترك الرجال للتواصل.",
+  "subscription_button_monthly": "اشترك — {price}/شهر",
+  "subscription_label_bestValue": "أفضل قيمة",
+
+  "profile_label_completeness": "الملف الشخصي مكتمل {percent}%",
+  "profile_nudge_completeness": "الملفات الشخصية المكتملة بنسبة 80%+ تحصل على 3 أضعاف الاهتمامات.",
+
   "interests_tab_received": "المُستلَمة",
   "interests_tab_sent": "المُرسَلة",
   "interests_button_accept": "قبول",
   "interests_button_decline": "رفض",
 
-  "subscription_title": "افتح نور",
-  "subscription_subtitle": "تراسل النساء مجانًا. يشترك الرجال للتواصل.",
-
   "settings_title": "الإعدادات",
-  "settings_button_deleteAccount": "حذف الحساب"
+  "settings_section_account": "الحساب",
+  "settings_section_safety": "الأمان",
+  "settings_section_app": "التطبيق",
+  "settings_section_legal": "القانونية",
+  "settings_section_dangerZone": "منطقة الخطر",
+  "settings_button_deleteAccount": "حذف الحساب",
+  "settings_label_deleteGrace": "سيتم إخفاء ملفك الشخصي فورًا. سيتم حذف بياناتك نهائيًا بعد 30 يومًا.",
+  "settings_section_notifications": "الإشعارات",
+  "settings_section_guardian": "الولي",
+  "settings_section_privacy": "الخصوصية",
+
+  "notifications_title": "الإشعارات",
+  "notifications_markAllRead": "تعليم الكل كمقروء",
+  "notifications_empty_title": "لا جديد لديك",
+  "notifications_empty_subtitle": "لا توجد إشعارات جديدة الآن.",
+
+  "deleteAccount_title": "حذف الحساب",
+
+  "interests_title": "الاهتمامات"
 }

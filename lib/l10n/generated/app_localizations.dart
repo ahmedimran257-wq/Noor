@@ -6,13 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_ar.dart';
-import 'app_localizations_de.dart';
 import 'app_localizations_en.dart';
-import 'app_localizations_fr.dart';
-import 'app_localizations_id.dart';
-import 'app_localizations_ms.dart';
-import 'app_localizations_tr.dart';
-import 'app_localizations_ur.dart';
 
 // ignore_for_file: type=lint
 
@@ -101,13 +95,7 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('ar'),
-    Locale('de'),
-    Locale('en'),
-    Locale('fr'),
-    Locale('id'),
-    Locale('ms'),
-    Locale('tr'),
-    Locale('ur')
+    Locale('en')
   ];
 
   /// App name
@@ -1003,6 +991,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your profile will be hidden immediately. Your data will be permanently deleted after 30 days.'**
   String get settings_label_deleteGrace;
+
+  /// No description provided for @settings_section_notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get settings_section_notifications;
+
+  /// No description provided for @settings_section_guardian.
+  ///
+  /// In en, this message translates to:
+  /// **'Guardian'**
+  String get settings_section_guardian;
+
+  /// No description provided for @settings_section_privacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy'**
+  String get settings_section_privacy;
+
+  /// No description provided for @notifications_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notifications_title;
+
+  /// No description provided for @notifications_markAllRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all read'**
+  String get notifications_markAllRead;
+
+  /// No description provided for @notifications_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re all caught up'**
+  String get notifications_empty_title;
+
+  /// No description provided for @notifications_empty_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No new notifications right now.'**
+  String get notifications_empty_subtitle;
+
+  /// No description provided for @deleteAccount_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get deleteAccount_title;
+
+  /// No description provided for @interests_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Interests'**
+  String get interests_title;
 }
 
 class _AppLocalizationsDelegate
@@ -1015,16 +1057,8 @@ class _AppLocalizationsDelegate
   }
 
   @override
-  bool isSupported(Locale locale) => <String>[
-        'ar',
-        'de',
-        'en',
-        'fr',
-        'id',
-        'ms',
-        'tr',
-        'ur'
-      ].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      <String>['ar', 'en'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -1035,20 +1069,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   switch (locale.languageCode) {
     case 'ar':
       return AppLocalizationsAr();
-    case 'de':
-      return AppLocalizationsDe();
     case 'en':
       return AppLocalizationsEn();
-    case 'fr':
-      return AppLocalizationsFr();
-    case 'id':
-      return AppLocalizationsId();
-    case 'ms':
-      return AppLocalizationsMs();
-    case 'tr':
-      return AppLocalizationsTr();
-    case 'ur':
-      return AppLocalizationsUr();
   }
 
   throw FlutterError(

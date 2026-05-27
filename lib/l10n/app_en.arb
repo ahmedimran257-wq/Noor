@@ -354,5 +354,26 @@
   "settings_button_deleteAccount": "Delete Account",
   "@settings_button_deleteAccount": {},
   "settings_label_deleteGrace": "Your profile will be hidden immediately. Your data will be permanently deleted after 30 days.",
-  "@settings_label_deleteGrace": {}
+  "@settings_label_deleteGrace": {},
+  "settings_section_notifications": "Notifications",
+  "@settings_section_notifications": {},
+  "settings_section_guardian": "Guardian",
+  "@settings_section_guardian": {},
+  "settings_section_privacy": "Privacy",
+  "@settings_section_privacy": {},
+
+  "notifications_title": "Notifications",
+  "@notifications_title": {},
+  "notifications_markAllRead": "Mark all read",
+  "@notifications_markAllRead": {},
+  "notifications_empty_title": "You're all caught up",
+  "@notifications_empty_title": {},
+  "notifications_empty_subtitle": "No new notifications right now.",
+  "@notifications_empty_subtitle": {},
+
+  "deleteAccount_title": "Delete Account",
+  "@deleteAccount_title": {},
+
+  "interests_title": "Interests",
+  "@interests_title": {}
 }

@@ -510,4 +510,31 @@ class AppLocalizationsMs extends AppLocalizations {
   @override
   String get settings_label_deleteGrace =>
       'Profil anda akan disembunyikan dengan serta-merta. Data anda akan dipadam secara kekal selepas 30 hari.';
+
+  @override
+  String get settings_section_notifications => 'Notifications';
+
+  @override
+  String get settings_section_guardian => 'Guardian';
+
+  @override
+  String get settings_section_privacy => 'Privacy';
+
+  @override
+  String get notifications_title => 'Notifications';
+
+  @override
+  String get notifications_markAllRead => 'Mark all read';
+
+  @override
+  String get notifications_empty_title => 'You\'re all caught up';
+
+  @override
+  String get notifications_empty_subtitle => 'No new notifications right now.';
+
+  @override
+  String get deleteAccount_title => 'Delete Account';
+
+  @override
+  String get interests_title => 'Interests';
 }

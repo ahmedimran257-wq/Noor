@@ -13,6 +13,7 @@ import '../../../core/cubits/notifications/notifications_cubit.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
@@ -41,7 +42,7 @@ class NotificationsScreen extends StatelessWidget {
             ),
           ),
         ),
-        title: Text('Notifications',
+        title: Text(AppLocalizations.of(context).notifications_title,
             style: AppTypography.screenTitle.copyWith(fontSize: 20)),
         actions: [
           BlocBuilder<NotificationsCubit, NotificationsState>(
@@ -51,7 +52,7 @@ class NotificationsScreen extends StatelessWidget {
                 onPressed: () =>
                     context.read<NotificationsCubit>().markAllRead(),
                 child: Text(
-                  'Mark all read',
+                  AppLocalizations.of(context).notifications_markAllRead,
                   style: AppTypography.caption.copyWith(
                     color: AppColors.champagneGold,
                   ),
@@ -239,12 +240,12 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: AppDimensions.space24),
           Text(
-            "You're all caught up",
+            AppLocalizations.of(context).notifications_empty_title,
             style: AppTypography.screenTitle.copyWith(fontSize: 20),
           ),
           const SizedBox(height: AppDimensions.space8),
           Text(
-            'No new notifications right now.',
+            AppLocalizations.of(context).notifications_empty_subtitle,
             style: AppTypography.bodyMuted,
           ),
         ],

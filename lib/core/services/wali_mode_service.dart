@@ -15,6 +15,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'supabase_service.dart';
 
 /// Manages Wali (Guardian) mode operations.
 ///
@@ -29,7 +30,12 @@ class WaliModeService {
   WaliModeService._();
   static final instance = WaliModeService._();
 
-  final _supabase = Supabase.instance.client;
+  SupabaseClient get _supabase {
+    if (!SupabaseService.isInitialized) {
+      throw StateError('Supabase is not initialized. Ensure SupabaseService.initialize() is called first.');
+    }
+    return SupabaseService.client;
+  }
 
   // ── Realtime ────────────────────────────────────────────────
   RealtimeChannel? _realtimeChannel;

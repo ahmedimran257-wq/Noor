@@ -11,8 +11,10 @@
 //   Guardian → completeAt 12
 // ============================================================
 
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/onboarding_data.dart';
 import '../../services/profile_write_service.dart';
 import '../auth/auth_cubit.dart';
@@ -25,12 +27,36 @@ class OnboardingCubit extends Cubit<OnboardingState> {
 
   final AuthCubit _authCubit;
 
+  static const String _kCacheKey = 'onboarding_data_cache';
+
   // ── Initialization ────────────────────────────────────────
 
   /// Called after auth succeeds. Loads the saved step from backend.
-  /// Mock: always starts at step 0.
+  /// Also restores saved data from Supabase/SharedPreferences to preserve state.
   Future<void> initialize({int startStep = 0}) async {
-    emit(OnboardingActive(step: startStep, data: const OnboardingData()));
+    OnboardingData data = const OnboardingData();
+
+    // 1. Attempt to load from Supabase if real mode is enabled
+    final dbData = await ProfileWriteService.loadProfile();
+    if (dbData != null) {
+      data = dbData;
+      debugPrint('OnboardingCubit: Successfully restored data from Supabase.');
+    } else {
+      // 2. Fallback to SharedPreferences cache if DB is empty/unconfigured
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final rawJson = prefs.getString(_kCacheKey);
+        if (rawJson != null && rawJson.isNotEmpty) {
+          final mapped = jsonDecode(rawJson) as Map<String, dynamic>;
+          data = OnboardingData.fromJson(mapped);
+          debugPrint('OnboardingCubit: Successfully restored data from SharedPreferences cache.');
+        }
+      } catch (e) {
+        debugPrint('OnboardingCubit: Error loading from SharedPreferences: $e');
+      }
+    }
+
+    emit(OnboardingActive(step: startStep, data: data));
   }
 
   // ── Step Advance ──────────────────────────────────────────
@@ -41,6 +67,9 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   Future<void> saveAndAdvance(OnboardingData updatedData) async {
     final currentStep = _currentStep;
     emit(OnboardingLoading(step: currentStep, data: updatedData));
+
+    // Persist to SharedPreferences cache immediately (offline fallback)
+    await _persistLocalCache(updatedData);
 
     // Persist to Supabase (or mock delay if not configured)
     final isGuardianPath = updatedData.profileFor == ProfileFor.guardian;
@@ -74,8 +103,8 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     }
   }
 
-  /// Moves back one step (local-only, no Supabase write needed).
-  void goBack() {
+  /// Moves back one step (local-only, but writes to DB to preserve step).
+  void goBack() async {
     final current = state;
     int? newStep;
     OnboardingData? data;
@@ -92,16 +121,22 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     }
 
     if (newStep != null && data != null) {
+      final isGuardianPath = data.profileFor == ProfileFor.guardian;
       // Update AuthCubit so the router redirect navigates to the previous screen
-      _authCubit.updateOnboardingStep(newStep);
+      _authCubit.updateOnboardingStep(newStep, isGuardianPath: isGuardianPath);
+
+      // Fixed Flaw 24: Persist the decremented step back to the DB
+      await ProfileWriteService.updateOnboardingStep(newStep);
+
       emit(OnboardingActive(step: newStep, data: data));
     }
   }
 
   /// Updates the profile data in-place without advancing the step.
   /// Use this from EditProfileScreen so saving doesn't bump the onboarding flow.
-  void updateProfile(OnboardingData data) {
+  void updateProfile(OnboardingData data) async {
     emit(OnboardingActive(step: _currentStep, data: data));
+    await _persistLocalCache(data);
   }
 
   /// Called by screens after router pushes the next page to mark active again.
@@ -115,9 +150,38 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     final data = _currentData;
     emit(OnboardingLoading(step: currentStep, data: data));
     await Future.delayed(const Duration(milliseconds: 200));
+    
     final nextStep = currentStep + 1;
-    _authCubit.updateOnboardingStep(nextStep);
-    emit(OnboardingSaved(step: nextStep, data: data));
+    final isGuardianPath = data.profileFor == ProfileFor.guardian;
+
+    // Fixed Flaw 7: Sync the skipped step to AuthCubit with guardian path support
+    _authCubit.updateOnboardingStep(nextStep, isGuardianPath: isGuardianPath);
+
+    // Fixed Flaw 7: Persist skipped step to the DB
+    await ProfileWriteService.updateOnboardingStep(nextStep);
+
+    // Completion thresholds:
+    //   Myself   → 11 steps (0–10)
+    //   Guardian → 12 steps (0–11)
+    final completeAt = isGuardianPath ? 12 : 11;
+
+    if (nextStep >= completeAt) {
+      // Fixed Flaw 7: Correctly emit OnboardingComplete() when skipping past threshold
+      emit(const OnboardingComplete());
+    } else {
+      emit(OnboardingSaved(step: nextStep, data: data));
+    }
+  }
+
+  // ── Cache Persistence Helper ──────────────────────────────
+
+  Future<void> _persistLocalCache(OnboardingData data) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_kCacheKey, jsonEncode(data.toJson()));
+    } catch (e) {
+      debugPrint('OnboardingCubit: Failed to write SharedPreferences cache: $e');
+    }
   }
 
   // ── Helpers ───────────────────────────────────────────────

@@ -60,6 +60,15 @@ class _AboutYourselfScreenState extends State<AboutYourselfScreen> {
   final Set<String> _interests = {};
   final Set<String> _languages = {};
 
+  @override
+  void initState() {
+    super.initState();
+    final data = context.read<OnboardingCubit>().currentData;
+    _bioCtrl.text = data.bio ?? '';
+    _interests.addAll(data.interests ?? []);
+    _languages.addAll(data.languages ?? []);
+  }
+
   static const _maxBio       = 300;
   static const _maxInterests = 6;
 

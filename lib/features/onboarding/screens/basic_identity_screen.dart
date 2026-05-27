@@ -377,11 +377,37 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
     _isGuardianMode = data.isGuardianMode;
     _candidateLabel = data.profileCreatorRelation ?? 'self';
 
-    // If guardian mode set the gender on guardian_details_screen,
-    // pre-fill it here and lock the selector.
     if (_isGuardianMode && data.gender != null) {
       _gender = data.gender;
       _genderLocked = true;
+    } else {
+      _gender = data.gender;
+    }
+
+    _firstNameCtrl.text = data.firstName ?? '';
+    _lastNameCtrl.text = data.lastName ?? '';
+    _dob = data.dateOfBirth;
+    _heightCm = data.heightCm ?? 165;
+    _complexion = data.complexion;
+    _motherTongue = data.motherTongue;
+    _community = data.community;
+    _residencyStatus = data.residencyStatus;
+    _specialNeeds = data.specialNeeds;
+
+    if (data.cityName != null) {
+      _selectedCity = data.cityName;
+      _cityCtrl.text = data.cityName!;
+      _selectedCityId = data.cityId;
+      _selectedCountryCode = data.countryCode;
+
+      final cityMatch = _kCities.firstWhere(
+        (c) => c['name'] == data.cityName,
+        orElse: () => <String, String>{},
+      );
+      if (cityMatch.isNotEmpty) {
+        _selectedCountryName = cityMatch['countryName'];
+        _selectedCountryCode ??= cityMatch['country'];
+      }
     }
   }
 
@@ -548,11 +574,9 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
     );
 
     // ── Gender & Country propagation ──────────────────────────
-    // Blueprint: "Women always message/interest free."
-    // Propagate gender to AuthCubit NOW so all subscription gates,
-    // daily-limit banners, and boost sections read the correct value
-    // immediately — including when a guardian creates a female profile.
-    if (_gender != null) {
+    // Propagate gender to AuthCubit NOW so all subscription gates read the correct value immediately.
+    // Fixed Flaw 20: Avoid calling setGender twice in guardian flow.
+    if (_gender != null && !_isGuardianMode) {
       context.read<AuthCubit>().setGender(
           _gender == Gender.female ? 'female' : 'male');
     }
@@ -560,6 +584,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
     // Save country code for regional pricing (subscription screen)
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('user_country_code', countryCode);
+
     if (mounted) {
       context.read<AuthCubit>().setCountryCode(countryCode);
     }

@@ -157,16 +157,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_islamicIdentity_title => 'هويتك الإسلامية';
 
   @override
-  String get onboarding_label_sect => 'Sect';
+  String get onboarding_label_sect => 'المذهب';
 
   @override
-  String get onboarding_label_sunni => 'Sunni';
+  String get onboarding_label_sunni => 'سني';
 
   @override
-  String get onboarding_label_shia => 'Shia';
+  String get onboarding_label_shia => 'شيعي';
 
   @override
-  String get onboarding_label_preferNotToSay => 'Prefer not to say';
+  String get onboarding_label_preferNotToSay => 'أفضل عدم الإجابة';
 
   @override
   String get onboarding_label_deenLevel => 'مستوى التديّن';
@@ -176,21 +176,21 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get onboarding_tooltip_practicing =>
-      'Follows all five pillars, prays regularly, halal lifestyle';
+      'يلتزم بأركان الإسلام الخمسة، يصلي بانتظام، يعيش حياة حلال';
 
   @override
   String get onboarding_label_moderate => 'معتدل';
 
   @override
   String get onboarding_tooltip_moderate =>
-      'Values Islamic principles, prays regularly but not always, culturally Muslim';
+      'يقدّر المبادئ الإسلامية، يصلي بانتظام لكن ليس دائمًا، مسلم ثقافيًا';
 
   @override
   String get onboarding_label_cultural => 'مسلم ثقافي';
 
   @override
   String get onboarding_tooltip_cultural =>
-      'Identifies as Muslim, celebrates occasions, may not pray regularly';
+      'يعرّف نفسه كمسلم، يحتفل بالمناسبات، قد لا يصلي بانتظام';
 
   @override
   String get onboarding_label_praysFiveDaily => 'أصلي الصلوات الخمس يوميًا';
@@ -300,17 +300,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get copy_beard_sibling => 'هل يُطلق أخوك لحيته؟';
 
   @override
-  String get onboarding_background_title => 'Education & Career';
+  String get onboarding_background_title => 'التعليم والمهنة';
 
   @override
-  String get onboarding_label_educationLevel => 'Education Level';
+  String get onboarding_label_educationLevel => 'المستوى التعليمي';
 
   @override
-  String get onboarding_label_profession => 'Profession';
+  String get onboarding_label_profession => 'المهنة';
 
   @override
-  String get onboarding_hint_profession =>
-      'e.g. Software Engineer, Teacher, Doctor';
+  String get onboarding_hint_profession => 'مثال: مهندس برمجيات، معلم، طبيب';
 
   @override
   String get onboarding_about_title => 'عن نفسك';
@@ -325,7 +324,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get onboarding_error_bioContactInfo =>
-      'Please remove contact information from your bio. External contact details are not allowed for your safety.';
+      'يرجى إزالة معلومات الاتصال من نبذتك. لا يُسمح بمعلومات الاتصال الخارجية لحمايتك.';
 
   @override
   String get onboarding_photo_title => 'أضف صورك';
@@ -343,18 +342,18 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get onboarding_error_noFace =>
-      'Please use a photo where your face is clearly visible.';
+      'يرجى استخدام صورة يظهر فيها وجهك بوضوح.';
 
   @override
   String get onboarding_error_multipleFaces =>
-      'Group photos cannot be your primary photo.';
+      'لا يمكن أن تكون صورة جماعية هي صورتك الأساسية.';
 
   @override
   String get discovery_header_title => 'نور';
 
   @override
   String discovery_label_profilesRemaining(int count) {
-    return '$count profiles remaining today';
+    return '$count ملفات متبقية اليوم';
   }
 
   @override
@@ -374,7 +373,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String chat_label_probation(int hours) {
-    return 'Messaging unlocks in $hours hours. You can send Interests now.';
+    return 'تُفتح المراسلة خلال $hours ساعة. يمكنك إرسال إشعارات الاهتمام الآن.';
   }
 
   @override
@@ -383,15 +382,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get chat_opener_1 =>
-      'Assalamu Alaikum! I came across your profile and was genuinely impressed. May I introduce myself?';
+      'السلام عليكم! لفت انتباهي ملفك الشخصي وأعجبني حقاً. هل تسمح لي بتقديم نفسي؟';
 
   @override
   String get chat_opener_2 =>
-      'Bismillah. Your profile caught my attention. I would love to learn more about you.';
+      'بسم الله. لفت ملفك الشخصي انتباهي. أود أن أعرف المزيد عنك.';
 
   @override
   String get chat_opener_3 =>
-      'Assalamu Alaikum. I believe we share similar values. Would you be open to getting to know each other?';
+      'السلام عليكم. أعتقد أننا نتشارك قيمًا متشابهة. هل تقبل أن نتعرف على بعضنا البعض؟';
 
   @override
   String get chat_endMatch_title => 'إنهاء هذا التطابق';
@@ -444,20 +443,20 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String subscription_button_monthly(String price) {
-    return 'Subscribe — $price/month';
+    return 'اشترك — $price/شهر';
   }
 
   @override
-  String get subscription_label_bestValue => 'Best Value';
+  String get subscription_label_bestValue => 'أفضل قيمة';
 
   @override
   String profile_label_completeness(int percent) {
-    return 'Profile $percent% complete';
+    return 'الملف الشخصي مكتمل $percent%';
   }
 
   @override
   String get profile_nudge_completeness =>
-      'Profiles with 80%+ completeness receive 3× more interests.';
+      'الملفات الشخصية المكتملة بنسبة 80%+ تحصل على 3 أضعاف الاهتمامات.';
 
   @override
   String get interests_tab_received => 'المُستلَمة';
@@ -475,24 +474,51 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings_title => 'الإعدادات';
 
   @override
-  String get settings_section_account => 'Account';
+  String get settings_section_account => 'الحساب';
 
   @override
-  String get settings_section_safety => 'Safety';
+  String get settings_section_safety => 'الأمان';
 
   @override
-  String get settings_section_app => 'App';
+  String get settings_section_app => 'التطبيق';
 
   @override
-  String get settings_section_legal => 'Legal';
+  String get settings_section_legal => 'القانونية';
 
   @override
-  String get settings_section_dangerZone => 'Danger Zone';
+  String get settings_section_dangerZone => 'منطقة الخطر';
 
   @override
   String get settings_button_deleteAccount => 'حذف الحساب';
 
   @override
   String get settings_label_deleteGrace =>
-      'Your profile will be hidden immediately. Your data will be permanently deleted after 30 days.';
+      'سيتم إخفاء ملفك الشخصي فورًا. سيتم حذف بياناتك نهائيًا بعد 30 يومًا.';
+
+  @override
+  String get settings_section_notifications => 'الإشعارات';
+
+  @override
+  String get settings_section_guardian => 'الولي';
+
+  @override
+  String get settings_section_privacy => 'الخصوصية';
+
+  @override
+  String get notifications_title => 'الإشعارات';
+
+  @override
+  String get notifications_markAllRead => 'تعليم الكل كمقروء';
+
+  @override
+  String get notifications_empty_title => 'لا جديد لديك';
+
+  @override
+  String get notifications_empty_subtitle => 'لا توجد إشعارات جديدة الآن.';
+
+  @override
+  String get deleteAccount_title => 'حذف الحساب';
+
+  @override
+  String get interests_title => 'الاهتمامات';
 }

@@ -17,6 +17,8 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:noor/core/config/app_config.dart';
+import 'package:noor/core/services/supabase_service.dart';
 
 class ConnectivityService {
   ConnectivityService._({
@@ -55,7 +57,15 @@ class ConnectivityService {
   /// Immediately check connectivity and return result.
   Future<bool> checkNow() async {
     try {
-      final result = await InternetAddress.lookup('google.com')
+      String host = 'one.one.one.one';
+      if (SupabaseService.isInitialized) {
+        final uri = Uri.tryParse(AppConfig.supabaseUrl);
+        if (uri != null && uri.host.isNotEmpty) {
+          host = uri.host;
+        }
+      }
+
+      final result = await InternetAddress.lookup(host)
           .timeout(const Duration(seconds: 5));
       final online = result.isNotEmpty && result[0].rawAddress.isNotEmpty;
       _updateState(online);
@@ -74,6 +84,10 @@ class ConnectivityService {
   }
 
   void _startPolling() {
+    // Avoid starting background polling timers in unit/widget tests
+    if (Platform.environment.containsKey('FLUTTER_TEST')) {
+      return;
+    }
     // Initial check
     checkNow();
     // Periodic checks

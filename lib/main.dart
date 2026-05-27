@@ -12,10 +12,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:go_router/go_router.dart';
 
 import 'core/theme/app_theme.dart';
 import 'core/services/supabase_service.dart';
 import 'core/services/connectivity_service.dart';
+import 'core/services/subscription_service.dart';
+import 'core/services/wali_mode_service.dart';
 import 'core/cubits/auth/auth_cubit.dart';
 import 'core/cubits/auth/auth_state.dart';
 import 'core/cubits/onboarding/onboarding_cubit.dart';
@@ -31,59 +34,21 @@ import 'core/router/app_router.dart';
 import 'l10n/generated/app_localizations.dart';
 
 /// Supported locales.
-/// Adding a locale here activates it in the language picker.
+/// Only list locales that have complete .arb translations.
+/// Phase 2+ expansion — add .arb file first, then uncomment here.
 const _supportedLocales = [
   Locale('en'),   // English
   Locale('ar'),   // Arabic  (RTL)
-  Locale('ur'),   // Urdu    (RTL)
-  Locale('ms'),   // Malay
-  Locale('id'),   // Indonesian
-  Locale('tr'),   // Turkish
-  Locale('bn'),   // Bengali
-  Locale('fr'),   // French
-  Locale('hi'),   // Hindi
-  Locale('ta'),   // Tamil
-  Locale('te'),   // Telugu
-  Locale('ml'),   // Malayalam
-  Locale('kn'),   // Kannada
-  Locale('mr'),   // Marathi
-  Locale('gu'),   // Gujarati
-  Locale('pa'),   // Punjabi
-  Locale('fa'),   // Persian (RTL)
-  Locale('ps'),   // Pashto  (RTL)
-  Locale('sw'),   // Swahili
-  Locale('so'),   // Somali
-  Locale('ha'),   // Hausa
-  Locale('de'),   // German
-  Locale('nl'),   // Dutch
-  Locale('sv'),   // Swedish
-  Locale('no'),   // Norwegian
-  Locale('ru'),   // Russian
-  Locale('bs'),   // Bosnian
-  Locale('sq'),   // Albanian
-  Locale('az'),   // Azerbaijani
-  Locale('pt'),   // Portuguese
-  Locale('es'),   // Spanish
-  Locale('am'),   // Amharic
-  Locale('ku'),   // Kurdish (RTL)
-  Locale('uz'),   // Uzbek
-  Locale('tg'),   // Tajik
-  Locale('tk'),   // Turkmen
-  Locale('kk'),   // Kazakh
-  Locale('ky'),   // Kyrgyz
-  Locale('my'),   // Burmese
-  Locale('th'),   // Thai
-  Locale('tl'),   // Filipino
-  Locale('jv'),   // Javanese
-  Locale('si'),   // Sinhala
-  Locale('ne'),   // Nepali
-  Locale('wo'),   // Wolof
-  Locale('yo'),   // Yoruba
-  Locale('af'),   // Afrikaans
+  // Locale('ur'),   // Urdu    (RTL)
+  // Locale('ms'),   // Malay
+  // Locale('id'),   // Indonesian
+  // Locale('tr'),   // Turkish
+  // Locale('fr'),   // French
+  // Locale('de'),   // German
 ];
 
 /// RTL locales — drives WidgetsApp directionality.
-const _rtlLocales = {'ar', 'ur', 'fa', 'ps', 'ku'};
+const _rtlLocales = {'ar'};
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -196,6 +161,8 @@ class _NoorAppState extends State<NoorApp> {
   late final NotificationsCubit     _notificationsCubit;
   late final LocaleCubit            _localeCubit;
 
+  late final GoRouter               _router;
+
   @override
   void initState() {
     super.initState();
@@ -210,12 +177,36 @@ class _NoorAppState extends State<NoorApp> {
     _notificationsCubit     = NotificationsCubit();
     _localeCubit            = LocaleCubit();
 
+    _router = buildAppRouter(_authCubit, initialLocation: widget.initialLocation);
+
     // Kick off session check + subscription init immediately.
     _authCubit.checkSession();
     _subscriptionCubit.initialize();
 
     // TD5: Start connectivity monitoring
     ConnectivityService.initialize();
+  }
+
+  @override
+  void dispose() {
+    // ── Dispose Cubits ─────────────────────────────────────────
+    _authCubit.close();
+    _onboardingCubit.close();
+    _interestsCubit.close();
+    _blockReportCubit.close();
+    _discoveryFeedCubit.close();
+    _chatCubit.close();
+    _subscriptionCubit.close();
+    _notificationPrefsCubit.close();
+    _notificationsCubit.close();
+    _localeCubit.close();
+
+    // ── Dispose Services ───────────────────────────────────────
+    ConnectivityService.instance.dispose();
+    SubscriptionService.instance.dispose();
+    WaliModeService.instance.dispose();
+
+    super.dispose();
   }
 
   @override
@@ -236,9 +227,6 @@ class _NoorAppState extends State<NoorApp> {
       ],
       child: Builder(
         builder: (context) {
-          // Build router after providers are available in context.
-          final router = buildAppRouter(context, initialLocation: widget.initialLocation);
-
           return BlocListener<AuthCubit, AuthState>(
             listener: (context, state) {
               // Reset the guard when user signs out so re-login triggers
@@ -272,7 +260,7 @@ class _NoorAppState extends State<NoorApp> {
               locale:       locale,
 
               // ── Router ───────────────────────────────────
-              routerConfig: router,
+              routerConfig: _router,
 
               // ── Localizations ─────────────────────────────
               supportedLocales: _supportedLocales,

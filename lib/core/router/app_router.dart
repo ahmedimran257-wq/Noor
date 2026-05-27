@@ -41,6 +41,7 @@ import '../../features/home/screens/notifications_screen.dart';
 import '../../features/home/screens/delete_account_screen.dart';
 import '../../features/home/screens/block_list_screen.dart';
 import '../../features/home/screens/subscription_screen.dart';
+import '../../features/home/screens/guardian_dashboard_screen.dart';
 
 // ── Route names ───────────────────────────────────────────────
 
@@ -57,7 +58,8 @@ abstract final class AppRoutes {
   static const notifications  = '/notifications';
   static const deleteAccount  = '/delete-account';
   static const blockList      = '/block-list';
-  static const subscription   = '/subscription';
+  static const subscription        = '/subscription';
+  static const guardianDashboard   = '/guardian-dashboard';
 }
 
 // ── Screen index → route path mapping ────────────────────────
@@ -68,14 +70,14 @@ String onboardingPathForStep(int step) {
 
 // ── Router factory ────────────────────────────────────────────
 
-GoRouter buildAppRouter(BuildContext buildContext, {
+GoRouter buildAppRouter(AuthCubit authCubit, {
   String initialLocation = AppRoutes.splash,
 }) {
   return GoRouter(
     initialLocation: initialLocation,
-    refreshListenable: _AuthStateListenable(buildContext.read<AuthCubit>()),
+    refreshListenable: _AuthStateListenable(authCubit),
     redirect: (context, state) {
-      final authState = context.read<AuthCubit>().state;
+      final authState = authCubit.state;
       final location  = state.matchedLocation;
 
       // Still checking session — no redirect yet
@@ -108,7 +110,8 @@ GoRouter buildAppRouter(BuildContext buildContext, {
               location == AppRoutes.notifications ||
               location == AppRoutes.deleteAccount ||
               location == AppRoutes.blockList ||
-              location == AppRoutes.subscription) return null;
+              location == AppRoutes.subscription ||
+              location == AppRoutes.guardianDashboard) return null;
           return AppRoutes.home;
         } else {
           // Still onboarding — allow the language selection screen so
@@ -229,6 +232,13 @@ GoRouter buildAppRouter(BuildContext buildContext, {
         pageBuilder: (context, state) => _slidePage(
           key: state.pageKey,
           child: const SubscriptionScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.guardianDashboard,
+        pageBuilder: (context, state) => _slidePage(
+          key: state.pageKey,
+          child: const GuardianDashboardScreen(),
         ),
       ),
     ],

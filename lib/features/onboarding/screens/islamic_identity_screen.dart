@@ -39,6 +39,24 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
   String?    _hookahHabit;
   String?    _isRevert; // Phase 1 addition
 
+  @override
+  void initState() {
+    super.initState();
+    final data = context.read<OnboardingCubit>().currentData;
+    _sect = data.sect;
+    _subSect = data.subSect;
+    _deenLevel = data.deenLevel;
+    _praysFive = data.praysFiveDaily;
+    _hijab = data.hijabStyle;
+    _beardStyle = data.beardStyle;
+    _religiousLeadership = data.religiousLeadership;
+    _dietType = data.dietType;
+    _smokingHabit = data.smokingHabit;
+    _vapingHabit = data.vapingHabit;
+    _hookahHabit = data.hookahHabit;
+    _isRevert = data.isRevert;
+  }
+
   /// Country-aware sub-sects: returns expanded list based on user's country.
   List<String> get _subSects {
     final code = context.read<OnboardingCubit>().currentData.countryCode ?? '';

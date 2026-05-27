@@ -79,6 +79,29 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
   String _incomeVisibility = 'bracket';
   bool _showIncome = false;
 
+  @override
+  void initState() {
+    super.initState();
+    final data = context.read<OnboardingCubit>().currentData;
+    if (data.educationRank != null) {
+      _education = _kEduLevels.firstWhere(
+        (edu) => edu.rank == data.educationRank,
+        orElse: () => _kEduLevels.first,
+      );
+    }
+    _studyCtrl.text = data.fieldOfStudy ?? '';
+    _professionCtrl.text = data.profession ?? '';
+    _employment = data.employmentStatus;
+    if (data.incomeBracketId != null) {
+      _incomeBracket = _kIncomeBrackets.firstWhere(
+        (inc) => inc.id == data.incomeBracketId,
+        orElse: () => _kIncomeBrackets.first,
+      );
+    }
+    _incomeVisibility = data.incomeVisibility ?? 'bracket';
+    _showIncome = data.incomeBracketId != null;
+  }
+
   bool get _canProceed =>
       _education != null && _employment != null;
 

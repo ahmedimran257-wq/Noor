@@ -45,6 +45,22 @@ class _IslamicMarriageDetailsScreenState
   bool?   _canProvideMaintenance;
   String? _debtStatus;
 
+  @override
+  void initState() {
+    super.initState();
+    final data = context.read<OnboardingCubit>().currentData;
+    _quranMemorization = data.quranMemorization;
+    _religiousEducation = data.religiousEducation;
+    _marriageTimeline = data.marriageTimeline;
+    _niqabPreference = data.niqabPreference;
+    _mahrExpectation = data.mahrExpectation;
+    _willingToWorkAfterMarriage = data.willingToWorkAfterMarriage;
+    _mahrBudget = data.mahrBudget;
+    _canProvideHousing = data.canProvideHousing;
+    _canProvideMaintenance = data.canProvideMaintenance;
+    _debtStatus = data.debtStatus;
+  }
+
   bool get _isFemale =>
       context.read<OnboardingCubit>().currentData.gender == Gender.female;
 
