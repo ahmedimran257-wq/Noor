@@ -177,7 +177,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancel', style: AppTypography.body),
+            child: const Text('Cancel', style: AppTypography.body),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -544,7 +544,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                             ),
                           ),
                           onPressed: _clearAll,
-                          child: Text('Clear All', style: AppTypography.body),
+                          child: const Text('Clear All', style: AppTypography.body),
                         ),
                       ),
                     ),
@@ -561,7 +561,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                             ),
                           ),
                           onPressed: _apply,
-                          child: Text('Apply Filters',
+                          child: const Text('Apply Filters',
                               style: AppTypography.button),
                         ),
                       ),
@@ -739,7 +739,7 @@ class _AgeRangeField extends StatelessWidget {
             onChanged: (v) => onChanged(v.start, v.end),
           ),
         ),
-        Row(
+        const Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text('18', style: AppTypography.caption),

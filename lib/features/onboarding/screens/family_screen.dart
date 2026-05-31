@@ -127,7 +127,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
               const SizedBox(height: AppDimensions.space32),
 
               // Family type
-              _Label('FAMILY TYPE'),
+              const _Label('FAMILY TYPE'),
               const SizedBox(height: AppDimensions.space12),
               Row(children: [
                 _FamilyTypeCard(
@@ -152,14 +152,14 @@ class _FamilyScreenState extends State<FamilyScreen> {
               const SizedBox(height: AppDimensions.space24),
 
               // Siblings
-              _Label('NUMBER OF SIBLINGS'),
+              const _Label('NUMBER OF SIBLINGS'),
               const SizedBox(height: AppDimensions.space12),
               _Stepper(value: _siblings, min: 0, max: 15, onChanged: (v) => setState(() => _siblings = v)),
 
 
 
               // Parents status
-              _Label('PARENTS\' MARITAL STATUS'),
+              const _Label('PARENTS\' MARITAL STATUS'),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
                 spacing: AppDimensions.space8,
@@ -219,7 +219,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
                 ),
                 if (_hasChildren == true) ...[
                   const SizedBox(height: AppDimensions.space16),
-                  _Label('HOW MANY?'),
+                  const _Label('HOW MANY?'),
                   const SizedBox(height: AppDimensions.space8),
                   _Stepper(
                     value: _childrenCount, min: 1, max: 10,
@@ -230,7 +230,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
 
               // ── POST-MARRIAGE LIVING (Phase 2) ─────────────
               const SizedBox(height: AppDimensions.space28),
-              _Label('POST-MARRIAGE LIVING EXPECTATIONS'),
+              const _Label('POST-MARRIAGE LIVING EXPECTATIONS'),
               const SizedBox(height: AppDimensions.space4),
               Text(
                 isGuardian
@@ -253,7 +253,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
 
               // ── WILLING TO RELOCATE (Phase 5.3) ────────────
               const SizedBox(height: AppDimensions.space28),
-              _Label('WILLING TO RELOCATE'),
+              const _Label('WILLING TO RELOCATE'),
               const SizedBox(height: AppDimensions.space4),
               Text(
                 isGuardian
@@ -300,7 +300,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
               // ── POLYGAMY (Optional, gender-specific) ───────
               if (_gender == Gender.male) ...[
                 const SizedBox(height: AppDimensions.space28),
-                _Label('POLYGAMY STATUS  (Optional)'),
+                const _Label('POLYGAMY STATUS  (Optional)'),
                 const SizedBox(height: AppDimensions.space4),
                 Text(
                   isGuardian
@@ -317,7 +317,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
               ],
               if (_gender == Gender.female) ...[
                 const SizedBox(height: AppDimensions.space28),
-                _Label('POLYGAMY ACCEPTANCE  (Optional)'),
+                const _Label('POLYGAMY ACCEPTANCE  (Optional)'),
                 const SizedBox(height: AppDimensions.space4),
                 Text(
                   isGuardian

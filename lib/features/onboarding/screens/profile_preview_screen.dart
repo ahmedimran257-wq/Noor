@@ -175,7 +175,7 @@ class ProfilePreviewScreen extends StatelessWidget {
                         ],
 
                         if (data.interests != null && data.interests!.isNotEmpty) ...[
-                          Text('INTERESTS', style: AppTypography.sectionLabel),
+                          const Text('INTERESTS', style: AppTypography.sectionLabel),
                           const SizedBox(height: AppDimensions.space8),
                           Wrap(
                             spacing:    AppDimensions.space6,

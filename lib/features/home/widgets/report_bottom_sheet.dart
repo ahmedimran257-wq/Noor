@@ -184,7 +184,7 @@ class _Step1 extends StatelessWidget {
           style: AppTypography.screenTitle.copyWith(fontSize: 20),
         ),
         const SizedBox(height: AppDimensions.space6),
-        Text(
+        const Text(
           'Help keep the community safe. Your report is anonymous.',
           style: AppTypography.bodyMuted,
         ),
@@ -237,7 +237,7 @@ class _Step1 extends StatelessWidget {
         Center(
           child: TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancel', style: AppTypography.bodyMuted),
+            child: const Text('Cancel', style: AppTypography.bodyMuted),
           ),
         ),
       ],
@@ -286,7 +286,7 @@ class _Step2 extends StatelessWidget {
         Text('Tell us more',
             style: AppTypography.bodyMedium.copyWith(fontSize: 18)),
         const SizedBox(height: AppDimensions.space6),
-        Text('Optional — helps our team review faster.',
+        const Text('Optional — helps our team review faster.',
             style: AppTypography.bodyMuted),
         const SizedBox(height: AppDimensions.space16),
 
@@ -408,7 +408,7 @@ class _Step3 extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 16),
               elevation: 0,
             ),
-            child: Text('Done', style: AppTypography.button),
+            child: const Text('Done', style: AppTypography.button),
           ),
         ),
       ],

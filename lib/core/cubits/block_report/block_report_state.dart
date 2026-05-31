@@ -123,8 +123,8 @@ class BlockReportState extends Equatable {
     this.reportHistory   = const [],
     this.hiddenProfileIds = const {},
     this.isSubmitting    = false,
-    this.successMessage  = null,
-    this.error           = null,
+    this.successMessage,
+    this.error,
   });
 
   bool isBlocked(String userId) =>

@@ -63,8 +63,10 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     _interestSent = widget.isInterestSent;
     // Load persisted bookmark state
     BookmarkService.load().then((ids) {
-      if (mounted) setState(() =>
+      if (mounted) {
+        setState(() =>
         _bookmarked = ids.contains(widget.profile.id));
+      }
     });
   }
 
@@ -95,8 +97,11 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     setState(() => _bookmarked = !_bookmarked);
     // Persist the updated bookmark set
     BookmarkService.load().then((ids) {
-      if (_bookmarked) ids.add(widget.profile.id);
-      else ids.remove(widget.profile.id);
+      if (_bookmarked) {
+        ids.add(widget.profile.id);
+      } else {
+        ids.remove(widget.profile.id);
+      }
       BookmarkService.save(ids);
     });
   }
@@ -217,7 +222,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
                     // About — bio in italic Playfair Display
                     if (p.bio != null) ...[
-                      _SectionHeader(label: 'About'),
+                      const _SectionHeader(label: 'About'),
                       const SizedBox(height: AppDimensions.space12),
                       Text(p.bio!, style: AppTypography.bio),
                       const SizedBox(height: AppDimensions.space28),
@@ -227,7 +232,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                     if (p.sect != null || p.deenLevel != null ||
                         p.motherTongue != null || p.smokingHabit != null ||
                         p.quranMemorization != null || p.religiousEducation != null) ...[
-                      _SectionHeader(label: 'Islamic Life'),
+                      const _SectionHeader(label: 'Islamic Life'),
                       const SizedBox(height: AppDimensions.space12),
                       _DetailGrid(items: [
                         if (p.sect      != null) _DetailItem(label: 'Sect',       value: p.sect!),
@@ -245,7 +250,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                     // Background
                     // Education & Career (no marital/family — those go in Family)
                     if (p.occupation != null || p.education != null) ...[
-                      _SectionHeader(label: 'Education & Career'),
+                      const _SectionHeader(label: 'Education & Career'),
                       const SizedBox(height: AppDimensions.space12),
                       _DetailGrid(items: [
                         if (p.occupation != null) _DetailItem(label: 'Occupation', value: p.occupation!),
@@ -257,7 +262,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                     // Family — blueprint section 5 of 6
                     if (p.familyType != null || p.maritalStatus != null ||
                         p.marriageTimeline != null || p.willingToRelocate != null) ...[
-                      _SectionHeader(label: 'Family & Future'),
+                      const _SectionHeader(label: 'Family & Future'),
                       const SizedBox(height: AppDimensions.space12),
                       _DetailGrid(items: [
                         if (p.familyType    != null) _DetailItem(label: 'Family Type',    value: p.familyType!),
@@ -271,7 +276,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
                     // Interests — gold outlined chips (blueprint: after Family)
                     if (p.interests != null && p.interests!.isNotEmpty) ...[
-                      _SectionHeader(label: 'Interests'),
+                      const _SectionHeader(label: 'Interests'),
                       const SizedBox(height: AppDimensions.space12),
                       Wrap(
                         spacing:    AppDimensions.space8,
@@ -285,7 +290,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
                     // Languages
                     if (p.languages != null && p.languages!.isNotEmpty) ...[
-                      _SectionHeader(label: 'Languages'),
+                      const _SectionHeader(label: 'Languages'),
                       const SizedBox(height: AppDimensions.space12),
                       Wrap(
                         spacing:    AppDimensions.space8,
@@ -299,7 +304,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
                     // Looking For — blueprint section 6 of 6
                     if (p.partnerAgeMin != null || p.partnerAgeMax != null) ...[
-                      _SectionHeader(label: 'Looking For'),
+                      const _SectionHeader(label: 'Looking For'),
                       const SizedBox(height: AppDimensions.space12),
                       _DetailGrid(items: [
                         if (p.partnerAgeMin != null && p.partnerAgeMax != null)
@@ -479,8 +484,8 @@ class _SinglePhotoSlide extends StatelessWidget {
     return GestureDetector(
       onTap: () => _openFullScreen(context),
       child: Container(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
             begin: Alignment.topCenter,
             end:   Alignment.bottomCenter,
             colors: [Color(0xFF1A1A2F), AppColors.obsidianNight],
@@ -844,7 +849,7 @@ class _CompatibilityIndicator extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: AppDimensions.space4),
-                Text(
+                const Text(
                   'Based on sect, deen, education & age preferences',
                   style: AppTypography.caption,
                 ),

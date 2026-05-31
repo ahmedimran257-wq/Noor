@@ -284,7 +284,7 @@ class _SheetBase extends StatelessWidget {
                   onApply!();
                   Navigator.pop(context);
                 },
-                child: Text('Apply', style: AppTypography.button),
+                child: const Text('Apply', style: AppTypography.button),
               ),
             ),
           const SizedBox(height: AppDimensions.space8),
@@ -362,7 +362,7 @@ class _AgeRangeSheetState extends State<_AgeRangeSheet> {
           ),
         ),
         const SizedBox(height: AppDimensions.space4),
-        Row(
+        const Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text('18', style: AppTypography.caption),

@@ -468,10 +468,10 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.dark(
+            colorScheme: const ColorScheme.dark(
               primary:   AppColors.champagneGold,
               onPrimary: AppColors.obsidianNight,
-              surface:   const Color(0xFF12121A),
+              surface:   Color(0xFF12121A),
               onSurface: AppColors.pearlWhite,
             ),
           ),
@@ -682,7 +682,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space20),
 
               // Date of birth
-              Text('DATE OF BIRTH', style: AppTypography.sectionLabel),
+              const Text('DATE OF BIRTH', style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space8),
               GestureDetector(
                 onTap: _pickDob,
@@ -692,12 +692,12 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                     horizontal: AppDimensions.space16,
                   ),
                   decoration: BoxDecoration(
-                    color:        AppColors.surfaceGlass,
+                    color:        AppColors.inputSurface,
                     borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.calendar_today_outlined,
+                      const Icon(Icons.calendar_today_outlined,
                           color: AppColors.slateMist,
                           size:  AppDimensions.iconSizeMedium),
                       const SizedBox(width: AppDimensions.space12),
@@ -817,7 +817,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                 const SizedBox(height: AppDimensions.space4),
                 Container(
                   decoration: BoxDecoration(
-                    color:        AppColors.surfaceGlass,
+                    color:        AppColors.inputSurface,
                     borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
                     border:       Border.all(color: AppColors.cardBorder),
                   ),
@@ -867,7 +867,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                       vertical:   AppDimensions.space12,
                     ),
                     decoration: BoxDecoration(
-                      color:        AppColors.surfaceGlass,
+                      color:        AppColors.inputSurface,
                       borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
                       border:       Border.all(color: AppColors.cardBorder),
                     ),
@@ -876,7 +876,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                         const Icon(Icons.flag_outlined,
                             color: AppColors.slateMist, size: 18),
                         const SizedBox(width: AppDimensions.space12),
-                        Text('Country', style: AppTypography.inputLabel),
+                        const Text('Country', style: AppTypography.inputLabel),
                         const Spacer(),
                         Text(_selectedCountryName!,
                             style: AppTypography.bodyMedium),
@@ -891,7 +891,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               // ── COMMUNITY / BIRADARI (Optional) ────────────────────
               Builder(builder: (ctx) {
                 final rel = ctx.read<OnboardingCubit>().currentData.profileCreatorRelation ?? 'self';
-                return Text(CopyEngine.communityQuestion(rel).toUpperCase() + '  (Optional)', style: AppTypography.sectionLabel);
+                return Text('${CopyEngine.communityQuestion(rel).toUpperCase()}  (Optional)', style: AppTypography.sectionLabel);
               }),
               const SizedBox(height: AppDimensions.space12),
               GestureDetector(
@@ -900,7 +900,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                   height: AppDimensions.buttonHeight,
                   padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space16),
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceGlass,
+                    color: AppColors.inputSurface,
                     borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
                     border: Border.all(
                       color: _community != null ? AppColors.champagneGold : AppColors.cardBorder,
@@ -918,7 +918,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                         color: _community != null ? AppColors.pearlWhite : AppColors.slateMist,
                       ),
                     )),
-                    Icon(Icons.expand_more_rounded, color: AppColors.slateMist),
+                    const Icon(Icons.expand_more_rounded, color: AppColors.slateMist),
                   ]),
                 ),
               ),
@@ -937,7 +937,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space24),
 
               // ── COMPLEXION (Optional) ──────────────────────────────
-              Text('COMPLEXION  (Optional)', style: AppTypography.sectionLabel),
+              const Text('COMPLEXION  (Optional)', style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
                 spacing:    AppDimensions.space8,
@@ -953,7 +953,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space24),
 
               // ── MOTHER TONGUE (Required) ───────────────────────────
-              Text('MOTHER TONGUE', style: AppTypography.sectionLabel),
+              const Text('MOTHER TONGUE', style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
               GestureDetector(
                 onTap: _showMotherTonguePicker,
@@ -963,7 +963,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                     horizontal: AppDimensions.space16,
                   ),
                   decoration: BoxDecoration(
-                    color:        AppColors.surfaceGlass,
+                    color:        AppColors.inputSurface,
                     borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
                     border: Border.all(
                       color: _motherTongue != null
@@ -992,7 +992,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                           ),
                         ),
                       ),
-                      Icon(Icons.expand_more_rounded,
+                      const Icon(Icons.expand_more_rounded,
                           color: AppColors.slateMist),
                     ],
                   ),
@@ -1002,7 +1002,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space28),
 
               // ── RESIDENCY STATUS (Optional) ─────────────────────────
-              Text('RESIDENCY STATUS  (Optional)', style: AppTypography.sectionLabel),
+              const Text('RESIDENCY STATUS  (Optional)', style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
                 spacing:    AppDimensions.space8,
@@ -1018,7 +1018,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space28),
 
               // ── SPECIAL NEEDS (Optional) ─────────────────────────────
-              Text('SPECIAL NEEDS  (Optional)', style: AppTypography.sectionLabel),
+              const Text('SPECIAL NEEDS  (Optional)', style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space4),
               Container(
                 padding: const EdgeInsets.all(AppDimensions.space10),
@@ -1027,11 +1027,11 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                   borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
                   border: Border.all(color: AppColors.cardBorder),
                 ),
-                child: Row(
+                child: const Row(
                   children: [
-                    const Icon(Icons.lock_outline_rounded,
+                    Icon(Icons.lock_outline_rounded,
                         color: AppColors.slateMist, size: 14),
-                    const SizedBox(width: AppDimensions.space8),
+                    SizedBox(width: AppDimensions.space8),
                     Expanded(
                       child: Text(
                         'This is only shared after mutual interest.',
@@ -1133,7 +1133,7 @@ class _HeightStepper extends StatelessWidget {
         vertical:   AppDimensions.space12,
       ),
       decoration: BoxDecoration(
-        color:        AppColors.surfaceGlass,
+        color:        AppColors.inputSurface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
         border:       Border.all(color: AppColors.goldBorder),
       ),
@@ -1338,7 +1338,7 @@ class _GenericListPickerState extends State<_GenericListPicker> {
                   hintText:  'Search…',
                   hintStyle: AppTypography.inputLabel,
                   prefixIcon: const Icon(Icons.search_rounded, color: AppColors.slateMist, size: 20),
-                  filled: true, fillColor: AppColors.surfaceGlass,
+                  filled: true, fillColor: AppColors.inputSurface,
                   contentPadding: const EdgeInsets.symmetric(horizontal: AppDimensions.space12, vertical: AppDimensions.space10),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppDimensions.radiusButton), borderSide: const BorderSide(color: AppColors.cardBorder)),
                   enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppDimensions.radiusButton), borderSide: const BorderSide(color: AppColors.cardBorder)),
@@ -1349,8 +1349,8 @@ class _GenericListPickerState extends State<_GenericListPicker> {
             const SizedBox(height: AppDimensions.space8),
             Flexible(
               child: _filtered.isEmpty
-                  ? Padding(
-                      padding: const EdgeInsets.all(AppDimensions.space24),
+                  ? const Padding(
+                      padding: EdgeInsets.all(AppDimensions.space24),
                       child: Text('Nothing found.', style: AppTypography.bodyMuted, textAlign: TextAlign.center),
                     )
                   : ListView.builder(

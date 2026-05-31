@@ -190,7 +190,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
                     children: [
                       Text('نور', style: AppTypography.wordmark.copyWith(fontSize: 26)),
                       const SizedBox(width: AppDimensions.space8),
-                      Text('NOOR', style: AppTypography.wordmark),
+                      const Text('NOOR', style: AppTypography.wordmark),
                       const Spacer(),
                       // Free-tier counter badge
                       if (feedState.status == FeedStatus.loaded ||
@@ -491,7 +491,7 @@ class _EmptyFeed extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppDimensions.space12),
-            Text(
+            const Text(
               'Try expanding your search filters\nor check back tomorrow.',
               style: AppTypography.bodyMuted,
               textAlign: TextAlign.center,
@@ -523,7 +523,7 @@ class _FreeTierLimitReached extends StatelessWidget {
                 color:  AppColors.champagneGold.withValues(alpha: 0.1),
                 shape:  BoxShape.circle,
                 border: Border.all(color: AppColors.goldBorder),
-                boxShadow: [
+                boxShadow: const [
                   BoxShadow(
                     color:        AppColors.goldGlow,
                     blurRadius:   24,
@@ -543,7 +543,7 @@ class _FreeTierLimitReached extends StatelessWidget {
               style: AppTypography.screenTitle.copyWith(fontSize: 22),
             ),
             const SizedBox(height: AppDimensions.space12),
-            Text(
+            const Text(
               'You\'ve browsed 15 profiles today.\nUpgrade to unlock unlimited browsing.',
               style: AppTypography.bodyMuted,
               textAlign: TextAlign.center,
@@ -560,7 +560,7 @@ class _FreeTierLimitReached extends StatelessWidget {
                   color:        AppColors.champagneGold,
                   borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
                 ),
-                child: Text('Upgrade Now', style: AppTypography.button),
+                child: const Text('Upgrade Now', style: AppTypography.button),
               ),
             ),
           ],
@@ -579,7 +579,9 @@ int _quickCompleteness(OnboardingData d) {
   if ((d.bio?.length ?? 0) >= 50) score += 15;
   if (d.sect != null && d.deenLevel != null) score += 15;
   if ((d.educationLabel != null || d.educationRank != null) &&
-      (d.profession?.isNotEmpty ?? false)) score += 10;
+      (d.profession?.isNotEmpty ?? false)) {
+    score += 10;
+  }
   if (d.familyType != null) score += 10;
   if (d.preferredAgeMin != null && d.preferredAgeMax != null) score += 10;
   if (d.photoLocalPaths != null && d.photoLocalPaths!.length >= 2) score += 8;
@@ -632,7 +634,7 @@ class _IncompleteProfileGate extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppDimensions.space8),
-            Text(
+            const Text(
               'Profiles above 40% get 3× more interests.\n'
               'Complete your profile to start browsing.',
               style: AppTypography.bodyMuted,
@@ -652,7 +654,7 @@ class _IncompleteProfileGate extends StatelessWidget {
                 ),
                 icon: const Icon(Icons.edit_outlined,
                     color: AppColors.obsidianNight, size: 18),
-                label: Text('Complete Profile', style: AppTypography.button),
+                label: const Text('Complete Profile', style: AppTypography.button),
                 onPressed: () {
                   // Switch to Profile tab (index 3) via HomeScreen
                   final homeState = context.findAncestorStateOfType<HomeScreenState>();

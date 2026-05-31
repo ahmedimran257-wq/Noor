@@ -119,14 +119,14 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
               const SizedBox(height: AppDimensions.space32),
 
               // Age range
-              _Label('AGE RANGE'),
+              const _Label('AGE RANGE'),
               const SizedBox(height: AppDimensions.space8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('${_ageMin.round()} – ${_ageMax.round()} years',
                       style: AppTypography.bodyMedium.copyWith(color: AppColors.champagneGold)),
-                  Text('18 – 60', style: AppTypography.caption),
+                  const Text('18 – 60', style: AppTypography.caption),
                 ],
               ),
               const SizedBox(height: AppDimensions.space8),
@@ -154,7 +154,7 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
               const SizedBox(height: AppDimensions.space24),
 
               // Location preference
-              _Label('LOCATION'),
+              const _Label('LOCATION'),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
                 spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
@@ -170,7 +170,7 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
               const SizedBox(height: AppDimensions.space24),
 
               // Sect preference
-              _Label('SECT PREFERENCE'),
+              const _Label('SECT PREFERENCE'),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
                 spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
@@ -183,7 +183,7 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
               const SizedBox(height: AppDimensions.space24),
 
               // Deen preference
-              _Label('DEEN LEVEL PREFERENCE'),
+              const _Label('DEEN LEVEL PREFERENCE'),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
                 spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
@@ -196,7 +196,7 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
               const SizedBox(height: AppDimensions.space24),
 
               // Min education
-              _Label('MINIMUM EDUCATION'),
+              const _Label('MINIMUM EDUCATION'),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
                 spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
@@ -209,7 +209,7 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
               const SizedBox(height: AppDimensions.space24),
 
               // Openness toggles
-              _Label('OPENNESS'),
+              const _Label('OPENNESS'),
               const SizedBox(height: AppDimensions.space12),
               _OpenTile(
                 label: 'Open to someone previously divorced',
@@ -233,7 +233,7 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
 
               // ── LIVING ARRANGEMENT PREFERENCE (Phase 2) ────
               const SizedBox(height: AppDimensions.space24),
-              _Label('LIVING ARRANGEMENT PREFERENCE'),
+              const _Label('LIVING ARRANGEMENT PREFERENCE'),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
                 spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,

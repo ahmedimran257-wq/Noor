@@ -339,7 +339,7 @@ class _ChatTile extends StatelessWidget {
                   horizontal: AppDimensions.space16,
                   vertical: AppDimensions.space10,
                 ),
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: AppColors.goldGlow,
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(AppDimensions.radiusCard),
@@ -524,7 +524,7 @@ class _EmptyDashboard extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppDimensions.space12),
-            Text(
+            const Text(
               'Your ward hasn\'t started any conversations yet.\n'
               'You\'ll see their chats here when they do.',
               style: AppTypography.bodyMuted,
@@ -562,7 +562,7 @@ class _DashboardShimmer extends StatelessWidget {
               Container(
                 width: 48,
                 height: 48,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   color: AppColors.surfaceGlassHover,
                 ),

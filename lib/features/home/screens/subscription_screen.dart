@@ -449,7 +449,7 @@ class _IncludedFeatures extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             "WHAT'S INCLUDED",
             style: AppTypography.sectionLabel,
           ),
@@ -476,7 +476,7 @@ class _FeatureRow extends StatelessWidget {
           Container(
             width: 32,
             height: 32,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.goldGlow,
             ),

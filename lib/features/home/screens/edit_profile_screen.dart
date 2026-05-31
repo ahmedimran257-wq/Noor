@@ -141,10 +141,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Row(children: [
-          const Icon(Icons.check_circle_rounded,
+        content: const Row(children: [
+          Icon(Icons.check_circle_rounded,
               color: AppColors.champagneGold, size: 18),
-          const SizedBox(width: AppDimensions.space8),
+          SizedBox(width: AppDimensions.space8),
           Text('Profile saved', style: AppTypography.body),
         ]),
         backgroundColor: AppColors.surfaceGlassHover,
@@ -208,12 +208,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               children: [
 
                 // ── Photos ──────────────────────────────────
-                _SectionHeader(label: 'Photos'),
+                const _SectionHeader(label: 'Photos'),
                 const SizedBox(height: AppDimensions.space12),
                 _PhotoGrid(
                   onTap: () => ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Photo management coming soon',
+                      content: const Text('Photo management coming soon',
                           style: AppTypography.body),
                       backgroundColor: AppColors.surfaceGlassHover,
                       behavior:        SnackBarBehavior.floating,
@@ -227,7 +227,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 const SizedBox(height: AppDimensions.space28),
 
                 // ── Basic Info ───────────────────────────────
-                _SectionHeader(label: 'Basic Info'),
+                const _SectionHeader(label: 'Basic Info'),
                 const SizedBox(height: AppDimensions.space12),
                 _NoorTextField(
                   label:        'First name',
@@ -250,7 +250,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 const SizedBox(height: AppDimensions.space28),
 
                 // ── Islamic Identity ─────────────────────────
-                _SectionHeader(label: 'Islamic Identity'),
+                const _SectionHeader(label: 'Islamic Identity'),
                 const SizedBox(height: AppDimensions.space12),
                 _DropdownField(
                   label:    'Sect',
@@ -302,7 +302,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 const SizedBox(height: AppDimensions.space28),
 
                 // ── About ────────────────────────────────────
-                _SectionHeader(label: 'About'),
+                const _SectionHeader(label: 'About'),
                 const SizedBox(height: AppDimensions.space12),
                 _NoorTextField(
                   label:      'Bio',
@@ -320,7 +320,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 const SizedBox(height: AppDimensions.space28),
 
                 // ── Education & Career ───────────────────────
-                _SectionHeader(label: 'Education & Career'),
+                const _SectionHeader(label: 'Education & Career'),
                 const SizedBox(height: AppDimensions.space12),
                 _DropdownField(
                   label:    'Education Level',
@@ -346,7 +346,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 const SizedBox(height: AppDimensions.space28),
 
                 // ── Family ───────────────────────────────────
-                _SectionHeader(label: 'Family'),
+                const _SectionHeader(label: 'Family'),
                 const SizedBox(height: AppDimensions.space12),
                 _DropdownField(
                   label:    'Family Type',
@@ -394,7 +394,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 const SizedBox(height: AppDimensions.space28),
 
                 // ── Partner Preferences ──────────────────────
-                _SectionHeader(label: 'Partner Preferences'),
+                const _SectionHeader(label: 'Partner Preferences'),
                 const SizedBox(height: AppDimensions.space12),
                 _AgeRangeField(
                   min:       _partnerAgeMin,
@@ -693,7 +693,7 @@ class _DropdownField extends StatelessWidget {
         border:       Border.all(color: AppColors.cardBorder),
       ),
       child: DropdownButtonFormField<String>(
-        value:         safeValue,
+        initialValue:         safeValue,
         style:         AppTypography.inputText,
         dropdownColor: const Color(0xFF13131A),
         decoration: InputDecoration(
@@ -749,7 +749,7 @@ class _ToggleRow extends StatelessWidget {
           Switch(
             value:             value,
             onChanged:         onChanged,
-            activeColor:       AppColors.champagneGold,
+            activeThumbColor:       AppColors.champagneGold,
             activeTrackColor:  AppColors.champagneGold.withValues(alpha: 0.3),
             inactiveThumbColor: AppColors.slateMist,
             inactiveTrackColor: AppColors.surfaceGlassHover,
@@ -887,7 +887,7 @@ class _AgeRangeField extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text('Partner age range', style: AppTypography.body),
+              const Text('Partner age range', style: AppTypography.body),
               const Spacer(),
               Text(
                 '${min.round()} – ${max.round()} yrs',
@@ -943,7 +943,7 @@ class _InterestChips extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Interests (up to 6)', style: AppTypography.sectionLabel),
+        const Text('Interests (up to 6)', style: AppTypography.sectionLabel),
         const SizedBox(height: AppDimensions.space8),
         Wrap(
           spacing: AppDimensions.space8,

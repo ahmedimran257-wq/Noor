@@ -103,7 +103,7 @@ class NoorBottomSheet extends StatelessWidget {
           // Subtitle
           if (subtitle != null)
             Padding(
-              padding: EdgeInsetsDirectional.fromSTEB(
+              padding: const EdgeInsetsDirectional.fromSTEB(
                 AppDimensions.horizontalMargin,
                 0,
                 AppDimensions.horizontalMargin,
@@ -115,7 +115,7 @@ class NoorBottomSheet extends StatelessWidget {
           // Content
           Padding(
             padding: padding ??
-                EdgeInsetsDirectional.symmetric(
+                const EdgeInsetsDirectional.symmetric(
                   horizontal: AppDimensions.horizontalMargin,
                 ),
             child: child,
@@ -240,7 +240,7 @@ class _ReportOption extends StatelessWidget {
           AppDimensions.space16,
         ),
         decoration: BoxDecoration(
-          border: Border(
+          border: const Border(
             bottom: BorderSide(
               color: AppColors.divider,
               width: AppDimensions.borderThin,

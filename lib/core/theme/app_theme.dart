@@ -42,18 +42,18 @@ abstract final class AppTheme {
       fontFamily: 'Inter',
 
       // ── App Bar ──────────────────────────────────────────
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         backgroundColor:  AppColors.obsidianNight,
         foregroundColor:  AppColors.pearlWhite,
         elevation:        0,
         scrolledUnderElevation: 0,
         centerTitle:      true,
         titleTextStyle:   AppTypography.wordmark,
-        iconTheme:        const IconThemeData(
+        iconTheme:        IconThemeData(
           color: AppColors.pearlWhite,
           size:  AppDimensions.iconSizeLarge,
         ),
-        systemOverlayStyle: const SystemUiOverlayStyle(
+        systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor:           Colors.transparent,
           statusBarIconBrightness:  Brightness.light,
           statusBarBrightness:      Brightness.dark,
@@ -104,50 +104,57 @@ abstract final class AppTheme {
       ),
 
       // ── Input Decoration Theme ───────────────────────────
-      // "BG: Surface Glass. Border: Bottom border only."
+      // Premium: near-transparent fill + crisp outline border.
+      // The fill is barely there — just enough to define the field
+      // against the background. Borders provide the real definition.
       inputDecorationTheme: InputDecorationTheme(
         filled:      true,
-        fillColor:   AppColors.surfaceGlass,
+        fillColor:   AppColors.inputSurface,
         hintStyle:   AppTypography.inputLabel,
         labelStyle:  AppTypography.inputLabel,
         floatingLabelStyle: AppTypography.inputLabel.copyWith(
           color: AppColors.champagneGold,
           fontSize: 12,
         ),
-        // Bottom border only — no outline
-        border: const UnderlineInputBorder(
-          borderSide: BorderSide(
-            color: AppColors.slateMist,
+        // Rounded outline border — premium, not underline
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+          borderSide: const BorderSide(
+            color: AppColors.cardBorder,
             width: AppDimensions.borderThin,
           ),
         ),
-        enabledBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(
-            color: AppColors.slateMist,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+          borderSide: const BorderSide(
+            color: AppColors.cardBorder,
             width: AppDimensions.borderThin,
           ),
         ),
-        // "Focus State: Bottom border transitions to 2px Champagne Gold."
-        focusedBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(
+        // Focus: refined gold border
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+          borderSide: const BorderSide(
             color: AppColors.champagneGold,
             width: AppDimensions.borderFocus,
           ),
         ),
-        errorBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+          borderSide: const BorderSide(
             color: AppColors.softCoral,
-            width: AppDimensions.borderFocus,
+            width: AppDimensions.borderThin,
           ),
         ),
-        focusedErrorBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+          borderSide: const BorderSide(
             color: AppColors.softCoral,
             width: AppDimensions.borderFocus,
           ),
         ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 0,
+          horizontal: AppDimensions.space16,
           vertical: AppDimensions.space16,
         ),
       ),
@@ -282,7 +289,7 @@ class NoorPageTransition extends PageTransitionsBuilder {
   ) {
     final fadeTween = CurveTween(curve: Curves.easeOutCubic);
     final slideTween = Tween<Offset>(
-      begin: const Offset(0, 0.04),   // 20px at typical 500px height ≈ 4%
+      begin: const Offset(0, 0.02),   // 10px at typical 500px height ≈ 2%
       end:   Offset.zero,
     ).chain(CurveTween(curve: Curves.easeOutCubic));
 

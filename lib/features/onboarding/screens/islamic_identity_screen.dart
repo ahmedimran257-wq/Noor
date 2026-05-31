@@ -223,10 +223,10 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
               const StepHeader(title: 'Your faith', subtitle: 'This helps match you with someone compatible.'),
               const SizedBox(height: AppDimensions.space32),
 
-              _SectionTitle('SECT'),
+              const _SectionTitle('SECT'),
               const SizedBox(height: AppDimensions.space12),
               _ChipGroup<Sect>(
-                options: [Sect.sunni, Sect.shia, Sect.preferNotToSay, Sect.other],
+                options: const [Sect.sunni, Sect.shia, Sect.preferNotToSay, Sect.other],
                 selected: _sect,
                 label: (s) {
                   switch (s) {
@@ -255,9 +255,9 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
               ],
 
               // ── REVERT / CONVERT STATUS ──────────────────
-              _SectionTitle('REVERT / CONVERT  (Optional)'),
+              const _SectionTitle('REVERT / CONVERT  (Optional)'),
               const SizedBox(height: AppDimensions.space4),
-              Text('Are you a revert (convert) to Islam?', style: AppTypography.caption),
+              const Text('Are you a revert (convert) to Islam?', style: AppTypography.caption),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
                 spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
@@ -273,7 +273,7 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
               ),
               const SizedBox(height: AppDimensions.space20),
 
-              _SectionTitle('DEEN LEVEL'),
+              const _SectionTitle('DEEN LEVEL'),
               const SizedBox(height: AppDimensions.space12),
               Column(
                 children: DeenLevel.values.map((d) {
@@ -328,9 +328,9 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
                   )).toList(),
                 ),
                 const SizedBox(height: AppDimensions.space20),
-                _SectionTitle('RELIGIOUS LEADERSHIP'),
+                const _SectionTitle('RELIGIOUS LEADERSHIP'),
                 const SizedBox(height: AppDimensions.space4),
-                Text('Can you lead congregational prayers?', style: AppTypography.caption),
+                const Text('Can you lead congregational prayers?', style: AppTypography.caption),
                 const SizedBox(height: AppDimensions.space12),
                 Wrap(
                   spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
@@ -349,12 +349,12 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
 
               // ── LIFESTYLE & DIET ─────────────────────────
               const SizedBox(height: AppDimensions.space28),
-              _SectionTitle('LIFESTYLE & DIET'),
+              const _SectionTitle('LIFESTYLE & DIET'),
               const SizedBox(height: AppDimensions.space6),
-              Text('These are dealbreaker fields for many families. Please answer honestly.', style: AppTypography.caption),
+              const Text('These are dealbreaker fields for many families. Please answer honestly.', style: AppTypography.caption),
               const SizedBox(height: AppDimensions.space16),
 
-              _SectionTitle('DIET'),
+              const _SectionTitle('DIET'),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
                 spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
@@ -367,10 +367,10 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
 
               // ── SUBSTANCE USE ─────────────────────────────
               const SizedBox(height: AppDimensions.space20),
-              _SectionTitle('SUBSTANCE USE'),
+              const _SectionTitle('SUBSTANCE USE'),
               const SizedBox(height: AppDimensions.space12),
 
-              Text('Smoking', style: AppTypography.caption),
+              const Text('Smoking', style: AppTypography.caption),
               const SizedBox(height: AppDimensions.space8),
               Wrap(
                 spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
@@ -381,7 +381,7 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
               ),
               const SizedBox(height: AppDimensions.space16),
 
-              Text('Vaping / E-Cigarettes', style: AppTypography.caption),
+              const Text('Vaping / E-Cigarettes', style: AppTypography.caption),
               const SizedBox(height: AppDimensions.space8),
               Wrap(
                 spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
@@ -392,7 +392,7 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
               ),
               const SizedBox(height: AppDimensions.space16),
 
-              Text('Hookah / Shisha', style: AppTypography.caption),
+              const Text('Hookah / Shisha', style: AppTypography.caption),
               const SizedBox(height: AppDimensions.space8),
               Wrap(
                 spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,

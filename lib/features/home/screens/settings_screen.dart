@@ -428,11 +428,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
           side: const BorderSide(color: AppColors.cardBorder),
         ),
-        title: Row(
+        title: const Row(
           children: [
-            const Icon(Icons.support_agent_rounded,
+            Icon(Icons.support_agent_rounded,
                 color: AppColors.champagneGold, size: 20),
-            const SizedBox(width: 10),
+            SizedBox(width: 10),
             Text('Contact Support', style: AppTypography.bodyMedium),
           ],
         ),
@@ -467,7 +467,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ],
                   ),
                   const SizedBox(height: AppDimensions.space8),
-                  Text(
+                  const Text(
                     'We aim to respond within 48 hours.',
                     style: AppTypography.caption,
                   ),
@@ -560,8 +560,8 @@ class _GuardianSectionState extends State<_GuardianSection> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
         leading: const Icon(Icons.supervisor_account_outlined,
             color: AppColors.champagneGold, size: 20),
-        title: Text('Guardian Mode', style: AppTypography.body),
-        subtitle: Text('Enable Wali oversight for messaging',
+        title: const Text('Guardian Mode', style: AppTypography.body),
+        subtitle: const Text('Enable Wali oversight for messaging',
             style: AppTypography.caption),
         trailing: Switch(
           value:              _enabled,
@@ -600,7 +600,7 @@ class _GuardianSectionState extends State<_GuardianSection> {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                   leading: const Icon(Icons.family_restroom_outlined,
                       color: AppColors.slateMist, size: 20),
-                  title: Text('Relationship', style: AppTypography.body),
+                  title: const Text('Relationship', style: AppTypography.body),
                   trailing: DropdownButton<String>(
                     value:           _relationship,
                     dropdownColor:   const Color(0xFF1A1A25),
@@ -624,8 +624,8 @@ class _GuardianSectionState extends State<_GuardianSection> {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                   leading: const Icon(Icons.content_copy_outlined,
                       color: AppColors.slateMist, size: 20),
-                  title: Text('Mirror Messages', style: AppTypography.body),
-                  subtitle: Text('Send copies of all messages to guardian',
+                  title: const Text('Mirror Messages', style: AppTypography.body),
+                  subtitle: const Text('Send copies of all messages to guardian',
                       style: AppTypography.caption),
                   trailing: Switch(
                     value:              _mirror,
@@ -642,8 +642,8 @@ class _GuardianSectionState extends State<_GuardianSection> {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                   leading: const Icon(Icons.reply_outlined,
                       color: AppColors.slateMist, size: 20),
-                  title: Text('Allow Guardian to Reply', style: AppTypography.body),
-                  subtitle: Text('Guardian may participate in conversations',
+                  title: const Text('Allow Guardian to Reply', style: AppTypography.body),
+                  subtitle: const Text('Guardian may participate in conversations',
                       style: AppTypography.caption),
                   trailing: Switch(
                     value:              _canReply,
@@ -672,19 +672,19 @@ class _GuardianSectionState extends State<_GuardianSection> {
                       child: AnimatedSwitcher(
                         duration: AppDimensions.durationTransition,
                         child: _saved
-                            ? Row(
-                                key: const ValueKey('saved'),
+                            ? const Row(
+                                key: ValueKey('saved'),
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.check_rounded,
+                                  Icon(Icons.check_rounded,
                                       color: AppColors.obsidianNight, size: 16),
-                                  const SizedBox(width: 6),
+                                  SizedBox(width: 6),
                                   Text('Saved',
                                       style: AppTypography.button),
                                 ],
                               )
-                            : Text('Save Guardian Settings',
-                                key: const ValueKey('save'),
+                            : const Text('Save Guardian Settings',
+                                key: ValueKey('save'),
                                 style: AppTypography.button),
                       ),
                     ),
@@ -890,11 +890,11 @@ class _PrivacySectionState extends State<_PrivacySection> {
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
           side: const BorderSide(color: AppColors.cardBorder),
         ),
-        title: Row(
+        title: const Row(
           children: [
-            const Icon(Icons.download_done_rounded,
+            Icon(Icons.download_done_rounded,
                 color: AppColors.verifiedTeal, size: 20),
-            const SizedBox(width: 10),
+            SizedBox(width: 10),
             Text('Export Requested', style: AppTypography.bodyMedium),
           ],
         ),
@@ -1347,8 +1347,8 @@ class _ReportHistorySheet extends StatelessWidget {
               style: AppTypography.screenTitle.copyWith(fontSize: 20)),
           const SizedBox(height: 16),
           if (reports.isEmpty)
-            Center(child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24),
+            const Center(child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
               child: Text('No reports submitted', style: AppTypography.bodyMuted),
             ))
           else

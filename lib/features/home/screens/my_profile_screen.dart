@@ -116,7 +116,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
             child: Row(
               children: [
-                Text('My Profile', style: AppTypography.screenTitle),
+                const Text('My Profile', style: AppTypography.screenTitle),
                 const Spacer(),
                 // Notification bell (from Feature 11)
                 BlocBuilder<NotificationsCubit, NotificationsState>(
@@ -238,7 +238,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                       ),
                     ),
                     const SizedBox(width: AppDimensions.space12),
-                    Expanded(
+                    const Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -304,7 +304,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                 icon: const Icon(Icons.edit_outlined,
                     color: AppColors.champagneGold,
                     size:  AppDimensions.iconSizeMedium),
-                label: Text('Edit Profile', style: AppTypography.buttonSecondary),
+                label: const Text('Edit Profile', style: AppTypography.buttonSecondary),
                 onPressed: () => Navigator.of(context).push(
                   PageRouteBuilder(
                     transitionDuration: AppDimensions.durationReveal,
@@ -514,10 +514,10 @@ class _BoostSectionState extends State<_BoostSection> {
       _startTimer();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Row(children: [
-            const Icon(Icons.rocket_launch_rounded,
+          content: const Row(children: [
+            Icon(Icons.rocket_launch_rounded,
                 color: AppColors.champagneGold, size: 16),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Text('Your profile is boosted for 2 hours!',
                 style: AppTypography.body),
           ]),
@@ -697,7 +697,7 @@ class _BoostLocked extends StatelessWidget {
                 Text('Profile Boost', style: AppTypography.bodyMedium.copyWith(
                     color: AppColors.slateMist)),
                 const SizedBox(height: AppDimensions.space4),
-                Text('Subscribe to unlock weekly profile boost.',
+                const Text('Subscribe to unlock weekly profile boost.',
                     style: AppTypography.caption),
               ],
             ),
@@ -764,7 +764,7 @@ class _SubscriptionCard extends StatelessWidget {
         const Icon(Icons.warning_amber_rounded,
             color: Color(0xFFF6C344), size: 22),
         const SizedBox(width: 10),
-        Expanded(child: Text('Payment issue — subscription in grace period.',
+        const Expanded(child: Text('Payment issue — subscription in grace period.',
             style: AppTypography.caption)),
         TextButton(
           onPressed: () => Navigator.of(context).push(
@@ -795,7 +795,7 @@ class _SubscriptionCard extends StatelessWidget {
               Text('Upgrade to NOOR Premium',
                   style: AppTypography.bodyMedium.copyWith(
                       color: AppColors.champagneGold)),
-              Text('Unlock messaging from ₹249/mo',
+              const Text('Unlock messaging from ₹249/mo',
                   style: AppTypography.caption),
             ],
           )),
@@ -881,7 +881,7 @@ class _ProfilePreviewCard extends StatelessWidget {
         color:        AppColors.surfaceGlass,
         borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
         border:       Border.all(color: AppColors.goldBorder),
-        boxShadow: [BoxShadow(color: AppColors.goldGlow, blurRadius: 20)],
+        boxShadow: const [BoxShadow(color: AppColors.goldGlow, blurRadius: 20)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1013,10 +1013,10 @@ class _SavedProfilesSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('SAVED PROFILES', style: AppTypography.sectionLabel),
+        const Text('SAVED PROFILES', style: AppTypography.sectionLabel),
         const SizedBox(height: AppDimensions.space12),
         if (saved.isEmpty)
-          NoorEmptyState(
+          const NoorEmptyState(
             icon:     Icons.bookmark_border_rounded,
             title:    'No saved profiles yet',
             subtitle: 'Tap the bookmark icon on any\nprofile to save it here.',
@@ -1258,7 +1258,7 @@ class _IFoundMyMatchButton extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: AppDimensions.space4),
-                  Text('Alhamdulillah! Deactivate your profile.',
+                  const Text('Alhamdulillah! Deactivate your profile.',
                     style: AppTypography.caption,
                   ),
                 ],
@@ -1305,13 +1305,13 @@ class _IFoundMyMatchButton extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppDimensions.space8),
-            Text(
+            const Text(
               'May Allah bless your union with\nlove, mercy, and barakah.',
               style: AppTypography.bodyMuted,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppDimensions.space6),
-            Text(
+            const Text(
               'Your profile will be hidden from searches.\nYou can reactivate anytime.',
               style: AppTypography.caption,
               textAlign: TextAlign.center,
@@ -1334,7 +1334,7 @@ class _IFoundMyMatchButton extends StatelessWidget {
                   context.read<AuthCubit>().signOut();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(
+                      content: const Text(
                         'Your profile has been deactivated. Mubarak!',
                         style: AppTypography.body,
                       ),
@@ -1347,7 +1347,7 @@ class _IFoundMyMatchButton extends StatelessWidget {
                     ),
                   );
                 },
-                child: Text('Confirm & Deactivate', style: AppTypography.button),
+                child: const Text('Confirm & Deactivate', style: AppTypography.button),
               ),
             ),
             const SizedBox(height: AppDimensions.space8),

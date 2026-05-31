@@ -112,7 +112,7 @@ class AuthCubit extends Cubit<AuthState> {
             // Store the access token for subsequent API calls
             // TODO: Set up Supabase auth session properly
           } else if (data['status'] == 'secondary_verification_required') {
-            emit(AuthError(message: 'New device detected. Please verify your identity.'));
+            emit(const AuthError(message: 'New device detected. Please verify your identity.'));
             return;
           }
         }

@@ -85,19 +85,19 @@ abstract final class AppDimensions {
   // ── Animation Durations ───────────────────────────────────
 
   /// "The Reveal" — elements entering the screen (300–500ms).
-  static const Duration durationReveal = Duration(milliseconds: 350);
+  static const Duration durationReveal = Duration(milliseconds: 250);
 
   /// "The Transition" — state changes, chip color (200–300ms).
-  static const Duration durationTransition = Duration(milliseconds: 250);
+  static const Duration durationTransition = Duration(milliseconds: 180);
 
   /// "The Tactile Pop" — micro-interactions (600–800ms).
-  static const Duration durationTactile = Duration(milliseconds: 700);
+  static const Duration durationTactile = Duration(milliseconds: 350);
 
   /// Button press scale animation (100ms).
   static const Duration durationButtonPress = Duration(milliseconds: 100);
 
   /// Page transition "Unfolding" (350ms).
-  static const Duration durationPageTransition = Duration(milliseconds: 350);
+  static const Duration durationPageTransition = Duration(milliseconds: 250);
 
   /// Shimmer sweep duration.
   static const Duration durationShimmer = Duration(milliseconds: 1500);

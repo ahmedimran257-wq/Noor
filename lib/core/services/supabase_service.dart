@@ -33,8 +33,8 @@ class SupabaseService {
   static Future<void> initialize() async {
     if (_isInitialized) return;
 
-    final url = AppConfig.supabaseUrl;
-    final anonKey = AppConfig.supabaseAnonKey;
+    const url = AppConfig.supabaseUrl;
+    const anonKey = AppConfig.supabaseAnonKey;
 
     // Check if credentials are placeholder values
     if (url.contains('YOUR_PROJECT') || anonKey.contains('YOUR_')) {

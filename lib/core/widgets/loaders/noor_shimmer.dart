@@ -129,23 +129,23 @@ class NoorProfileCardShimmer extends StatelessWidget {
               width: AppDimensions.borderThin,
             ),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(AppDimensions.space20),
+          child: const Padding(
+            padding: EdgeInsets.all(AppDimensions.space20),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.end,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Location line
                 ShimmerBox(width: 80, height: 12, radius: AppDimensions.radiusTiny),
-                const SizedBox(height: AppDimensions.space8),
+                SizedBox(height: AppDimensions.space8),
                 // Name line
                 ShimmerBox(width: 160, height: 20, radius: AppDimensions.radiusTiny),
-                const SizedBox(height: AppDimensions.space12),
+                SizedBox(height: AppDimensions.space12),
                 // Two chips
                 Row(
                   children: [
                     ShimmerBox(width: 70, height: 28, radius: AppDimensions.radiusChip),
-                    const SizedBox(width: AppDimensions.space8),
+                    SizedBox(width: AppDimensions.space8),
                     ShimmerBox(width: 90, height: 28, radius: AppDimensions.radiusChip),
                   ],
                 ),
@@ -165,23 +165,23 @@ class NoorConversationShimmer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return NoorShimmer(
+    return const NoorShimmer(
       child: Padding(
-        padding: const EdgeInsetsDirectional.symmetric(
+        padding: EdgeInsetsDirectional.symmetric(
           horizontal: AppDimensions.horizontalMargin,
           vertical:   AppDimensions.space12,
         ),
         child: Row(
           children: [
             // Avatar
-            const ShimmerBox(width: 52, height: 52, radius: 26),
-            const SizedBox(width: AppDimensions.space12),
+            ShimmerBox(width: 52, height: 52, radius: 26),
+            SizedBox(width: AppDimensions.space12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ShimmerBox(width: 120, height: 14, radius: AppDimensions.radiusTiny),
-                  const SizedBox(height: AppDimensions.space8),
+                  SizedBox(height: AppDimensions.space8),
                   ShimmerBox(
                     width: double.infinity,
                     height: 12,
@@ -218,16 +218,16 @@ class NoorInterestShimmer extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
           border: Border.all(color: AppColors.cardBorder),
         ),
-        child: Row(
+        child: const Row(
           children: [
-            const ShimmerBox(width: 56, height: 56, radius: AppDimensions.radiusButton),
-            const SizedBox(width: AppDimensions.space12),
+            ShimmerBox(width: 56, height: 56, radius: AppDimensions.radiusButton),
+            SizedBox(width: AppDimensions.space12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ShimmerBox(width: 140, height: 16, radius: AppDimensions.radiusTiny),
-                  const SizedBox(height: AppDimensions.space8),
+                  SizedBox(height: AppDimensions.space8),
                   ShimmerBox(width: 100, height: 12, radius: AppDimensions.radiusTiny),
                 ],
               ),

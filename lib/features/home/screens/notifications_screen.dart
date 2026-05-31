@@ -109,7 +109,7 @@ class _NotificationTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
           border: item.isRead
               ? Border.all(color: AppColors.cardBorder)
-              : Border(
+              : const Border(
                   left:   BorderSide(
                       color: AppColors.champagneGold, width: 3),
                   top:    BorderSide(color: AppColors.cardBorder),

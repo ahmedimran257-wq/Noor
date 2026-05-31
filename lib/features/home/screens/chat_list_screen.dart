@@ -42,7 +42,7 @@ class ChatListScreen extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Text('Messages', style: AppTypography.screenTitle),
+                  const Text('Messages', style: AppTypography.screenTitle),
                   const Spacer(),
                   // Total unread badge on header
                   if (state.totalUnread > 0)
@@ -66,7 +66,7 @@ class ChatListScreen extends StatelessWidget {
                         ..clearSnackBars()
                         ..showSnackBar(
                           SnackBar(
-                            content: Text('Search coming soon',
+                            content: const Text('Search coming soon',
                                 style: AppTypography.body),
                             backgroundColor: AppColors.surfaceGlassHover,
                             behavior: SnackBarBehavior.floating,
@@ -337,7 +337,7 @@ class _ChatEmptyState extends StatelessWidget {
                 color:  AppColors.surfaceGlass,
                 shape:  BoxShape.circle,
                 border: Border.all(color: AppColors.goldBorder),
-                boxShadow: [
+                boxShadow: const [
                   BoxShadow(
                     color:       AppColors.goldGlow,
                     blurRadius:  24,
@@ -357,7 +357,7 @@ class _ChatEmptyState extends StatelessWidget {
               style: AppTypography.screenTitle.copyWith(fontSize: 22),
             ),
             const SizedBox(height: AppDimensions.space12),
-            Text(
+            const Text(
               'Accept an interest or have yours\naccepted to begin a conversation.',
               style: AppTypography.bodyMuted,
               textAlign: TextAlign.center,

@@ -172,7 +172,7 @@ class _AboutYourselfScreenState extends State<AboutYourselfScreen> {
               // Interests
               Row(
                 children: [
-                  Text('INTERESTS', style: AppTypography.sectionLabel),
+                  const Text('INTERESTS', style: AppTypography.sectionLabel),
                   const Spacer(),
                   Text(
                     '${_interests.length}/$_maxInterests selected',
@@ -252,7 +252,7 @@ class _AboutYourselfScreenState extends State<AboutYourselfScreen> {
               const SizedBox(height: AppDimensions.space8),
 
               // Languages
-              Text('LANGUAGES SPOKEN', style: AppTypography.sectionLabel),
+              const Text('LANGUAGES SPOKEN', style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
                 spacing:    AppDimensions.space8,

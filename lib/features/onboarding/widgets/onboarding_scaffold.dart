@@ -57,84 +57,109 @@ class OnboardingScaffold extends StatelessWidget {
     final resolvedTotal = totalSteps ?? (isGuardian ? 12 : 11);
 
     return Scaffold(
-      backgroundColor: AppColors.obsidianNight,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ── Top bar: back + progress ──────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppDimensions.space24,
-                vertical:   AppDimensions.space16,
-              ),
-              child: Row(
-                children: [
-                  // Back button (RTL-aware)
-                  _BackButton(onBack: onBack ?? () => context.read<OnboardingCubit>().goBack()),
-                  const SizedBox(width: AppDimensions.space16),
-                  // Progress bar fills remaining width
-                  Expanded(
-                    child: OnboardingProgressBar(
-                      currentStep: resolvedStep,
-                      totalSteps:  resolvedTotal,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // ── Scrollable body ───────────────────────────
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment(0, -0.5),  // slightly above center
+            radius: 1.2,
+            colors: [
+              Color(0xFF151522),  // Deep premium navy-charcoal core
+              AppColors.obsidianNight,  // Deep midnight edges
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // ── Top bar: back + progress ──────────────────
+              Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppDimensions.space24,
+                  vertical:   AppDimensions.space16,
                 ),
-                child: body,
-              ),
-            ),
-
-            // ── Bottom CTA ────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppDimensions.space24,
-                AppDimensions.space16,
-                AppDimensions.space24,
-                AppDimensions.space32,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  GestureDetector(
-                    onTap: isCtaEnabled ? null : onCtaDisabledTap,
-                    child: NoorPrimaryButton(
-                      label:     ctaLabel,
-                      onTap:     isCtaEnabled ? onCta : null,
-                      isLoading: isCtaLoading,
-                    ),
-                  ),
-                  if (skipLabel != null && onSkip != null) ...[
-                    const SizedBox(height: AppDimensions.space12),
-                    GestureDetector(
-                      onTap: onSkip,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: AppDimensions.space8,
-                        ),
-                        child: Text(
-                          skipLabel!,
-                          style: AppTypography.buttonGhost.copyWith(
-                            color: AppColors.slateMist,
-                            fontSize: 14,
-                          ),
-                        ),
+                child: Row(
+                  children: [
+                    // Back button (RTL-aware)
+                    _BackButton(onBack: onBack ?? () => context.read<OnboardingCubit>().goBack()),
+                    const SizedBox(width: AppDimensions.space16),
+                    // Progress bar fills remaining width
+                    Expanded(
+                      child: OnboardingProgressBar(
+                        currentStep: resolvedStep,
+                        totalSteps:  resolvedTotal,
                       ),
                     ),
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+  
+              // ── Scrollable body ───────────────────────────
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppDimensions.space24,
+                  ),
+                  child: body,
+                ),
+              ),
+  
+              // ── Bottom CTA ────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppDimensions.space24,
+                  AppDimensions.space16,
+                  AppDimensions.space24,
+                  AppDimensions.space32,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // When disabled, IgnorePointer stops the button from
+                    // absorbing the tap (NoorPressable uses opaque hit-testing).
+                    // The overlay GestureDetector then catches it for validation.
+                    if (!isCtaEnabled && onCtaDisabledTap != null)
+                      GestureDetector(
+                        onTap: onCtaDisabledTap,
+                        behavior: HitTestBehavior.opaque,
+                        child: IgnorePointer(
+                          child: NoorPrimaryButton(
+                            label:     ctaLabel,
+                            onTap:     null,
+                            isLoading: isCtaLoading,
+                          ),
+                        ),
+                      )
+                    else
+                      NoorPrimaryButton(
+                        label:     ctaLabel,
+                        onTap:     isCtaEnabled ? onCta : null,
+                        isLoading: isCtaLoading,
+                      ),
+                    if (skipLabel != null && onSkip != null) ...[
+                      const SizedBox(height: AppDimensions.space12),
+                      GestureDetector(
+                        onTap: onSkip,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppDimensions.space8,
+                          ),
+                          child: Text(
+                            skipLabel!,
+                            style: AppTypography.buttonGhost.copyWith(
+                              color: AppColors.slateMist,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

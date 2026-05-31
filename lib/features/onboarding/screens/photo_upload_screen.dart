@@ -205,10 +205,10 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
     if (face == _FaceResult.notFound) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Row(children: [
-            const Icon(Icons.warning_amber_rounded,
+          content: const Row(children: [
+            Icon(Icons.warning_amber_rounded,
                 color: Colors.white, size: 18),
-            const SizedBox(width: AppDimensions.space8),
+            SizedBox(width: AppDimensions.space8),
             Expanded(
               child: Text(
                 'No face visible — please retry with a clear face photo',
@@ -246,18 +246,18 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
               ),
             ),
             const SizedBox(height: AppDimensions.space20),
-            Text('Add photo', style: AppTypography.bodyMedium),
+            const Text('Add photo', style: AppTypography.bodyMedium),
             const SizedBox(height: AppDimensions.space16),
             ListTile(
               leading: const Icon(Icons.camera_alt_outlined,
                   color: AppColors.champagneGold),
-              title: Text('Camera', style: AppTypography.body),
+              title: const Text('Camera', style: AppTypography.body),
               onTap: () => Navigator.pop(sheetCtx, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined,
                   color: AppColors.champagneGold),
-              title: Text('Photo Gallery', style: AppTypography.body),
+              title: const Text('Photo Gallery', style: AppTypography.body),
               onTap: () => Navigator.pop(sheetCtx, ImageSource.gallery),
             ),
             const SizedBox(height: AppDimensions.space16),
@@ -375,8 +375,8 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
 
               // Slot labels
               const SizedBox(height: AppDimensions.space12),
-              Row(
-                children: const [
+              const Row(
+                children: [
                   Expanded(child: Center(
                     child: _SlotLabel('Primary photo', isRequired: true),
                   )),
@@ -387,8 +387,8 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
                 ],
               ),
               const SizedBox(height: AppDimensions.space4),
-              Row(
-                children: const [
+              const Row(
+                children: [
                   Expanded(child: Center(
                     child: _SlotLabel('Photo 3', isRequired: false),
                   )),
@@ -403,7 +403,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
               // Privacy toggle for women
               if (_gender == Gender.female) ...[
                 const SizedBox(height: AppDimensions.space24),
-                Text('PHOTO PRIVACY', style: AppTypography.sectionLabel),
+                const Text('PHOTO PRIVACY', style: AppTypography.sectionLabel),
                 const SizedBox(height: AppDimensions.space12),
                 _PrivacyToggle(
                   current:   _privacy,

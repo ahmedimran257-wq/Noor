@@ -21,10 +21,10 @@ class SubscriptionState extends Equatable {
 
   const SubscriptionState({
     this.status         = SubscriptionStatus.none,
-    this.expiresAt      = null,
+    this.expiresAt,
     this.isLoading      = false,
-    this.error          = null,
-    this.successMessage = null,
+    this.error,
+    this.successMessage,
   });
 
   // ── Blueprint Part 14: assert_messaging_allowed logic ─────

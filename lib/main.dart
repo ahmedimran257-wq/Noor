@@ -131,7 +131,7 @@ void main() async {
   // After the animation, it auto-navigates to:
   //   • /language  (first install — intro not yet completed)
   //   • /splash    (returning user — intro already completed)
-  runApp(NoorApp(initialLocation: AppRoutes.assalam));
+  runApp(const NoorApp(initialLocation: AppRoutes.assalam));
 }
 
 class NoorApp extends StatefulWidget {

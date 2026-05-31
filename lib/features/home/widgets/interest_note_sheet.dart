@@ -88,7 +88,7 @@ class _InterestNoteSheetState extends State<_InterestNoteSheet> {
               ),
             ),
             const SizedBox(height: AppDimensions.space6),
-            Text(
+            const Text(
               'A personal note makes your interest stand out.',
               style: AppTypography.caption,
             ),

@@ -72,155 +72,167 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.obsidianNight,
-      body: Stack(
-        children: [
-          // ── Pulsing gold glow ─────────────────────────────
-          Center(
-            child: AnimatedBuilder(
-              animation: _glowCtrl,
-              builder: (context, _) => Transform.scale(
-                scale: _glowScale.value,
-                child: Container(
-                  width: 320,
-                  height: 320,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        Color(0x30C5A059),
-                        Color(0x00C5A059),
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment(0, -0.5),  // slightly above center
+            radius: 1.2,
+            colors: [
+              Color(0xFF151522),  // Deep premium navy-charcoal core
+              AppColors.obsidianNight,  // Deep midnight edges
+            ],
+          ),
+        ),
+        child: Stack(
+          children: [
+            // ── Pulsing gold glow ─────────────────────────────
+            Center(
+              child: AnimatedBuilder(
+                animation: _glowCtrl,
+                builder: (context, _) => Transform.scale(
+                  scale: _glowScale.value,
+                  child: Container(
+                    width: 320,
+                    height: 320,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          Color(0x30C5A059),
+                          Color(0x00C5A059),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+  
+            // ── Content ───────────────────────────────────────
+            SafeArea(
+              child: FadeTransition(
+                opacity: _contentOpacity,
+                child: SlideTransition(
+                  position: _contentSlide,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppDimensions.space24,
+                    ),
+                    child: Column(
+                      children: [
+                        const Spacer(flex: 2),
+  
+                        // Icon
+                        Container(
+                          width:  96,
+                          height: 96,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.champagneGold.withValues(alpha: 0.1),
+                            border: Border.all(
+                              color: AppColors.champagneGold.withValues(alpha: 0.4),
+                              width: 2,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.check_rounded,
+                            color: AppColors.champagneGold,
+                            size:  48,
+                          ),
+                        ),
+  
+                        const SizedBox(height: AppDimensions.space24),
+  
+                        Text(
+                          'Bismillah,\nyou\'re live.',
+                          style: AppTypography.screenTitle.copyWith(
+                            fontSize: 32,
+                            height:   1.2,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+  
+                        const SizedBox(height: AppDimensions.space12),
+  
+                        const Text(
+                          'Your profile is now visible on NOOR.\n'
+                          'May Allah make it easy for you.',
+                          style: AppTypography.bodyMuted,
+                          textAlign: TextAlign.center,
+                        ),
+  
+                        const SizedBox(height: AppDimensions.space40),
+  
+                        // Community guidelines notice
+                        Container(
+                          padding: const EdgeInsets.all(AppDimensions.space16),
+                          decoration: BoxDecoration(
+                            color:        AppColors.surfaceGlass,
+                            borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                            border:       Border.all(color: AppColors.cardBorder),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width:  40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color:  AppColors.verifiedTeal.withValues(alpha: 0.1),
+                                  shape:  BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.shield_outlined,
+                                  color: AppColors.verifiedTeal,
+                                  size:  20,
+                                ),
+                              ),
+                              const SizedBox(width: AppDimensions.space12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'You\'re in a safe space',
+                                      style: AppTypography.captionMedium.copyWith(
+                                        color: AppColors.verifiedTeal,
+                                      ),
+                                    ),
+                                    const SizedBox(height: AppDimensions.space4),
+                                    const Text(
+                                      'All profiles are reviewed for safety. '
+                                      'Browse, send interests, and start meaningful '
+                                      'conversations with sincerity.',
+                                      style: AppTypography.caption,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+  
+                        const Spacer(flex: 3),
+  
+                        NoorPrimaryButton(
+                          label: 'Start Browsing',
+                          onTap: () {
+                            // Mark onboarding as fully complete (step >= 14)
+                            // so the router redirect allows /home navigation.
+                            context.read<AuthCubit>().updateOnboardingStep(14);
+                            context.go(AppRoutes.home);
+                          },
+                        ),
+  
+                        const SizedBox(height: AppDimensions.space48),
                       ],
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-
-          // ── Content ───────────────────────────────────────
-          SafeArea(
-            child: FadeTransition(
-              opacity: _contentOpacity,
-              child: SlideTransition(
-                position: _contentSlide,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppDimensions.space24,
-                  ),
-                  child: Column(
-                    children: [
-                      const Spacer(flex: 2),
-
-                      // Icon
-                      Container(
-                        width:  96,
-                        height: 96,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.champagneGold.withValues(alpha: 0.1),
-                          border: Border.all(
-                            color: AppColors.champagneGold.withValues(alpha: 0.4),
-                            width: 2,
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.check_rounded,
-                          color: AppColors.champagneGold,
-                          size:  48,
-                        ),
-                      ),
-
-                      const SizedBox(height: AppDimensions.space24),
-
-                      Text(
-                        'Bismillah,\nyou\'re live.',
-                        style: AppTypography.screenTitle.copyWith(
-                          fontSize: 32,
-                          height:   1.2,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-
-                      const SizedBox(height: AppDimensions.space12),
-
-                      Text(
-                        'Your profile is now visible on NOOR.\n'
-                        'May Allah make it easy for you.',
-                        style: AppTypography.bodyMuted,
-                        textAlign: TextAlign.center,
-                      ),
-
-                      const SizedBox(height: AppDimensions.space40),
-
-                      // Community guidelines notice
-                      Container(
-                        padding: const EdgeInsets.all(AppDimensions.space16),
-                        decoration: BoxDecoration(
-                          color:        AppColors.surfaceGlass,
-                          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                          border:       Border.all(color: AppColors.cardBorder),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width:  40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color:  AppColors.verifiedTeal.withValues(alpha: 0.1),
-                                shape:  BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.shield_outlined,
-                                color: AppColors.verifiedTeal,
-                                size:  20,
-                              ),
-                            ),
-                            const SizedBox(width: AppDimensions.space12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'You\'re in a safe space',
-                                    style: AppTypography.captionMedium.copyWith(
-                                      color: AppColors.verifiedTeal,
-                                    ),
-                                  ),
-                                  const SizedBox(height: AppDimensions.space4),
-                                  Text(
-                                    'All profiles are reviewed for safety. '
-                                    'Browse, send interests, and start meaningful '
-                                    'conversations with sincerity.',
-                                    style: AppTypography.caption,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const Spacer(flex: 3),
-
-                      NoorPrimaryButton(
-                        label: 'Start Browsing',
-                        onTap: () {
-                          // Mark onboarding as fully complete (step >= 14)
-                          // so the router redirect allows /home navigation.
-                          context.read<AuthCubit>().updateOnboardingStep(14);
-                          context.go(AppRoutes.home);
-                        },
-                      ),
-
-                      const SizedBox(height: AppDimensions.space48),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

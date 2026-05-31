@@ -16,8 +16,8 @@ abstract final class AppCurves {
   static const Curve transition = Curves.easeInOutQuart;
 
   /// "The Tactile Pop" — micro-interactions (heart icon, checkmark).
-  /// Used for 600–800ms durations.
-  static const Curve tactile = Curves.elasticOut;
+  /// Used for 300–400ms durations.
+  static const Curve tactile = Curves.easeOutBack;
 
   /// Button press scale — snappy feel.
   static const Curve buttonPress = Curves.easeInOut;

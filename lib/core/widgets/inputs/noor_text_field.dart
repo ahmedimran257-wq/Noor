@@ -68,7 +68,7 @@ class NoorTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceGlass,
+        color: AppColors.inputSurface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
       ),
       padding: const EdgeInsetsDirectional.fromSTEB(
@@ -102,6 +102,9 @@ class NoorTextField extends StatelessWidget {
           errorText:   errorText,
           helperStyle: AppTypography.caption,
           errorStyle:  AppTypography.caption.copyWith(color: AppColors.softCoral),
+          // Override theme's fill — the Container already provides surfaceGlass
+          filled:    false,
+          fillColor: Colors.transparent,
           prefixIcon:  prefixIcon != null
               ? Icon(prefixIcon, color: AppColors.slateMist, size: AppDimensions.iconSizeMedium)
               : null,
@@ -154,8 +157,12 @@ class _NoorOtpFieldState extends State<NoorOtpField> {
 
   @override
   void dispose() {
-    for (final c in _controllers) c.dispose();
-    for (final f in _focusNodes)  f.dispose();
+    for (final c in _controllers) {
+      c.dispose();
+    }
+    for (final f in _focusNodes) {
+      f.dispose();
+    }
     super.dispose();
   }
 
@@ -187,8 +194,8 @@ class _NoorOtpFieldState extends State<NoorOtpField> {
     widget.onChanged?.call(_buildOtpString());
   }
 
-  void _onKeyPressed(int index, RawKeyEvent event) {
-    if (event is RawKeyDownEvent &&
+  void _onKeyPressed(int index, KeyEvent event) {
+    if (event is KeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.backspace &&
         _controllers[index].text.isEmpty &&
         index > 0) {
@@ -214,9 +221,9 @@ class _NoorOtpFieldState extends State<NoorOtpField> {
       children: List.generate(widget.length, (index) {
         return SizedBox(
           width: 44,
-          child: RawKeyboardListener(
+          child: KeyboardListener(
             focusNode: FocusNode(),
-            onKey: (event) => _onKeyPressed(index, event),
+            onKeyEvent: (event) => _onKeyPressed(index, event),
             child: TextField(
               controller:      _controllers[index],
               focusNode:       _focusNodes[index],

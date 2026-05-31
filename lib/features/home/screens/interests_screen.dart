@@ -71,7 +71,7 @@ class _InterestsScreenState extends State<InterestsScreen>
                   color:        const Color(0xFF13131A),
                   borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
                   border:       Border.all(color: AppColors.goldBorder, width: 1.5),
-                  boxShadow: [
+                  boxShadow: const [
                     BoxShadow(
                       color:       AppColors.goldGlow,
                       blurRadius:  40,
@@ -139,7 +139,7 @@ class _InterestsScreenState extends State<InterestsScreen>
                             ),
                           );
                         },
-                        child: Text('Message Now',
+                        child: const Text('Message Now',
                             style: AppTypography.button),
                       ),
                     ),
@@ -179,7 +179,7 @@ class _InterestsScreenState extends State<InterestsScreen>
         title: Text('Withdraw interest?',
             style: AppTypography.bodyMedium.copyWith(
                 color: AppColors.pearlWhite, fontSize: 17)),
-        content: Text(
+        content: const Text(
           "They won't be notified.",
           style: AppTypography.bodyMuted,
         ),
@@ -441,11 +441,11 @@ class _MatchAvatarPair extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Positioned(
+          const Positioned(
             left: 30,
             child: _Avatar(border: AppColors.champagneGold),
           ),
-          Positioned(
+          const Positioned(
             right: 30,
             child: _Avatar(border: AppColors.champagneGold),
           ),
@@ -599,10 +599,10 @@ class _ReceivedTile extends StatelessWidget {
                   Text(entry.timeAgo, style: AppTypography.caption),
                   const SizedBox(height: AppDimensions.space4),
                   if (isAccepted)
-                    _StatusPill(
+                    const _StatusPill(
                         label: '✓ Matched', color: AppColors.champagneGold),
                   if (isDeclined)
-                    _StatusPill(label: 'Declined', color: AppColors.slateMist),
+                    const _StatusPill(label: 'Declined', color: AppColors.slateMist),
                 ],
               ),
             ],
@@ -883,14 +883,14 @@ class _SentTile extends StatelessWidget {
                   ),
                 )
               else if (isAccepted)
-                _StatusPill(
+                const _StatusPill(
                     label: '✓ Accepted', color: AppColors.champagneGold)
               else if (isExpired)
-                _StatusPill(label: 'Expired', color: AppColors.slateMist)
+                const _StatusPill(label: 'Expired', color: AppColors.slateMist)
               else if (isWithdrawn)
-                _StatusPill(label: 'Withdrawn', color: AppColors.slateMist)
+                const _StatusPill(label: 'Withdrawn', color: AppColors.slateMist)
               else
-                _StatusPill(label: 'Declined', color: AppColors.softCoral),
+                const _StatusPill(label: 'Declined', color: AppColors.softCoral),
             ],
           ),
         ],

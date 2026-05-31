@@ -24,7 +24,7 @@ void main() {
     });
 
     test('Redaction replaces phone numbers correctly', () {
-      final text = 'My number is 555.123.4567 and my friend is at 555 1234';
+      const text = 'My number is 555.123.4567 and my friend is at 555 1234';
       final redacted = ContentFilter.redact(text);
       expect(redacted, contains('[contact info removed]'));
       expect(redacted.contains('555.123.4567'), isFalse);

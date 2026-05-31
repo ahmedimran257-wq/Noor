@@ -152,7 +152,7 @@ class _BlockListAppBar extends StatelessWidget implements PreferredSizeWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Blocked Profiles', style: AppTypography.bodyMedium),
+                const Text('Blocked Profiles', style: AppTypography.bodyMedium),
                 if (count > 0)
                   Text('$count blocked',
                       style: AppTypography.caption.copyWith(fontSize: 12)),

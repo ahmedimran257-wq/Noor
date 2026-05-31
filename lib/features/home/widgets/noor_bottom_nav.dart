@@ -50,8 +50,8 @@ class NoorBottomNav extends StatelessWidget {
             };
 
             return Container(
-              decoration: BoxDecoration(
-                color: const Color(0xCC0A0A0F), // Frosted obsidian
+              decoration: const BoxDecoration(
+                color: Color(0xCC0A0A0F), // Frosted obsidian
                 border: Border(
                   top: BorderSide(
                     color: AppColors.cardBorder,

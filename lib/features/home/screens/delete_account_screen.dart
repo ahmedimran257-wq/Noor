@@ -155,27 +155,27 @@ class _Step1 extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppDimensions.space16),
-          Text(
+          const Text(
             'We\'d hate to see you go. Before you proceed, here\'s what will happen:',
             style: AppTypography.bodyMuted,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppDimensions.space24),
-          _InfoCard(
+          const _InfoCard(
             icon:  Icons.timer_outlined,
-            color: const Color(0xFFF6C344),
+            color: Color(0xFFF6C344),
             title: '30-day grace period',
             body:  'Your account will be scheduled for deletion. You can log back in any time within 30 days to cancel.',
           ),
           const SizedBox(height: AppDimensions.space12),
-          _InfoCard(
+          const _InfoCard(
             icon:  Icons.delete_sweep_outlined,
             color: AppColors.softCoral,
             title: 'Permanent data loss',
             body:  'All matches, messages, and profile data will be permanently deleted after 30 days. This cannot be undone.',
           ),
           const SizedBox(height: AppDimensions.space12),
-          _InfoCard(
+          const _InfoCard(
             icon:  Icons.credit_card_off_outlined,
             color: AppColors.slateMist,
             title: 'Subscriptions cancelled',
@@ -193,7 +193,7 @@ class _Step1 extends StatelessWidget {
                 ),
               ),
               onPressed: onKeepAccount,
-              child: Text('Keep My Account', style: AppTypography.button),
+              child: const Text('Keep My Account', style: AppTypography.button),
             ),
           ),
           const SizedBox(height: AppDimensions.space12),
@@ -253,7 +253,7 @@ class _Step2 extends StatelessWidget {
           Text('Why are you leaving?',
               style: AppTypography.screenTitle.copyWith(fontSize: 22)),
           const SizedBox(height: AppDimensions.space8),
-          Text('This helps us improve NOOR for others.',
+          const Text('This helps us improve NOOR for others.',
               style: AppTypography.bodyMuted),
           const SizedBox(height: AppDimensions.space24),
           Container(
@@ -367,7 +367,7 @@ class _Step3 extends StatelessWidget {
           Text('Last step',
               style: AppTypography.screenTitle.copyWith(fontSize: 22)),
           const SizedBox(height: AppDimensions.space8),
-          Text('Type DELETE to confirm you want to delete your account.',
+          const Text('Type DELETE to confirm you want to delete your account.',
               style: AppTypography.bodyMuted),
           const SizedBox(height: AppDimensions.space24),
 

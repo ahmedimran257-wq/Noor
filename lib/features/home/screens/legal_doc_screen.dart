@@ -74,7 +74,7 @@ class LegalDocScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: AppDimensions.space12),
-                  Text(
+                  const Text(
                     'Last updated: May 1, 2026',
                     style: AppTypography.caption,
                   ),

@@ -263,7 +263,7 @@ class _ClosedInputBar extends StatelessWidget {
         color: AppColors.obsidianNight,
         border: Border(top: BorderSide(color: AppColors.cardBorder)),
       ),
-      child: Center(child: Text(
+      child: const Center(child: Text(
         'This conversation is closed',
         style: AppTypography.caption,
       )),
@@ -305,7 +305,7 @@ class _EndMatchSheetState extends State<_EndMatchSheet> {
           const SizedBox(height: AppDimensions.space20),
           Text('End this match', style: AppTypography.bodyMedium.copyWith(color: AppColors.pearlWhite)),
           const SizedBox(height: AppDimensions.space6),
-          Text(
+          const Text(
             'Choose a respectful message to close this conversation. The other person will be notified.',
             style: AppTypography.caption,
           ),
@@ -405,7 +405,7 @@ class _SuggestedOpenersArea extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text('Begin with Bismillah', style: AppTypography.tagline),
+        const Text('Begin with Bismillah', style: AppTypography.tagline),
         const SizedBox(height: AppDimensions.space20),
         SizeTransition(
           sizeFactor: sizeAnim, axisAlignment: -1,
@@ -655,10 +655,10 @@ class _InputBar extends StatelessWidget {
               controller: controller, maxLines: null,
               style: AppTypography.chatMessage,
               textInputAction: TextInputAction.newline,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 hintText: 'Type a message…', hintStyle: AppTypography.inputLabel,
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: AppDimensions.space14, vertical: AppDimensions.space10),
+                contentPadding: EdgeInsets.symmetric(horizontal: AppDimensions.space14, vertical: AppDimensions.space10),
               ),
             ),
           ),

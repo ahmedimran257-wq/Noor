@@ -17,6 +17,13 @@ abstract final class AppConfig {
   // Any 6-digit code is accepted as valid.
   static const String mockOtpCode = '000000';
 
+  // ── Google Places ──────────────────────────────────────────
+  // Replace with your Google Places API key from:
+  // Google Cloud Console → APIs & Services → Credentials
+  // Enable: Places API (New) + Geocoding API
+  // Free tier: 28,500 requests/month
+  static const String googlePlacesApiKey = 'YOUR_GOOGLE_PLACES_API_KEY';
+
   // ── App Versioning ────────────────────────────────────────
   static const String appVersion   = '1.0.0';
   static const String tosVersion   = '1.0';

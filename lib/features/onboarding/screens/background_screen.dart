@@ -166,7 +166,7 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
               const SizedBox(height: AppDimensions.space32),
 
               // Education level
-              Text('EDUCATION LEVEL', style: AppTypography.sectionLabel),
+              const Text('EDUCATION LEVEL', style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
               ..._kEduLevels.map((edu) => Padding(
                 padding: const EdgeInsets.only(bottom: AppDimensions.space8),
@@ -202,7 +202,7 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
               const SizedBox(height: AppDimensions.space20),
 
               // Employment status
-              Text('EMPLOYMENT STATUS', style: AppTypography.sectionLabel),
+              const Text('EMPLOYMENT STATUS', style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
                 spacing:    AppDimensions.space8,
@@ -260,13 +260,13 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
                       const Icon(Icons.account_balance_wallet_outlined,
                           color: AppColors.slateMist, size: 20),
                       const SizedBox(width: AppDimensions.space12),
-                      Expanded(
+                      const Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text('INCOME RANGE  (Optional)',
                                 style: AppTypography.sectionLabel),
-                            const SizedBox(height: 2),
+                            SizedBox(height: 2),
                             Text('Many people skip this — it\'s entirely optional.',
                                 style: AppTypography.caption),
                           ],
@@ -285,7 +285,7 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
 
               if (_showIncome) ...[
                 const SizedBox(height: AppDimensions.space16),
-                Text('INCOME BRACKET (INR)', style: AppTypography.sectionLabel),
+                const Text('INCOME BRACKET (INR)', style: AppTypography.sectionLabel),
                 const SizedBox(height: AppDimensions.space12),
                 ..._kIncomeBrackets.map((b) => Padding(
                   padding: const EdgeInsets.only(bottom: AppDimensions.space8),
@@ -323,7 +323,7 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
                   ),
                 )),
                 const SizedBox(height: AppDimensions.space16),
-                Text('WHO CAN SEE THIS?', style: AppTypography.sectionLabel),
+                const Text('WHO CAN SEE THIS?', style: AppTypography.sectionLabel),
                 const SizedBox(height: AppDimensions.space12),
                 ..._kVisibilityOptions.map((opt) => Padding(
                   padding: const EdgeInsets.only(bottom: AppDimensions.space8),

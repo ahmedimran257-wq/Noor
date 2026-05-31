@@ -19,7 +19,7 @@ abstract final class AppColors {
 
   /// The accent color. Used SPARINGLY — CTAs, badges, borders, gold moments.
   /// "Champagne Gold" — not trophy gold. Muted and sophisticated.
-  static const Color champagneGold = Color(0xFFC5A059);
+  static const Color champagneGold = Color(0xFFD4AA60);
 
   /// Primary text. Soft muted white (Apple-style) — not stark white.
   /// Reduces eye strain. Feels premium.
@@ -31,24 +31,32 @@ abstract final class AppColors {
   // ── Surface & Semantic ────────────────────────────────────
 
   /// Card and overlay background. Creates glassmorphism.
-  /// rgba(255, 255, 255, 0.05) = 5% white
-  static const Color surfaceGlass = Color(0x0DFFFFFF);
+  /// rgba(255, 255, 255, 0.04) — barely visible depth layer.
+  /// Premium dark-mode apps keep fills near-invisible; definition
+  /// comes from borders, not fill color.
+  static const Color surfaceGlass = Color(0x0AFFFFFF);
 
-  /// Slightly more opaque surface for interactive elements.
-  /// rgba(255, 255, 255, 0.08)
-  static const Color surfaceGlassHover = Color(0x14FFFFFF);
+  /// Slightly more opaque surface for interactive / hovered elements.
+  /// rgba(255, 255, 255, 0.07)
+  static const Color surfaceGlassHover = Color(0x12FFFFFF);
+
+  /// Dedicated input field fill — a hair brighter than surfaceGlass
+  /// so text fields have just enough contrast to feel "present"
+  /// without creating the ugly grey wash.
+  /// rgba(255, 255, 255, 0.05)
+  static const Color inputSurface = Color(0x0DFFFFFF);
 
   /// Card border. Gives a "sharp" edge that feels high-end.
-  /// rgba(255, 255, 255, 0.10)
-  static const Color cardBorder = Color(0x1AFFFFFF);
+  /// rgba(255, 255, 255, 0.08)
+  static const Color cardBorder = Color(0x14FFFFFF);
 
   /// Gold border — for selected states, verified rings.
-  /// rgba(197, 160, 89, 0.40)
-  static const Color goldBorder = Color(0x66C5A059);
+  /// rgba(212, 170, 96, 0.40)
+  static const Color goldBorder = Color(0x66D4AA60);
 
   /// Subtle gold glow — for focus states and active indicators.
-  /// rgba(197, 160, 89, 0.15)
-  static const Color goldGlow = Color(0x26C5A059);
+  /// rgba(212, 170, 96, 0.15)
+  static const Color goldGlow = Color(0x26D4AA60);
 
   /// Verified badge. Muted teal — not neon green.
   static const Color verifiedTeal = Color(0xFF2DCDA9);

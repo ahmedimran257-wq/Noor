@@ -145,7 +145,7 @@ class _PaywallGateContent extends StatelessWidget {
                 color: AppColors.champagneGold,
               ),
               alignment: Alignment.center,
-              child: Text('See Plans', style: AppTypography.button),
+              child: const Text('See Plans', style: AppTypography.button),
             ),
           ),
 
@@ -154,7 +154,7 @@ class _PaywallGateContent extends StatelessWidget {
           // Not Now
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text(
+            child: const Text(
               'Not Now',
               style: AppTypography.bodyMuted,
             ),

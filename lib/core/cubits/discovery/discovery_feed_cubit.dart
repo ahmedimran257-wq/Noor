@@ -360,11 +360,9 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
               .select()
               .neq('user_id', currentUserId);
           
-          if (response != null) {
-            final list = response as List<dynamic>;
-            return list.map((row) => _mapDbToMockProfile(row as Map<String, dynamic>)).toList();
-          }
-        }
+          final list = response as List<dynamic>;
+          return list.map((row) => _mapDbToMockProfile(row as Map<String, dynamic>)).toList();
+                }
       } catch (e) {
         debugPrint('DiscoveryFeedCubit: Error fetching from Supabase, falling back to mock: $e');
       }

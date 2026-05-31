@@ -111,7 +111,9 @@ GoRouter buildAppRouter(AuthCubit authCubit, {
               location == AppRoutes.deleteAccount ||
               location == AppRoutes.blockList ||
               location == AppRoutes.subscription ||
-              location == AppRoutes.guardianDashboard) return null;
+              location == AppRoutes.guardianDashboard) {
+            return null;
+          }
           return AppRoutes.home;
         } else {
           // Still onboarding — allow the language selection screen so
@@ -303,8 +305,8 @@ CustomTransitionPage<void> _slidePage({
   return CustomTransitionPage<void>(
     key: key,
     child: child,
-    transitionDuration: const Duration(milliseconds: 350),
-    reverseTransitionDuration: const Duration(milliseconds: 300),
+    transitionDuration: const Duration(milliseconds: 250),
+    reverseTransitionDuration: const Duration(milliseconds: 200),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       final slideIn = Tween<Offset>(
         begin: const Offset(1.0, 0.0),

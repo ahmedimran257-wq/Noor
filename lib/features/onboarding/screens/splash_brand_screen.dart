@@ -217,7 +217,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                 // NOOR wordmark
                 FadeTransition(
                   opacity: _wordmarkOpacity,
-                  child: Text('NOOR', style: AppTypography.wordmark),
+                  child: const Text('NOOR', style: AppTypography.wordmark),
                 ),
 
                 const SizedBox(height: AppDimensions.space12),
@@ -225,7 +225,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                 // Tagline
                 FadeTransition(
                   opacity: _taglineOpacity,
-                  child: Text(
+                  child: const Text(
                     'Begin with bismillah',
                     style: AppTypography.tagline,
                   ),
@@ -315,7 +315,7 @@ class _RaysPainter extends CustomPainter {
 
     for (int i = 0; i < 6; i++) {
       final angle = (i * 60) * (math.pi / 180);
-      final startR = 48.0;
+      const startR = 48.0;
       final endR   = startR + (80 * length);
       final start  = Offset(
         center.dx + startR * math.cos(angle),

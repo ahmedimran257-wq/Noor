@@ -264,118 +264,130 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.obsidianNight,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ── Header ────────────────────────────────────────
-            FadeTransition(
-              opacity: _headerFade,
-              child: _buildHeader(),
-            ),
-
-            // ── Search bar ─────────────────────────────────────
-            FadeTransition(
-              opacity: _listFade,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppDimensions.horizontalMargin,
-                  0,
-                  AppDimensions.horizontalMargin,
-                  AppDimensions.space12,
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (val) => setState(() => _searchQuery = val),
-                  style: const TextStyle(
-                    color: AppColors.pearlWhite,
-                    fontSize: 15,
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment(0, -0.5),  // slightly above center
+            radius: 1.2,
+            colors: [
+              Color(0xFF151522),  // Deep premium navy-charcoal core
+              AppColors.obsidianNight,  // Deep midnight edges
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // ── Header ────────────────────────────────────────
+              FadeTransition(
+                opacity: _headerFade,
+                child: _buildHeader(),
+              ),
+  
+              // ── Search bar ─────────────────────────────────────
+              FadeTransition(
+                opacity: _listFade,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppDimensions.horizontalMargin,
+                    0,
+                    AppDimensions.horizontalMargin,
+                    AppDimensions.space12,
                   ),
-                  decoration: InputDecoration(
-                    hintText: 'Search languages...',
-                    hintStyle: TextStyle(
-                      color: AppColors.slateMist.withValues(alpha: 0.6),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (val) => setState(() => _searchQuery = val),
+                    style: const TextStyle(
+                      color: AppColors.pearlWhite,
                       fontSize: 15,
                     ),
-                    prefixIcon: Icon(
-                      Icons.search_rounded,
-                      color: AppColors.slateMist.withValues(alpha: 0.6),
-                      size: 20,
-                    ),
-                    filled: true,
-                    fillColor: AppColors.surfaceGlass,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                      borderSide: BorderSide(color: AppColors.cardBorder),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                      borderSide: BorderSide(color: AppColors.cardBorder),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                      borderSide: BorderSide(
-                        color: AppColors.champagneGold.withValues(alpha: 0.5),
-                        width: 1.5,
+                    decoration: InputDecoration(
+                      hintText: 'Search languages...',
+                      hintStyle: TextStyle(
+                        color: AppColors.slateMist.withValues(alpha: 0.6),
+                        fontSize: 15,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search_rounded,
+                        color: AppColors.slateMist.withValues(alpha: 0.6),
+                        size: 20,
+                      ),
+                      filled: true,
+                      fillColor: AppColors.surfaceGlass,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                        borderSide: const BorderSide(color: AppColors.cardBorder),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                        borderSide: const BorderSide(color: AppColors.cardBorder),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                        borderSide: BorderSide(
+                          color: AppColors.champagneGold.withValues(alpha: 0.5),
+                          width: 1.5,
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-
-            // ── Language list ──────────────────────────────────
-            Expanded(
-              child: SlideTransition(
-                position: _listSlide,
-                child: FadeTransition(
-                  opacity: _listFade,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppDimensions.horizontalMargin,
-                      0,
-                      AppDimensions.horizontalMargin,
-                      AppDimensions.space16,
+  
+              // ── Language list ──────────────────────────────────
+              Expanded(
+                child: SlideTransition(
+                  position: _listSlide,
+                  child: FadeTransition(
+                    opacity: _listFade,
+                    child: ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppDimensions.horizontalMargin,
+                        0,
+                        AppDimensions.horizontalMargin,
+                        AppDimensions.space16,
+                      ),
+                      itemCount:  _filteredLanguages.length,
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(height: AppDimensions.space8),
+                      itemBuilder: (context, i) {
+                        final lang = _filteredLanguages[i];
+                        return _LanguageTile(
+                          language:   lang,
+                          isSelected: _selectedCode == lang.code,
+                          onTap: () => setState(
+                            () => _selectedCode = lang.code,
+                          ),
+                        );
+                      },
                     ),
-                    itemCount:  _filteredLanguages.length,
-                    separatorBuilder: (_, __) =>
-                        const SizedBox(height: AppDimensions.space8),
-                    itemBuilder: (context, i) {
-                      final lang = _filteredLanguages[i];
-                      return _LanguageTile(
-                        language:   lang,
-                        isSelected: _selectedCode == lang.code,
-                        onTap: () => setState(
-                          () => _selectedCode = lang.code,
-                        ),
-                      );
-                    },
                   ),
                 ),
               ),
-            ),
-
-            // ── Continue button ────────────────────────────────
-            FadeTransition(
-              opacity: _buttonFade,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppDimensions.horizontalMargin,
-                  AppDimensions.space8,
-                  AppDimensions.horizontalMargin,
-                  AppDimensions.space48,
-                ),
-                child: NoorPrimaryButton(
-                  label: 'Continue',
-                  onTap: _onContinue,
+  
+              // ── Continue button ────────────────────────────────
+              FadeTransition(
+                opacity: _buttonFade,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppDimensions.horizontalMargin,
+                    AppDimensions.space8,
+                    AppDimensions.horizontalMargin,
+                    AppDimensions.space48,
+                  ),
+                  child: NoorPrimaryButton(
+                    label: 'Continue',
+                    onTap: _onContinue,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -417,7 +429,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen>
             ),
           ),
           const SizedBox(height: AppDimensions.space8),
-          Text(
+          const Text(
             'You can change this at any time in settings.',
             style: AppTypography.caption,
           ),
@@ -532,7 +544,7 @@ class _LanguageTile extends StatelessWidget {
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 200),
                   child: isSelected
-                      ? _SelectedCheck(key: const ValueKey('check'))
+                      ? const _SelectedCheck(key: ValueKey('check'))
                       : const SizedBox(
                           key:    ValueKey('empty'),
                           width:  22,
@@ -557,7 +569,7 @@ class _SelectedCheck extends StatelessWidget {
     return Container(
       width:  22,
       height: 22,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         shape: BoxShape.circle,
         color: AppColors.champagneGold,
       ),

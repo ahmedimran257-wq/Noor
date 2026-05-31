@@ -32,140 +32,152 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.obsidianNight,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ── Header ─────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppDimensions.space24,
-                AppDimensions.space32,
-                AppDimensions.space24,
-                0,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Back
-                  GestureDetector(
-                    onTap: () => context.pop(),
-                    child: Container(
-                      width: 40, height: 40,
-                      decoration: BoxDecoration(
-                        color:  AppColors.surfaceGlass,
-                        shape:  BoxShape.circle,
-                        border: Border.all(color: AppColors.cardBorder),
-                      ),
-                      child: Icon(
-                        Directionality.of(context) == TextDirection.rtl
-                            ? Icons.arrow_forward_ios_rounded
-                            : Icons.arrow_back_ios_new_rounded,
-                        color: AppColors.pearlWhite,
-                        size:  16,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: AppDimensions.space32),
-                  Text('A dignified beginning',
-                      style: AppTypography.screenTitle),
-                  const SizedBox(height: AppDimensions.space8),
-                  Text(
-                    'Please read and agree to continue.',
-                    style: AppTypography.bodyMuted,
-                  ),
-                ],
-              ),
-            ),
-
-            // ── Scrollable body ────────────────────────────
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppDimensions.space24,
-                  vertical:   AppDimensions.space24,
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment(0, -0.5),  // slightly above center
+            radius: 1.2,
+            colors: [
+              Color(0xFF151522),  // Deep premium navy-charcoal core
+              AppColors.obsidianNight,  // Deep midnight edges
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // ── Header ─────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppDimensions.space24,
+                  AppDimensions.space32,
+                  AppDimensions.space24,
+                  0,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _TermsSummaryCard(),
-                    const SizedBox(height: AppDimensions.space24),
-
-                    // ── Checkboxes ─────────────────────────
-                    _NoorCheckbox(
-                      value:    _ageConfirmed,
-                      onChanged: (v) => setState(() => _ageConfirmed = v ?? false),
-                      label:    'I confirm that I am 18 years of age or older.',
-                    ),
-                    const SizedBox(height: AppDimensions.space16),
-                    _NoorCheckbox(
-                      value:    _termsConfirmed,
-                      onChanged: (v) => setState(() => _termsConfirmed = v ?? false),
-                      label:    'I have read and agree to the',
-                      richSuffix: TextSpan(
-                        children: [
-                          TextSpan(
-                            text:       ' Terms of Service',
-                            style:      AppTypography.body.copyWith(
-                              color: AppColors.champagneGold,
-                            ),
-                            recognizer: TapGestureRecognizer()
-                              ..onTap = () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(builder: (_) => const LegalDocScreen(type: 'tos')),
-                                );
-                              },
-                          ),
-                          TextSpan(
-                            text:  ' and ',
-                            style: AppTypography.body,
-                          ),
-                          TextSpan(
-                            text:       'Privacy Policy',
-                            style:      AppTypography.body.copyWith(
-                              color: AppColors.champagneGold,
-                            ),
-                            recognizer: TapGestureRecognizer()
-                              ..onTap = () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(builder: (_) => const LegalDocScreen(type: 'privacy')),
-                                );
-                              },
-                          ),
-                          TextSpan(
-                            text:  '.',
-                            style: AppTypography.body,
-                          ),
-                        ],
+                    // Back
+                    GestureDetector(
+                      onTap: () => context.pop(),
+                      child: Container(
+                        width: 40, height: 40,
+                        decoration: BoxDecoration(
+                          color:  AppColors.surfaceGlass,
+                          shape:  BoxShape.circle,
+                          border: Border.all(color: AppColors.cardBorder),
+                        ),
+                        child: Icon(
+                          Directionality.of(context) == TextDirection.rtl
+                              ? Icons.arrow_forward_ios_rounded
+                              : Icons.arrow_back_ios_new_rounded,
+                          color: AppColors.pearlWhite,
+                          size:  16,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: AppDimensions.space48),
+                    const SizedBox(height: AppDimensions.space32),
+                    const Text('A dignified beginning',
+                        style: AppTypography.screenTitle),
+                    const SizedBox(height: AppDimensions.space8),
+                    const Text(
+                      'Please read and agree to continue.',
+                      style: AppTypography.bodyMuted,
+                    ),
                   ],
                 ),
               ),
-            ),
-
-            // ── Bottom CTA ─────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppDimensions.space24,
-                0,
-                AppDimensions.space24,
-                AppDimensions.space32,
-              ),
-              child: AnimatedOpacity(
-                opacity:  _canProceed ? 1.0 : 0.45,
-                duration: AppDimensions.durationTransition,
-                child: NoorPrimaryButton(
-                  label: 'Continue',
-                  onTap: _canProceed
-                      ? () => context.push(AppRoutes.phone)
-                      : null,
+  
+              // ── Scrollable body ────────────────────────────
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppDimensions.space24,
+                    vertical:   AppDimensions.space24,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _TermsSummaryCard(),
+                      const SizedBox(height: AppDimensions.space24),
+  
+                      // ── Checkboxes ─────────────────────────
+                      _NoorCheckbox(
+                        value:    _ageConfirmed,
+                        onChanged: (v) => setState(() => _ageConfirmed = v ?? false),
+                        label:    'I confirm that I am 18 years of age or older.',
+                      ),
+                      const SizedBox(height: AppDimensions.space16),
+                      _NoorCheckbox(
+                        value:    _termsConfirmed,
+                        onChanged: (v) => setState(() => _termsConfirmed = v ?? false),
+                        label:    'I have read and agree to the',
+                        richSuffix: TextSpan(
+                          children: [
+                            TextSpan(
+                              text:       ' Terms of Service',
+                              style:      AppTypography.body.copyWith(
+                                color: AppColors.champagneGold,
+                              ),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => const LegalDocScreen(type: 'tos')),
+                                  );
+                                },
+                            ),
+                            const TextSpan(
+                              text:  ' and ',
+                              style: AppTypography.body,
+                            ),
+                            TextSpan(
+                              text:       'Privacy Policy',
+                              style:      AppTypography.body.copyWith(
+                                color: AppColors.champagneGold,
+                              ),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => const LegalDocScreen(type: 'privacy')),
+                                  );
+                                },
+                            ),
+                            const TextSpan(
+                              text:  '.',
+                              style: AppTypography.body,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: AppDimensions.space48),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+  
+              // ── Bottom CTA ─────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppDimensions.space24,
+                  0,
+                  AppDimensions.space24,
+                  AppDimensions.space32,
+                ),
+                child: AnimatedOpacity(
+                  opacity:  _canProceed ? 1.0 : 0.45,
+                  duration: AppDimensions.durationTransition,
+                  child: NoorPrimaryButton(
+                    label: 'Continue',
+                    onTap: _canProceed
+                        ? () => context.push(AppRoutes.phone)
+                        : null,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -223,14 +235,14 @@ class _TermsSummaryCard extends StatelessWidget {
             ),
           );
         }).toList()
-          ..last = Padding(
+          ..last = const Padding(
             padding: EdgeInsets.zero,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.delete_outline_rounded,
+                Icon(Icons.delete_outline_rounded,
                     color: AppColors.champagneGold, size: 20),
-                const SizedBox(width: AppDimensions.space12),
+                SizedBox(width: AppDimensions.space12),
                 Expanded(
                   child: Text(
                     'You may delete your account and all data at any time.',

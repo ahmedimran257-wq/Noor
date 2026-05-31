@@ -264,7 +264,7 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
               const SizedBox(height: AppDimensions.space32),
 
               // ── Candidate summary (read-only, derived) ──────────
-              Text('CREATING PROFILE FOR', style: AppTypography.sectionLabel),
+              const Text('CREATING PROFILE FOR', style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
               Container(
                 padding: const EdgeInsets.all(AppDimensions.space16),
@@ -323,9 +323,9 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
               const SizedBox(height: AppDimensions.space28),
 
               // ── Guardian name ────────────────────────────────────
-              Text('YOUR NAME', style: AppTypography.sectionLabel),
+              const Text('YOUR NAME', style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space8),
-              Text(
+              const Text(
                 'Your name as the guardian. This is shown to matches.',
                 style: AppTypography.caption,
               ),
@@ -360,9 +360,9 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
               const SizedBox(height: AppDimensions.space28),
 
               // ── Guardian phone ──────────────────────────────────
-              Text('YOUR PHONE NUMBER', style: AppTypography.sectionLabel),
+              const Text('YOUR PHONE NUMBER', style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space8),
-              Text(
+              const Text(
                 'For account verification. Not shown on the profile.',
                 style: AppTypography.caption,
               ),
@@ -433,9 +433,9 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
               const SizedBox(height: AppDimensions.space28),
 
               // ── Guardian mode ───────────────────────────────────
-              Text('GUARDIAN INVOLVEMENT', style: AppTypography.sectionLabel),
+              const Text('GUARDIAN INVOLVEMENT', style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space8),
-              Text(
+              const Text(
                 'How involved do you want to be in conversations?',
                 style: AppTypography.caption,
               ),
@@ -656,7 +656,7 @@ class _CodePickerSheetState extends State<_CodePickerSheet> {
               ),
             ),
             const SizedBox(height: AppDimensions.space16),
-            Text('Select country code', style: AppTypography.bodyMedium),
+            const Text('Select country code', style: AppTypography.bodyMedium),
             const SizedBox(height: AppDimensions.space12),
             Padding(
               padding: const EdgeInsets.symmetric(

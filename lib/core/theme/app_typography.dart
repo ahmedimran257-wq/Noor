@@ -1,27 +1,27 @@
 // lib/core/theme/app_typography.dart
 // ============================================================
 // NOOR Design DNA — Typography System
-// "We use a Font Pairing strategy to make the app feel like
-//  a high-end magazine or a wedding invitation."
-//
-// Heading Font: Playfair Display (Serif)
-//   Vibe: Prestigious, timeless, elegant.
-//   Usage: User names, screen titles, "Bismillah" tagline, bios.
-//
-// Body Font: Inter (Geometric Sans-Serif)
+// Single font family: Inter (Geometric Sans-Serif)
 //   Vibe: Modern, clean, professional.
-//   Usage: Labels, settings, chat messages, body copy.
+//
+// Visual hierarchy through WEIGHT CONTRAST, not family contrast:
+//   Titles:  Inter Bold/ExtraBold — commanding presence
+//   Body:    Inter Regular — clean readability
+//   Accent:  Inter Light Italic — elegant bios & taglines
+//
+// This approach is what Telegram, Signal, and premium apps use.
+// Faster load, less memory, consistent rendering across scripts.
 // ============================================================
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
 abstract final class AppTypography {
-  // ── Heading Font: Playfair Display ────────────────────────
+  // ── Titles (Inter Bold / ExtraBold) ───────────────────────
 
-  /// Screen Title — Playfair 28px Bold, 0.5px spacing, Pearl White
-  static TextStyle get screenTitle => GoogleFonts.playfairDisplay(
+  /// Screen Title — Inter 28px Bold, 0.5px spacing, Pearl White
+  static const TextStyle screenTitle = TextStyle(
+        fontFamily: 'Inter',
         fontSize: 28,
         fontWeight: FontWeight.w700,
         letterSpacing: 0.5,
@@ -29,39 +29,43 @@ abstract final class AppTypography {
         height: 1.2,
       );
 
-  /// User Name — Playfair 24px SemiBold, 0.2px spacing, Pearl White
-  static TextStyle get userName => GoogleFonts.playfairDisplay(
+  /// User Name — Inter 24px Bold, 0.2px spacing, Pearl White
+  static const TextStyle userName = TextStyle(
+        fontFamily: 'Inter',
         fontSize: 24,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
         letterSpacing: 0.2,
         color: AppColors.pearlWhite,
         height: 1.25,
       );
 
-  /// Bio — Playfair 17px Italic, Pearl White, wide line-height
-  /// "Displayed in italic display font — these are the person's own words."
-  static TextStyle get bio => GoogleFonts.playfairDisplay(
+  /// Bio — Inter 17px Light Italic, Pearl White, wide line-height
+  /// "Displayed in light italic — these are the person's own words."
+  static const TextStyle bio = TextStyle(
+        fontFamily: 'Inter',
         fontSize: 17,
-        fontWeight: FontWeight.w400,
+        fontWeight: FontWeight.w300,
         fontStyle: FontStyle.italic,
         color: AppColors.pearlWhite,
         height: 1.6, // "wide line-height to feel like a handwritten letter"
-        letterSpacing: 0,
+        letterSpacing: 0.1,
       );
 
-  /// Tagline — "Begin with bismillah" — Playfair 16px Italic
-  static TextStyle get tagline => GoogleFonts.playfairDisplay(
+  /// Tagline — "Begin with bismillah" — Inter 16px Light Italic
+  static const TextStyle tagline = TextStyle(
+        fontFamily: 'Inter',
         fontSize: 16,
-        fontWeight: FontWeight.w400,
+        fontWeight: FontWeight.w300,
         fontStyle: FontStyle.italic,
         color: AppColors.slateMist,
         height: 1.4,
       );
 
-  /// NOOR wordmark in the header — Playfair 22px SemiBold, Gold
-  static TextStyle get wordmark => GoogleFonts.playfairDisplay(
+  /// NOOR wordmark in the header — Inter 22px ExtraBold, Gold
+  static const TextStyle wordmark = TextStyle(
+        fontFamily: 'Inter',
         fontSize: 22,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w800,
         letterSpacing: 2.0,
         color: AppColors.champagneGold,
       );
@@ -69,7 +73,8 @@ abstract final class AppTypography {
   // ── Body Font: Inter ──────────────────────────────────────
 
   /// Section Label — Inter 11px Medium, 1.5px UPPER tracking, Slate Mist
-  static TextStyle get sectionLabel => GoogleFonts.inter(
+  static const TextStyle sectionLabel = TextStyle(
+        fontFamily: 'Inter',
         fontSize: 11,
         fontWeight: FontWeight.w500,
         letterSpacing: 1.5,
@@ -78,7 +83,8 @@ abstract final class AppTypography {
       );
 
   /// Body Text — Inter 15px Regular, 0px spacing, Pearl White
-  static TextStyle get body => GoogleFonts.inter(
+  static const TextStyle body = TextStyle(
+        fontFamily: 'Inter',
         fontSize: 15,
         fontWeight: FontWeight.w400,
         letterSpacing: 0,
@@ -87,7 +93,8 @@ abstract final class AppTypography {
       );
 
   /// Body muted — same as body but Slate Mist
-  static TextStyle get bodyMuted => GoogleFonts.inter(
+  static const TextStyle bodyMuted = TextStyle(
+        fontFamily: 'Inter',
         fontSize: 15,
         fontWeight: FontWeight.w400,
         letterSpacing: 0,
@@ -96,7 +103,8 @@ abstract final class AppTypography {
       );
 
   /// Body Medium — Inter 15px Medium (for labels that need weight)
-  static TextStyle get bodyMedium => GoogleFonts.inter(
+  static const TextStyle bodyMedium = TextStyle(
+        fontFamily: 'Inter',
         fontSize: 15,
         fontWeight: FontWeight.w500,
         letterSpacing: 0,
@@ -105,7 +113,8 @@ abstract final class AppTypography {
       );
 
   /// Caption — Inter 13px Regular, Slate Mist
-  static TextStyle get caption => GoogleFonts.inter(
+  static const TextStyle caption = TextStyle(
+        fontFamily: 'Inter',
         fontSize: 13,
         fontWeight: FontWeight.w400,
         letterSpacing: 0,
@@ -114,7 +123,8 @@ abstract final class AppTypography {
       );
 
   /// Caption Medium — Inter 13px Medium
-  static TextStyle get captionMedium => GoogleFonts.inter(
+  static const TextStyle captionMedium = TextStyle(
+        fontFamily: 'Inter',
         fontSize: 13,
         fontWeight: FontWeight.w500,
         color: AppColors.pearlWhite,
@@ -122,7 +132,8 @@ abstract final class AppTypography {
       );
 
   /// Location text on discovery card — Inter 14px Regular
-  static TextStyle get cardLocation => GoogleFonts.inter(
+  static TextStyle get cardLocation => TextStyle(
+        fontFamily: 'Inter',
         fontSize: 14,
         fontWeight: FontWeight.w400,
         color: AppColors.pearlWhite.withValues(alpha: 0.85),
@@ -130,7 +141,8 @@ abstract final class AppTypography {
       );
 
   /// Chip label — Inter 12px Medium
-  static TextStyle get chipLabel => GoogleFonts.inter(
+  static const TextStyle chipLabel = TextStyle(
+        fontFamily: 'Inter',
         fontSize: 12,
         fontWeight: FontWeight.w500,
         letterSpacing: 0.2,
@@ -138,7 +150,8 @@ abstract final class AppTypography {
       );
 
   /// Button label — Inter 16px SemiBold
-  static TextStyle get button => GoogleFonts.inter(
+  static const TextStyle button = TextStyle(
+        fontFamily: 'Inter',
         fontSize: 16,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.2,
@@ -147,7 +160,8 @@ abstract final class AppTypography {
       );
 
   /// Secondary button label — same but gold text
-  static TextStyle get buttonSecondary => GoogleFonts.inter(
+  static const TextStyle buttonSecondary = TextStyle(
+        fontFamily: 'Inter',
         fontSize: 16,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.2,
@@ -156,7 +170,8 @@ abstract final class AppTypography {
       );
 
   /// Ghost button label
-  static TextStyle get buttonGhost => GoogleFonts.inter(
+  static const TextStyle buttonGhost = TextStyle(
+        fontFamily: 'Inter',
         fontSize: 16,
         fontWeight: FontWeight.w500,
         letterSpacing: 0.2,
@@ -165,14 +180,16 @@ abstract final class AppTypography {
       );
 
   /// Input label (floating) — Inter 13px Regular, Slate Mist
-  static TextStyle get inputLabel => GoogleFonts.inter(
+  static const TextStyle inputLabel = TextStyle(
+        fontFamily: 'Inter',
         fontSize: 13,
         fontWeight: FontWeight.w400,
         color: AppColors.slateMist,
       );
 
   /// Input text — Inter 15px Regular, Pearl White
-  static TextStyle get inputText => GoogleFonts.inter(
+  static const TextStyle inputText = TextStyle(
+        fontFamily: 'Inter',
         fontSize: 15,
         fontWeight: FontWeight.w400,
         color: AppColors.pearlWhite,
@@ -180,7 +197,8 @@ abstract final class AppTypography {
       );
 
   /// Chat message text
-  static TextStyle get chatMessage => GoogleFonts.inter(
+  static const TextStyle chatMessage = TextStyle(
+        fontFamily: 'Inter',
         fontSize: 15,
         fontWeight: FontWeight.w400,
         color: AppColors.pearlWhite,
@@ -188,14 +206,16 @@ abstract final class AppTypography {
       );
 
   /// Timestamp in chat (hidden by default)
-  static TextStyle get chatTimestamp => GoogleFonts.inter(
+  static const TextStyle chatTimestamp = TextStyle(
+        fontFamily: 'Inter',
         fontSize: 11,
         fontWeight: FontWeight.w400,
         color: AppColors.slateMist,
       );
 
   /// Unread count badge
-  static TextStyle get badge => GoogleFonts.inter(
+  static const TextStyle badge = TextStyle(
+        fontFamily: 'Inter',
         fontSize: 11,
         fontWeight: FontWeight.w700,
         color: AppColors.obsidianNight,
