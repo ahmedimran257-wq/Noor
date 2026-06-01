@@ -56,6 +56,18 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       }
     }
 
+    // Prefill countryCode from SharedPreferences if null
+    if (data.countryCode == null) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final code = prefs.getString('user_country_code');
+        if (code != null && code.isNotEmpty) {
+          data = data.copyWith(countryCode: code.toUpperCase());
+          debugPrint('OnboardingCubit: Prefilled countryCode from user_country_code: $code');
+        }
+      } catch (_) {}
+    }
+
     emit(OnboardingActive(step: startStep, data: data));
   }
 

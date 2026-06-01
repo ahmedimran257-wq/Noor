@@ -95,11 +95,7 @@ class ReferralService {
       );
     } catch (e) {
       debugPrint('[ReferralService] Error fetching stats: $e');
-      return const ReferralStats(
-        totalReferrals: 0,
-        rewardsEarned: 0,
-        pendingReferrals: 0,
-      );
+      rethrow;
     }
   }
 }

@@ -27,7 +27,7 @@ enum MaritalStatus { neverMarried, divorced, widowed }
 enum FamilyType { nuclear, joint, extended }
 
 /// Photo privacy for women.
-enum PhotoPrivacy { publicAll, mutualOnly }
+enum PhotoPrivacy { publicAll, mutualOnly, requestOnly }
 
 /// Location preference for partner.
 enum LocationPreference { sameCity, sameCountry, openToAbroad, diaspora }

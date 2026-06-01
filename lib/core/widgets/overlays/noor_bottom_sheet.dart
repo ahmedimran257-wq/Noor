@@ -28,10 +28,6 @@ Future<T?> showNoorBottomSheet<T>({
     enableDrag:          isDismissible,
     useSafeArea:         true,
     backgroundColor:     AppColors.obsidianNight,
-    transitionAnimationController: AnimationController(
-      vsync:     Navigator.of(context),
-      duration:  AppDimensions.durationReveal,
-    )..forward(),
     builder: (_) => child,
   );
 }

@@ -19,7 +19,7 @@ abstract final class AppColors {
 
   /// The accent color. Used SPARINGLY — CTAs, badges, borders, gold moments.
   /// "Champagne Gold" — not trophy gold. Muted and sophisticated.
-  static const Color champagneGold = Color(0xFFD4AA60);
+  static const Color champagneGold = Color(0xFFC5A059);
 
   /// Primary text. Soft muted white (Apple-style) — not stark white.
   /// Reduces eye strain. Feels premium.
@@ -52,11 +52,11 @@ abstract final class AppColors {
 
   /// Gold border — for selected states, verified rings.
   /// rgba(212, 170, 96, 0.40)
-  static const Color goldBorder = Color(0x66D4AA60);
+  static const Color goldBorder = Color(0x66C5A059);
 
   /// Subtle gold glow — for focus states and active indicators.
   /// rgba(212, 170, 96, 0.15)
-  static const Color goldGlow = Color(0x26D4AA60);
+  static const Color goldGlow = Color(0x26C5A059);
 
   /// Verified badge. Muted teal — not neon green.
   static const Color verifiedTeal = Color(0xFF2DCDA9);

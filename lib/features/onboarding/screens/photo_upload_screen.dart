@@ -636,6 +636,14 @@ class _PrivacyToggle extends StatelessWidget {
           isSelected: current == PhotoPrivacy.mutualOnly,
           onTap:      () => onChanged(PhotoPrivacy.mutualOnly),
         ),
+        const SizedBox(height: AppDimensions.space8),
+        _PrivacyTile(
+          icon:       Icons.visibility_off_outlined,
+          label:      'Request to view',
+          subtitle:   'Photos are blurred until you approve a request.',
+          isSelected: current == PhotoPrivacy.requestOnly,
+          onTap:      () => onChanged(PhotoPrivacy.requestOnly),
+        ),
       ],
     );
   }

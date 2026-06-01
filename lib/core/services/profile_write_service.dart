@@ -502,7 +502,11 @@ class ProfileWriteService {
       openToWidowed: pr?['open_to_widowed'] as bool?,
       openToWithChildren: pr?['open_to_has_children'] as bool?,
       preferredLivingExpectation: pr?['preferred_living_expectation'] as String?,
-      photoPrivacy: p['photo_privacy'] == 'mutual_only' ? PhotoPrivacy.mutualOnly : PhotoPrivacy.publicAll,
+      photoPrivacy: p['photo_privacy'] == 'mutual_only'
+          ? PhotoPrivacy.mutualOnly
+          : p['photo_privacy'] == 'request_only'
+              ? PhotoPrivacy.requestOnly
+              : PhotoPrivacy.publicAll,
       quranMemorization: p['quran_memorization'] as String?,
       religiousEducation: p['religious_education'] as String?,
       marriageTimeline: p['marriage_timeline'] as String?,
@@ -580,8 +584,9 @@ class ProfileWriteService {
   static String? _photoPrivacyToString(PhotoPrivacy? p) {
     if (p == null) return null;
     switch (p) {
-      case PhotoPrivacy.publicAll:  return 'public';
-      case PhotoPrivacy.mutualOnly: return 'mutual_only';
+      case PhotoPrivacy.publicAll:    return 'public';
+      case PhotoPrivacy.mutualOnly:   return 'mutual_only';
+      case PhotoPrivacy.requestOnly:  return 'request_only';
     }
   }
 

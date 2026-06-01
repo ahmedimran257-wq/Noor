@@ -19,6 +19,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/cubits/auth/auth_state.dart';
@@ -112,10 +113,17 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
     return _rawDigits.length >= (_country.maxDigits - 1); // -1 for tolerance
   }
 
-  void _sendOtp() {
+  void _sendOtp() async {
     if (!_isNumberComplete) return;
     HapticFeedback.mediumImpact();
     final fullPhone = '${_country.dialCode}$_rawDigits';
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_country_code', _country.iso2.toUpperCase());
+    } catch (_) {}
+
+    if (!mounted) return;
     context.read<AuthCubit>().sendOtp(fullPhone);
     setState(() {
       _otpSent = true;

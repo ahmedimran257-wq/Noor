@@ -39,6 +39,7 @@ class NoorProfileCard extends StatelessWidget {
     this.onBookmark,
     this.isInterestSent = false,
     this.lastActiveLabel,
+    this.cardScale = 1.0,
   });
 
   final String firstName;
@@ -58,13 +59,12 @@ class NoorProfileCard extends StatelessWidget {
   final VoidCallback? onBookmark;
   final bool isInterestSent;
   final String? lastActiveLabel;
+  final double cardScale;  // Continuous scale driven by scroll offset
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedScale(
-      scale:    isFocused ? 1.0 : 0.95,
-      duration: AppDimensions.durationTransition,
-      curve:    Curves.easeInOutQuart,
+    return Transform.scale(
+      scale: cardScale,
       child: NoorPressable(
         onTap: onTap,
         child: AspectRatio(

@@ -27,6 +27,7 @@ class ChatMessage extends Equatable {
     required this.isMe,
     this.status = MessageStatus.sent,
     this.isTimestampVisible = false,
+    this.sentByGuardian = false,
   });
 
   final String         id;
@@ -35,6 +36,7 @@ class ChatMessage extends Equatable {
   final bool           isMe;      // true = sent by current user
   final MessageStatus  status;
   final bool           isTimestampVisible;
+  final bool           sentByGuardian; // §3.2: true when guardian sent this message
 
   ChatMessage copyWith({
     MessageStatus? status,
@@ -47,12 +49,13 @@ class ChatMessage extends Equatable {
       isMe:                isMe,
       status:              status ?? this.status,
       isTimestampVisible:  isTimestampVisible ?? this.isTimestampVisible,
+      sentByGuardian:      sentByGuardian,
     );
   }
 
   @override
   List<Object?> get props =>
-      [id, text, sentAt, isMe, status, isTimestampVisible];
+      [id, text, sentAt, isMe, status, isTimestampVisible, sentByGuardian];
 }
 
 // ── Conversation ──────────────────────────────────────────────

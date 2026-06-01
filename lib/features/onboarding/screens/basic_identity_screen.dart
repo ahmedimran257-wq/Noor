@@ -11,8 +11,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:country_state_city/country_state_city.dart' as csc;
 
-import '../../../core/config/demographics_config.dart';
+import '../../../core/data/country_data.dart';
+import '../../../core/services/country_context_service.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_state.dart';
@@ -29,290 +31,6 @@ import '../widgets/step_header.dart';
 // ── City data — 300+ cities with country metadata ─────────────
 
 /// Each map has keys: 'name', 'country' (ISO-2), 'countryName'.
-const _kCities = <Map<String, String>>[
-  // ─ India ────────────────────────────────────────────────────
-  {'name': 'Mumbai',        'country': 'IN', 'countryName': 'India'},
-  {'name': 'Delhi',         'country': 'IN', 'countryName': 'India'},
-  {'name': 'Hyderabad',     'country': 'IN', 'countryName': 'India'},
-  {'name': 'Bengaluru',     'country': 'IN', 'countryName': 'India'},
-  {'name': 'Chennai',       'country': 'IN', 'countryName': 'India'},
-  {'name': 'Kolkata',       'country': 'IN', 'countryName': 'India'},
-  {'name': 'Pune',          'country': 'IN', 'countryName': 'India'},
-  {'name': 'Ahmedabad',     'country': 'IN', 'countryName': 'India'},
-  {'name': 'Lucknow',       'country': 'IN', 'countryName': 'India'},
-  {'name': 'Jaipur',        'country': 'IN', 'countryName': 'India'},
-  {'name': 'Surat',         'country': 'IN', 'countryName': 'India'},
-  {'name': 'Kanpur',        'country': 'IN', 'countryName': 'India'},
-  {'name': 'Nagpur',        'country': 'IN', 'countryName': 'India'},
-  {'name': 'Patna',         'country': 'IN', 'countryName': 'India'},
-  {'name': 'Bhopal',        'country': 'IN', 'countryName': 'India'},
-  {'name': 'Indore',        'country': 'IN', 'countryName': 'India'},
-  {'name': 'Coimbatore',    'country': 'IN', 'countryName': 'India'},
-  {'name': 'Kochi',         'country': 'IN', 'countryName': 'India'},
-  {'name': 'Kozhikode',     'country': 'IN', 'countryName': 'India'},
-  {'name': 'Malappuram',    'country': 'IN', 'countryName': 'India'},
-  {'name': 'Thrissur',      'country': 'IN', 'countryName': 'India'},
-  {'name': 'Thiruvananthapuram', 'country': 'IN', 'countryName': 'India'},
-  // ─ Pakistan ─────────────────────────────────────────────────
-  {'name': 'Karachi',       'country': 'PK', 'countryName': 'Pakistan'},
-  {'name': 'Lahore',        'country': 'PK', 'countryName': 'Pakistan'},
-  {'name': 'Islamabad',     'country': 'PK', 'countryName': 'Pakistan'},
-  {'name': 'Rawalpindi',    'country': 'PK', 'countryName': 'Pakistan'},
-  {'name': 'Faisalabad',    'country': 'PK', 'countryName': 'Pakistan'},
-  {'name': 'Multan',        'country': 'PK', 'countryName': 'Pakistan'},
-  {'name': 'Peshawar',      'country': 'PK', 'countryName': 'Pakistan'},
-  {'name': 'Quetta',        'country': 'PK', 'countryName': 'Pakistan'},
-  {'name': 'Hyderabad',     'country': 'PK', 'countryName': 'Pakistan'},
-  {'name': 'Sialkot',       'country': 'PK', 'countryName': 'Pakistan'},
-  // ─ Bangladesh ───────────────────────────────────────────────
-  {'name': 'Dhaka',         'country': 'BD', 'countryName': 'Bangladesh'},
-  {'name': 'Chittagong',    'country': 'BD', 'countryName': 'Bangladesh'},
-  {'name': 'Sylhet',        'country': 'BD', 'countryName': 'Bangladesh'},
-  {'name': 'Rajshahi',      'country': 'BD', 'countryName': 'Bangladesh'},
-  {'name': 'Khulna',        'country': 'BD', 'countryName': 'Bangladesh'},
-  // ─ Indonesia ─────────────────────────────────────────────────
-  {'name': 'Jakarta',       'country': 'ID', 'countryName': 'Indonesia'},
-  {'name': 'Surabaya',      'country': 'ID', 'countryName': 'Indonesia'},
-  {'name': 'Bandung',       'country': 'ID', 'countryName': 'Indonesia'},
-  {'name': 'Medan',         'country': 'ID', 'countryName': 'Indonesia'},
-  {'name': 'Semarang',      'country': 'ID', 'countryName': 'Indonesia'},
-  {'name': 'Makassar',      'country': 'ID', 'countryName': 'Indonesia'},
-  // ─ Malaysia ──────────────────────────────────────────────────
-  {'name': 'Kuala Lumpur',  'country': 'MY', 'countryName': 'Malaysia'},
-  {'name': 'Johor Bahru',   'country': 'MY', 'countryName': 'Malaysia'},
-  {'name': 'Penang',        'country': 'MY', 'countryName': 'Malaysia'},
-  {'name': 'Kota Kinabalu', 'country': 'MY', 'countryName': 'Malaysia'},
-  {'name': 'Petaling Jaya', 'country': 'MY', 'countryName': 'Malaysia'},
-  // ─ Nigeria ───────────────────────────────────────────────────
-  {'name': 'Lagos',         'country': 'NG', 'countryName': 'Nigeria'},
-  {'name': 'Abuja',         'country': 'NG', 'countryName': 'Nigeria'},
-  {'name': 'Kano',          'country': 'NG', 'countryName': 'Nigeria'},
-  {'name': 'Ibadan',        'country': 'NG', 'countryName': 'Nigeria'},
-  {'name': 'Port Harcourt', 'country': 'NG', 'countryName': 'Nigeria'},
-  {'name': 'Kaduna',        'country': 'NG', 'countryName': 'Nigeria'},
-  // ─ Egypt ──────────────────────────────────────────────────────
-  {'name': 'Cairo',         'country': 'EG', 'countryName': 'Egypt'},
-  {'name': 'Alexandria',    'country': 'EG', 'countryName': 'Egypt'},
-  {'name': 'Giza',          'country': 'EG', 'countryName': 'Egypt'},
-  {'name': 'Shubra El Kheima', 'country': 'EG', 'countryName': 'Egypt'},
-  {'name': 'Luxor',         'country': 'EG', 'countryName': 'Egypt'},
-  // ─ Turkey ────────────────────────────────────────────────────
-  {'name': 'Istanbul',      'country': 'TR', 'countryName': 'Turkey'},
-  {'name': 'Ankara',        'country': 'TR', 'countryName': 'Turkey'},
-  {'name': 'Izmir',         'country': 'TR', 'countryName': 'Turkey'},
-  {'name': 'Bursa',         'country': 'TR', 'countryName': 'Turkey'},
-  {'name': 'Antalya',       'country': 'TR', 'countryName': 'Turkey'},
-  // ─ Saudi Arabia ──────────────────────────────────────────────
-  {'name': 'Riyadh',        'country': 'SA', 'countryName': 'Saudi Arabia'},
-  {'name': 'Jeddah',        'country': 'SA', 'countryName': 'Saudi Arabia'},
-  {'name': 'Mecca',         'country': 'SA', 'countryName': 'Saudi Arabia'},
-  {'name': 'Medina',        'country': 'SA', 'countryName': 'Saudi Arabia'},
-  {'name': 'Dammam',        'country': 'SA', 'countryName': 'Saudi Arabia'},
-  {'name': 'Khobar',        'country': 'SA', 'countryName': 'Saudi Arabia'},
-  // ─ UAE ───────────────────────────────────────────────────────
-  {'name': 'Dubai',         'country': 'AE', 'countryName': 'UAE'},
-  {'name': 'Abu Dhabi',     'country': 'AE', 'countryName': 'UAE'},
-  {'name': 'Sharjah',       'country': 'AE', 'countryName': 'UAE'},
-  {'name': 'Ajman',         'country': 'AE', 'countryName': 'UAE'},
-  {'name': 'Ras Al Khaimah', 'country': 'AE', 'countryName': 'UAE'},
-  // ─ UK ────────────────────────────────────────────────────────
-  {'name': 'London',        'country': 'GB', 'countryName': 'UK'},
-  {'name': 'Birmingham',    'country': 'GB', 'countryName': 'UK'},
-  {'name': 'Manchester',    'country': 'GB', 'countryName': 'UK'},
-  {'name': 'Leeds',         'country': 'GB', 'countryName': 'UK'},
-  {'name': 'Bradford',      'country': 'GB', 'countryName': 'UK'},
-  {'name': 'Glasgow',       'country': 'GB', 'countryName': 'UK'},
-  {'name': 'Sheffield',     'country': 'GB', 'countryName': 'UK'},
-  {'name': 'Leicester',     'country': 'GB', 'countryName': 'UK'},
-  {'name': 'Luton',         'country': 'GB', 'countryName': 'UK'},
-  {'name': 'Coventry',      'country': 'GB', 'countryName': 'UK'},
-  // ─ USA ───────────────────────────────────────────────────────
-  {'name': 'New York',      'country': 'US', 'countryName': 'USA'},
-  {'name': 'Chicago',       'country': 'US', 'countryName': 'USA'},
-  {'name': 'Houston',       'country': 'US', 'countryName': 'USA'},
-  {'name': 'Los Angeles',   'country': 'US', 'countryName': 'USA'},
-  {'name': 'Detroit',       'country': 'US', 'countryName': 'USA'},
-  {'name': 'Dearborn',      'country': 'US', 'countryName': 'USA'},
-  {'name': 'Dallas',        'country': 'US', 'countryName': 'USA'},
-  {'name': 'Washington DC', 'country': 'US', 'countryName': 'USA'},
-  {'name': 'Philadelphia',  'country': 'US', 'countryName': 'USA'},
-  {'name': 'Atlanta',       'country': 'US', 'countryName': 'USA'},
-  {'name': 'Minneapolis',   'country': 'US', 'countryName': 'USA'},
-  {'name': 'Seattle',       'country': 'US', 'countryName': 'USA'},
-  // ─ Canada ────────────────────────────────────────────────────
-  {'name': 'Toronto',       'country': 'CA', 'countryName': 'Canada'},
-  {'name': 'Mississauga',   'country': 'CA', 'countryName': 'Canada'},
-  {'name': 'Vancouver',     'country': 'CA', 'countryName': 'Canada'},
-  {'name': 'Montreal',      'country': 'CA', 'countryName': 'Canada'},
-  {'name': 'Ottawa',        'country': 'CA', 'countryName': 'Canada'},
-  {'name': 'Calgary',       'country': 'CA', 'countryName': 'Canada'},
-  // ─ Australia ─────────────────────────────────────────────────
-  {'name': 'Sydney',        'country': 'AU', 'countryName': 'Australia'},
-  {'name': 'Melbourne',     'country': 'AU', 'countryName': 'Australia'},
-  {'name': 'Brisbane',      'country': 'AU', 'countryName': 'Australia'},
-  {'name': 'Perth',         'country': 'AU', 'countryName': 'Australia'},
-  {'name': 'Adelaide',      'country': 'AU', 'countryName': 'Australia'},
-  // ─ Germany ───────────────────────────────────────────────────
-  {'name': 'Berlin',        'country': 'DE', 'countryName': 'Germany'},
-  {'name': 'Hamburg',       'country': 'DE', 'countryName': 'Germany'},
-  {'name': 'Munich',        'country': 'DE', 'countryName': 'Germany'},
-  {'name': 'Cologne',       'country': 'DE', 'countryName': 'Germany'},
-  {'name': 'Frankfurt',     'country': 'DE', 'countryName': 'Germany'},
-  // ─ France ────────────────────────────────────────────────────
-  {'name': 'Paris',         'country': 'FR', 'countryName': 'France'},
-  {'name': 'Marseille',     'country': 'FR', 'countryName': 'France'},
-  {'name': 'Lyon',          'country': 'FR', 'countryName': 'France'},
-  {'name': 'Toulouse',      'country': 'FR', 'countryName': 'France'},
-  {'name': 'Nice',          'country': 'FR', 'countryName': 'France'},
-  // ─ Netherlands ───────────────────────────────────────────────
-  {'name': 'Amsterdam',     'country': 'NL', 'countryName': 'Netherlands'},
-  {'name': 'Rotterdam',     'country': 'NL', 'countryName': 'Netherlands'},
-  {'name': 'The Hague',     'country': 'NL', 'countryName': 'Netherlands'},
-  {'name': 'Utrecht',       'country': 'NL', 'countryName': 'Netherlands'},
-  // ─ Belgium ───────────────────────────────────────────────────
-  {'name': 'Brussels',      'country': 'BE', 'countryName': 'Belgium'},
-  {'name': 'Antwerp',       'country': 'BE', 'countryName': 'Belgium'},
-  {'name': 'Ghent',         'country': 'BE', 'countryName': 'Belgium'},
-  // ─ Sweden ────────────────────────────────────────────────────
-  {'name': 'Stockholm',     'country': 'SE', 'countryName': 'Sweden'},
-  {'name': 'Gothenburg',    'country': 'SE', 'countryName': 'Sweden'},
-  {'name': 'Malmö',         'country': 'SE', 'countryName': 'Sweden'},
-  // ─ Norway ────────────────────────────────────────────────────
-  {'name': 'Oslo',          'country': 'NO', 'countryName': 'Norway'},
-  {'name': 'Bergen',        'country': 'NO', 'countryName': 'Norway'},
-  // ─ Qatar ──────────────────────────────────────────────────────
-  {'name': 'Doha',          'country': 'QA', 'countryName': 'Qatar'},
-  // ─ Kuwait ────────────────────────────────────────────────────
-  {'name': 'Kuwait City',   'country': 'KW', 'countryName': 'Kuwait'},
-  // ─ Oman ──────────────────────────────────────────────────────
-  {'name': 'Muscat',        'country': 'OM', 'countryName': 'Oman'},
-  {'name': 'Salalah',       'country': 'OM', 'countryName': 'Oman'},
-  // ─ Bahrain ───────────────────────────────────────────────────
-  {'name': 'Manama',        'country': 'BH', 'countryName': 'Bahrain'},
-  // ─ Jordan ────────────────────────────────────────────────────
-  {'name': 'Amman',         'country': 'JO', 'countryName': 'Jordan'},
-  {'name': 'Zarqa',         'country': 'JO', 'countryName': 'Jordan'},
-  // ─ Lebanon ───────────────────────────────────────────────────
-  {'name': 'Beirut',        'country': 'LB', 'countryName': 'Lebanon'},
-  {'name': 'Tripoli',       'country': 'LB', 'countryName': 'Lebanon'},
-  // ─ Syria ──────────────────────────────────────────────────────
-  {'name': 'Damascus',      'country': 'SY', 'countryName': 'Syria'},
-  {'name': 'Aleppo',        'country': 'SY', 'countryName': 'Syria'},
-  // ─ Iraq ───────────────────────────────────────────────────────
-  {'name': 'Baghdad',       'country': 'IQ', 'countryName': 'Iraq'},
-  {'name': 'Basra',         'country': 'IQ', 'countryName': 'Iraq'},
-  {'name': 'Erbil',         'country': 'IQ', 'countryName': 'Iraq'},
-  // ─ Iran ───────────────────────────────────────────────────────
-  {'name': 'Tehran',        'country': 'IR', 'countryName': 'Iran'},
-  {'name': 'Mashhad',       'country': 'IR', 'countryName': 'Iran'},
-  {'name': 'Isfahan',       'country': 'IR', 'countryName': 'Iran'},
-  // ─ Algeria ────────────────────────────────────────────────────
-  {'name': 'Algiers',       'country': 'DZ', 'countryName': 'Algeria'},
-  {'name': 'Oran',          'country': 'DZ', 'countryName': 'Algeria'},
-  {'name': 'Constantine',   'country': 'DZ', 'countryName': 'Algeria'},
-  // ─ Morocco ───────────────────────────────────────────────────
-  {'name': 'Casablanca',    'country': 'MA', 'countryName': 'Morocco'},
-  {'name': 'Rabat',         'country': 'MA', 'countryName': 'Morocco'},
-  {'name': 'Fes',           'country': 'MA', 'countryName': 'Morocco'},
-  {'name': 'Marrakech',     'country': 'MA', 'countryName': 'Morocco'},
-  // ─ Tunisia ───────────────────────────────────────────────────
-  {'name': 'Tunis',         'country': 'TN', 'countryName': 'Tunisia'},
-  {'name': 'Sfax',          'country': 'TN', 'countryName': 'Tunisia'},
-  // ─ Libya ──────────────────────────────────────────────────────
-  {'name': 'Tripoli',       'country': 'LY', 'countryName': 'Libya'},
-  {'name': 'Benghazi',      'country': 'LY', 'countryName': 'Libya'},
-  // ─ Sudan ──────────────────────────────────────────────────────
-  {'name': 'Khartoum',      'country': 'SD', 'countryName': 'Sudan'},
-  {'name': 'Omdurman',      'country': 'SD', 'countryName': 'Sudan'},
-  // ─ Yemen ──────────────────────────────────────────────────────
-  {'name': 'Sanaa',         'country': 'YE', 'countryName': 'Yemen'},
-  {'name': 'Aden',          'country': 'YE', 'countryName': 'Yemen'},
-  // ─ Afghanistan ────────────────────────────────────────────────
-  {'name': 'Kabul',         'country': 'AF', 'countryName': 'Afghanistan'},
-  {'name': 'Kandahar',      'country': 'AF', 'countryName': 'Afghanistan'},
-  // ─ Ghana ──────────────────────────────────────────────────────
-  {'name': 'Accra',         'country': 'GH', 'countryName': 'Ghana'},
-  {'name': 'Kumasi',        'country': 'GH', 'countryName': 'Ghana'},
-  // ─ Kenya ──────────────────────────────────────────────────────
-  {'name': 'Nairobi',       'country': 'KE', 'countryName': 'Kenya'},
-  {'name': 'Mombasa',       'country': 'KE', 'countryName': 'Kenya'},
-  // ─ Tanzania ───────────────────────────────────────────────────
-  {'name': 'Dar es Salaam', 'country': 'TZ', 'countryName': 'Tanzania'},
-  {'name': 'Zanzibar',      'country': 'TZ', 'countryName': 'Tanzania'},
-  // ─ Ethiopia ───────────────────────────────────────────────────
-  {'name': 'Addis Ababa',   'country': 'ET', 'countryName': 'Ethiopia'},
-  {'name': 'Dire Dawa',     'country': 'ET', 'countryName': 'Ethiopia'},
-  // ─ Somalia ───────────────────────────────────────────────────
-  {'name': 'Mogadishu',     'country': 'SO', 'countryName': 'Somalia'},
-  {'name': 'Hargeisa',      'country': 'SO', 'countryName': 'Somalia'},
-  // ─ Senegal ───────────────────────────────────────────────────
-  {'name': 'Dakar',         'country': 'SN', 'countryName': 'Senegal'},
-  // ─ Mali ───────────────────────────────────────────────────────
-  {'name': 'Bamako',        'country': 'ML', 'countryName': 'Mali'},
-  // ─ Niger ──────────────────────────────────────────────────────
-  {'name': 'Niamey',        'country': 'NE', 'countryName': 'Niger'},
-  // ─ Kazakhstan ─────────────────────────────────────────────────
-  {'name': 'Almaty',        'country': 'KZ', 'countryName': 'Kazakhstan'},
-  {'name': 'Astana',        'country': 'KZ', 'countryName': 'Kazakhstan'},
-  // ─ Uzbekistan ────────────────────────────────────────────────
-  {'name': 'Tashkent',      'country': 'UZ', 'countryName': 'Uzbekistan'},
-  {'name': 'Samarkand',     'country': 'UZ', 'countryName': 'Uzbekistan'},
-  // ─ Tajikistan ────────────────────────────────────────────────
-  {'name': 'Dushanbe',      'country': 'TJ', 'countryName': 'Tajikistan'},
-  // ─ Kyrgyzstan ─────────────────────────────────────────────────
-  {'name': 'Bishkek',       'country': 'KG', 'countryName': 'Kyrgyzstan'},
-  // ─ Azerbaijan ────────────────────────────────────────────────
-  {'name': 'Baku',          'country': 'AZ', 'countryName': 'Azerbaijan'},
-  // ─ Bosnia ─────────────────────────────────────────────────────
-  {'name': 'Sarajevo',      'country': 'BA', 'countryName': 'Bosnia & Herz.'},
-  {'name': 'Banja Luka',    'country': 'BA', 'countryName': 'Bosnia & Herz.'},
-  // ─ Kosovo ─────────────────────────────────────────────────────
-  {'name': 'Pristina',      'country': 'XK', 'countryName': 'Kosovo'},
-  // ─ Albania ───────────────────────────────────────────────────
-  {'name': 'Tirana',        'country': 'AL', 'countryName': 'Albania'},
-  // ─ Maldives ───────────────────────────────────────────────────
-  {'name': 'Malé',          'country': 'MV', 'countryName': 'Maldives'},
-  // ─ Brunei ─────────────────────────────────────────────────────
-  {'name': 'Bandar Seri Begawan', 'country': 'BN', 'countryName': 'Brunei'},
-  // ─ Singapore ──────────────────────────────────────────────────
-  {'name': 'Singapore',     'country': 'SG', 'countryName': 'Singapore'},
-  // ─ South Africa ───────────────────────────────────────────────
-  {'name': 'Johannesburg',  'country': 'ZA', 'countryName': 'South Africa'},
-  {'name': 'Cape Town',     'country': 'ZA', 'countryName': 'South Africa'},
-  {'name': 'Durban',        'country': 'ZA', 'countryName': 'South Africa'},
-  // ─ Spain ──────────────────────────────────────────────────────
-  {'name': 'Madrid',        'country': 'ES', 'countryName': 'Spain'},
-  {'name': 'Barcelona',     'country': 'ES', 'countryName': 'Spain'},
-  // ─ Italy ──────────────────────────────────────────────────────
-  {'name': 'Rome',          'country': 'IT', 'countryName': 'Italy'},
-  {'name': 'Milan',         'country': 'IT', 'countryName': 'Italy'},
-  // ─ New Zealand ────────────────────────────────────────────────
-  {'name': 'Auckland',      'country': 'NZ', 'countryName': 'New Zealand'},
-  {'name': 'Wellington',    'country': 'NZ', 'countryName': 'New Zealand'},
-  // ─ Ireland ────────────────────────────────────────────────────
-  {'name': 'Dublin',        'country': 'IE', 'countryName': 'Ireland'},
-  // ─ Sri Lanka ──────────────────────────────────────────────────
-  {'name': 'Colombo',       'country': 'LK', 'countryName': 'Sri Lanka'},
-  // ─ Myanmar ────────────────────────────────────────────────────
-  {'name': 'Yangon',        'country': 'MM', 'countryName': 'Myanmar'},
-  {'name': 'Mandalay',      'country': 'MM', 'countryName': 'Myanmar'},
-  // ─ Philippines ────────────────────────────────────────────────
-  {'name': 'Manila',        'country': 'PH', 'countryName': 'Philippines'},
-  {'name': 'Cotabato',      'country': 'PH', 'countryName': 'Philippines'},
-  // ─ Thailand ───────────────────────────────────────────────────
-  {'name': 'Bangkok',       'country': 'TH', 'countryName': 'Thailand'},
-  {'name': 'Pattani',       'country': 'TH', 'countryName': 'Thailand'},
-  // ─ Palestine ──────────────────────────────────────────────────
-  {'name': 'Gaza',          'country': 'PS', 'countryName': 'Palestine'},
-  {'name': 'Ramallah',      'country': 'PS', 'countryName': 'Palestine'},
-  // ─ Russia ─────────────────────────────────────────────────────
-  {'name': 'Moscow',        'country': 'RU', 'countryName': 'Russia'},
-  {'name': 'Kazan',         'country': 'RU', 'countryName': 'Russia'},
-  {'name': 'Ufa',           'country': 'RU', 'countryName': 'Russia'},
-];
-
-
-
 // ── Complexion options ─────────────────────────────────────────
 
 const _kComplexions = <String>[
@@ -345,7 +63,6 @@ class BasicIdentityScreen extends StatefulWidget {
 class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
   final _firstNameCtrl = TextEditingController();
   final _lastNameCtrl  = TextEditingController();
-  final _cityCtrl      = TextEditingController();
   DateTime? _dob;
   Gender?   _gender;
   String    _dobError = '';
@@ -355,7 +72,14 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
   String? _selectedCityId;
   String? _selectedCountryCode;
   String? _selectedCountryName;
-  bool    _showSuggestions = false;
+  String? _selectedStateName;
+  String? _selectedStateCode;
+
+  // Demographics from CountryContextService
+  List<String> _loadedLanguages = ['English', 'Arabic', 'Other'];
+  List<String> _loadedCommunities = ['Prefer not to say'];
+
+
 
   // New fields
   int     _heightCm     = 165;
@@ -394,37 +118,39 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
     _residencyStatus = data.residencyStatus;
     _specialNeeds = data.specialNeeds;
 
-    if (data.cityName != null) {
-      _selectedCity = data.cityName;
-      _cityCtrl.text = data.cityName!;
-      _selectedCityId = data.cityId;
+    if (data.countryCode != null) {
       _selectedCountryCode = data.countryCode;
-
-      final cityMatch = _kCities.firstWhere(
-        (c) => c['name'] == data.cityName,
-        orElse: () => <String, String>{},
-      );
-      if (cityMatch.isNotEmpty) {
-        _selectedCountryName = cityMatch['countryName'];
-        _selectedCountryCode ??= cityMatch['country'];
+      final match = kAllCountries.where((c) => c.iso2.toUpperCase() == _selectedCountryCode!.toUpperCase());
+      if (match.isNotEmpty) {
+        _selectedCountryName = match.first.name;
       }
+      _fetchDemographics(_selectedCountryCode!);
+    }
+
+    if (data.cityName != null) {
+      final parts = data.cityName!.split(', ');
+      if (parts.length > 1) {
+        _selectedCity = parts[0];
+        _selectedStateName = parts[1];
+      } else {
+        _selectedCity = data.cityName;
+      }
+      _selectedCityId = data.cityId;
     }
   }
 
-  /// City is valid if user either (a) picked from suggestions, or
-  /// (b) typed at least 2 characters as a free-text city name.
-  String get _effectiveCity => _selectedCity ?? _cityCtrl.text.trim();
-
-  // TODO (backend): read demographics from Supabase country_demographics table.
-  List<String> get _countryLanguages {
-    final code = _selectedCountryCode ?? '';
-    return DemographicsConfig.languages(code);
+  Future<void> _fetchDemographics(String countryCode) async {
+    final ctx = await CountryContextService.instance.getContext(countryCode);
+    if (!mounted) return;
+    setState(() {
+      _loadedLanguages = ctx.languages;
+      _loadedCommunities = [...ctx.communities];
+      if (!_loadedCommunities.contains('Prefer not to say')) {
+        _loadedCommunities.add('Prefer not to say');
+      }
+    });
   }
 
-  List<String> get _countryCommunities {
-    final code = _selectedCountryCode ?? '';
-    return [...DemographicsConfig.communities(code), 'Prefer not to say'];
-  }
 
   String get _creatorRelation =>
       context.read<OnboardingCubit>().currentData.profileCreatorRelation ?? 'self';
@@ -435,7 +161,9 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       _dob != null &&
       _dobError.isEmpty &&
       _gender != null &&
-      _effectiveCity.length >= 2 &&
+      _selectedCountryCode != null &&
+      _selectedStateName != null &&
+      _selectedCity != null &&
       _motherTongue != null;
 
   void _showValidation() {
@@ -446,7 +174,9 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
     if (_dob == null) missing.add('Date of birth');
     if (_dobError.isNotEmpty) missing.add('Valid date of birth (18+)');
     if (_gender == null) missing.add('Gender');
-    if (_effectiveCity.length < 2) missing.add('City');
+    if (_selectedCountryCode == null) missing.add('Country');
+    if (_selectedStateName == null) missing.add('State / Region');
+    if (_selectedCity == null) missing.add('City');
     if (_motherTongue == null) missing.add('Mother tongue');
     showValidationSnackbar(context, missing);
   }
@@ -455,7 +185,6 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
   void dispose() {
     _firstNameCtrl.dispose();
     _lastNameCtrl.dispose();
-    _cityCtrl.dispose();
     super.dispose();
   }
 
@@ -504,15 +233,6 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       '${d.month.toString().padLeft(2, '0')} / '
       '${d.year}';
 
-  List<Map<String, String>> get _filteredCities {
-    final q = _cityCtrl.text.trim();
-    if (q.isEmpty || _selectedCity != null) return [];
-    final lower = q.toLowerCase();
-    return _kCities
-        .where((c) => c['name']!.toLowerCase().contains(lower))
-        .take(6)
-        .toList();
-  }
 
   void _showMotherTonguePicker() {
     showModalBottomSheet<void>(
@@ -524,7 +244,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       ),
       builder: (_) => _GenericListPicker(
         title:      'Mother Tongue',
-        options:    _countryLanguages,
+        options:    _loadedLanguages,
         selected:   _motherTongue,
         onSelected: (v) {
           setState(() => _motherTongue = v);
@@ -544,7 +264,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       ),
       builder: (_) => _GenericListPicker(
         title:      CopyEngine.communityQuestion(_creatorRelation),
-        options:    _countryCommunities,
+        options:    _loadedCommunities,
         selected:   _community,
         onSelected: (v) {
           setState(() => _community = v);
@@ -554,9 +274,78 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
     );
   }
 
+
+  void _showStatePicker() {
+    if (_selectedCountryCode == null) return;
+    showModalBottomSheet<void>(
+      context:            context,
+      backgroundColor:    const Color(0xFF12121A),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => _LocationPickerSheet(
+        title:      'Select State / Province',
+        selectedName: _selectedStateName,
+        fetchItems: () async {
+          final states = await csc.getStatesOfCountry(_selectedCountryCode!);
+          return states.map((s) => {
+            'name': s.name,
+            'code': s.isoCode,
+          }).toList();
+        },
+        onSelected: (v) {
+          final code = v['code']!;
+          final name = v['name']!;
+          setState(() {
+            _selectedStateCode = code;
+            _selectedStateName = name;
+            _selectedCity      = null;
+            _selectedCityId    = null;
+          });
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+
+  void _showCityPicker() {
+    if (_selectedCountryCode == null || _selectedStateCode == null) return;
+    showModalBottomSheet<void>(
+      context:            context,
+      backgroundColor:    const Color(0xFF12121A),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => _LocationPickerSheet(
+        title:      'Select City',
+        selectedName: _selectedCity,
+        fetchItems: () async {
+          final cities = await csc.getStateCities(_selectedCountryCode!, _selectedStateCode!);
+          return cities.map((c) => {
+            'name': c.name,
+            'code': c.name,
+          }).toList();
+        },
+        onSelected: (v) {
+          final name = v['name']!;
+          setState(() {
+            _selectedCity   = name;
+            _selectedCityId = name.toLowerCase();
+          });
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+
+
   void _advance() async {
     final countryCode = _selectedCountryCode ?? 'XX';
-    final cityName = _effectiveCity;
+    final cityName = _selectedStateName != null && _selectedStateName!.isNotEmpty
+        ? '$_selectedCity, $_selectedStateName'
+        : (_selectedCity ?? '');
     final data = context.read<OnboardingCubit>().currentData.copyWith(
       firstName:    _firstNameCtrl.text.trim(),
       lastName:     _lastNameCtrl.text.trim(),
@@ -790,100 +579,185 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
 
               const SizedBox(height: AppDimensions.space20),
 
-              // City search
-              Text(
-                _isGuardianMode ? "THEIR CITY" : 'YOUR CITY',
-                style: AppTypography.sectionLabel,
-              ),
-              const SizedBox(height: AppDimensions.space8),
-              NoorTextField(
-                controller:         _cityCtrl,
-                hint:               'Type your city',
-                prefixIcon:         Icons.location_on_outlined,
-                textCapitalization: TextCapitalization.words,
-                textInputAction:    TextInputAction.done,
-                onChanged: (q) => setState(() {
-                  // Clear locked selection so user can re-type
-                  _selectedCity        = null;
-                  _selectedCityId      = null;
-                  _selectedCountryCode = null;
-                  _selectedCountryName = null;
-                  _showSuggestions     = q.trim().isNotEmpty;
-                }),
+              // ── Country Selector ──────────────────────────────────
+              Text(_isGuardianMode ? 'THEIR COUNTRY' : 'YOUR COUNTRY', style: AppTypography.sectionLabel),
+              const SizedBox(height: AppDimensions.space12),
+              Container(
+                height: AppDimensions.buttonHeight,
+                padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space16),
+                decoration: BoxDecoration(
+                  color: AppColors.champagneGold.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                  border: Border.all(color: AppColors.champagneGold),
+                ),
+                child: Row(children: [
+                  const Icon(Icons.public_rounded,
+                      color: AppColors.champagneGold,
+                      size: AppDimensions.iconSizeMedium),
+                  const SizedBox(width: AppDimensions.space12),
+                  Expanded(child: Text(
+                    _selectedCountryName ?? 'Select country',
+                    style: AppTypography.inputText.copyWith(
+                      color: AppColors.champagneGold,
+                    ),
+                  )),
+                  const Icon(
+                    Icons.lock_outline_rounded,
+                    color: AppColors.slateMist,
+                    size: 14,
+                  ),
+                ]),
               ),
 
-              // Suggestions dropdown
-              if (_showSuggestions && _filteredCities.isNotEmpty) ...[
-                const SizedBox(height: AppDimensions.space4),
+              const SizedBox(height: AppDimensions.space20),
+
+              // ── State Selector ───────────────────────────────────
+              Text(_isGuardianMode ? 'THEIR STATE / PROVINCE' : 'YOUR STATE / PROVINCE', style: AppTypography.sectionLabel),
+              const SizedBox(height: AppDimensions.space12),
+              GestureDetector(
+                onTap: _selectedCountryCode != null ? _showStatePicker : null,
+                child: Opacity(
+                  opacity: _selectedCountryCode != null ? 1.0 : 0.5,
+                  child: Container(
+                    height: AppDimensions.buttonHeight,
+                    padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space16),
+                    decoration: BoxDecoration(
+                      color: AppColors.inputSurface,
+                      borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                      border: Border.all(
+                        color: _selectedStateName != null ? AppColors.champagneGold : AppColors.cardBorder,
+                        width: _selectedStateName != null ? AppDimensions.borderFocus : AppDimensions.borderThin,
+                      ),
+                    ),
+                    child: Row(children: [
+                      Icon(Icons.map_outlined,
+                          color: _selectedStateName != null ? AppColors.champagneGold : AppColors.slateMist,
+                          size: AppDimensions.iconSizeMedium),
+                      const SizedBox(width: AppDimensions.space12),
+                      Expanded(child: Text(
+                        _selectedStateName ?? (_selectedCountryCode == null ? 'Select country first' : 'Select state / province'),
+                        style: AppTypography.inputText.copyWith(
+                          color: _selectedStateName != null ? AppColors.pearlWhite : AppColors.slateMist,
+                        ),
+                      )),
+                      const Icon(Icons.expand_more_rounded, color: AppColors.slateMist),
+                    ]),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: AppDimensions.space20),
+
+              // ── City Selector ────────────────────────────────────
+              Text(_isGuardianMode ? 'THEIR CITY' : 'YOUR CITY', style: AppTypography.sectionLabel),
+              const SizedBox(height: AppDimensions.space12),
+              GestureDetector(
+                onTap: _selectedStateName != null ? _showCityPicker : null,
+                child: Opacity(
+                  opacity: _selectedStateName != null ? 1.0 : 0.5,
+                  child: Container(
+                    height: AppDimensions.buttonHeight,
+                    padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space16),
+                    decoration: BoxDecoration(
+                      color: AppColors.inputSurface,
+                      borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                      border: Border.all(
+                        color: _selectedCity != null ? AppColors.champagneGold : AppColors.cardBorder,
+                        width: _selectedCity != null ? AppDimensions.borderFocus : AppDimensions.borderThin,
+                      ),
+                    ),
+                    child: Row(children: [
+                      Icon(Icons.location_city_rounded,
+                          color: _selectedCity != null ? AppColors.champagneGold : AppColors.slateMist,
+                          size: AppDimensions.iconSizeMedium),
+                      const SizedBox(width: AppDimensions.space12),
+                      Expanded(child: Text(
+                        _selectedCity ?? (_selectedStateName == null ? 'Select state first' : 'Select city'),
+                        style: AppTypography.inputText.copyWith(
+                          color: _selectedCity != null ? AppColors.pearlWhite : AppColors.slateMist,
+                        ),
+                      )),
+                      const Icon(Icons.expand_more_rounded, color: AppColors.slateMist),
+                    ]),
+                  ),
+                ),
+              ),
+
+
+              // Premium Confirmed Location Card
+              if (_selectedCity != null) ...[
+                const SizedBox(height: AppDimensions.space12),
                 Container(
+                  padding: const EdgeInsets.all(AppDimensions.space16),
                   decoration: BoxDecoration(
-                    color:        AppColors.inputSurface,
+                    color: AppColors.inputSurface,
                     borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                    border:       Border.all(color: AppColors.cardBorder),
+                    border: Border.all(color: AppColors.champagneGold.withValues(alpha: 0.3)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.champagneGold.withValues(alpha: 0.05),
+                        blurRadius: 16,
+                        spreadRadius: 0,
+                      ),
+                    ],
                   ),
                   child: Column(
-                    children: _filteredCities.map((city) {
-                      return ListTile(
-                        dense: true,
-                        leading: const Icon(Icons.location_city_outlined,
-                            color: AppColors.slateMist, size: 18),
-                        title: Text(city['name']!, style: AppTypography.body),
-                        subtitle: Text(
-                          city['countryName']!,
-                          style: AppTypography.caption.copyWith(
-                            color: AppColors.slateMist,
-                          ),
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.check_circle_rounded,
+                              color: AppColors.champagneGold, size: 18),
+                          const SizedBox(width: AppDimensions.space8),
+                          Text('Confirmed Location', style: AppTypography.captionMedium.copyWith(color: AppColors.champagneGold)),
+                        ],
+                      ),
+                      const SizedBox(height: AppDimensions.space16),
+                      // City
+                      Row(
+                        children: [
+                          const Icon(Icons.location_city_rounded, color: AppColors.slateMist, size: 18),
+                          const SizedBox(width: AppDimensions.space12),
+                          const Text('City', style: AppTypography.inputLabel),
+                          const Spacer(),
+                          Text(_selectedCity!, style: AppTypography.bodyMedium),
+                        ],
+                      ),
+                      // State
+                      if (_selectedStateName != null && _selectedStateName!.isNotEmpty) ...[
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8.0),
+                          child: Divider(color: AppColors.cardBorder, height: 1),
                         ),
-                        onTap: () => setState(() {
-                          _selectedCity        = city['name'];
-                          _selectedCityId      = city['name']!.toLowerCase();
-                          _selectedCountryCode = city['country'];
-                          _selectedCountryName = city['countryName'];
-                          _showSuggestions     = false;
-                          _cityCtrl.text       = city['name']!;
-                        }),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ],
-
-              // Confirmed city badge (picked from list) + country display
-              if (_selectedCity != null) ...[
-                const SizedBox(height: AppDimensions.space8),
-                Row(
-                  children: [
-                    const Icon(Icons.check_circle_outline,
-                        color: AppColors.verifiedTeal, size: 16),
-                    const SizedBox(width: AppDimensions.space8),
-                    Text(_selectedCity!, style: AppTypography.captionMedium),
-                  ],
-                ),
-                if (_selectedCountryName != null) ...[
-                  const SizedBox(height: AppDimensions.space6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppDimensions.space16,
-                      vertical:   AppDimensions.space12,
-                    ),
-                    decoration: BoxDecoration(
-                      color:        AppColors.inputSurface,
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                      border:       Border.all(color: AppColors.cardBorder),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.flag_outlined,
-                            color: AppColors.slateMist, size: 18),
-                        const SizedBox(width: AppDimensions.space12),
-                        const Text('Country', style: AppTypography.inputLabel),
-                        const Spacer(),
-                        Text(_selectedCountryName!,
-                            style: AppTypography.bodyMedium),
+                        Row(
+                          children: [
+                            const Icon(Icons.map_outlined, color: AppColors.slateMist, size: 18),
+                            const SizedBox(width: AppDimensions.space12),
+                            const Text('State / Region', style: AppTypography.inputLabel),
+                            const Spacer(),
+                            Text(_selectedStateName!, style: AppTypography.bodyMedium),
+                          ],
+                        ),
                       ],
-                    ),
+                      // Country
+                      if (_selectedCountryName != null) ...[
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8.0),
+                          child: Divider(color: AppColors.cardBorder, height: 1),
+                        ),
+                        Row(
+                          children: [
+                            const Icon(Icons.public, color: AppColors.slateMist, size: 18),
+                            const SizedBox(width: AppDimensions.space12),
+                            const Text('Country', style: AppTypography.inputLabel),
+                            const Spacer(),
+                            Text(_selectedCountryName!, style: AppTypography.bodyMedium),
+                          ],
+                        ),
+                      ],
+                    ],
                   ),
-                ],
+                ),
               ],
 
               const SizedBox(height: AppDimensions.space28),
@@ -1372,6 +1246,152 @@ class _GenericListPickerState extends State<_GenericListPicker> {
             ),
             const SizedBox(height: AppDimensions.space16),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Reusable Premium Location Picker Sheet ─────────────────────
+// Uses country_state_city package offline data dynamically.
+
+class _LocationPickerSheet extends StatefulWidget {
+  const _LocationPickerSheet({
+    required this.title,
+    required this.fetchItems,
+    required this.selectedName,
+    required this.onSelected,
+  });
+  final String title;
+  final Future<List<Map<String, String>>> Function() fetchItems;
+  final String? selectedName;
+  final ValueChanged<Map<String, String>> onSelected;
+
+  @override
+  State<_LocationPickerSheet> createState() => _LocationPickerSheetState();
+}
+
+class _LocationPickerSheetState extends State<_LocationPickerSheet> {
+  final _searchCtrl = TextEditingController();
+  List<Map<String, String>> _all = [];
+  List<Map<String, String>> _filtered = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    try {
+      final items = await widget.fetchItems();
+      if (mounted) {
+        setState(() {
+          _all = items;
+          _filtered = items;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  void _onSearch(String q) {
+    final lower = q.trim().toLowerCase();
+    setState(() {
+      _filtered = lower.isEmpty
+          ? _all
+          : _all.where((item) => item['name']!.toLowerCase().contains(lower)).toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(bottom: bottom),
+        child: Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.75,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: AppDimensions.space16),
+              Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.slateMist.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: AppDimensions.space16),
+              Text(widget.title, style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600, fontSize: 18)),
+              const SizedBox(height: AppDimensions.space12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space16),
+                child: TextField(
+                  controller: _searchCtrl,
+                  onChanged:  _onSearch,
+                  style:      AppTypography.inputText,
+                  decoration: InputDecoration(
+                    hintText:  'Search…',
+                    hintStyle: AppTypography.inputLabel,
+                    prefixIcon: const Icon(Icons.search_rounded, color: AppColors.slateMist, size: 20),
+                    filled: true, fillColor: AppColors.inputSurface,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: AppDimensions.space12, vertical: AppDimensions.space10),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppDimensions.radiusButton), borderSide: const BorderSide(color: AppColors.cardBorder)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppDimensions.radiusButton), borderSide: const BorderSide(color: AppColors.cardBorder)),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppDimensions.radiusButton), borderSide: const BorderSide(color: AppColors.champagneGold, width: AppDimensions.borderFocus)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppDimensions.space8),
+              Flexible(
+                child: _loading
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(AppDimensions.space24),
+                          child: CircularProgressIndicator(color: AppColors.champagneGold),
+                        ),
+                      )
+                    : _filtered.isEmpty
+                        ? const Padding(
+                            padding: EdgeInsets.all(AppDimensions.space24),
+                            child: Text('Nothing found.', style: AppTypography.bodyMuted, textAlign: TextAlign.center),
+                          )
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: _filtered.length,
+                            itemBuilder: (_, i) {
+                              final item = _filtered[i];
+                              final name = item['name']!;
+                              final isSel = name == widget.selectedName;
+                              return ListTile(
+                                title: Text(name, style: AppTypography.body),
+                                trailing: isSel ? const Icon(Icons.check_rounded, color: AppColors.champagneGold, size: 20) : null,
+                                selected: isSel,
+                                selectedColor: AppColors.champagneGold,
+                                onTap: () => widget.onSelected(item),
+                              );
+                            },
+                          ),
+              ),
+              const SizedBox(height: AppDimensions.space16),
+            ],
+          ),
         ),
       ),
     );

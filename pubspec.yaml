@@ -42,6 +42,7 @@ dependencies:
 
   # ── Networking ──────────────────────────────────────────────
   http: ^1.2.2                    # REST Countries + Google Places API
+  country_state_city: ^0.1.6      # Offline local country, state, and city database
 
   # ── Animations & Images ───────────────────────────────────
   flutter_animate: ^4.5.2         # City search dropdown animations
@@ -60,6 +61,12 @@ flutter:
     - family: Inter
       fonts:
         - asset: assets/fonts/Inter.ttf
+
+    - family: PlayfairDisplay
+      fonts:
+        - asset: assets/fonts/PlayfairDisplay.ttf
+        - asset: assets/fonts/PlayfairDisplay-Italic.ttf
+          style: italic
 
   # ── Assets ───────────────────────────────────────────────────
   # Add local asset paths here when needed, e.g.:\n  # assets:

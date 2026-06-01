@@ -358,7 +358,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       backgroundColor: Colors.transparent,
       builder: (_) => _SimplePickerSheet(
         title:   'Photo Privacy',
-        options: const ['Public', 'After Acceptance'],
+        options: const ['Public', 'After Acceptance', 'Request Only'],
         initial: 'After Acceptance',
         onSelect: (_) {},
       ),
@@ -764,6 +764,11 @@ class _PrivacySectionState extends State<_PrivacySection> {
             label:     'Accepted interests only',
             selected:  _photoVisibility == 'Accepted interests only',
             onTap: () { setState(() => _photoVisibility = 'Accepted interests only'); _persist(_kPhotoVisibility, 'Accepted interests only'); },
+          ),
+          _RadioRow(
+            label:     'Request to view',
+            selected:  _photoVisibility == 'Request to view',
+            onTap: () { setState(() => _photoVisibility = 'Request to view'); _persist(_kPhotoVisibility, 'Request to view'); },
           ),
         ]),
       ),

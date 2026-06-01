@@ -34,14 +34,14 @@ import '../../theme/app_typography.dart';
 class CitySearchField extends StatefulWidget {
   const CitySearchField({
     super.key,
-    required this.countryCode,
+    this.countryCode,
     required this.onSelected,
     this.initialValue,
     this.label,
     this.hint,
   });
 
-  final String countryCode;
+  final String? countryCode;
   final ValueChanged<CityResult> onSelected;
   final String? initialValue;
   final String? label;

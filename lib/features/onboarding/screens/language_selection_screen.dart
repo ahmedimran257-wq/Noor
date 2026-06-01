@@ -22,6 +22,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/buttons/noor_primary_button.dart';
+import '../../../core/widgets/buttons/noor_pressable.dart';
 import '../../../core/router/app_router.dart';
 
 // ── Language data ─────────────────────────────────────────────
@@ -482,14 +483,9 @@ class _LanguageTile extends StatelessWidget {
           width: isSelected ? 1.5 : 1.0,
         ),
       ),
-      child: Material(
-        color:        Colors.transparent,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-        child: InkWell(
-          onTap:        onTap,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          splashColor:  AppColors.goldGlow,
-          child: Padding(
+      child: NoorPressable(
+        onTap: onTap,
+        child: Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppDimensions.space16,
               vertical:   AppDimensions.space14,
@@ -554,7 +550,6 @@ class _LanguageTile extends StatelessWidget {
               ],
             ),
           ),
-        ),
       ),
     );
   }

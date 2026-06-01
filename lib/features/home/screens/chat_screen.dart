@@ -558,6 +558,24 @@ class _MessageBubble extends StatelessWidget {
       child: Column(
         crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
+          // §3.2: Guardian message indicator
+          if (message.sentByGuardian)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 2, left: 4, right: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.supervisor_account_outlined,
+                      color: AppColors.champagneGold.withValues(alpha: 0.7), size: 12),
+                  const SizedBox(width: 3),
+                  Text('Sent by Guardian',
+                    style: AppTypography.chatTimestamp.copyWith(
+                      color: AppColors.champagneGold.withValues(alpha: 0.7),
+                      fontSize: 10,
+                    )),
+                ],
+              ),
+            ),
           GestureDetector(
             onTap: onTap,
             child: Row(
@@ -623,6 +641,8 @@ class _StatusIcon extends StatelessWidget {
 }
 
 // ── Input bar ─────────────────────────────────────────────────
+// Blueprint: "Minimalist field. No 'Send' button — only a Gold
+// arrow icon that appears when typing starts."
 
 class _InputBar extends StatelessWidget {
   const _InputBar({required this.controller, required this.canSend, required this.onSend});
@@ -663,20 +683,24 @@ class _InputBar extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: AppDimensions.space10),
-        GestureDetector(
-          onTap: canSend ? onSend : null,
-          child: AnimatedContainer(
+        // Gold arrow — fades & scales in only when typing starts
+        AnimatedScale(
+          scale: canSend ? 1.0 : 0.0,
+          duration: AppDimensions.durationTransition,
+          curve: Curves.easeOutCubic,
+          child: AnimatedOpacity(
+            opacity: canSend ? 1.0 : 0.0,
             duration: AppDimensions.durationTransition,
-            width: 48, height: 48,
-            decoration: BoxDecoration(
-              color: canSend ? AppColors.champagneGold : AppColors.surfaceGlassHover,
-              shape: BoxShape.circle,
-              border: Border.all(color: canSend ? AppColors.champagneGold : AppColors.cardBorder),
-            ),
-            child: Icon(Icons.send_rounded,
-              color: canSend ? AppColors.obsidianNight : AppColors.slateMist,
-              size: AppDimensions.iconSizeMedium,
+            child: Padding(
+              padding: const EdgeInsets.only(left: AppDimensions.space10),
+              child: GestureDetector(
+                onTap: canSend ? onSend : null,
+                child: const Icon(
+                  Icons.arrow_upward_rounded,
+                  color: AppColors.champagneGold,
+                  size: 28,
+                ),
+              ),
             ),
           ),
         ),

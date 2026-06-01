@@ -49,6 +49,7 @@ class DiscoveryFeedScreen extends StatefulWidget {
 class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
   late final PageController _pageCtrl;
   int         _currentPage = 0;
+  double      _pageOffset  = 0.0; // Continuous scroll offset for smooth scaling
   final Set<String> _sentInterests = {};
   // Bookmarks now use profile IDs (String) for persistence
   Set<String> _bookmarked = {};
@@ -79,9 +80,14 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
   }
 
   void _onScroll() {
-    final page = _pageCtrl.page?.round() ?? 0;
+    final rawPage = _pageCtrl.page ?? 0.0;
+    final page = rawPage.round();
+
+    // Update continuous offset for smooth card scaling
+    if (mounted) setState(() => _pageOffset = rawPage);
+
     if (page != _currentPage) {
-      setState(() => _currentPage = page);
+      _currentPage = page;
       context.read<DiscoveryFeedCubit>().recordProfileView();
     }
 
@@ -257,13 +263,15 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
       itemCount:    itemCount,
       onPageChanged: (page) => setState(() => _currentPage = page),
       itemBuilder:  (context, index) {
-        final focused = index == _currentPage;
+        // Continuous scale: 1.0 at center, 0.95 at 1.0 page distance
+        final double offset = (index - _pageOffset).abs();
+        final double scale = (1.0 - (offset * 0.05)).clamp(0.95, 1.0);
 
         // Skeleton card at the end while loading more
         if (index >= profiles.length) {
           return _cardPadding(
             child: Transform.scale(
-              scale: focused ? 1.0 : 0.95,
+              scale: scale,
               child: const NoorProfileCardShimmer(),
             ),
           );
@@ -293,7 +301,8 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
                   isPhotoPrivate:  p.isPhotoPrivate,
                   isVerified:      p.isVerified,
                   lastActiveLabel: fp.lastActiveLabel,
-                  isFocused:       focused,
+                  isFocused:       true, // Scale handled externally now
+                  cardScale:       scale,
                   isInterestSent:  _sentInterests.contains(p.id),
                   onTap:           () => _openProfile(index, fp),
                   onSendInterest:  _sentInterests.contains(p.id)

@@ -372,9 +372,25 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
 
   static MockProfile _mapDbToMockProfile(Map<String, dynamic> row) {
     final gender = row['gender'] as String?;
-    final photoUrl = row['photo_url'] as String?;
+    final rawPhotoPath = row['photo_url'] as String?;
     final photoCount = (row['photo_count'] as num?)?.toInt() ?? 0;
     final photoPrivacy = row['photo_privacy'] as String?;
+
+    // §1.3 FIX: photo_url from DB is a storage path, not a URL.
+    // Generate a signed URL client-side if Supabase is available.
+    String? photoUrl;
+    if (rawPhotoPath != null && rawPhotoPath.isNotEmpty) {
+      try {
+        if (SupabaseService.isInitialized) {
+          photoUrl = SupabaseService.client.storage
+              .from('photos')
+              .getPublicUrl(rawPhotoPath);
+        }
+      } catch (_) {
+        // Fallback: use raw path if signed URL generation fails
+        photoUrl = rawPhotoPath;
+      }
+    }
 
     return MockProfile(
       firstName: (row['first_name'] as String?) ?? 'Noor User',
@@ -385,7 +401,8 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       deenLevel: (row['deen_level'] as String?) ?? 'moderate',
       photoUrl: photoUrl,
       photoCount: photoCount,
-      isPhotoPrivate: photoPrivacy == 'mutual_only',
+      // §3.1: Both mutual_only and request_only are treated as private
+      isPhotoPrivate: photoPrivacy == 'mutual_only' || photoPrivacy == 'request_only',
       isVerified: (row['is_verified'] as bool?) ?? false,
       occupation: (row['profession'] as String?) ?? 'Professional',
       education: (row['education_level'] as String?) ?? 'Graduate',

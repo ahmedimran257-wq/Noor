@@ -148,7 +148,7 @@ class CountryContextService {
 
   Future<List<CityResult>> searchCities(
     String query, {
-    required String countryCode,
+    String? countryCode,
   }) async {
     if (query.trim().length < 2) return [];
 
@@ -167,7 +167,7 @@ class CountryContextService {
         {
           'input':       query,
           'types':       '(cities)',
-          'components':  'country:${countryCode.toLowerCase()}',
+          if (countryCode != null) 'components':  'country:${countryCode.toLowerCase()}',
           'key':         apiKey,
           'language':    'en',
         },

@@ -116,7 +116,7 @@ class WaliModeService {
       }).toList();
     } catch (e) {
       debugPrint('[WaliModeService] Dashboard fetch error: $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -191,7 +191,7 @@ class WaliModeService {
       return chats;
     } catch (e) {
       debugPrint('[WaliModeService] Error fetching mirrored chats: $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -247,6 +247,7 @@ class WaliModeService {
       );
     } catch (e) {
       debugPrint('[WaliModeService] Mark seen error: $e');
+      rethrow;
     }
   }
 
@@ -267,6 +268,7 @@ class WaliModeService {
         'sender_id': wardId,     // Sent as the ward
         'receiver_id': receiverId,
         'content': content,
+        'sent_by_guardian': true, // §3.2: Transparency flag
       });
 
       debugPrint('[WaliModeService] Message sent as guardian for ward $wardId');
