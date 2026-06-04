@@ -12,7 +12,7 @@ max_rows = 1000
 [db]
 port = 54322
 shadow_port = 54320
-major_version = 15
+major_version = 17
 
 [studio]
 enabled = true
@@ -28,8 +28,6 @@ enabled = true
 # supabase storage create profile-photos --public=false
 
 [auth]
-enabled = true
-port = 54321
 site_url = "noor://"
 additional_redirect_urls = ["https://noor.app"]
 jwt_expiry = 3600
@@ -41,7 +39,8 @@ minimum_password_length = 8
 
 [auth.sms]
 # We use Firebase Auth for OTP — Supabase SMS is not used
-enabled = false
+enable_signup = false
+enable_confirmations = false
 
 [realtime]
 enabled = true

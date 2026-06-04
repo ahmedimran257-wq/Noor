@@ -57,7 +57,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
     //        'deletion_requested_at': DateTime.now().toUtc().toIso8601String(),
     //      }).eq('id', userId);
     //   2. RevenueCat: Purchases.logOut() to detach subscription
-    //   3. OneSignal: OneSignal.logout() to stop push notifications
+    //   3. FCM: Delete user's FCM token from user_fcm_tokens table to stop push notifications
     //   4. supabase.auth.signOut() → triggers router redirect
     //
     // The server-side cron (purge_deleted_users in 008_cron_jobs.sql)

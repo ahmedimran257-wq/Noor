@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "444078304823",
+    "project_id": "noor-82e23",
+    "storage_bucket": "noor-82e23.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:444078304823:android:4103d46c052383810d19b2",
+        "android_client_info": {
+          "package_name": "com.noor.app.noor"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC6LwSFbmY7fuQhAYEqzNBy2CK5MRW7HtI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

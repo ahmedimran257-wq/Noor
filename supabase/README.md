@@ -104,13 +104,10 @@ This key is used by `set_guardian_phone()` to AES-encrypt guardian contact numbe
 ```bash
 # Firebase
 supabase secrets set FIREBASE_PROJECT_ID=your_firebase_project_id
+supabase secrets set FIREBASE_SERVICE_ACCOUNT='{...your service account JSON...}'
 
 # RevenueCat
 supabase secrets set REVENUECAT_WEBHOOK_SECRET=your_webhook_secret
-
-# OneSignal
-supabase secrets set ONESIGNAL_APP_ID=your_app_id
-supabase secrets set ONESIGNAL_REST_API_KEY=your_rest_api_key
 ```
 
 The `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are automatically injected by Supabase.
@@ -205,9 +202,8 @@ WHERE schemaname = 'public' AND rowsecurity = false;
 | Variable | Where Set | Description |
 |---|---|---|
 | `FIREBASE_PROJECT_ID` | `supabase secrets` | Firebase project ID for token verification |
-| `REVENUECAT_WEBHOOK_SECRET` | `supabase secrets` | HMAC signing secret from RevenueCat |
-| `ONESIGNAL_APP_ID` | `supabase secrets` | OneSignal app identifier |
-| `ONESIGNAL_REST_API_KEY` | `supabase secrets` | OneSignal API key for sending pushes |
+| `FIREBASE_SERVICE_ACCOUNT` | `supabase secrets` | Firebase service account JSON for FCM push dispatch |
+| `REVENUECAT_WEBHOOK_SECRET` | `supabase secrets` | Authorization token for RevenueCat webhook |
 | `SUPABASE_URL` | Auto-injected | Your Supabase project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | Auto-injected | Full bypass key (keep private) |
 | `SUPABASE_ANON_KEY` | Auto-injected | Public key for client-side auth |
@@ -219,7 +215,7 @@ WHERE schemaname = 'public' AND rowsecurity = false;
 - **Auth**: Firebase phone OTP → `firebase-auth-exchange` Edge Function → Supabase JWT
 - **Photos**: All uploads via `get-signed-url` Edge Function. No direct client-to-storage uploads.
 - **Subscriptions**: RevenueCat webhook → `revenuecat-webhook` Edge Function → `users` table
-- **Notifications**: Timezone-aware queue in `notifications` table + `dispatch-notifications` cron
+- **Notifications**: Timezone-aware queue in `notifications` table + `dispatch-notifications` cron via FCM
 - **Account Deletion**: 30-day grace → `admin-purge-deleted-users` Edge Function (Zombie Auth proof)
 - **Discovery**: `discovery_pool` materialized view refreshed nightly at 02:30 UTC
 - **Chat**: Supabase Realtime Broadcast (low-latency) + async REST insert (persistence)

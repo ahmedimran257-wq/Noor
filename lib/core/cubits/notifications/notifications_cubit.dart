@@ -1,12 +1,14 @@
 // lib/core/cubits/notifications/notifications_cubit.dart
 // ============================================================
-// NOOR — Notifications Cubit (Feature 11)
-// Manages a list of mock NotificationItems with unread count.
-// markRead(id) / markAllRead().
+// NOOR — Notifications Cubit (Real Supabase + Mock Fallback)
 // ============================================================
 
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../services/supabase_service.dart';
 
 // ── Model ─────────────────────────────────────────────────────
 
@@ -65,8 +67,99 @@ class NotificationsState extends Equatable {
 
 class NotificationsCubit extends Cubit<NotificationsState> {
   NotificationsCubit() : super(const NotificationsState()) {
-    _loadMock();
+    loadNotifications();
   }
+
+  RealtimeChannel? _realtimeSubscription;
+
+  bool get _isRealMode => SupabaseService.isInitialized;
+
+  // ── DB Loading & Realtime ─────────────────────────────────
+
+  Future<void> loadNotifications() async {
+    if (!_isRealMode) {
+      _loadMock();
+      return;
+    }
+
+    final me = SupabaseService.currentUserId;
+    if (me == null) {
+      _loadMock();
+      return;
+    }
+
+    try {
+      final data = await SupabaseService.client
+          .from('notifications')
+          .select()
+          .eq('user_id', me)
+          .order('created_at', ascending: false);
+
+      final items = (data as List).map((row) {
+        final id = row['id'] as String;
+        final type = row['type'] as String? ?? 'general';
+        final title = row['title'] as String? ?? '';
+        final body = row['body'] as String? ?? '';
+        final readAt = row['read_at'];
+        final createdAt = DateTime.parse(row['created_at'] as String).toLocal();
+        final deepLink = row['deep_link'] as String?;
+        
+        // Parse profileId from deepLink if it looks like noor://profile/uuid
+        String? profileId;
+        if (deepLink != null && deepLink.contains('profile/')) {
+          profileId = deepLink.split('profile/').last;
+        }
+
+        return NotificationItem(
+          id: id,
+          type: type,
+          title: title,
+          body: body,
+          time: createdAt,
+          isRead: readAt != null,
+          profileId: profileId,
+        );
+      }).toList();
+
+      emit(NotificationsState(items: items));
+      _setupRealtime();
+    } catch (e) {
+      debugPrint('NotificationsCubit: Error loading notifications: $e');
+      _loadMock();
+    }
+  }
+
+  void _setupRealtime() {
+    final me = SupabaseService.currentUserId;
+    if (me == null) return;
+
+    _realtimeSubscription?.unsubscribe();
+
+    _realtimeSubscription = SupabaseService.client
+        .channel('public:notifications')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'notifications',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'user_id',
+            value: me,
+          ),
+          callback: (payload) {
+            loadNotifications();
+          },
+        )
+        .subscribe();
+  }
+
+  @override
+  Future<void> close() {
+    _realtimeSubscription?.unsubscribe();
+    return super.close();
+  }
+
+  // ── Mock data fallback ─────────────────────────────────────
 
   void _loadMock() {
     final now = DateTime.now();
@@ -125,15 +218,43 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     ]));
   }
 
+  // ── Public API ────────────────────────────────────────────
+
   void markRead(String id) {
-    emit(state.copyWith(
-      items: state.items.map((n) => n.id == id ? n.copyWith(isRead: true) : n).toList(),
-    ));
+    // Optimistic UI update
+    final updated = state.items.map((n) => n.id == id ? n.copyWith(isRead: true) : n).toList();
+    emit(state.copyWith(items: updated));
+
+    if (_isRealMode) {
+      try {
+        SupabaseService.client
+            .from('notifications')
+            .update({'read_at': DateTime.now().toIso8601String()})
+            .eq('id', id);
+      } catch (e) {
+        debugPrint('NotificationsCubit: Error marking notification read: $e');
+      }
+    }
   }
 
   void markAllRead() {
-    emit(state.copyWith(
-      items: state.items.map((n) => n.copyWith(isRead: true)).toList(),
-    ));
+    // Optimistic UI update
+    final updated = state.items.map((n) => n.copyWith(isRead: true)).toList();
+    emit(state.copyWith(items: updated));
+
+    if (_isRealMode) {
+      final me = SupabaseService.currentUserId;
+      if (me == null) return;
+
+      try {
+        SupabaseService.client
+            .from('notifications')
+            .update({'read_at': DateTime.now().toIso8601String()})
+            .eq('user_id', me)
+            .isFilter('read_at', null);
+      } catch (e) {
+        debugPrint('NotificationsCubit: Error marking all notifications read: $e');
+      }
+    }
   }
 }

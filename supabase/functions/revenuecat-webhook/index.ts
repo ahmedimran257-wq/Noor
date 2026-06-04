@@ -19,8 +19,8 @@
 //   attacks from downgrading active subscriptions.
 //
 // Security:
-//   RevenueCat webhook signature is verified using HMAC-SHA256
-//   against the webhook secret stored in env vars.
+//   RevenueCat webhook is verified using an Authorization
+//   Bearer token against the webhook secret stored in env vars.
 // ============================================================
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -35,15 +35,14 @@ Deno.serve(async (req: Request) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  // ── Verify RevenueCat HMAC-SHA256 signature ────────────────
-  const signature = req.headers.get("X-RevenueCat-Signature") ?? "";
-  const rawBody = await req.text();
-
-  const isValid = await verifyHmac(rawBody, signature, REVENUECAT_WEBHOOK_SECRET);
-  if (!isValid) {
-    console.warn("[revenuecat-webhook] Invalid signature — request rejected.");
+  // ── Verify RevenueCat Authorization Token ──────────────────
+  const authHeader = req.headers.get("Authorization") ?? "";
+  if (authHeader !== `Bearer ${REVENUECAT_WEBHOOK_SECRET}`) {
+    console.warn("[revenuecat-webhook] Invalid Authorization token — request rejected.");
     return new Response("Unauthorized", { status: 401 });
   }
+
+  const rawBody = await req.text();
 
   let payload: RevenueCatWebhookPayload;
   try {
@@ -178,35 +177,7 @@ Deno.serve(async (req: Request) => {
 
   return new Response("OK", { status: 200 });
 });
-
-// ── HMAC Signature Verification ───────────────────────────────
-
-async function verifyHmac(body: string, signature: string, secret: string): Promise<boolean> {
-  try {
-    const encoder = new TextEncoder();
-    const key = await crypto.subtle.importKey(
-      "raw",
-      encoder.encode(secret),
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["verify"]
-    );
-    const sigBytes = hexToBytes(signature);
-    return await crypto.subtle.verify("HMAC", key, sigBytes, encoder.encode(body));
-  } catch {
-    return false;
-  }
-}
-
-function hexToBytes(hex: string): Uint8Array {
-  const bytes = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < hex.length; i += 2) {
-    bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
-  }
-  return bytes;
-}
-
-// ── Type definitions ───────────────────────────────────────────
+// ── Type definitions ─────────────────────────────────────────────
 
 interface RevenueCatEvent {
   type: string;

@@ -1,16 +1,17 @@
 // lib/core/config/app_config.dart
 // ============================================================
 // NOOR — App Configuration
-// Placeholder constants for Phase 4 demo.
-// Replace with real values before going live with Supabase.
+// Real credentials — wired to live Supabase project.
 // ============================================================
 
 abstract final class AppConfig {
   // ── Supabase ───────────────────────────────────────────────
-  // Replace with your project's URL & anon key from:
-  // Supabase Dashboard → Settings → API
-  static const String supabaseUrl  = 'https://YOUR_PROJECT.supabase.co';
-  static const String supabaseAnonKey = 'YOUR_ANON_KEY';
+  static const String supabaseUrl  = 'https://wmkoeahcqfbigglhsxaa.supabase.co';
+  static const String supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indta29lYWhjcWZiaWdnbGhzeGFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MTkyNjgsImV4cCI6MjA5MTQ5NTI2OH0.aTZHHcLsrOv5m0xtA8Xlb9G7M7JNs_1YiST49C6PlP8';
+
+  // ── RevenueCat ─────────────────────────────────────────────
+  static const String revenueCatAndroidKey = 'goog_mtcvFiHMUfRbYuvlPXICQWjySJl';
+  static const String revenueCatIosKey     = ''; // TODO: Add iOS key from RevenueCat Dashboard
 
   // ── Mock Auth ─────────────────────────────────────────────
   // Step 4 uses a mock OTP flow.

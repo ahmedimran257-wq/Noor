@@ -1,6 +1,6 @@
 // lib/core/cubits/block_report/block_report_cubit.dart
 // ============================================================
-// NOOR — Block / Report Cubit (Step 10 — Mock)
+// NOOR — Block / Report Cubit (Real Supabase + Mock Fallback)
 //
 // Blueprint (Part 9):
 //   "Blocking is silent. The blocked person is not notified.
@@ -11,13 +11,14 @@
 //    menu) and from within every conversation. Reporting immediately
 //    hides that profile from the reporter."
 //
-// Persistence: blocked users and report history are persisted
-// to SharedPreferences as JSON so they survive app restarts.
+// Real mode:
+//   - blockUser:   INSERT INTO blocks (blocker_id, blocked_id)
+//                  DB trigger sever_ties_on_block() auto-removes matches/interests
+//   - unblockUser: DELETE FROM blocks
+//   - reportUser:  INSERT INTO reports (reporter_id, reported_user_id, reason, description)
+//                  DB trigger check_report_threshold() auto-suspends after 3 unique reports
 //
-// Step 12: replace SharedPreferences with Supabase writes:
-//   - blockUser: INSERT INTO blocks (blocker_id, blocked_id)
-//   - reportUser: INSERT INTO reports (reporter_id, reported_user_id, ...)
-//   - unblockUser: DELETE FROM blocks WHERE blocker_id=... AND blocked_id=...
+// SharedPreferences is retained as offline cache.
 // ============================================================
 
 import 'dart:async';
@@ -25,18 +26,132 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../services/supabase_service.dart';
 import 'block_report_state.dart';
 
 class BlockReportCubit extends Cubit<BlockReportState> {
   BlockReportCubit() : super(const BlockReportState()) {
-    _loadFromPrefs();
+    _loadInitial();
   }
 
   static const _kBlockedUsers    = 'blocked_users_json';
   static const _kReportHistory   = 'report_history_json';
   static const _kHiddenProfiles  = 'hidden_profile_ids';
 
-  // ── Persistence — Load ────────────────────────────────────
+  bool get _isRealMode => SupabaseService.isInitialized;
+
+  // ── Initial load ──────────────────────────────────────────
+
+  Future<void> _loadInitial() async {
+    if (_isRealMode) {
+      await _loadFromDb();
+    } else {
+      await _loadFromPrefs();
+    }
+  }
+
+  /// Load blocks from Supabase
+  Future<void> _loadFromDb() async {
+    final userId = SupabaseService.currentUserId;
+    if (userId == null) {
+      await _loadFromPrefs();
+      return;
+    }
+
+    try {
+      // Load blocked users
+      final blockedRows = await SupabaseService.client
+          .from('blocks')
+          .select('blocked_id, created_at')
+          .eq('blocker_id', userId);
+
+      final blockedUsers = <BlockedUser>[];
+      final hiddenIds = <String>{};
+
+      for (final row in (blockedRows as List<dynamic>)) {
+        final blockedId = row['blocked_id'] as String;
+        hiddenIds.add(blockedId);
+
+        // Try to get the blocked user's name from profiles
+        String name = 'User';
+        String lastInitial = '';
+        try {
+          final profile = await SupabaseService.client
+              .from('profiles')
+              .select('first_name, last_name')
+              .eq('user_id', blockedId)
+              .maybeSingle();
+          if (profile != null) {
+            name = (profile['first_name'] as String?) ?? 'User';
+            final lastName = (profile['last_name'] as String?) ?? '';
+            lastInitial = lastName.isNotEmpty ? lastName[0] : '';
+          }
+        } catch (_) {}
+
+        blockedUsers.add(BlockedUser(
+          userId:      blockedId,
+          name:        name,
+          lastInitial: lastInitial,
+          blockedAt:   DateTime.tryParse(row['created_at'] as String) ?? DateTime.now(),
+        ));
+      }
+
+      // Load report history
+      final reportRows = await SupabaseService.client
+          .from('reports')
+          .select('id, reported_user_id, reason, description, created_at')
+          .eq('reporter_id', userId)
+          .order('created_at', ascending: false);
+
+      final reportHistory = <ReportEntry>[];
+      for (final row in (reportRows as List<dynamic>)) {
+        final reportedUserId = row['reported_user_id'] as String;
+        hiddenIds.add(reportedUserId);
+
+        // Get reported user name
+        String reportedName = 'User';
+        try {
+          final profile = await SupabaseService.client
+              .from('profiles')
+              .select('first_name')
+              .eq('user_id', reportedUserId)
+              .maybeSingle();
+          if (profile != null) {
+            reportedName = (profile['first_name'] as String?) ?? 'User';
+          }
+        } catch (_) {}
+
+        reportHistory.add(ReportEntry(
+          reportId:       row['id'] as String,
+          reportedUserId: reportedUserId,
+          reportedName:   reportedName,
+          reason:         ReportReason.values.firstWhere(
+            (r) => r.key == (row['reason'] as String),
+            orElse: () => ReportReason.other,
+          ),
+          description:    row['description'] as String?,
+          submittedAt:    DateTime.tryParse(row['created_at'] as String) ?? DateTime.now(),
+        ));
+      }
+
+      if (!isClosed) {
+        emit(state.copyWith(
+          blockedUsers:     blockedUsers,
+          reportHistory:    reportHistory,
+          hiddenProfileIds: hiddenIds,
+        ));
+      }
+
+      // Also sync to SharedPreferences for offline access
+      await _saveToPrefs();
+    } catch (e) {
+      debugPrint('[BlockReportCubit] Error loading from DB: $e');
+      // Fallback to local cache
+      await _loadFromPrefs();
+    }
+  }
+
+  // ── Persistence — Load from SharedPreferences ─────────────
 
   Future<void> _loadFromPrefs() async {
     try {
@@ -95,7 +210,7 @@ class BlockReportCubit extends Cubit<BlockReportState> {
     }
   }
 
-  // ── Persistence — Save ────────────────────────────────────
+  // ── Persistence — Save to SharedPreferences ───────────────
 
   Future<void> _saveToPrefs() async {
     try {
@@ -144,8 +259,28 @@ class BlockReportCubit extends Cubit<BlockReportState> {
 
     emit(state.copyWith(isSubmitting: true));
 
-    // Mock: simulate network
-    await Future.delayed(const Duration(milliseconds: 600));
+    if (_isRealMode) {
+      // Real mode: INSERT INTO blocks
+      final myId = SupabaseService.currentUserId;
+      if (myId != null) {
+        try {
+          await SupabaseService.client
+              .from('blocks')
+              .insert({
+                'blocker_id': myId,
+                'blocked_id': userId,
+              });
+          // DB trigger sever_ties_on_block() automatically:
+          //   - Deletes matches between blocker and blocked
+          //   - Deletes interests between the pair
+        } catch (e) {
+          debugPrint('[BlockReportCubit] Error blocking user: $e');
+        }
+      }
+    } else {
+      // Mock: simulate network
+      await Future.delayed(const Duration(milliseconds: 600));
+    }
 
     if (isClosed) return;
 
@@ -173,7 +308,22 @@ class BlockReportCubit extends Cubit<BlockReportState> {
   Future<void> unblockUser(String userId) async {
     emit(state.copyWith(isSubmitting: true));
 
-    await Future.delayed(const Duration(milliseconds: 500));
+    if (_isRealMode) {
+      final myId = SupabaseService.currentUserId;
+      if (myId != null) {
+        try {
+          await SupabaseService.client
+              .from('blocks')
+              .delete()
+              .eq('blocker_id', myId)
+              .eq('blocked_id', userId);
+        } catch (e) {
+          debugPrint('[BlockReportCubit] Error unblocking user: $e');
+        }
+      }
+    } else {
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
 
     if (isClosed) return;
 
@@ -203,12 +353,36 @@ class BlockReportCubit extends Cubit<BlockReportState> {
   }) async {
     emit(state.copyWith(isSubmitting: true, clearError: true));
 
-    await Future.delayed(const Duration(milliseconds: 800));
+    String? reportId;
+
+    if (_isRealMode) {
+      final myId = SupabaseService.currentUserId;
+      if (myId != null) {
+        try {
+          final result = await SupabaseService.client
+              .from('reports')
+              .insert({
+                'reporter_id':      myId,
+                'reported_user_id': reportedUserId,
+                'reason':           reason.key,
+                'description':      description,
+              })
+              .select('id')
+              .single();
+          reportId = result['id'] as String;
+          // DB trigger check_report_threshold() auto-suspends after 3 unique reports
+        } catch (e) {
+          debugPrint('[BlockReportCubit] Error reporting user: $e');
+        }
+      }
+    } else {
+      await Future.delayed(const Duration(milliseconds: 800));
+    }
 
     if (isClosed) return;
 
     final entry = ReportEntry(
-      reportId:       'r_${DateTime.now().millisecondsSinceEpoch}',
+      reportId:       reportId ?? 'r_${DateTime.now().millisecondsSinceEpoch}',
       reportedUserId: reportedUserId,
       reportedName:   reportedName,
       reason:         reason,

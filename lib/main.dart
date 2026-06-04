@@ -6,6 +6,7 @@
 //         Auth-gated routing with mock OTP flow.
 // ============================================================
 
+import 'dart:io' show Platform;
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -13,12 +14,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
+import 'firebase_options.dart';
+import 'core/config/app_config.dart';
 
 import 'core/theme/app_theme.dart';
 import 'core/services/supabase_service.dart';
 import 'core/services/connectivity_service.dart';
 import 'core/services/subscription_service.dart';
 import 'core/services/wali_mode_service.dart';
+import 'core/services/fcm_service.dart';
 import 'core/cubits/auth/auth_cubit.dart';
 import 'core/cubits/auth/auth_state.dart';
 import 'core/cubits/onboarding/onboarding_cubit.dart';
@@ -53,9 +59,27 @@ const _rtlLocales = {'ar'};
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // ── Firebase Initialization ─────────────────────────────────
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   // ── Supabase Initialization ─────────────────────────────────
   // Initialize Supabase client if configured (non-mock mode)
   await SupabaseService.initialize();
+
+  // ── FCM Push Notifications ──────────────────────────────────
+  // Request permissions and register FCM token
+  await FcmService.instance.initialize();
+
+  // ── RevenueCat Subscriptions ───────────────────────────────
+  // Configure RevenueCat SDK with the platform-appropriate key
+  final rcKey = Platform.isIOS
+      ? AppConfig.revenueCatIosKey
+      : AppConfig.revenueCatAndroidKey;
+  if (rcKey.isNotEmpty) {
+    await Purchases.configure(PurchasesConfiguration(rcKey));
+  }
 
   // ── Global Error Handling ──────────────────────────────────
 
@@ -205,6 +229,7 @@ class _NoorAppState extends State<NoorApp> {
     ConnectivityService.instance.dispose();
     SubscriptionService.instance.dispose();
     WaliModeService.instance.dispose();
+    FcmService.instance.dispose();
 
     super.dispose();
   }
@@ -233,6 +258,8 @@ class _NoorAppState extends State<NoorApp> {
               // a fresh initialization of the onboarding cubit.
               if (state is AuthUnauthenticated) {
                 _onboardingInitialized = false;
+                _chatCubit.loadConversations();
+                _notificationsCubit.loadNotifications();
               }
               // Initialize the onboarding cubit ONCE when the user first
               // authenticates. Without the _onboardingInitialized guard,
@@ -248,6 +275,8 @@ class _NoorAppState extends State<NoorApp> {
                   gender: state.gender ?? 'male',
                   isSubscribed: context.read<SubscriptionCubit>().state.isSubscribed,
                 );
+                _chatCubit.loadConversations();
+                _notificationsCubit.loadNotifications();
               }
             },
             child: BlocBuilder<LocaleCubit, Locale>(

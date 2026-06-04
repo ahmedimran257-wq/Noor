@@ -29,6 +29,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_state.dart';
+import '../../../core/data/country_data.dart';
 import '../../../core/models/onboarding_data.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
@@ -36,44 +37,6 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/validation_snackbar.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
-
-// ── Country codes ─────────────────────────────────────────────
-
-class _CC {
-  const _CC(this.flag, this.name, this.dialCode);
-  final String flag;
-  final String name;
-  final String dialCode;
-}
-
-const _kCodes = <_CC>[
-  _CC('🇮🇳', 'India',        '+91'),
-  _CC('🇵🇰', 'Pakistan',     '+92'),
-  _CC('🇧🇩', 'Bangladesh',   '+880'),
-  _CC('🇸🇦', 'Saudi Arabia', '+966'),
-  _CC('🇦🇪', 'UAE',          '+971'),
-  _CC('🇬🇧', 'UK',           '+44'),
-  _CC('🇺🇸', 'USA',          '+1'),
-  _CC('🇨🇦', 'Canada',       '+1'),
-  _CC('🇦🇺', 'Australia',    '+61'),
-  _CC('🇲🇾', 'Malaysia',     '+60'),
-  _CC('🇮🇩', 'Indonesia',    '+62'),
-  _CC('🇳🇬', 'Nigeria',      '+234'),
-  _CC('🇪🇬', 'Egypt',        '+20'),
-  _CC('🇹🇷', 'Turkey',       '+90'),
-  _CC('🇶🇦', 'Qatar',        '+974'),
-  _CC('🇰🇼', 'Kuwait',       '+965'),
-  _CC('🇴🇲', 'Oman',         '+968'),
-  _CC('🇩🇪', 'Germany',      '+49'),
-  _CC('🇫🇷', 'France',       '+33'),
-  _CC('🇳🇱', 'Netherlands',  '+31'),
-  _CC('🇸🇪', 'Sweden',       '+46'),
-  _CC('🇳🇴', 'Norway',       '+47'),
-  _CC('🇿🇦', 'South Africa', '+27'),
-  _CC('🇰🇪', 'Kenya',        '+254'),
-  _CC('🇵🇭', 'Philippines',  '+63'),
-  _CC('🇸🇬', 'Singapore',    '+65'),
-];
 
 // ── Screen ────────────────────────────────────────────────────
 
@@ -89,7 +52,10 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
   final   _nameCtrl     = TextEditingController();
 
   // Guardian phone
-  _CC     _selectedCode = _kCodes.first;
+  CountryInfo _selectedCode = kAllCountries.firstWhere(
+    (c) => c.iso2 == 'IN',
+    orElse: () => kAllCountries.first,
+  );
   final   _phoneCtrl    = TextEditingController();
 
   // Guardian mode preference
@@ -143,10 +109,13 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
       _nameCtrl.text = data.guardianName!;
     }
     if (data.guardianPhoneCountryCode != null) {
-      _selectedCode = _kCodes.firstWhere(
+      _selectedCode = kAllCountries.firstWhere(
         (c) => c.dialCode == data.guardianPhoneCountryCode,
-        orElse: () => _kCodes.first,
+        orElse: () => _selectedCode,
       );
+    } else {
+      // Auto-detect based on device context if no saved code
+      _selectedCode = deviceCountry();
     }
     if (data.guardianPhone != null && data.guardianPhoneCountryCode != null) {
       final dial = data.guardianPhoneCountryCode!;
@@ -608,8 +577,8 @@ class _CodePickerSheet extends StatefulWidget {
     required this.selected,
     required this.onSelected,
   });
-  final _CC selected;
-  final ValueChanged<_CC> onSelected;
+  final CountryInfo selected;
+  final ValueChanged<CountryInfo> onSelected;
 
   @override
   State<_CodePickerSheet> createState() => _CodePickerSheetState();
@@ -617,7 +586,7 @@ class _CodePickerSheet extends StatefulWidget {
 
 class _CodePickerSheetState extends State<_CodePickerSheet> {
   final _searchCtrl = TextEditingController();
-  List<_CC> _filtered = List.unmodifiable(_kCodes);
+  List<CountryInfo> _filtered = List.unmodifiable(kAllCountries);
 
   @override
   void dispose() {
@@ -629,8 +598,8 @@ class _CodePickerSheetState extends State<_CodePickerSheet> {
     final lower = q.trim().toLowerCase();
     setState(() {
       _filtered = lower.isEmpty
-          ? List.unmodifiable(_kCodes)
-          : _kCodes
+          ? List.unmodifiable(kAllCountries)
+          : kAllCountries
               .where((c) =>
                   c.name.toLowerCase().contains(lower) ||
                   c.dialCode.contains(lower))
