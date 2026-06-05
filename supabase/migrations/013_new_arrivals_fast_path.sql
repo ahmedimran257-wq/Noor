@@ -159,6 +159,8 @@ COMMENT ON FUNCTION get_new_arrivals IS
 -- The ONLY change is: we UNION the MV with get_new_arrivals()
 -- before applying filters, so fresh profiles appear immediately.
 -- ================================================================
+DROP FUNCTION IF EXISTS get_discovery_feed(uuid, double precision, uuid, integer, jsonb);
+
 CREATE OR REPLACE FUNCTION get_discovery_feed(
   p_viewer_id    uuid,
   p_cursor_score double precision DEFAULT NULL,

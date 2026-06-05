@@ -25,7 +25,7 @@ CREATE INDEX IF NOT EXISTS idx_discovery_pool_gender_country_rank
 -- A partial index makes this lookup near-instant.
 CREATE INDEX IF NOT EXISTS idx_profiles_boosted_active
   ON profiles(is_boosted, boost_expires_at)
-  WHERE is_boosted = true AND boost_expires_at > NOW();
+  WHERE is_boosted = true;
 
 -- ── 3. Covering index for blocks lookup ───────────────────────
 -- The blocks exclusion subquery runs for every feed row.
