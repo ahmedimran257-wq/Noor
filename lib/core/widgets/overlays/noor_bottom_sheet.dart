@@ -1,17 +1,72 @@
 // lib/core/widgets/overlays/noor_bottom_sheet.dart
 // ============================================================
 // NOOR Bottom Sheet
-// "NO Pop-ups: Use Bottom Sheets that slide up with
-//  Curves.easeOutCubic."
+// "NO Pop-ups: Use Bottom Sheets that slide up with spring physics."
 // All dialogs and confirmations use this.
 // ============================================================
 
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimensions.dart';
 import '../../theme/app_typography.dart';
+import '../../theme/noor_spring.dart';
 import '../buttons/noor_primary_button.dart';
 import '../buttons/noor_secondary_button.dart';
+
+// ── Custom Route for Frosted Glass & Spring Transition ────────
+
+class NoorBottomSheetRoute<T> extends ModalBottomSheetRoute<T> {
+  NoorBottomSheetRoute({
+    required super.builder,
+    super.capturedThemes,
+    super.barrierLabel,
+    super.isDismissible = true,
+    super.enableDrag = true,
+    super.isScrollControlled = true,
+    super.scrollControlDisabledMaxHeightRatio,
+    super.settings,
+    super.transitionAnimationController,
+    super.anchorPoint,
+    super.useSafeArea = true,
+  });
+
+  @override
+  Color get barrierColor => const Color(0x66000000); // 40% black barrier
+
+  @override
+  Widget buildModalBarrier() {
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0),
+      child: super.buildModalBarrier(),
+    );
+  }
+
+  @override
+  Widget buildTransitions(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    final springAnimation = CurvedAnimation(
+      parent: animation,
+      curve: const SpringCurve(
+        spring: NoorSpring.gentle,
+        duration: Duration(milliseconds: 500),
+      ),
+    );
+    final slide = Tween<Offset>(
+      begin: const Offset(0.0, 1.0),
+      end: Offset.zero,
+    ).animate(springAnimation);
+
+    return SlideTransition(
+      position: slide,
+      child: child,
+    );
+  }
+}
 
 // ── Show Helper ───────────────────────────────────────────────
 
@@ -21,15 +76,64 @@ Future<T?> showNoorBottomSheet<T>({
   bool isDismissible = true,
   bool isScrollControlled = true,
 }) {
-  return showModalBottomSheet<T>(
-    context:             context,
-    isDismissible:       isDismissible,
-    isScrollControlled:  isScrollControlled,
-    enableDrag:          isDismissible,
-    useSafeArea:         true,
-    backgroundColor:     AppColors.obsidianNight,
-    builder: (_) => child,
+  return Navigator.of(context).push<T>(
+    NoorBottomSheetRoute<T>(
+      builder: (_) => child,
+      isDismissible: isDismissible,
+      enableDrag: isDismissible,
+      isScrollControlled: isScrollControlled,
+      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    ),
   );
+}
+
+// ── Pulsing Handle Bar ────────────────────────────────────────
+
+class NoorPulseHandle extends StatefulWidget {
+  const NoorPulseHandle({super.key});
+
+  @override
+  State<NoorPulseHandle> createState() => _NoorPulseHandleState();
+}
+
+class _NoorPulseHandleState extends State<NoorPulseHandle>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+    _opacity = Tween<double>(begin: 0.3, end: 0.7).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _opacity,
+      builder: (context, child) => Container(
+        margin: const EdgeInsets.only(top: AppDimensions.space12),
+        width:  40,
+        height: 4,
+        decoration: BoxDecoration(
+          color:        AppColors.slateMist.withValues(alpha: _opacity.value),
+          borderRadius: BorderRadius.circular(2),
+        ),
+      ),
+    );
+  }
 }
 
 // ── Standard Bottom Sheet Shell ───────────────────────────────
@@ -58,7 +162,7 @@ class NoorBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: AppColors.obsidianNight,
+        color: Color(0x990A0A0F), // Frosted glass obsidian night
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppDimensions.radiusCard),
         ),
@@ -72,16 +176,8 @@ class NoorBottomSheet extends StatelessWidget {
         children: [
           // Handle indicator
           if (showHandle)
-            Center(
-              child: Container(
-                margin: const EdgeInsets.only(top: AppDimensions.space12),
-                width:  40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color:        AppColors.slateMist.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+            const Center(
+              child: NoorPulseHandle(),
             ),
 
           // Title

@@ -13,11 +13,11 @@
 // ============================================================
 
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimensions.dart';
 import '../../theme/app_typography.dart';
 import '../buttons/noor_pressable.dart';
+import '../loaders/noor_blur_image.dart';
 
 class NoorProfileCard extends StatelessWidget {
   const NoorProfileCard({
@@ -40,6 +40,7 @@ class NoorProfileCard extends StatelessWidget {
     this.isInterestSent = false,
     this.lastActiveLabel,
     this.cardScale = 1.0,
+    this.blurhash,
   });
 
   final String firstName;
@@ -60,6 +61,7 @@ class NoorProfileCard extends StatelessWidget {
   final bool isInterestSent;
   final String? lastActiveLabel;
   final double cardScale;  // Continuous scale driven by scroll offset
+  final String? blurhash;
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +86,7 @@ class NoorProfileCard extends StatelessWidget {
               children: [
                 // ── Photo Layer ──────────────────────────────
                 if (photoUrl != null && !isPhotoPrivate)
-                  _PhotoLayer(url: photoUrl!)
+                  _PhotoLayer(url: photoUrl!, blurhash: blurhash)
                 else
                   _PrivatePhotoPlaceholder(
                     photoCount: photoCount,
@@ -235,37 +237,20 @@ class NoorProfileCard extends StatelessWidget {
 // ── Sub-widgets ───────────────────────────────────────────────
 
 class _PhotoLayer extends StatelessWidget {
-  const _PhotoLayer({required this.url});
+  const _PhotoLayer({required this.url, this.blurhash});
   final String url;
+  final String? blurhash;
 
   @override
   Widget build(BuildContext context) {
-    return CachedNetworkImage(
+    return NoorBlurImage(
       imageUrl: url,
+      blurhash: blurhash,
       fit: BoxFit.cover,
-      errorWidget: (_, __, ___) => const _PhotoError(),
-      placeholder: (_, __) => Container(color: AppColors.surfaceGlassHover),
     );
   }
 }
 
-class _PhotoError extends StatelessWidget {
-  const _PhotoError();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.surfaceGlassHover,
-      child: const Center(
-        child: Icon(
-          Icons.person_outline_rounded,
-          color: AppColors.slateMist,
-          size: 64,
-        ),
-      ),
-    );
-  }
-}
 
 class _PrivatePhotoPlaceholder extends StatelessWidget {
   const _PrivatePhotoPlaceholder({
@@ -389,19 +374,19 @@ class _FrostedPhotoPill extends StatelessWidget {
         vertical:   AppDimensions.space6,
       ),
       decoration: BoxDecoration(
-        color:        Colors.black.withValues(alpha: 0.55),
+        color:        AppColors.overlayBlack55,
         borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.lock_outline_rounded,
-              color: Colors.white, size: 14),
+              color: AppColors.pearlWhite, size: 14),
           const SizedBox(width: AppDimensions.space6),
           Text(
             '$photoCount photo${photoCount > 1 ? 's' : ''} · visible after acceptance',
             style: AppTypography.caption.copyWith(
-              color:    Colors.white,
+              color:    AppColors.pearlWhite,
               fontSize: 11,
             ),
           ),
@@ -424,19 +409,19 @@ class _PhotoCountPill extends StatelessWidget {
         vertical:   AppDimensions.space4,
       ),
       decoration: BoxDecoration(
-        color:        Colors.black.withValues(alpha: 0.45),
+        color:        AppColors.overlayBlack45,
         borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.camera_alt_outlined,
-              color: Colors.white, size: 12),
+              color: AppColors.pearlWhite, size: 12),
           const SizedBox(width: AppDimensions.space4),
           Text(
             '$count',
             style: AppTypography.caption.copyWith(
-              color:    Colors.white,
+              color:    AppColors.pearlWhite,
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
@@ -559,7 +544,7 @@ class _LastActivePill extends StatelessWidget {
         vertical:   AppDimensions.space4,
       ),
       decoration: BoxDecoration(
-        color:        Colors.black.withValues(alpha: 0.45),
+        color:        AppColors.overlayBlack45,
         borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
       ),
       child: Row(
@@ -570,7 +555,7 @@ class _LastActivePill extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: isOnline
-                  ? const Color(0xFF4ADE80) // green
+                  ? AppColors.onlineGreen
                   : AppColors.slateMist,
             ),
           ),
@@ -578,7 +563,7 @@ class _LastActivePill extends StatelessWidget {
           Text(
             label,
             style: AppTypography.caption.copyWith(
-              color:    Colors.white,
+              color:    AppColors.pearlWhite,
               fontSize: 10,
               fontWeight: FontWeight.w500,
             ),

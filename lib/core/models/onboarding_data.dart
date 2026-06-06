@@ -143,6 +143,11 @@ class OnboardingData {
     this.polygamyAcceptance,     // female: 'yes','no','open_to_discussion','prefer_not_to_say'
     this.specialNeeds,           // 'none','physical','hearing','visual','other','prefer_not_to_say'
     this.residencyStatus,        // 'citizen','permanent_resident','work_visa','student_visa','other','prefer_not_to_say'
+
+    // Geo fields
+    this.postalCode,
+    this.lat,
+    this.lng,
   });
 
   // Step 3
@@ -254,6 +259,11 @@ class OnboardingData {
   final String? specialNeeds;
   final String? residencyStatus;
 
+  // Geo fields
+  final String? postalCode;
+  final double? lat;
+  final double? lng;
+
   OnboardingData copyWith({
     ProfileFor? profileFor,
     String?     firstName,
@@ -336,6 +346,9 @@ class OnboardingData {
     String?     polygamyAcceptance,
     String?     specialNeeds,
     String?     residencyStatus,
+    String?     postalCode,
+    double?     lat,
+    double?     lng,
   }) {
     return OnboardingData(
       profileFor:               profileFor               ?? this.profileFor,
@@ -419,6 +432,9 @@ class OnboardingData {
       polygamyAcceptance:       polygamyAcceptance       ?? this.polygamyAcceptance,
       specialNeeds:             specialNeeds             ?? this.specialNeeds,
       residencyStatus:          residencyStatus          ?? this.residencyStatus,
+      postalCode:               postalCode               ?? this.postalCode,
+      lat:                      lat                      ?? this.lat,
+      lng:                      lng                      ?? this.lng,
     );
   }
 
@@ -535,6 +551,9 @@ class OnboardingData {
       'polygamyAcceptance': polygamyAcceptance,
       'specialNeeds': specialNeeds,
       'residencyStatus': residencyStatus,
+      'postalCode': postalCode,
+      'lat': lat,
+      'lng': lng,
     };
   }
 
@@ -621,6 +640,9 @@ class OnboardingData {
       polygamyAcceptance: json['polygamyAcceptance'] as String?,
       specialNeeds: json['specialNeeds'] as String?,
       residencyStatus: json['residencyStatus'] as String?,
+      postalCode: json['postalCode'] as String?,
+      lat: json['lat'] as double?,
+      lng: json['lng'] as double?,
     );
   }
 }

@@ -14,7 +14,8 @@ import 'screens/my_profile_screen.dart';
 import 'widgets/noor_bottom_nav.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.initialTab});
+  final int? initialTab;
 
   @override
   State<HomeScreen> createState() => HomeScreenState();
@@ -22,6 +23,22 @@ class HomeScreen extends StatefulWidget {
 
 class HomeScreenState extends State<HomeScreen> {
   int _currentTab = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialTab != null) {
+      _currentTab = widget.initialTab!;
+    }
+  }
+
+  @override
+  void didUpdateWidget(HomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialTab != null && widget.initialTab != oldWidget.initialTab) {
+      _currentTab = widget.initialTab!;
+    }
+  }
 
   /// Allows child widgets (e.g. DiscoveryFeedScreen) to switch tabs programmatically.
   void switchToTab(int index) {

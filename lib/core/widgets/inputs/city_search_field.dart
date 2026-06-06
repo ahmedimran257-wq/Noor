@@ -62,6 +62,9 @@ class _CitySearchFieldState extends State<CitySearchField> {
   Timer? _debounce;
   String? _selectedDisplay;
 
+  OverlayEntry? _overlayEntry;
+  final _layerLink = LayerLink();
+
   @override
   void initState() {
     super.initState();
@@ -80,6 +83,7 @@ class _CitySearchFieldState extends State<CitySearchField> {
       _ctrl.clear();
       _selectedDisplay = null;
       _results.clear();
+      _hideOverlay();
     }
   }
 
@@ -88,13 +92,26 @@ class _CitySearchFieldState extends State<CitySearchField> {
     _ctrl.dispose();
     _focus.dispose();
     _debounce?.cancel();
+    _hideOverlay();
     super.dispose();
   }
 
   void _onFocusChange() {
-    if (!_focus.hasFocus && _showDropdown) {
-      Future.delayed(const Duration(milliseconds: 200), () {
-        if (mounted) setState(() => _showDropdown = false);
+    if (_focus.hasFocus) {
+      if (_ctrl.text.trim().length >= 2 && !_showDropdown) {
+        setState(() {
+          _showDropdown = true;
+          _showOverlay();
+        });
+      }
+    } else {
+      Future.delayed(const Duration(milliseconds: 250), () {
+        if (mounted && !_focus.hasFocus) {
+          setState(() {
+            _showDropdown = false;
+            _hideOverlay();
+          });
+        }
       });
     }
   }
@@ -108,13 +125,18 @@ class _CitySearchFieldState extends State<CitySearchField> {
       setState(() {
         _results       = [];
         _showDropdown  = false;
+        _hideOverlay();
       });
       return;
     }
 
     _debounce = Timer(const Duration(milliseconds: 400), () async {
       if (!mounted) return;
-      setState(() { _loading = true; _showDropdown = true; });
+      setState(() {
+        _loading = true;
+        _showDropdown = true;
+        _showOverlay();
+      });
 
       final results = await _service.searchCities(
         value,
@@ -125,6 +147,9 @@ class _CitySearchFieldState extends State<CitySearchField> {
       setState(() {
         _results  = results;
         _loading  = false;
+        if (_showDropdown) {
+          _showOverlay();
+        }
       });
     });
   }
@@ -138,6 +163,7 @@ class _CitySearchFieldState extends State<CitySearchField> {
       _selectedDisplay = display;
       _showDropdown    = false;
       _results         = [];
+      _hideOverlay();
     });
     _ctrl.value = TextEditingValue(
       text:      display,
@@ -145,6 +171,34 @@ class _CitySearchFieldState extends State<CitySearchField> {
     );
     _focus.unfocus();
     widget.onSelected(result);
+  }
+
+  void _showOverlay() {
+    if (!mounted) return;
+    _hideOverlay();
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) {
+        final renderBox = this.context.findRenderObject() as RenderBox?;
+        final width = renderBox?.size.width ?? 300.0;
+        return Positioned(
+          width: width,
+          child: CompositedTransformFollower(
+            link: _layerLink,
+            showWhenUnlinked: false,
+            offset: const Offset(0, 62),
+            child: _buildDropdown(),
+          ),
+        );
+      },
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
+  }
+
+  void _hideOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
   }
 
   @override
@@ -159,22 +213,10 @@ class _CitySearchFieldState extends State<CitySearchField> {
           const SizedBox(height: 8),
         ],
 
-        // ── Input + dropdown stack ─────────────────────────
-        Stack(
-          clipBehavior: Clip.none,
-          children: [
-            // Input field
-            _buildInput(),
-
-            // Floating dropdown
-            if (_showDropdown)
-              Positioned(
-                top: 62,
-                left: 0,
-                right: 0,
-                child: _buildDropdown(),
-              ),
-          ],
+        // ── Input field wrapped in composited transform target ──
+        CompositedTransformTarget(
+          link: _layerLink,
+          child: _buildInput(),
         ),
       ],
     );
@@ -223,6 +265,18 @@ class _CitySearchFieldState extends State<CitySearchField> {
                       onTap: () => setState(() {
                         _ctrl.clear();
                         _selectedDisplay = null;
+                        _hideOverlay();
+                        widget.onSelected(const CityResult(
+                          city: '',
+                          state: '',
+                          country: '',
+                          countryCode: '',
+                          postalCode: '',
+                          fullAddress: '',
+                          placeId: '',
+                          lat: 0.0,
+                          lng: 0.0,
+                        ));
                       }),
                       child: const Icon(
                         Icons.close_rounded,
@@ -242,13 +296,16 @@ class _CitySearchFieldState extends State<CitySearchField> {
   }
 
   Widget _buildDropdown() {
+    final queryText = _ctrl.text.trim();
+    final showFallback = queryText.isNotEmpty;
+
     return Material(
       color:       Colors.transparent,
       borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
       elevation:   0,
       child: Container(
         decoration: BoxDecoration(
-          color:        const Color(0xFF14141E),
+          color:        AppColors.dropdownSurface,
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
           border: Border.all(color: AppColors.cardBorder),
           boxShadow: [
@@ -259,7 +316,7 @@ class _CitySearchFieldState extends State<CitySearchField> {
             ),
           ],
         ),
-        child: _results.isEmpty
+        child: _results.isEmpty && !showFallback
             ? const Padding(
                 padding: EdgeInsets.all(16),
                 child: Text(
@@ -270,17 +327,36 @@ class _CitySearchFieldState extends State<CitySearchField> {
             : ListView.separated(
                 shrinkWrap:       true,
                 physics:          const NeverScrollableScrollPhysics(),
-                itemCount:        _results.length,
+                itemCount:        _results.length + (showFallback ? 1 : 0),
                 separatorBuilder: (_, __) => const Divider(
                   height: 1,
                   color:  AppColors.cardBorder,
                 ),
                 itemBuilder: (context, i) {
-                  final r = _results[i];
-                  return _CityTile(
-                    result: r,
-                    onTap:  () => _selectResult(r),
-                  );
+                  if (i < _results.length) {
+                    final r = _results[i];
+                    return _CityTile(
+                      result: r,
+                      onTap:  () => _selectResult(r),
+                    );
+                  } else {
+                    return _CustomCityTile(
+                      query: queryText,
+                      onTap: () {
+                        _selectResult(CityResult(
+                          city: queryText,
+                          state: '',
+                          country: '',
+                          countryCode: widget.countryCode ?? '',
+                          postalCode: '',
+                          fullAddress: queryText,
+                          placeId: 'custom-city-${queryText.toLowerCase()}',
+                          lat: 0.0,
+                          lng: 0.0,
+                        ));
+                      },
+                    );
+                  }
                 },
               ),
       ),
@@ -288,6 +364,68 @@ class _CitySearchFieldState extends State<CitySearchField> {
           begin: -0.04, end: 0,
           duration: 220.ms, curve: Curves.easeOutCubic,
         );
+  }
+}
+
+class _CustomCityTile extends StatelessWidget {
+  const _CustomCityTile({required this.query, required this.onTap});
+
+  final String query;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap:       onTap,
+      splashColor: AppColors.goldGlow,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Container(
+              width:  36,
+              height: 36,
+              decoration: BoxDecoration(
+                color:        AppColors.champagneGold.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.add_location_alt_rounded,
+                color: AppColors.champagneGold,
+                size:  18,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize:       MainAxisSize.min,
+                children: [
+                  Text(
+                    'Use "$query" as custom city',
+                    style: AppTypography.body.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.champagneGold,
+                    ),
+                    maxLines:  1,
+                    overflow:  TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Specify state/region in the next field',
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.slateMist,
+                    ),
+                    maxLines:  1,
+                    overflow:  TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

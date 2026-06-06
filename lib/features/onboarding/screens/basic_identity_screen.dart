@@ -11,10 +11,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:country_state_city/country_state_city.dart' as csc;
+import 'package:noor/l10n/generated/app_localizations.dart';
+import '../../../core/widgets/inputs/city_search_field.dart';
 
 import '../../../core/data/country_data.dart';
 import '../../../core/services/country_context_service.dart';
+import '../../../core/services/supabase_service.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_state.dart';
@@ -63,6 +65,7 @@ class BasicIdentityScreen extends StatefulWidget {
 class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
   final _firstNameCtrl = TextEditingController();
   final _lastNameCtrl  = TextEditingController();
+  final _stateCtrl     = TextEditingController();
   DateTime? _dob;
   Gender?   _gender;
   String    _dobError = '';
@@ -73,7 +76,6 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
   String? _selectedCountryCode;
   String? _selectedCountryName;
   String? _selectedStateName;
-  String? _selectedStateCode;
 
   // Demographics from CountryContextService
   List<String> _loadedLanguages = ['English', 'Arabic', 'Other'];
@@ -88,6 +90,9 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
   String? _community; // Phase 2 — optional
   String? _residencyStatus; // Phase 1 — optional
   String? _specialNeeds;    // Phase 1 — optional
+  String? _postalCode;
+  double? _lat;
+  double? _lng;
 
   // Guardian mode — derived from previous screens
   bool _isGuardianMode = false;
@@ -132,11 +137,15 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       if (parts.length > 1) {
         _selectedCity = parts[0];
         _selectedStateName = parts[1];
+        _stateCtrl.text = parts[1];
       } else {
         _selectedCity = data.cityName;
       }
       _selectedCityId = data.cityId;
     }
+    _postalCode = data.postalCode;
+    _lat = data.lat;
+    _lng = data.lng;
   }
 
   Future<void> _fetchDemographics(String countryCode) async {
@@ -162,8 +171,9 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       _dobError.isEmpty &&
       _gender != null &&
       _selectedCountryCode != null &&
-      _selectedStateName != null &&
       _selectedCity != null &&
+      _selectedStateName != null &&
+      _selectedStateName!.trim().isNotEmpty &&
       _motherTongue != null;
 
   void _showValidation() {
@@ -175,8 +185,8 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
     if (_dobError.isNotEmpty) missing.add('Valid date of birth (18+)');
     if (_gender == null) missing.add('Gender');
     if (_selectedCountryCode == null) missing.add('Country');
-    if (_selectedStateName == null) missing.add('State / Region');
-    if (_selectedCity == null) missing.add('City');
+    if (_selectedCity == null || _selectedCity!.trim().isEmpty) missing.add('City');
+    if (_selectedStateName == null || _selectedStateName!.trim().isEmpty) missing.add('State / Region');
     if (_motherTongue == null) missing.add('Mother tongue');
     showValidationSnackbar(context, missing);
   }
@@ -185,10 +195,61 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
   void dispose() {
     _firstNameCtrl.dispose();
     _lastNameCtrl.dispose();
+    _stateCtrl.dispose();
     super.dispose();
   }
 
+  String _getLocalizedRelation(AppLocalizations l10n) {
+    if (_candidateLabel == 'son') return l10n.onboarding_profileForWhom_relation_son;
+    if (_candidateLabel == 'daughter') return l10n.onboarding_profileForWhom_relation_daughter;
+    if (_candidateLabel == 'brother') return l10n.onboarding_profileForWhom_relation_brother;
+    if (_candidateLabel == 'sister') return l10n.onboarding_profileForWhom_relation_sister;
+    return _candidateLabel;
+  }
+
+  String _getLocalizedComplexion(AppLocalizations l10n, String raw) {
+    if (l10n.localeName == 'ar') {
+      switch (raw) {
+        case 'Fair': return 'فاتحة';
+        case 'Medium': return 'قمحية';
+        case 'Olive': return 'زيتونية';
+        case 'Dark': return 'سمراء';
+        case 'Prefer not to say': return 'أفضل عدم الإجابة';
+      }
+    }
+    return raw;
+  }
+
+  String _getLocalizedResidency(AppLocalizations l10n, String raw) {
+    if (l10n.localeName == 'ar') {
+      switch (raw) {
+        case 'Citizen': return 'مواطن';
+        case 'Permanent Resident': return 'مقيم دائم';
+        case 'Work Visa': return 'تأشيرة عمل';
+        case 'Student Visa': return 'تأشيرة طالب';
+        case 'Other': return 'أخرى';
+        case 'Prefer not to say': return 'أفضل عدم الإجابة';
+      }
+    }
+    return raw;
+  }
+
+  String _getLocalizedSpecialNeeds(AppLocalizations l10n, String raw) {
+    if (l10n.localeName == 'ar') {
+      switch (raw) {
+        case 'None': return 'لا يوجد';
+        case 'Physical disability': return 'إعاقة جسدية';
+        case 'Hearing impairment': return 'ضعف السمع';
+        case 'Visual impairment': return 'ضعف البصر';
+        case 'Other': return 'أخرى';
+        case 'Prefer not to say': return 'أفضل عدم الإجابة';
+      }
+    }
+    return raw;
+  }
+
   void _pickDob() async {
+    final l10n = AppLocalizations.of(context);
     final picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now().subtract(const Duration(days: 365 * 25)),
@@ -200,7 +261,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
             colorScheme: const ColorScheme.dark(
               primary:   AppColors.champagneGold,
               onPrimary: AppColors.obsidianNight,
-              surface:   Color(0xFF12121A),
+              surface:   AppColors.surfaceMid,
               onSurface: AppColors.pearlWhite,
             ),
           ),
@@ -214,8 +275,8 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       _dob      = picked;
       _dobError = age < 18
           ? _isGuardianMode
-              ? 'Your $_candidateLabel must be 18 or older to use NOOR.'
-              : 'You must be 18 or older to use NOOR. We look forward to welcoming you then.'
+              ? l10n.onboarding_error_under18_guardian(_getLocalizedRelation(l10n))
+              : l10n.onboarding_error_under18_self
           : '';
     });
   }
@@ -235,15 +296,16 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
 
 
   void _showMotherTonguePicker() {
+    final l10n = AppLocalizations.of(context);
     showModalBottomSheet<void>(
       context:            context,
-      backgroundColor:    const Color(0xFF12121A),
+      backgroundColor:    AppColors.surfaceMid,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (_) => _GenericListPicker(
-        title:      'Mother Tongue',
+        title:      l10n.onboarding_label_motherTongue,
         options:    _loadedLanguages,
         selected:   _motherTongue,
         onSelected: (v) {
@@ -255,15 +317,16 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
   }
 
   void _showCommunityPicker() {
+    final l10n = AppLocalizations.of(context);
     showModalBottomSheet<void>(
       context:            context,
-      backgroundColor:    const Color(0xFF12121A),
+      backgroundColor:    AppColors.surfaceMid,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (_) => _GenericListPicker(
-        title:      CopyEngine.communityQuestion(_creatorRelation),
+        title:      CopyEngine.communityQuestion(l10n, _creatorRelation),
         options:    _loadedCommunities,
         selected:   _community,
         onSelected: (v) {
@@ -275,70 +338,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
   }
 
 
-  void _showStatePicker() {
-    if (_selectedCountryCode == null) return;
-    showModalBottomSheet<void>(
-      context:            context,
-      backgroundColor:    const Color(0xFF12121A),
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => _LocationPickerSheet(
-        title:      'Select State / Province',
-        selectedName: _selectedStateName,
-        fetchItems: () async {
-          final states = await csc.getStatesOfCountry(_selectedCountryCode!);
-          return states.map((s) => {
-            'name': s.name,
-            'code': s.isoCode,
-          }).toList();
-        },
-        onSelected: (v) {
-          final code = v['code']!;
-          final name = v['name']!;
-          setState(() {
-            _selectedStateCode = code;
-            _selectedStateName = name;
-            _selectedCity      = null;
-            _selectedCityId    = null;
-          });
-          Navigator.pop(context);
-        },
-      ),
-    );
-  }
-
-  void _showCityPicker() {
-    if (_selectedCountryCode == null || _selectedStateCode == null) return;
-    showModalBottomSheet<void>(
-      context:            context,
-      backgroundColor:    const Color(0xFF12121A),
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => _LocationPickerSheet(
-        title:      'Select City',
-        selectedName: _selectedCity,
-        fetchItems: () async {
-          final cities = await csc.getStateCities(_selectedCountryCode!, _selectedStateCode!);
-          return cities.map((c) => {
-            'name': c.name,
-            'code': c.name,
-          }).toList();
-        },
-        onSelected: (v) {
-          final name = v['name']!;
-          setState(() {
-            _selectedCity   = name;
-            _selectedCityId = name.toLowerCase();
-          });
-          Navigator.pop(context);
-        },
-      ),
-    );
-  }
+  // State and City picker sheets removed in favor of CitySearchField Google Places Autocomplete
 
 
   void _advance() async {
@@ -346,14 +346,54 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
     final cityName = _selectedStateName != null && _selectedStateName!.isNotEmpty
         ? '$_selectedCity, $_selectedStateName'
         : (_selectedCity ?? '');
-    final data = context.read<OnboardingCubit>().currentData.copyWith(
+
+    // Pre-capture BLoC references before any asynchronous gap
+    final authCubit = context.read<AuthCubit>();
+    final onboardingCubit = context.read<OnboardingCubit>();
+
+    String? resolvedCityId = _selectedCityId;
+    final uuidRegex = RegExp(
+        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$');
+
+    if (_selectedCity != null &&
+        (resolvedCityId == null || !uuidRegex.hasMatch(resolvedCityId))) {
+      if (SupabaseService.isInitialized) {
+        try {
+          debugPrint(
+              '[BasicIdentityScreen] Ingesting city dynamically: $_selectedCity...');
+          final response = await SupabaseService.client.rpc(
+            'get_or_create_city',
+            params: {
+              'p_name':         _selectedCity,
+              'p_country_code': countryCode,
+              'p_latitude':     _lat ?? 0.0,
+              'p_longitude':    _lng ?? 0.0,
+              'p_timezone':     'UTC',
+              'p_name_local':   null,
+            },
+          );
+          if (response != null && uuidRegex.hasMatch(response.toString())) {
+            resolvedCityId = response.toString();
+            debugPrint(
+                '[BasicIdentityScreen] Ingested successfully. Returned UUID: $resolvedCityId');
+          }
+        } catch (e) {
+          debugPrint('[BasicIdentityScreen] Dynamic city ingestion failed: $e');
+        }
+      }
+    }
+
+    final data = onboardingCubit.currentData.copyWith(
       firstName:    _firstNameCtrl.text.trim(),
       lastName:     _lastNameCtrl.text.trim(),
       dateOfBirth:  _dob,
       gender:       _gender,
       cityName:     cityName,
-      cityId:       _selectedCityId ?? cityName.toLowerCase(),
+      cityId:       resolvedCityId ?? cityName.toLowerCase(),
       countryCode:  countryCode,
+      postalCode:   _postalCode,
+      lat:          _lat,
+      lng:          _lng,
       heightCm:        _heightCm,
       complexion:      _complexion,
       motherTongue:    _motherTongue,
@@ -366,8 +406,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
     // Propagate gender to AuthCubit NOW so all subscription gates read the correct value immediately.
     // Fixed Flaw 20: Avoid calling setGender twice in guardian flow.
     if (_gender != null && !_isGuardianMode) {
-      context.read<AuthCubit>().setGender(
-          _gender == Gender.female ? 'female' : 'male');
+      authCubit.setGender(_gender == Gender.female ? 'female' : 'male');
     }
 
     // Save country code for regional pricing (subscription screen)
@@ -375,21 +414,23 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
     await prefs.setString('user_country_code', countryCode);
 
     if (mounted) {
-      context.read<AuthCubit>().setCountryCode(countryCode);
+      authCubit.setCountryCode(countryCode);
     }
 
     if (mounted) {
-      context.read<OnboardingCubit>().saveAndAdvance(data);
+      onboardingCubit.saveAndAdvance(data);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final localizedRelation = _getLocalizedRelation(l10n);
     return BlocBuilder<OnboardingCubit, OnboardingState>(
       builder: (context, state) {
         final isLoading = state is OnboardingLoading;
         return OnboardingScaffold(
-          ctaLabel:      'Continue',
+          ctaLabel:      l10n.legal_button_continue,
           onCta:         _advance,
           isCtaEnabled:  _canProceed,
           isCtaLoading:  isLoading,
@@ -415,8 +456,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                       const SizedBox(width: AppDimensions.space10),
                       Expanded(
                         child: Text(
-                          'You are filling this as a guardian. '
-                          'These details are about your $_candidateLabel.',
+                          l10n.onboarding_basicIdentity_guardianBanner(localizedRelation),
                           style: AppTypography.caption.copyWith(
                             color: AppColors.champagneGold,
                             height: 1.5,
@@ -431,11 +471,11 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
 
               StepHeader(
                 title: _isGuardianMode
-                    ? 'Tell us about your $_candidateLabel'
-                    : 'Tell us about yourself',
+                    ? l10n.onboarding_basicIdentity_title_guardian(localizedRelation)
+                    : l10n.onboarding_basicIdentity_title,
                 subtitle: _isGuardianMode
-                    ? 'This is what others will see on their profile.'
-                    : 'This is what others will see on your profile.',
+                    ? l10n.onboarding_basicIdentity_subtitle_guardian
+                    : l10n.onboarding_basicIdentity_subtitle_self,
               ),
               const SizedBox(height: AppDimensions.space32),
 
@@ -446,8 +486,8 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                     child: NoorTextField(
                       controller:         _firstNameCtrl,
                       label:              _isGuardianMode
-                                              ? "Candidate's first name"
-                                              : 'First name',
+                                              ? l10n.onboarding_label_firstName_guardian
+                                              : l10n.onboarding_label_firstName_self,
                       textCapitalization: TextCapitalization.words,
                       textInputAction:    TextInputAction.next,
                       onChanged:          (_) => setState(() {}),
@@ -457,9 +497,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                   Expanded(
                     child: NoorTextField(
                       controller:         _lastNameCtrl,
-                      label:              _isGuardianMode
-                                              ? 'Last name'
-                                              : 'Last name',
+                      label:              l10n.onboarding_label_lastName,
                       textCapitalization: TextCapitalization.words,
                       textInputAction:    TextInputAction.next,
                       onChanged:          (_) => setState(() {}),
@@ -471,7 +509,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space20),
 
               // Date of birth
-              const Text('DATE OF BIRTH', style: AppTypography.sectionLabel),
+              Text(l10n.onboarding_label_dateOfBirth.toUpperCase(), style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space8),
               GestureDetector(
                 onTap: _pickDob,
@@ -491,7 +529,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                           size:  AppDimensions.iconSizeMedium),
                       const SizedBox(width: AppDimensions.space12),
                       Text(
-                        _dob != null ? _formatDob(_dob!) : 'Select date of birth',
+                        _dob != null ? _formatDob(_dob!) : l10n.onboarding_hint_selectDateOfBirth,
                         style: _dob != null
                             ? AppTypography.inputText
                             : AppTypography.inputText.copyWith(
@@ -512,7 +550,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
 
               // Gender
               Text(
-                _isGuardianMode ? "CANDIDATE'S GENDER" : 'GENDER',
+                _isGuardianMode ? l10n.onboarding_label_gender_guardian.toUpperCase() : l10n.onboarding_label_gender_self.toUpperCase(),
                 style: AppTypography.sectionLabel,
               ),
               const SizedBox(height: AppDimensions.space8),
@@ -539,7 +577,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                       ),
                       const SizedBox(width: AppDimensions.space12),
                       Text(
-                        _gender == Gender.male ? 'Male' : 'Female',
+                        _gender == Gender.male ? l10n.onboarding_label_male : l10n.onboarding_label_female,
                         style: AppTypography.bodyMedium.copyWith(
                           color: AppColors.champagneGold,
                         ),
@@ -558,7 +596,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                   children: [
                     Expanded(
                       child: _GenderPill(
-                        label:      'Male',
+                        label:      l10n.onboarding_label_male,
                         icon:       Icons.male_rounded,
                         isSelected: _gender == Gender.male,
                         onTap:      () => setState(() => _gender = Gender.male),
@@ -567,7 +605,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                     const SizedBox(width: AppDimensions.space12),
                     Expanded(
                       child: _GenderPill(
-                        label:      'Female',
+                        label:      l10n.onboarding_label_female,
                         icon:       Icons.female_rounded,
                         isSelected: _gender == Gender.female,
                         onTap:      () => setState(() => _gender = Gender.female),
@@ -580,7 +618,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space20),
 
               // ── Country Selector ──────────────────────────────────
-              Text(_isGuardianMode ? 'THEIR COUNTRY' : 'YOUR COUNTRY', style: AppTypography.sectionLabel),
+              Text(_isGuardianMode ? l10n.onboarding_label_country_guardian.toUpperCase() : l10n.onboarding_label_country_self.toUpperCase(), style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
               Container(
                 height: AppDimensions.buttonHeight,
@@ -596,7 +634,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                       size: AppDimensions.iconSizeMedium),
                   const SizedBox(width: AppDimensions.space12),
                   Expanded(child: Text(
-                    _selectedCountryName ?? 'Select country',
+                    _selectedCountryName ?? l10n.onboarding_hint_selectCountry,
                     style: AppTypography.inputText.copyWith(
                       color: AppColors.champagneGold,
                     ),
@@ -611,77 +649,53 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
 
               const SizedBox(height: AppDimensions.space20),
 
-              // ── State Selector ───────────────────────────────────
-              Text(_isGuardianMode ? 'THEIR STATE / PROVINCE' : 'YOUR STATE / PROVINCE', style: AppTypography.sectionLabel),
-              const SizedBox(height: AppDimensions.space12),
-              GestureDetector(
-                onTap: _selectedCountryCode != null ? _showStatePicker : null,
-                child: Opacity(
-                  opacity: _selectedCountryCode != null ? 1.0 : 0.5,
-                  child: Container(
-                    height: AppDimensions.buttonHeight,
-                    padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space16),
-                    decoration: BoxDecoration(
-                      color: AppColors.inputSurface,
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                      border: Border.all(
-                        color: _selectedStateName != null ? AppColors.champagneGold : AppColors.cardBorder,
-                        width: _selectedStateName != null ? AppDimensions.borderFocus : AppDimensions.borderThin,
-                      ),
-                    ),
-                    child: Row(children: [
-                      Icon(Icons.map_outlined,
-                          color: _selectedStateName != null ? AppColors.champagneGold : AppColors.slateMist,
-                          size: AppDimensions.iconSizeMedium),
-                      const SizedBox(width: AppDimensions.space12),
-                      Expanded(child: Text(
-                        _selectedStateName ?? (_selectedCountryCode == null ? 'Select country first' : 'Select state / province'),
-                        style: AppTypography.inputText.copyWith(
-                          color: _selectedStateName != null ? AppColors.pearlWhite : AppColors.slateMist,
-                        ),
-                      )),
-                      const Icon(Icons.expand_more_rounded, color: AppColors.slateMist),
-                    ]),
-                  ),
-                ),
+              // ── City Search with Autocomplete ────────────────────
+              CitySearchField(
+                countryCode: _selectedCountryCode,
+                initialValue: _selectedCity != null && _selectedStateName != null && _selectedStateName!.isNotEmpty
+                    ? '$_selectedCity, $_selectedStateName'
+                    : _selectedCity,
+                label: _isGuardianMode ? l10n.onboarding_label_city_guardian.toUpperCase() : l10n.onboarding_label_city_self.toUpperCase(),
+                hint: l10n.onboarding_hint_searchCity,
+                onSelected: (result) {
+                  setState(() {
+                    _selectedCity = result.city.isNotEmpty ? result.city : null;
+                    _selectedStateName = result.state.isNotEmpty ? result.state : null;
+                    _stateCtrl.text = result.state;
+                    
+                    // Keep country info locked to verified selection if result is cleared
+                    if (result.countryCode.isNotEmpty) {
+                      _selectedCountryCode = result.countryCode;
+                    }
+                    if (result.country.isNotEmpty) {
+                      _selectedCountryName = result.country;
+                    }
+                    
+                    _selectedCityId = result.placeId.isNotEmpty ? result.placeId : null;
+                    _postalCode = result.postalCode.isNotEmpty ? result.postalCode : null;
+                    _lat = result.lat;
+                    _lng = result.lng;
+                  });
+                  if (result.countryCode.isNotEmpty) {
+                    _fetchDemographics(result.countryCode);
+                  }
+                },
               ),
 
-              const SizedBox(height: AppDimensions.space20),
-
-              // ── City Selector ────────────────────────────────────
-              Text(_isGuardianMode ? 'THEIR CITY' : 'YOUR CITY', style: AppTypography.sectionLabel),
-              const SizedBox(height: AppDimensions.space12),
-              GestureDetector(
-                onTap: _selectedStateName != null ? _showCityPicker : null,
-                child: Opacity(
-                  opacity: _selectedStateName != null ? 1.0 : 0.5,
-                  child: Container(
-                    height: AppDimensions.buttonHeight,
-                    padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space16),
-                    decoration: BoxDecoration(
-                      color: AppColors.inputSurface,
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                      border: Border.all(
-                        color: _selectedCity != null ? AppColors.champagneGold : AppColors.cardBorder,
-                        width: _selectedCity != null ? AppDimensions.borderFocus : AppDimensions.borderThin,
-                      ),
-                    ),
-                    child: Row(children: [
-                      Icon(Icons.location_city_rounded,
-                          color: _selectedCity != null ? AppColors.champagneGold : AppColors.slateMist,
-                          size: AppDimensions.iconSizeMedium),
-                      const SizedBox(width: AppDimensions.space12),
-                      Expanded(child: Text(
-                        _selectedCity ?? (_selectedStateName == null ? 'Select state first' : 'Select city'),
-                        style: AppTypography.inputText.copyWith(
-                          color: _selectedCity != null ? AppColors.pearlWhite : AppColors.slateMist,
-                        ),
-                      )),
-                      const Icon(Icons.expand_more_rounded, color: AppColors.slateMist),
-                    ]),
-                  ),
+              if (_selectedCity != null) ...[
+                const SizedBox(height: AppDimensions.space20),
+                NoorTextField(
+                  controller: _stateCtrl,
+                  label: l10n.localeName == 'ar' ? 'المنطقة / الولاية' : 'STATE / REGION',
+                  hint: l10n.localeName == 'ar' ? 'أدخل المنطقة' : 'Enter state, region or province',
+                  textCapitalization: TextCapitalization.words,
+                  onChanged: (v) {
+                    setState(() {
+                      _selectedStateName = v;
+                    });
+                  },
                 ),
-              ),
+              ],
 
 
               // Premium Confirmed Location Card
@@ -709,7 +723,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                           const Icon(Icons.check_circle_rounded,
                               color: AppColors.champagneGold, size: 18),
                           const SizedBox(width: AppDimensions.space8),
-                          Text('Confirmed Location', style: AppTypography.captionMedium.copyWith(color: AppColors.champagneGold)),
+                          Text(l10n.onboarding_location_confirmed, style: AppTypography.captionMedium.copyWith(color: AppColors.champagneGold)),
                         ],
                       ),
                       const SizedBox(height: AppDimensions.space16),
@@ -718,7 +732,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                         children: [
                           const Icon(Icons.location_city_rounded, color: AppColors.slateMist, size: 18),
                           const SizedBox(width: AppDimensions.space12),
-                          const Text('City', style: AppTypography.inputLabel),
+                          Text(l10n.onboarding_label_city, style: AppTypography.inputLabel),
                           const Spacer(),
                           Text(_selectedCity!, style: AppTypography.bodyMedium),
                         ],
@@ -726,14 +740,14 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                       // State
                       if (_selectedStateName != null && _selectedStateName!.isNotEmpty) ...[
                         const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 8.0),
-                          child: Divider(color: AppColors.cardBorder, height: 1),
+                           padding: EdgeInsets.symmetric(vertical: 8.0),
+                           child: Divider(color: AppColors.cardBorder, height: 1),
                         ),
                         Row(
                           children: [
                             const Icon(Icons.map_outlined, color: AppColors.slateMist, size: 18),
                             const SizedBox(width: AppDimensions.space12),
-                            const Text('State / Region', style: AppTypography.inputLabel),
+                            Text(l10n.localeName == 'ar' ? 'المنطقة' : 'State / Region', style: AppTypography.inputLabel),
                             const Spacer(),
                             Text(_selectedStateName!, style: AppTypography.bodyMedium),
                           ],
@@ -742,14 +756,14 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                       // Country
                       if (_selectedCountryName != null) ...[
                         const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 8.0),
-                          child: Divider(color: AppColors.cardBorder, height: 1),
+                           padding: EdgeInsets.symmetric(vertical: 8.0),
+                           child: Divider(color: AppColors.cardBorder, height: 1),
                         ),
                         Row(
                           children: [
                             const Icon(Icons.public, color: AppColors.slateMist, size: 18),
                             const SizedBox(width: AppDimensions.space12),
-                            const Text('Country', style: AppTypography.inputLabel),
+                            Text(l10n.localeName == 'ar' ? 'البلد' : 'Country', style: AppTypography.inputLabel),
                             const Spacer(),
                             Text(_selectedCountryName!, style: AppTypography.bodyMedium),
                           ],
@@ -764,8 +778,9 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
 
               // ── COMMUNITY / BIRADARI (Optional) ────────────────────
               Builder(builder: (ctx) {
+                final l10nBuild = AppLocalizations.of(ctx);
                 final rel = ctx.read<OnboardingCubit>().currentData.profileCreatorRelation ?? 'self';
-                return Text('${CopyEngine.communityQuestion(rel).toUpperCase()}  (Optional)', style: AppTypography.sectionLabel);
+                return Text('${CopyEngine.communityQuestion(l10nBuild, rel).toUpperCase()}  (Optional)', style: AppTypography.sectionLabel);
               }),
               const SizedBox(height: AppDimensions.space12),
               GestureDetector(
@@ -787,7 +802,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                         size: AppDimensions.iconSizeMedium),
                     const SizedBox(width: AppDimensions.space12),
                     Expanded(child: Text(
-                      _community ?? 'Select community (optional)',
+                      _community ?? l10n.onboarding_hint_selectCommunity,
                       style: AppTypography.inputText.copyWith(
                         color: _community != null ? AppColors.pearlWhite : AppColors.slateMist,
                       ),
@@ -800,7 +815,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space28),
 
               // ── HEIGHT ─────────────────────────────────────────────
-              Text(_isGuardianMode ? 'THEIR HEIGHT' : 'YOUR HEIGHT',
+              Text(_isGuardianMode ? l10n.onboarding_label_height_guardian.toUpperCase() : l10n.onboarding_label_height_self.toUpperCase(),
                   style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
               _HeightStepper(
@@ -811,13 +826,13 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space24),
 
               // ── COMPLEXION (Optional) ──────────────────────────────
-              const Text('COMPLEXION  (Optional)', style: AppTypography.sectionLabel),
+              Text(l10n.localeName == 'ar' ? 'البشرة (اختياري)'.toUpperCase() : 'COMPLEXION  (Optional)', style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
                 spacing:    AppDimensions.space8,
                 runSpacing: AppDimensions.space8,
                 children: _kComplexions.map((o) => _SelectChip(
-                  label:      o,
+                  label:      _getLocalizedComplexion(l10n, o),
                   isSelected: _complexion == o,
                   onTap: () => setState(() =>
                       _complexion = _complexion == o ? null : o),
@@ -827,7 +842,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space24),
 
               // ── MOTHER TONGUE (Required) ───────────────────────────
-              const Text('MOTHER TONGUE', style: AppTypography.sectionLabel),
+              Text(l10n.onboarding_label_motherTongue.toUpperCase(), style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
               GestureDetector(
                 onTap: _showMotherTonguePicker,
@@ -858,7 +873,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                       const SizedBox(width: AppDimensions.space12),
                       Expanded(
                         child: Text(
-                          _motherTongue ?? 'Select language',
+                          _motherTongue ?? l10n.onboarding_hint_selectLanguage,
                           style: AppTypography.inputText.copyWith(
                             color: _motherTongue != null
                                 ? AppColors.pearlWhite
@@ -876,13 +891,13 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space28),
 
               // ── RESIDENCY STATUS (Optional) ─────────────────────────
-              const Text('RESIDENCY STATUS  (Optional)', style: AppTypography.sectionLabel),
+              Text(l10n.localeName == 'ar' ? 'حالة الإقامة (اختياري)'.toUpperCase() : 'RESIDENCY STATUS  (Optional)', style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
                 spacing:    AppDimensions.space8,
                 runSpacing: AppDimensions.space8,
                 children: _kResidencyOptions.map((o) => _SelectChip(
-                  label:      o,
+                  label:      _getLocalizedResidency(l10n, o),
                   isSelected: _residencyStatus == o,
                   onTap: () => setState(() =>
                       _residencyStatus = _residencyStatus == o ? null : o),
@@ -892,7 +907,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space28),
 
               // ── SPECIAL NEEDS (Optional) ─────────────────────────────
-              const Text('SPECIAL NEEDS  (Optional)', style: AppTypography.sectionLabel),
+              Text(l10n.localeName == 'ar' ? 'ذوو الاحتياجات الخاصة (اختياري)'.toUpperCase() : 'SPECIAL NEEDS  (Optional)', style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space4),
               Container(
                 padding: const EdgeInsets.all(AppDimensions.space10),
@@ -901,14 +916,14 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                   borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
                   border: Border.all(color: AppColors.cardBorder),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.lock_outline_rounded,
+                    const Icon(Icons.lock_outline_rounded,
                         color: AppColors.slateMist, size: 14),
-                    SizedBox(width: AppDimensions.space8),
+                    const SizedBox(width: AppDimensions.space8),
                     Expanded(
                       child: Text(
-                        'This is only shared after mutual interest.',
+                        l10n.localeName == 'ar' ? 'يتم مشاركة هذا فقط بعد الاهتمام المتبادل.' : 'This is only shared after mutual interest.',
                         style: AppTypography.caption,
                       ),
                     ),
@@ -920,7 +935,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                 spacing:    AppDimensions.space8,
                 runSpacing: AppDimensions.space8,
                 children: _kSpecialNeedsOptions.map((o) => _SelectChip(
-                  label:      o,
+                  label:      _getLocalizedSpecialNeeds(l10n, o),
                   isSelected: _specialNeeds == o,
                   onTap: () => setState(() =>
                       _specialNeeds = _specialNeeds == o ? null : o),
@@ -1252,148 +1267,4 @@ class _GenericListPickerState extends State<_GenericListPicker> {
   }
 }
 
-// ── Reusable Premium Location Picker Sheet ─────────────────────
-// Uses country_state_city package offline data dynamically.
 
-class _LocationPickerSheet extends StatefulWidget {
-  const _LocationPickerSheet({
-    required this.title,
-    required this.fetchItems,
-    required this.selectedName,
-    required this.onSelected,
-  });
-  final String title;
-  final Future<List<Map<String, String>>> Function() fetchItems;
-  final String? selectedName;
-  final ValueChanged<Map<String, String>> onSelected;
-
-  @override
-  State<_LocationPickerSheet> createState() => _LocationPickerSheetState();
-}
-
-class _LocationPickerSheetState extends State<_LocationPickerSheet> {
-  final _searchCtrl = TextEditingController();
-  List<Map<String, String>> _all = [];
-  List<Map<String, String>> _filtered = [];
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  @override
-  void dispose() {
-    _searchCtrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _load() async {
-    try {
-      final items = await widget.fetchItems();
-      if (mounted) {
-        setState(() {
-          _all = items;
-          _filtered = items;
-          _loading = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() => _loading = false);
-      }
-    }
-  }
-
-  void _onSearch(String q) {
-    final lower = q.trim().toLowerCase();
-    setState(() {
-      _filtered = lower.isEmpty
-          ? _all
-          : _all.where((item) => item['name']!.toLowerCase().contains(lower)).toList();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).viewInsets.bottom;
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(bottom: bottom),
-        child: Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.75,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: AppDimensions.space16),
-              Container(
-                width: 40, height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.slateMist.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: AppDimensions.space16),
-              Text(widget.title, style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600, fontSize: 18)),
-              const SizedBox(height: AppDimensions.space12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space16),
-                child: TextField(
-                  controller: _searchCtrl,
-                  onChanged:  _onSearch,
-                  style:      AppTypography.inputText,
-                  decoration: InputDecoration(
-                    hintText:  'Search…',
-                    hintStyle: AppTypography.inputLabel,
-                    prefixIcon: const Icon(Icons.search_rounded, color: AppColors.slateMist, size: 20),
-                    filled: true, fillColor: AppColors.inputSurface,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: AppDimensions.space12, vertical: AppDimensions.space10),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppDimensions.radiusButton), borderSide: const BorderSide(color: AppColors.cardBorder)),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppDimensions.radiusButton), borderSide: const BorderSide(color: AppColors.cardBorder)),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppDimensions.radiusButton), borderSide: const BorderSide(color: AppColors.champagneGold, width: AppDimensions.borderFocus)),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppDimensions.space8),
-              Flexible(
-                child: _loading
-                    ? const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(AppDimensions.space24),
-                          child: CircularProgressIndicator(color: AppColors.champagneGold),
-                        ),
-                      )
-                    : _filtered.isEmpty
-                        ? const Padding(
-                            padding: EdgeInsets.all(AppDimensions.space24),
-                            child: Text('Nothing found.', style: AppTypography.bodyMuted, textAlign: TextAlign.center),
-                          )
-                        : ListView.builder(
-                            shrinkWrap: true,
-                            physics: const BouncingScrollPhysics(),
-                            itemCount: _filtered.length,
-                            itemBuilder: (_, i) {
-                              final item = _filtered[i];
-                              final name = item['name']!;
-                              final isSel = name == widget.selectedName;
-                              return ListTile(
-                                title: Text(name, style: AppTypography.body),
-                                trailing: isSel ? const Icon(Icons.check_rounded, color: AppColors.champagneGold, size: 20) : null,
-                                selected: isSel,
-                                selectedColor: AppColors.champagneGold,
-                                onTap: () => widget.onSelected(item),
-                              );
-                            },
-                          ),
-              ),
-              const SizedBox(height: AppDimensions.space16),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}

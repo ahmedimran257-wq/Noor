@@ -9,13 +9,19 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'supabase_service.dart';
 
 /// Manages referral code generation, application, and reward tracking.
 class ReferralService {
   ReferralService._();
   static final instance = ReferralService._();
 
-  final _supabase = Supabase.instance.client;
+  SupabaseClient get _supabase {
+    if (!SupabaseService.isInitialized) {
+      throw UnsupportedError('Referral requires backend');
+    }
+    return SupabaseService.client;
+  }
 
   String? _cachedCode;
 

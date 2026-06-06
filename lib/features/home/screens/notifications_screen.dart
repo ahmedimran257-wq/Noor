@@ -201,7 +201,7 @@ class _NotificationTile extends StatelessWidget {
     switch (type) {
       case 'interest_received':  return AppColors.champagneGold;
       case 'interest_accepted':  return AppColors.verifiedTeal;
-      case 'new_message':        return const Color(0xFF5B9BD5);
+      case 'new_message':        return AppColors.messageBlue;
       case 'boost_ready':        return AppColors.champagneGold;
       case 'profile_approved':   return AppColors.verifiedTeal;
       default:                   return AppColors.slateMist;

@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/cubits/auth/auth_state.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
@@ -31,6 +32,7 @@ import 'settings_screen.dart';
 import 'subscription_screen.dart';
 import 'profile_views_screen.dart';
 import 'notifications_screen.dart';
+import '../../../core/services/supabase_service.dart';
 
 // ── Completeness score ────────────────────────────────────────
 
@@ -79,18 +81,24 @@ class MyProfileScreen extends StatefulWidget {
   State<MyProfileScreen> createState() => _MyProfileScreenState();
 }
 
-class _MyProfileScreenState extends State<MyProfileScreen> {
+class _MyProfileScreenState extends State<MyProfileScreen>
+    with AutomaticKeepAliveClientMixin {
   Set<String> _bookmarked = {};
   bool _guardianEnabled = false;
 
-  // Mock views count
-  static const _viewCount = 10;
+  int _viewCount = 10;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
     _loadBookmarks();
     _loadGuardian();
+    if (SupabaseService.isInitialized) {
+      _loadViewsCount();
+    }
   }
 
   Future<void> _loadBookmarks() async {
@@ -106,8 +114,35 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     }
   }
 
+  Future<void> _loadViewsCount() async {
+    try {
+      final myUserId = SupabaseService.currentUserId;
+      if (myUserId == null) return;
+
+      final myProfileRes = await SupabaseService.client
+          .from('profiles')
+          .select('id')
+          .eq('user_id', myUserId)
+          .single();
+      final myProfileId = myProfileRes['id'] as String;
+
+      final response = await SupabaseService.client
+          .from('profile_views')
+          .select('id')
+          .eq('viewed_profile_id', myProfileId);
+      
+      final count = response.length;
+      if (mounted) {
+        setState(() => _viewCount = count);
+      }
+    } catch (e) {
+      debugPrint('Error loading views count: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -276,6 +311,61 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: _SubscriptionCard(),
+          ),
+
+          const SizedBox(height: AppDimensions.space16),
+
+          // Referral Card
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: GestureDetector(
+              onTap: () => context.push('/referral'),
+              child: Container(
+                padding: const EdgeInsets.all(AppDimensions.space16),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceGlass,
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                  border: Border.all(color: AppColors.goldBorder.withValues(alpha: 0.5)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.champagneGold.withValues(alpha: 0.02),
+                      blurRadius: 12,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(AppDimensions.space8),
+                      decoration: BoxDecoration(
+                        color: AppColors.champagneGold.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.goldBorder),
+                      ),
+                      child: const Icon(
+                        Icons.card_giftcard_rounded,
+                        color: AppColors.champagneGold,
+                        size: AppDimensions.iconSizeMedium,
+                      ),
+                    ),
+                    const SizedBox(width: AppDimensions.space12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Refer a Friend', style: AppTypography.bodyMedium),
+                          Text('Get 7 days of Premium for free', style: AppTypography.caption),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right_rounded,
+                        color: AppColors.slateMist,
+                        size: AppDimensions.iconSizeMedium),
+                  ],
+                ),
+              ),
+            ),
           ),
 
           const SizedBox(height: AppDimensions.space16),
@@ -758,11 +848,11 @@ class _SubscriptionCard extends StatelessWidget {
 
   Widget _buildGrace(BuildContext context) {
     return _CardShell(
-      borderColor: const Color(0xFFF6C344),
-      glowColor:   const Color(0x1AF6C344),
+      borderColor: AppColors.premiumGold,
+      glowColor:   AppColors.premiumGold.withValues(alpha: 0.1),
       child: Row(children: [
         const Icon(Icons.warning_amber_rounded,
-            color: Color(0xFFF6C344), size: 22),
+            color: AppColors.premiumGold, size: 22),
         const SizedBox(width: 10),
         const Expanded(child: Text('Payment issue — subscription in grace period.',
             style: AppTypography.caption)),
@@ -771,7 +861,7 @@ class _SubscriptionCard extends StatelessWidget {
             MaterialPageRoute<void>(
                 builder: (_) => const SubscriptionScreen())),
           child: Text('Fix', style: AppTypography.captionMedium
-              .copyWith(color: const Color(0xFFF6C344))),
+              .copyWith(color: AppColors.premiumGold)),
         ),
       ]),
     );
@@ -1281,7 +1371,7 @@ class _IFoundMyMatchButton extends StatelessWidget {
         margin:  const EdgeInsets.all(AppDimensions.space16),
         padding: const EdgeInsets.all(AppDimensions.space24),
         decoration: BoxDecoration(
-          color:        const Color(0xFF13131A),
+          color:        AppColors.surfaceElevated,
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
           border:       Border.all(color: AppColors.goldBorder),
         ),

@@ -13,6 +13,8 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+import { Image } from "https://deno.land/x/imagescript@1.2.15/mod.ts";
+import { encode } from "https://esm.sh/blurhash@2.0.5";
 
 const SUPABASE_URL         = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -146,6 +148,47 @@ Deno.serve(async (req: Request) => {
       console.log(
         `[validate-photo-upload] ✅ Photo activated for user ${userId}: ${storagePath}`
       );
+
+      // Generate BlurHash
+      try {
+        const { data: fileData, error: downloadError } = await adminClient.storage
+          .from(BUCKET_NAME)
+          .download(storagePath);
+
+        if (downloadError) {
+          console.error(`[validate-photo-upload] Failed to download image for BlurHash: ${downloadError.message}`);
+        } else if (fileData) {
+          const arrayBuffer = await fileData.arrayBuffer();
+          const uint8Array = new Uint8Array(arrayBuffer);
+          const image = await Image.decode(uint8Array);
+          const width = image.width;
+          const height = image.height;
+
+          // Scale down for speed/memory efficiency
+          const scale = Math.min(32 / width, 32 / height, 1);
+          const thumbWidth = Math.max(1, Math.round(width * scale));
+          const thumbHeight = Math.max(1, Math.round(height * scale));
+          const thumbnail = image.resize(thumbWidth, thumbHeight);
+
+          const rgba = thumbnail.bitmap;
+          const clamped = new Uint8ClampedArray(rgba.buffer, rgba.byteOffset, rgba.byteLength);
+          const hash = encode(clamped, thumbWidth, thumbHeight, 4, 3);
+
+          const { error: dbUpdateError } = await adminClient
+            .from("photos")
+            .update({ blurhash: hash })
+            .eq("profile_id", profile.id)
+            .eq("storage_path", storagePath);
+
+          if (dbUpdateError) {
+            console.error(`[validate-photo-upload] Failed to save BlurHash to DB: ${dbUpdateError.message}`);
+          } else {
+            console.log(`[validate-photo-upload] ✅ BlurHash generated and saved: ${hash}`);
+          }
+        }
+      } catch (err) {
+        console.error(`[validate-photo-upload] Error generating BlurHash:`, err);
+      }
     }
 
     return new Response(

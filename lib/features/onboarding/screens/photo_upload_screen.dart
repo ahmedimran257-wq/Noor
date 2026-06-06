@@ -229,7 +229,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
   Future<ImageSource?> _showSourceSheet() async {
     return showModalBottomSheet<ImageSource>(
       context: context,
-      backgroundColor: const Color(0xFF12121A),
+      backgroundColor: AppColors.surfaceMid,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),

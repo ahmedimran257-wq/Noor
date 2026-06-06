@@ -1,0 +1,5 @@
+-- ============================================================
+-- MIGRATION 032: SEED MOCK CITIES (DEPRECATED & EMPTIED)
+-- ============================================================
+-- All mock cities seed data has been deprecated and is removed
+-- to use real-world geocoding search and dynamic DB ingestion.

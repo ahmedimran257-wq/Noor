@@ -16,6 +16,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/services/supabase_service.dart';
 import '../../../core/services/wali_mode_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
@@ -43,29 +44,51 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
 
   @override
   void dispose() {
-    _waliService.disposeRealtime();
+    if (SupabaseService.isInitialized) {
+      _waliService.disposeRealtime();
+    }
     super.dispose();
   }
 
   Future<void> _loadDashboard() async {
+    if (!SupabaseService.isInitialized) {
+      if (mounted) {
+        setState(() {
+          _chats = [];
+          _isLoading = false;
+        });
+      }
+      return;
+    }
     setState(() => _isLoading = true);
-    final chats = await _waliService.getDashboard();
-    if (mounted) {
-      setState(() {
-        _chats = chats;
-        _isLoading = false;
-      });
+    try {
+      final chats = await _waliService.getDashboard();
+      if (mounted) {
+        setState(() {
+          _chats = chats;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   void _setupRealtime() {
+    if (!SupabaseService.isInitialized) return;
     _waliService.subscribeToMirroredChats(
       onNewMessage: (message) {
         // Refresh dashboard to update unread counts and last message
         _loadDashboard();
       },
+      onStatusChange: (connected) {
+        if (mounted) {
+          setState(() => _isRealtimeConnected = connected);
+        }
+      },
     );
-    setState(() => _isRealtimeConnected = true);
   }
 
   Future<void> _handleApproveMatch(GuardianDashboardItem chat) async {

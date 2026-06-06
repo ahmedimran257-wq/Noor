@@ -17,6 +17,7 @@ import 'package:go_router/go_router.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'firebase_options.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'core/config/app_config.dart';
 
 import 'core/theme/app_theme.dart';
@@ -150,12 +151,12 @@ void main() async {
     DeviceOrientation.portraitUp,
   ]);
 
-  // ── Always start with Assalam animation ─────────────────────
-  // The assalam greeting screen plays every time the app opens.
-  // After the animation, it auto-navigates to:
-  //   • /language  (first install — intro not yet completed)
-  //   • /splash    (returning user — intro already completed)
-  runApp(const NoorApp(initialLocation: AppRoutes.assalam));
+  // ── SharedPreferences check for returning users ──────────────
+  final prefs = await SharedPreferences.getInstance();
+  final introCompleted = prefs.getBool('noor_intro_completed') ?? false;
+  runApp(NoorApp(
+    initialLocation: introCompleted ? AppRoutes.splash : AppRoutes.assalam,
+  ));
 }
 
 class NoorApp extends StatefulWidget {
@@ -202,6 +203,11 @@ class _NoorAppState extends State<NoorApp> {
     _localeCubit            = LocaleCubit();
 
     _router = buildAppRouter(_authCubit, initialLocation: widget.initialLocation);
+
+    // Wire up FCM tap navigation callback
+    FcmService.instance.onNotificationTap = (path) {
+      _router.push(path);
+    };
 
     // Kick off session check + subscription init immediately.
     _authCubit.checkSession();
@@ -271,6 +277,7 @@ class _NoorAppState extends State<NoorApp> {
               }
               // Set the daily interest limit based on gender + subscription status.
               if (state is AuthAuthenticated) {
+                _subscriptionCubit.loginUser(state.userId);
                 _interestsCubit.setDailyLimitForGender(
                   gender: state.gender ?? 'male',
                   isSubscribed: context.read<SubscriptionCubit>().state.isSubscribed,

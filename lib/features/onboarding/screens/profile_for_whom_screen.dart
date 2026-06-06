@@ -10,6 +10,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:noor/l10n/generated/app_localizations.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_state.dart';
 import '../../../core/models/onboarding_data.dart';
@@ -106,6 +107,7 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return BlocListener<OnboardingCubit, OnboardingState>(
       listener: (context, state) {
         // Navigation handled by GoRouter redirect on AuthCubit step update
@@ -119,17 +121,17 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: AppDimensions.space32),
-                const StepHeader(
-                  title:    'Who is this profile for?',
-                  subtitle: 'You can update this later from settings.',
+                StepHeader(
+                  title:    l10n.onboarding_profileForWhom_title,
+                  subtitle: l10n.onboarding_profileForWhom_subtitle,
                 ),
                 const SizedBox(height: AppDimensions.space32),
 
                 // ── Option 1: Myself ─────────────────────────
                 _SelectionCard(
                   icon:       Icons.person_outline_rounded,
-                  title:      'Myself',
-                  subtitle:   'I am looking for a spouse',
+                  title:      l10n.onboarding_profileForWhom_myself,
+                  subtitle:   l10n.onboarding_profileForWhom_myselfSub,
                   isSelected: _selectedCategory == 'self',
                   onTap:      _selectSelf,
                 ),
@@ -137,9 +139,9 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
 
                 // ── Option 2: Guardian ───────────────────────
                 _SelectionCard(
-                  icon:       Icons.shield_outlined,
-                  title:      'Guardian',
-                  subtitle:   'I am creating this profile for someone',
+                  icon:       Icons.copy_rounded, // or any icon from design
+                  title:      l10n.onboarding_profileForWhom_guardianCardTitle,
+                  subtitle:   l10n.onboarding_profileForWhom_guardianCardSub,
                   isSelected: _selectedCategory == 'guardian',
                   onTap:      _selectGuardian,
                   showChevron: true,
@@ -164,7 +166,7 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
                             bottom: AppDimensions.space10,
                           ),
                           child: Text(
-                            'I am creating this for my…',
+                            l10n.onboarding_profileForWhom_creatingFor,
                             style: AppTypography.caption.copyWith(
                               color: AppColors.champagneGold,
                               fontWeight: FontWeight.w500,
@@ -176,7 +178,7 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
                             Expanded(
                               child: _RelationChip(
                                 icon: Icons.boy_rounded,
-                                label: 'Son',
+                                label: l10n.onboarding_profileForWhom_relation_son,
                                 isSelected: _selectedRelation == 'son',
                                 onTap: () => _selectRelation('son'),
                               ),
@@ -185,7 +187,7 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
                             Expanded(
                               child: _RelationChip(
                                 icon: Icons.girl_rounded,
-                                label: 'Daughter',
+                                label: l10n.onboarding_profileForWhom_relation_daughter,
                                 isSelected: _selectedRelation == 'daughter',
                                 onTap: () => _selectRelation('daughter'),
                               ),
@@ -198,7 +200,7 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
                             Expanded(
                               child: _RelationChip(
                                 icon: Icons.person_outline_rounded,
-                                label: 'Brother',
+                                label: l10n.onboarding_profileForWhom_relation_brother,
                                 isSelected: _selectedRelation == 'brother',
                                 onTap: () => _selectRelation('brother'),
                               ),
@@ -207,7 +209,7 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
                             Expanded(
                               child: _RelationChip(
                                 icon: Icons.person_outline_rounded,
-                                label: 'Sister',
+                                label: l10n.onboarding_profileForWhom_relation_sister,
                                 isSelected: _selectedRelation == 'sister',
                                 onTap: () => _selectRelation('sister'),
                               ),
@@ -225,8 +227,8 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
                 Center(
                   child: Text(
                     _selectedCategory == 'guardian' && _selectedRelation == null
-                        ? 'Select a relationship to continue'
-                        : 'Select one to continue',
+                        ? l10n.onboarding_profileForWhom_selectRelation
+                        : l10n.onboarding_profileForWhom_selectOne,
                     style: AppTypography.caption,
                   ),
                 ),

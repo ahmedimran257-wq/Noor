@@ -147,7 +147,7 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
   void _showCodePicker() {
     showModalBottomSheet<void>(
       context:            context,
-      backgroundColor:    const Color(0xFF12121A),
+      backgroundColor:    AppColors.surfaceMid,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),

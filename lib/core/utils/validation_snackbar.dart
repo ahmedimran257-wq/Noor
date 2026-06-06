@@ -35,7 +35,7 @@ void showValidationSnackbar(BuildContext context, List<String> missingFields) {
             ),
           ],
         ),
-        backgroundColor: const Color(0xFF1A1A24),
+        backgroundColor: AppColors.snackbarSurface,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),

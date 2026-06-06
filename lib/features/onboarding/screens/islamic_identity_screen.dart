@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:noor/l10n/generated/app_localizations.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_state.dart';
 import '../../../core/models/onboarding_data.dart';
@@ -159,11 +160,6 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
     return [...common, ...extras, 'Other', 'Prefer not to say'];
   }
   static const _hijabOptions = ['Always', 'Sometimes', 'No', 'Prefer not to say'];
-  static const _deenTooltips = {
-    'Practicing': 'Actively follows Islamic obligations: prayers, fasting, halal diet.',
-    'Moderate':   'Identifies as Muslim and follows core practices but may not strictly observe all.',
-    'Cultural':   'Muslim by identity and family heritage but less focused on religious practice.',
-  };
   static const _habitOptions = ['Never', 'Occasionally', 'Frequently', 'Prefer not to say'];
   static const _dietOptions = [
     ('Strict Zabiha',       'zabiha_strict'),
@@ -207,47 +203,106 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
     context.read<OnboardingCubit>().saveAndAdvance(data);
   }
 
+  String _getLocalizedSubSect(AppLocalizations l10n, String raw) {
+    if (l10n.localeName == 'ar') {
+      switch (raw) {
+        case 'Hanafi': return 'حنفي';
+        case 'Shafi\'i': return 'شافعي';
+        case 'Maliki': return 'مالكي';
+        case 'Hanbali': return 'حنبلي';
+        case 'Deobandi': return 'ديوبندي';
+        case 'Barelvi': return 'بريلوي';
+        case 'Ahle Hadith': return 'أهل الحديث';
+        case 'Salafi': return 'سلفي';
+        case 'Sufi': return 'صوفي';
+        case 'Other': return 'أخرى';
+        case 'Prefer not to say': return 'أفضل عدم الإجابة';
+        case 'Ithna Ashari (Twelver)': return 'إثنا عشري (جعفري)';
+        case 'Ismaili (Nizari)': return 'إسماعيلي (نزاري)';
+        case 'Zaydi': return 'زيدي';
+        case 'Jafari': return 'جعفري';
+      }
+    }
+    return raw;
+  }
+
+  String _getLocalizedHijab(AppLocalizations l10n, String raw) {
+    switch (raw) {
+      case 'Always': return l10n.onboarding_hijab_always;
+      case 'Sometimes': return l10n.onboarding_hijab_sometimes;
+      case 'No': return l10n.onboarding_hijab_no;
+      case 'Prefer not to say': return l10n.onboarding_label_preferNotToSay;
+    }
+    return raw;
+  }
+
+  String _getLocalizedHabit(AppLocalizations l10n, String raw) {
+    switch (raw) {
+      case 'Never': return l10n.onboarding_habit_never;
+      case 'Occasionally': return l10n.onboarding_habit_occasionally;
+      case 'Frequently': return l10n.onboarding_habit_frequently;
+      case 'Prefer not to say': return l10n.onboarding_habit_preferNotToSay;
+    }
+    return raw;
+  }
+
+  String _getLocalizedDiet(AppLocalizations l10n, String key) {
+    switch (key) {
+      case 'zabiha_strict': return l10n.onboarding_diet_zabihaStrict;
+      case 'halal_only': return l10n.onboarding_diet_halalOnly;
+      case 'eats_anything': return l10n.onboarding_diet_eatsAnything;
+      case 'vegetarian': return l10n.onboarding_diet_vegetarian;
+      case 'vegan': return l10n.onboarding_diet_vegan;
+    }
+    return key;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final deenTooltips = {
+      l10n.onboarding_label_practicing: l10n.onboarding_tooltip_practicing,
+      l10n.onboarding_label_moderate:   l10n.onboarding_tooltip_moderate,
+      l10n.onboarding_label_cultural:   l10n.onboarding_tooltip_cultural,
+    };
+
     return BlocBuilder<OnboardingCubit, OnboardingState>(
       builder: (context, state) {
         final isLoading = state is OnboardingLoading;
         return OnboardingScaffold(
-          ctaLabel: 'Continue', onCta: _advance,
+          ctaLabel: l10n.legal_button_continue, onCta: _advance,
           isCtaEnabled: _canProceed, isCtaLoading: isLoading,
           onCtaDisabledTap: _showValidation,
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: AppDimensions.space32),
-              const StepHeader(title: 'Your faith', subtitle: 'This helps match you with someone compatible.'),
+              StepHeader(title: l10n.onboarding_islamicIdentity_title, subtitle: l10n.onboarding_islamicIdentity_subtitle),
               const SizedBox(height: AppDimensions.space32),
 
-              const _SectionTitle('SECT'),
+              _SectionTitle(l10n.onboarding_label_sect.toUpperCase()),
               const SizedBox(height: AppDimensions.space12),
               _ChipGroup<Sect>(
                 options: const [Sect.sunni, Sect.shia, Sect.preferNotToSay, Sect.other],
                 selected: _sect,
                 label: (s) {
                   switch (s) {
-                    case Sect.sunni:          return 'Sunni';
-                    case Sect.shia:           return 'Shia';
-                    case Sect.preferNotToSay: return 'Prefer not to say';
-                    case Sect.other:          return 'Other';
+                    case Sect.sunni:          return l10n.onboarding_label_sunni;
+                    case Sect.shia:           return l10n.onboarding_label_shia;
+                    case Sect.preferNotToSay: return l10n.onboarding_label_preferNotToSay;
+                    case Sect.other:          return l10n.localeName == 'ar' ? 'أخرى' : 'Other';
                   }
                 },
                 onSelected: (s) => setState(() { _sect = s; _subSect = null; }),
               ),
               const SizedBox(height: AppDimensions.space20),
               if (_sect == Sect.sunni || _sect == Sect.shia) ...[
-                _SectionTitle(_sect == Sect.shia
-                    ? 'SCHOOL OF THOUGHT  (Optional)'
-                    : 'SCHOOL OF THOUGHT  (Optional)'),
+                _SectionTitle(l10n.onboarding_label_subSect.toUpperCase()),
                 const SizedBox(height: AppDimensions.space12),
                 Wrap(
                   spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
                   children: _subSects.map((s) => _SelectChip(
-                    label: s, isSelected: _subSect == s,
+                    label: _getLocalizedSubSect(l10n, s), isSelected: _subSect == s,
                     onTap: () => setState(() => _subSect = _subSect == s ? null : s),
                   )).toList(),
                 ),
@@ -255,16 +310,16 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
               ],
 
               // ── REVERT / CONVERT STATUS ──────────────────
-              const _SectionTitle('REVERT / CONVERT  (Optional)'),
+              _SectionTitle(l10n.onboarding_label_revert.toUpperCase()),
               const SizedBox(height: AppDimensions.space4),
-              const Text('Are you a revert (convert) to Islam?', style: AppTypography.caption),
+              Text(l10n.onboarding_label_revertQuestion, style: AppTypography.caption),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
                 spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
                 children: {
-                  'yes': 'Yes',
-                  'no': 'No',
-                  'prefer_not_to_say': 'Prefer not to say',
+                  'yes': l10n.localeName == 'ar' ? 'نعم' : 'Yes',
+                  'no': l10n.localeName == 'ar' ? 'لا' : 'No',
+                  'prefer_not_to_say': l10n.onboarding_label_preferNotToSay,
                 }.entries.map((e) => _SelectChip(
                   label: e.value,
                   isSelected: _isRevert == e.key,
@@ -273,15 +328,15 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
               ),
               const SizedBox(height: AppDimensions.space20),
 
-              const _SectionTitle('DEEN LEVEL'),
+              _SectionTitle(l10n.onboarding_label_deenLevel.toUpperCase()),
               const SizedBox(height: AppDimensions.space12),
               Column(
                 children: DeenLevel.values.map((d) {
-                  final label = _deenLabel(d);
+                  final label = _deenLabel(l10n, d);
                   return Padding(
                     padding: const EdgeInsets.only(bottom: AppDimensions.space8),
                     child: _DeenCard(
-                      label: label, tooltip: _deenTooltips[label] ?? '',
+                      label: label, tooltip: deenTooltips[label] ?? '',
                       isSelected: _deenLevel == d,
                       onTap: () => setState(() => _deenLevel = d),
                     ),
@@ -290,22 +345,22 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
               ),
               const SizedBox(height: AppDimensions.space20),
 
-              _SectionTitle(CopyEngine.prayerQuestion(_relation).toUpperCase()),
+              _SectionTitle(CopyEngine.prayerQuestion(l10n, _relation).toUpperCase()),
               const SizedBox(height: AppDimensions.space12),
               Row(children: [
-                Expanded(child: _TogglePill(label: 'Yes', isSelected: _praysFive == true,  onTap: () => setState(() => _praysFive = true))),
+                Expanded(child: _TogglePill(label: l10n.localeName == 'ar' ? 'نعم' : 'Yes', isSelected: _praysFive == true,  onTap: () => setState(() => _praysFive = true))),
                 const SizedBox(width: AppDimensions.space12),
-                Expanded(child: _TogglePill(label: 'No',  isSelected: _praysFive == false, onTap: () => setState(() => _praysFive = false))),
+                Expanded(child: _TogglePill(label: l10n.localeName == 'ar' ? 'لا' : 'No',  isSelected: _praysFive == false, onTap: () => setState(() => _praysFive = false))),
               ]),
 
               if (_gender == Gender.female) ...[
                 const SizedBox(height: AppDimensions.space20),
-                _SectionTitle(CopyEngine.hijabQuestion(_relation, 'female').toUpperCase()),
+                _SectionTitle(CopyEngine.hijabQuestion(l10n, _relation, 'female').toUpperCase()),
                 const SizedBox(height: AppDimensions.space12),
                 Wrap(
                   spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
                   children: _hijabOptions.map((o) => _SelectChip(
-                    label: o, isSelected: _hijab == o,
+                    label: _getLocalizedHijab(l10n, o), isSelected: _hijab == o,
                     onTap: () => setState(() => _hijab = _hijab == o ? null : o),
                   )).toList(),
                 ),
@@ -313,14 +368,14 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
 
               if (_gender == Gender.male) ...[
                 const SizedBox(height: AppDimensions.space20),
-                _SectionTitle(CopyEngine.beardQuestion(_relation).toUpperCase()),
+                _SectionTitle(CopyEngine.beardQuestion(l10n, _relation).toUpperCase()),
                 const SizedBox(height: AppDimensions.space12),
                 Wrap(
                   spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
                 children: {
-                  'yes': 'Yes',
-                  'no': 'No',
-                  'prefer_not_to_say': 'Prefer not to say',
+                  'yes': l10n.localeName == 'ar' ? 'نعم' : 'Yes',
+                  'no': l10n.localeName == 'ar' ? 'لا' : 'No',
+                  'prefer_not_to_say': l10n.onboarding_label_preferNotToSay,
                 }.entries.map((e) => _SelectChip(
                     label: e.value,
                     isSelected: _beardStyle == e.key,
@@ -328,17 +383,17 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
                   )).toList(),
                 ),
                 const SizedBox(height: AppDimensions.space20),
-                const _SectionTitle('RELIGIOUS LEADERSHIP'),
+                _SectionTitle(l10n.onboarding_label_leadership.toUpperCase()),
                 const SizedBox(height: AppDimensions.space4),
-                const Text('Can you lead congregational prayers?', style: AppTypography.caption),
+                Text(l10n.onboarding_label_leadershipQuestion, style: AppTypography.caption),
                 const SizedBox(height: AppDimensions.space12),
                 Wrap(
                   spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
                   children: {
-                    'leads_prayer': 'Leads Prayer',
-                    'learning': 'Learning',
-                    'not_yet': 'Not Yet',
-                    'prefer_not_to_say': 'Prefer Not to Say',
+                    'leads_prayer': l10n.onboarding_leadership_leads,
+                    'learning': l10n.onboarding_leadership_learning,
+                    'not_yet': l10n.onboarding_leadership_notYet,
+                    'prefer_not_to_say': l10n.onboarding_label_preferNotToSay,
                   }.entries.map((e) => _SelectChip(
                     label: e.value,
                     isSelected: _religiousLeadership == e.key,
@@ -349,17 +404,17 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
 
               // ── LIFESTYLE & DIET ─────────────────────────
               const SizedBox(height: AppDimensions.space28),
-              const _SectionTitle('LIFESTYLE & DIET'),
+              _SectionTitle(l10n.onboarding_label_lifestyleDiet.toUpperCase()),
               const SizedBox(height: AppDimensions.space6),
-              const Text('These are dealbreaker fields for many families. Please answer honestly.', style: AppTypography.caption),
+              Text(l10n.onboarding_label_lifestyleDietSub, style: AppTypography.caption),
               const SizedBox(height: AppDimensions.space16),
 
-              const _SectionTitle('DIET'),
+              _SectionTitle(l10n.onboarding_label_diet.toUpperCase()),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
                 spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
                 children: _dietOptions.map((opt) => _SelectChip(
-                  label: opt.$1, isSelected: _dietType == opt.$2,
+                  label: _getLocalizedDiet(l10n, opt.$2), isSelected: _dietType == opt.$2,
                   onTap: () => setState(() => _dietType = opt.$2),
                 )).toList(),
               ),
@@ -367,37 +422,37 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
 
               // ── SUBSTANCE USE ─────────────────────────────
               const SizedBox(height: AppDimensions.space20),
-              const _SectionTitle('SUBSTANCE USE'),
+              _SectionTitle(l10n.onboarding_label_substanceUse.toUpperCase()),
               const SizedBox(height: AppDimensions.space12),
 
-              const Text('Smoking', style: AppTypography.caption),
+              Text(l10n.onboarding_label_smoking, style: AppTypography.caption),
               const SizedBox(height: AppDimensions.space8),
               Wrap(
                 spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
                 children: _habitOptions.map((o) => _SelectChip(
-                  label: o, isSelected: _smokingHabit == o,
+                  label: _getLocalizedHabit(l10n, o), isSelected: _smokingHabit == o,
                   onTap: () => setState(() => _smokingHabit = o),
                 )).toList(),
               ),
               const SizedBox(height: AppDimensions.space16),
 
-              const Text('Vaping / E-Cigarettes', style: AppTypography.caption),
+              Text(l10n.onboarding_label_vaping, style: AppTypography.caption),
               const SizedBox(height: AppDimensions.space8),
               Wrap(
                 spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
                 children: _habitOptions.map((o) => _SelectChip(
-                  label: o, isSelected: _vapingHabit == o,
+                  label: _getLocalizedHabit(l10n, o), isSelected: _vapingHabit == o,
                   onTap: () => setState(() => _vapingHabit = o),
                 )).toList(),
               ),
               const SizedBox(height: AppDimensions.space16),
 
-              const Text('Hookah / Shisha', style: AppTypography.caption),
+              Text(l10n.onboarding_label_hookah, style: AppTypography.caption),
               const SizedBox(height: AppDimensions.space8),
               Wrap(
                 spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
                 children: _habitOptions.map((o) => _SelectChip(
-                  label: o, isSelected: _hookahHabit == o,
+                  label: _getLocalizedHabit(l10n, o), isSelected: _hookahHabit == o,
                   onTap: () => setState(() => _hookahHabit = o),
                 )).toList(),
               ),
@@ -410,11 +465,11 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
     );
   }
 
-  String _deenLabel(DeenLevel d) {
+  String _deenLabel(AppLocalizations l10n, DeenLevel d) {
     switch (d) {
-      case DeenLevel.practicing: return 'Practicing';
-      case DeenLevel.moderate:   return 'Moderate';
-      case DeenLevel.cultural:   return 'Cultural Muslim';
+      case DeenLevel.practicing: return l10n.onboarding_label_practicing;
+      case DeenLevel.moderate:   return l10n.onboarding_label_moderate;
+      case DeenLevel.cultural:   return l10n.onboarding_label_cultural;
     }
   }
 }

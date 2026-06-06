@@ -23,7 +23,7 @@ class FcmService {
   FcmService._();
   static final instance = FcmService._();
 
-  final _messaging = FirebaseMessaging.instance;
+  FirebaseMessaging get _messaging => FirebaseMessaging.instance;
   StreamSubscription<String>? _tokenRefreshSub;
 
   /// Device ID — persisted across sessions so the same device
@@ -63,6 +63,15 @@ class FcmService {
       debugPrint('[FcmService] 🔄 FCM token refreshed.');
       await _saveTokenToSupabase(newToken);
     });
+
+    // Handle notification taps when app is in background
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
+
+    // Handle notification that launched the app from terminated state
+    final initialMessage = await _messaging.getInitialMessage();
+    if (initialMessage != null) {
+      _handleNotificationTap(initialMessage);
+    }
   }
 
   /// Save (upsert) the FCM token to the user_fcm_tokens table in Supabase.
@@ -136,6 +145,42 @@ class FcmService {
       await prefs.setString('noor_device_id', deviceId);
     }
     return deviceId;
+  }
+
+  Function(String path)? _onNotificationTap;
+  String? _pendingNotificationPath;
+
+  set onNotificationTap(Function(String path)? callback) {
+    _onNotificationTap = callback;
+    if (callback != null && _pendingNotificationPath != null) {
+      callback(_pendingNotificationPath!);
+      _pendingNotificationPath = null;
+    }
+  }
+
+  void _handleNotificationTap(RemoteMessage message) {
+    debugPrint('[FcmService] Notification tapped: ${message.data}');
+    final type = message.data['type'] as String?;
+    String? path;
+
+    if (type == 'interest_received') {
+      path = '/home?tab=1';
+    } else if (type == 'new_message') {
+      final matchId = message.data['match_id'] as String?;
+      if (matchId != null) {
+        path = '/chat/$matchId';
+      }
+    } else if (type == 'interest_accepted') {
+      path = '/home?tab=1';
+    }
+
+    if (path != null) {
+      if (_onNotificationTap != null) {
+        _onNotificationTap!(path);
+      } else {
+        _pendingNotificationPath = path;
+      }
+    }
   }
 
   /// Dispose resources.

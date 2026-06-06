@@ -35,6 +35,8 @@ class DiscoveryFilter {
     this.quranMemorization,
     this.marriageTimeline,
     this.willingToRelocate,
+    this.diasporaMode = false,
+    this.diasporaCountries,
   });
 
   final int?    ageMin;
@@ -64,6 +66,9 @@ class DiscoveryFilter {
   final String? marriageTimeline;   // 'asap','6_months','1_year','2_plus_years','not_sure'
   final String? willingToRelocate;  // 'yes','no','open_to_discussion'
 
+  final bool    diasporaMode;
+  final List<String>? diasporaCountries;
+
   // Whether any filter is active
   bool get isActive =>
       ageMin != null ||
@@ -85,7 +90,9 @@ class DiscoveryFilter {
       livingExpectation != null ||
       quranMemorization != null ||
       marriageTimeline != null ||
-      willingToRelocate != null;
+      willingToRelocate != null ||
+      diasporaMode ||
+      (diasporaCountries != null && diasporaCountries!.isNotEmpty);
 
   int get activeCount {
     int count = 0;
@@ -108,6 +115,7 @@ class DiscoveryFilter {
     if (quranMemorization != null) count++;
     if (marriageTimeline != null) count++;
     if (willingToRelocate != null) count++;
+    if (diasporaMode) count++;
     return count;
   }
 
@@ -132,6 +140,8 @@ class DiscoveryFilter {
     String? quranMemorization,
     String? marriageTimeline,
     String? willingToRelocate,
+    bool?   diasporaMode,
+    List<String>? diasporaCountries,
     // Nulling sentinels
     bool clearSect              = false,
     bool clearDeenLevel         = false,
@@ -149,6 +159,7 @@ class DiscoveryFilter {
     bool clearQuranMemorization = false,
     bool clearMarriageTimeline  = false,
     bool clearWillingToRelocate = false,
+    bool clearDiasporaCountries = false,
   }) {
     return DiscoveryFilter(
       ageMin:             clearAgeRange          ? null : (ageMin           ?? this.ageMin),
@@ -171,6 +182,8 @@ class DiscoveryFilter {
       quranMemorization:  clearQuranMemorization ? null : (quranMemorization ?? this.quranMemorization),
       marriageTimeline:   clearMarriageTimeline  ? null : (marriageTimeline  ?? this.marriageTimeline),
       willingToRelocate:  clearWillingToRelocate ? null : (willingToRelocate ?? this.willingToRelocate),
+      diasporaMode:       diasporaMode           ?? this.diasporaMode,
+      diasporaCountries:  clearDiasporaCountries ? null : (diasporaCountries  ?? this.diasporaCountries),
     );
   }
 

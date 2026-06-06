@@ -51,129 +51,6 @@ const List<_Language> _kLanguages = [
   // ── Global / Major ─────────────────────────────────────
   _Language(code: 'ar', nativeName: 'العربية',           englishName: 'Arabic',               isRtl: true,  emoji: '🇸🇦'),
   _Language(code: 'en', nativeName: 'English',            englishName: 'English',              isRtl: false, emoji: '🌍'),
-  _Language(code: 'ur', nativeName: 'اردو',               englishName: 'Urdu',                 isRtl: true,  emoji: '🇵🇰'),
-  _Language(code: 'hi', nativeName: 'हिन्दी',               englishName: 'Hindi',                isRtl: false, emoji: '🇮🇳'),
-  _Language(code: 'bn', nativeName: 'বাংলা',               englishName: 'Bengali',              isRtl: false, emoji: '🇧🇩'),
-  _Language(code: 'id', nativeName: 'Bahasa Indonesia',   englishName: 'Indonesian',           isRtl: false, emoji: '🇮🇩'),
-  _Language(code: 'ms', nativeName: 'Bahasa Melayu',      englishName: 'Malay',                isRtl: false, emoji: '🇲🇾'),
-  _Language(code: 'tr', nativeName: 'Türkçe',             englishName: 'Turkish',              isRtl: false, emoji: '🇹🇷'),
-  _Language(code: 'fa', nativeName: 'فارسی',              englishName: 'Persian',              isRtl: true,  emoji: '🇮🇷'),
-  _Language(code: 'fr', nativeName: 'Français',           englishName: 'French',               isRtl: false, emoji: '🇫🇷'),
-
-  // ── South Asian ────────────────────────────────────────
-  _Language(code: 'ta', nativeName: 'தமிழ்',               englishName: 'Tamil',                isRtl: false, emoji: '🇮🇳'),
-  _Language(code: 'te', nativeName: 'తెలుగు',              englishName: 'Telugu',               isRtl: false, emoji: '🇮🇳'),
-  _Language(code: 'ml', nativeName: 'മലയാളം',              englishName: 'Malayalam',            isRtl: false, emoji: '🇮🇳'),
-  _Language(code: 'kn', nativeName: 'ಕನ್ನಡ',               englishName: 'Kannada',              isRtl: false, emoji: '🇮🇳'),
-  _Language(code: 'mr', nativeName: 'मराठी',               englishName: 'Marathi',              isRtl: false, emoji: '🇮🇳'),
-  _Language(code: 'gu', nativeName: 'ગુજરાતી',             englishName: 'Gujarati',             isRtl: false, emoji: '🇮🇳'),
-  _Language(code: 'pa', nativeName: 'ਪੰਜਾਬੀ',               englishName: 'Punjabi',              isRtl: false, emoji: '🇮🇳'),
-  _Language(code: 'ks', nativeName: 'کٲشُر',              englishName: 'Kashmiri',             isRtl: true,  emoji: '🇮🇳'),
-  _Language(code: 'sd', nativeName: 'سنڌي',               englishName: 'Sindhi',               isRtl: true,  emoji: '🇵🇰'),
-  _Language(code: 'or', nativeName: 'ଓଡ଼ିଆ',               englishName: 'Odia',                 isRtl: false, emoji: '🇮🇳'),
-  _Language(code: 'as', nativeName: 'অসমীয়া',             englishName: 'Assamese',             isRtl: false, emoji: '🇮🇳'),
-  _Language(code: 'ne', nativeName: 'नेपाली',               englishName: 'Nepali',               isRtl: false, emoji: '🇳🇵'),
-  _Language(code: 'si', nativeName: 'සිංහල',              englishName: 'Sinhala',              isRtl: false, emoji: '🇱🇰'),
-  _Language(code: 'dv', nativeName: 'ދިވެހި',               englishName: 'Dhivehi',              isRtl: true,  emoji: '🇲🇻'),
-
-  // ── South Asian regional ───────────────────────────────
-  _Language(code: 'bh', nativeName: 'भोजपुरी',             englishName: 'Bhojpuri',             isRtl: false, emoji: '🇮🇳'),
-  _Language(code: 'do', nativeName: 'डोगरी',              englishName: 'Dogri',                isRtl: false, emoji: '🇮🇳'),
-  _Language(code: 'mt', nativeName: 'مائیتھلی',            englishName: 'Maithili',             isRtl: false, emoji: '🇮🇳'),
-  _Language(code: 'tu', nativeName: 'ತುಳು',                englishName: 'Tulu',                 isRtl: false, emoji: '🇮🇳'),
-  _Language(code: 'ko', nativeName: 'کونکنی',             englishName: 'Konkani',              isRtl: false, emoji: '🇮🇳'),
-  _Language(code: 'sk', nativeName: 'سرائیکی',            englishName: 'Saraiki',              isRtl: true,  emoji: '🇵🇰'),
-  _Language(code: 'hk', nativeName: 'ہندکو',              englishName: 'Hindko',               isRtl: true,  emoji: '🇵🇰'),
-  _Language(code: 'bl', nativeName: 'بلوچی',              englishName: 'Balochi',              isRtl: true,  emoji: '🇵🇰'),
-  _Language(code: 'br', nativeName: 'براہوئی',             englishName: 'Brahui',               isRtl: true,  emoji: '🇵🇰'),
-  _Language(code: 'sn', nativeName: 'شینا',               englishName: 'Shina',                isRtl: true,  emoji: '🇵🇰'),
-  _Language(code: 'bs2', nativeName: 'بروشسکی',           englishName: 'Burushaski',           isRtl: true,  emoji: '🇵🇰'),
-  _Language(code: 'kh', nativeName: 'کھوار',              englishName: 'Khowar',               isRtl: true,  emoji: '🇵🇰'),
-  _Language(code: 'po', nativeName: 'پوٹھوہاری',           englishName: 'Pothohari',            isRtl: true,  emoji: '🇵🇰'),
-  _Language(code: 'ct', nativeName: 'চাটগাঁইয়া',           englishName: 'Chittagonian',         isRtl: false, emoji: '🇧🇩'),
-  _Language(code: 'sy', nativeName: 'সিলেটি',              englishName: 'Sylheti',              isRtl: false, emoji: '🇧🇩'),
-
-  // ── Pashto & Afghan ────────────────────────────────────
-  _Language(code: 'ps', nativeName: 'پښتو',               englishName: 'Pashto',               isRtl: true,  emoji: '🇦🇫'),
-  _Language(code: 'prs', nativeName: 'دری',               englishName: 'Dari',                 isRtl: true,  emoji: '🇦🇫'),
-
-  // ── Central Asian ──────────────────────────────────────
-  _Language(code: 'az', nativeName: 'Azərbaycan',         englishName: 'Azerbaijani',          isRtl: false, emoji: '🇦🇿'),
-  _Language(code: 'uz', nativeName: 'O\'zbek',            englishName: 'Uzbek',                isRtl: false, emoji: '🇺🇿'),
-  _Language(code: 'kk', nativeName: 'Қазақ',              englishName: 'Kazakh',               isRtl: false, emoji: '🇰🇿'),
-  _Language(code: 'ky', nativeName: 'Кыргыз',             englishName: 'Kyrgyz',               isRtl: false, emoji: '🇰🇬'),
-  _Language(code: 'tg', nativeName: 'Тоҷикӣ',             englishName: 'Tajik',                isRtl: false, emoji: '🇹🇯'),
-  _Language(code: 'tk', nativeName: 'Türkmen',            englishName: 'Turkmen',              isRtl: false, emoji: '🇹🇲'),
-
-  // ── MENA regional ─────────────────────────────────────
-  _Language(code: 'ku', nativeName: 'کوردی',              englishName: 'Kurdish',              isRtl: true,  emoji: '🇮🇶'),
-  _Language(code: 'ber', nativeName: 'ⵜⴰⵎⴰⵣⵉⵖⵜ',         englishName: 'Amazigh (Berber)',     isRtl: false, emoji: '🇩🇿'),
-  _Language(code: 'tmz', nativeName: 'ⵜⴰⵎⴰⵣⵉⵖⵜ',         englishName: 'Tamazight',            isRtl: false, emoji: '🇲🇦'),
-  _Language(code: 'nub', nativeName: 'Nobiin',            englishName: 'Nubian',               isRtl: false, emoji: '🇸🇩'),
-  _Language(code: 'bej', nativeName: 'Beja',              englishName: 'Beja',                 isRtl: false, emoji: '🇸🇩'),
-  _Language(code: 'fur', nativeName: 'Fur',               englishName: 'Fur',                  isRtl: false, emoji: '🇸🇩'),
-  _Language(code: 'hs', nativeName: 'الحسانية',           englishName: 'Hassaniya',            isRtl: true,  emoji: '🇱🇾'),
-  _Language(code: 'asy', nativeName: 'ܐܫܘܪܝܐ',           englishName: 'Assyrian',             isRtl: true,  emoji: '🇮🇶'),
-
-  // ── African ────────────────────────────────────────────
-  _Language(code: 'sw', nativeName: 'Kiswahili',          englishName: 'Swahili',              isRtl: false, emoji: '🇹🇿'),
-  _Language(code: 'so', nativeName: 'Soomaali',           englishName: 'Somali',               isRtl: false, emoji: '🇸🇴'),
-  _Language(code: 'ha', nativeName: 'Hausa',              englishName: 'Hausa',                isRtl: false, emoji: '🇳🇬'),
-  _Language(code: 'yo', nativeName: 'Yorùbá',             englishName: 'Yoruba',               isRtl: false, emoji: '🇳🇬'),
-  _Language(code: 'ff', nativeName: 'Fulfulde',           englishName: 'Fulfulde',             isRtl: false, emoji: '🇳🇬'),
-  _Language(code: 'kr', nativeName: 'Kanuri',             englishName: 'Kanuri',               isRtl: false, emoji: '🇳🇬'),
-  _Language(code: 'ig', nativeName: 'Igbo',               englishName: 'Igbo',                 isRtl: false, emoji: '🇳🇬'),
-  _Language(code: 'nup', nativeName: 'Nupe',              englishName: 'Nupe',                 isRtl: false, emoji: '🇳🇬'),
-  _Language(code: 'am', nativeName: 'አማርኛ',              englishName: 'Amharic',              isRtl: false, emoji: '🇪🇹'),
-  _Language(code: 'om', nativeName: 'Oromoo',             englishName: 'Oromo',                isRtl: false, emoji: '🇪🇹'),
-  _Language(code: 'aa', nativeName: 'Qafar',              englishName: 'Afar',                 isRtl: false, emoji: '🇪🇹'),
-  _Language(code: 'wo', nativeName: 'Wolof',              englishName: 'Wolof',                isRtl: false, emoji: '🇸🇳'),
-  _Language(code: 'mn', nativeName: 'Mandinka',           englishName: 'Mandinka',             isRtl: false, emoji: '🇸🇳'),
-  _Language(code: 'sr2', nativeName: 'Serer',             englishName: 'Serer',                isRtl: false, emoji: '🇸🇳'),
-  _Language(code: 'bm', nativeName: 'Bamanankan',         englishName: 'Bambara',              isRtl: false, emoji: '🇲🇱'),
-  _Language(code: 'sg2', nativeName: 'Songhai',           englishName: 'Songhai',              isRtl: false, emoji: '🇲🇱'),
-  _Language(code: 'tmq', nativeName: 'Tamasheq',          englishName: 'Tamasheq',             isRtl: false, emoji: '🇲🇱'),
-  _Language(code: 'dg', nativeName: 'Dagbani',            englishName: 'Dagbani',              isRtl: false, emoji: '🇬🇭'),
-  _Language(code: 'lg', nativeName: 'Luganda',            englishName: 'Luganda',              isRtl: false, emoji: '🇺🇬'),
-  _Language(code: 'af', nativeName: 'Afrikaans',          englishName: 'Afrikaans',            isRtl: false, emoji: '🇿🇦'),
-
-  // ── European ───────────────────────────────────────────
-  _Language(code: 'de', nativeName: 'Deutsch',            englishName: 'German',               isRtl: false, emoji: '🇩🇪'),
-  _Language(code: 'nl', nativeName: 'Nederlands',         englishName: 'Dutch',                isRtl: false, emoji: '🇳🇱'),
-  _Language(code: 'sv', nativeName: 'Svenska',            englishName: 'Swedish',              isRtl: false, emoji: '🇸🇪'),
-  _Language(code: 'no', nativeName: 'Norsk',              englishName: 'Norwegian',            isRtl: false, emoji: '🇳🇴'),
-  _Language(code: 'ru', nativeName: 'Русский',            englishName: 'Russian',              isRtl: false, emoji: '🇷🇺'),
-  _Language(code: 'bs', nativeName: 'Bosanski',           englishName: 'Bosnian',              isRtl: false, emoji: '🇧🇦'),
-  _Language(code: 'hr', nativeName: 'Hrvatski',           englishName: 'Croatian',             isRtl: false, emoji: '🇭🇷'),
-  _Language(code: 'sr', nativeName: 'Српски',             englishName: 'Serbian',              isRtl: false, emoji: '🇷🇸'),
-  _Language(code: 'sq', nativeName: 'Shqip',              englishName: 'Albanian',             isRtl: false, emoji: '🇦🇱'),
-  _Language(code: 'tt', nativeName: 'Татар',              englishName: 'Tatar',                isRtl: false, emoji: '🇷🇺'),
-  _Language(code: 'ce', nativeName: 'Нохчийн',            englishName: 'Chechen',              isRtl: false, emoji: '🇷🇺'),
-  _Language(code: 'av', nativeName: 'Авар',               englishName: 'Avar',                 isRtl: false, emoji: '🇷🇺'),
-  _Language(code: 'kbd', nativeName: 'Адыгэбзэ',          englishName: 'Circassian',           isRtl: false, emoji: '🇷🇺'),
-  _Language(code: 'ba', nativeName: 'Башҡорт',            englishName: 'Bashkir',              isRtl: false, emoji: '🇷🇺'),
-  _Language(code: 'rom', nativeName: 'Romani',            englishName: 'Romani',               isRtl: false, emoji: '🌍'),
-
-  // ── Southeast Asian ────────────────────────────────────
-  _Language(code: 'jv', nativeName: 'Basa Jawa',          englishName: 'Javanese',             isRtl: false, emoji: '🇮🇩'),
-  _Language(code: 'su', nativeName: 'Basa Sunda',         englishName: 'Sundanese',            isRtl: false, emoji: '🇮🇩'),
-  _Language(code: 'mad', nativeName: 'Madhurâ',           englishName: 'Madurese',             isRtl: false, emoji: '🇮🇩'),
-  _Language(code: 'ace', nativeName: 'Acèh',              englishName: 'Acehnese',             isRtl: false, emoji: '🇮🇩'),
-  _Language(code: 'min', nativeName: 'Minangkabau',       englishName: 'Minangkabau',          isRtl: false, emoji: '🇮🇩'),
-  _Language(code: 'bug', nativeName: 'ᨅᨔ ᨕᨘᨁᨗ',          englishName: 'Bugis',                isRtl: false, emoji: '🇮🇩'),
-  _Language(code: 'bet', nativeName: 'Betawi',            englishName: 'Betawi',               isRtl: false, emoji: '🇮🇩'),
-  _Language(code: 'tl', nativeName: 'Filipino',           englishName: 'Filipino',             isRtl: false, emoji: '🇵🇭'),
-  _Language(code: 'mrw', nativeName: 'Maranao',           englishName: 'Maranao',              isRtl: false, emoji: '🇵🇭'),
-  _Language(code: 'tsg', nativeName: 'Tausug',            englishName: 'Tausug',               isRtl: false, emoji: '🇵🇭'),
-  _Language(code: 'mdh', nativeName: 'Maguindanao',       englishName: 'Maguindanao',          isRtl: false, emoji: '🇵🇭'),
-  _Language(code: 'yka', nativeName: 'Yakan',             englishName: 'Yakan',                isRtl: false, emoji: '🇵🇭'),
-  _Language(code: 'th', nativeName: 'ไทย',                englishName: 'Thai',                 isRtl: false, emoji: '🇹🇭'),
-  _Language(code: 'my', nativeName: 'မြန်မာ',             englishName: 'Burmese',              isRtl: false, emoji: '🇲🇲'),
-  _Language(code: 'rhg', nativeName: 'Rohingya',          englishName: 'Rohingya',             isRtl: false, emoji: '🇲🇲'),
-
-  // ── Americas ───────────────────────────────────────────
-  _Language(code: 'es', nativeName: 'Español',            englishName: 'Spanish',              isRtl: false, emoji: '🇪🇸'),
-  _Language(code: 'pt', nativeName: 'Português',          englishName: 'Portuguese',           isRtl: false, emoji: '🇧🇷'),
 ];
 
 // ── Screen ────────────────────────────────────────────────────
@@ -272,7 +149,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen>
             center: Alignment(0, -0.5),  // slightly above center
             radius: 1.2,
             colors: [
-              Color(0xFF151522),  // Deep premium navy-charcoal core
+              AppColors.navyCharcoal,  // Deep premium navy-charcoal core
               AppColors.obsidianNight,  // Deep midnight edges
             ],
           ),

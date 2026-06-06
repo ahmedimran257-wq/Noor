@@ -1,0 +1,4 @@
+-- ============================================================
+-- MIGRATION 034: DELETE MOCK CITIES (DEPRECATED & EMPTIED)
+-- ============================================================
+-- Empty since migration 032 is emptied.

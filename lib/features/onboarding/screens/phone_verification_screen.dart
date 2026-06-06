@@ -225,7 +225,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
               center: Alignment(0, -0.5),  // slightly above center
               radius: 1.2,
               colors: [
-                Color(0xFF151522),  // Deep premium navy-charcoal core
+                AppColors.navyCharcoal,  // Deep premium navy-charcoal core
                 AppColors.obsidianNight,  // Deep midnight edges
               ],
             ),
@@ -1207,7 +1207,7 @@ class _CountryPickerScreenState extends State<_CountryPickerScreen> {
             center: Alignment(0, -0.5),  // slightly above center
             radius: 1.2,
             colors: [
-              Color(0xFF151522),  // Deep premium navy-charcoal core
+              AppColors.navyCharcoal,  // Deep premium navy-charcoal core
               AppColors.obsidianNight,  // Deep midnight edges
             ],
           ),

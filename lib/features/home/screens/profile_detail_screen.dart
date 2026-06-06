@@ -18,7 +18,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import '../../../core/widgets/loaders/noor_blur_image.dart';
 import '../../../core/mock/mock_profiles.dart';
 import '../../../core/cubits/block_report/block_report_cubit.dart';
 import '../../../core/cubits/interests/interests_cubit.dart';
@@ -38,12 +38,14 @@ class ProfileDetailScreen extends StatefulWidget {
     required this.heroTag,
     required this.isInterestSent,
     required this.onInterestSent,
+    this.isMutualMatch = false,
   });
 
   final MockProfile  profile;
   final String       heroTag;
   final bool         isInterestSent;
   final VoidCallback onInterestSent;
+  final bool         isMutualMatch;
 
   @override
   State<ProfileDetailScreen> createState() => _ProfileDetailScreenState();
@@ -197,6 +199,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                       totalPhotos: _totalPhotos,
                       currentPage: _photoPage,
                       onPageChanged: (i) => setState(() => _photoPage = i),
+                      isMutualMatch: widget.isMutualMatch,
                     ),
                   ),
                 ),
@@ -213,7 +216,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     // Name + age + location
-                    _NameBlock(profile: p),
+                    _NameBlock(profile: p, isMutualMatch: widget.isMutualMatch),
                     const SizedBox(height: AppDimensions.space20),
 
                     // Compatibility indicator
@@ -249,19 +252,26 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
                     // Background
                     // Education & Career (no marital/family — those go in Family)
-                    if (p.occupation != null || p.education != null) ...[
+                    if (p.occupation != null || p.education != null || p.incomeBracket != null) ...[
                       const _SectionHeader(label: 'Education & Career'),
                       const SizedBox(height: AppDimensions.space12),
                       _DetailGrid(items: [
                         if (p.occupation != null) _DetailItem(label: 'Occupation', value: p.occupation!),
                         if (p.education  != null) _DetailItem(label: 'Education',  value: p.education!),
+                        if (p.incomeBracket != null)
+                          _DetailItem(
+                            label: 'Income Bracket',
+                            value: widget.isMutualMatch
+                                ? p.incomeBracket!
+                                : '🔒 Locked (Mutual match only)',
+                          ),
                       ]),
                       const SizedBox(height: AppDimensions.space28),
                     ],
 
                     // Family — blueprint section 5 of 6
                     if (p.familyType != null || p.maritalStatus != null ||
-                        p.marriageTimeline != null || p.willingToRelocate != null) ...[
+                        p.marriageTimeline != null || p.willingToRelocate != null || p.familyOriginCity != null) ...[
                       const _SectionHeader(label: 'Family & Future'),
                       const SizedBox(height: AppDimensions.space12),
                       _DetailGrid(items: [
@@ -270,6 +280,13 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                         if (p.marriageTimeline != null) _DetailItem(label: 'Timeline', value: _formatTimeline(p.marriageTimeline!)),
                         if (p.willingToRelocate != null) _DetailItem(label: 'Relocate', value: _formatRelocate(p.willingToRelocate!)),
                         if (p.livingExpectation != null) _DetailItem(label: 'Living', value: _formatLiving(p.livingExpectation!)),
+                        if (p.familyOriginCity != null)
+                          _DetailItem(
+                            label: 'Origin City',
+                            value: widget.isMutualMatch
+                                ? p.familyOriginCity!
+                                : '🔒 Locked (Mutual match only)',
+                          ),
                       ]),
                       const SizedBox(height: AppDimensions.space28),
                     ],
@@ -408,12 +425,14 @@ class _PhotoCarousel extends StatelessWidget {
     required this.totalPhotos,
     required this.currentPage,
     required this.onPageChanged,
+    required this.isMutualMatch,
   });
 
   final MockProfile profile;
   final int         totalPhotos;
   final int         currentPage;
   final ValueChanged<int> onPageChanged;
+  final bool        isMutualMatch;
 
   @override
   Widget build(BuildContext context) {
@@ -427,6 +446,7 @@ class _PhotoCarousel extends StatelessWidget {
           itemBuilder:   (_, i) => _SinglePhotoSlide(
             profile:  profile,
             index:    i,
+            isMutualMatch: isMutualMatch,
           ),
         ),
 
@@ -473,13 +493,18 @@ class _PhotoCarousel extends StatelessWidget {
 }
 
 class _SinglePhotoSlide extends StatelessWidget {
-  const _SinglePhotoSlide({required this.profile, required this.index});
+  const _SinglePhotoSlide({
+    required this.profile,
+    required this.index,
+    required this.isMutualMatch,
+  });
   final MockProfile profile;
   final int         index;
+  final bool        isMutualMatch;
 
   @override
   Widget build(BuildContext context) {
-    final isPrivate = profile.isPhotoPrivate && index > 0;
+    final isPrivate = profile.isPhotoPrivate && index > 0 && !isMutualMatch;
 
     return GestureDetector(
       onTap: () => _openFullScreen(context),
@@ -493,7 +518,7 @@ class _SinglePhotoSlide extends StatelessWidget {
         ),
         child: isPrivate
             ? _PrivateSlide(photoCount: profile.photoCount)
-            : _PublicSlide(photoUrl: profile.photoUrl, index: index),
+            : _PublicSlide(photoUrl: profile.photoUrl, index: index, blurhash: profile.blurhash),
       ),
     );
   }
@@ -503,11 +528,15 @@ class _SinglePhotoSlide extends StatelessWidget {
     Navigator.of(context).push(
       PageRouteBuilder(
         opaque:              false,
-        barrierColor:        Colors.black87,
+        barrierColor:        AppColors.overlayBlack87,
         barrierDismissible:  true,
         pageBuilder: (ctx, animation, _) => FadeTransition(
           opacity: animation,
-          child: _FullScreenPhotoViewer(profile: profile, initialIndex: index),
+          child: _FullScreenPhotoViewer(
+            profile: profile,
+            initialIndex: index,
+            isMutualMatch: isMutualMatch,
+          ),
         ),
       ),
     );
@@ -515,18 +544,18 @@ class _SinglePhotoSlide extends StatelessWidget {
 }
 
 class _PublicSlide extends StatelessWidget {
-  const _PublicSlide({required this.photoUrl, required this.index});
+  const _PublicSlide({required this.photoUrl, required this.index, this.blurhash});
   final String? photoUrl;
   final int     index;
+  final String? blurhash;
 
   @override
   Widget build(BuildContext context) {
     if (photoUrl != null && index == 0) {
-      return CachedNetworkImage(
+      return NoorBlurImage(
         imageUrl: photoUrl!,
+        blurhash: blurhash,
         fit: BoxFit.cover,
-        errorWidget: (_, __, ___) => const _PersonPlaceholder(),
-        placeholder: (_, __) => const _PersonPlaceholder(),
       );
     }
     return const _PersonPlaceholder();
@@ -582,12 +611,19 @@ class _PersonPlaceholder extends StatelessWidget {
 // ── Full-Screen Photo Viewer ──────────────────────────────────
 
 class _FullScreenPhotoViewer extends StatelessWidget {
-  const _FullScreenPhotoViewer({required this.profile, required this.initialIndex});
+  const _FullScreenPhotoViewer({
+    required this.profile,
+    required this.initialIndex,
+    required this.isMutualMatch,
+  });
   final MockProfile profile;
   final int         initialIndex;
+  final bool        isMutualMatch;
 
   @override
   Widget build(BuildContext context) {
+    final isPrivate = profile.isPhotoPrivate && initialIndex > 0 && !isMutualMatch;
+
     return Stack(
       children: [
         // Dismissible background
@@ -607,11 +643,24 @@ class _FullScreenPhotoViewer extends StatelessWidget {
                   colors: [Color(0xFF1A1A2F), AppColors.obsidianNight],
                 ),
               ),
-              child: const Icon(
-                Icons.person_outline_rounded,
-                color: AppColors.slateMist,
-                size:  120,
-              ),
+              child: isPrivate
+                  ? const Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.lock_outline_rounded, color: AppColors.slateMist, size: 60),
+                          SizedBox(height: 12),
+                          Text('Locked', style: AppTypography.bodyMuted),
+                        ],
+                      ),
+                    )
+                  : (profile.photoUrl != null && initialIndex == 0
+                      ? NoorBlurImage(
+                          imageUrl: profile.photoUrl!,
+                          blurhash: profile.blurhash,
+                          fit: BoxFit.contain,
+                        )
+                      : const Icon(Icons.person_outline_rounded, color: AppColors.slateMist, size: 120)),
             ),
           ),
         ),
@@ -667,8 +716,9 @@ class _HeaderButton extends StatelessWidget {
 // ── Name Block ────────────────────────────────────────────────
 
 class _NameBlock extends StatelessWidget {
-  const _NameBlock({required this.profile});
+  const _NameBlock({required this.profile, required this.isMutualMatch});
   final MockProfile profile;
+  final bool isMutualMatch;
 
   @override
   Widget build(BuildContext context) {
@@ -682,6 +732,10 @@ class _NameBlock extends StatelessWidget {
       heightStr = '$cm cm ($feet ft $inches in)';
     }
 
+    final displayName = isMutualMatch
+        ? '${profile.firstName} ${profile.lastName ?? profile.lastNameInitial}'
+        : '${profile.firstName} ${profile.lastNameInitial}.';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -689,7 +743,7 @@ class _NameBlock extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                '${profile.firstName} ${profile.lastNameInitial}.',
+                displayName,
                 style: AppTypography.screenTitle.copyWith(fontSize: 30),
               ),
             ),
@@ -1095,7 +1149,7 @@ class _ReportBlockSheet extends StatelessWidget {
       margin:  const EdgeInsets.all(AppDimensions.space16),
       padding: const EdgeInsets.all(AppDimensions.space24),
       decoration: BoxDecoration(
-        color:        const Color(0xFF13131A),
+        color:        AppColors.surfaceElevated,
         borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
         border:       Border.all(color: AppColors.cardBorder),
       ),

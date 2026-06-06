@@ -225,7 +225,7 @@ class _SheetBase extends StatelessWidget {
           AppDimensions.space16, AppDimensions.space16),
       padding: const EdgeInsets.all(AppDimensions.space24),
       decoration: BoxDecoration(
-        color:        const Color(0xFF13131A),
+        color:        AppColors.surfaceElevated,
         borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
         border:       Border.all(color: AppColors.cardBorder),
       ),

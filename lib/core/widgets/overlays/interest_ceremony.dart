@@ -23,6 +23,7 @@ import 'package:flutter/services.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimensions.dart';
 import '../../theme/app_typography.dart';
+import '../../theme/noor_spring.dart';
 
 // ── Public API ────────────────────────────────────────────────
 
@@ -85,7 +86,13 @@ class _InterestCeremonyOverlayState extends State<_InterestCeremonyOverlay>
       duration: const Duration(milliseconds: 500),
     );
     _ringRadius = Tween<double>(begin: 0, end: 60).animate(
-      CurvedAnimation(parent: _ringController, curve: Curves.easeOutCubic),
+      CurvedAnimation(
+        parent: _ringController,
+        curve: const SpringCurve(
+          spring: NoorSpring.bouncy,
+          duration: Duration(milliseconds: 500),
+        ),
+      ),
     );
     _ringOpacity = Tween<double>(begin: 1, end: 0).animate(
       CurvedAnimation(
@@ -99,7 +106,13 @@ class _InterestCeremonyOverlayState extends State<_InterestCeremonyOverlay>
       duration: const Duration(milliseconds: 400),
     );
     _particleProgress = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _particleController, curve: Curves.easeOut),
+      CurvedAnimation(
+        parent: _particleController,
+        curve: const SpringCurve(
+          spring: NoorSpring.standard,
+          duration: Duration(milliseconds: 400),
+        ),
+      ),
     );
     _particleOpacity = Tween<double>(begin: 1, end: 0).animate(
       CurvedAnimation(parent: _particleController, curve: Curves.easeIn),
@@ -107,10 +120,16 @@ class _InterestCeremonyOverlayState extends State<_InterestCeremonyOverlay>
 
     _checkController = AnimationController(
       vsync:    this,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 400),
     );
     _checkProgress = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _checkController, curve: Curves.easeInOut),
+      CurvedAnimation(
+        parent: _checkController,
+        curve: const SpringCurve(
+          spring: NoorSpring.bouncy,
+          duration: Duration(milliseconds: 400),
+        ),
+      ),
     );
 
     _textController = AnimationController(

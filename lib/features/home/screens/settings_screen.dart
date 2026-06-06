@@ -423,7 +423,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF12121A),
+        backgroundColor: AppColors.surfaceMid,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
           side: const BorderSide(color: AppColors.cardBorder),
@@ -603,7 +603,7 @@ class _GuardianSectionState extends State<_GuardianSection> {
                   title: const Text('Relationship', style: AppTypography.body),
                   trailing: DropdownButton<String>(
                     value:           _relationship,
-                    dropdownColor:   const Color(0xFF1A1A25),
+                    dropdownColor:   AppColors.surfaceDark,
                     underline:       const SizedBox.shrink(),
                     style:           AppTypography.caption.copyWith(
                         color: AppColors.champagneGold),
@@ -803,19 +803,19 @@ class _PrivacySectionState extends State<_PrivacySection> {
               Container(
                 padding: const EdgeInsets.all(AppDimensions.space12),
                 decoration: BoxDecoration(
-                  color:        const Color(0x1AF6C344),
+                  color:        AppColors.premiumGold.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                  border:       Border.all(color: const Color(0x4AF6C344)),
+                  border:       Border.all(color: AppColors.premiumGold.withValues(alpha: 0.3)),
                 ),
                 child: Row(children: [
                   const Icon(Icons.visibility_off_outlined,
-                      color: Color(0xFFF6C344), size: 18),
+                      color: AppColors.premiumGold, size: 18),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Your profile is hidden. No one can find you.',
                       style: AppTypography.caption.copyWith(
-                          color: const Color(0xFFF6C344)),
+                          color: AppColors.premiumGold),
                     ),
                   ),
                 ]),
@@ -890,7 +890,7 @@ class _PrivacySectionState extends State<_PrivacySection> {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF12121A),
+        backgroundColor: AppColors.surfaceMid,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
           side: const BorderSide(color: AppColors.cardBorder),
@@ -1058,7 +1058,7 @@ class _LanguagePickerSheet extends StatelessWidget {
     final bottomPad = MediaQuery.of(context).viewPadding.bottom;
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFF12121A),
+        color: AppColors.surfaceMid,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         border: Border(top: BorderSide(color: AppColors.cardBorder)),
       ),
@@ -1335,7 +1335,7 @@ class _ReportHistorySheet extends StatelessWidget {
     final bottomPad = MediaQuery.of(context).viewPadding.bottom;
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFF12121A),
+        color: AppColors.surfaceMid,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         border: Border(top: BorderSide(color: AppColors.cardBorder)),
       ),
@@ -1425,7 +1425,7 @@ class _SimplePickerSheetState extends State<_SimplePickerSheet> {
     final bottomPad = MediaQuery.of(context).viewPadding.bottom;
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFF12121A),
+        color: AppColors.surfaceMid,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         border: Border(top: BorderSide(color: AppColors.cardBorder)),
       ),

@@ -89,6 +89,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         : 'male';
     final isFemale = gender == 'female';
 
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final bool isSmallScreen = screenHeight < 750;
+
+    final double spaceLarge = isSmallScreen ? 16 : 36;
+    final double spaceMedium = isSmallScreen ? 12 : 28;
+    final double spaceSmall = isSmallScreen ? 10 : 20;
+
     return BlocConsumer<SubscriptionCubit, SubscriptionState>(
       listener: (context, state) {
         if (state.successMessage != null) {
@@ -114,7 +121,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
           ),
           body: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+            padding: EdgeInsets.fromLTRB(20, 0, 20, isSmallScreen ? 20 : 40),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -123,31 +130,33 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                   position: _headerSlide,
                   child: FadeTransition(
                     opacity: _headerFade,
-                    child: _Header(isFemale: isFemale),
+                    child: _Header(isFemale: isFemale, isSmallScreen: isSmallScreen),
                   ),
                 ),
 
-                const SizedBox(height: 36),
+                SizedBox(height: spaceLarge),
 
                 // ── Plan Cards ──────────────────────────────
                 _PlanCards(
                   pricing:      _pricing,
                   selectedPlan: _selectedPlan,
                   onSelect: (plan) => setState(() => _selectedPlan = plan),
+                  isSmallScreen: isSmallScreen,
                 ),
 
-                const SizedBox(height: 28),
+                SizedBox(height: spaceMedium),
 
                 // ── What's included ─────────────────────────
-                _IncludedFeatures(isFemale: isFemale),
+                _IncludedFeatures(isFemale: isFemale, isSmallScreen: isSmallScreen),
 
-                const SizedBox(height: 36),
+                SizedBox(height: spaceLarge),
 
                 // ── CTA Button ──────────────────────────────
                 _CtaButton(
                   selectedPlan: _selectedPlan,
                   pricing:      _pricing,
                   isLoading: state.isLoading,
+                  isSmallScreen: isSmallScreen,
                   onTap: () {
                     final planId = _selectedPlan == 'annual'
                         ? SubscriptionCubit.annualProductId
@@ -156,11 +165,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                   },
                 ),
 
-                const SizedBox(height: 20),
+                SizedBox(height: spaceSmall),
 
                 // ── Secondary links ─────────────────────────
                 _SecondaryLinks(
                   isLoading: state.isLoading,
+                  isSmallScreen: isSmallScreen,
                   onRestore: () => context.read<SubscriptionCubit>().restore(),
                 ),
               ],
@@ -198,8 +208,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
 // ── Header ────────────────────────────────────────────────────
 
 class _Header extends StatelessWidget {
-  const _Header({this.isFemale = false});
+  const _Header({this.isFemale = false, this.isSmallScreen = false});
   final bool isFemale;
+  final bool isSmallScreen;
 
   @override
   Widget build(BuildContext context) {
@@ -208,27 +219,32 @@ class _Header extends StatelessWidget {
       children: [
         // Gold crown icon
         Container(
-          width: 56,
-          height: 56,
+          width: isSmallScreen ? 44 : 56,
+          height: isSmallScreen ? 44 : 56,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: AppColors.goldGlow,
             border: Border.all(color: AppColors.goldBorder, width: 1.5),
           ),
-          child: const Icon(Icons.workspace_premium_rounded,
-              color: AppColors.champagneGold, size: 28),
+          child: Icon(Icons.workspace_premium_rounded,
+              color: AppColors.champagneGold, size: isSmallScreen ? 22 : 28),
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: isSmallScreen ? 12 : 20),
         Text(
           isFemale ? 'Unlock Premium' : 'Unlock NOOR',
-          style: AppTypography.screenTitle,
+          style: AppTypography.screenTitle.copyWith(
+            fontSize: isSmallScreen ? 22 : 28,
+          ),
         ),
         const SizedBox(height: 8),
         Text(
           isFemale
               ? 'You already message free.\nUnlock advanced features.'
               : 'Women message free.\nMen subscribe to connect.',
-          style: AppTypography.bodyMuted.copyWith(height: 1.6),
+          style: AppTypography.bodyMuted.copyWith(
+            height: 1.6,
+            fontSize: isSmallScreen ? 13 : 15,
+          ),
         ),
       ],
     );
@@ -241,11 +257,13 @@ class _PlanCards extends StatelessWidget {
   final DisplayPricing pricing;
   final String      selectedPlan;
   final void Function(String) onSelect;
+  final bool isSmallScreen;
 
   const _PlanCards({
     required this.pricing,
     required this.selectedPlan,
     required this.onSelect,
+    this.isSmallScreen = false,
   });
 
   @override
@@ -262,6 +280,7 @@ class _PlanCards extends StatelessWidget {
             isBest:    false,
             savings:   null,
             isSelected: selectedPlan == 'monthly',
+            isSmallScreen: isSmallScreen,
             onTap:     () => onSelect('monthly'),
           ),
         ),
@@ -276,6 +295,7 @@ class _PlanCards extends StatelessWidget {
             isBest:    true,
             savings:   pricing.savingsPercent,
             isSelected: selectedPlan == 'annual',
+            isSmallScreen: isSmallScreen,
             onTap:     () => onSelect('annual'),
           ),
         ),
@@ -293,6 +313,7 @@ class _PlanCard extends StatelessWidget {
   final bool    isBest;
   final int?    savings;
   final bool    isSelected;
+  final bool    isSmallScreen;
   final VoidCallback onTap;
 
   const _PlanCard({
@@ -305,6 +326,7 @@ class _PlanCard extends StatelessWidget {
     required this.savings,
     required this.isSelected,
     required this.onTap,
+    this.isSmallScreen = false,
   });
 
   @override
@@ -325,7 +347,7 @@ class _PlanCard extends StatelessWidget {
               : AppColors.surfaceGlass,
           border: Border.all(color: borderColor, width: isSelected ? 1.5 : 1),
         ),
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -344,23 +366,23 @@ class _PlanCard extends StatelessWidget {
                   style: AppTypography.sectionLabel.copyWith(
                     color: AppColors.obsidianNight,
                     fontWeight: FontWeight.w700,
-                    fontSize: 9,
+                    fontSize: 8,
                     letterSpacing: 1,
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: isSmallScreen ? 6 : 10),
             ] else
-              const SizedBox(height: 23), // align with badge row
+              SizedBox(height: isSmallScreen ? 20 : 23), // align with badge row
 
             Text(label,
                 style: AppTypography.captionMedium
-                    .copyWith(color: AppColors.slateMist)),
+                    .copyWith(color: AppColors.slateMist, fontSize: isSmallScreen ? 12 : 14)),
             const SizedBox(height: 6),
             Text(
               price,
               style: AppTypography.screenTitle.copyWith(
-                fontSize: 22,
+                fontSize: isSmallScreen ? 18 : 22,
                 color: isSelected
                     ? AppColors.champagneGold
                     : AppColors.pearlWhite,
@@ -368,26 +390,26 @@ class _PlanCard extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(period,
-                style: AppTypography.caption.copyWith(fontSize: 11)),
+                style: AppTypography.caption.copyWith(fontSize: 10)),
             const SizedBox(height: 4),
             // Billing note (Billed annually / monthly)
             Text(
               billing,
               style: AppTypography.caption.copyWith(
-                fontSize:   10,
+                fontSize:   9,
                 color:      AppColors.slateMist.withValues(alpha: 0.7),
                 fontStyle:  FontStyle.italic,
               ),
             ),
 
-            const SizedBox(height: 12),
+            SizedBox(height: isSmallScreen ? 8 : 12),
 
             // Selection indicator
             Center(
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                width: 20,
-                height: 20,
+                width: 18,
+                height: 18,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
@@ -402,7 +424,7 @@ class _PlanCard extends StatelessWidget {
                 ),
                 child: isSelected
                     ? const Icon(Icons.check_rounded,
-                        size: 12, color: AppColors.obsidianNight)
+                        size: 10, color: AppColors.obsidianNight)
                     : null,
               ),
             ),
@@ -416,8 +438,9 @@ class _PlanCard extends StatelessWidget {
 // ── Included Features ─────────────────────────────────────────
 
 class _IncludedFeatures extends StatelessWidget {
-  const _IncludedFeatures({this.isFemale = false});
+  const _IncludedFeatures({this.isFemale = false, this.isSmallScreen = false});
   final bool isFemale;
+  final bool isSmallScreen;
 
   static const _maleFeatures = [
     (Icons.all_inclusive_rounded,       'Unlimited profile browsing'),
@@ -445,16 +468,18 @@ class _IncludedFeatures extends StatelessWidget {
         color: AppColors.surfaceGlass,
         border: Border.all(color: AppColors.cardBorder),
       ),
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isSmallScreen ? 12 : 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             "WHAT'S INCLUDED",
-            style: AppTypography.sectionLabel,
+            style: AppTypography.sectionLabel.copyWith(
+              fontSize: isSmallScreen ? 10 : 12,
+            ),
           ),
-          const SizedBox(height: 16),
-          ...features.map((f) => _FeatureRow(icon: f.$1, label: f.$2)),
+          SizedBox(height: isSmallScreen ? 10 : 16),
+          ...features.map((f) => _FeatureRow(icon: f.$1, label: f.$2, isSmallScreen: isSmallScreen)),
         ],
       ),
     );
@@ -464,27 +489,28 @@ class _IncludedFeatures extends StatelessWidget {
 class _FeatureRow extends StatelessWidget {
   final IconData icon;
   final String   label;
+  final bool isSmallScreen;
 
-  const _FeatureRow({required this.icon, required this.label});
+  const _FeatureRow({required this.icon, required this.label, this.isSmallScreen = false});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: isSmallScreen ? 8 : 12),
       child: Row(
         children: [
           Container(
-            width: 32,
-            height: 32,
+            width: isSmallScreen ? 24 : 32,
+            height: isSmallScreen ? 24 : 32,
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.goldGlow,
             ),
-            child: Icon(icon, color: AppColors.champagneGold, size: 16),
+            child: Icon(icon, color: AppColors.champagneGold, size: isSmallScreen ? 12 : 16),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: isSmallScreen ? 8 : 12),
           Expanded(
-            child: Text(label, style: AppTypography.body.copyWith(fontSize: 14)),
+            child: Text(label, style: AppTypography.body.copyWith(fontSize: isSmallScreen ? 12 : 14)),
           ),
         ],
       ),
@@ -498,6 +524,7 @@ class _CtaButton extends StatelessWidget {
   final String         selectedPlan;
   final DisplayPricing pricing;
   final bool           isLoading;
+  final bool           isSmallScreen;
   final VoidCallback onTap;
 
   const _CtaButton({
@@ -505,6 +532,7 @@ class _CtaButton extends StatelessWidget {
     required this.pricing,
     required this.isLoading,
     required this.onTap,
+    this.isSmallScreen = false,
   });
 
   @override
@@ -517,7 +545,7 @@ class _CtaButton extends StatelessWidget {
       onTap: isLoading ? null : onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        height: 56,
+        height: isSmallScreen ? 48 : 56,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
           color: isLoading
@@ -534,7 +562,7 @@ class _CtaButton extends StatelessWidget {
                   strokeWidth: 2.5,
                 ),
               )
-            : Text(label, style: AppTypography.button),
+            : Text(label, style: AppTypography.button.copyWith(fontSize: isSmallScreen ? 14 : 16)),
       ),
     );
   }
@@ -544,11 +572,13 @@ class _CtaButton extends StatelessWidget {
 
 class _SecondaryLinks extends StatelessWidget {
   final bool     isLoading;
+  final bool     isSmallScreen;
   final VoidCallback onRestore;
 
   const _SecondaryLinks({
     required this.isLoading,
     required this.onRestore,
+    this.isSmallScreen = false,
   });
 
   @override
@@ -557,13 +587,18 @@ class _SecondaryLinks extends StatelessWidget {
       children: [
         TextButton(
           onPressed: isLoading ? null : onRestore,
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 4 : 8),
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
           child: Text(
             'Restore Purchase',
             style: AppTypography.caption
-                .copyWith(color: AppColors.champagneGold),
+                .copyWith(color: AppColors.champagneGold, fontSize: isSmallScreen ? 12 : 14),
           ),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: isSmallScreen ? 2 : 4),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -572,10 +607,11 @@ class _SecondaryLinks extends StatelessWidget {
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
               child: Text('Privacy Policy',
                   style: AppTypography.caption
-                      .copyWith(fontSize: 12)),
+                      .copyWith(fontSize: isSmallScreen ? 11 : 12)),
             ),
             Text('·',
                 style:
@@ -585,18 +621,19 @@ class _SecondaryLinks extends StatelessWidget {
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
               child: Text('Terms of Service',
                   style: AppTypography.caption
-                      .copyWith(fontSize: 12)),
+                      .copyWith(fontSize: isSmallScreen ? 11 : 12)),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: isSmallScreen ? 4 : 8),
         Text(
           'Subscription auto-renews unless cancelled 24h before renewal.\nWomen always message free on NOOR.',
           style: AppTypography.caption
-              .copyWith(fontSize: 11, height: 1.5),
+              .copyWith(fontSize: isSmallScreen ? 10 : 11, height: 1.5),
           textAlign: TextAlign.center,
         ),
       ],

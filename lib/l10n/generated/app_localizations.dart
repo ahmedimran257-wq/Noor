@@ -515,7 +515,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboarding_label_vaping.
   ///
   /// In en, this message translates to:
-  /// **'Vaping / E-cigarettes'**
+  /// **'Vaping / E-Cigarettes'**
   String get onboarding_label_vaping;
 
   /// No description provided for @onboarding_label_hookah.
@@ -1045,6 +1045,588 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Interests'**
   String get interests_title;
+
+  /// No description provided for @onboarding_profileForWhom_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You can update this later from settings.'**
+  String get onboarding_profileForWhom_subtitle;
+
+  /// No description provided for @onboarding_profileForWhom_guardianCardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Guardian'**
+  String get onboarding_profileForWhom_guardianCardTitle;
+
+  /// No description provided for @onboarding_profileForWhom_guardianCardSub.
+  ///
+  /// In en, this message translates to:
+  /// **'I am creating this profile for someone'**
+  String get onboarding_profileForWhom_guardianCardSub;
+
+  /// No description provided for @onboarding_profileForWhom_creatingFor.
+  ///
+  /// In en, this message translates to:
+  /// **'I am creating this for my…'**
+  String get onboarding_profileForWhom_creatingFor;
+
+  /// No description provided for @onboarding_profileForWhom_relation_son.
+  ///
+  /// In en, this message translates to:
+  /// **'Son'**
+  String get onboarding_profileForWhom_relation_son;
+
+  /// No description provided for @onboarding_profileForWhom_relation_daughter.
+  ///
+  /// In en, this message translates to:
+  /// **'Daughter'**
+  String get onboarding_profileForWhom_relation_daughter;
+
+  /// No description provided for @onboarding_profileForWhom_relation_brother.
+  ///
+  /// In en, this message translates to:
+  /// **'Brother'**
+  String get onboarding_profileForWhom_relation_brother;
+
+  /// No description provided for @onboarding_profileForWhom_relation_sister.
+  ///
+  /// In en, this message translates to:
+  /// **'Sister'**
+  String get onboarding_profileForWhom_relation_sister;
+
+  /// No description provided for @onboarding_profileForWhom_selectRelation.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a relationship to continue'**
+  String get onboarding_profileForWhom_selectRelation;
+
+  /// No description provided for @onboarding_profileForWhom_selectOne.
+  ///
+  /// In en, this message translates to:
+  /// **'Select one to continue'**
+  String get onboarding_profileForWhom_selectOne;
+
+  /// No description provided for @onboarding_basicIdentity_guardianBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'You are filling this as a guardian. These details are about your {relation}.'**
+  String onboarding_basicIdentity_guardianBanner(String relation);
+
+  /// No description provided for @onboarding_basicIdentity_title_guardian.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us about your {relation}'**
+  String onboarding_basicIdentity_title_guardian(String relation);
+
+  /// No description provided for @onboarding_basicIdentity_subtitle_self.
+  ///
+  /// In en, this message translates to:
+  /// **'This is what others will see on your profile.'**
+  String get onboarding_basicIdentity_subtitle_self;
+
+  /// No description provided for @onboarding_basicIdentity_subtitle_guardian.
+  ///
+  /// In en, this message translates to:
+  /// **'This is what others will see on their profile.'**
+  String get onboarding_basicIdentity_subtitle_guardian;
+
+  /// No description provided for @onboarding_label_firstName_self.
+  ///
+  /// In en, this message translates to:
+  /// **'First name'**
+  String get onboarding_label_firstName_self;
+
+  /// No description provided for @onboarding_label_firstName_guardian.
+  ///
+  /// In en, this message translates to:
+  /// **'Candidate\'s first name'**
+  String get onboarding_label_firstName_guardian;
+
+  /// No description provided for @onboarding_hint_selectDateOfBirth.
+  ///
+  /// In en, this message translates to:
+  /// **'Select date of birth'**
+  String get onboarding_hint_selectDateOfBirth;
+
+  /// No description provided for @onboarding_error_under18_guardian.
+  ///
+  /// In en, this message translates to:
+  /// **'Your {relation} must be 18 or older to use NOOR.'**
+  String onboarding_error_under18_guardian(String relation);
+
+  /// No description provided for @onboarding_error_under18_self.
+  ///
+  /// In en, this message translates to:
+  /// **'You must be 18 or older to use NOOR. We look forward to welcoming you then.'**
+  String get onboarding_error_under18_self;
+
+  /// No description provided for @onboarding_label_gender_self.
+  ///
+  /// In en, this message translates to:
+  /// **'Gender'**
+  String get onboarding_label_gender_self;
+
+  /// No description provided for @onboarding_label_gender_guardian.
+  ///
+  /// In en, this message translates to:
+  /// **'Candidate\'s gender'**
+  String get onboarding_label_gender_guardian;
+
+  /// No description provided for @onboarding_label_country_self.
+  ///
+  /// In en, this message translates to:
+  /// **'Your country'**
+  String get onboarding_label_country_self;
+
+  /// No description provided for @onboarding_label_country_guardian.
+  ///
+  /// In en, this message translates to:
+  /// **'Their country'**
+  String get onboarding_label_country_guardian;
+
+  /// No description provided for @onboarding_hint_selectCountry.
+  ///
+  /// In en, this message translates to:
+  /// **'Select country'**
+  String get onboarding_hint_selectCountry;
+
+  /// No description provided for @onboarding_label_city_self.
+  ///
+  /// In en, this message translates to:
+  /// **'Your city'**
+  String get onboarding_label_city_self;
+
+  /// No description provided for @onboarding_label_city_guardian.
+  ///
+  /// In en, this message translates to:
+  /// **'Their city'**
+  String get onboarding_label_city_guardian;
+
+  /// No description provided for @onboarding_location_confirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed Location'**
+  String get onboarding_location_confirmed;
+
+  /// No description provided for @onboarding_hint_selectCommunity.
+  ///
+  /// In en, this message translates to:
+  /// **'Select community (optional)'**
+  String get onboarding_hint_selectCommunity;
+
+  /// No description provided for @onboarding_label_height_self.
+  ///
+  /// In en, this message translates to:
+  /// **'Your height'**
+  String get onboarding_label_height_self;
+
+  /// No description provided for @onboarding_label_height_guardian.
+  ///
+  /// In en, this message translates to:
+  /// **'Their height'**
+  String get onboarding_label_height_guardian;
+
+  /// No description provided for @onboarding_label_complexion.
+  ///
+  /// In en, this message translates to:
+  /// **'Complexion (Optional)'**
+  String get onboarding_label_complexion;
+
+  /// No description provided for @onboarding_hint_selectLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Select language'**
+  String get onboarding_hint_selectLanguage;
+
+  /// No description provided for @onboarding_label_residencyStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Residency Status (Optional)'**
+  String get onboarding_label_residencyStatus;
+
+  /// No description provided for @onboarding_label_specialNeeds.
+  ///
+  /// In en, this message translates to:
+  /// **'Special Needs (Optional)'**
+  String get onboarding_label_specialNeeds;
+
+  /// No description provided for @onboarding_islamicIdentity_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This helps match you with someone compatible.'**
+  String get onboarding_islamicIdentity_subtitle;
+
+  /// No description provided for @onboarding_label_subSect.
+  ///
+  /// In en, this message translates to:
+  /// **'School of thought (Optional)'**
+  String get onboarding_label_subSect;
+
+  /// No description provided for @onboarding_label_revert.
+  ///
+  /// In en, this message translates to:
+  /// **'Revert / Convert (Optional)'**
+  String get onboarding_label_revert;
+
+  /// No description provided for @onboarding_label_revertQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you a revert (convert) to Islam?'**
+  String get onboarding_label_revertQuestion;
+
+  /// No description provided for @onboarding_hijab_always.
+  ///
+  /// In en, this message translates to:
+  /// **'Always'**
+  String get onboarding_hijab_always;
+
+  /// No description provided for @onboarding_hijab_sometimes.
+  ///
+  /// In en, this message translates to:
+  /// **'Sometimes'**
+  String get onboarding_hijab_sometimes;
+
+  /// No description provided for @onboarding_hijab_no.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get onboarding_hijab_no;
+
+  /// No description provided for @onboarding_label_leadership.
+  ///
+  /// In en, this message translates to:
+  /// **'Religious Leadership'**
+  String get onboarding_label_leadership;
+
+  /// No description provided for @onboarding_label_leadershipQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Can you lead congregational prayers?'**
+  String get onboarding_label_leadershipQuestion;
+
+  /// No description provided for @onboarding_leadership_leads.
+  ///
+  /// In en, this message translates to:
+  /// **'Leads Prayer'**
+  String get onboarding_leadership_leads;
+
+  /// No description provided for @onboarding_leadership_learning.
+  ///
+  /// In en, this message translates to:
+  /// **'Learning'**
+  String get onboarding_leadership_learning;
+
+  /// No description provided for @onboarding_leadership_notYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Yet'**
+  String get onboarding_leadership_notYet;
+
+  /// No description provided for @onboarding_label_lifestyleDiet.
+  ///
+  /// In en, this message translates to:
+  /// **'Lifestyle & Diet'**
+  String get onboarding_label_lifestyleDiet;
+
+  /// No description provided for @onboarding_label_lifestyleDietSub.
+  ///
+  /// In en, this message translates to:
+  /// **'These are dealbreaker fields for many families. Please answer honestly.'**
+  String get onboarding_label_lifestyleDietSub;
+
+  /// No description provided for @onboarding_label_substanceUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Substance Use'**
+  String get onboarding_label_substanceUse;
+
+  /// No description provided for @onboarding_marriageDeen_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Marriage & Deen'**
+  String get onboarding_marriageDeen_title;
+
+  /// No description provided for @onboarding_marriageDeen_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Help us understand your journey and readiness.'**
+  String get onboarding_marriageDeen_subtitle;
+
+  /// No description provided for @onboarding_label_quranMemorization.
+  ///
+  /// In en, this message translates to:
+  /// **'Quran Memorization'**
+  String get onboarding_label_quranMemorization;
+
+  /// No description provided for @onboarding_quran_none.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get onboarding_quran_none;
+
+  /// No description provided for @onboarding_quran_some.
+  ///
+  /// In en, this message translates to:
+  /// **'Some Surahs'**
+  String get onboarding_quran_some;
+
+  /// No description provided for @onboarding_quran_partial.
+  ///
+  /// In en, this message translates to:
+  /// **'Partial Hifz'**
+  String get onboarding_quran_partial;
+
+  /// No description provided for @onboarding_quran_hafiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Hafiz / Hafiza'**
+  String get onboarding_quran_hafiz;
+
+  /// No description provided for @onboarding_label_religiousEducation.
+  ///
+  /// In en, this message translates to:
+  /// **'Religious Education'**
+  String get onboarding_label_religiousEducation;
+
+  /// No description provided for @onboarding_religiousEdu_selfTaught.
+  ///
+  /// In en, this message translates to:
+  /// **'Self-Taught'**
+  String get onboarding_religiousEdu_selfTaught;
+
+  /// No description provided for @onboarding_religiousEdu_madrasa.
+  ///
+  /// In en, this message translates to:
+  /// **'Madrasa'**
+  String get onboarding_religiousEdu_madrasa;
+
+  /// No description provided for @onboarding_religiousEdu_islamicUni.
+  ///
+  /// In en, this message translates to:
+  /// **'Islamic University'**
+  String get onboarding_religiousEdu_islamicUni;
+
+  /// No description provided for @onboarding_religiousEdu_alim.
+  ///
+  /// In en, this message translates to:
+  /// **'Alim Course'**
+  String get onboarding_religiousEdu_alim;
+
+  /// No description provided for @onboarding_label_marriageTimeline.
+  ///
+  /// In en, this message translates to:
+  /// **'Marriage Timeline'**
+  String get onboarding_label_marriageTimeline;
+
+  /// No description provided for @onboarding_label_marriageTimelineQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'When are you looking to get married?'**
+  String get onboarding_label_marriageTimelineQuestion;
+
+  /// No description provided for @onboarding_timeline_asap.
+  ///
+  /// In en, this message translates to:
+  /// **'As soon as possible'**
+  String get onboarding_timeline_asap;
+
+  /// No description provided for @onboarding_timeline_6months.
+  ///
+  /// In en, this message translates to:
+  /// **'Within 6 months'**
+  String get onboarding_timeline_6months;
+
+  /// No description provided for @onboarding_timeline_1year.
+  ///
+  /// In en, this message translates to:
+  /// **'Within a year'**
+  String get onboarding_timeline_1year;
+
+  /// No description provided for @onboarding_timeline_2years.
+  ///
+  /// In en, this message translates to:
+  /// **'2+ years'**
+  String get onboarding_timeline_2years;
+
+  /// No description provided for @onboarding_timeline_notSure.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sure yet'**
+  String get onboarding_timeline_notSure;
+
+  /// No description provided for @onboarding_label_niqab.
+  ///
+  /// In en, this message translates to:
+  /// **'Niqab'**
+  String get onboarding_label_niqab;
+
+  /// No description provided for @onboarding_niqab_wear.
+  ///
+  /// In en, this message translates to:
+  /// **'I wear niqab'**
+  String get onboarding_niqab_wear;
+
+  /// No description provided for @onboarding_niqab_open.
+  ///
+  /// In en, this message translates to:
+  /// **'Open to wearing'**
+  String get onboarding_niqab_open;
+
+  /// No description provided for @onboarding_niqab_dontWear.
+  ///
+  /// In en, this message translates to:
+  /// **'I don\'t wear niqab'**
+  String get onboarding_niqab_dontWear;
+
+  /// No description provided for @onboarding_label_mahrExpectation.
+  ///
+  /// In en, this message translates to:
+  /// **'Mahr Expectation'**
+  String get onboarding_label_mahrExpectation;
+
+  /// No description provided for @onboarding_label_mahrExpectationQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'What is your expectation for mahr?'**
+  String get onboarding_label_mahrExpectationQuestion;
+
+  /// No description provided for @onboarding_mahr_noPreference.
+  ///
+  /// In en, this message translates to:
+  /// **'No preference'**
+  String get onboarding_mahr_noPreference;
+
+  /// No description provided for @onboarding_mahr_modest.
+  ///
+  /// In en, this message translates to:
+  /// **'Modest'**
+  String get onboarding_mahr_modest;
+
+  /// No description provided for @onboarding_mahr_moderate.
+  ///
+  /// In en, this message translates to:
+  /// **'Moderate'**
+  String get onboarding_mahr_moderate;
+
+  /// No description provided for @onboarding_mahr_generous.
+  ///
+  /// In en, this message translates to:
+  /// **'Generous'**
+  String get onboarding_mahr_generous;
+
+  /// No description provided for @onboarding_mahr_toDiscuss.
+  ///
+  /// In en, this message translates to:
+  /// **'To discuss'**
+  String get onboarding_mahr_toDiscuss;
+
+  /// No description provided for @onboarding_label_workAfterMarriage.
+  ///
+  /// In en, this message translates to:
+  /// **'Work After Marriage'**
+  String get onboarding_label_workAfterMarriage;
+
+  /// No description provided for @onboarding_label_workAfterMarriageQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Would you like to work after marriage?'**
+  String get onboarding_label_workAfterMarriageQuestion;
+
+  /// No description provided for @onboarding_work_yes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes, I plan to work'**
+  String get onboarding_work_yes;
+
+  /// No description provided for @onboarding_work_no.
+  ///
+  /// In en, this message translates to:
+  /// **'No, I prefer not to'**
+  String get onboarding_work_no;
+
+  /// No description provided for @onboarding_label_mahrBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Mahr Budget'**
+  String get onboarding_label_mahrBudget;
+
+  /// No description provided for @onboarding_label_mahrBudgetQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'What mahr range are you prepared to offer?'**
+  String get onboarding_label_mahrBudgetQuestion;
+
+  /// No description provided for @onboarding_label_providerReadiness.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider Readiness'**
+  String get onboarding_label_providerReadiness;
+
+  /// No description provided for @onboarding_providerQuote.
+  ///
+  /// In en, this message translates to:
+  /// **'\"The best of you are the best to your wives.\" — Prophet Muhammad ﷺ\n\nBeing honest about your readiness helps build a strong foundation.'**
+  String get onboarding_providerQuote;
+
+  /// No description provided for @onboarding_label_housing.
+  ///
+  /// In en, this message translates to:
+  /// **'Housing'**
+  String get onboarding_label_housing;
+
+  /// No description provided for @onboarding_label_housingQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Can you provide a separate living space?'**
+  String get onboarding_label_housingQuestion;
+
+  /// No description provided for @onboarding_label_maintenance.
+  ///
+  /// In en, this message translates to:
+  /// **'Financial Maintenance'**
+  String get onboarding_label_maintenance;
+
+  /// No description provided for @onboarding_label_maintenanceQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you able to provide for a spouse financially?'**
+  String get onboarding_label_maintenanceQuestion;
+
+  /// No description provided for @onboarding_label_debtStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Debt Status'**
+  String get onboarding_label_debtStatus;
+
+  /// No description provided for @onboarding_label_debtStatusQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Your current financial obligations.'**
+  String get onboarding_label_debtStatusQuestion;
+
+  /// No description provided for @onboarding_debt_none.
+  ///
+  /// In en, this message translates to:
+  /// **'No debt'**
+  String get onboarding_debt_none;
+
+  /// No description provided for @onboarding_debt_manageable.
+  ///
+  /// In en, this message translates to:
+  /// **'Manageable debt'**
+  String get onboarding_debt_manageable;
+
+  /// No description provided for @onboarding_debt_significant.
+  ///
+  /// In en, this message translates to:
+  /// **'Significant debt'**
+  String get onboarding_debt_significant;
+
+  /// No description provided for @onboarding_marriageDeen_privacyNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'These details are not shown on your public profile. They are shared privately during the acceptance stage.'**
+  String get onboarding_marriageDeen_privacyNotice;
 }
 
 class _AppLocalizationsDelegate

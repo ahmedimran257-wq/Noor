@@ -20,6 +20,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../mock/mock_profiles.dart';
 import '../../services/supabase_service.dart';
+import '../../utils/noor_compute.dart';
 import '../block_report/block_report_cubit.dart';
 import 'discovery_feed_state.dart';
 
@@ -81,6 +82,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
             gender: p.gender,
             hasChildren: p.hasChildren,
             lastActiveAt: p.lastActiveAt,
+            countryCode: p.countryCode,
           ));
         }
       }
@@ -244,6 +246,8 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         quranMemorization:  j['quranMemorization'] as String?,
         marriageTimeline:   j['marriageTimeline'] as String?,
         willingToRelocate:  j['willingToRelocate'] as String?,
+        diasporaMode:       (j['diasporaMode'] as bool?) ?? false,
+        diasporaCountries:  j['diasporaCountries'] != null ? List<String>.from(j['diasporaCountries'] as Iterable) : null,
       );
     } catch (e) {
       debugPrint('DiscoveryFeedCubit: failed to load filter: $e');
@@ -279,6 +283,8 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         'quranMemorization':  f.quranMemorization,
         'marriageTimeline':   f.marriageTimeline,
         'willingToRelocate':  f.willingToRelocate,
+        'diasporaMode':       f.diasporaMode,
+        'diasporaCountries':  f.diasporaCountries,
       });
       await prefs.setString(_kFilterKey, json);
     } catch (e) {
@@ -316,6 +322,9 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         if (f.livingExpectation != null && f.livingExpectation!.isNotEmpty && p.livingExpectation != f.livingExpectation) return false;
         if (f.genderPref != null && f.genderPref!.isNotEmpty && p.gender != f.genderPref) return false;
         if (f.hasChildren != null && f.hasChildren == 'no' && p.hasChildren) return false;
+        if (f.diasporaMode && f.diasporaCountries != null && f.diasporaCountries!.isNotEmpty) {
+          if (p.countryCode == null || !f.diasporaCountries!.contains(p.countryCode)) return false;
+        }
       }
       return true;
     }).toList();
@@ -361,72 +370,12 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
               .neq('user_id', currentUserId);
           
           final list = response as List<dynamic>;
-          return list.map((row) => _mapDbToMockProfile(row as Map<String, dynamic>)).toList();
+          return compute(parseProfilesInBackground, list);
                 }
       } catch (e) {
         debugPrint('DiscoveryFeedCubit: Error fetching from Supabase, falling back to mock: $e');
       }
     }
     return _pool;
-  }
-
-  static MockProfile _mapDbToMockProfile(Map<String, dynamic> row) {
-    final gender = row['gender'] as String?;
-    final rawPhotoPath = row['photo_url'] as String?;
-    final photoCount = (row['photo_count'] as num?)?.toInt() ?? 0;
-    final photoPrivacy = row['photo_privacy'] as String?;
-
-    // §1.3 FIX: photo_url from DB is a storage path, not a URL.
-    // Generate a signed URL client-side if Supabase is available.
-    String? photoUrl;
-    if (rawPhotoPath != null && rawPhotoPath.isNotEmpty) {
-      try {
-        if (SupabaseService.isInitialized) {
-          photoUrl = SupabaseService.client.storage
-              .from('photos')
-              .getPublicUrl(rawPhotoPath);
-        }
-      } catch (_) {
-        // Fallback: use raw path if signed URL generation fails
-        photoUrl = rawPhotoPath;
-      }
-    }
-
-    return MockProfile(
-      firstName: (row['first_name'] as String?) ?? 'Noor User',
-      lastNameInitial: (row['last_name_initial'] as String?) ?? '',
-      age: (row['age'] as num?)?.toInt() ?? 25,
-      cityName: (row['city_name'] as String?) ?? 'Unknown',
-      sect: (row['sect'] as String?)?.toUpperCase() ?? 'SUNNI',
-      deenLevel: (row['deen_level'] as String?) ?? 'moderate',
-      photoUrl: photoUrl,
-      photoCount: photoCount,
-      // §3.1: Both mutual_only and request_only are treated as private
-      isPhotoPrivate: photoPrivacy == 'mutual_only' || photoPrivacy == 'request_only',
-      isVerified: (row['is_verified'] as bool?) ?? false,
-      occupation: (row['profession'] as String?) ?? 'Professional',
-      education: (row['education_level'] as String?) ?? 'Graduate',
-      bio: (row['bio'] as String?) ?? '',
-      languages: row['languages'] != null ? List<String>.from(row['languages'] as Iterable) : null,
-      maritalStatus: (row['previously_married'] as String?) == 'no' ? 'Never Married' : ((row['previously_married'] as String?) ?? 'Never Married'),
-      familyType: (row['family_type'] as String?) ?? 'Nuclear',
-      interests: row['interests'] != null ? List<String>.from(row['interests'] as Iterable) : null,
-      partnerAgeMin: (row['preferred_age_min'] as num?)?.toInt(),
-      partnerAgeMax: (row['preferred_age_max'] as num?)?.toInt(),
-      heightCm: (row['height_cm'] as num?)?.toInt(),
-      complexion: (row['complexion'] as String?),
-      motherTongue: (row['mother_tongue'] as String?),
-      smokingHabit: (row['smoking_habit'] as String?),
-      community: (row['community'] as String?),
-      dietType: (row['diet_type'] as String?),
-      livingExpectation: (row['living_expectation'] as String?),
-      quranMemorization: (row['quran_memorization'] as String?),
-      religiousEducation: (row['religious_education'] as String?),
-      marriageTimeline: (row['marriage_timeline'] as String?),
-      willingToRelocate: (row['willing_to_relocate'] as String?),
-      gender: gender,
-      hasChildren: (row['children_count'] as int? ?? 0) > 0,
-      lastActiveAt: row['last_active_at'] != null ? DateTime.tryParse(row['last_active_at'] as String) : null,
-    );
   }
 }

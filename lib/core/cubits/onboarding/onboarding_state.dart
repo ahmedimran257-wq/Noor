@@ -54,7 +54,7 @@ class OnboardingSaved extends OnboardingState {
   List<Object?> get props => [step, data];
 }
 
-/// Onboarding is fully complete (step == 14).
+/// Onboarding is fully complete (Myself path: step >= 11. Guardian path: step >= 12).
 class OnboardingComplete extends OnboardingState {
   const OnboardingComplete();
 }

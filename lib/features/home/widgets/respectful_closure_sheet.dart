@@ -96,7 +96,7 @@ class _RespectfulClosureSheetState extends State<RespectfulClosureSheet> {
     return Container(
       margin: const EdgeInsets.all(AppDimensions.space16),
       decoration: BoxDecoration(
-        color:        const Color(0xFF13131A),
+        color:        AppColors.surfaceElevated,
         borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
         border:       Border.all(color: AppColors.cardBorder),
       ),

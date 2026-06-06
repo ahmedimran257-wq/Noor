@@ -9,6 +9,7 @@
 // ============================================================
 
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/onboarding_data.dart';
 import 'supabase_service.dart';
 
@@ -26,6 +27,39 @@ class ProfileWriteService {
   /// Persists the fields modified in [step] to Supabase.
   /// In mock mode (Supabase not configured), simulates a delay.
   /// Returns true on success, false on error.
+  static const _keyPendingPhoneRetry = 'pending_guardian_phone_retry';
+
+  /// Retries sending a previously failed guardian phone number RPC update.
+  static Future<void> retryPendingGuardianPhone() async {
+    if (!_canWrite || _userId == null) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final pendingPhone = prefs.getString(_keyPendingPhoneRetry);
+      if (pendingPhone == null) return;
+
+      final profileRes = await SupabaseService.client
+          .from('profiles')
+          .select('id')
+          .eq('user_id', _userId!)
+          .single();
+
+      await SupabaseService.client.rpc('set_guardian_phone', params: {
+        'p_profile_id': profileRes['id'],
+        'p_phone': pendingPhone,
+      });
+
+      // Success! Clear retry flag
+      await prefs.remove(_keyPendingPhoneRetry);
+      debugPrint('ProfileWriteService: Successfully retried setting guardian phone');
+    } catch (e) {
+      debugPrint('ProfileWriteService: Failed retrying guardian phone: $e');
+    }
+  }
+
+  /// Persists the fields modified in [step] to Supabase.
+  /// In mock mode (Supabase not configured), simulates a delay.
+  /// Returns true on success, false on error.
   static Future<bool> saveStep({
     required int step,
     required OnboardingData data,
@@ -36,6 +70,9 @@ class ProfileWriteService {
       await Future.delayed(const Duration(milliseconds: 600));
       return true;
     }
+
+    // Attempt retry asynchronously
+    retryPendingGuardianPhone();
 
     try {
       final fields = _fieldsForStep(step, data, isGuardianPath);
@@ -73,16 +110,26 @@ class ProfileWriteService {
       // Guardian phone: encrypt via set_guardian_phone() SECURITY DEFINER RPC
       // This must happen AFTER the profiles upsert so the profile row exists.
       if (isGuardianPath && step == 1 && data.guardianPhone != null) {
-        final profileRes = await SupabaseService.client
-            .from('profiles')
-            .select('id')
-            .eq('user_id', _userId!)
-            .single();
+        try {
+          final profileRes = await SupabaseService.client
+              .from('profiles')
+              .select('id')
+              .eq('user_id', _userId!)
+              .single();
 
-        await SupabaseService.client.rpc('set_guardian_phone', params: {
-          'p_profile_id': profileRes['id'],
-          'p_phone': data.guardianPhone,
-        });
+          await SupabaseService.client.rpc('set_guardian_phone', params: {
+            'p_profile_id': profileRes['id'],
+            'p_phone': data.guardianPhone,
+          });
+        } catch (rpcErr) {
+          debugPrint('ProfileWriteService: RPC set_guardian_phone failed, queueing for retry: $rpcErr');
+          try {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString(_keyPendingPhoneRetry, data.guardianPhone!);
+          } catch (prefErr) {
+            debugPrint('ProfileWriteService: Failed to save phone for retry: $prefErr');
+          }
+        }
       }
 
       debugPrint('ProfileWriteService: Step $step saved (${fields.length} fields)');
@@ -159,7 +206,11 @@ class ProfileWriteService {
           'last_name': data.lastName,
           'date_of_birth': data.dateOfBirth?.toIso8601String().split('T')[0],
           'gender': _genderToString(data.gender),
-          'city_id': data.cityId,
+          'city_id': (data.cityId != null &&
+                  RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
+                      .hasMatch(data.cityId!))
+              ? data.cityId
+              : null,
           'country_code': data.countryCode,
           'height_cm': data.heightCm,
           'complexion': data.complexion?.toLowerCase().replaceAll(' ', '_'),

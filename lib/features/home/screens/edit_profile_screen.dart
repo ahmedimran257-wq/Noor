@@ -695,7 +695,7 @@ class _DropdownField extends StatelessWidget {
       child: DropdownButtonFormField<String>(
         initialValue:         safeValue,
         style:         AppTypography.inputText,
-        dropdownColor: const Color(0xFF13131A),
+        dropdownColor: AppColors.surfaceElevated,
         decoration: InputDecoration(
           labelText:  label,
           labelStyle: AppTypography.inputLabel,

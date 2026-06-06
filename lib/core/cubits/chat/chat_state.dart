@@ -15,7 +15,7 @@ import 'package:equatable/equatable.dart';
 
 // ── Message status ─────────────────────────────────────────────
 
-enum MessageStatus { queued, sent, delivered, read }
+enum MessageStatus { queued, sent, delivered, read, failed }
 
 // ── Message ───────────────────────────────────────────────────
 
@@ -129,13 +129,21 @@ class ChatState extends Equatable {
   const ChatState({
     this.conversations = const [],
     this.isLoading     = false,
+    this.violationCounts = const {},
+    this.messagingSuspendedUntil,
   });
 
   final List<Conversation> conversations;
   final bool               isLoading;
+  final Map<String, int>   violationCounts;
+  final DateTime?          messagingSuspendedUntil;
 
   int get totalUnread =>
       conversations.fold(0, (sum, c) => sum + c.unreadCount);
+
+  bool get isSuspended =>
+      messagingSuspendedUntil != null &&
+      messagingSuspendedUntil!.isAfter(DateTime.now());
 
   /// Sorted: newest message first
   List<Conversation> get sortedConversations {
@@ -151,13 +159,17 @@ class ChatState extends Equatable {
   ChatState copyWith({
     List<Conversation>? conversations,
     bool?              isLoading,
+    Map<String, int>?   violationCounts,
+    DateTime?          messagingSuspendedUntil,
   }) {
     return ChatState(
       conversations: conversations ?? this.conversations,
       isLoading:     isLoading     ?? this.isLoading,
+      violationCounts: violationCounts ?? this.violationCounts,
+      messagingSuspendedUntil: messagingSuspendedUntil ?? this.messagingSuspendedUntil,
     );
   }
 
   @override
-  List<Object?> get props => [conversations, isLoading];
+  List<Object?> get props => [conversations, isLoading, violationCounts, messagingSuspendedUntil];
 }

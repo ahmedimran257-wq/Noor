@@ -7,6 +7,7 @@
 
 class MockProfile {
   const MockProfile({
+    String? id,
     required this.firstName,
     required this.lastNameInitial,
     required this.age,
@@ -49,8 +50,14 @@ class MockProfile {
     this.hasChildren = false,
     // D3: Last active timestamp for recency display
     this.lastActiveAt,
-  });
+    this.countryCode,
+    this.lastName,
+    this.incomeBracket,
+    this.familyOriginCity,
+    this.blurhash,
+  }) : _id = id;
 
+  final String? _id;
   final String firstName;
   final String lastNameInitial;
   final int age;
@@ -90,9 +97,14 @@ class MockProfile {
   final bool hasChildren;
   // D3: Last active timestamp
   final DateTime? lastActiveAt;
+  final String? countryCode;
+  final String? lastName;
+  final String? incomeBracket;
+  final String? familyOriginCity;
+  final String? blurhash;
 
   /// Stable mock ID — derived from name. Replaced by real UUID in Step 12.
-  String get id => '${firstName.toLowerCase()}_${lastNameInitial.toLowerCase()}';
+  String get id => _id ?? '${firstName.toLowerCase()}_${lastNameInitial.toLowerCase()}';
 
   /// Human-readable last-active label
   String get lastActiveLabel {
@@ -141,6 +153,11 @@ const List<MockProfile> kMockProfiles = [
     marriageTimeline: '6_months',
     willingToRelocate: 'open_to_discussion',
     gender: 'female',
+    countryCode: 'AE',
+    lastName: 'Al-Sayegh',
+    incomeBracket: '₹12–25 Lakh/year',
+    familyOriginCity: 'Hyderabad',
+    blurhash: 'L6PZ|C5800_w.W_x9F_R.g9f%M%M',
   ),
   MockProfile(
     firstName: 'Zainab',
@@ -173,6 +190,11 @@ const List<MockProfile> kMockProfiles = [
     marriageTimeline: '1_year',
     willingToRelocate: 'no',
     gender: 'female',
+    countryCode: 'GB',
+    lastName: 'Hashmi',
+    incomeBracket: '£35–60k/year',
+    familyOriginCity: 'Karachi',
+    blurhash: 'LEHV6nWB2yk8pyo0adR*.7kCMdnj',
   ),
   MockProfile(
     firstName: 'Mariam',
@@ -205,6 +227,11 @@ const List<MockProfile> kMockProfiles = [
     marriageTimeline: 'asap',
     willingToRelocate: 'yes',
     gender: 'female',
+    countryCode: 'CA',
+    lastName: 'Khan',
+    incomeBracket: 'CAD 65–110k/year',
+    familyOriginCity: 'Lahore',
+    blurhash: 'LGF5?1Yk^6#M%-5eia^w#M%-5eia',
   ),
   MockProfile(
     firstName: 'Nadia',
@@ -237,6 +264,11 @@ const List<MockProfile> kMockProfiles = [
     marriageTimeline: '1_year',
     willingToRelocate: 'open_to_discussion',
     gender: 'female',
+    countryCode: 'MY',
+    lastName: 'Razak',
+    incomeBracket: 'MYR 60–120k/year',
+    familyOriginCity: 'Penang',
+    blurhash: 'LKN]~^%2_N_3_N%M_N_3_N%M_N_3',
   ),
   MockProfile(
     firstName: 'Sara',
@@ -269,6 +301,11 @@ const List<MockProfile> kMockProfiles = [
     marriageTimeline: '6_months',
     willingToRelocate: 'no',
     gender: 'female',
+    countryCode: 'TR',
+    lastName: 'Mustafa',
+    incomeBracket: '₺600k–1.2M/year',
+    familyOriginCity: 'Ankara',
+    blurhash: 'LPD87F5?_N_3_N%M_N_3_N%M_N_3',
   ),
   MockProfile(
     firstName: 'Amira',
@@ -301,6 +338,11 @@ const List<MockProfile> kMockProfiles = [
     marriageTimeline: '2_plus_years',
     willingToRelocate: 'yes',
     gender: 'female',
+    countryCode: 'EG',
+    lastName: 'Soliman',
+    incomeBracket: 'EGP 150–350k/year',
+    familyOriginCity: 'Alexandria',
+    blurhash: 'LUDG~v%2_N_3_N%M_N_3_N%M_N_3',
   ),
   MockProfile(
     firstName: 'Hana',
@@ -333,6 +375,11 @@ const List<MockProfile> kMockProfiles = [
     marriageTimeline: 'asap',
     willingToRelocate: 'open_to_discussion',
     gender: 'female',
+    countryCode: 'FR',
+    lastName: 'Bennani',
+    incomeBracket: '€40–70k/year',
+    familyOriginCity: 'Casablanca',
+    blurhash: 'LFD87F5?_N_3_N%M_N_3_N%M_N_3',
   ),
   MockProfile(
     firstName: 'Layla',
@@ -365,5 +412,10 @@ const List<MockProfile> kMockProfiles = [
     marriageTimeline: '1_year',
     willingToRelocate: 'yes',
     gender: 'female',
+    countryCode: 'US',
+    lastName: 'Qabbani',
+    incomeBracket: '\$100–200k/year',
+    familyOriginCity: 'Beirut',
+    blurhash: 'LOD87F5?_N_3_N%M_N_3_N%M_N_3',
   ),
 ];

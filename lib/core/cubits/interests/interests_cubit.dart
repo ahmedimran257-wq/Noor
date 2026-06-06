@@ -20,6 +20,7 @@ import 'interests_state.dart';
 import '../../mock/mock_profiles.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/content_filter.dart';
+import '../../utils/noor_compute.dart';
 
 class InterestsCubit extends Cubit<InterestsState> {
   InterestsCubit() : super(const InterestsState()) {
@@ -161,28 +162,7 @@ class InterestsCubit extends Cubit<InterestsState> {
           .maybeSingle();
 
       if (row != null) {
-        final dob = row['date_of_birth'] != null
-            ? DateTime.tryParse(row['date_of_birth'] as String)
-            : null;
-        final age = dob != null
-            ? DateTime.now().difference(dob).inDays ~/ 365
-            : 25;
-
-        return MockProfile(
-          firstName:      (row['first_name'] as String?) ?? 'Noor User',
-          lastNameInitial: ((row['last_name'] as String?) ?? '').isNotEmpty
-              ? (row['last_name'] as String)[0]
-              : '',
-          age:            age,
-          cityName:       'Unknown',
-          sect:           ((row['sect'] as String?) ?? 'sunni').toUpperCase(),
-          deenLevel:      (row['deen_level'] as String?) ?? 'moderate',
-          isVerified:     false,
-          occupation:     'Professional',
-          education:      'Graduate',
-          bio:            (row['bio'] as String?) ?? '',
-          gender:         row['gender'] as String?,
-        );
+        return compute(parseSingleProfileInBackground, row);
       }
     } catch (e) {
       debugPrint('[InterestsCubit] Error loading profile for $userId: $e');

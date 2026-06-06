@@ -15,6 +15,7 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/inputs/noor_text_field.dart';
 import '../../../core/utils/validation_snackbar.dart';
+import '../../../core/data/country_income_brackets.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
 
@@ -42,21 +43,6 @@ const _kEmploymentOptions = [
   (value: EmploymentStatus.notWorking,    label: 'Not working'),
 ];
 
-// ── Income brackets (merged from income_screen) ───────────────
-class _IncomeBracket {
-  const _IncomeBracket(this.id, this.label);
-  final int id;       // matches income_brackets(id) integer PK
-  final String label;
-}
-
-const _kIncomeBrackets = <_IncomeBracket>[
-  _IncomeBracket(1, '< \u20B93 Lakh/year'),
-  _IncomeBracket(2, '\u20B93 \u2013 6 Lakh/year'),
-  _IncomeBracket(3, '\u20B96 \u2013 12 Lakh/year'),
-  _IncomeBracket(4, '\u20B912 \u2013 25 Lakh/year'),
-  _IncomeBracket(5, '> \u20B925 Lakh/year'),
-];
-
 const _kVisibilityOptions = [
   (id: 'hidden',      label: 'Keep private'),
   (id: 'bracket',     label: 'Show bracket to everyone'),
@@ -75,9 +61,11 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
   final _studyCtrl      = TextEditingController();
   final _professionCtrl = TextEditingController();
   EmploymentStatus? _employment;
-  _IncomeBracket? _incomeBracket;
+  IncomeBracketData? _incomeBracket;
   String _incomeVisibility = 'bracket';
   bool _showIncome = false;
+  List<IncomeBracketData> _incomeBrackets = [];
+  bool _incomeHidden = false;
 
   @override
   void initState() {
@@ -92,14 +80,20 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
     _studyCtrl.text = data.fieldOfStudy ?? '';
     _professionCtrl.text = data.profession ?? '';
     _employment = data.employmentStatus;
-    if (data.incomeBracketId != null) {
-      _incomeBracket = _kIncomeBrackets.firstWhere(
+
+    final countryCode = data.countryCode;
+    final brackets = bracketsFor(countryCode);
+    _incomeHidden = brackets == null;
+    _incomeBrackets = brackets ?? [];
+
+    if (data.incomeBracketId != null && !_incomeHidden) {
+      _incomeBracket = _incomeBrackets.firstWhere(
         (inc) => inc.id == data.incomeBracketId,
-        orElse: () => _kIncomeBrackets.first,
+        orElse: () => _incomeBrackets.first,
       );
     }
     _incomeVisibility = data.incomeVisibility ?? 'bracket';
-    _showIncome = data.incomeBracketId != null;
+    _showIncome = data.incomeBracketId != null && !_incomeHidden;
   }
 
   bool get _canProceed =>
@@ -246,82 +240,86 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
               const SizedBox(height: AppDimensions.space28),
 
               // ── INCOME (Optional, collapsible) ───────────────
-              GestureDetector(
-                onTap: () => setState(() => _showIncome = !_showIncome),
-                child: Container(
-                  padding: const EdgeInsets.all(AppDimensions.space16),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceGlass,
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                    border: Border.all(color: AppColors.cardBorder),
+              if (!_incomeHidden) ...[
+                GestureDetector(
+                  onTap: () => setState(() => _showIncome = !_showIncome),
+                  child: Container(
+                    padding: const EdgeInsets.all(AppDimensions.space16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceGlass,
+                      borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                      border: Border.all(color: AppColors.cardBorder),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.account_balance_wallet_outlined,
+                            color: AppColors.slateMist, size: 20),
+                        const SizedBox(width: AppDimensions.space12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('INCOME RANGE  (Optional)',
+                                  style: AppTypography.sectionLabel),
+                              SizedBox(height: 2),
+                              Text('Many people skip this — it\'s entirely optional.',
+                                  style: AppTypography.caption),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          _showIncome
+                              ? Icons.expand_less_rounded
+                              : Icons.expand_more_rounded,
+                          color: AppColors.slateMist,
+                        ),
+                      ],
+                    ),
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.account_balance_wallet_outlined,
-                          color: AppColors.slateMist, size: 20),
-                      const SizedBox(width: AppDimensions.space12),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+
+                if (_showIncome) ...[
+                  const SizedBox(height: AppDimensions.space16),
+                  Text(
+                    'INCOME BRACKET (${currencyFor(context.read<OnboardingCubit>().currentData.countryCode)})',
+                    style: AppTypography.sectionLabel,
+                  ),
+                  const SizedBox(height: AppDimensions.space12),
+                  ..._incomeBrackets.map((b) => Padding(
+                    padding: const EdgeInsets.only(bottom: AppDimensions.space8),
+                    child: GestureDetector(
+                      onTap: () => setState(() =>
+                          _incomeBracket = _incomeBracket?.id == b.id ? null : b),
+                      child: AnimatedContainer(
+                        duration: AppDimensions.durationTransition,
+                        padding: const EdgeInsets.all(AppDimensions.space16),
+                        decoration: BoxDecoration(
+                          color: _incomeBracket?.id == b.id
+                              ? AppColors.champagneGold.withValues(alpha: 0.08)
+                              : AppColors.surfaceGlass,
+                          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                          border: Border.all(
+                            color: _incomeBracket?.id == b.id
+                                ? AppColors.champagneGold
+                                : AppColors.cardBorder,
+                            width: _incomeBracket?.id == b.id
+                                ? AppDimensions.borderFocus
+                                : AppDimensions.borderThin,
+                          ),
+                        ),
+                        child: Row(
                           children: [
-                            Text('INCOME RANGE  (Optional)',
-                                style: AppTypography.sectionLabel),
-                            SizedBox(height: 2),
-                            Text('Many people skip this — it\'s entirely optional.',
-                                style: AppTypography.caption),
+                            Expanded(
+                              child: Text(b.label, style: AppTypography.body),
+                            ),
+                            if (_incomeBracket?.id == b.id)
+                              const Icon(Icons.check_rounded,
+                                  color: AppColors.champagneGold, size: 20),
                           ],
                         ),
                       ),
-                      Icon(
-                        _showIncome
-                            ? Icons.expand_less_rounded
-                            : Icons.expand_more_rounded,
-                        color: AppColors.slateMist,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              if (_showIncome) ...[
-                const SizedBox(height: AppDimensions.space16),
-                const Text('INCOME BRACKET (INR)', style: AppTypography.sectionLabel),
-                const SizedBox(height: AppDimensions.space12),
-                ..._kIncomeBrackets.map((b) => Padding(
-                  padding: const EdgeInsets.only(bottom: AppDimensions.space8),
-                  child: GestureDetector(
-                    onTap: () => setState(() =>
-                        _incomeBracket = _incomeBracket?.id == b.id ? null : b),
-                    child: AnimatedContainer(
-                      duration: AppDimensions.durationTransition,
-                      padding: const EdgeInsets.all(AppDimensions.space16),
-                      decoration: BoxDecoration(
-                        color: _incomeBracket?.id == b.id
-                            ? AppColors.champagneGold.withValues(alpha: 0.08)
-                            : AppColors.surfaceGlass,
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                        border: Border.all(
-                          color: _incomeBracket?.id == b.id
-                              ? AppColors.champagneGold
-                              : AppColors.cardBorder,
-                          width: _incomeBracket?.id == b.id
-                              ? AppDimensions.borderFocus
-                              : AppDimensions.borderThin,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(b.label, style: AppTypography.body),
-                          ),
-                          if (_incomeBracket?.id == b.id)
-                            const Icon(Icons.check_rounded,
-                                color: AppColors.champagneGold, size: 20),
-                        ],
-                      ),
                     ),
-                  ),
-                )),
+                  )),
                 const SizedBox(height: AppDimensions.space16),
                 const Text('WHO CAN SEE THIS?', style: AppTypography.sectionLabel),
                 const SizedBox(height: AppDimensions.space12),
@@ -378,6 +376,7 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
                   ),
                 )),
               ],
+            ],
 
               const SizedBox(height: AppDimensions.space32),
             ],

@@ -16,6 +16,7 @@ import '../../../core/cubits/chat/chat_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/animations/spring_keyboard_padding.dart';
 
 /// G12: Profile-aware openers — include the match's name.
 List<String> _buildOpeners(String name) => [
@@ -168,6 +169,7 @@ class _ChatScreenState extends State<ChatScreen>
         final isClosed    = conv.isMatchClosed;
 
         return Scaffold(
+          resizeToAvoidBottomInset: false,
           backgroundColor: AppColors.obsidianNight,
           appBar: _ChatAppBar(
             name:    conv.matchName,
@@ -175,46 +177,53 @@ class _ChatScreenState extends State<ChatScreen>
             isClosed: isClosed,
             onEndMatch: () => _showEndMatchSheet(context),
           ),
-          body: Column(
-            children: [
-              // Closed match banner
-              if (isClosed) _ClosedBanner(name: conv.matchName),
-
-              // Messages
-              Expanded(
-                child: hasMessages
-                    ? ListView.builder(
-                        controller: _scrollCtrl,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppDimensions.space16, vertical: AppDimensions.space12,
+          body: SpringKeyboardPadding(
+            child: Column(
+              children: [
+                // Closed match banner
+                if (isClosed) _ClosedBanner(name: conv.matchName),
+  
+                // Suspended banner
+                if (state.isSuspended) _SuspendedBanner(suspendedUntil: state.messagingSuspendedUntil),
+  
+                // Messages
+                Expanded(
+                  child: hasMessages
+                      ? ListView.builder(
+                          controller: _scrollCtrl,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppDimensions.space16, vertical: AppDimensions.space12,
+                          ),
+                          itemCount:   conv.messages.length,
+                          itemBuilder: (_, i) {
+                            final msg      = conv.messages[i];
+                            final prev     = i > 0 ? conv.messages[i - 1] : null;
+                            final sameAsPrev = prev != null && prev.isMe == msg.isMe;
+                            return _MessageBubble(
+                              message:    msg,
+                              sameAsPrev: sameAsPrev,
+                              onTap: () => context.read<ChatCubit>()
+                                  .toggleTimestamp(widget.conversationId, msg.id),
+                            );
+                          },
+                        )
+                      : _SuggestedOpenersArea(
+                          showOpeners: _showSuggestedOpeners,
+                          sizeAnim:   _openersSize,
+                          onSelect:   _useOpener,
+                          matchName:  conv.matchName,
                         ),
-                        itemCount:   conv.messages.length,
-                        itemBuilder: (_, i) {
-                          final msg      = conv.messages[i];
-                          final prev     = i > 0 ? conv.messages[i - 1] : null;
-                          final sameAsPrev = prev != null && prev.isMe == msg.isMe;
-                          return _MessageBubble(
-                            message:    msg,
-                            sameAsPrev: sameAsPrev,
-                            onTap: () => context.read<ChatCubit>()
-                                .toggleTimestamp(widget.conversationId, msg.id),
-                          );
-                        },
-                      )
-                    : _SuggestedOpenersArea(
-                        showOpeners: _showSuggestedOpeners,
-                        sizeAnim:   _openersSize,
-                        onSelect:   _useOpener,
-                        matchName:  conv.matchName,
-                      ),
-              ),
-
-              // Input bar (hidden when closed)
-              if (!isClosed)
-                _InputBar(controller: _inputCtrl, canSend: _canSend, onSend: _sendMessage)
-              else
-                _ClosedInputBar(),
-            ],
+                ),
+  
+                // Input bar (hidden when closed or suspended)
+                if (state.isSuspended)
+                  _SuspendedInputBar(suspendedUntil: state.messagingSuspendedUntil)
+                else if (!isClosed)
+                  _InputBar(controller: _inputCtrl, canSend: _canSend, onSend: _sendMessage)
+                else
+                  _ClosedInputBar(),
+              ],
+            ),
           ),
         );
       },
@@ -271,6 +280,67 @@ class _ClosedInputBar extends StatelessWidget {
   }
 }
 
+// ── Suspended Banner ──────────────────────────────────────────
+
+class _SuspendedBanner extends StatelessWidget {
+  const _SuspendedBanner({required this.suspendedUntil});
+  final DateTime? suspendedUntil;
+
+  @override
+  Widget build(BuildContext context) {
+    final diff = suspendedUntil != null
+        ? suspendedUntil!.difference(DateTime.now())
+        : Duration.zero;
+    final hours = diff.inHours.clamp(0, 24);
+    final minutes = diff.inMinutes % 60;
+    final remainingStr = hours > 0
+        ? '$hours hour${hours == 1 ? '' : 's'}'
+        : '$minutes minute${minutes == 1 ? '' : 's'}';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.space16, vertical: AppDimensions.space12,
+      ),
+      color: AppColors.softCoral.withValues(alpha: 0.1),
+      child: Row(children: [
+        const Icon(Icons.warning_amber_rounded, color: AppColors.softCoral, size: 16),
+        const SizedBox(width: AppDimensions.space8),
+        Expanded(child: Text(
+          'Messaging suspended for violating community guidelines. Unlocks in $remainingStr.',
+          style: AppTypography.caption.copyWith(color: AppColors.softCoral),
+        )),
+      ]),
+    );
+  }
+}
+
+// ── Suspended Input Replacement ──────────────────────────────
+
+class _SuspendedInputBar extends StatelessWidget {
+  const _SuspendedInputBar({required this.suspendedUntil});
+  final DateTime? suspendedUntil;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        AppDimensions.space16, AppDimensions.space12,
+        AppDimensions.space16,
+        AppDimensions.space12 + MediaQuery.of(context).padding.bottom,
+      ),
+      decoration: const BoxDecoration(
+        color: AppColors.obsidianNight,
+        border: Border(top: BorderSide(color: AppColors.cardBorder)),
+      ),
+      child: const Center(child: Text(
+        'Messaging is temporarily suspended',
+        style: AppTypography.caption,
+      )),
+    );
+  }
+}
+
 // ── End Match Bottom Sheet ────────────────────────────────────
 
 class _EndMatchSheet extends StatefulWidget {
@@ -290,7 +360,7 @@ class _EndMatchSheetState extends State<_EndMatchSheet> {
       margin:  const EdgeInsets.all(AppDimensions.space16),
       padding: const EdgeInsets.all(AppDimensions.space24),
       decoration: BoxDecoration(
-        color:        const Color(0xFF13131A),
+        color:        AppColors.surfaceElevated,
         borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
         border:       Border.all(color: AppColors.cardBorder),
       ),
@@ -486,7 +556,7 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
               decoration: BoxDecoration(color: AppColors.surfaceGlass, shape: BoxShape.circle, border: Border.all(color: AppColors.cardBorder)),
               child: const Icon(Icons.more_vert_rounded, color: AppColors.slateMist, size: AppDimensions.iconSizeMedium),
             ),
-            color: const Color(0xFF13131A),
+            color: AppColors.surfaceElevated,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
               side: const BorderSide(color: AppColors.cardBorder),
@@ -636,6 +706,7 @@ class _StatusIcon extends StatelessWidget {
       case MessageStatus.sent:      return const Icon(Icons.check_rounded, color: AppColors.slateMist, size: 12);
       case MessageStatus.delivered: return const Icon(Icons.done_all_rounded, color: AppColors.slateMist, size: 12);
       case MessageStatus.read:      return const Icon(Icons.done_all_rounded, color: AppColors.champagneGold, size: 12);
+      case MessageStatus.failed:    return const Icon(Icons.error_outline_rounded, color: AppColors.softCoral, size: 12);
     }
   }
 }

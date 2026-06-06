@@ -92,7 +92,7 @@ class _ReportContentState extends State<_ReportContent> {
       builder: (context, state) {
         return Container(
           decoration: const BoxDecoration(
-            color: Color(0xFF12121A),
+            color: AppColors.surfaceMid,
             borderRadius:
                 BorderRadius.vertical(top: Radius.circular(24)),
             border:

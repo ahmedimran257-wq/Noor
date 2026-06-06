@@ -11,6 +11,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
+import '../../../core/services/supabase_service.dart';
+import '../../../core/services/fcm_service.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
@@ -47,24 +50,47 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
   Future<void> _confirm() async {
     HapticFeedback.mediumImpact();
 
-    // TODO (backend-wiring): Replace this with real Supabase + RevenueCat calls
-    // when the repository layer is implemented.
-    //
-    // Production flow:
-    //   1. supabase.from('users').update({
-    //        'deletion_status': 'pending',
-    //        'deletion_reason': _reason,
-    //        'deletion_requested_at': DateTime.now().toUtc().toIso8601String(),
-    //      }).eq('id', userId);
-    //   2. RevenueCat: Purchases.logOut() to detach subscription
-    //   3. FCM: Delete user's FCM token from user_fcm_tokens table to stop push notifications
-    //   4. supabase.auth.signOut() → triggers router redirect
-    //
-    // The server-side cron (purge_deleted_users in 008_cron_jobs.sql)
-    // handles final hard-delete after the 30-day grace period.
+    if (SupabaseService.isInitialized) {
+      try {
+        final userId = SupabaseService.currentUserId;
+        if (userId != null) {
+          // 1. Update users table in Supabase (sets deleted_at, triggering soft-delete cascade)
+          await SupabaseService.client.from('users').update({
+            'deletion_status': 'pending_deletion',
+            'deleted_at': DateTime.now().toUtc().toIso8601String(),
+          }).eq('id', userId);
 
-    // For now: sign out (mock mode)
-    context.read<AuthCubit>().signOut();
+          // 2. RevenueCat logOut
+          try {
+            await Purchases.logOut();
+          } catch (e) {
+            debugPrint('RevenueCat logOut error: $e');
+          }
+
+          // 3. FCM onUserLogout to delete token
+          try {
+            await FcmService.instance.onUserLogout();
+          } catch (e) {
+            debugPrint('FCM onUserLogout error: $e');
+          }
+        }
+      } catch (e) {
+        debugPrint('Account deletion error: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to delete account: $e', style: AppTypography.body),
+              backgroundColor: AppColors.errorRed,
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    if (mounted) {
+      context.read<AuthCubit>().signOut();
+    }
   }
 
   @override
@@ -163,7 +189,7 @@ class _Step1 extends StatelessWidget {
           const SizedBox(height: AppDimensions.space24),
           const _InfoCard(
             icon:  Icons.timer_outlined,
-            color: Color(0xFFF6C344),
+            color: AppColors.premiumGold,
             title: '30-day grace period',
             body:  'Your account will be scheduled for deletion. You can log back in any time within 30 days to cancel.',
           ),

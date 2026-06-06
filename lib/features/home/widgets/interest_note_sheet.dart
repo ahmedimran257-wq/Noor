@@ -11,6 +11,7 @@ import 'package:flutter/services.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/animations/spring_keyboard_padding.dart';
 import '../../../core/utils/content_filter.dart';
 
 /// Shows the interest note sheet and returns the note text (or null).
@@ -55,14 +56,12 @@ class _InterestNoteSheetState extends State<_InterestNoteSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final bottomPad = MediaQuery.of(context).viewInsets.bottom;
-    return Padding(
-      padding: EdgeInsets.only(bottom: bottomPad),
+    return SpringKeyboardPadding(
       child: Container(
         margin:  const EdgeInsets.all(AppDimensions.space16),
         padding: const EdgeInsets.all(AppDimensions.space24),
         decoration: BoxDecoration(
-          color:        const Color(0xFF13131A),
+          color:        AppColors.surfaceElevated,
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
           border:       Border.all(color: AppColors.cardBorder),
         ),

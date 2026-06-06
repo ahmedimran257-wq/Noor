@@ -34,8 +34,11 @@ class InterestsScreen extends StatefulWidget {
 }
 
 class _InterestsScreenState extends State<InterestsScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   late final TabController _tabCtrl;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -68,7 +71,7 @@ class _InterestsScreenState extends State<InterestsScreen>
               child: Container(
                 padding: const EdgeInsets.all(AppDimensions.space32),
                 decoration: BoxDecoration(
-                  color:        const Color(0xFF13131A),
+                  color:        AppColors.surfaceElevated,
                   borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
                   border:       Border.all(color: AppColors.goldBorder, width: 1.5),
                   boxShadow: const [
@@ -171,7 +174,7 @@ class _InterestsScreenState extends State<InterestsScreen>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF13131A),
+        backgroundColor: AppColors.surfaceElevated,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
           side: const BorderSide(color: AppColors.cardBorder),
@@ -208,6 +211,7 @@ class _InterestsScreenState extends State<InterestsScreen>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return BlocConsumer<InterestsCubit, InterestsState>(
       listenWhen: (prev, curr) =>
           !prev.limitError && curr.limitError,
@@ -453,7 +457,7 @@ class _MatchAvatarPair extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(AppDimensions.space8),
             decoration: BoxDecoration(
-              color:  const Color(0xFF13131A),
+              color:  AppColors.surfaceElevated,
               shape:  BoxShape.circle,
               border: Border.all(color: AppColors.champagneGold, width: 2),
             ),
@@ -744,7 +748,7 @@ class _ExpiryRow extends StatelessWidget {
     if (hours == null || hours > 72) return const SizedBox.shrink();
 
     final isUrgent = hours < 24;
-    final color    = isUrgent ? AppColors.softCoral : const Color(0xFFFFBF47);
+    final color    = isUrgent ? AppColors.softCoral : AppColors.expiryAmber;
     final icon     = isUrgent
         ? Icons.warning_amber_rounded
         : Icons.access_time_rounded;

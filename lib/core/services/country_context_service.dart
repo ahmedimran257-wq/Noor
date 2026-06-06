@@ -33,6 +33,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
 import '../data/country_communities_data.dart';
 import '../data/country_sects_data.dart';
+import 'supabase_service.dart';
 
 // ── Models ────────────────────────────────────────────────────
 
@@ -150,26 +151,107 @@ class CountryContextService {
     String query, {
     String? countryCode,
   }) async {
+    debugPrint('[CountryContextService] searchCities query: "$query", countryCode: "$countryCode"');
     if (query.trim().length < 2) return [];
 
-    const apiKey = AppConfig.googlePlacesApiKey;
-    if (apiKey.isEmpty || apiKey == 'YOUR_GOOGLE_PLACES_API_KEY') {
-      // Return empty — city field becomes a free-text input
-      debugPrint('[CountryContextService] No Google Places key set');
-      return [];
+    // 1. Try Supabase first if initialized
+    if (SupabaseService.isInitialized) {
+      try {
+        debugPrint('[CountryContextService] Querying Supabase rpc search_cities...');
+        final response = await SupabaseService.client.rpc(
+          'search_cities',
+          params: {
+            'search_term': query,
+            if (countryCode != null) 'country_filter': countryCode,
+          },
+        );
+        debugPrint('[CountryContextService] Supabase response: $response');
+        if (response != null) {
+          final list = response as List<dynamic>;
+          if (list.isNotEmpty) {
+            debugPrint('[CountryContextService] Found ${list.length} cities from Supabase');
+            return list.map((row) {
+              final map = row as Map<String, dynamic>;
+              final cityName = map['name'] as String? ?? '';
+              final code = map['country_code'] as String? ?? countryCode ?? '';
+              final lat = (map['lat'] as num?)?.toDouble() ?? 0.0;
+              final lng = (map['lng'] as num?)?.toDouble() ?? 0.0;
+              return CityResult(
+                city: cityName,
+                state: '', // DB schema doesn't store state separately in cities table
+                country: '',
+                countryCode: code,
+                postalCode: '',
+                fullAddress: cityName,
+                placeId: map['id'] as String? ?? '',
+                lat: lat,
+                lng: lng,
+              );
+            }).toList();
+          }
+        }
+      } catch (e) {
+        debugPrint('[CountryContextService] Supabase search_cities failed: $e');
+      }
     }
 
+    // 2. Try Google Places API
+    const apiKey = AppConfig.googlePlacesApiKey;
+    if (apiKey.isNotEmpty && apiKey != 'YOUR_GOOGLE_PLACES_API_KEY') {
+      try {
+        debugPrint('[CountryContextService] Querying Google Places API...');
+        // Autocomplete with locality + sublocality types
+        final uri = Uri.https(
+          'maps.googleapis.com',
+          '/maps/api/place/autocomplete/json',
+          {
+            'input':       query,
+            'types':       '(cities)',
+            if (countryCode != null) 'components':  'country:${countryCode.toLowerCase()}',
+            'key':         apiKey,
+            'language':    'en',
+          },
+        );
+
+        final response = await http.get(uri).timeout(
+          const Duration(seconds: 5),
+        );
+
+        if (response.statusCode == 200) {
+          final data    = jsonDecode(response.body) as Map<String, dynamic>;
+          final status  = data['status'] as String?;
+          if (status == 'OK' || status == 'ZERO_RESULTS') {
+            final predictions = (data['predictions'] as List<dynamic>? ?? []);
+            final results = <CityResult>[];
+            for (final pred in predictions.take(5)) {
+              final placeId = pred['place_id'] as String? ?? '';
+              if (placeId.isEmpty) continue;
+
+              final detail = await _fetchPlaceDetail(placeId, apiKey);
+              if (detail != null) results.add(detail);
+            }
+            if (results.isNotEmpty) {
+              debugPrint('[CountryContextService] Found ${results.length} cities from Google Places API');
+              return results;
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('[CountryContextService] Google Places city search failed: $e');
+      }
+    }
+
+    // 3. Try Open-Meteo Geocoding API (Free fallback, 9M+ cities/districts/villages, no key required)
     try {
-      // Autocomplete with locality + sublocality types
+      debugPrint('[CountryContextService] Querying Open-Meteo Geocoding API for "$query" (countryCode: $countryCode)...');
       final uri = Uri.https(
-        'maps.googleapis.com',
-        '/maps/api/place/autocomplete/json',
+        'geocoding-api.open-meteo.com',
+        '/v1/search',
         {
-          'input':       query,
-          'types':       '(cities)',
-          if (countryCode != null) 'components':  'country:${countryCode.toLowerCase()}',
-          'key':         apiKey,
-          'language':    'en',
+          'name':     query,
+          'count':    '20',
+          'language': 'en',
+          'format':   'json',
         },
       );
 
@@ -177,30 +259,58 @@ class CountryContextService {
         const Duration(seconds: 5),
       );
 
-      if (response.statusCode != 200) return [];
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final results = data['results'] as List<dynamic>? ?? [];
+        final parsedResults = <CityResult>[];
+        
+        for (final item in results) {
+          final map = item as Map<String, dynamic>;
+          final cCode = map['country_code'] as String? ?? '';
+          
+          // Filter to requested country code if provided
+          if (countryCode != null && cCode.toLowerCase() != countryCode.toLowerCase()) {
+            continue;
+          }
+          
+          final cityName = map['name'] as String? ?? '';
+          final stateName = map['admin1'] as String? ?? '';
+          final countryName = map['country'] as String? ?? '';
+          final lat = (map['latitude'] as num?)?.toDouble() ?? 0.0;
+          final lng = (map['longitude'] as num?)?.toDouble() ?? 0.0;
+          
+          // Formatted address: "Kurnool, Andhra Pradesh, India"
+          final fullAddr = [
+            cityName,
+            if (stateName.isNotEmpty) stateName,
+            if (countryName.isNotEmpty) countryName,
+          ].join(', ');
 
-      final data    = jsonDecode(response.body) as Map<String, dynamic>;
-      final status  = data['status'] as String?;
-      if (status != 'OK' && status != 'ZERO_RESULTS') return [];
-
-      final predictions = (data['predictions'] as List<dynamic>? ?? []);
-
-      // Fetch details for each to get postal code
-      // Limit to 5 for performance
-      final results = <CityResult>[];
-      for (final pred in predictions.take(5)) {
-        final placeId = pred['place_id'] as String? ?? '';
-        if (placeId.isEmpty) continue;
-
-        final detail = await _fetchPlaceDetail(placeId, apiKey);
-        if (detail != null) results.add(detail);
+          parsedResults.add(CityResult(
+            city: cityName,
+            state: stateName,
+            country: countryName,
+            countryCode: cCode.toUpperCase(),
+            postalCode: '',
+            fullAddress: fullAddr,
+            placeId: 'openmeteo-${map['id'] ?? cityName.toLowerCase()}',
+            lat: lat,
+            lng: lng,
+          ));
+        }
+        
+        if (parsedResults.isNotEmpty) {
+          debugPrint('[CountryContextService] Found ${parsedResults.length} cities from Open-Meteo');
+          return parsedResults;
+        }
       }
-
-      return results;
     } catch (e) {
-      debugPrint('[CountryContextService] City search failed: $e');
-      return [];
+      debugPrint('[CountryContextService] Open-Meteo search failed: $e');
     }
+
+    // 4. Fallback: Return empty list (allowing custom city entries if enabled)
+    debugPrint('[CountryContextService] No matches found, returning empty list.');
+    return const [];
   }
 
   // ── Place detail fetch (postal code, lat/lng, components) ──

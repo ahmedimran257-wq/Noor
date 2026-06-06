@@ -46,13 +46,17 @@ class DiscoveryFeedScreen extends StatefulWidget {
   State<DiscoveryFeedScreen> createState() => _DiscoveryFeedScreenState();
 }
 
-class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
+class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
+    with AutomaticKeepAliveClientMixin {
   late final PageController _pageCtrl;
   int         _currentPage = 0;
   double      _pageOffset  = 0.0; // Continuous scroll offset for smooth scaling
   final Set<String> _sentInterests = {};
   // Bookmarks now use profile IDs (String) for persistence
   Set<String> _bookmarked = {};
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -152,16 +156,12 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
 
   void _openProfile(int index, FeedProfile fp) {
     Navigator.of(context).push(
-      PageRouteBuilder(
-        transitionDuration: AppDimensions.durationReveal,
-        pageBuilder: (context, animation, _) => FadeTransition(
-          opacity: animation,
-          child: ProfileDetailScreen(
-            profile:        fp.profile,
-            heroTag:        'profile_card_$index',
-            isInterestSent: _sentInterests.contains(fp.profile.id),
-            onInterestSent: () => setState(() => _sentInterests.add(fp.profile.id)),
-          ),
+      MaterialPageRoute<void>(
+        builder: (_) => ProfileDetailScreen(
+          profile:        fp.profile,
+          heroTag:        'profile_card_$index',
+          isInterestSent: _sentInterests.contains(fp.profile.id),
+          onInterestSent: () => setState(() => _sentInterests.add(fp.profile.id)),
         ),
       ),
     );
@@ -171,6 +171,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return BlocBuilder<DiscoveryFeedCubit, DiscoveryFeedState>(
       builder: (context, feedState) {
         return RefreshIndicator(

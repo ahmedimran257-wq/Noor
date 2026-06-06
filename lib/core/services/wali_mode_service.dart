@@ -45,8 +45,10 @@ class WaliModeService {
   /// Each event is the raw message payload from Supabase Realtime.
   Stream<Map<String, dynamic>> get messageStream => _messageController.stream;
 
+  bool _isRealtimeConnected = false;
+
   /// Whether the Realtime channel is currently connected.
-  bool get isRealtimeConnected => _realtimeChannel != null;
+  bool get isRealtimeConnected => _isRealtimeConnected;
 
   /// Activates guardian mode by linking the current user as a guardian
   /// to a ward's profile.
@@ -207,6 +209,7 @@ class WaliModeService {
   /// the dashboard.
   void subscribeToMirroredChats({
     required Function(Map<String, dynamic>) onNewMessage,
+    void Function(bool connected)? onStatusChange,
   }) {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) {
@@ -232,6 +235,11 @@ class WaliModeService {
         )
         .subscribe((status, [error]) {
           debugPrint('[WaliModeService] Realtime status: $status');
+          final isSubscribed = status == RealtimeSubscribeStatus.subscribed;
+          _isRealtimeConnected = isSubscribed;
+          if (onStatusChange != null) {
+            onStatusChange(isSubscribed);
+          }
         });
 
     debugPrint('[WaliModeService] ✅ Realtime subscription active for guardian $userId');
@@ -349,6 +357,7 @@ class WaliModeService {
     if (_realtimeChannel != null) {
       _supabase.removeChannel(_realtimeChannel!);
       _realtimeChannel = null;
+      _isRealtimeConnected = false;
       debugPrint('[WaliModeService] Realtime subscription disposed');
     }
   }

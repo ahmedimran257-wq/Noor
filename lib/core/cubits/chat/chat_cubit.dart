@@ -9,6 +9,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/content_filter.dart';
+import '../../utils/noor_compute.dart';
 import 'chat_state.dart';
 
 class ChatCubit extends Cubit<ChatState> {
@@ -36,6 +37,18 @@ class ChatCubit extends Cubit<ChatState> {
       if (me == null) {
         _initMockConversations();
         return;
+      }
+
+      // Fetch user's messaging_suspended_until
+      final userRow = await SupabaseService.client
+          .from('users')
+          .select('messaging_suspended_until')
+          .eq('id', me)
+          .maybeSingle();
+
+      DateTime? suspendedUntil;
+      if (userRow != null && userRow['messaging_suspended_until'] != null) {
+        suspendedUntil = DateTime.tryParse(userRow['messaging_suspended_until'] as String)?.toLocal();
       }
 
       // Fetch matches where current user is participant
@@ -72,26 +85,12 @@ class ChatCubit extends Cubit<ChatState> {
             .eq('match_id', matchId)
             .order('created_at', ascending: true);
 
-        final List<ChatMessage> chatMessages = [];
-        int unreadCount = 0;
-
-        for (var msg in messagesData) {
-          final isMe = msg['sender_id'] == me;
-          final readAt = msg['read_at'];
-          final isRead = readAt != null;
-          if (!isMe && !isRead) {
-            unreadCount++;
-          }
-          chatMessages.add(ChatMessage(
-            id: msg['id'] as String,
-            text: msg['content'] as String? ?? '',
-            sentAt: DateTime.parse(msg['created_at'] as String).toLocal(),
-            isMe: isMe,
-            status: isRead 
-                ? MessageStatus.read 
-                : (isMe ? MessageStatus.sent : MessageStatus.delivered),
-          ));
-        }
+        final parseResult = await compute(
+          parseMessagesInBackground,
+          MessagesParseInput(messagesData: messagesData, myUserId: me),
+        );
+        final chatMessages = parseResult.chatMessages;
+        final unreadCount = parseResult.unreadCount;
 
         loaded.add(Conversation(
           id: matchId,
@@ -105,7 +104,11 @@ class ChatCubit extends Cubit<ChatState> {
         ));
       }
 
-      emit(state.copyWith(conversations: loaded, isLoading: false));
+      emit(state.copyWith(
+        conversations: loaded,
+        isLoading: false,
+        messagingSuspendedUntil: suspendedUntil,
+      ));
       _setupRealtime();
     } catch (e) {
       debugPrint('ChatCubit: Error loading conversations: $e');
@@ -271,10 +274,59 @@ class ChatCubit extends Cubit<ChatState> {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
 
+    if (state.isSuspended) return;
+
     final conv = state.conversations
         .where((c) => c.id == conversationId)
         .firstOrNull;
     if (conv?.isMatchClosed == true) return;
+
+    final validationError = ContentFilter.validate(trimmed);
+    final hasViolation = validationError != null;
+    final isUrl = trimmed.contains(RegExp(r'(https?://|www\.)\S+'));
+
+    if (hasViolation) {
+      final currentViolations = (state.violationCounts[conversationId] ?? 0) + 1;
+      final updatedViolations = Map<String, int>.from(state.violationCounts)
+        ..[conversationId] = currentViolations;
+
+      DateTime? suspendedUntil;
+      if (currentViolations >= 3) {
+        suspendedUntil = DateTime.now().add(const Duration(hours: 24));
+        if (_isRealMode) {
+          try {
+            final me = SupabaseService.currentUserId;
+            if (me != null) {
+              await SupabaseService.client
+                  .from('users')
+                  .update({'messaging_suspended_until': suspendedUntil.toUtc().toIso8601String()})
+                  .eq('id', me);
+            }
+          } catch (e) {
+            debugPrint('ChatCubit: Error suspending user: $e');
+          }
+        }
+      }
+
+      emit(state.copyWith(
+        violationCounts: updatedViolations,
+        messagingSuspendedUntil: suspendedUntil ?? state.messagingSuspendedUntil,
+      ));
+
+      if (isUrl) {
+        _msgCounter++;
+        final tempMsgId = 'msg_$_msgCounter';
+        final failedMsg = ChatMessage(
+          id:     tempMsgId,
+          text:   '[link blocked - safety violation]',
+          sentAt: DateTime.now(),
+          isMe:   true,
+          status: MessageStatus.failed,
+        );
+        _appendMessage(conversationId, failedMsg);
+        return;
+      }
+    }
 
     final filtered = ContentFilter.redact(trimmed);
 

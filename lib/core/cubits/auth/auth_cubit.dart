@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/supabase_service.dart';
+import '../../services/referral_service.dart';
 import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
@@ -108,9 +109,22 @@ class AuthCubit extends Cubit<AuthState> {
         if (response.data != null) {
           final data = response.data as Map<String, dynamic>;
           if (data['status'] == 'authenticated') {
-            userId = data['user_id'] as String?;
-            // Store the access token for subsequent API calls
-            // TODO: Set up Supabase auth session properly
+            await SupabaseService.client.auth.setSession(
+              data['refresh_token'] as String,
+            );
+            userId = SupabaseService.client.auth.currentUser?.id;
+
+            // Apply pending referral code if any exists in SharedPreferences
+            try {
+              final prefs = await SharedPreferences.getInstance();
+              final pendingCode = prefs.getString('pending_referral_code');
+              if (pendingCode != null && pendingCode.isNotEmpty) {
+                await ReferralService.instance.applyCode(pendingCode);
+                await prefs.remove('pending_referral_code');
+              }
+            } catch (e) {
+              debugPrint('Failed to apply pending referral code: $e');
+            }
           } else if (data['status'] == 'secondary_verification_required') {
             emit(const AuthError(message: 'New device detected. Please verify your identity.'));
             return;
@@ -242,10 +256,10 @@ class AuthCubit extends Cubit<AuthState> {
         gender = userRow['gender'] as String?;
       }
 
-      // Load onboarding step and guardian mode from profiles table
+      // Load onboarding step, guardian mode, and gender fallback from profiles table
       final profileRow = await SupabaseService.client
           .from('profiles')
-          .select('onboarding_step, guardian_mode')
+          .select('onboarding_step, guardian_mode, gender')
           .eq('user_id', userId)
           .maybeSingle();
 
@@ -253,6 +267,9 @@ class AuthCubit extends Cubit<AuthState> {
         onboardingStep = (profileRow['onboarding_step'] as int?) ?? 0;
         final guardianMode = profileRow['guardian_mode'] as String?;
         isGuardianPath = guardianMode != null && guardianMode != 'none';
+        
+        // Fallback: also check profiles.gender if users.gender is null
+        gender ??= profileRow['gender'] as String?;
       }
     } catch (e) {
       debugPrint('AuthCubit: Error loading user profile: $e');

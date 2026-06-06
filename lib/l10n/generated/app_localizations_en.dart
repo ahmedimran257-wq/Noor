@@ -229,7 +229,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboarding_label_smoking => 'Smoking';
 
   @override
-  String get onboarding_label_vaping => 'Vaping / E-cigarettes';
+  String get onboarding_label_vaping => 'Vaping / E-Cigarettes';
 
   @override
   String get onboarding_label_hookah => 'Hookah / Shisha';
@@ -530,4 +530,322 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get interests_title => 'Interests';
+
+  @override
+  String get onboarding_profileForWhom_subtitle =>
+      'You can update this later from settings.';
+
+  @override
+  String get onboarding_profileForWhom_guardianCardTitle => 'Guardian';
+
+  @override
+  String get onboarding_profileForWhom_guardianCardSub =>
+      'I am creating this profile for someone';
+
+  @override
+  String get onboarding_profileForWhom_creatingFor =>
+      'I am creating this for my…';
+
+  @override
+  String get onboarding_profileForWhom_relation_son => 'Son';
+
+  @override
+  String get onboarding_profileForWhom_relation_daughter => 'Daughter';
+
+  @override
+  String get onboarding_profileForWhom_relation_brother => 'Brother';
+
+  @override
+  String get onboarding_profileForWhom_relation_sister => 'Sister';
+
+  @override
+  String get onboarding_profileForWhom_selectRelation =>
+      'Select a relationship to continue';
+
+  @override
+  String get onboarding_profileForWhom_selectOne => 'Select one to continue';
+
+  @override
+  String onboarding_basicIdentity_guardianBanner(String relation) {
+    return 'You are filling this as a guardian. These details are about your $relation.';
+  }
+
+  @override
+  String onboarding_basicIdentity_title_guardian(String relation) {
+    return 'Tell us about your $relation';
+  }
+
+  @override
+  String get onboarding_basicIdentity_subtitle_self =>
+      'This is what others will see on your profile.';
+
+  @override
+  String get onboarding_basicIdentity_subtitle_guardian =>
+      'This is what others will see on their profile.';
+
+  @override
+  String get onboarding_label_firstName_self => 'First name';
+
+  @override
+  String get onboarding_label_firstName_guardian => 'Candidate\'s first name';
+
+  @override
+  String get onboarding_hint_selectDateOfBirth => 'Select date of birth';
+
+  @override
+  String onboarding_error_under18_guardian(String relation) {
+    return 'Your $relation must be 18 or older to use NOOR.';
+  }
+
+  @override
+  String get onboarding_error_under18_self =>
+      'You must be 18 or older to use NOOR. We look forward to welcoming you then.';
+
+  @override
+  String get onboarding_label_gender_self => 'Gender';
+
+  @override
+  String get onboarding_label_gender_guardian => 'Candidate\'s gender';
+
+  @override
+  String get onboarding_label_country_self => 'Your country';
+
+  @override
+  String get onboarding_label_country_guardian => 'Their country';
+
+  @override
+  String get onboarding_hint_selectCountry => 'Select country';
+
+  @override
+  String get onboarding_label_city_self => 'Your city';
+
+  @override
+  String get onboarding_label_city_guardian => 'Their city';
+
+  @override
+  String get onboarding_location_confirmed => 'Confirmed Location';
+
+  @override
+  String get onboarding_hint_selectCommunity => 'Select community (optional)';
+
+  @override
+  String get onboarding_label_height_self => 'Your height';
+
+  @override
+  String get onboarding_label_height_guardian => 'Their height';
+
+  @override
+  String get onboarding_label_complexion => 'Complexion (Optional)';
+
+  @override
+  String get onboarding_hint_selectLanguage => 'Select language';
+
+  @override
+  String get onboarding_label_residencyStatus => 'Residency Status (Optional)';
+
+  @override
+  String get onboarding_label_specialNeeds => 'Special Needs (Optional)';
+
+  @override
+  String get onboarding_islamicIdentity_subtitle =>
+      'This helps match you with someone compatible.';
+
+  @override
+  String get onboarding_label_subSect => 'School of thought (Optional)';
+
+  @override
+  String get onboarding_label_revert => 'Revert / Convert (Optional)';
+
+  @override
+  String get onboarding_label_revertQuestion =>
+      'Are you a revert (convert) to Islam?';
+
+  @override
+  String get onboarding_hijab_always => 'Always';
+
+  @override
+  String get onboarding_hijab_sometimes => 'Sometimes';
+
+  @override
+  String get onboarding_hijab_no => 'No';
+
+  @override
+  String get onboarding_label_leadership => 'Religious Leadership';
+
+  @override
+  String get onboarding_label_leadershipQuestion =>
+      'Can you lead congregational prayers?';
+
+  @override
+  String get onboarding_leadership_leads => 'Leads Prayer';
+
+  @override
+  String get onboarding_leadership_learning => 'Learning';
+
+  @override
+  String get onboarding_leadership_notYet => 'Not Yet';
+
+  @override
+  String get onboarding_label_lifestyleDiet => 'Lifestyle & Diet';
+
+  @override
+  String get onboarding_label_lifestyleDietSub =>
+      'These are dealbreaker fields for many families. Please answer honestly.';
+
+  @override
+  String get onboarding_label_substanceUse => 'Substance Use';
+
+  @override
+  String get onboarding_marriageDeen_title => 'Marriage & Deen';
+
+  @override
+  String get onboarding_marriageDeen_subtitle =>
+      'Help us understand your journey and readiness.';
+
+  @override
+  String get onboarding_label_quranMemorization => 'Quran Memorization';
+
+  @override
+  String get onboarding_quran_none => 'None';
+
+  @override
+  String get onboarding_quran_some => 'Some Surahs';
+
+  @override
+  String get onboarding_quran_partial => 'Partial Hifz';
+
+  @override
+  String get onboarding_quran_hafiz => 'Hafiz / Hafiza';
+
+  @override
+  String get onboarding_label_religiousEducation => 'Religious Education';
+
+  @override
+  String get onboarding_religiousEdu_selfTaught => 'Self-Taught';
+
+  @override
+  String get onboarding_religiousEdu_madrasa => 'Madrasa';
+
+  @override
+  String get onboarding_religiousEdu_islamicUni => 'Islamic University';
+
+  @override
+  String get onboarding_religiousEdu_alim => 'Alim Course';
+
+  @override
+  String get onboarding_label_marriageTimeline => 'Marriage Timeline';
+
+  @override
+  String get onboarding_label_marriageTimelineQuestion =>
+      'When are you looking to get married?';
+
+  @override
+  String get onboarding_timeline_asap => 'As soon as possible';
+
+  @override
+  String get onboarding_timeline_6months => 'Within 6 months';
+
+  @override
+  String get onboarding_timeline_1year => 'Within a year';
+
+  @override
+  String get onboarding_timeline_2years => '2+ years';
+
+  @override
+  String get onboarding_timeline_notSure => 'Not sure yet';
+
+  @override
+  String get onboarding_label_niqab => 'Niqab';
+
+  @override
+  String get onboarding_niqab_wear => 'I wear niqab';
+
+  @override
+  String get onboarding_niqab_open => 'Open to wearing';
+
+  @override
+  String get onboarding_niqab_dontWear => 'I don\'t wear niqab';
+
+  @override
+  String get onboarding_label_mahrExpectation => 'Mahr Expectation';
+
+  @override
+  String get onboarding_label_mahrExpectationQuestion =>
+      'What is your expectation for mahr?';
+
+  @override
+  String get onboarding_mahr_noPreference => 'No preference';
+
+  @override
+  String get onboarding_mahr_modest => 'Modest';
+
+  @override
+  String get onboarding_mahr_moderate => 'Moderate';
+
+  @override
+  String get onboarding_mahr_generous => 'Generous';
+
+  @override
+  String get onboarding_mahr_toDiscuss => 'To discuss';
+
+  @override
+  String get onboarding_label_workAfterMarriage => 'Work After Marriage';
+
+  @override
+  String get onboarding_label_workAfterMarriageQuestion =>
+      'Would you like to work after marriage?';
+
+  @override
+  String get onboarding_work_yes => 'Yes, I plan to work';
+
+  @override
+  String get onboarding_work_no => 'No, I prefer not to';
+
+  @override
+  String get onboarding_label_mahrBudget => 'Mahr Budget';
+
+  @override
+  String get onboarding_label_mahrBudgetQuestion =>
+      'What mahr range are you prepared to offer?';
+
+  @override
+  String get onboarding_label_providerReadiness => 'Provider Readiness';
+
+  @override
+  String get onboarding_providerQuote =>
+      '\"The best of you are the best to your wives.\" — Prophet Muhammad ﷺ\n\nBeing honest about your readiness helps build a strong foundation.';
+
+  @override
+  String get onboarding_label_housing => 'Housing';
+
+  @override
+  String get onboarding_label_housingQuestion =>
+      'Can you provide a separate living space?';
+
+  @override
+  String get onboarding_label_maintenance => 'Financial Maintenance';
+
+  @override
+  String get onboarding_label_maintenanceQuestion =>
+      'Are you able to provide for a spouse financially?';
+
+  @override
+  String get onboarding_label_debtStatus => 'Debt Status';
+
+  @override
+  String get onboarding_label_debtStatusQuestion =>
+      'Your current financial obligations.';
+
+  @override
+  String get onboarding_debt_none => 'No debt';
+
+  @override
+  String get onboarding_debt_manageable => 'Manageable debt';
+
+  @override
+  String get onboarding_debt_significant => 'Significant debt';
+
+  @override
+  String get onboarding_marriageDeen_privacyNotice =>
+      'These details are not shown on your public profile. They are shared privately during the acceptance stage.';
 }

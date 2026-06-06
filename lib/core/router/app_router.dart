@@ -42,6 +42,8 @@ import '../../features/home/screens/delete_account_screen.dart';
 import '../../features/home/screens/block_list_screen.dart';
 import '../../features/home/screens/subscription_screen.dart';
 import '../../features/home/screens/guardian_dashboard_screen.dart';
+import '../../features/home/screens/chat_screen.dart';
+import '../../features/home/screens/referral_screen.dart';
 
 // ── Route names ───────────────────────────────────────────────
 
@@ -60,6 +62,7 @@ abstract final class AppRoutes {
   static const blockList      = '/block-list';
   static const subscription        = '/subscription';
   static const guardianDashboard   = '/guardian-dashboard';
+  static const referral            = '/referral';
 }
 
 // ── Screen index → route path mapping ────────────────────────
@@ -111,7 +114,8 @@ GoRouter buildAppRouter(AuthCubit authCubit, {
               location == AppRoutes.deleteAccount ||
               location == AppRoutes.blockList ||
               location == AppRoutes.subscription ||
-              location == AppRoutes.guardianDashboard) {
+              location == AppRoutes.guardianDashboard ||
+              location == AppRoutes.referral) {
             return null;
           }
           return AppRoutes.home;
@@ -187,10 +191,14 @@ GoRouter buildAppRouter(AuthCubit authCubit, {
       // ── Home (post-onboarding) ───────────────────────────
       GoRoute(
         path: AppRoutes.home,
-        pageBuilder: (context, state) => _slidePage(
-          key: state.pageKey,
-          child: const HomeScreen(),
-        ),
+        pageBuilder: (context, state) {
+          final tabIndexStr = state.uri.queryParameters['tab'];
+          final initialTab = tabIndexStr != null ? int.tryParse(tabIndexStr) : null;
+          return _slidePage(
+            key: state.pageKey,
+            child: HomeScreen(initialTab: initialTab),
+          );
+        },
       ),
 
       // ── Full-screen sub-screens ──────────────────────────
@@ -242,6 +250,23 @@ GoRouter buildAppRouter(AuthCubit authCubit, {
           key: state.pageKey,
           child: const GuardianDashboardScreen(),
         ),
+      ),
+      GoRoute(
+        path: AppRoutes.referral,
+        pageBuilder: (context, state) => _slidePage(
+          key: state.pageKey,
+          child: const ReferralScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/chat/:id',
+        pageBuilder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return _slidePage(
+            key: state.pageKey,
+            child: ChatScreen(conversationId: id),
+          );
+        },
       ),
     ],
   );

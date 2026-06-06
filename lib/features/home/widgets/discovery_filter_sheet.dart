@@ -28,7 +28,9 @@ import '../../../core/services/filter_preset_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/overlays/noor_bottom_sheet.dart';
 import '../screens/subscription_screen.dart';
+import '../../../core/data/country_data.dart';
 
 // ── Sheet entry point (called from DiscoveryFilterBar) ────────
 
@@ -37,16 +39,17 @@ Future<void> showDiscoveryFilterSheet(
   DiscoveryFilter? initial,
   String? scrollToSection,
 }) async {
-  await showModalBottomSheet<void>(
-    context: context,
-    backgroundColor: Colors.transparent,
-    isScrollControlled: true,
-    builder: (sheetCtx) => BlocProvider.value(
-      value: context.read<DiscoveryFeedCubit>(),
-      child: DiscoveryFilterSheet(
-        initial:         initial ?? context.read<DiscoveryFeedCubit>().state.activeFilter,
-        scrollToSection: scrollToSection,
+  await Navigator.of(context).push(
+    NoorBottomSheetRoute<void>(
+      builder: (sheetCtx) => BlocProvider.value(
+        value: context.read<DiscoveryFeedCubit>(),
+        child: DiscoveryFilterSheet(
+          initial:         initial ?? context.read<DiscoveryFeedCubit>().state.activeFilter,
+          scrollToSection: scrollToSection,
+        ),
       ),
+      isScrollControlled: true,
+      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
     ),
   );
 }
@@ -89,6 +92,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
   final _tongueKey    = GlobalKey();
   final _communityKey = GlobalKey();
   final _livingKey    = GlobalKey();
+  final _diasporaKey  = GlobalKey();
 
   @override
   void initState() {
@@ -124,6 +128,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
       'children'  => _childrenKey,
       'verified'  => _verifiedKey,
       'distance'  => _distanceKey,
+      'diaspora'  => _diasporaKey,
       'tongue'    => _tongueKey,
       'community' => _communityKey,
       'living'    => _livingKey,
@@ -166,7 +171,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF12121A),
+        backgroundColor: AppColors.surfaceMid,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Delete preset?',
             style: AppTypography.screenTitle.copyWith(fontSize: 18)),
@@ -218,23 +223,14 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
       builder: (ctx, scrollCtrl) {
         return Container(
           decoration: const BoxDecoration(
-            color: Color(0xFF12121A),
+            color: Color(0x99151522), // Frosted glass surfaceMid
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             border: Border(top: BorderSide(color: AppColors.cardBorder)),
           ),
           child: Column(
             children: [
               // Handle
-              Padding(
-                padding: const EdgeInsets.only(top: 12, bottom: 4),
-                child: Container(
-                  width: 40, height: 4,
-                  decoration: BoxDecoration(
-                    color:        AppColors.cardBorder,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
+              const Center(child: NoorPulseHandle()),
 
               // Header
               Padding(
@@ -461,6 +457,76 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                     ),
                     const SizedBox(height: 20),
 
+                    // ── DIASPORA MODE (Premium) ──────────────────
+                    _SectionLabel(key: _diasporaKey, label: 'DIASPORA MODE'),
+                    const SizedBox(height: 8),
+                    _SubscriberGate(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _ToggleRow(
+                            label: 'Enable Diaspora Mode',
+                            value: _draft.diasporaMode,
+                            onChanged: (v) {
+                              setState(() {
+                                _draft = _draft.copyWith(
+                                  diasporaMode: v,
+                                  clearDiasporaCountries: !v,
+                                );
+                              });
+                            },
+                          ),
+                          if (_draft.diasporaMode) ...[
+                            const SizedBox(height: 12),
+                            const Text(
+                              'Target Home Countries',
+                              style: AppTypography.caption,
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                ...(_draft.diasporaCountries ?? []).map((code) {
+                                  final country = kAllCountries.firstWhere(
+                                    (c) => c.iso2 == code,
+                                    orElse: () => CountryInfo(iso2: code, dialCode: '', name: code),
+                                  );
+                                  return Chip(
+                                    backgroundColor: AppColors.champagneGold.withValues(alpha: 0.12),
+                                    side: const BorderSide(color: AppColors.goldBorder),
+                                    label: Text(
+                                      '${country.flag} ${country.name}',
+                                      style: AppTypography.chipLabel.copyWith(color: AppColors.champagneGold),
+                                    ),
+                                    onDeleted: () {
+                                      setState(() {
+                                        final current = List<String>.from(_draft.diasporaCountries ?? []);
+                                        current.remove(code);
+                                        _draft = _draft.copyWith(
+                                          diasporaCountries: current,
+                                          clearDiasporaCountries: current.isEmpty,
+                                        );
+                                      });
+                                    },
+                                    deleteIconColor: AppColors.champagneGold,
+                                  );
+                                }),
+                                ActionChip(
+                                  backgroundColor: AppColors.surfaceGlass,
+                                  side: const BorderSide(color: AppColors.cardBorder),
+                                  avatar: const Icon(Icons.add, color: AppColors.slateMist, size: 16),
+                                  label: const Text('Add Country', style: AppTypography.chipLabel),
+                                  onPressed: _showCountrySelector,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
                     // ── MOTHER TONGUE (Premium) ─────────────
                     _SectionLabel(key: _tongueKey, label: 'MOTHER TONGUE'),
                     const SizedBox(height: 8),
@@ -571,6 +637,141 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  void _showCountrySelector() {
+    final searchCtrl = TextEditingController();
+    List<String> tempSelected = List<String>.from(_draft.diasporaCountries ?? []);
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surfaceElevated,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetCtx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            final query = searchCtrl.text.toLowerCase().trim();
+            final filtered = kAllCountries.where((c) {
+              return c.name.toLowerCase().contains(query) ||
+                  c.iso2.toLowerCase().contains(query);
+            }).toList();
+
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.7,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Select Home Countries',
+                        style: AppTypography.screenTitle.copyWith(fontSize: 18),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: AppColors.slateMist),
+                        onPressed: () => Navigator.pop(sheetCtx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: searchCtrl,
+                    style: AppTypography.body,
+                    decoration: InputDecoration(
+                      hintText: 'Search countries...',
+                      hintStyle: AppTypography.bodyMuted,
+                      prefixIcon: const Icon(Icons.search, color: AppColors.slateMist),
+                      fillColor: AppColors.surfaceGlass,
+                      filled: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.cardBorder),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.cardBorder),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.champagneGold),
+                      ),
+                    ),
+                    onChanged: (_) => setSheetState(() {}),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final country = filtered[index];
+                        final isSel = tempSelected.contains(country.iso2);
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: Text(
+                            country.flag,
+                            style: const TextStyle(fontSize: 24),
+                          ),
+                          title: Text(
+                            country.name,
+                            style: AppTypography.body.copyWith(
+                              color: isSel ? AppColors.champagneGold : AppColors.pearlWhite,
+                              fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                          trailing: isSel
+                              ? const Icon(Icons.check_circle, color: AppColors.champagneGold)
+                              : const Icon(Icons.circle_outlined, color: AppColors.slateMist),
+                          onTap: () {
+                            setSheetState(() {
+                              if (isSel) {
+                                tempSelected.remove(country.iso2);
+                              } else {
+                                tempSelected.add(country.iso2);
+                              }
+                            });
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    height: AppDimensions.buttonHeight,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.champagneGold,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                        ),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _draft = _draft.copyWith(
+                            diasporaCountries: tempSelected,
+                            clearDiasporaCountries: tempSelected.isEmpty,
+                          );
+                        });
+                        Navigator.pop(sheetCtx);
+                      },
+                      child: Text(
+                        'Apply (${tempSelected.length})',
+                        style: AppTypography.button,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
@@ -796,7 +997,7 @@ class _DropdownRow extends StatelessWidget {
       child: DropdownButtonFormField<String>(
         initialValue:  safe,
         style:         AppTypography.inputText,
-        dropdownColor: const Color(0xFF13131A),
+        dropdownColor: AppColors.surfaceElevated,
         decoration: const InputDecoration(border: InputBorder.none),
         icon: const Icon(Icons.expand_more_rounded, color: AppColors.slateMist),
         items: options.map((o) => DropdownMenuItem(

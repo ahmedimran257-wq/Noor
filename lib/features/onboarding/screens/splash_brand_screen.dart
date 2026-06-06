@@ -15,6 +15,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
@@ -136,6 +137,118 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
     super.dispose();
   }
 
+  void _showReferralSheet(BuildContext context) {
+    final codeCtrl = TextEditingController();
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surfaceMid,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        final bottom = MediaQuery.of(context).viewInsets.bottom;
+        return Padding(
+          padding: EdgeInsets.only(bottom: bottom),
+          child: Container(
+            padding: const EdgeInsets.all(AppDimensions.space24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: AppDimensions.space8),
+                Text(
+                  'Enter Referral Code',
+                  style: AppTypography.screenTitle.copyWith(fontSize: 20),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppDimensions.space12),
+                const Text(
+                  'If a friend invited you to NOOR, enter their 6-character referral code below.',
+                  style: AppTypography.bodyMuted,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppDimensions.space24),
+                TextField(
+                  controller: codeCtrl,
+                  style: AppTypography.inputText,
+                  textCapitalization: TextCapitalization.characters,
+                  maxLength: 6,
+                  decoration: InputDecoration(
+                    hintText: 'e.g. NOORXX',
+                    hintStyle: AppTypography.inputLabel,
+                    filled: true,
+                    fillColor: AppColors.inputSurface,
+                    counterText: '',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                      borderSide: const BorderSide(color: AppColors.cardBorder),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                      borderSide: const BorderSide(color: AppColors.cardBorder),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                      borderSide: const BorderSide(color: AppColors.champagneGold, width: 2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppDimensions.space24),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.champagneGold,
+                    foregroundColor: AppColors.obsidianNight,
+                    minimumSize: const Size(double.infinity, AppDimensions.buttonHeight),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                    ),
+                  ),
+                  onPressed: () async {
+                    final code = codeCtrl.text.trim().toUpperCase();
+                    if (code.length != 6) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Please enter a valid 6-character code.'),
+                          backgroundColor: AppColors.errorRed,
+                        ),
+                      );
+                      return;
+                    }
+
+                    // Save to SharedPreferences
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setString('pending_referral_code', code);
+
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text(
+                            'Referral code saved! It will be applied after you sign in.',
+                            style: AppTypography.body,
+                          ),
+                          backgroundColor: AppColors.surfaceGlassHover,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                            side: const BorderSide(color: AppColors.cardBorder),
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text('Apply Code', style: AppTypography.button),
+                ),
+                const SizedBox(height: AppDimensions.space12),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -252,6 +365,18 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                           NoorSecondaryButton(
                             label: 'Sign In',
                             onTap: () => context.push(AppRoutes.phone),
+                          ),
+                          const SizedBox(height: AppDimensions.space16),
+                          TextButton(
+                            onPressed: () => _showReferralSheet(context),
+                            child: Text(
+                              'Have a referral code?',
+                              style: AppTypography.captionMedium.copyWith(
+                                color: AppColors.champagneGold,
+                                decoration: TextDecoration.underline,
+                                decorationColor: AppColors.champagneGold,
+                              ),
+                            ),
                           ),
                         ],
                       ),

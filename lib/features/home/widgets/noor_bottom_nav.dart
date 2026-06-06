@@ -8,6 +8,7 @@
 //         and Chat (total unread count)
 // ============================================================
 
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -18,6 +19,7 @@ import '../../../core/cubits/chat/chat_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/noor_spring.dart';
 
 class NoorBottomNav extends StatelessWidget {
   const NoorBottomNav({
@@ -49,37 +51,42 @@ class NoorBottomNav extends StatelessWidget {
               2: chatState.totalUnread,
             };
 
-            return Container(
-              decoration: const BoxDecoration(
-                color: Color(0xCC0A0A0F), // Frosted obsidian
-                border: Border(
-                  top: BorderSide(
-                    color: AppColors.cardBorder,
-                    width: AppDimensions.borderThin,
+            return ClipRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: AppColors.navBarSurface,
+                    border: Border(
+                      top: BorderSide(
+                        color: AppColors.navBarBorder,
+                        width: AppDimensions.borderThin,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              child: SafeArea(
-                top: false,
-                child: SizedBox(
-                  height: 64,
-                  child: Row(
-                    children: List.generate(_items.length, (index) {
-                      final item   = _items[index];
-                      final active = index == currentIndex;
-                      final badge  = badges[index] ?? 0;
-                      return Expanded(
-                        child: _NavTab(
-                          item:     item,
-                          isActive: active,
-                          badgeCount: badge,
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            onTabSelected(index);
-                          },
-                        ),
-                      );
-                    }),
+                  child: SafeArea(
+                    top: false,
+                    child: SizedBox(
+                      height: 64,
+                      child: Row(
+                        children: List.generate(_items.length, (index) {
+                          final item   = _items[index];
+                          final active = index == currentIndex;
+                          final badge  = badges[index] ?? 0;
+                          return Expanded(
+                            child: _NavTab(
+                              item:     item,
+                              isActive: active,
+                              badgeCount: badge,
+                              onTap: () {
+                                HapticFeedback.selectionClick();
+                                onTabSelected(index);
+                              },
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -129,7 +136,11 @@ class _NavTab extends StatelessWidget {
         children: [
           // Gold underline indicator (top)
           AnimatedContainer(
-            duration: AppDimensions.durationTransition,
+            duration: const Duration(milliseconds: 300),
+            curve: const SpringCurve(
+              spring: NoorSpring.snappy,
+              duration: Duration(milliseconds: 300),
+            ),
             width:  isActive ? 24.0 : 0.0,
             height: 2.0,
             margin: const EdgeInsets.only(bottom: AppDimensions.space6),

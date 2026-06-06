@@ -94,4 +94,24 @@ abstract final class AppColors {
 
   /// Discovery card gradient — bottom (fully opaque)
   static const Color cardGradientBottom = Color(0xFF0A0A0F);
+
+  // ── New Surface Tokens ────────────────────────────────────
+  static const Color surfaceElevated = Color(0xFF13131A);
+  static const Color surfaceMid      = Color(0xFF12121A);
+  static const Color surfaceDark     = Color(0xFF1A1A25);
+
+  // ── Phase 3 Color System Cleanup ─────────────────────────
+  static const Color premiumGold     = Color(0xFFF6C344);  // Bright gold — subscription badges
+  static const Color onlineGreen     = Color(0xFF4ADE80);  // Online status indicator
+  static const Color messageBlue     = Color(0xFF5B9BD5);  // New message notification
+  static const Color expiryAmber     = Color(0xFFFFBF47);  // Expiry warning
+  static const Color navyCharcoal    = Color(0xFF151522);  // Gradient core (onboarding)
+  static const Color dropdownSurface = Color(0xFF14141E);  // Dropdown background
+  static const Color snackbarSurface = Color(0xFF1A1A24);  // Snackbar background
+  static const Color navBarSurface   = Color(0xCC0A0A0F);  // Nav bar frosted
+  static const Color navBarBorder    = Color(0x14FFFFFF);  // Nav bar border
+  static const Color overlayBlack55  = Color(0x8C000000);  // 55% black overlay
+  static const Color overlayBlack45  = Color(0x73000000);  // 45% black overlay
+  static const Color overlayBlack87  = Color(0xDE000000);  // 87% black overlay
 }
+

@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'app_colors.dart';
 import 'app_dimensions.dart';
 import 'app_typography.dart';
+import 'noor_spring.dart';
 
 abstract final class AppTheme {
   // ── Dark Theme (NOOR Default) ─────────────────────────────
@@ -287,17 +288,67 @@ class NoorPageTransition extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    final fadeTween = CurveTween(curve: Curves.easeOutCubic);
-    final slideTween = Tween<Offset>(
-      begin: const Offset(0, 0.02),   // 10px at typical 500px height ≈ 2%
-      end:   Offset.zero,
-    ).chain(CurveTween(curve: Curves.easeOutCubic));
+    // Gentle spring curve for both animations
+    const springCurve = SpringCurve(
+      spring: NoorSpring.gentle,
+      duration: Duration(milliseconds: 500),
+    );
 
-    return FadeTransition(
-      opacity: animation.drive(fadeTween),
-      child: SlideTransition(
-        position: animation.drive(slideTween),
-        child: child,
+    // Primary (incoming) slide: slides in from right
+    final primarySlide = Tween<Offset>(
+      begin: const Offset(1.0, 0.0),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: animation,
+        curve: springCurve,
+      ),
+    );
+
+    // Secondary (outgoing) slide: slides left at 0.3x speed
+    final secondarySlide = Tween<Offset>(
+      begin: Offset.zero,
+      end: const Offset(-0.3, 0.0),
+    ).animate(
+      CurvedAnimation(
+        parent: secondaryAnimation,
+        curve: springCurve,
+      ),
+    );
+
+    // Primary (incoming) fade
+    final primaryFade = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(
+      CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOut,
+      ),
+    );
+
+    // Secondary (outgoing) fade: dims slightly to 80% opacity when pushed over
+    final secondaryFade = Tween<double>(
+      begin: 1.0,
+      end: 0.8,
+    ).animate(
+      CurvedAnimation(
+        parent: secondaryAnimation,
+        curve: Curves.easeOut,
+      ),
+    );
+
+    return SlideTransition(
+      position: secondarySlide,
+      child: FadeTransition(
+        opacity: secondaryFade,
+        child: SlideTransition(
+          position: primarySlide,
+          child: FadeTransition(
+            opacity: primaryFade,
+            child: child,
+          ),
+        ),
       ),
     );
   }
