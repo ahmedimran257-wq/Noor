@@ -199,11 +199,14 @@ class _ChatScreenState extends State<ChatScreen>
                             final msg      = conv.messages[i];
                             final prev     = i > 0 ? conv.messages[i - 1] : null;
                             final sameAsPrev = prev != null && prev.isMe == msg.isMe;
+                            final locale   = Localizations.localeOf(context).languageCode;
                             return _MessageBubble(
                               message:    msg,
                               sameAsPrev: sameAsPrev,
                               onTap: () => context.read<ChatCubit>()
                                   .toggleTimestamp(widget.conversationId, msg.id),
+                              onTranslate: () => context.read<ChatCubit>()
+                                  .translateMessage(widget.conversationId, msg.id, locale),
                             );
                           },
                         )
@@ -608,14 +611,23 @@ class _OpenerCard extends StatelessWidget {
 // ── Message bubble ────────────────────────────────────────────
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.message, required this.sameAsPrev, required this.onTap});
+  const _MessageBubble({
+    required this.message,
+    required this.sameAsPrev,
+    required this.onTap,
+    this.onTranslate,
+  });
   final ChatMessage message;
   final bool        sameAsPrev;
   final VoidCallback onTap;
+  final VoidCallback? onTranslate;
 
   @override
   Widget build(BuildContext context) {
     final isMe   = message.isMe;
+    final locale = Localizations.localeOf(context).languageCode;
+    final hasTranslation = message.translations.containsKey(locale);
+
     final radius = BorderRadius.only(
       topLeft:     Radius.circular(isMe ? AppDimensions.radiusButton : 6),
       topRight:    Radius.circular(isMe ? 6 : AppDimensions.radiusButton),
@@ -661,13 +673,77 @@ class _MessageBubble extends StatelessWidget {
                       borderRadius: radius,
                       border: Border.all(color: isMe ? AppColors.goldBorder : AppColors.cardBorder, width: 0.8),
                     ),
-                    child: Text(message.text, style: AppTypography.chatMessage),
+                    child: hasTranslation
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(message.text, style: AppTypography.chatMessage),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 6),
+                                child: Divider(
+                                  color: (isMe ? AppColors.goldBorder : AppColors.cardBorder).withValues(alpha: 0.5),
+                                  height: 1,
+                                ),
+                              ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(
+                                    Icons.g_translate_rounded,
+                                    color: AppColors.champagneGold.withValues(alpha: 0.8),
+                                    size: 14,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      message.translations[locale]!,
+                                      style: AppTypography.chatMessage.copyWith(
+                                        color: AppColors.pearlWhite.withValues(alpha: 0.9),
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          )
+                        : Text(message.text, style: AppTypography.chatMessage),
                   ),
                 ),
                 if (isMe) ...[ const SizedBox(width: AppDimensions.space4), _StatusIcon(status: message.status) ],
               ],
             ),
           ),
+          if (!isMe && !hasTranslation && onTranslate != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, left: 6),
+              child: GestureDetector(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  onTranslate!();
+                },
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.translate,
+                      color: AppColors.champagneGold,
+                      size: 12,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Translate',
+                      style: AppTypography.chatTimestamp.copyWith(
+                        color: AppColors.champagneGold,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           AnimatedSize(
             duration: AppDimensions.durationTransition,
             child: message.isTimestampVisible

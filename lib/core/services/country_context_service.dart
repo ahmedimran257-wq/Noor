@@ -173,17 +173,23 @@ class CountryContextService {
             return list.map((row) {
               final map = row as Map<String, dynamic>;
               final cityName = map['name'] as String? ?? '';
+              final stateName = map['state'] as String? ?? '';
+              final countryName = map['country'] as String? ?? '';
               final code = map['country_code'] as String? ?? countryCode ?? '';
               final lat = (map['lat'] as num?)?.toDouble() ?? 0.0;
               final lng = (map['lng'] as num?)?.toDouble() ?? 0.0;
               return CityResult(
                 city: cityName,
-                state: '', // DB schema doesn't store state separately in cities table
-                country: '',
+                state: stateName,
+                country: countryName,
                 countryCode: code,
                 postalCode: '',
-                fullAddress: cityName,
-                placeId: map['id'] as String? ?? '',
+                fullAddress: [
+                  cityName,
+                  if (stateName.isNotEmpty) stateName,
+                  if (countryName.isNotEmpty) countryName,
+                ].join(', '),
+                placeId: map['id']?.toString() ?? '',
                 lat: lat,
                 lng: lng,
               );
@@ -241,43 +247,52 @@ class CountryContextService {
       }
     }
 
-    // 3. Try Open-Meteo Geocoding API (Free fallback, 9M+ cities/districts/villages, no key required)
+    // 3. Try Photon (Komoot/OSM) Geocoding API (Free fallback, no key required, structured global cities/districts)
     try {
-      debugPrint('[CountryContextService] Querying Open-Meteo Geocoding API for "$query" (countryCode: $countryCode)...');
+      debugPrint('[CountryContextService] Querying Photon Geocoding API for "$query" (countryCode: $countryCode)...');
       final uri = Uri.https(
-        'geocoding-api.open-meteo.com',
-        '/v1/search',
+        'photon.komoot.io',
+        '/api',
         {
-          'name':     query,
-          'count':    '20',
-          'language': 'en',
-          'format':   'json',
+          'q': query,
+          'limit': '20',
         },
       );
 
-      final response = await http.get(uri).timeout(
+      final response = await http.get(
+        uri,
+        headers: {
+          'User-Agent': 'NoorApp/1.0 (contact@noorapp.com; matchmaking app)',
+        },
+      ).timeout(
         const Duration(seconds: 5),
       );
 
+      debugPrint('[CountryContextService] Photon status code: ${response.statusCode}');
+
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        final results = data['results'] as List<dynamic>? ?? [];
+        final data = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+        final features = data['features'] as List<dynamic>? ?? [];
         final parsedResults = <CityResult>[];
         
-        for (final item in results) {
-          final map = item as Map<String, dynamic>;
-          final cCode = map['country_code'] as String? ?? '';
+        for (final feat in features) {
+          final map = feat as Map<String, dynamic>;
+          final properties = map['properties'] as Map<String, dynamic>? ?? {};
+          final geometry = map['geometry'] as Map<String, dynamic>? ?? {};
+          final coords = geometry['coordinates'] as List<dynamic>? ?? [];
+          
+          final cCode = properties['countrycode'] as String? ?? '';
           
           // Filter to requested country code if provided
           if (countryCode != null && cCode.toLowerCase() != countryCode.toLowerCase()) {
             continue;
           }
           
-          final cityName = map['name'] as String? ?? '';
-          final stateName = map['admin1'] as String? ?? '';
-          final countryName = map['country'] as String? ?? '';
-          final lat = (map['latitude'] as num?)?.toDouble() ?? 0.0;
-          final lng = (map['longitude'] as num?)?.toDouble() ?? 0.0;
+          final cityName = properties['name'] as String? ?? '';
+          final stateName = properties['state'] as String? ?? '';
+          final countryName = properties['country'] as String? ?? '';
+          final lng = coords.isNotEmpty ? (coords[0] as num).toDouble() : 0.0;
+          final lat = coords.length > 1 ? (coords[1] as num).toDouble() : 0.0;
           
           // Formatted address: "Kurnool, Andhra Pradesh, India"
           final fullAddr = [
@@ -293,19 +308,19 @@ class CountryContextService {
             countryCode: cCode.toUpperCase(),
             postalCode: '',
             fullAddress: fullAddr,
-            placeId: 'openmeteo-${map['id'] ?? cityName.toLowerCase()}',
+            placeId: 'photon-${properties['osm_id'] ?? cityName.toLowerCase()}',
             lat: lat,
             lng: lng,
           ));
         }
         
         if (parsedResults.isNotEmpty) {
-          debugPrint('[CountryContextService] Found ${parsedResults.length} cities from Open-Meteo');
+          debugPrint('[CountryContextService] Found ${parsedResults.length} cities from Photon');
           return parsedResults;
         }
       }
     } catch (e) {
-      debugPrint('[CountryContextService] Open-Meteo search failed: $e');
+      debugPrint('[CountryContextService] Photon search failed: $e');
     }
 
     // 4. Fallback: Return empty list (allowing custom city entries if enabled)

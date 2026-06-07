@@ -352,11 +352,10 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
     final onboardingCubit = context.read<OnboardingCubit>();
 
     String? resolvedCityId = _selectedCityId;
-    final uuidRegex = RegExp(
-        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$');
+    final intRegex = RegExp(r'^\d+$');
 
     if (_selectedCity != null &&
-        (resolvedCityId == null || !uuidRegex.hasMatch(resolvedCityId))) {
+        (resolvedCityId == null || !intRegex.hasMatch(resolvedCityId))) {
       if (SupabaseService.isInitialized) {
         try {
           debugPrint(
@@ -364,18 +363,18 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
           final response = await SupabaseService.client.rpc(
             'get_or_create_city',
             params: {
-              'p_name':         _selectedCity,
+              'p_city_name':    _selectedCity,
+              'p_region_name':  _selectedStateName ?? '',
+              'p_country_name': _selectedCountryName ?? '',
               'p_country_code': countryCode,
               'p_latitude':     _lat ?? 0.0,
               'p_longitude':    _lng ?? 0.0,
-              'p_timezone':     'UTC',
-              'p_name_local':   null,
             },
           );
-          if (response != null && uuidRegex.hasMatch(response.toString())) {
+          if (response != null && intRegex.hasMatch(response.toString())) {
             resolvedCityId = response.toString();
             debugPrint(
-                '[BasicIdentityScreen] Ingested successfully. Returned UUID: $resolvedCityId');
+                '[BasicIdentityScreen] Ingested successfully. Returned ID: $resolvedCityId');
           }
         } catch (e) {
           debugPrint('[BasicIdentityScreen] Dynamic city ingestion failed: $e');

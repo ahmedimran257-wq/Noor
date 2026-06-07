@@ -5,6 +5,12 @@
 --   No explicit identity verification tying a selfie to uploaded
 --   photos. Photos are marked admin_approved but there's no KYC.
 --
+-- KYC Provider: Ballerine (open-source KYC orchestration)
+--   See: https://github.com/ballerine-io/ballerine
+--   Finding 3.3 (KYC Pipeline) deferred to Phase 2.
+--   Full Ballerine integration requires: API keys, webhook
+--   endpoint, and billing setup.
+--
 -- Changes:
 --   1. Create identity_verifications table
 --   2. Create sync_verification_status() trigger
@@ -16,7 +22,7 @@ CREATE TABLE identity_verifications (
   id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id          uuid UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   provider         text NOT NULL DEFAULT 'manual'
-                     CHECK (provider IN ('manual','persona','onfido','sumsub')),
+                     CHECK (provider IN ('manual','ballerine')),
   status           text NOT NULL DEFAULT 'pending'
                      CHECK (status IN ('pending','in_review','approved','rejected','expired')),
   provider_ref_id  text,          -- External verification ID from KYC provider
@@ -33,10 +39,11 @@ CREATE INDEX idx_identity_verif_status ON identity_verifications(status);
 CREATE INDEX idx_identity_verif_user   ON identity_verifications(user_id);
 
 COMMENT ON TABLE identity_verifications IS
-  'Identity verification records. Supports manual admin verification, '
-  'or third-party KYC providers (Persona, Onfido, Sumsub). '
+  'Identity verification records. Supports manual admin verification '
+  'or Ballerine (open-source KYC orchestration). '
   'Verified status syncs to profiles.is_verified via trigger. '
-  'Verification can expire after a configurable period.';
+  'Verification can expire after a configurable period. '
+  'Full Ballerine integration (API + webhooks) is a Phase 2 task.';
 
 -- ── 2. Sync verification status to profiles ──────────────────
 -- When an identity_verifications row changes status, update

@@ -206,10 +206,8 @@ class ProfileWriteService {
           'last_name': data.lastName,
           'date_of_birth': data.dateOfBirth?.toIso8601String().split('T')[0],
           'gender': _genderToString(data.gender),
-          'city_id': (data.cityId != null &&
-                  RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
-                      .hasMatch(data.cityId!))
-              ? data.cityId
+          'city_id': (data.cityId != null && RegExp(r'^\d+$').hasMatch(data.cityId!))
+              ? int.parse(data.cityId!)
               : null,
           'country_code': data.countryCode,
           'height_cm': data.heightCm,
@@ -507,7 +505,7 @@ class ProfileWriteService {
       lastName: p['last_name'] as String?,
       dateOfBirth: dob,
       gender: gender,
-      cityId: p['city_id'] as String?,
+      cityId: p['city_id']?.toString(),
       cityName: null, // Resolves locally in BasicIdentityScreen via _kCities
       countryCode: p['country_code'] as String?,
       heightCm: p['height_cm'] as int?,

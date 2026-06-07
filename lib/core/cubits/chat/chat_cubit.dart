@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/supabase_service.dart';
+import '../../services/translation_service.dart';
 import '../../utils/content_filter.dart';
 import '../../utils/noor_compute.dart';
 import 'chat_state.dart';
@@ -122,11 +123,11 @@ class ChatCubit extends Cubit<ChatState> {
 
     _disposeRealtime();
 
-    // Subscribe to new incoming messages where I am the receiver
+    // Subscribe to new incoming messages/updates where I am the receiver
     _messagesSubscription = SupabaseService.client
         .channel('chat_messages')
         .onPostgresChanges(
-          event: PostgresChangeEvent.insert,
+          event: PostgresChangeEvent.all,
           schema: 'public',
           table: 'messages',
           filter: PostgresChangeFilter(
@@ -545,6 +546,85 @@ class ChatCubit extends Cubit<ChatState> {
         messages:    [...c.messages, replyMsg],
         unreadCount: 0,
       );
+    }).toList();
+    emit(state.copyWith(conversations: updated));
+  }
+
+  // ── Translation ────────────────────────────────────────────
+
+  Future<void> translateMessage(String conversationId, String messageId, String targetLang) async {
+    final convIndex = state.conversations.indexWhere((c) => c.id == conversationId);
+    if (convIndex == -1) return;
+
+    final conv = state.conversations[convIndex];
+    final msgIndex = conv.messages.indexWhere((m) => m.id == messageId);
+    if (msgIndex == -1) return;
+
+    final msg = conv.messages[msgIndex];
+
+    // Check if translation is already present locally
+    if (msg.translations.containsKey(targetLang)) {
+      return;
+    }
+
+    if (_isRealMode) {
+      try {
+        // Fetch message translations from Supabase to check if cached in DB
+        final response = await SupabaseService.client
+            .from('messages')
+            .select('translations')
+            .eq('id', messageId)
+            .single();
+
+        final dbTranslations = Map<String, dynamic>.from(response['translations'] ?? {});
+
+        if (dbTranslations.containsKey(targetLang)) {
+          _updateMessageTranslations(conversationId, messageId, dbTranslations);
+          return;
+        }
+
+        // Call the Translation Service to translate content
+        final translated = await TranslationService.instance.translate(
+          text: msg.text,
+          targetLang: targetLang,
+        );
+
+        if (translated != null) {
+          dbTranslations[targetLang] = translated;
+          await SupabaseService.client
+              .from('messages')
+              .update({'translations': dbTranslations})
+              .eq('id', messageId);
+
+          _updateMessageTranslations(conversationId, messageId, dbTranslations);
+        }
+      } catch (e) {
+        debugPrint('ChatCubit: Error translating message in DB: $e');
+      }
+    } else {
+      // Mock mode translation fallback
+      final translated = await TranslationService.instance.translate(
+        text: msg.text,
+        targetLang: targetLang,
+      );
+      if (translated != null) {
+        final newTranslations = Map<String, String>.from(msg.translations)
+          ..[targetLang] = translated;
+        _updateMessageTranslations(conversationId, messageId, newTranslations);
+      }
+    }
+  }
+
+  void _updateMessageTranslations(
+      String convId, String msgId, Map<String, dynamic> translations) {
+    if (isClosed) return;
+    final updated = state.conversations.map((c) {
+      if (c.id != convId) return c;
+      final msgs = c.messages.map((m) {
+        if (m.id != msgId) return m;
+        return m.copyWith(translations: Map<String, String>.from(translations));
+      }).toList();
+      return c.copyWith(messages: msgs);
     }).toList();
     emit(state.copyWith(conversations: updated));
   }

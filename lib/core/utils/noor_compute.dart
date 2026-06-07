@@ -107,6 +107,12 @@ MessagesParseResult parseMessagesInBackground(MessagesParseInput input) {
     if (!isMe && !isRead) {
       unreadCount++;
     }
+
+    final translationsMap = msg['translations'] as Map<dynamic, dynamic>? ?? {};
+    final translations = translationsMap.map(
+      (key, value) => MapEntry(key.toString(), value.toString()),
+    );
+
     chatMessages.add(ChatMessage(
       id: msg['id'] as String,
       text: msg['content'] as String? ?? '',
@@ -115,6 +121,7 @@ MessagesParseResult parseMessagesInBackground(MessagesParseInput input) {
       status: isRead 
           ? MessageStatus.read 
           : (isMe ? MessageStatus.sent : MessageStatus.delivered),
+      translations: translations,
     ));
   }
   return MessagesParseResult(chatMessages: chatMessages, unreadCount: unreadCount);
