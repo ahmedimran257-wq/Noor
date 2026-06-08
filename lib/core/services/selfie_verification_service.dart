@@ -23,6 +23,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
+import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:path_provider/path_provider.dart';
@@ -183,21 +184,17 @@ class SelfieVerificationService {
       final face = faces.first;
 
       // 2. Face occupies ≥ 20% of image
-      // We use a conservative estimate of image dimensions from the bounding box.
-      // ML Kit returns the face bounding box in image coordinates.
-      final faceArea = face.boundingBox.width * face.boundingBox.height;
-      // Estimate image area: we use the face bounding box position to infer
-      // a minimum image size. The face shouldn't be less than 20% of the image.
-      // Since we don't have the exact image dimensions from InputImage,
-      // we use the bounding box coordinates as a lower bound.
-      final estimatedImageWidth = (face.boundingBox.right + face.boundingBox.left).clamp(1.0, double.infinity);
-      final estimatedImageHeight = (face.boundingBox.bottom + face.boundingBox.top).clamp(1.0, double.infinity);
-      final estimatedImageArea = estimatedImageWidth * estimatedImageHeight;
-      final faceRatio = faceArea / estimatedImageArea;
+      // Decode the actual image dimensions from the bytes.
+      final codec = await ui.instantiateImageCodec(imageBytes);
+      final frameInfo = await codec.getNextFrame();
+      final imageWidth = frameInfo.image.width;
+      final imageHeight = frameInfo.image.height;
+      final imageArea = imageWidth * imageHeight;
 
-      if (faceRatio < 0.10) {
-        // Using 10% as the threshold with estimated dimensions
-        // (since estimated area is larger than actual, 10% ≈ 20% of real image)
+      final faceArea = face.boundingBox.width * face.boundingBox.height;
+      final faceRatio = faceArea / imageArea;
+
+      if (faceRatio < 0.20) {
         return const ValidationResult.failure(FaceValidationError.faceTooSmall);
       }
 
@@ -273,7 +270,7 @@ class SelfieVerificationService {
       final storagePath = '$userId/verification_${DateTime.now().millisecondsSinceEpoch}.webp';
 
       await SupabaseService.client.storage
-          .from('profile-photos')
+          .from('selfie-verifications')
           .uploadBinary(
             storagePath,
             photoBytes,

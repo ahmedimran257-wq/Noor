@@ -19,14 +19,26 @@
 -- ============================================================
 
 -- ── 1. Drop old identity verification infrastructure ─────────
-DROP TRIGGER IF EXISTS trg_sync_verification_status_insert ON identity_verifications;
-DROP TRIGGER IF EXISTS trg_sync_verification_status ON identity_verifications;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'identity_verifications') THEN
+    DROP TRIGGER IF EXISTS trg_sync_verification_status_insert ON identity_verifications;
+    DROP TRIGGER IF EXISTS trg_sync_verification_status ON identity_verifications;
+  END IF;
+END $$;
 DROP FUNCTION IF EXISTS sync_verification_status();
 DROP FUNCTION IF EXISTS request_verification(text);
 DROP FUNCTION IF EXISTS expire_old_verifications();
 
 -- Remove the cron job for expiring verifications
-SELECT cron.unschedule('expire_old_verifications_monthly');
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
+    PERFORM cron.unschedule('expire_old_verifications_monthly');
+  END IF;
+EXCEPTION
+  WHEN OTHERS THEN NULL;
+END $$;
 
 DROP TABLE IF EXISTS identity_verifications CASCADE;
 

@@ -72,6 +72,7 @@ class Conversation extends Equatable {
     required this.messages,
     this.unreadCount = 0,
     this.matchId,
+    this.otherUserId,
     this.isMatchClosed = false,
     this.closureMessage,
   });
@@ -82,6 +83,7 @@ class Conversation extends Equatable {
   final List<ChatMessage> messages;
   final int              unreadCount;
   final String?          matchId;
+  final String?          otherUserId;
   final bool             isMatchClosed;   // true when respectful closure sent
   final String?          closureMessage;  // the pre-written closing message
 
@@ -117,6 +119,7 @@ class Conversation extends Equatable {
       messages:          messages       ?? this.messages,
       unreadCount:       unreadCount    ?? this.unreadCount,
       matchId:           matchId,
+      otherUserId:       otherUserId,
       isMatchClosed:     isMatchClosed  ?? this.isMatchClosed,
       closureMessage:    closureMessage ?? this.closureMessage,
     );
@@ -124,7 +127,7 @@ class Conversation extends Equatable {
 
   @override
   List<Object?> get props =>
-      [id, matchName, matchLastInitial, messages, unreadCount, isMatchClosed, closureMessage];
+      [id, matchName, matchLastInitial, messages, unreadCount, matchId, otherUserId, isMatchClosed, closureMessage];
 }
 
 // ── Chat State ────────────────────────────────────────────────

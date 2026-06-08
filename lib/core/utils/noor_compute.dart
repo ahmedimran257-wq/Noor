@@ -36,6 +36,7 @@ MockProfile mapDbRowToMockProfile(Map<String, dynamic> row) {
   }
 
   return MockProfile(
+    id: row['user_id'] as String?,
     firstName: (row['first_name'] as String?) ?? 'Noor User',
     lastNameInitial: ((row['last_name_initial'] as String?) ?? '').isNotEmpty
         ? row['last_name_initial'] as String

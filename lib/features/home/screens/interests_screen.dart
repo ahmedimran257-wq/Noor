@@ -131,7 +131,7 @@ class _InterestsScreenState extends State<InterestsScreen>
                           final navigator = Navigator.of(context);
                           navigator.pop();
                           final convId = await chatCubit.openOrCreateConversation(
-                              profile.firstName, profile.lastNameInitial);
+                              profile.id, profile.firstName, profile.lastNameInitial);
                           if (convId.isNotEmpty) {
                             navigator.push(
                               PageRouteBuilder(
@@ -718,7 +718,7 @@ class _ReceivedTile extends StatelessWidget {
                   final chatCubit = context.read<ChatCubit>();
                   final navigator = Navigator.of(context);
                   final convId = await chatCubit.openOrCreateConversation(
-                      p.firstName, p.lastNameInitial);
+                      p.id, p.firstName, p.lastNameInitial);
                   if (convId.isNotEmpty) {
                     navigator.push(
                       PageRouteBuilder(

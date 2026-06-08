@@ -157,7 +157,7 @@ class InterestsCubit extends Cubit<InterestsState> {
     try {
       final row = await SupabaseService.client
           .from('profiles')
-          .select('first_name, last_name, date_of_birth, gender, city_id, sect, deen_level, photo_privacy, bio')
+          .select('user_id, first_name, last_name, date_of_birth, gender, city_id, sect, deen_level, photo_privacy, bio')
           .eq('user_id', userId)
           .maybeSingle();
 
