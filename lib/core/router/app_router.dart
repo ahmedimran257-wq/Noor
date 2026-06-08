@@ -44,6 +44,7 @@ import '../../features/home/screens/subscription_screen.dart';
 import '../../features/home/screens/guardian_dashboard_screen.dart';
 import '../../features/home/screens/chat_screen.dart';
 import '../../features/home/screens/referral_screen.dart';
+import '../../features/verification/screens/selfie_verification_screen.dart';
 
 // ── Route names ───────────────────────────────────────────────
 
@@ -63,6 +64,7 @@ abstract final class AppRoutes {
   static const subscription        = '/subscription';
   static const guardianDashboard   = '/guardian-dashboard';
   static const referral            = '/referral';
+  static const verify              = '/verify';
 }
 
 // ── Screen index → route path mapping ────────────────────────
@@ -115,7 +117,8 @@ GoRouter buildAppRouter(AuthCubit authCubit, {
               location == AppRoutes.blockList ||
               location == AppRoutes.subscription ||
               location == AppRoutes.guardianDashboard ||
-              location == AppRoutes.referral) {
+              location == AppRoutes.referral ||
+              location == AppRoutes.verify) {
             return null;
           }
           return AppRoutes.home;
@@ -249,6 +252,13 @@ GoRouter buildAppRouter(AuthCubit authCubit, {
         pageBuilder: (context, state) => _slidePage(
           key: state.pageKey,
           child: const GuardianDashboardScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.verify,
+        pageBuilder: (context, state) => _slidePage(
+          key: state.pageKey,
+          child: const SelfieVerificationScreen(),
         ),
       ),
       GoRoute(

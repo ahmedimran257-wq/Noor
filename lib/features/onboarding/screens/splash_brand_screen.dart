@@ -22,6 +22,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/buttons/noor_primary_button.dart';
 import '../../../core/widgets/buttons/noor_secondary_button.dart';
 import '../../../core/router/app_router.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 class SplashBrandScreen extends StatefulWidget {
   const SplashBrandScreen({super.key});
@@ -138,6 +139,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
   }
 
   void _showReferralSheet(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final codeCtrl = TextEditingController();
     showModalBottomSheet<void>(
       context: context,
@@ -158,13 +160,13 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
               children: [
                 const SizedBox(height: AppDimensions.space8),
                 Text(
-                  'Enter Referral Code',
+                  l10n.splash_referral_title,
                   style: AppTypography.screenTitle.copyWith(fontSize: 20),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppDimensions.space12),
-                const Text(
-                  'If a friend invited you to NOOR, enter their 6-character referral code below.',
+                Text(
+                  l10n.splash_referral_subtitle,
                   style: AppTypography.bodyMuted,
                   textAlign: TextAlign.center,
                 ),
@@ -175,7 +177,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                   textCapitalization: TextCapitalization.characters,
                   maxLength: 6,
                   decoration: InputDecoration(
-                    hintText: 'e.g. NOORXX',
+                    hintText: l10n.splash_referral_hint,
                     hintStyle: AppTypography.inputLabel,
                     filled: true,
                     fillColor: AppColors.inputSurface,
@@ -208,8 +210,8 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                     final code = codeCtrl.text.trim().toUpperCase();
                     if (code.length != 6) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Please enter a valid 6-character code.'),
+                        SnackBar(
+                          content: Text(l10n.splash_referral_invalid),
                           backgroundColor: AppColors.errorRed,
                         ),
                       );
@@ -224,8 +226,8 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: const Text(
-                            'Referral code saved! It will be applied after you sign in.',
+                          content: Text(
+                            l10n.splash_referral_saved,
                             style: AppTypography.body,
                           ),
                           backgroundColor: AppColors.surfaceGlassHover,
@@ -238,7 +240,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                       );
                     }
                   },
-                  child: const Text('Apply Code', style: AppTypography.button),
+                  child: Text(l10n.splash_referral_button, style: AppTypography.button),
                 ),
                 const SizedBox(height: AppDimensions.space12),
               ],
@@ -251,6 +253,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.obsidianNight,
       body: Stack(
@@ -306,7 +309,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                     child: Transform.scale(
                       scale: _noorScale.value,
                       child: Text(
-                        'نور',
+                        l10n.localeName == 'ar' ? 'ميثاق' : 'نور',
                         style: TextStyle(
                           fontFamily: 'serif',
                           fontSize: 72,
@@ -330,7 +333,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                 // NOOR wordmark
                 FadeTransition(
                   opacity: _wordmarkOpacity,
-                  child: const Text('NOOR', style: AppTypography.wordmark),
+                  child: Text(l10n.appName, style: AppTypography.wordmark),
                 ),
 
                 const SizedBox(height: AppDimensions.space12),
@@ -338,8 +341,8 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                 // Tagline
                 FadeTransition(
                   opacity: _taglineOpacity,
-                  child: const Text(
-                    'Begin with bismillah',
+                  child: Text(
+                    l10n.appTagline,
                     style: AppTypography.tagline,
                   ),
                 ),
@@ -358,19 +361,19 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                       child: Column(
                         children: [
                           NoorPrimaryButton(
-                            label: 'Create Profile',
+                            label: l10n.splash_button_createProfile,
                             onTap: () => context.push(AppRoutes.legal),
                           ),
                           const SizedBox(height: AppDimensions.space12),
                           NoorSecondaryButton(
-                            label: 'Sign In',
+                            label: l10n.splash_button_signIn,
                             onTap: () => context.push(AppRoutes.phone),
                           ),
                           const SizedBox(height: AppDimensions.space16),
                           TextButton(
                             onPressed: () => _showReferralSheet(context),
                             child: Text(
-                              'Have a referral code?',
+                              l10n.splash_referral_question,
                               style: AppTypography.captionMedium.copyWith(
                                 color: AppColors.champagneGold,
                                 decoration: TextDecoration.underline,

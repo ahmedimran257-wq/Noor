@@ -125,22 +125,24 @@ class _InterestsScreenState extends State<InterestsScreen>
                           ),
                           elevation: 0,
                         ),
-                        onPressed: () {
+                        onPressed: () async {
                           HapticFeedback.mediumImpact();
-                          Navigator.of(context).pop();
-                          final convId = context
-                              .read<ChatCubit>()
-                              .openOrCreateConversation(
-                                  profile.firstName, profile.lastNameInitial);
-                          Navigator.of(context).push(
-                            PageRouteBuilder(
-                              transitionDuration: AppDimensions.durationReveal,
-                              pageBuilder: (ctx, anim, _) => FadeTransition(
-                                opacity: anim,
-                                child: ChatScreen(conversationId: convId),
+                          final chatCubit = context.read<ChatCubit>();
+                          final navigator = Navigator.of(context);
+                          navigator.pop();
+                          final convId = await chatCubit.openOrCreateConversation(
+                              profile.firstName, profile.lastNameInitial);
+                          if (convId.isNotEmpty) {
+                            navigator.push(
+                              PageRouteBuilder(
+                                transitionDuration: AppDimensions.durationReveal,
+                                pageBuilder: (ctx, anim, _) => FadeTransition(
+                                  opacity: anim,
+                                  child: ChatScreen(conversationId: convId),
+                                ),
                               ),
-                            ),
-                          );
+                            );
+                          }
                         },
                         child: const Text('Message Now',
                             style: AppTypography.button),
@@ -711,21 +713,23 @@ class _ReceivedTile extends StatelessWidget {
                 icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
                 label: Text('Message ${p.firstName}',
                     style: AppTypography.buttonSecondary),
-                onPressed: () {
+                onPressed: () async {
                   HapticFeedback.selectionClick();
-                  final convId = context
-                      .read<ChatCubit>()
-                      .openOrCreateConversation(
-                          p.firstName, p.lastNameInitial);
-                  Navigator.of(context).push(
-                    PageRouteBuilder(
-                      transitionDuration: AppDimensions.durationReveal,
-                      pageBuilder: (ctx, anim, _) => FadeTransition(
-                        opacity: anim,
-                        child: ChatScreen(conversationId: convId),
+                  final chatCubit = context.read<ChatCubit>();
+                  final navigator = Navigator.of(context);
+                  final convId = await chatCubit.openOrCreateConversation(
+                      p.firstName, p.lastNameInitial);
+                  if (convId.isNotEmpty) {
+                    navigator.push(
+                      PageRouteBuilder(
+                        transitionDuration: AppDimensions.durationReveal,
+                        pageBuilder: (ctx, anim, _) => FadeTransition(
+                          opacity: anim,
+                          child: ChatScreen(conversationId: convId),
+                        ),
                       ),
-                    ),
-                  );
+                    );
+                  }
                 },
               ),
             ),

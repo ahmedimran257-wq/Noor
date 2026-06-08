@@ -14,6 +14,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/validation_snackbar.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
 
@@ -75,10 +76,11 @@ class _FamilyScreenState extends State<FamilyScreen> {
       _livingExpectation != null; // Phase 2: required
 
   void _showValidation() {
+    final l10n = AppLocalizations.of(context);
     final missing = <String>[];
-    if (_familyType == null) missing.add('Family type');
-    if (_parentsStatus == null) missing.add('Parents\' marital status');
-    if (_livingExpectation == null) missing.add('Post-marriage living expectations');
+    if (_familyType == null) missing.add(l10n.family_label_type);
+    if (_parentsStatus == null) missing.add(l10n.family_label_parents);
+    if (_livingExpectation == null) missing.add(l10n.family_living_title);
     showValidationSnackbar(context, missing);
   }
 
@@ -100,50 +102,113 @@ class _FamilyScreenState extends State<FamilyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final obData = context.read<OnboardingCubit>().currentData;
     final isGuardian = obData.isGuardianMode;
     final relation = obData.profileCreatorRelation ?? 'ward';
+
+    // Helper to get localized relationship string
+    String getRelationString() {
+      switch (relation) {
+        case 'son':
+          return l10n.onboarding_profileForWhom_relation_son.toLowerCase();
+        case 'daughter':
+          return l10n.onboarding_profileForWhom_relation_daughter.toLowerCase();
+        case 'brother':
+          return l10n.onboarding_profileForWhom_relation_brother.toLowerCase();
+        case 'sister':
+          return l10n.onboarding_profileForWhom_relation_sister.toLowerCase();
+        default:
+          return l10n.onboarding_profileForWhom_ward.toLowerCase();
+      }
+    }
+
+    String getParentsStatusLabel(String status) {
+      switch (status) {
+        case 'Together':
+          return l10n.family_parents_together;
+        case 'Separated':
+          return l10n.family_parents_separated;
+        case 'Divorced':
+          return l10n.family_parents_divorced;
+        case 'Father deceased':
+          return l10n.family_parents_father_deceased;
+        case 'Mother deceased':
+          return l10n.family_parents_mother_deceased;
+        case 'Both deceased':
+          return l10n.family_parents_both_deceased;
+        default:
+          return status;
+      }
+    }
+
+    (String, String) getLivingLabels(String value) {
+      switch (value) {
+        case 'with_inlaws':
+          return (l10n.onboarding_living_withInlaws, l10n.onboarding_living_withInlawsSub);
+        case 'separate':
+          return (l10n.onboarding_living_separate, l10n.onboarding_living_separateSub);
+        case 'open_to_discussion':
+          return (l10n.onboarding_living_openToDiscussion, l10n.onboarding_living_openToDiscussionSub);
+        default:
+          return ('', '');
+      }
+    }
+
+    String getWillingToRelocateLabel(String key) {
+      switch (key) {
+        case 'yes':
+          return l10n.family_relocate_yes;
+        case 'no':
+          return l10n.family_relocate_no;
+        case 'open_to_discussion':
+          return l10n.family_relocate_discussion;
+        default:
+          return key;
+      }
+    }
+
     return BlocBuilder<OnboardingCubit, OnboardingState>(
       builder: (context, state) {
         final isLoading = state is OnboardingLoading;
         return OnboardingScaffold(
-          ctaLabel:     'Continue',
+          ctaLabel:     l10n.legal_button_continue,
           onCta:        _advance,
           isCtaEnabled: _canProceed,
           isCtaLoading: isLoading,
           onCtaDisabledTap: _showValidation,
-          skipLabel:    'I\'ll do this later',
+          skipLabel:    l10n.about_button_later,
           onSkip:       () => context.read<OnboardingCubit>().skipStep(),
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: AppDimensions.space32),
               StepHeader(
-                title:    isGuardian ? 'Family background' : 'Family background',
+                title:    isGuardian ? l10n.family_title_guardian : l10n.family_title_self,
                 subtitle: isGuardian
-                    ? 'Tell us about your $relation\'s family.'
-                    : 'Family compatibility is central to lasting marriages.',
+                    ? l10n.family_subtitle_guardian(getRelationString())
+                    : l10n.family_subtitle_self,
               ),
               const SizedBox(height: AppDimensions.space32),
 
               // Family type
-              const _Label('FAMILY TYPE'),
+              _Label(l10n.family_label_type),
               const SizedBox(height: AppDimensions.space12),
               Row(children: [
                 _FamilyTypeCard(
-                  icon: Icons.home_outlined, label: 'Nuclear',
+                  icon: Icons.home_outlined, label: l10n.family_type_nuclear,
                   isSelected: _familyType == FamilyType.nuclear,
                   onTap: () => setState(() => _familyType = FamilyType.nuclear),
                 ),
                 const SizedBox(width: AppDimensions.space8),
                 _FamilyTypeCard(
-                  icon: Icons.people_outline_rounded, label: 'Joint',
+                  icon: Icons.people_outline_rounded, label: l10n.family_type_joint,
                   isSelected: _familyType == FamilyType.joint,
                   onTap: () => setState(() => _familyType = FamilyType.joint),
                 ),
                 const SizedBox(width: AppDimensions.space8),
                 _FamilyTypeCard(
-                  icon: Icons.groups_outlined, label: 'Extended',
+                  icon: Icons.groups_outlined, label: l10n.family_type_extended,
                   isSelected: _familyType == FamilyType.extended,
                   onTap: () => setState(() => _familyType = FamilyType.extended),
                 ),
@@ -152,14 +217,14 @@ class _FamilyScreenState extends State<FamilyScreen> {
               const SizedBox(height: AppDimensions.space24),
 
               // Siblings
-              const _Label('NUMBER OF SIBLINGS'),
+              _Label(l10n.family_label_siblings),
               const SizedBox(height: AppDimensions.space12),
               _Stepper(value: _siblings, min: 0, max: 15, onChanged: (v) => setState(() => _siblings = v)),
 
-
+              const SizedBox(height: AppDimensions.space24),
 
               // Parents status
-              const _Label('PARENTS\' MARITAL STATUS'),
+              _Label(l10n.family_label_parents),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
                 spacing: AppDimensions.space8,
@@ -181,7 +246,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
                           width: isSel ? AppDimensions.borderFocus : AppDimensions.borderThin,
                         ),
                       ),
-                      child: Text(s, style: AppTypography.chipLabel.copyWith(
+                      child: Text(getParentsStatusLabel(s), style: AppTypography.chipLabel.copyWith(
                         color: isSel ? AppColors.champagneGold : AppColors.pearlWhite,
                       )),
                     ),
@@ -192,12 +257,20 @@ class _FamilyScreenState extends State<FamilyScreen> {
               const SizedBox(height: AppDimensions.space24),
 
               // Previously married
-              _Label(isGuardian ? 'PREVIOUSLY MARRIED?' : 'PREVIOUSLY MARRIED?'),
+              _Label(l10n.family_label_prev_married),
               const SizedBox(height: AppDimensions.space8),
               _InlinePills(
                 options: const ['No', 'Divorced', 'Widowed'],
                 selected: _marital == MaritalStatus.neverMarried ? 'No'
                     : _marital == MaritalStatus.divorced ? 'Divorced' : 'Widowed',
+                labelBuilder: (v) {
+                  switch (v) {
+                    case 'No': return l10n.family_prev_no;
+                    case 'Divorced': return l10n.family_prev_divorced;
+                    case 'Widowed': return l10n.family_prev_widowed;
+                    default: return v;
+                  }
+                },
                 onSelected: (v) => setState(() {
                   _marital       = v == 'No' ? MaritalStatus.neverMarried
                                  : v == 'Divorced' ? MaritalStatus.divorced
@@ -210,16 +283,23 @@ class _FamilyScreenState extends State<FamilyScreen> {
               // Children (if previously married)
               if (_marital != MaritalStatus.neverMarried) ...[
                 const SizedBox(height: AppDimensions.space20),
-                _Label(isGuardian ? 'DO THEY HAVE CHILDREN?' : 'DO YOU HAVE CHILDREN?'),
+                _Label(isGuardian ? l10n.family_label_children_guardian : l10n.family_label_children_self),
                 const SizedBox(height: AppDimensions.space8),
                 _InlinePills(
                   options: const ['Yes', 'No'],
                   selected: _hasChildren == null ? null : (_hasChildren! ? 'Yes' : 'No'),
+                  labelBuilder: (v) {
+                    switch (v) {
+                      case 'Yes': return l10n.family_children_yes;
+                      case 'No': return l10n.family_children_no;
+                      default: return v;
+                    }
+                  },
                   onSelected: (v) => setState(() { _hasChildren = v == 'Yes'; }),
                 ),
                 if (_hasChildren == true) ...[
                   const SizedBox(height: AppDimensions.space16),
-                  const _Label('HOW MANY?'),
+                  _Label(l10n.family_label_how_many),
                   const SizedBox(height: AppDimensions.space8),
                   _Stepper(
                     value: _childrenCount, min: 1, max: 10,
@@ -230,35 +310,37 @@ class _FamilyScreenState extends State<FamilyScreen> {
 
               // ── POST-MARRIAGE LIVING (Phase 2) ─────────────
               const SizedBox(height: AppDimensions.space28),
-              const _Label('POST-MARRIAGE LIVING EXPECTATIONS'),
+              _Label(l10n.family_living_title),
               const SizedBox(height: AppDimensions.space4),
               Text(
                 isGuardian
-                    ? 'Where does your $relation expect to live after marriage?'
-                    : 'Where do you expect to live after marriage?',
+                    ? l10n.family_relocate_subtitle_guardian(getRelationString())
+                    : l10n.family_relocate_subtitle_self,
                 style: AppTypography.caption,
               ),
               const SizedBox(height: AppDimensions.space12),
-              // TODO (backend): write livingExpectation to partner_preferences table.
-              ..._kLivingOptions.map((opt) => Padding(
-                padding: const EdgeInsets.only(bottom: AppDimensions.space8),
-                child: _LivingCard(
-                  title:      opt.title,
-                  subtitle:   opt.subtitle,
-                  value:      opt.value,
-                  isSelected: _livingExpectation == opt.value,
-                  onTap:      () => setState(() => _livingExpectation = opt.value),
-                ),
-              )),
+              ..._kLivingOptions.map((opt) {
+                final labels = getLivingLabels(opt.value);
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: AppDimensions.space8),
+                  child: _LivingCard(
+                    title:      labels.$1,
+                    subtitle:   labels.$2,
+                    value:      opt.value,
+                    isSelected: _livingExpectation == opt.value,
+                    onTap:      () => setState(() => _livingExpectation = opt.value),
+                  ),
+                );
+              }),
 
               // ── WILLING TO RELOCATE (Phase 5.3) ────────────
               const SizedBox(height: AppDimensions.space28),
-              const _Label('WILLING TO RELOCATE'),
+              _Label(l10n.family_label_relocate),
               const SizedBox(height: AppDimensions.space4),
               Text(
                 isGuardian
-                    ? 'Would your $relation relocate for marriage?'
-                    : 'Would you relocate for marriage?',
+                    ? l10n.family_relocate_subtitle_guardian(getRelationString())
+                    : l10n.family_relocate_subtitle_self,
                 style: AppTypography.caption,
               ),
               const SizedBox(height: AppDimensions.space12),
@@ -277,7 +359,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
                       duration: AppDimensions.durationTransition,
                       padding: const EdgeInsets.symmetric(
                         horizontal: AppDimensions.space16,
-                        vertical: AppDimensions.space10,
+                        vertical:   AppDimensions.space10,
                       ),
                       decoration: BoxDecoration(
                         color: isSel
@@ -289,7 +371,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
                           width: isSel ? AppDimensions.borderFocus : AppDimensions.borderThin,
                         ),
                       ),
-                      child: Text(e.value, style: AppTypography.chipLabel.copyWith(
+                      child: Text(getWillingToRelocateLabel(e.key), style: AppTypography.chipLabel.copyWith(
                         color: isSel ? AppColors.champagneGold : AppColors.pearlWhite,
                       )),
                     ),
@@ -300,35 +382,52 @@ class _FamilyScreenState extends State<FamilyScreen> {
               // ── POLYGAMY (Optional, gender-specific) ───────
               if (_gender == Gender.male) ...[
                 const SizedBox(height: AppDimensions.space28),
-                const _Label('POLYGAMY STATUS  (Optional)'),
+                _Label(l10n.family_label_polygamy_male_self),
                 const SizedBox(height: AppDimensions.space4),
                 Text(
                   isGuardian
-                      ? 'Is your $relation currently married and looking for an additional spouse?'
-                      : 'Are you currently married and looking for an additional spouse?',
+                      ? l10n.family_polygamy_male_sub_guardian(getRelationString())
+                      : l10n.family_polygamy_male_sub_self,
                   style: AppTypography.caption,
                 ),
                 const SizedBox(height: AppDimensions.space12),
                 _InlinePills(
                   options: const ['No, this is my first', 'Yes, currently married', 'Prefer not to say'],
                   selected: _polygamyStatus,
+                  labelBuilder: (v) {
+                    switch (v) {
+                      case 'No, this is my first': return l10n.family_polygamy_option_first;
+                      case 'Yes, currently married': return l10n.family_polygamy_option_married;
+                      case 'Prefer not to say': return l10n.family_polygamy_option_prefer_not;
+                      default: return v;
+                    }
+                  },
                   onSelected: (v) => setState(() => _polygamyStatus = v),
                 ),
               ],
               if (_gender == Gender.female) ...[
                 const SizedBox(height: AppDimensions.space28),
-                const _Label('POLYGAMY ACCEPTANCE  (Optional)'),
+                _Label(l10n.family_label_polygamy_female_self),
                 const SizedBox(height: AppDimensions.space4),
                 Text(
                   isGuardian
-                      ? 'Would your $relation consider being a co-wife?'
-                      : 'Would you consider being a co-wife?',
+                      ? l10n.family_polygamy_female_sub_guardian(getRelationString())
+                      : l10n.family_polygamy_female_sub_self,
                   style: AppTypography.caption,
                 ),
                 const SizedBox(height: AppDimensions.space12),
                 _InlinePills(
                   options: const ['Yes', 'No', 'Open to discussion', 'Prefer not to say'],
                   selected: _polygamyAcceptance,
+                  labelBuilder: (v) {
+                    switch (v) {
+                      case 'Yes': return l10n.family_polygamy_female_yes;
+                      case 'No': return l10n.family_polygamy_female_no;
+                      case 'Open to discussion': return l10n.family_polygamy_female_discussion;
+                      case 'Prefer not to say': return l10n.family_polygamy_female_prefer_not;
+                      default: return v;
+                    }
+                  },
                   onSelected: (v) => setState(() => _polygamyAcceptance = v),
                 ),
               ],
@@ -472,10 +571,16 @@ class _StepperBtn extends StatelessWidget {
 }
 
 class _InlinePills extends StatelessWidget {
-  const _InlinePills({required this.options, required this.selected, required this.onSelected});
+  const _InlinePills({
+    required this.options,
+    required this.selected,
+    required this.onSelected,
+    this.labelBuilder,
+  });
   final List<String> options;
   final String? selected;
   final ValueChanged<String> onSelected;
+  final String Function(String)? labelBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -483,6 +588,7 @@ class _InlinePills extends StatelessWidget {
       spacing: AppDimensions.space8,
       children: options.map((o) {
         final isSel = selected == o;
+        final displayLabel = labelBuilder != null ? labelBuilder!(o) : o;
         return GestureDetector(
           onTap: () => onSelected(o),
           child: AnimatedContainer(
@@ -493,7 +599,7 @@ class _InlinePills extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
               border: Border.all(color: isSel ? AppColors.champagneGold : AppColors.cardBorder, width: isSel ? AppDimensions.borderFocus : AppDimensions.borderThin),
             ),
-            child: Text(o, style: AppTypography.chipLabel.copyWith(color: isSel ? AppColors.champagneGold : AppColors.pearlWhite)),
+            child: Text(displayLabel, style: AppTypography.chipLabel.copyWith(color: isSel ? AppColors.champagneGold : AppColors.pearlWhite)),
           ),
         );
       }).toList(),

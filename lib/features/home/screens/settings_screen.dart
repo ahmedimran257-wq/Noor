@@ -29,6 +29,7 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import 'legal_doc_screen.dart';
+import '../../../core/services/selfie_verification_service.dart';
 
 
 // ── Languages ─────────────────────────────────────────────────
@@ -49,13 +50,6 @@ class _LangOption {
 const _kLanguages = [
   _LangOption(locale: 'en', nativeName: 'English',            englishName: 'English'),
   _LangOption(locale: 'ar', nativeName: 'العربية',             englishName: 'Arabic',    isRtl: true),
-  // Phase 2+ — uncomment after adding .arb files:
-  // _LangOption(locale: 'ur', nativeName: 'اردو',                englishName: 'Urdu',      isRtl: true),
-  // _LangOption(locale: 'fr', nativeName: 'Français',            englishName: 'French'),
-  // _LangOption(locale: 'de', nativeName: 'Deutsch',             englishName: 'German'),
-  // _LangOption(locale: 'tr', nativeName: 'Türkçe',              englishName: 'Turkish'),
-  // _LangOption(locale: 'id', nativeName: 'Bahasa Indonesia',    englishName: 'Indonesian'),
-  // _LangOption(locale: 'ms', nativeName: 'Bahasa Melayu',       englishName: 'Malay'),
 ];
 
 // ── Guardian prefs keys ───────────────────────────────────────
@@ -92,12 +86,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _privacyKey  = GlobalKey();
   final _helpKey     = GlobalKey();
   final _accountKey  = GlobalKey();
+  bool _isVerified = false;
 
   @override
   void initState() {
     super.initState();
+    _loadVerificationStatus();
     if (widget.initialSection != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToSection());
+    }
+  }
+
+  Future<void> _loadVerificationStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _isVerified = prefs.getBool('selfie_verified') ?? false;
+    });
+
+    try {
+      final status = await SelfieVerificationService.instance.getStatus();
+      if (!mounted) return;
+      final isVerified = status.status == 'verified';
+      if (isVerified != _isVerified) {
+        setState(() {
+          _isVerified = isVerified;
+        });
+        await prefs.setBool('selfie_verified', isVerified);
+      }
+    } catch (e) {
+      debugPrint('SettingsScreen: _loadVerificationStatus error: $e');
     }
   }
 
@@ -117,6 +135,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.obsidianNight,
       appBar: AppBar(
@@ -128,18 +147,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded,
               color: AppColors.pearlWhite, size: 20),
         ),
-        title: Text(AppLocalizations.of(context).settings_title,
+        title: Text(l10n.settings_title,
             style: AppTypography.screenTitle.copyWith(fontSize: 20)),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
         children: [
           // ── 1. ACCOUNT ────────────────────────────────────
-          _SectionHeader(AppLocalizations.of(context).settings_section_account, key: _accountKey),
+          _SectionHeader(l10n.settings_section_account, key: _accountKey),
           _SettingsCard(children: [
             _NavTile(
               icon:  Icons.edit_outlined,
-              label: 'Edit Profile',
+              label: l10n.settings_label_editProfile,
               onTap: () => context.push('/edit-profile'),
             ),
             _Divider(),
@@ -149,28 +168,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 final masked = _maskPhone(phone);
                 return _NavTile(
                   icon:  Icons.phone_outlined,
-                  label: 'Phone Number',
+                  label: l10n.settings_label_phoneNumber,
                   value: masked,
-                  onTap: () => _showInfoSnackbar(context, 'Phone number cannot be changed. Contact support for help.'),
+                  onTap: () => _showInfoSnackbar(context, l10n.settings_label_phoneCannotChange),
                 );
               },
             ),
             _Divider(),
             _NavTile(
               icon:  Icons.photo_library_outlined,
-              label: 'Photo Privacy',
-              value: 'After Acceptance',
+              label: l10n.settings_label_photoPrivacy,
+              value: l10n.settings_photo_privacy_after_acceptance,
               onTap: () => _showPhotoPrivacySheet(context),
+            ),
+            _Divider(),
+            _NavTile(
+              icon:      Icons.verified_outlined,
+              label:     l10n.settings_label_verifyProfile,
+              value:     _isVerified ? 'Verified' : l10n.settings_label_selfieChallenge,
+              iconColor: _isVerified ? AppColors.verifiedTeal : AppColors.champagneGold,
+              onTap:     () async {
+                await context.push('/verify');
+                _loadVerificationStatus();
+              },
             ),
           ]),
 
           // ── 2. NOTIFICATIONS ─────────────────────────────
-          _SectionHeader(AppLocalizations.of(context).settings_section_notifications),
+          _SectionHeader(l10n.settings_section_notifications),
           BlocBuilder<NotificationPrefsCubit, NotificationPrefsState>(
             builder: (context, prefs) => _SettingsCard(children: [
               _ToggleTile(
                 icon:    Icons.favorite_outline_rounded,
-                label:   'New Interests',
+                label:   l10n.settings_notify_newInterest,
                 value:   prefs.newInterest,
                 onChanged: (v) =>
                     context.read<NotificationPrefsCubit>().toggleNewInterest(v),
@@ -178,7 +208,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _Divider(),
               _ToggleTile(
                 icon:    Icons.check_circle_outline_rounded,
-                label:   'Interest Accepted',
+                label:   l10n.settings_notify_interestAccepted,
                 value:   prefs.interestAccepted,
                 onChanged: (v) =>
                     context.read<NotificationPrefsCubit>().toggleInterestAccepted(v),
@@ -186,7 +216,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _Divider(),
               _ToggleTile(
                 icon:    Icons.chat_bubble_outline_rounded,
-                label:   'New Messages',
+                label:   l10n.settings_notify_newMessage,
                 value:   prefs.newMessage,
                 onChanged: (v) =>
                     context.read<NotificationPrefsCubit>().toggleNewMessage(v),
@@ -194,7 +224,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _Divider(),
               _ToggleTile(
                 icon:    Icons.verified_outlined,
-                label:   'Profile Approved',
+                label:   l10n.settings_notify_profileApproved,
                 value:   prefs.profileApproved,
                 onChanged: (v) =>
                     context.read<NotificationPrefsCubit>().toggleProfileApproved(v),
@@ -202,7 +232,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _Divider(),
               _ToggleTile(
                 icon:    Icons.timer_outlined,
-                label:   'Interest Expiring Soon',
+                label:   l10n.settings_notify_interestExpiring,
                 value:   prefs.interestExpiring,
                 onChanged: (v) =>
                     context.read<NotificationPrefsCubit>().toggleInterestExpiring(v),
@@ -210,8 +240,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _Divider(),
               _ToggleTile(
                 icon:    Icons.notifications_active_outlined,
-                label:   'Activity Nudges',
-                caption: 'Remind when inactive for 7+ days',
+                label:   l10n.settings_notify_activityNudges,
+                caption: l10n.settings_notify_activityNudgesSub,
                 value:   prefs.inactiveNudge,
                 onChanged: (v) =>
                     context.read<NotificationPrefsCubit>().toggleInactiveNudge(v),
@@ -219,8 +249,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _Divider(),
               _ToggleTile(
                 icon:    Icons.rocket_launch_outlined,
-                label:   'Boost Reminders',
-                caption: 'Remind when your weekly boost is ready',
+                label:   l10n.settings_notify_boostReminders,
+                caption: l10n.settings_notify_boostRemindersSub,
                 value:   prefs.boostAvailable,
                 onChanged: (v) =>
                     context.read<NotificationPrefsCubit>().toggleBoostAvailable(v),
@@ -228,22 +258,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _Divider(),
               _InfoTile(
                 icon:  Icons.bedtime_outlined,
-                label: 'Quiet Hours',
+                label: l10n.settings_notify_quietHours,
                 value: '${_fmtHour(prefs.quietStartHour)} – ${_fmtHour(prefs.quietEndHour)}',
               ),
             ]),
           ),
 
           // ── 3. GUARDIAN (Feature 13) ──────────────────────
-          _SectionHeader(AppLocalizations.of(context).settings_section_guardian),
+          _SectionHeader(l10n.settings_section_guardian),
           const _GuardianSection(),
 
           // ── 4. PRIVACY (Feature 14) ───────────────────────
-          _SectionHeader(AppLocalizations.of(context).settings_section_privacy, key: _privacyKey),
+          _SectionHeader(l10n.settings_section_privacy, key: _privacyKey),
           const _PrivacySection(),
 
           // ── 5. APP (Feature 16) ───────────────────────────
-          _SectionHeader(AppLocalizations.of(context).settings_section_app),
+          _SectionHeader(l10n.settings_section_app),
           _SettingsCard(children: [
             BlocBuilder<LocaleCubit, Locale>(
               builder: (context, locale) {
@@ -252,7 +282,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         orElse: () => _kLanguages.first);
                 return _NavTile(
                   icon:  Icons.language_rounded,
-                  label: 'Language',
+                  label: l10n.settings_label_language,
                   value: lang.englishName,
                   onTap: () => _showLanguageSheet(context, lang),
                 );
@@ -261,47 +291,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _Divider(),
             _NavTile(
               icon:  Icons.star_outline_rounded,
-              label: 'Rate NOOR',
-              onTap: () => _showInfoSnackbar(context, 'Rating will be available once NOOR launches on the app store.'),
+              label: l10n.settings_label_rate,
+              onTap: () => _showInfoSnackbar(context, l10n.settings_label_rate_snackbar),
             ),
             _Divider(),
-            const _InfoTile(
+            _InfoTile(
               icon:  Icons.info_outline_rounded,
-              label: 'Version',
+              label: l10n.settings_label_version,
               value: '1.0.0 (build 1)',
             ),
           ]),
 
           // ── 6. SAFETY ─────────────────────────────────────
-          _SectionHeader(AppLocalizations.of(context).settings_section_safety),
+          _SectionHeader(l10n.settings_section_safety),
           BlocBuilder<BlockReportCubit, BlockReportState>(
             builder: (context, brs) => _SettingsCard(children: [
-           _NavTile(
+              _NavTile(
                 icon:  Icons.block_rounded,
-                label: 'Blocked Profiles',
+                label: l10n.settings_label_blocked,
                 value: brs.blockedUsers.isEmpty
-                    ? 'None'
-                    : '${brs.blockedUsers.length} blocked',
+                    ? l10n.settings_label_blocked_none
+                    : l10n.settings_label_blocked_count(brs.blockedUsers.length),
                 onTap: () => context.push(AppRoutes.blockList),
               ),
               _Divider(),
               _NavTile(
                 icon:  Icons.flag_outlined,
-                label: 'Report History',
+                label: l10n.settings_label_reports,
                 value: brs.reportHistory.isEmpty
-                    ? 'No reports submitted'
-                    : '${brs.reportHistory.length} submitted',
+                    ? l10n.settings_label_reports_none
+                    : l10n.settings_label_reports_count(brs.reportHistory.length),
                 onTap: () => _showReportHistory(context, brs),
               ),
             ]),
           ),
 
           // ── 7. LEGAL ──────────────────────────────────────
-          _SectionHeader(AppLocalizations.of(context).settings_section_legal, key: _helpKey),
+          _SectionHeader(l10n.settings_section_legal, key: _helpKey),
           _SettingsCard(children: [
             _NavTile(
               icon:  Icons.description_outlined,
-              label: 'Terms of Service',
+              label: l10n.localeName == 'ar' ? 'شروط الخدمة' : 'Terms of Service',
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const LegalDocScreen(type: 'tos')),
               ),
@@ -309,7 +339,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _Divider(),
             _NavTile(
               icon:  Icons.privacy_tip_outlined,
-              label: 'Privacy Policy',
+              label: l10n.localeName == 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy',
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const LegalDocScreen(type: 'privacy')),
               ),
@@ -317,20 +347,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ]),
 
           // ── 8. DANGER ZONE (Feature 15) ──────────────────
-          _SectionHeader(AppLocalizations.of(context).settings_section_dangerZone),
+          _SectionHeader(l10n.settings_section_dangerZone),
           _SettingsCard(
             borderColor: AppColors.softCoral.withValues(alpha: 0.3),
             children: [
               _NavTile(
                 icon:      Icons.support_agent_rounded,
-                label:     'Contact Support',
+                label:     l10n.settings_support_contact,
                 iconColor: AppColors.slateMist,
                 onTap:     () => _showSupportDialog(context),
               ),
               _Divider(),
-               _NavTile(
+              _NavTile(
                 icon:       Icons.delete_forever_outlined,
-                label:      AppLocalizations.of(context).settings_button_deleteAccount,
+                label:      l10n.settings_button_deleteAccount,
                 iconColor:  AppColors.softCoral,
                 labelColor: AppColors.softCoral,
                 onTap: () => context.push(AppRoutes.deleteAccount),
@@ -341,7 +371,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 20),
           Center(
             child: Text(
-              'NOOR (نور) · For the sake of Allah',
+              l10n.settings_brand_credit,
               style: AppTypography.caption.copyWith(fontSize: 11),
               textAlign: TextAlign.center,
             ),
@@ -353,12 +383,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // ── Photo privacy ──────────────────────────────────────────
   void _showPhotoPrivacySheet(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) => _SimplePickerSheet(
-        title:   'Photo Privacy',
+        title:   l10n.settings_label_photoPrivacy,
         options: const ['Public', 'After Acceptance', 'Request Only'],
+        localizedOptions: [
+          l10n.settings_photo_privacy_public,
+          l10n.settings_photo_privacy_after_acceptance,
+          l10n.settings_photo_privacy_request_only,
+        ],
         initial: 'After Acceptance',
         onSelect: (_) {},
       ),
@@ -377,8 +413,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
   }
-
-
 
   void _showReportHistory(BuildContext context, BlockReportState state) {
     showModalBottomSheet<void>(
@@ -420,6 +454,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // ── Support dialog ──────────────────────────────────────────
   static void _showSupportDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -428,12 +463,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
           side: const BorderSide(color: AppColors.cardBorder),
         ),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.support_agent_rounded,
+            const Icon(Icons.support_agent_rounded,
                 color: AppColors.champagneGold, size: 20),
-            SizedBox(width: 10),
-            Text('Contact Support', style: AppTypography.bodyMedium),
+            const SizedBox(width: 10),
+            Text(l10n.settings_support_contact, style: AppTypography.bodyMedium),
           ],
         ),
         content: Column(
@@ -441,7 +476,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'For any questions, concerns, or feedback:',
+              l10n.settings_support_body,
               style: AppTypography.body.copyWith(height: 1.5),
             ),
             const SizedBox(height: AppDimensions.space16),
@@ -467,8 +502,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ],
                   ),
                   const SizedBox(height: AppDimensions.space8),
-                  const Text(
-                    'We aim to respond within 48 hours.',
+                  Text(
+                    l10n.settings_support_note,
                     style: AppTypography.caption,
                   ),
                 ],
@@ -479,7 +514,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Close',
+            child: Text(l10n.settings_support_btn_close,
                 style: AppTypography.caption.copyWith(
                     color: AppColors.champagneGold)),
           ),
@@ -552,16 +587,28 @@ class _GuardianSectionState extends State<_GuardianSection> {
     }
   }
 
+  String _relationLabel(AppLocalizations l10n, String relation) {
+    switch (relation) {
+      case 'Father': return l10n.settings_relation_father;
+      case 'Mother': return l10n.settings_relation_mother;
+      case 'Brother': return l10n.settings_relation_brother;
+      case 'Uncle': return l10n.settings_relation_uncle;
+      case 'Other': return l10n.settings_relation_other;
+      default: return relation;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return _SettingsCard(children: [
       // Guardian Mode master toggle
       ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
         leading: const Icon(Icons.supervisor_account_outlined,
             color: AppColors.champagneGold, size: 20),
-        title: const Text('Guardian Mode', style: AppTypography.body),
-        subtitle: const Text('Enable Wali oversight for messaging',
+        title: Text(l10n.settings_guardian_title, style: AppTypography.body),
+        subtitle: Text(l10n.settings_guardian_sub,
             style: AppTypography.caption),
         trailing: Switch(
           value:              _enabled,
@@ -583,14 +630,14 @@ class _GuardianSectionState extends State<_GuardianSection> {
                 // Guardian name
                 _TextFieldTile(
                   icon:        Icons.person_outline_rounded,
-                  hint:        'Guardian Name',
+                  hint:        l10n.settings_guardian_name_hint,
                   controller:  _nameCtrl,
                 ),
                 const _DividerFull(),
                 // Guardian phone
                 _TextFieldTile(
                   icon:          Icons.phone_outlined,
-                  hint:          'Guardian Phone',
+                  hint:          l10n.settings_guardian_phone_hint,
                   controller:    _phoneCtrl,
                   keyboardType:  TextInputType.phone,
                 ),
@@ -600,7 +647,7 @@ class _GuardianSectionState extends State<_GuardianSection> {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                   leading: const Icon(Icons.family_restroom_outlined,
                       color: AppColors.slateMist, size: 20),
-                  title: const Text('Relationship', style: AppTypography.body),
+                  title: Text(l10n.settings_guardian_relationship, style: AppTypography.body),
                   trailing: DropdownButton<String>(
                     value:           _relationship,
                     dropdownColor:   AppColors.surfaceDark,
@@ -611,7 +658,7 @@ class _GuardianSectionState extends State<_GuardianSection> {
                         color: AppColors.slateMist, size: 16),
                     items: _relationships.map((r) => DropdownMenuItem(
                       value: r,
-                      child: Text(r, style: AppTypography.body),
+                      child: Text(_relationLabel(l10n, r), style: AppTypography.body),
                     )).toList(),
                     onChanged: (v) {
                       if (v != null) setState(() => _relationship = v);
@@ -624,8 +671,8 @@ class _GuardianSectionState extends State<_GuardianSection> {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                   leading: const Icon(Icons.content_copy_outlined,
                       color: AppColors.slateMist, size: 20),
-                  title: const Text('Mirror Messages', style: AppTypography.body),
-                  subtitle: const Text('Send copies of all messages to guardian',
+                  title: Text(l10n.settings_guardian_mirror, style: AppTypography.body),
+                  subtitle: Text(l10n.settings_guardian_mirror_sub,
                       style: AppTypography.caption),
                   trailing: Switch(
                     value:              _mirror,
@@ -642,8 +689,8 @@ class _GuardianSectionState extends State<_GuardianSection> {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                   leading: const Icon(Icons.reply_outlined,
                       color: AppColors.slateMist, size: 20),
-                  title: const Text('Allow Guardian to Reply', style: AppTypography.body),
-                  subtitle: const Text('Guardian may participate in conversations',
+                  title: Text(l10n.settings_guardian_reply, style: AppTypography.body),
+                  subtitle: Text(l10n.settings_guardian_reply_sub,
                       style: AppTypography.caption),
                   trailing: Switch(
                     value:              _canReply,
@@ -672,19 +719,19 @@ class _GuardianSectionState extends State<_GuardianSection> {
                       child: AnimatedSwitcher(
                         duration: AppDimensions.durationTransition,
                         child: _saved
-                            ? const Row(
-                                key: ValueKey('saved'),
+                            ? Row(
+                                key: const ValueKey('saved'),
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.check_rounded,
+                                  const Icon(Icons.check_rounded,
                                       color: AppColors.obsidianNight, size: 16),
-                                  SizedBox(width: 6),
-                                  Text('Saved',
+                                  const SizedBox(width: 6),
+                                  Text(l10n.settings_guardian_saved,
                                       style: AppTypography.button),
                                 ],
                               )
-                            : const Text('Save Guardian Settings',
-                                key: ValueKey('save'),
+                            : Text(l10n.settings_guardian_save,
+                                key: const ValueKey('save'),
                                 style: AppTypography.button),
                       ),
                     ),
@@ -745,28 +792,41 @@ class _PrivacySectionState extends State<_PrivacySection> {
     });
   }
 
+  String _photoPrivacyLabel(AppLocalizations l10n, String code) {
+    switch (code) {
+      case 'Public': return l10n.settings_photo_privacy_public;
+      case 'After Acceptance': return l10n.settings_photo_privacy_after_acceptance;
+      case 'Request Only': return l10n.settings_photo_privacy_request_only;
+      case 'Everyone': return l10n.settings_photo_privacy_everyone;
+      case 'Accepted interests only': return l10n.settings_photo_privacy_accepted_interests;
+      case 'Request to view': return l10n.settings_photo_privacy_request_to_view;
+      default: return code;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(children: [
       // ── Photo Visibility ───────────────────────────────────
       _PrivacyCard(
-        label:    'PHOTO VISIBILITY',
-        subtitle: 'Who can see your photos',
+        label:    l10n.settings_privacy_photo_label,
+        subtitle: l10n.settings_privacy_photo_sub,
         saved:    _savedIndicators[_kPhotoVisibility] ?? false,
         child: Column(children: [
           const SizedBox(height: 8),
           _RadioRow(
-            label:     'Everyone',
+            label:     _photoPrivacyLabel(l10n, 'Everyone'),
             selected:  _photoVisibility == 'Everyone',
             onTap: () { setState(() => _photoVisibility = 'Everyone'); _persist(_kPhotoVisibility, 'Everyone'); },
           ),
           _RadioRow(
-            label:     'Accepted interests only',
+            label:     _photoPrivacyLabel(l10n, 'Accepted interests only'),
             selected:  _photoVisibility == 'Accepted interests only',
             onTap: () { setState(() => _photoVisibility = 'Accepted interests only'); _persist(_kPhotoVisibility, 'Accepted interests only'); },
           ),
           _RadioRow(
-            label:     'Request to view',
+            label:     _photoPrivacyLabel(l10n, 'Request to view'),
             selected:  _photoVisibility == 'Request to view',
             onTap: () { setState(() => _photoVisibility = 'Request to view'); _persist(_kPhotoVisibility, 'Request to view'); },
           ),
@@ -776,8 +836,8 @@ class _PrivacySectionState extends State<_PrivacySection> {
 
       // ── Online Status ──────────────────────────────────────
       _PrivacyCard(
-        label:    'ONLINE STATUS',
-        subtitle: 'Show when you were last active',
+        label:    l10n.settings_privacy_online_label,
+        subtitle: l10n.settings_privacy_online_sub,
         saved:    _savedIndicators[_kShowOnlineStatus] ?? false,
         child: _PrivacyToggle(
           value:     _showOnlineStatus,
@@ -788,8 +848,8 @@ class _PrivacySectionState extends State<_PrivacySection> {
 
       // ── Profile Pause ──────────────────────────────────────
       _PrivacyCard(
-        label:    'PROFILE PAUSE',
-        subtitle: 'Hide your profile from search',
+        label:    l10n.settings_privacy_pause_label,
+        subtitle: l10n.settings_privacy_pause_sub,
         saved:    _savedIndicators[_kProfilePaused] ?? false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -813,7 +873,7 @@ class _PrivacySectionState extends State<_PrivacySection> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Your profile is hidden. No one can find you.',
+                      l10n.settings_privacy_pause_warning,
                       style: AppTypography.caption.copyWith(
                           color: AppColors.premiumGold),
                     ),
@@ -828,18 +888,18 @@ class _PrivacySectionState extends State<_PrivacySection> {
 
       // ── Who Can See My Profile ─────────────────────────────
       _PrivacyCard(
-        label:    'WHO CAN SEE MY PROFILE',
-        subtitle: 'Controls who can browse your profile',
+        label:    l10n.settings_privacy_visibility_label,
+        subtitle: l10n.settings_privacy_visibility_sub,
         saved:    _savedIndicators[_kProfileVisibility] ?? false,
         child: Column(children: [
           const SizedBox(height: 8),
           _RadioRow(
-            label:    'All registered users',
+            label:    l10n.settings_privacy_visibility_all,
             selected: _profileVisibility == 'All registered users',
             onTap: () { setState(() => _profileVisibility = 'All registered users'); _persist(_kProfileVisibility, 'All registered users'); },
           ),
           _RadioRow(
-            label:    'Subscribers only',
+            label:    l10n.settings_privacy_visibility_subscribers,
             selected: _profileVisibility == 'Subscribers only',
             onTap: () { setState(() => _profileVisibility = 'Subscribers only'); _persist(_kProfileVisibility, 'Subscribers only'); },
           ),
@@ -849,16 +909,15 @@ class _PrivacySectionState extends State<_PrivacySection> {
 
       // ── Download My Data (GDPR) ────────────────────────────
       _PrivacyCard(
-        label:    'DOWNLOAD MY DATA',
-        subtitle: 'Export a copy of your personal data under GDPR',
+        label:    l10n.settings_privacy_download_label,
+        subtitle: l10n.settings_privacy_download_sub,
         saved:    false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: AppDimensions.space12),
             Text(
-              'Under GDPR and other privacy regulations, you can request a complete export of your '
-              'profile, matching, and activity data. The file will be prepared and sent to your registered address.',
+              l10n.settings_privacy_download_body,
               style: AppTypography.caption.copyWith(height: 1.5),
             ),
             const SizedBox(height: AppDimensions.space16),
@@ -874,7 +933,7 @@ class _PrivacySectionState extends State<_PrivacySection> {
                 ),
                 icon: const Icon(Icons.download_rounded, color: AppColors.obsidianNight, size: 16),
                 label: Text(
-                  'Request Data Export',
+                  l10n.settings_privacy_download_btn,
                   style: AppTypography.button.copyWith(color: AppColors.obsidianNight),
                 ),
                 onPressed: () => _triggerDataExport(context),
@@ -887,6 +946,7 @@ class _PrivacySectionState extends State<_PrivacySection> {
   }
 
   void _triggerDataExport(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -895,12 +955,12 @@ class _PrivacySectionState extends State<_PrivacySection> {
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
           side: const BorderSide(color: AppColors.cardBorder),
         ),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.download_done_rounded,
+            const Icon(Icons.download_done_rounded,
                 color: AppColors.verifiedTeal, size: 20),
-            SizedBox(width: 10),
-            Text('Export Requested', style: AppTypography.bodyMedium),
+            const SizedBox(width: 10),
+            Text(l10n.settings_privacy_export_title, style: AppTypography.bodyMedium),
           ],
         ),
         content: Column(
@@ -908,12 +968,12 @@ class _PrivacySectionState extends State<_PrivacySection> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Your request has been received! We are compiling your personal data archive.',
+              l10n.settings_privacy_export_body,
               style: AppTypography.body.copyWith(height: 1.5),
             ),
             const SizedBox(height: AppDimensions.space16),
             Text(
-              'A download link will be sent to your registered phone/email within 48 hours in compliance with GDPR guidelines.',
+              l10n.settings_privacy_export_subbody,
               style: AppTypography.caption.copyWith(height: 1.4),
             ),
           ],
@@ -921,7 +981,7 @@ class _PrivacySectionState extends State<_PrivacySection> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Understood',
+            child: Text(l10n.settings_privacy_export_btn_close,
                 style: AppTypography.caption.copyWith(
                     color: AppColors.champagneGold)),
           ),
@@ -969,7 +1029,7 @@ class _PrivacyCard extends StatelessWidget {
                         const Icon(Icons.check_rounded,
                             color: AppColors.verifiedTeal, size: 14),
                         const SizedBox(width: 3),
-                        Text('Saved',
+                        Text(AppLocalizations.of(context).settings_guardian_saved,
                             style: AppTypography.caption.copyWith(
                                 color: AppColors.verifiedTeal, fontSize: 11)),
                       ],
@@ -1055,6 +1115,7 @@ class _LanguagePickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final bottomPad = MediaQuery.of(context).viewPadding.bottom;
     return Container(
       decoration: const BoxDecoration(
@@ -1076,7 +1137,7 @@ class _LanguagePickerSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          Text('Language',
+          Text(l10n.settings_label_language,
               style: AppTypography.screenTitle.copyWith(fontSize: 20)),
           const SizedBox(height: 16),
           ..._kLanguages.map((lang) {
@@ -1088,7 +1149,10 @@ class _LanguagePickerSheet extends StatelessWidget {
                   Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Language updated to ${lang.englishName}',
+                      content: Text(
+                          l10n.localeName == 'ar'
+                              ? 'تم تحديث اللغة إلى ${lang.nativeName}'
+                              : 'Language updated to ${lang.englishName}',
                           style: AppTypography.body),
                       backgroundColor: AppColors.surfaceGlassHover,
                       behavior:        SnackBarBehavior.floating,
@@ -1332,6 +1396,7 @@ class _ReportHistorySheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final bottomPad = MediaQuery.of(context).viewPadding.bottom;
     return Container(
       decoration: const BoxDecoration(
@@ -1348,13 +1413,13 @@ class _ReportHistorySheet extends StatelessWidget {
               decoration: BoxDecoration(color: AppColors.cardBorder,
                   borderRadius: BorderRadius.circular(2)))),
           const SizedBox(height: 20),
-          Text('Report History',
+          Text(l10n.settings_label_reports,
               style: AppTypography.screenTitle.copyWith(fontSize: 20)),
           const SizedBox(height: 16),
           if (reports.isEmpty)
-            const Center(child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 24),
-              child: Text('No reports submitted', style: AppTypography.bodyMuted),
+            Center(child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Text(l10n.settings_label_reports_none, style: AppTypography.bodyMuted),
             ))
           else
             ...reports.map((r) => Padding(
@@ -1383,7 +1448,8 @@ class _ReportHistorySheet extends StatelessWidget {
                       borderRadius: BorderRadius.circular(6),
                       color: AppColors.surfaceGlassHover,
                     ),
-                    child: Text('Pending',
+                    child: Text(
+                        l10n.localeName == 'ar' ? 'قيد المراجعة' : 'Pending',
                         style: AppTypography.caption.copyWith(fontSize: 10)),
                   ),
                 ]),
@@ -1400,12 +1466,14 @@ class _ReportHistorySheet extends StatelessWidget {
 class _SimplePickerSheet extends StatefulWidget {
   final String              title;
   final List<String>        options;
+  final List<String>?       localizedOptions;
   final String              initial;
   final ValueChanged<String> onSelect;
 
   const _SimplePickerSheet({
     required this.title,
     required this.options,
+    this.localizedOptions,
     required this.initial,
     required this.onSelect,
   });
@@ -1441,39 +1509,46 @@ class _SimplePickerSheetState extends State<_SimplePickerSheet> {
           Text(widget.title,
               style: AppTypography.screenTitle.copyWith(fontSize: 20)),
           const SizedBox(height: 16),
-          ...widget.options.map((opt) => GestureDetector(
-            onTap: () {
-              setState(() => _selected = opt);
-              widget.onSelect(opt);
-              Navigator.of(context).pop();
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: _selected == opt ? AppColors.goldGlow : AppColors.surfaceGlass,
-                border: Border.all(
-                  color: _selected == opt
-                      ? AppColors.champagneGold
-                      : AppColors.cardBorder,
-                  width: _selected == opt ? 1.5 : 1,
+          ...List.generate(widget.options.length, (index) {
+            final opt = widget.options[index];
+            final displayOpt = widget.localizedOptions != null
+                ? widget.localizedOptions![index]
+                : opt;
+            final isSelected = _selected == opt;
+            return GestureDetector(
+              onTap: () {
+                setState(() => _selected = opt);
+                widget.onSelect(opt);
+                Navigator.of(context).pop();
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: isSelected ? AppColors.goldGlow : AppColors.surfaceGlass,
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.champagneGold
+                        : AppColors.cardBorder,
+                    width: isSelected ? 1.5 : 1,
+                  ),
                 ),
+                child: Row(children: [
+                  Expanded(child: Text(displayOpt,
+                      style: AppTypography.body.copyWith(
+                        color: isSelected
+                            ? AppColors.champagneGold
+                            : AppColors.pearlWhite,
+                      ))),
+                  if (isSelected)
+                    const Icon(Icons.check_rounded,
+                        color: AppColors.champagneGold, size: 18),
+                ]),
               ),
-              child: Row(children: [
-                Expanded(child: Text(opt,
-                    style: AppTypography.body.copyWith(
-                      color: _selected == opt
-                          ? AppColors.champagneGold
-                          : AppColors.pearlWhite,
-                    ))),
-                if (_selected == opt)
-                  const Icon(Icons.check_rounded,
-                      color: AppColors.champagneGold, size: 18),
-              ]),
-            ),
-          )),
+            );
+          }),
         ],
       ),
     );

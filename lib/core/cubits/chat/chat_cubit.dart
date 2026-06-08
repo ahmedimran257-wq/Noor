@@ -246,14 +246,56 @@ class ChatCubit extends Cubit<ChatState> {
 
   // ── Public API ────────────────────────────────────────────
 
-  String openOrCreateConversation(String matchName, String lastInitial) {
+  Future<String> openOrCreateConversation(String matchName, String lastInitial) async {
     final existing = state.conversations.where(
-      (c) => c.matchName == matchName,
+      (c) => c.matchName.toLowerCase() == matchName.toLowerCase(),
     );
     if (existing.isNotEmpty) return existing.first.id;
 
     if (_isRealMode) {
       // In real mode, matches are created via accepted interests, not manually.
+      // 1. Try reloading conversations first in case the realtime sync didn't complete yet
+      await loadConversations().timeout(const Duration(seconds: 5));
+      final existingAfterLoad = state.conversations.where(
+        (c) => c.matchName.toLowerCase() == matchName.toLowerCase(),
+      );
+      if (existingAfterLoad.isNotEmpty) return existingAfterLoad.first.id;
+
+      // 2. Fetch matches from database directly
+      final me = SupabaseService.currentUserId;
+      if (me != null) {
+        try {
+          final matchesRows = await SupabaseService.client
+              .from('matches')
+              .select('id, user_a, user_b')
+              .or('user_a.eq.$me,user_b.eq.$me')
+              .timeout(const Duration(seconds: 5));
+
+          for (final m in matchesRows) {
+            final otherUserId = (m['user_a'] as String) == me ? m['user_b'] as String : m['user_a'] as String;
+            final profile = await SupabaseService.client
+                .from('profiles')
+                .select('first_name, last_name')
+                .eq('user_id', otherUserId)
+                .maybeSingle()
+                .timeout(const Duration(seconds: 5));
+
+            if (profile != null) {
+              final firstName = profile['first_name'] as String? ?? '';
+              final lastName = profile['last_name'] as String? ?? '';
+              final lastInitialChar = lastName.isNotEmpty ? lastName[0] : '';
+              if (firstName.toLowerCase() == matchName.toLowerCase() &&
+                  (lastInitial.isEmpty || lastInitialChar.toLowerCase() == lastInitial.toLowerCase())) {
+                // Reload conversations so state holds this conversation
+                await loadConversations().timeout(const Duration(seconds: 5));
+                return m['id'] as String;
+              }
+            }
+          }
+        } catch (e) {
+          debugPrint('ChatCubit: Error finding match by profile name in real mode: $e');
+        }
+      }
       return '';
     }
 

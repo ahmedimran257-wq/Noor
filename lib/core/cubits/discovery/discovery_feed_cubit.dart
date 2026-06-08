@@ -20,6 +20,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../mock/mock_profiles.dart';
 import '../../services/supabase_service.dart';
+import '../../services/profile_write_service.dart';
+import '../../models/onboarding_data.dart';
 import '../../utils/noor_compute.dart';
 import '../block_report/block_report_cubit.dart';
 import 'discovery_feed_state.dart';
@@ -94,15 +96,50 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
 
   // ── Public API ────────────────────────────────────────────
 
+  Future<OnboardingData?> _getViewerProfile() async {
+    try {
+      if (SupabaseService.isInitialized) {
+        final dbData = await ProfileWriteService.loadProfile();
+        if (dbData != null) return dbData;
+      }
+      final prefs = await SharedPreferences.getInstance();
+      final rawJson = prefs.getString('onboarding_data_cache');
+      if (rawJson != null && rawJson.isNotEmpty) {
+        final mapped = jsonDecode(rawJson) as Map<String, dynamic>;
+        return OnboardingData.fromJson(mapped);
+      }
+    } catch (e) {
+      debugPrint('DiscoveryFeedCubit: Error loading viewer profile: $e');
+    }
+    return null;
+  }
+
   /// Initial page load — shows skeleton loaders first.
   /// Also restores saved filter and browse counter from SharedPreferences.
   Future<void> loadInitial() async {
     if (state.status != FeedStatus.initial) return;
     emit(state.copyWith(status: FeedStatus.loading));
 
+    final viewerProfile = await _getViewerProfile();
+
     // Restore saved filter
     final savedFilter = await _loadFilterFromPrefs();
-    final filter = savedFilter ?? state.activeFilter;
+    DiscoveryFilter filter = savedFilter ?? state.activeFilter;
+
+    if (savedFilter == null && viewerProfile != null) {
+      filter = DiscoveryFilter(
+        ageMin: viewerProfile.preferredAgeMin,
+        ageMax: viewerProfile.preferredAgeMax,
+        sect: viewerProfile.preferredSect != null && viewerProfile.preferredSect != 'Any' ? viewerProfile.preferredSect : null,
+        deenLevel: viewerProfile.preferredDeenLevel != null && viewerProfile.preferredDeenLevel != 'Any' ? viewerProfile.preferredDeenLevel : null,
+        diasporaMode: viewerProfile.locationPreference == LocationPreference.diaspora,
+        distanceLabel: viewerProfile.locationPreference == LocationPreference.sameCity
+            ? 'Same City'
+            : (viewerProfile.locationPreference == LocationPreference.sameCountry
+                ? 'Same Country'
+                : 'Anywhere'),
+      );
+    }
 
     // G5: Restore persisted browse counter (daily reset)
     final restoredViews = await _restoreBrowseCounter();
@@ -110,8 +147,8 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     await Future.delayed(const Duration(milliseconds: 1200));
 
     _cursor = 0;
-    final activePool = await _getPool();
-    final filtered = _applyFilter(activePool, filter);
+    final activePool = await _getPool(filter: filter);
+    final filtered = _applyFilter(activePool, filter, viewerProfile);
     final batch    = _nextBatch(filtered, offset: 0);
 
     if (!isClosed) {
@@ -133,8 +170,9 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     emit(state.copyWith(status: FeedStatus.loadingMore));
     await Future.delayed(const Duration(milliseconds: 1400));
 
-    final activePool = await _getPool();
-    final filtered = _applyFilter(activePool, state.activeFilter);
+    final viewerProfile = await _getViewerProfile();
+    final activePool = await _getPool(filter: state.activeFilter);
+    final filtered = _applyFilter(activePool, state.activeFilter, viewerProfile);
     final batch    = _nextBatch(filtered, offset: state.profiles.length);
 
     if (!isClosed) {
@@ -156,8 +194,9 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     await Future.delayed(const Duration(milliseconds: 800));
 
     _cursor = 0;
-    final activePool = await _getPool();
-    final filtered = _applyFilter(activePool, filter);
+    final viewerProfile = await _getViewerProfile();
+    final activePool = await _getPool(filter: filter);
+    final filtered = _applyFilter(activePool, filter, viewerProfile);
     final batch    = _nextBatch(filtered, offset: 0);
 
     if (!isClosed) {
@@ -292,17 +331,28 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     }
   }
 
-  // ── Internal helpers ──────────────────────────────────────
-
-  /// Apply filter predicate to the full mock pool.
-  /// T3: Also excludes profiles in BlockReportCubit.hiddenProfileIds.
-  List<MockProfile> _applyFilter(List<MockProfile> pool, DiscoveryFilter f) {
+  List<MockProfile> _applyFilter(List<MockProfile> pool, DiscoveryFilter f, OnboardingData? viewer) {
     // T3: Get hidden profile IDs from BlockReportCubit
     final hidden = blockReportCubit?.state.hiddenProfileIds ?? <String>{};
 
     return pool.where((p) {
       // T3: Blocked profiles filtered from discovery feed
       if (hidden.isNotEmpty && hidden.contains(p.id)) return false;
+
+      // Filter by location / distance preference if viewer is available
+      if (viewer != null) {
+        if (f.distanceLabel == 'Same City') {
+          if (p.cityName.toLowerCase() != viewer.cityName?.toLowerCase()) return false;
+        } else if (f.distanceLabel == 'Same Country') {
+          if (p.countryCode?.toLowerCase() != viewer.countryCode?.toLowerCase()) return false;
+        } else if (f.distanceLabel == '50km' || f.distanceLabel == '100km') {
+          if (f.distanceLabel == '50km') {
+            if (p.cityName.toLowerCase() != viewer.cityName?.toLowerCase()) return false;
+          } else {
+            if (p.countryCode?.toLowerCase() != viewer.countryCode?.toLowerCase()) return false;
+          }
+        }
+      }
 
       // Standard filters (only applied when filter is active)
       if (f.isActive) {
@@ -356,24 +406,62 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     return list;
   }
 
+  Map<String, dynamic> _mapFilterToJson(DiscoveryFilter f) {
+    int? maxKm;
+    if (f.distanceLabel == '50km') {
+      maxKm = 50;
+    } else if (f.distanceLabel == '100km') {
+      maxKm = 100;
+    }
+
+    return {
+      if (maxKm != null) 'max_distance_km': maxKm,
+      if (f.distanceLabel == 'Same City') 'same_city': true,
+      if (f.distanceLabel == 'Same Country') 'same_country': true,
+      if (f.distanceLabel == 'Anywhere') 'anywhere': true,
+      if (f.ageMin != null) 'age_min': f.ageMin,
+      if (f.ageMax != null) 'age_max': f.ageMax,
+      if (f.sect != null && f.sect != 'Any') 'sect': f.sect!.toLowerCase(),
+      if (f.deenLevel != null && f.deenLevel != 'Any') 'deen_level': f.deenLevel!.toLowerCase(),
+      'verified_only': f.verifiedOnly,
+      if (f.familyType != null && f.familyType != 'Any') 'family_type': f.familyType!.toLowerCase(),
+      if (f.maritalStatus != null && f.maritalStatus != 'Any')
+        'marital_status': f.maritalStatus == 'Never Married' ? 'no' : f.maritalStatus!.toLowerCase(),
+      'open_to_divorced': f.openToDivorced,
+      if (f.motherTongue != null && f.motherTongue != 'Any') 'mother_tongue': f.motherTongue,
+      if (f.community != null && f.community != 'Any') 'community': f.community,
+      if (f.livingExpectation != null && f.livingExpectation != 'Any') 'living_expectation': f.livingExpectation,
+      if (f.quranMemorization != null && f.quranMemorization != 'Any') 'quran_memorization': f.quranMemorization,
+      if (f.marriageTimeline != null && f.marriageTimeline != 'Any') 'marriage_timeline': f.marriageTimeline,
+      if (f.willingToRelocate != null && f.willingToRelocate != 'Any') 'willing_to_relocate': f.willingToRelocate,
+      if (f.hasChildren != null) 'has_children': f.hasChildren!.toLowerCase(),
+    };
+  }
+
   /// Fetches candidates pool. In real mode (Supabase configured), loads from
-  /// the materialized view `discovery_pool` and maps to MockProfile instances (Flaw 14).
+  /// the matchmaking RPC get_discovery_feed.
   /// Falls back to local unique mock pool when in mock mode.
-  Future<List<MockProfile>> _getPool() async {
+  Future<List<MockProfile>> _getPool({DiscoveryFilter? filter}) async {
     if (SupabaseService.isInitialized) {
       try {
         final currentUserId = SupabaseService.currentUserId;
         if (currentUserId != null) {
-          final response = await SupabaseService.client
-              .from('discovery_pool')
-              .select()
-              .neq('user_id', currentUserId);
+          final payload = filter != null ? _mapFilterToJson(filter) : <String, dynamic>{};
+          
+          final response = await SupabaseService.client.rpc(
+            'get_discovery_feed',
+            params: {
+              'p_viewer_id': currentUserId,
+              'p_page_size': 1000,
+              'p_filters': payload,
+            },
+          );
           
           final list = response as List<dynamic>;
           return compute(parseProfilesInBackground, list);
-                }
+        }
       } catch (e) {
-        debugPrint('DiscoveryFeedCubit: Error fetching from Supabase, falling back to mock: $e');
+        debugPrint('DiscoveryFeedCubit: Error fetching from Supabase RPC, falling back to mock: $e');
       }
     }
     return _pool;

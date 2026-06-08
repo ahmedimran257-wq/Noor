@@ -35,6 +35,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/validation_snackbar.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
 
@@ -131,9 +132,10 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
   }
 
   void _showValidation() {
+    final l10n = AppLocalizations.of(context);
     final missing = <String>[];
-    if (_nameCtrl.text.trim().length < 2) missing.add('Your name');
-    if (_phoneCtrl.text.trim().length < 7) missing.add('Phone number');
+    if (_nameCtrl.text.trim().length < 2) missing.add(l10n.guardian_details_your_name);
+    if (_phoneCtrl.text.trim().length < 7) missing.add(l10n.guardian_details_your_phone);
     showValidationSnackbar(context, missing);
   }
 
@@ -185,11 +187,29 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    // Helper to get localized relationship string
+    String getRelationString() {
+      switch (_candidateLabel) {
+        case 'son':
+          return l10n.onboarding_profileForWhom_relation_son.toLowerCase();
+        case 'daughter':
+          return l10n.onboarding_profileForWhom_relation_daughter.toLowerCase();
+        case 'brother':
+          return l10n.onboarding_profileForWhom_relation_brother.toLowerCase();
+        case 'sister':
+          return l10n.onboarding_profileForWhom_relation_sister.toLowerCase();
+        default:
+          return l10n.onboarding_profileForWhom_ward.toLowerCase();
+      }
+    }
+
     return BlocBuilder<OnboardingCubit, OnboardingState>(
       builder: (context, state) {
         final isLoading = state is OnboardingLoading;
         return OnboardingScaffold(
-          ctaLabel:     'Continue',
+          ctaLabel:     l10n.legal_button_continue,
           onCta:        _advance,
           isCtaEnabled: _canProceed,
           isCtaLoading: isLoading,
@@ -215,8 +235,7 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
                     const SizedBox(width: AppDimensions.space12),
                     Expanded(
                       child: Text(
-                        'You are creating a profile for your $_candidateLabel. '
-                        'All profile details on the next screens will describe them, not you.',
+                        l10n.guardian_details_notice(getRelationString()),
                         style: AppTypography.caption.copyWith(height: 1.6),
                       ),
                     ),
@@ -226,14 +245,14 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
 
               const SizedBox(height: AppDimensions.space28),
 
-              const StepHeader(
-                title:    'Your guardian details',
-                subtitle: 'Tell us about yourself as the guardian.',
+              StepHeader(
+                title:    l10n.guardian_details_title,
+                subtitle: l10n.guardian_details_subtitle,
               ),
               const SizedBox(height: AppDimensions.space32),
 
               // ── Candidate summary (read-only, derived) ──────────
-              const Text('CREATING PROFILE FOR', style: AppTypography.sectionLabel),
+              Text(l10n.guardian_details_candidate_label, style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
               Container(
                 padding: const EdgeInsets.all(AppDimensions.space16),
@@ -265,7 +284,7 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'My ${_candidateLabel[0].toUpperCase()}${_candidateLabel.substring(1)}',
+                            l10n.guardian_details_candidate_relation(getRelationString()),
                             style: AppTypography.bodyMedium.copyWith(
                               color: AppColors.champagneGold,
                             ),
@@ -273,8 +292,8 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
                           const SizedBox(height: 2),
                           Text(
                             _candidateGender == Gender.male
-                                ? 'Male candidate'
-                                : 'Female candidate • Women message free',
+                                ? l10n.guardian_details_candidate_male
+                                : l10n.guardian_details_candidate_female,
                             style: AppTypography.caption,
                           ),
                         ],
@@ -292,10 +311,10 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
               const SizedBox(height: AppDimensions.space28),
 
               // ── Guardian name ────────────────────────────────────
-              const Text('YOUR NAME', style: AppTypography.sectionLabel),
+              Text(l10n.guardian_details_your_name, style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space8),
-              const Text(
-                'Your name as the guardian. This is shown to matches.',
+              Text(
+                l10n.guardian_details_name_subtitle,
                 style: AppTypography.caption,
               ),
               const SizedBox(height: AppDimensions.space12),
@@ -313,7 +332,7 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
                   style:        AppTypography.inputText,
                   onChanged:    (_) => setState(() {}),
                   decoration: InputDecoration(
-                    hintText:       'Full name',
+                    hintText:       l10n.guardian_details_name_hint,
                     hintStyle:      AppTypography.inputText.copyWith(
                                       color: AppColors.slateMist),
                     border:         InputBorder.none,
@@ -329,10 +348,10 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
               const SizedBox(height: AppDimensions.space28),
 
               // ── Guardian phone ──────────────────────────────────
-              const Text('YOUR PHONE NUMBER', style: AppTypography.sectionLabel),
+              Text(l10n.guardian_details_your_phone, style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space8),
-              const Text(
-                'For account verification. Not shown on the profile.',
+              Text(
+                l10n.guardian_details_phone_subtitle,
                 style: AppTypography.caption,
               ),
               const SizedBox(height: AppDimensions.space12),
@@ -385,7 +404,7 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
                         style:        AppTypography.inputText,
                         onChanged:    (_) => setState(() {}),
                         decoration: InputDecoration(
-                          hintText:       'Phone number',
+                          hintText:       l10n.guardian_details_phone_hint,
                           hintStyle:      AppTypography.inputText.copyWith(
                                             color: AppColors.slateMist),
                           border:         InputBorder.none,
@@ -402,28 +421,26 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
               const SizedBox(height: AppDimensions.space28),
 
               // ── Guardian mode ───────────────────────────────────
-              const Text('GUARDIAN INVOLVEMENT', style: AppTypography.sectionLabel),
+              Text(l10n.guardian_details_involvement, style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space8),
-              const Text(
-                'How involved do you want to be in conversations?',
+              Text(
+                l10n.guardian_details_involvement_subtitle,
                 style: AppTypography.caption,
               ),
               const SizedBox(height: AppDimensions.space12),
 
               _ModeCard(
                 icon:        Icons.visibility_outlined,
-                title:       'Observe only',
-                subtitle:    'See all chats in real-time, but only your '
-                             '$_candidateLabel can send messages.',
+                title:       l10n.guardian_details_mode_passive_title,
+                subtitle:    l10n.guardian_details_mode_passive_sub(getRelationString()),
                 isSelected:  _guardianMode == 'passive',
                 onTap:       () => setState(() => _guardianMode = 'passive'),
               ),
               const SizedBox(height: AppDimensions.space10),
               _ModeCard(
                 icon:        Icons.shield_outlined,
-                title:       'Active guardian',
-                subtitle:    'See chats, approve matches, and send messages '
-                             'on behalf of your $_candidateLabel.',
+                title:       l10n.guardian_details_mode_active_title,
+                subtitle:    l10n.guardian_details_mode_active_sub(getRelationString()),
                 isSelected:  _guardianMode == 'active',
                 onTap:       () => setState(() => _guardianMode = 'active'),
               ),
@@ -446,9 +463,7 @@ class _GuardianDetailsScreenState extends State<GuardianDetailsScreen> {
                     const SizedBox(width: AppDimensions.space10),
                     Expanded(
                       child: Text(
-                        'Your phone number is encrypted and never shown publicly. '
-                        'Potential matches will see "${_candidateLabel[0].toUpperCase()}'
-                        "${_candidateLabel.substring(1)}'s Guardian\" on the profile.",
+                        l10n.guardian_details_privacy_note(getRelationString()),
                         style: AppTypography.caption.copyWith(height: 1.6),
                       ),
                     ),
@@ -609,6 +624,7 @@ class _CodePickerSheetState extends State<_CodePickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final bottom = MediaQuery.of(context).viewInsets.bottom;
     return SafeArea(
       child: Padding(
@@ -625,7 +641,7 @@ class _CodePickerSheetState extends State<_CodePickerSheet> {
               ),
             ),
             const SizedBox(height: AppDimensions.space16),
-            const Text('Select country code', style: AppTypography.bodyMedium),
+            Text(l10n.guardian_details_select_code, style: AppTypography.bodyMedium),
             const SizedBox(height: AppDimensions.space12),
             Padding(
               padding: const EdgeInsets.symmetric(
@@ -636,7 +652,7 @@ class _CodePickerSheetState extends State<_CodePickerSheet> {
                 onChanged:   _onSearch,
                 style:       AppTypography.inputText,
                 decoration: InputDecoration(
-                  hintText:  'Search',
+                  hintText:  l10n.guardian_details_search_hint,
                   hintStyle: AppTypography.inputLabel,
                   prefixIcon: const Icon(Icons.search_rounded,
                       color: AppColors.slateMist, size: 20),

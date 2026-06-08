@@ -30,6 +30,7 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/buttons/noor_pressable.dart';
 import '../../../core/widgets/buttons/noor_primary_button.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 // ─────────────────────────────────────────────────────────────
 // SCREEN
@@ -406,6 +407,7 @@ class _PhoneViewState extends State<_PhoneView>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -421,7 +423,7 @@ class _PhoneViewState extends State<_PhoneView>
                 position: _titleSlide,
                 child: FadeTransition(
                   opacity: _titleFade,
-                  child: const Text('Your number', style: AppTypography.screenTitle),
+                  child: Text(l10n.auth_title_yourNumber, style: AppTypography.screenTitle),
                 ),
               ),
               const SizedBox(height: 8),
@@ -429,8 +431,8 @@ class _PhoneViewState extends State<_PhoneView>
                 position: _subtitleSlide,
                 child: FadeTransition(
                   opacity: _subtitleFade,
-                  child: const Text(
-                    'We\'ll verify it with a one-time code.',
+                  child: Text(
+                    l10n.auth_subtitle_verifyOtp,
                     style: AppTypography.bodyMuted,
                   ),
                 ),
@@ -469,7 +471,7 @@ class _PhoneViewState extends State<_PhoneView>
               opacity: _ctaFade,
               child: BlocBuilder<AuthCubit, AuthState>(
                 builder: (context, state) => NoorPrimaryButton(
-                  label:     'Send Code',
+                  label:     l10n.auth_button_sendCode,
                   isLoading: state is AuthLoading,
                   enabled:   widget.isComplete,
                   onTap:     widget.isComplete && state is! AuthLoading ? widget.onSend : null,
@@ -616,7 +618,7 @@ class _PhoneInputRowState extends State<_PhoneInputRow> {
                 letterSpacing: 1.5,
               ),
               decoration: InputDecoration(
-                hintText:       'Phone number',
+                hintText:       AppLocalizations.of(context).auth_hint_phoneNumber,
                 hintStyle: TextStyle(
                   fontSize:     20,
                   color:        AppColors.slateMist.withValues(alpha: 0.5),
@@ -702,6 +704,7 @@ class _OtpViewState extends State<_OtpView>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final formattedNum = widget.country.formatNumber(widget.rawDigits);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -718,7 +721,7 @@ class _OtpViewState extends State<_OtpView>
                 position: _titleSlide,
                 child: FadeTransition(
                   opacity: _titleFade,
-                  child: const Text('Enter the code', style: AppTypography.screenTitle),
+                  child: Text(l10n.auth_title_enterCode, style: AppTypography.screenTitle),
                 ),
               ),
               const SizedBox(height: 10),
@@ -728,8 +731,8 @@ class _OtpViewState extends State<_OtpView>
                   textAlign: TextAlign.center,
                   text: TextSpan(
                     children: [
-                      const TextSpan(
-                        text: 'We sent a 6-digit code to\n',
+                      TextSpan(
+                        text: l10n.auth_label_sentCodeTo,
                         style: AppTypography.bodyMuted,
                       ),
                       TextSpan(
@@ -792,8 +795,8 @@ class _OtpViewState extends State<_OtpView>
               child: Text(
                 key: ValueKey(widget.resendSecs == 0 ? 'active' : 'waiting'),
                 widget.resendSecs > 0
-                    ? 'Resend code in ${widget.resendSecs}s'
-                    : 'Resend code',
+                    ? l10n.auth_label_resendCodeIn(widget.resendSecs)
+                    : l10n.auth_label_resendCode,
                 style: AppTypography.bodyMuted.copyWith(
                   color: widget.resendSecs == 0
                       ? AppColors.champagneGold
@@ -815,7 +818,7 @@ class _OtpViewState extends State<_OtpView>
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
             child: Text(
-              'Wrong number? Change it',
+              l10n.auth_label_changeNumber,
               style: AppTypography.caption.copyWith(
                 color: AppColors.slateMist,
                 decoration: TextDecoration.underline,

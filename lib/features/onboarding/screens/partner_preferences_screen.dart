@@ -13,15 +13,10 @@ import '../../../core/models/onboarding_data.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
 
-const _kLocationPrefLabels = {
-  LocationPreference.sameCity:     'Same city',
-  LocationPreference.sameCountry:  'Same country',
-  LocationPreference.openToAbroad: 'Open to abroad',
-  LocationPreference.diaspora:     'Diaspora mode',
-};
 
 // Living arrangement preference options (Phase 2)
 const _kLivingPrefOptions = [
@@ -97,36 +92,131 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final obData = context.read<OnboardingCubit>().currentData;
     final isGuardian = obData.isGuardianMode;
     final relation = obData.profileCreatorRelation ?? 'ward';
+
+    // Helper to get localized relationship string
+    String getRelationString() {
+      switch (relation) {
+        case 'son':
+          return l10n.onboarding_profileForWhom_relation_son.toLowerCase();
+        case 'daughter':
+          return l10n.onboarding_profileForWhom_relation_daughter.toLowerCase();
+        case 'brother':
+          return l10n.onboarding_profileForWhom_relation_brother.toLowerCase();
+        case 'sister':
+          return l10n.onboarding_profileForWhom_relation_sister.toLowerCase();
+        default:
+          return l10n.onboarding_profileForWhom_ward.toLowerCase();
+      }
+    }
+
+    String getPrefLocationLabel(LocationPreference pref) {
+      switch (pref) {
+        case LocationPreference.sameCity:
+          return l10n.preferences_location_same_city;
+        case LocationPreference.sameCountry:
+          return l10n.preferences_location_same_country;
+        case LocationPreference.openToAbroad:
+          return l10n.preferences_location_abroad;
+        case LocationPreference.diaspora:
+          return l10n.preferences_location_diaspora;
+      }
+    }
+
+    String getSectLabel(String s) {
+      switch (s) {
+        case 'Any':
+          return l10n.preferences_sect_any;
+        case 'Sunni':
+          return l10n.preferences_sect_sunni;
+        case 'Shia':
+          return l10n.preferences_sect_shia;
+        case 'Same as mine':
+          return l10n.preferences_sect_same;
+        default:
+          return s;
+      }
+    }
+
+    String getDeenLabel(String d) {
+      switch (d) {
+        case 'Any':
+          return l10n.preferences_deen_any;
+        case 'Practicing':
+          return l10n.preferences_deen_practicing;
+        case 'Moderate':
+          return l10n.preferences_deen_moderate;
+        case 'Cultural Muslim':
+          return l10n.preferences_deen_cultural;
+        default:
+          return d;
+      }
+    }
+
+    String getEduLabel(int rank) {
+      switch (rank) {
+        case 1:
+          return l10n.preferences_edu_any;
+        case 2:
+          return l10n.preferences_edu_secondary;
+        case 4:
+          return l10n.preferences_edu_diploma;
+        case 5:
+          return l10n.preferences_edu_bachelors;
+        case 6:
+          return l10n.preferences_edu_masters;
+        case 7:
+          return l10n.preferences_edu_phd;
+        default:
+          return '';
+      }
+    }
+
+    String getPrefLivingLabel(String value) {
+      switch (value) {
+        case 'no_preference':
+          return l10n.preferences_living_no_pref;
+        case 'with_inlaws':
+          return l10n.preferences_living_family;
+        case 'separate':
+          return l10n.preferences_living_separate;
+        case 'open_to_discussion':
+          return l10n.preferences_living_discussion;
+        default:
+          return value;
+      }
+    }
+
     return BlocBuilder<OnboardingCubit, OnboardingState>(
       builder: (context, state) {
         final isLoading = state is OnboardingLoading;
         return OnboardingScaffold(
-          ctaLabel: 'Continue', onCta: _advance,
+          ctaLabel: l10n.legal_button_continue, onCta: _advance,
           isCtaEnabled: true, isCtaLoading: isLoading,
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: AppDimensions.space32),
               StepHeader(
-                title:    'Partner preferences',
+                title:    l10n.preferences_title,
                 subtitle: isGuardian
-                    ? 'Set preferences for your $relation\'s ideal match.'
-                    : 'These are preferences, not hard filters.',
+                    ? l10n.preferences_subtitle_guardian(getRelationString())
+                    : l10n.preferences_subtitle_self,
               ),
               const SizedBox(height: AppDimensions.space32),
 
               // Age range
-              const _Label('AGE RANGE'),
+              _Label(l10n.preferences_label_age),
               const SizedBox(height: AppDimensions.space8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('${_ageMin.round()} – ${_ageMax.round()} years',
+                  Text(l10n.preferences_label_age_range(_ageMin.round().toString(), _ageMax.round().toString()),
                       style: AppTypography.bodyMedium.copyWith(color: AppColors.champagneGold)),
-                  const Text('18 – 60', style: AppTypography.caption),
+                  Text(l10n.preferences_label_age_bounds, style: AppTypography.caption),
                 ],
               ),
               const SizedBox(height: AppDimensions.space8),
@@ -154,7 +244,7 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
               const SizedBox(height: AppDimensions.space24),
 
               // Location preference
-              const _Label('LOCATION'),
+              _Label(l10n.preferences_label_location),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
                 spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
@@ -162,7 +252,7 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
                   final isSel = _location == pref;
                   return GestureDetector(
                     onTap: () => setState(() => _location = pref),
-                    child: _PrefChip(label: _kLocationPrefLabels[pref]!, isSelected: isSel),
+                    child: _PrefChip(label: getPrefLocationLabel(pref), isSelected: isSel),
                   );
                 }).toList(),
               ),
@@ -170,76 +260,74 @@ class _PartnerPreferencesScreenState extends State<PartnerPreferencesScreen> {
               const SizedBox(height: AppDimensions.space24),
 
               // Sect preference
-              const _Label('SECT PREFERENCE'),
+              _Label(l10n.preferences_label_sect),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
                 spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
                 children: _sectOptions.map((s) => GestureDetector(
                   onTap: () => setState(() => _prefSect = s),
-                  child: _PrefChip(label: s, isSelected: _prefSect == s),
+                  child: _PrefChip(label: getSectLabel(s), isSelected: _prefSect == s),
                 )).toList(),
               ),
 
               const SizedBox(height: AppDimensions.space24),
 
               // Deen preference
-              const _Label('DEEN LEVEL PREFERENCE'),
+              _Label(l10n.preferences_label_deen),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
                 spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
                 children: _deenOptions.map((d) => GestureDetector(
                   onTap: () => setState(() => _prefDeen = d),
-                  child: _PrefChip(label: d, isSelected: _prefDeen == d),
+                  child: _PrefChip(label: getDeenLabel(d), isSelected: _prefDeen == d),
                 )).toList(),
               ),
 
               const SizedBox(height: AppDimensions.space24),
 
               // Min education
-              const _Label('MINIMUM EDUCATION'),
+              _Label(l10n.preferences_label_edu),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
                 spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
                 children: _eduRanks.map((e) => GestureDetector(
                   onTap: () => setState(() => _minEduRank = e.rank),
-                  child: _PrefChip(label: e.label, isSelected: _minEduRank == e.rank),
+                  child: _PrefChip(label: getEduLabel(e.rank), isSelected: _minEduRank == e.rank),
                 )).toList(),
               ),
 
               const SizedBox(height: AppDimensions.space24),
 
               // Openness toggles
-              const _Label('OPENNESS'),
+              _Label(l10n.preferences_label_openness),
               const SizedBox(height: AppDimensions.space12),
               _OpenTile(
-                label: 'Open to someone previously divorced',
+                label: l10n.preferences_open_divorced,
                 value: _openToDivorced,
                 onChanged: (v) => setState(() => _openToDivorced = v),
               ),
               const SizedBox(height: AppDimensions.space8),
               _OpenTile(
-                label: 'Open to someone previously widowed',
+                label: l10n.preferences_open_widowed,
                 value: _openToWidowed,
                 onChanged: (v) => setState(() => _openToWidowed = v),
               ),
               const SizedBox(height: AppDimensions.space8),
               _OpenTile(
-                label: 'Open to someone with children',
+                label: l10n.preferences_open_children,
                 value: _openToChildren,
                 onChanged: (v) => setState(() => _openToChildren = v),
               ),
 
-
-
               // ── LIVING ARRANGEMENT PREFERENCE (Phase 2) ────
               const SizedBox(height: AppDimensions.space24),
-              const _Label('LIVING ARRANGEMENT PREFERENCE'),
+              _Label(l10n.preferences_label_living),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
                 spacing: AppDimensions.space8, runSpacing: AppDimensions.space8,
                 children: _kLivingPrefOptions.map((opt) => GestureDetector(
                   onTap: () => setState(() => _preferredLiving = opt.value),
-                  child: _PrefChip(label: opt.label, isSelected: _preferredLiving == opt.value),
+                  child: _PrefChip(label: getPrefLivingLabel(opt.value), isSelected: _preferredLiving == opt.value),
                 )).toList(),
               ),
 

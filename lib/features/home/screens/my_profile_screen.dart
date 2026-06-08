@@ -33,6 +33,7 @@ import 'subscription_screen.dart';
 import 'profile_views_screen.dart';
 import 'notifications_screen.dart';
 import '../../../core/services/supabase_service.dart';
+import '../../../core/services/selfie_verification_service.dart';
 
 // ── Completeness score ────────────────────────────────────────
 
@@ -303,6 +304,14 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                 ),
               ),
             ),
+          ),
+
+          const SizedBox(height: AppDimensions.space16),
+
+          // Verification card
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: _VerificationCard(),
           ),
 
           const SizedBox(height: AppDimensions.space16),
@@ -1458,6 +1467,171 @@ class _IFoundMyMatchButton extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppDimensions.space8),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Verification Card ─────────────────────────────────────────
+
+class _VerificationCard extends StatefulWidget {
+  @override
+  State<_VerificationCard> createState() => _VerificationCardState();
+}
+
+class _VerificationCardState extends State<_VerificationCard> {
+  bool _isVerified = false;
+  DateTime? _verifiedAt;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStatus();
+  }
+
+  Future<void> _loadStatus() async {
+    // 1. Read locally cached state from SharedPreferences first for instant display
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _isVerified = prefs.getBool('selfie_verified') ?? false;
+      final ts = prefs.getString('selfie_verified_at');
+      if (ts != null) _verifiedAt = DateTime.tryParse(ts);
+    });
+
+    // 2. Fetch fresh verification status asynchronously in the background
+    try {
+      final status = await SelfieVerificationService.instance.getStatus();
+      if (!mounted) return;
+      final isVerified = status.status == 'verified';
+      
+      setState(() {
+        _isVerified = isVerified;
+        _verifiedAt = status.verifiedAt;
+      });
+
+      await prefs.setBool('selfie_verified', isVerified);
+      if (status.verifiedAt != null) {
+        await prefs.setString('selfie_verified_at', status.verifiedAt!.toIso8601String());
+      } else {
+        await prefs.remove('selfie_verified_at');
+      }
+    } catch (e) {
+      debugPrint('MyProfileScreen: _loadStatus error fetching fresh status: $e');
+    }
+  }
+
+  Future<void> _navigateToVerify() async {
+    await context.push('/verify');
+    // Refresh status after returning
+    _loadStatus();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isVerified) {
+      // Verified state — teal badge
+      return Container(
+        padding: const EdgeInsets.all(AppDimensions.space16),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceGlass,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+          border: Border.all(
+            color: AppColors.verifiedTeal.withValues(alpha: 0.4),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(AppDimensions.space8),
+              decoration: BoxDecoration(
+                color: AppColors.verifiedTeal.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppColors.verifiedTeal.withValues(alpha: 0.3),
+                ),
+              ),
+              child: const Icon(
+                Icons.verified_rounded,
+                color: AppColors.verifiedTeal,
+                size: AppDimensions.iconSizeMedium,
+              ),
+            ),
+            const SizedBox(width: AppDimensions.space12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Verified',
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppColors.verifiedTeal,
+                      )),
+                  Text(
+                    _verifiedAt != null
+                        ? 'Since ${_verifiedAt!.day}/${_verifiedAt!.month}/${_verifiedAt!.year}'
+                        : 'Your profile is verified',
+                    style: AppTypography.caption,
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.check_circle_rounded,
+                color: AppColors.verifiedTeal,
+                size: AppDimensions.iconSizeMedium),
+          ],
+        ),
+      );
+    }
+
+    // Unverified state — gold CTA
+    return GestureDetector(
+      onTap: _navigateToVerify,
+      child: Container(
+        padding: const EdgeInsets.all(AppDimensions.space16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+          gradient: LinearGradient(
+            colors: [
+              AppColors.champagneGold.withValues(alpha: 0.12),
+              AppColors.champagneGold.withValues(alpha: 0.04),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          border: Border.all(color: AppColors.goldBorder),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(AppDimensions.space8),
+              decoration: BoxDecoration(
+                color: AppColors.champagneGold.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.goldBorder),
+              ),
+              child: const Icon(
+                Icons.shield_outlined,
+                color: AppColors.champagneGold,
+                size: AppDimensions.iconSizeMedium,
+              ),
+            ),
+            const SizedBox(width: AppDimensions.space12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Verify Your Profile',
+                      style: AppTypography.bodyMedium),
+                  Text('Earn a verified badge • 30 seconds',
+                      style: AppTypography.caption),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded,
+                color: AppColors.champagneGold,
+                size: AppDimensions.iconSizeMedium),
           ],
         ),
       ),

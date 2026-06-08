@@ -22,6 +22,7 @@ import '../../../core/models/onboarding_data.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
 
@@ -170,9 +171,10 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Could not pick photo: $e',
+            content: Text(l10n.photo_error_pick_failed(e.toString()),
                 style: AppTypography.body),
             backgroundColor: AppColors.softCoral,
           ),
@@ -203,15 +205,16 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
     });
 
     if (face == _FaceResult.notFound) {
+      final l10n = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Row(children: [
-            Icon(Icons.warning_amber_rounded,
+          content: Row(children: [
+            const Icon(Icons.warning_amber_rounded,
                 color: Colors.white, size: 18),
-            SizedBox(width: AppDimensions.space8),
+            const SizedBox(width: AppDimensions.space8),
             Expanded(
               child: Text(
-                'No face visible — please retry with a clear face photo',
+                l10n.photo_error_no_face_detected,
                 style: AppTypography.body,
               ),
             ),
@@ -227,6 +230,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
   }
 
   Future<ImageSource?> _showSourceSheet() async {
+    final l10n = AppLocalizations.of(context);
     return showModalBottomSheet<ImageSource>(
       context: context,
       backgroundColor: AppColors.surfaceMid,
@@ -246,18 +250,18 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
               ),
             ),
             const SizedBox(height: AppDimensions.space20),
-            const Text('Add photo', style: AppTypography.bodyMedium),
+            Text(l10n.photo_add_photo, style: AppTypography.bodyMedium),
             const SizedBox(height: AppDimensions.space16),
             ListTile(
               leading: const Icon(Icons.camera_alt_outlined,
                   color: AppColors.champagneGold),
-              title: const Text('Camera', style: AppTypography.body),
+              title: Text(l10n.photo_sheet_camera, style: AppTypography.body),
               onTap: () => Navigator.pop(sheetCtx, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined,
                   color: AppColors.champagneGold),
-              title: const Text('Photo Gallery', style: AppTypography.body),
+              title: Text(l10n.photo_sheet_gallery, style: AppTypography.body),
               onTap: () => Navigator.pop(sheetCtx, ImageSource.gallery),
             ),
             const SizedBox(height: AppDimensions.space16),
@@ -297,14 +301,31 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return BlocBuilder<OnboardingCubit, OnboardingState>(
       builder: (context, state) {
         final isLoading = state is OnboardingLoading;
         final obData = context.read<OnboardingCubit>().currentData;
         final isGuardian = obData.isGuardianMode;
         final relation = obData.profileCreatorRelation ?? 'ward';
+
+        String getRelationString() {
+          switch (relation) {
+            case 'son':
+              return l10n.onboarding_profileForWhom_relation_son.toLowerCase();
+            case 'daughter':
+              return l10n.onboarding_profileForWhom_relation_daughter.toLowerCase();
+            case 'brother':
+              return l10n.onboarding_profileForWhom_relation_brother.toLowerCase();
+            case 'sister':
+              return l10n.onboarding_profileForWhom_relation_sister.toLowerCase();
+            default:
+              return l10n.onboarding_profileForWhom_ward.toLowerCase();
+          }
+        }
+
         return OnboardingScaffold(
-          ctaLabel:     'Continue',
+          ctaLabel:     l10n.legal_button_continue,
           onCta:        _advance,
           isCtaEnabled: _hasPrimary && !_uploading && _faces[0] == _FaceResult.found,
           isCtaLoading: isLoading,
@@ -313,10 +334,10 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
             children: [
               const SizedBox(height: AppDimensions.space32),
               StepHeader(
-                title:    isGuardian ? 'Add their photos' : 'Add your photos',
+                title:    isGuardian ? l10n.photo_title_guardian : l10n.photo_title_self,
                 subtitle: isGuardian
-                    ? 'Add photos of your $relation. At least one is required.'
-                    : 'At least one photo is required. Maximum four.',
+                    ? l10n.photo_subtitle_guardian(getRelationString())
+                    : l10n.photo_subtitle_self,
               ),
               const SizedBox(height: AppDimensions.space24),
 
@@ -335,8 +356,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
                     const SizedBox(width: AppDimensions.space8),
                     Expanded(
                       child: Text(
-                        'Each photo is scanned to ensure a visible face. '
-                        'Group photos are not allowed as your primary photo.',
+                        l10n.photo_banner_text,
                         style: AppTypography.caption.copyWith(
                           color: AppColors.champagneGold,
                         ),
@@ -375,26 +395,26 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
 
               // Slot labels
               const SizedBox(height: AppDimensions.space12),
-              const Row(
+              Row(
                 children: [
                   Expanded(child: Center(
-                    child: _SlotLabel('Primary photo', isRequired: true),
+                    child: _SlotLabel(l10n.photo_label_primary, isRequired: true),
                   )),
-                  SizedBox(width: AppDimensions.space12),
+                  const SizedBox(width: AppDimensions.space12),
                   Expanded(child: Center(
-                    child: _SlotLabel('Photo 2', isRequired: false),
+                    child: _SlotLabel(l10n.photo_label_photo2, isRequired: false),
                   )),
                 ],
               ),
               const SizedBox(height: AppDimensions.space4),
-              const Row(
+              Row(
                 children: [
                   Expanded(child: Center(
-                    child: _SlotLabel('Photo 3', isRequired: false),
+                    child: _SlotLabel(l10n.photo_label_photo3, isRequired: false),
                   )),
-                  SizedBox(width: AppDimensions.space12),
+                  const SizedBox(width: AppDimensions.space12),
                   Expanded(child: Center(
-                    child: _SlotLabel('Verification selfie',
+                    child: _SlotLabel(l10n.photo_label_selfie,
                         isRequired: false),
                   )),
                 ],
@@ -403,7 +423,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
               // Privacy toggle for women
               if (_gender == Gender.female) ...[
                 const SizedBox(height: AppDimensions.space24),
-                const Text('PHOTO PRIVACY', style: AppTypography.sectionLabel),
+                Text(l10n.photo_privacy_label, style: AppTypography.sectionLabel),
                 const SizedBox(height: AppDimensions.space12),
                 _PrivacyToggle(
                   current:   _privacy,
@@ -443,6 +463,7 @@ class _PhotoSlot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final isFilled = bytes != null;
     return GestureDetector(
       onTap: isFilled ? null : onAdd,
@@ -517,8 +538,8 @@ class _PhotoSlot extends StatelessWidget {
                       const SizedBox(width: 4),
                       Text(
                         faceResult == _FaceResult.found
-                            ? 'Face detected ✓'
-                            : 'No face visible',
+                            ? l10n.photo_face_detected
+                            : l10n.photo_no_face,
                         style: AppTypography.caption.copyWith(
                           color:    Colors.white,
                           fontSize: 10,
@@ -559,6 +580,7 @@ class _EmptySlot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -574,7 +596,7 @@ class _EmptySlot extends StatelessWidget {
           padding: const EdgeInsets.symmetric(
               horizontal: AppDimensions.space12),
           child: Text(
-            isPrimary ? 'Add main photo\n(required)' : 'Add photo',
+            isPrimary ? l10n.photo_add_main_required : l10n.photo_add_photo,
             style: AppTypography.caption.copyWith(
               color: isPrimary
                   ? AppColors.champagneGold
@@ -619,28 +641,29 @@ class _PrivacyToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       children: [
         _PrivacyTile(
           icon:       Icons.public_outlined,
-          label:      'Visible to everyone',
-          subtitle:   'All members can see your photos.',
+          label:      l10n.photo_privacy_everyone,
+          subtitle:   l10n.photo_privacy_everyone_sub,
           isSelected: current == PhotoPrivacy.publicAll,
           onTap:      () => onChanged(PhotoPrivacy.publicAll),
         ),
         const SizedBox(height: AppDimensions.space8),
         _PrivacyTile(
           icon:       Icons.lock_outline_rounded,
-          label:      'Visible after mutual interest',
-          subtitle:   'Photos only reveal when both parties express interest.',
+          label:      l10n.photo_privacy_mutual,
+          subtitle:   l10n.photo_privacy_mutual_sub,
           isSelected: current == PhotoPrivacy.mutualOnly,
           onTap:      () => onChanged(PhotoPrivacy.mutualOnly),
         ),
         const SizedBox(height: AppDimensions.space8),
         _PrivacyTile(
           icon:       Icons.visibility_off_outlined,
-          label:      'Request to view',
-          subtitle:   'Photos are blurred until you approve a request.',
+          label:      l10n.photo_privacy_request,
+          subtitle:   l10n.photo_privacy_request_sub,
           isSelected: current == PhotoPrivacy.requestOnly,
           onTap:      () => onChanged(PhotoPrivacy.requestOnly),
         ),

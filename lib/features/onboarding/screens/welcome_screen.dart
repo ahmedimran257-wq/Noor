@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:noor/l10n/generated/app_localizations.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
@@ -71,6 +72,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final isAr = l10n.localeName == 'ar';
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Container(
@@ -145,7 +148,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                         const SizedBox(height: AppDimensions.space24),
   
                         Text(
-                          'Bismillah,\nyou\'re live.',
+                          isAr ? 'بسم الله،\nملفك نشط الآن.' : 'Bismillah,\nyou\'re live.',
                           style: AppTypography.screenTitle.copyWith(
                             fontSize: 32,
                             height:   1.2,
@@ -155,9 +158,11 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   
                         const SizedBox(height: AppDimensions.space12),
   
-                        const Text(
-                          'Your profile is now visible on NOOR.\n'
-                          'May Allah make it easy for you.',
+                        Text(
+                          isAr
+                              ? 'ملفك الشخصي مرئي الآن على نور.\nيسّر الله لك أمرك.'
+                              : 'Your profile is now visible on NOOR.\n'
+                                'May Allah make it easy for you.',
                           style: AppTypography.bodyMuted,
                           textAlign: TextAlign.center,
                         ),
@@ -193,16 +198,18 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'You\'re in a safe space',
+                                      isAr ? 'أنت في مساحة آمنة' : 'You\'re in a safe space',
                                       style: AppTypography.captionMedium.copyWith(
                                         color: AppColors.verifiedTeal,
                                       ),
                                     ),
                                     const SizedBox(height: AppDimensions.space4),
-                                    const Text(
-                                      'All profiles are reviewed for safety. '
-                                      'Browse, send interests, and start meaningful '
-                                      'conversations with sincerity.',
+                                    Text(
+                                      isAr
+                                          ? 'تتم مراجعة جميع الملفات الشخصية للأمان. تصفح، أرسل اهتماماتك، وابدأ محادثات هادفة بكل صدق.'
+                                          : 'All profiles are reviewed for safety. '
+                                            'Browse, send interests, and start meaningful '
+                                            'conversations with sincerity.',
                                       style: AppTypography.caption,
                                     ),
                                   ],
@@ -215,7 +222,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                         const Spacer(flex: 3),
   
                         NoorPrimaryButton(
-                          label: 'Start Browsing',
+                          label: isAr ? 'ابدأ التصفح' : 'Start Browsing',
                           onTap: () {
                             // Mark onboarding as fully complete (step >= 14)
                             // so the router redirect allows /home navigation.

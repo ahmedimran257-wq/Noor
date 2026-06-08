@@ -31,6 +31,7 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/cards/noor_profile_card.dart';
 import '../../../core/widgets/loaders/noor_shimmer.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../widgets/discovery_filter_bar.dart';
 import '../widgets/interest_ceremony_overlay.dart';
 import '../widgets/interest_note_sheet.dart';
@@ -133,14 +134,15 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
     // Persist updated bookmark set
     BookmarkService.save(Set<String>.from(_bookmarked));
 
+    final l10n = AppLocalizations.of(context);
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
           content: Text(
             _bookmarked.contains(id)
-                ? '${fp.profile.firstName} saved'
-                : '${fp.profile.firstName} removed',
+                ? l10n.discovery_bookmark_saved(fp.profile.firstName)
+                : l10n.discovery_bookmark_removed(fp.profile.firstName),
             style: AppTypography.body,
           ),
           backgroundColor: AppColors.surfaceGlassHover,
@@ -346,6 +348,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
 class _WildCardLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.space12,
@@ -358,7 +361,7 @@ class _WildCardLabel extends StatelessWidget {
             color: AppColors.champagneGold.withValues(alpha: 0.5)),
       ),
       child: Text(
-        'Someone you might connect with',
+        l10n.discovery_wildcard_label,
         style: AppTypography.caption.copyWith(
           color:        AppColors.champagneGold,
           fontSize:     11,
@@ -377,6 +380,7 @@ class _FreeTierCounter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AnimatedContainer(
       duration: AppDimensions.durationTransition,
       padding: const EdgeInsets.symmetric(
@@ -393,7 +397,7 @@ class _FreeTierCounter extends StatelessWidget {
         ),
       ),
       child: Text(
-        '$remaining profiles remaining',
+        l10n.discovery_remaining_profiles(remaining.toString()),
         style: AppTypography.caption.copyWith(
           color:    remaining <= 3 ? AppColors.errorRed : AppColors.slateMist,
           fontSize: 11,
@@ -476,6 +480,7 @@ class _EmptyFeed extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppDimensions.space32),
@@ -496,13 +501,13 @@ class _EmptyFeed extends StatelessWidget {
             ),
             const SizedBox(height: AppDimensions.space24),
             Text(
-              'You\'ve seen everyone nearby',
+              l10n.discovery_empty_title,
               style: AppTypography.screenTitle.copyWith(fontSize: 20),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppDimensions.space12),
-            const Text(
-              'Try expanding your search filters\nor check back tomorrow.',
+            Text(
+              l10n.discovery_empty_subtitle,
               style: AppTypography.bodyMuted,
               textAlign: TextAlign.center,
             ),
@@ -520,6 +525,7 @@ class _FreeTierLimitReached extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppDimensions.space40),
@@ -549,12 +555,12 @@ class _FreeTierLimitReached extends StatelessWidget {
             ),
             const SizedBox(height: AppDimensions.space28),
             Text(
-              'Daily limit reached',
+              l10n.discovery_limit_title,
               style: AppTypography.screenTitle.copyWith(fontSize: 22),
             ),
             const SizedBox(height: AppDimensions.space12),
-            const Text(
-              'You\'ve browsed 15 profiles today.\nUpgrade to unlock unlimited browsing.',
+            Text(
+              l10n.discovery_limit_subtitle,
               style: AppTypography.bodyMuted,
               textAlign: TextAlign.center,
             ),
@@ -570,7 +576,7 @@ class _FreeTierLimitReached extends StatelessWidget {
                   color:        AppColors.champagneGold,
                   borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
                 ),
-                child: const Text('Upgrade Now', style: AppTypography.button),
+                child: Text(l10n.discovery_limit_button, style: AppTypography.button),
               ),
             ),
           ],
@@ -606,6 +612,7 @@ class _IncompleteProfileGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space32),
@@ -639,14 +646,13 @@ class _IncompleteProfileGate extends StatelessWidget {
             ),
             const SizedBox(height: AppDimensions.space24),
             Text(
-              'Complete Your Profile',
+              l10n.discovery_completeness_title,
               style: AppTypography.screenTitle.copyWith(fontSize: 20),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppDimensions.space8),
-            const Text(
-              'Profiles above 40% get 3× more interests.\n'
-              'Complete your profile to start browsing.',
+            Text(
+              l10n.discovery_completeness_subtitle,
               style: AppTypography.bodyMuted,
               textAlign: TextAlign.center,
             ),
@@ -664,7 +670,7 @@ class _IncompleteProfileGate extends StatelessWidget {
                 ),
                 icon: const Icon(Icons.edit_outlined,
                     color: AppColors.obsidianNight, size: 18),
-                label: const Text('Complete Profile', style: AppTypography.button),
+                label: Text(l10n.discovery_completeness_button, style: AppTypography.button),
                 onPressed: () {
                   // Switch to Profile tab (index 3) via HomeScreen
                   final homeState = context.findAncestorStateOfType<HomeScreenState>();

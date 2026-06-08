@@ -16,6 +16,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/inputs/noor_text_field.dart';
 import '../../../core/utils/validation_snackbar.dart';
 import '../../../core/data/country_income_brackets.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
 
@@ -100,9 +101,10 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
       _education != null && _employment != null;
 
   void _showValidation() {
+    final l10n = AppLocalizations.of(context);
     final missing = <String>[];
-    if (_education == null) missing.add('Education level');
-    if (_employment == null) missing.add('Employment status');
+    if (_education == null) missing.add(l10n.background_label_eduLevel);
+    if (_employment == null) missing.add(l10n.background_label_employment);
     showValidationSnackbar(context, missing);
   }
 
@@ -133,34 +135,78 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final obData = context.read<OnboardingCubit>().currentData;
     final isGuardian = obData.isGuardianMode;
     final relation = obData.profileCreatorRelation ?? 'ward';
+
+    // Helper to get localized relationship string
+    String getRelationString() {
+      switch (relation) {
+        case 'son':
+          return l10n.onboarding_profileForWhom_relation_son.toLowerCase();
+        case 'daughter':
+          return l10n.onboarding_profileForWhom_relation_daughter.toLowerCase();
+        case 'brother':
+          return l10n.onboarding_profileForWhom_relation_brother.toLowerCase();
+        case 'sister':
+          return l10n.onboarding_profileForWhom_relation_sister.toLowerCase();
+        default:
+          return l10n.onboarding_profileForWhom_ward.toLowerCase();
+      }
+    }
+
+    String getEmploymentLabel(EmploymentStatus value) {
+      switch (value) {
+        case EmploymentStatus.employed:
+          return l10n.background_emp_employed;
+        case EmploymentStatus.selfEmployed:
+          return l10n.background_emp_self_employed;
+        case EmploymentStatus.student:
+          return l10n.background_emp_student;
+        case EmploymentStatus.notWorking:
+          return l10n.background_emp_not_working;
+      }
+    }
+
+    String getVisibilityLabel(String id) {
+      switch (id) {
+        case 'hidden':
+          return l10n.background_vis_private;
+        case 'bracket':
+          return l10n.background_vis_everyone;
+        case 'after_match':
+          return l10n.background_vis_mutual;
+        default:
+          return '';
+      }
+    }
+
     return BlocBuilder<OnboardingCubit, OnboardingState>(
       builder: (context, state) {
         final isLoading = state is OnboardingLoading;
         return OnboardingScaffold(
-          ctaLabel:     'Continue',
+          ctaLabel:     l10n.legal_button_continue,
           onCta:        _advance,
           isCtaEnabled: _canProceed,
           isCtaLoading: isLoading,
           onCtaDisabledTap: _showValidation,
-          skipLabel:    'I\'ll do this later',
+          skipLabel:    l10n.about_button_later,
           onSkip:       () => context.read<OnboardingCubit>().skipStep(),
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: AppDimensions.space32),
               StepHeader(
-                title:    isGuardian ? 'Their background' : 'Your background',
+                title:    isGuardian ? l10n.background_edu_title_guardian : l10n.background_edu_title_self,
                 subtitle: isGuardian
-                    ? 'Tell us about your $relation\'s education and career.'
-                    : 'Helps find professionally compatible matches.',
+                    ? l10n.background_edu_subtitle_guardian(getRelationString())
+                    : l10n.background_edu_subtitle_self,
               ),
               const SizedBox(height: AppDimensions.space32),
 
               // Education level
-              const Text('EDUCATION LEVEL', style: AppTypography.sectionLabel),
+              Text(l10n.background_label_eduLevel, style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
               ..._kEduLevels.map((edu) => Padding(
                 padding: const EdgeInsets.only(bottom: AppDimensions.space8),
@@ -176,7 +222,7 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
               // Field of study
               NoorTextField(
                 controller:         _studyCtrl,
-                label:              'Field of study  (Optional)',
+                label:              l10n.background_label_study,
                 prefixIcon:         Icons.school_outlined,
                 textCapitalization: TextCapitalization.sentences,
                 textInputAction:    TextInputAction.next,
@@ -187,7 +233,7 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
               // Profession
               NoorTextField(
                 controller:         _professionCtrl,
-                label:              'Profession  (Optional)',
+                label:              l10n.background_label_profession,
                 prefixIcon:         Icons.work_outline_rounded,
                 textCapitalization: TextCapitalization.words,
                 textInputAction:    TextInputAction.done,
@@ -196,7 +242,7 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
               const SizedBox(height: AppDimensions.space20),
 
               // Employment status
-              const Text('EMPLOYMENT STATUS', style: AppTypography.sectionLabel),
+              Text(l10n.background_label_employment, style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
                 spacing:    AppDimensions.space8,
@@ -226,7 +272,7 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
                         ),
                       ),
                       child: Text(
-                        opt.label,
+                        getEmploymentLabel(opt.value),
                         style: AppTypography.chipLabel.copyWith(
                           color: isSel
                               ? AppColors.champagneGold
@@ -255,14 +301,14 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
                         const Icon(Icons.account_balance_wallet_outlined,
                             color: AppColors.slateMist, size: 20),
                         const SizedBox(width: AppDimensions.space12),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('INCOME RANGE  (Optional)',
+                              Text(l10n.background_label_income_range,
                                   style: AppTypography.sectionLabel),
-                              SizedBox(height: 2),
-                              Text('Many people skip this — it\'s entirely optional.',
+                              const SizedBox(height: 2),
+                              Text(l10n.background_income_subtitle,
                                   style: AppTypography.caption),
                             ],
                           ),
@@ -281,7 +327,7 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
                 if (_showIncome) ...[
                   const SizedBox(height: AppDimensions.space16),
                   Text(
-                    'INCOME BRACKET (${currencyFor(context.read<OnboardingCubit>().currentData.countryCode)})',
+                    l10n.background_label_income_bracket(currencyFor(context.read<OnboardingCubit>().currentData.countryCode)),
                     style: AppTypography.sectionLabel,
                   ),
                   const SizedBox(height: AppDimensions.space12),
@@ -321,7 +367,7 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
                     ),
                   )),
                 const SizedBox(height: AppDimensions.space16),
-                const Text('WHO CAN SEE THIS?', style: AppTypography.sectionLabel),
+                Text(l10n.background_label_who_see, style: AppTypography.sectionLabel),
                 const SizedBox(height: AppDimensions.space12),
                 ..._kVisibilityOptions.map((opt) => Padding(
                   padding: const EdgeInsets.only(bottom: AppDimensions.space8),
@@ -369,7 +415,7 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
                                 : null,
                           ),
                           const SizedBox(width: AppDimensions.space12),
-                          Text(opt.label, style: AppTypography.body),
+                          Text(getVisibilityLabel(opt.id), style: AppTypography.body),
                         ],
                       ),
                     ),
@@ -401,6 +447,34 @@ class _EduTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    String localizedLabel = '';
+    switch (edu.rank) {
+      case 1:
+        localizedLabel = l10n.background_edu_below_secondary;
+        break;
+      case 2:
+        localizedLabel = l10n.background_edu_secondary;
+        break;
+      case 3:
+        localizedLabel = l10n.background_edu_higher_secondary;
+        break;
+      case 4:
+        localizedLabel = l10n.background_edu_diploma;
+        break;
+      case 5:
+        localizedLabel = l10n.background_edu_bachelors;
+        break;
+      case 6:
+        localizedLabel = l10n.background_edu_masters;
+        break;
+      case 7:
+        localizedLabel = l10n.background_edu_doctorate;
+        break;
+      default:
+        localizedLabel = edu.label;
+    }
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -444,7 +518,7 @@ class _EduTile extends StatelessWidget {
             ),
             const SizedBox(width: AppDimensions.space12),
             Text(
-              edu.label,
+              localizedLabel,
               style: AppTypography.body.copyWith(
                 color: isSelected ? AppColors.champagneGold : AppColors.pearlWhite,
               ),
