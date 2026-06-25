@@ -1,6 +1,6 @@
 // lib/core/data/country_income_brackets.dart
 // ============================================================
-// NOOR — Multi-Currency Income Brackets for 15 Countries
+// MITHAQ — Multi-Currency Income Brackets for 15 Countries
 // ============================================================
 
 class IncomeBracketData {

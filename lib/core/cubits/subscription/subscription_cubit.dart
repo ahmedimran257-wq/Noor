@@ -1,6 +1,6 @@
 // lib/core/cubits/subscription/subscription_cubit.dart
 // ============================================================
-// NOOR — Subscription Cubit (Real RevenueCat + Mock Fallback)
+// MITHAQ — Subscription Cubit (Real RevenueCat + Mock Fallback)
 //
 // When Supabase is configured (real mode):
 //   • Purchases.logIn(userId) on auth
@@ -25,8 +25,8 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
   SubscriptionCubit() : super(const SubscriptionState());
 
   // Product IDs matching RevenueCat entitlement keys
-  static const monthlyProductId = 'noor_monthly';
-  static const annualProductId  = 'noor_annual';
+  static const monthlyProductId = 'mithaq_monthly';
+  static const annualProductId  = 'mithaq_annual';
 
   bool get _isRealMode => SupabaseService.isInitialized;
 
@@ -145,7 +145,7 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
         isLoading:      false,
         status:         SubscriptionStatus.active,
         expiresAt:      expiry,
-        successMessage: 'JazakAllah khair — NOOR Premium is now active!',
+        successMessage: 'JazakAllah khair — MITHAQ Premium is now active!',
       ));
       return;
     }
@@ -167,7 +167,7 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
           isLoading:      false,
           status:         SubscriptionStatus.active,
           expiresAt:      expiry,
-          successMessage: 'JazakAllah khair — NOOR Premium is now active!',
+          successMessage: 'JazakAllah khair — MITHAQ Premium is now active!',
         ));
       } else {
         emit(state.copyWith(

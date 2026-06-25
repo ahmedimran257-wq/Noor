@@ -1,6 +1,6 @@
 // lib/core/services/wali_mode_service.dart
 // ============================================================
-// NOOR — Wali (Guardian) Mode Service
+// MITHAQ — Wali (Guardian) Mode Service
 //
 // Fixes Audit Finding 3.1 (Critical):
 //   Provides guardian link flow, mirrored chat access, realtime

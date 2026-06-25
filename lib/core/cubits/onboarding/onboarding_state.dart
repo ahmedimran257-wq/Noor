@@ -1,6 +1,6 @@
 // lib/core/cubits/onboarding/onboarding_state.dart
 // ============================================================
-// NOOR — Onboarding Cubit States
+// MITHAQ — Onboarding Cubit States
 // ============================================================
 
 import 'package:equatable/equatable.dart';
@@ -54,7 +54,7 @@ class OnboardingSaved extends OnboardingState {
   List<Object?> get props => [step, data];
 }
 
-/// Onboarding is fully complete (Myself path: step >= 11. Guardian path: step >= 12).
+/// Onboarding is fully complete.
 class OnboardingComplete extends OnboardingState {
   const OnboardingComplete();
 }

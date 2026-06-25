@@ -1,6 +1,6 @@
 // lib/features/onboarding/screens/language_selection_screen.dart
 // ============================================================
-// NOOR — Language Selection Screen
+// MITHAQ — Language Selection Screen
 //
 // First interactive screen after the assalam animation.
 // Lets the user pick their preferred language before anything else.
@@ -21,8 +21,8 @@ import '../../../core/cubits/locale/locale_cubit.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/buttons/noor_primary_button.dart';
-import '../../../core/widgets/buttons/noor_pressable.dart';
+import '../../../core/widgets/buttons/mithaq_primary_button.dart';
+import '../../../core/widgets/buttons/mithaq_pressable.dart';
 import '../../../core/router/app_router.dart';
 
 // ── Language data ─────────────────────────────────────────────
@@ -133,7 +133,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen>
     context.read<LocaleCubit>().setLocale(Locale(_selectedCode));
     // Mark intro as completed so it never shows again.
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('noor_intro_completed', true);
+    await prefs.setBool('mithaq_intro_completed', true);
     if (mounted) context.go(AppRoutes.splash);
   }
 
@@ -258,7 +258,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen>
                     AppDimensions.horizontalMargin,
                     AppDimensions.space48,
                   ),
-                  child: NoorPrimaryButton(
+                  child: MithaqPrimaryButton(
                     label: 'Continue',
                     onTap: _onContinue,
                   ),
@@ -282,9 +282,9 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Subtle نور mark above the title
+          // Subtle ميثاق mark above the title
           Text(
-            'نور',
+            'ميثاق',
             textDirection: TextDirection.rtl,
             style: TextStyle(
               fontSize:      22,
@@ -360,7 +360,7 @@ class _LanguageTile extends StatelessWidget {
           width: isSelected ? 1.5 : 1.0,
         ),
       ),
-      child: NoorPressable(
+      child: MithaqPressable(
         onTap: onTap,
         child: Padding(
             padding: const EdgeInsets.symmetric(

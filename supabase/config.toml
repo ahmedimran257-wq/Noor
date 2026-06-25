@@ -1,5 +1,5 @@
 # ============================================================
-# Supabase Project Configuration — NOOR
+# Supabase Project Configuration — Mithaq
 # ============================================================
 
 [api]
@@ -28,14 +28,31 @@ enabled = true
 # supabase storage create profile-photos --public=false
 
 [auth]
-site_url = "noor://"
-additional_redirect_urls = ["https://noor.app"]
+site_url = "mithaq://"
+additional_redirect_urls = ["https://mithaq.app"]
 jwt_expiry = 3600
 enable_refresh_token_rotation = true
 refresh_token_reuse_interval = 10
 enable_signup = true
 enable_anonymous_sign_ins = false
 minimum_password_length = 8
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+secure_password_change = false
+max_frequency = "60s"
+otp_expiry = 600
+otp_length = 6
+
+[auth.email.template.magic_link]
+subject = "Your Mithaq verification code"
+content_path = "./supabase/auth/email_templates/mithaq_verification_code.html"
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
 
 [auth.sms]
 # We use Firebase Auth for OTP — Supabase SMS is not used
@@ -50,3 +67,7 @@ enabled = true
 [functions]
 # Edge Functions are in supabase/functions/
 # Deploy all with: supabase functions deploy
+
+[functions.auth-before-user-created]
+# Supabase Auth calls this endpoint before an anonymous user session exists.
+verify_jwt = false

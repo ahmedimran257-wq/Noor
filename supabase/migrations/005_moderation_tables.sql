@@ -199,7 +199,7 @@ CREATE TABLE notifications (
   type         text NOT NULL,                          -- new_interest | interest_accepted | etc.
   title        text NOT NULL,
   body         text NOT NULL,
-  deep_link    text,                                   -- noor://screen/param
+  deep_link    text,                                   -- mithaq://screen/param
   scheduled_at timestamptz NOT NULL,
   sent_at      timestamptz,
   read_at      timestamptz,

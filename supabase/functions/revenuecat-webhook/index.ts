@@ -150,14 +150,25 @@ Deno.serve(async (req: Request) => {
     return new Response("Internal Server Error", { status: 500 });
   }
 
+  const { error: eventError } = await supabase.from("subscription_events").upsert({
+    user_id: supabaseUserId,
+    event_type: event.type,
+    event_timestamp_ms: eventTimestampMs,
+    product_id: event.product_id ?? null,
+    currency: event.currency ?? null,
+    price: event.price ?? null,
+    expires_at: expiresAt,
+  }, { onConflict: "user_id,event_type,event_timestamp_ms" });
+  if (eventError) console.error("[revenuecat-webhook] Event ledger write failed:", eventError.message);
+
   // ── Send push notification on key events ──────────────────
   if (event.type === "EXPIRATION") {
     await supabase.rpc("queue_notification", {
       p_user_id:  supabaseUserId,
       p_type:     "subscription_expired",
-      p_title:    "Your NOOR subscription has ended",
+      p_title:    "Your Mithaq subscription has ended",
       p_body:     "Renew today to keep messaging your connections.",
-      p_deep_link:"noor://subscription",
+      p_deep_link:"mithaq://subscription",
     });
   }
 
@@ -167,7 +178,7 @@ Deno.serve(async (req: Request) => {
       p_type:     "billing_issue",
       p_title:    "Payment issue — action required",
       p_body:     "Please update your payment method to continue messaging.",
-      p_deep_link:"noor://subscription",
+      p_deep_link:"mithaq://subscription",
     });
   }
 

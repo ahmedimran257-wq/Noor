@@ -49,16 +49,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get about_title_self => 'About you';
 
   @override
-  String get appName => 'NOOR';
+  String get appName => 'Mithaq';
 
   @override
   String get appTagline => 'Begin with bismillah';
 
   @override
-  String get auth_button_resendOtp => 'Resend Code';
+  String get auth_button_resendOtp => 'Resend Verification Code';
 
   @override
-  String get auth_button_sendCode => 'Send Code';
+  String get auth_button_sendCode => 'Send Verification Code';
 
   @override
   String get auth_button_sendOtp => 'Send Verification Code';
@@ -73,17 +73,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get auth_label_changeNumber => 'Wrong number? Change it';
 
   @override
-  String get auth_label_enterOtp => 'Enter the 6-digit code sent to';
+  String get auth_label_enterOtp =>
+      'Enter the 6-digit verification code sent to';
 
   @override
   String get auth_label_phoneNumber => 'Phone Number';
 
   @override
-  String get auth_label_resendCode => 'Resend code';
+  String get auth_label_resendCode => 'Resend verification code';
 
   @override
   String auth_label_resendCodeIn(Object seconds) {
-    return 'Resend code in ${seconds}s';
+    return 'Resend verification code in ${seconds}s';
   }
 
   @override
@@ -92,14 +93,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get auth_label_sentCodeTo => 'We sent a 6-digit code to\n';
+  String get auth_label_sentCodeTo =>
+      'We sent a 6-digit verification code to\n';
 
   @override
   String get auth_subtitle_verifyOtp =>
       'We\'ll verify it with a one-time code.';
 
   @override
-  String get auth_title_enterCode => 'Enter the code';
+  String get auth_title_enterCode => 'Enter your verification code';
 
   @override
   String get auth_title_yourNumber => 'Your number';
@@ -228,7 +230,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chat_label_subscribeToMessage =>
-      'Subscribe to unlock messaging. Women always message free on NOOR.';
+      'Subscribe to unlock messaging. Women always message free on Mithaq.';
 
   @override
   String get chat_matchClosed_banner =>
@@ -344,7 +346,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get discovery_empty_title => 'You\'ve seen everyone nearby';
 
   @override
-  String get discovery_header_title => 'NOOR';
+  String get discovery_header_title => 'Mithaq';
 
   @override
   String get discovery_label_interestSent => 'Interest Sent ✓';
@@ -1044,16 +1046,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboarding_error_under18 =>
-      'NOOR is for those 18 and older. We\'ve made this requirement to protect everyone in our community.';
+      'Mithaq is for those 18 and older. We\'ve made this requirement to protect everyone in our community.';
 
   @override
   String onboarding_error_under18_guardian(String relation) {
-    return 'Your $relation must be 18 or older to use NOOR.';
+    return 'Your $relation must be 18 or older to use Mithaq.';
   }
 
   @override
   String get onboarding_error_under18_self =>
-      'You must be 18 or older to use NOOR. We look forward to welcoming you then.';
+      'You must be 18 or older to use Mithaq. We look forward to welcoming you then.';
 
   @override
   String get onboarding_habit_frequently => 'Frequently';
@@ -1868,7 +1870,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Profiles with 80%+ completeness receive 3× more interests.';
 
   @override
-  String get settings_brand_credit => 'NOOR (نور) · For the sake of Allah';
+  String get settings_brand_credit => 'Mithaq (ميثاق) · For the sake of Allah';
 
   @override
   String get settings_button_deleteAccount => 'Delete Account';
@@ -2178,5 +2180,5 @@ class AppLocalizationsEn extends AppLocalizations {
       'Women message free. Men subscribe to connect.';
 
   @override
-  String get subscription_title => 'Unlock NOOR';
+  String get subscription_title => 'Unlock Mithaq';
 }

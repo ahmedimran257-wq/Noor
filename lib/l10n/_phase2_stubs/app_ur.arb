@@ -2,7 +2,7 @@
   "@@locale": "ur",
   "@@last_modified": "2026-04-11",
 
-  "appName": "نور",
+  "appName": "ميثاق",
   "appTagline": "بسم اللہ سے شروع کریں",
 
   "common_button_next": "اگلا",
@@ -53,7 +53,7 @@
   "onboarding_label_female": "عورت",
   "onboarding_label_city": "شہر",
   "onboarding_hint_searchCity": "اپنا شہر تلاش کریں…",
-  "onboarding_error_under18": "نور 18 سال یا اس سے زیادہ عمر کے لوگوں کے لیے ہے۔",
+  "onboarding_error_under18": "ميثاق 18 سال یا اس سے زیادہ عمر کے لوگوں کے لیے ہے۔",
 
   "onboarding_islamicIdentity_title": "آپ کی اسلامی شناخت",
   "onboarding_label_deenLevel": "دینداری کی سطح",
@@ -110,7 +110,7 @@
   "onboarding_photo_verifySelfie": "تصدیقی سیلفی",
   "onboarding_photo_verifySelfieHint": "اپنی شناخت کی تصدیق کے لیے لائیو تصویر لیں",
 
-  "discovery_header_title": "نور",
+  "discovery_header_title": "ميثاق",
   "discovery_button_sendInterest": "دلچسپی بھیجیں",
   "discovery_label_interestSent": "بھیج دی گئی ✓",
   "discovery_label_outsidePrefs": "کوئی جس سے آپ جڑ سکتے ہیں",
@@ -118,7 +118,7 @@
   "ceremony_text_blessing": "اللہ اس میں برکت عطا فرمائے",
 
   "chat_placeholder_typeMessage": "پیغام لکھیں…",
-  "chat_label_subscribeToMessage": "میسجنگ کھولنے کے لیے سبسکرائب کریں۔ خواتین ہمیشہ نور پر مفت میسج کرتی ہیں۔",
+  "chat_label_subscribeToMessage": "میسجنگ کھولنے کے لیے سبسکرائب کریں۔ خواتین ہمیشہ ميثاق پر مفت میسج کرتی ہیں۔",
   "chat_endMatch_title": "یہ میچ ختم کریں",
   "chat_endMatch_subtitle": "ایک باعزت پیغام منتخب کریں۔ دوسرے شخص کو مطلع کیا جائے گا۔",
   "chat_endMatch_button": "بھیجیں اور میچ ختم کریں",
@@ -138,7 +138,7 @@
   "interests_button_accept": "قبول کریں",
   "interests_button_decline": "رد کریں",
 
-  "subscription_title": "نور کو کھولیں",
+  "subscription_title": "ميثاق کو کھولیں",
   "subscription_subtitle": "خواتین مفت میسج کرتی ہیں۔ مرد رابطے کے لیے سبسکرائب کریں۔",
 
   "settings_title": "ترتیبات",

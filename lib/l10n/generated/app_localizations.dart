@@ -167,7 +167,7 @@ abstract class AppLocalizations {
   /// App name
   ///
   /// In en, this message translates to:
-  /// **'NOOR'**
+  /// **'Mithaq'**
   String get appName;
 
   /// Brand tagline on splash screen
@@ -179,13 +179,13 @@ abstract class AppLocalizations {
   /// No description provided for @auth_button_resendOtp.
   ///
   /// In en, this message translates to:
-  /// **'Resend Code'**
+  /// **'Resend Verification Code'**
   String get auth_button_resendOtp;
 
   /// No description provided for @auth_button_sendCode.
   ///
   /// In en, this message translates to:
-  /// **'Send Code'**
+  /// **'Send Verification Code'**
   String get auth_button_sendCode;
 
   /// No description provided for @auth_button_sendOtp.
@@ -215,7 +215,7 @@ abstract class AppLocalizations {
   /// No description provided for @auth_label_enterOtp.
   ///
   /// In en, this message translates to:
-  /// **'Enter the 6-digit code sent to'**
+  /// **'Enter the 6-digit verification code sent to'**
   String get auth_label_enterOtp;
 
   /// No description provided for @auth_label_phoneNumber.
@@ -227,13 +227,13 @@ abstract class AppLocalizations {
   /// No description provided for @auth_label_resendCode.
   ///
   /// In en, this message translates to:
-  /// **'Resend code'**
+  /// **'Resend verification code'**
   String get auth_label_resendCode;
 
   /// No description provided for @auth_label_resendCodeIn.
   ///
   /// In en, this message translates to:
-  /// **'Resend code in {seconds}s'**
+  /// **'Resend verification code in {seconds}s'**
   String auth_label_resendCodeIn(Object seconds);
 
   /// No description provided for @auth_label_resendIn.
@@ -245,7 +245,7 @@ abstract class AppLocalizations {
   /// No description provided for @auth_label_sentCodeTo.
   ///
   /// In en, this message translates to:
-  /// **'We sent a 6-digit code to\n'**
+  /// **'We sent a 6-digit verification code to\n'**
   String get auth_label_sentCodeTo;
 
   /// No description provided for @auth_subtitle_verifyOtp.
@@ -257,7 +257,7 @@ abstract class AppLocalizations {
   /// No description provided for @auth_title_enterCode.
   ///
   /// In en, this message translates to:
-  /// **'Enter the code'**
+  /// **'Enter your verification code'**
   String get auth_title_enterCode;
 
   /// No description provided for @auth_title_yourNumber.
@@ -485,7 +485,7 @@ abstract class AppLocalizations {
   /// No description provided for @chat_label_subscribeToMessage.
   ///
   /// In en, this message translates to:
-  /// **'Subscribe to unlock messaging. Women always message free on NOOR.'**
+  /// **'Subscribe to unlock messaging. Women always message free on Mithaq.'**
   String get chat_label_subscribeToMessage;
 
   /// No description provided for @chat_matchClosed_banner.
@@ -695,7 +695,7 @@ abstract class AppLocalizations {
   /// No description provided for @discovery_header_title.
   ///
   /// In en, this message translates to:
-  /// **'NOOR'**
+  /// **'Mithaq'**
   String get discovery_header_title;
 
   /// No description provided for @discovery_label_interestSent.
@@ -1997,19 +1997,19 @@ abstract class AppLocalizations {
   /// No description provided for @onboarding_error_under18.
   ///
   /// In en, this message translates to:
-  /// **'NOOR is for those 18 and older. We\'ve made this requirement to protect everyone in our community.'**
+  /// **'Mithaq is for those 18 and older. We\'ve made this requirement to protect everyone in our community.'**
   String get onboarding_error_under18;
 
   /// No description provided for @onboarding_error_under18_guardian.
   ///
   /// In en, this message translates to:
-  /// **'Your {relation} must be 18 or older to use NOOR.'**
+  /// **'Your {relation} must be 18 or older to use Mithaq.'**
   String onboarding_error_under18_guardian(String relation);
 
   /// No description provided for @onboarding_error_under18_self.
   ///
   /// In en, this message translates to:
-  /// **'You must be 18 or older to use NOOR. We look forward to welcoming you then.'**
+  /// **'You must be 18 or older to use Mithaq. We look forward to welcoming you then.'**
   String get onboarding_error_under18_self;
 
   /// No description provided for @onboarding_habit_frequently.
@@ -3527,7 +3527,7 @@ abstract class AppLocalizations {
   /// No description provided for @settings_brand_credit.
   ///
   /// In en, this message translates to:
-  /// **'NOOR (نور) · For the sake of Allah'**
+  /// **'Mithaq (ميثاق) · For the sake of Allah'**
   String get settings_brand_credit;
 
   /// No description provided for @settings_button_deleteAccount.
@@ -4097,7 +4097,7 @@ abstract class AppLocalizations {
   /// No description provided for @subscription_title.
   ///
   /// In en, this message translates to:
-  /// **'Unlock NOOR'**
+  /// **'Unlock Mithaq'**
   String get subscription_title;
 }
 

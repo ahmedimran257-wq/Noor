@@ -1,6 +1,6 @@
 // lib/core/router/app_router.dart
 // ============================================================
-// NOOR — GoRouter Configuration
+// MITHAQ — GoRouter Configuration
 // Auth-gated routing:
 //   • Unauthenticated → /splash
 //   • Authenticated, onboarding incomplete → /onboarding/:step
@@ -21,19 +21,12 @@ import '../../features/onboarding/screens/splash_brand_screen.dart';
 import '../../features/onboarding/screens/assalam_animation_screen.dart';
 import '../../features/onboarding/screens/language_selection_screen.dart';
 import '../../features/onboarding/screens/legal_gate_screen.dart';
-import '../../features/onboarding/screens/phone_verification_screen.dart';
+import '../../features/onboarding/screens/email_verification_screen.dart';
 import '../../features/onboarding/screens/profile_for_whom_screen.dart';
-import '../../features/onboarding/screens/guardian_details_screen.dart';
+import '../../features/onboarding/screens/quick_location_screen.dart';
 import '../../features/onboarding/screens/basic_identity_screen.dart';
 import '../../features/onboarding/screens/islamic_identity_screen.dart';
-import '../../features/onboarding/screens/islamic_marriage_details_screen.dart';
-import '../../features/onboarding/screens/background_screen.dart';
-import '../../features/onboarding/screens/family_screen.dart';
-import '../../features/onboarding/screens/about_yourself_screen.dart';
-import '../../features/onboarding/screens/partner_preferences_screen.dart';
 import '../../features/onboarding/screens/photo_upload_screen.dart';
-import '../../features/onboarding/screens/profile_preview_screen.dart';
-import '../../features/onboarding/screens/welcome_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/home/screens/edit_profile_screen.dart';
 import '../../features/home/screens/profile_views_screen.dart';
@@ -44,27 +37,31 @@ import '../../features/home/screens/subscription_screen.dart';
 import '../../features/home/screens/guardian_dashboard_screen.dart';
 import '../../features/home/screens/chat_screen.dart';
 import '../../features/home/screens/referral_screen.dart';
-import '../../features/verification/screens/selfie_verification_screen.dart';
+import '../../features/home/screens/help_support_screen.dart';
+import '../../features/verification/screens/badge_verification_screen.dart';
+import '../../features/verification/screens/kyc_verification_screen.dart';
 
 // ── Route names ───────────────────────────────────────────────
 
 abstract final class AppRoutes {
-  static const splash         = '/';
-  static const assalam        = '/assalam';
+  static const splash = '/';
+  static const assalam = '/assalam';
   static const languageSelect = '/language';
-  static const legal          = '/legal';
-  static const phone          = '/phone';
-  static const onboarding     = '/onboarding';
-  static const home           = '/home';
-  static const editProfile    = '/edit-profile';
-  static const profileViews   = '/profile-views';
-  static const notifications  = '/notifications';
-  static const deleteAccount  = '/delete-account';
-  static const blockList      = '/block-list';
-  static const subscription        = '/subscription';
-  static const guardianDashboard   = '/guardian-dashboard';
-  static const referral            = '/referral';
-  static const verify              = '/verify';
+  static const legal = '/legal';
+  static const email = '/email';
+  static const onboarding = '/onboarding';
+  static const home = '/home';
+  static const editProfile = '/edit-profile';
+  static const profileViews = '/profile-views';
+  static const notifications = '/notifications';
+  static const deleteAccount = '/delete-account';
+  static const blockList = '/block-list';
+  static const subscription = '/subscription';
+  static const guardianDashboard = '/guardian-dashboard';
+  static const referral = '/referral';
+  static const verify = '/verify';
+  static const badgeVerification = '/badge-verification';
+  static const helpSupport = '/help-support';
 }
 
 // ── Screen index → route path mapping ────────────────────────
@@ -75,7 +72,8 @@ String onboardingPathForStep(int step) {
 
 // ── Router factory ────────────────────────────────────────────
 
-GoRouter buildAppRouter(AuthCubit authCubit, {
+GoRouter buildAppRouter(
+  AuthCubit authCubit, {
   String initialLocation = AppRoutes.splash,
 }) {
   return GoRouter(
@@ -83,7 +81,7 @@ GoRouter buildAppRouter(AuthCubit authCubit, {
     refreshListenable: _AuthStateListenable(authCubit),
     redirect: (context, state) {
       final authState = authCubit.state;
-      final location  = state.matchedLocation;
+      final location = state.matchedLocation;
 
       // Still checking session — no redirect yet
       if (authState is AuthInitial || authState is AuthLoading) {
@@ -92,11 +90,11 @@ GoRouter buildAppRouter(AuthCubit authCubit, {
 
       // Unauthenticated: always go to splash
       if (authState is AuthUnauthenticated || authState is AuthOtpSent) {
-        if (location == AppRoutes.assalam        ||
+        if (location == AppRoutes.assalam ||
             location == AppRoutes.languageSelect ||
-            location == AppRoutes.splash         ||
-            location == AppRoutes.legal          ||
-            location == AppRoutes.phone) {
+            location == AppRoutes.splash ||
+            location == AppRoutes.legal ||
+            location == AppRoutes.email) {
           return null; // allow these pages
         }
         return AppRoutes.splash;
@@ -118,14 +116,16 @@ GoRouter buildAppRouter(AuthCubit authCubit, {
               location == AppRoutes.subscription ||
               location == AppRoutes.guardianDashboard ||
               location == AppRoutes.referral ||
-              location == AppRoutes.verify) {
+              location == AppRoutes.verify ||
+              location == AppRoutes.badgeVerification ||
+              location == AppRoutes.helpSupport) {
             return null;
           }
           return AppRoutes.home;
         } else {
           // Still onboarding — allow the language selection screen so
           // the first-install sequence isn't short-circuited.
-          // Other pre-auth screens (splash, legal, phone) should redirect
+          // Other pre-auth screens (splash, legal, email) should redirect
           // to the onboarding step once the user is authenticated.
           if (location == AppRoutes.languageSelect) {
             return null;
@@ -172,11 +172,16 @@ GoRouter buildAppRouter(AuthCubit authCubit, {
         ),
       ),
       GoRoute(
-        path: AppRoutes.phone,
-        pageBuilder: (context, state) => _slidePage(
-          key: state.pageKey,
-          child: const PhoneVerificationScreen(),
-        ),
+        path: AppRoutes.email,
+        pageBuilder: (context, state) {
+          final mode = state.uri.queryParameters['mode'] == 'signup'
+              ? EmailAuthMode.signUp
+              : EmailAuthMode.signIn;
+          return _slidePage(
+            key: state.pageKey,
+            child: EmailVerificationScreen(mode: mode),
+          );
+        },
       ),
 
       // ── Onboarding steps 0–11 ───────────────────────────
@@ -196,7 +201,8 @@ GoRouter buildAppRouter(AuthCubit authCubit, {
         path: AppRoutes.home,
         pageBuilder: (context, state) {
           final tabIndexStr = state.uri.queryParameters['tab'];
-          final initialTab = tabIndexStr != null ? int.tryParse(tabIndexStr) : null;
+          final initialTab =
+              tabIndexStr != null ? int.tryParse(tabIndexStr) : null;
           return _slidePage(
             key: state.pageKey,
             child: HomeScreen(initialTab: initialTab),
@@ -258,7 +264,21 @@ GoRouter buildAppRouter(AuthCubit authCubit, {
         path: AppRoutes.verify,
         pageBuilder: (context, state) => _slidePage(
           key: state.pageKey,
-          child: const SelfieVerificationScreen(),
+          child: const KycVerificationScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.badgeVerification,
+        pageBuilder: (context, state) => _slidePage(
+          key: state.pageKey,
+          child: const BadgeVerificationScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.helpSupport,
+        pageBuilder: (context, state) => _slidePage(
+          key: state.pageKey,
+          child: const HelpSupportScreen(),
         ),
       ),
       GoRoute(
@@ -293,41 +313,40 @@ GoRouter buildAppRouter(AuthCubit authCubit, {
 // Guardian paths add +1 step (GuardianDetails at step 1).
 
 Widget _screenForStep(BuildContext context, int step) {
-  final data       = context.read<OnboardingCubit>().currentData;
+  final data = context.read<OnboardingCubit>().currentData;
   final isGuardian = data.profileFor == ProfileFor.guardian;
 
   if (isGuardian) {
     switch (step) {
-      case 0:  return const ProfileForWhomScreen();
-      case 1:  return const GuardianDetailsScreen();
-      case 2:  return const BasicIdentityScreen();
-      case 3:  return const IslamicIdentityScreen();
-      case 4:  return const IslamicMarriageDetailsScreen();
-      case 5:  return const BackgroundScreen();
-      case 6:  return const FamilyScreen();
-      case 7:  return const AboutYourselfScreen();
-      case 8:  return const PartnerPreferencesScreen();
-      case 9:  return const PhotoUploadScreen();
-      case 10: return const ProfilePreviewScreen();
-      case 11: return const WelcomeScreen();
-      default: return const ProfileForWhomScreen();
+      case 0:
+        return const ProfileForWhomScreen();
+      case 1:
+        return const QuickLocationScreen();
+      case 2:
+        return const BasicIdentityScreen();
+      case 3:
+        return const IslamicIdentityScreen();
+      case 4:
+        return const PhotoUploadScreen();
+      default:
+        return const ProfileForWhomScreen();
     }
   }
 
   // Myself path
   switch (step) {
-    case 0:  return const ProfileForWhomScreen();
-    case 1:  return const BasicIdentityScreen();
-    case 2:  return const IslamicIdentityScreen();
-    case 3:  return const IslamicMarriageDetailsScreen();
-    case 4:  return const BackgroundScreen();
-    case 5:  return const FamilyScreen();
-    case 6:  return const AboutYourselfScreen();
-    case 7:  return const PartnerPreferencesScreen();
-    case 8:  return const PhotoUploadScreen();
-    case 9:  return const ProfilePreviewScreen();
-    case 10: return const WelcomeScreen();
-    default: return const ProfileForWhomScreen();
+    case 0:
+      return const ProfileForWhomScreen();
+    case 1:
+      return const QuickLocationScreen();
+    case 2:
+      return const BasicIdentityScreen();
+    case 3:
+      return const IslamicIdentityScreen();
+    case 4:
+      return const PhotoUploadScreen();
+    default:
+      return const ProfileForWhomScreen();
   }
 }
 
@@ -345,18 +364,18 @@ CustomTransitionPage<void> _slidePage({
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       final slideIn = Tween<Offset>(
         begin: const Offset(1.0, 0.0),
-        end:   Offset.zero,
+        end: Offset.zero,
       ).animate(CurvedAnimation(
         parent: animation,
-        curve:  Curves.easeOutCubic,
+        curve: Curves.easeOutCubic,
       ));
 
       final slideOut = Tween<Offset>(
         begin: Offset.zero,
-        end:   const Offset(-0.25, 0.0),
+        end: const Offset(-0.25, 0.0),
       ).animate(CurvedAnimation(
         parent: secondaryAnimation,
-        curve:  Curves.easeInCubic,
+        curve: Curves.easeInCubic,
       ));
 
       return SlideTransition(

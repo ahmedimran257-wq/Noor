@@ -1,6 +1,6 @@
 // lib/core/services/selfie_verification_service.dart
 // ============================================================
-// NOOR — Selfie Verification Service
+// MITHAQ — Selfie Verification Service
 //
 // Automated selfie verification using Google ML Kit Face Detection.
 // No third-party KYC provider. No paid APIs. No manual review.
@@ -74,11 +74,16 @@ enum VerificationChallenge {
   /// Database value.
   String get dbValue {
     switch (this) {
-      case VerificationChallenge.smile:     return 'smile';
-      case VerificationChallenge.turnLeft:  return 'turn_left';
-      case VerificationChallenge.turnRight: return 'turn_right';
-      case VerificationChallenge.lookUp:    return 'look_up';
-      case VerificationChallenge.lookDown:  return 'look_down';
+      case VerificationChallenge.smile:
+        return 'smile';
+      case VerificationChallenge.turnLeft:
+        return 'turn_left';
+      case VerificationChallenge.turnRight:
+        return 'turn_right';
+      case VerificationChallenge.lookUp:
+        return 'look_up';
+      case VerificationChallenge.lookDown:
+        return 'look_down';
     }
   }
 }
@@ -94,7 +99,9 @@ enum FaceValidationError {
 }
 
 class ValidationResult {
-  const ValidationResult.success() : error = null, isValid = true;
+  const ValidationResult.success()
+      : error = null,
+        isValid = true;
   const ValidationResult.failure(this.error) : isValid = false;
 
   final bool isValid;
@@ -152,22 +159,23 @@ class SelfieVerificationService {
       // Write bytes to temp file for ML Kit
       final tempDir = await getTemporaryDirectory();
       tempFile = File(
-        '${tempDir.path}/noor_verif_${DateTime.now().millisecondsSinceEpoch}.webp',
+        '${tempDir.path}/mithaq_verif_${DateTime.now().millisecondsSinceEpoch}.webp',
       );
       await tempFile.writeAsBytes(imageBytes);
 
       final inputImage = InputImage.fromFilePath(tempFile.path);
       final detector = FaceDetector(
         options: FaceDetectorOptions(
-          enableClassification: true,  // smile probability, eye open probability
-          enableLandmarks: true,       // eye positions
+          enableClassification: true, // smile probability, eye open probability
+          enableLandmarks: true, // eye positions
           enableContours: false,
           enableTracking: false,
           performanceMode: FaceDetectorMode.accurate,
         ),
       );
 
-      final faces = await detector.processImage(inputImage)
+      final faces = await detector
+          .processImage(inputImage)
           .timeout(const Duration(seconds: 10));
       await detector.close();
 
@@ -178,7 +186,8 @@ class SelfieVerificationService {
         return const ValidationResult.failure(FaceValidationError.noFace);
       }
       if (faces.length > 1) {
-        return const ValidationResult.failure(FaceValidationError.multipleFaces);
+        return const ValidationResult.failure(
+            FaceValidationError.multipleFaces);
       }
 
       final face = faces.first;
@@ -204,13 +213,15 @@ class SelfieVerificationService {
       if (leftEyeOpen < 0.3 || rightEyeOpen < 0.3) {
         // Exception: for look_down, eyes may appear partially closed
         if (challenge != VerificationChallenge.lookDown) {
-          return const ValidationResult.failure(FaceValidationError.eyesNotVisible);
+          return const ValidationResult.failure(
+              FaceValidationError.eyesNotVisible);
         }
       }
 
       // 4. Challenge validation
       if (!_validateChallenge(face, challenge)) {
-        return const ValidationResult.failure(FaceValidationError.challengeFailed);
+        return const ValidationResult.failure(
+            FaceValidationError.challengeFailed);
       }
 
       return const ValidationResult.success();
@@ -221,7 +232,9 @@ class SelfieVerificationService {
     } finally {
       // Clean up temp file
       if (tempFile != null && await tempFile.exists()) {
-        try { await tempFile.delete(); } catch (_) {}
+        try {
+          await tempFile.delete();
+        } catch (_) {}
       }
     }
   }
@@ -267,7 +280,8 @@ class SelfieVerificationService {
 
     try {
       // Upload the selfie to Supabase Storage
-      final storagePath = '$userId/verification_${DateTime.now().millisecondsSinceEpoch}.webp';
+      final storagePath =
+          '$userId/verification_${DateTime.now().millisecondsSinceEpoch}.webp';
 
       await SupabaseService.client.storage
           .from('selfie-verifications')
@@ -288,8 +302,7 @@ class SelfieVerificationService {
           'p_challenge': challenge.dbValue,
           'p_photo_path': storagePath,
         },
-      )
-      .timeout(const Duration(seconds: 15));
+      ).timeout(const Duration(seconds: 15));
 
       return Map<String, dynamic>.from(response as Map);
     } catch (e) {
@@ -305,10 +318,11 @@ class SelfieVerificationService {
     }
 
     try {
-      final response = await SupabaseService.client.rpc(
-        'record_failed_verification_attempt',
-      )
-      .timeout(const Duration(seconds: 10));
+      final response = await SupabaseService.client
+          .rpc(
+            'record_failed_verification_attempt',
+          )
+          .timeout(const Duration(seconds: 10));
       return Map<String, dynamic>.from(response as Map);
     } catch (e) {
       debugPrint('SelfieVerificationService: record attempt error: $e');
@@ -317,7 +331,8 @@ class SelfieVerificationService {
   }
 
   /// Check current verification status from the profile.
-  Future<({String status, int attempts, DateTime? verifiedAt})> getStatus() async {
+  Future<({String status, int attempts, DateTime? verifiedAt})>
+      getStatus() async {
     if (!SupabaseService.isInitialized) {
       return (status: 'unverified', attempts: 0, verifiedAt: null);
     }
@@ -347,5 +362,71 @@ class SelfieVerificationService {
       return (status: 'unverified', attempts: 0, verifiedAt: null);
     }
   }
+
+  // ── Badge Verification (3-pose sequence) ─────────────────────
+
+  /// Generate a sequence of 3 unique random challenges for badge verification.
+  List<VerificationChallenge> generateBadgeSequence() {
+    final all = VerificationChallenge.values.toList()..shuffle(_random);
+    return all.take(3).toList();
+  }
+
+  /// Submit the badge verification result to the server.
+  /// Writes has_verification_badge = true, badge_earned_at, and
+  /// badge_pose_sequence to the profiles table.
+  Future<bool> submitBadgeVerification({
+    required List<String> poseSequence,
+  }) async {
+    if (!SupabaseService.isInitialized) return false;
+    final userId = SupabaseService.currentUserId;
+    if (userId == null) return false;
+
+    try {
+      await SupabaseService.client.from('profiles').update({
+        'has_verification_badge': true,
+        'badge_earned_at': DateTime.now().toUtc().toIso8601String(),
+        'badge_pose_sequence': poseSequence,
+        'verification_status': 'verified',
+        'verification_challenge': 'three_pose_badge',
+        'verified_at': DateTime.now().toUtc().toIso8601String(),
+        'is_verified': true,
+      }).eq('user_id', userId);
+      return true;
+    } catch (e) {
+      debugPrint('SelfieVerificationService: badge submit error: $e');
+      return false;
+    }
+  }
+
+  /// Check if the user already has a verification badge.
+  Future<bool> hasBadge() async {
+    if (!SupabaseService.isInitialized) return false;
+    final userId = SupabaseService.currentUserId;
+    if (userId == null) return false;
+
+    try {
+      final response = await SupabaseService.client
+          .from('profiles')
+          .select('has_verification_badge')
+          .eq('user_id', userId)
+          .single();
+      return (response['has_verification_badge'] as bool?) ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
 }
 
+// ── Badge Verification Result ──────────────────────────────────
+
+class BadgeVerificationResult {
+  const BadgeVerificationResult({
+    required this.passed,
+    required this.poseSequence,
+    this.failedAtStep,
+  });
+
+  final bool passed;
+  final List<String> poseSequence;
+  final int? failedAtStep; // which step (0-2) failed, if any
+}

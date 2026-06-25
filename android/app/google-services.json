@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "444078304823",
-    "project_id": "noor-82e23",
-    "storage_bucket": "noor-82e23.firebasestorage.app"
+    "project_number": "163379661830",
+    "project_id": "mithaq-fcf44",
+    "storage_bucket": "mithaq-fcf44.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:444078304823:android:4103d46c052383810d19b2",
+        "mobilesdk_app_id": "1:163379661830:android:d784f1e0b6774796edc787",
         "android_client_info": {
-          "package_name": "com.noor.app.noor"
+          "package_name": "com.mithaq.app.mithaq"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyC6LwSFbmY7fuQhAYEqzNBy2CK5MRW7HtI"
+          "current_key": "AIzaSyAGKqQtW9lsVOgpls3tPjGUdoC6jVbJ0ws"
         }
       ],
       "services": {

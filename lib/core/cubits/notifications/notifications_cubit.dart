@@ -1,6 +1,6 @@
 // lib/core/cubits/notifications/notifications_cubit.dart
 // ============================================================
-// NOOR — Notifications Cubit (Real Supabase + Mock Fallback)
+// MITHAQ — Notifications Cubit (Real Supabase + Mock Fallback)
 // ============================================================
 
 import 'dart:async';

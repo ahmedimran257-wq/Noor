@@ -1,6 +1,6 @@
 // lib/core/config/demographics_config.dart
 // ============================================================
-// NOOR — Demographics Configuration
+// MITHAQ — Demographics Configuration
 // Maps ISO country codes to communities and languages.
 // Uses regional files for 75+ countries.
 //

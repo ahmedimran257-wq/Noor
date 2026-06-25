@@ -1,6 +1,6 @@
 // lib/core/utils/content_filter.dart
 // ============================================================
-// NOOR — Content Filter (Shared)
+// MITHAQ — Content Filter (Shared)
 // Detects and redacts contact information, social media handles,
 // external links, and phone numbers from user-generated text.
 //

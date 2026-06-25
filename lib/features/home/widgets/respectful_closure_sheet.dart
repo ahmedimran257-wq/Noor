@@ -1,6 +1,6 @@
 // lib/features/home/widgets/respectful_closure_sheet.dart
 // ============================================================
-// NOOR — Respectful Closure Sheet
+// MITHAQ — Respectful Closure Sheet
 // Phase 2: Anti-ghosting feature.
 //
 // Displays 5 pre-written Islamic closure messages.

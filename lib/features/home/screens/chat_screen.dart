@@ -1,6 +1,6 @@
 // lib/features/home/screens/chat_screen.dart
 // ============================================================
-// NOOR — Individual Chat Screen
+// MITHAQ — Individual Chat Screen
 // Phase 2: Respectful Closure ("End Match") feature added.
 //   • Three-dot menu → "End Match" option
 //   • _EndMatchSheet: 5 pre-written Islamic closure messages

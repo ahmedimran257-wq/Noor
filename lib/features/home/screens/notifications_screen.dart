@@ -1,6 +1,6 @@
 // lib/features/home/screens/notifications_screen.dart
 // ============================================================
-// NOOR — Notifications Screen (Feature 11)
+// MITHAQ — Notifications Screen (Feature 11)
 // Shows all notifications with read/unread state.
 // AppBar: "Mark all read" text button.
 // Each row: type icon in colored circle + title + body + time.

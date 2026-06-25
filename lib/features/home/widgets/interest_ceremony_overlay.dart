@@ -1,6 +1,6 @@
 // lib/features/home/widgets/interest_ceremony_overlay.dart
 // ============================================================
-// NOOR — The Interest Ceremony Overlay
+// MITHAQ — The Interest Ceremony Overlay
 // Blueprint-exact animation sequence when "Send Interest" fires.
 //
 // Timeline:

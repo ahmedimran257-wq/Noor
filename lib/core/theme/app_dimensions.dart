@@ -1,6 +1,6 @@
 // lib/core/theme/app_dimensions.dart
 // ============================================================
-// NOOR Design DNA — Spacing, Radius & Layout Constants
+// MITHAQ Design DNA — Spacing, Radius & Layout Constants
 // "Premium apps use whitespace as a feature."
 // ============================================================
 

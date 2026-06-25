@@ -1,5 +1,5 @@
 // lib/core/config/country_demographics/oceania.dart
-// NOOR — Oceania Demographics
+// MITHAQ — Oceania Demographics
 
 const kOceaniaDemographics = <String, Map<String, List<String>>>{
   'AU': {

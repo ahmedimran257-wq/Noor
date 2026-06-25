@@ -1,134 +1,216 @@
-// ============================================================
-// EDGE FUNCTION: firebase-auth-exchange
-// supabase/functions/firebase-auth-exchange/index.ts
-//
-// The bridge between Firebase Auth (OTP) and Supabase Auth.
-//
-// Flow:
-//   1. Flutter sends Firebase ID Token after phone OTP success
-//   2. This function verifies it cryptographically
-//   3. Checks if this is a new device + old account (>30d) →
-//      triggers secondary verification (DOB/PIN) if so
-//   4. Finds or creates the Supabase user
-//   5. Issues a Supabase session via admin.generateLink()
-//   6. Returns the session to Flutter
-//
-// Security:
-//   - Firebase project ID is verified in token claims
-//   - Tokens from other Firebase projects are rejected
-//   - Uses Supabase admin methods, NOT manual JWT signing
-//   - New device on old account (>30d) triggers 2FA gate
-// ============================================================
-
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { verifyFirebaseToken } from "../_shared/firebase_verifier.ts";
 import { corsHeaders, handleCors } from "../_shared/cors.ts";
 
-const SUPABASE_URL        = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_KEY= Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const FIREBASE_PROJECT_ID = Deno.env.get("FIREBASE_PROJECT_ID")!;
+// DEPRECATED: signup/signin no longer uses Firebase phone SMS.
+// The app now uses Supabase auth.verifyOTP(type: email) directly.
+// Keep this only for legacy/admin recovery paths until safely removed.
 
-// How long before an account is considered "established" (new device check threshold)
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const FIREBASE_PROJECT_ID = Deno.env.get("FIREBASE_PROJECT_ID")!;
 const ACCOUNT_AGE_THRESHOLD_DAYS = 30;
 
+type AuthMode = "signup" | "signin";
+
 Deno.serve(async (req: Request) => {
-  // ── CORS preflight ─────────────────────────────────────────
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
   try {
-    // ── Parse request ──────────────────────────────────────────
-    const { firebase_id_token, device_id, app_version } = await req.json() as {
-      firebase_id_token: string;
-      device_id: string;
+    const {
+      firebase_id_token,
+      device_id,
+      mode,
+      country_code,
+      app_version,
+    } = await req.json() as {
+      firebase_id_token?: string;
+      device_id?: string;
+      mode?: AuthMode;
+      country_code?: string;
       app_version?: string;
     };
 
     if (!firebase_id_token || !device_id) {
-      return errorResponse(400, "firebase_id_token and device_id are required.");
+      return errorResponse(
+        400,
+        "firebase_id_token and device_id are required.",
+        "BAD_REQUEST",
+      );
     }
 
-    // ── Verify Firebase token cryptographically ────────────────
-    const claims = await verifyFirebaseToken(firebase_id_token, FIREBASE_PROJECT_ID);
-    const phoneNumber = claims.phone_number; // e.g. "+919876543210"
+    const authMode: AuthMode = mode === "signup" ? "signup" : "signin";
+    const claims = await verifyFirebaseToken(
+      firebase_id_token,
+      FIREBASE_PROJECT_ID,
+    );
+    const phoneNumber = claims.phone_number;
 
-    // ── Supabase admin client (service role) ───────────────────
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // ── Find or create Supabase user ───────────────────────────
+    function normalizePhone(phone: string) {
+      return phone.replace(/\D/g, "");
+    }
+
+    function countryCodeForPhone(phone: string) {
+      const provided = country_code?.trim().toUpperCase();
+      if (provided && /^[A-Z]{2}$/.test(provided)) return provided;
+
+      const dialMap: Array<[string, string]> = [
+        ["+91", "IN"],
+        ["+92", "PK"],
+        ["+880", "BD"],
+        ["+62", "ID"],
+        ["+966", "SA"],
+        ["+971", "AE"],
+        ["+60", "MY"],
+        ["+90", "TR"],
+        ["+20", "EG"],
+        ["+234", "NG"],
+        ["+44", "GB"],
+        ["+1", "US"],
+        ["+49", "DE"],
+        ["+33", "FR"],
+      ];
+      return dialMap.find(([dial]) => phone.startsWith(dial))?.[1] ?? "IN";
+    }
+
+    async function findExistingUser(phone: string) {
+      const normalized = normalizePhone(phone);
+      const variants = [...new Set([phone, normalized, `+${normalized}`])];
+
+      const { data: publicUser } = await supabase
+        .from("users")
+        .select("id, created_at, phone")
+        .in("phone", variants)
+        .maybeSingle();
+
+      if (publicUser) {
+        return { id: publicUser.id, created_at: publicUser.created_at };
+      }
+
+      let page = 1;
+      while (true) {
+        const { data: usersData, error } = await supabase.auth.admin.listUsers({
+          page,
+          perPage: 1000,
+        });
+
+        if (error || !usersData?.users || usersData.users.length === 0) break;
+
+        const found = usersData.users.find((user) => {
+          if (!user.phone) return false;
+          const userPhone = normalizePhone(user.phone);
+          return userPhone === normalized || variants.includes(user.phone);
+        });
+
+        if (found) {
+          return { id: found.id, created_at: found.created_at };
+        }
+
+        if (usersData.users.length < 1000) break;
+        page++;
+      }
+
+      return null;
+    }
+
+    async function ensurePublicUser(userId: string, phone: string) {
+      const normalized = normalizePhone(phone);
+      const variants = [...new Set([phone, normalized, `+${normalized}`])];
+
+      const { data: existingById } = await supabase
+        .from("users")
+        .select("id")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (existingById) return;
+
+      const { data: existingByPhone } = await supabase
+        .from("users")
+        .select("id")
+        .in("phone", variants)
+        .maybeSingle();
+
+      if (existingByPhone && existingByPhone.id !== userId) {
+        throw new Error("Phone number already registered by another user");
+      }
+
+      const { error } = await supabase.from("users").insert({
+        id: userId,
+        phone,
+        country_code: countryCodeForPhone(phone),
+      });
+
+      if (error) {
+        throw new Error(`Failed to create public user row: ${error.message}`);
+      }
+    }
+
+    const existingUser = await findExistingUser(phoneNumber);
     let supabaseUserId: string;
     let isNewUser = false;
     let accountAgeHours = 0;
 
-    // Search for existing user by phone
-    const { data: existingUsers, error: listError } =
-      await supabase.auth.admin.listUsers();
-
-    // Note: In production with large user bases, use a custom
-    // users table lookup instead of listUsers() to avoid pagination issues.
-    const existingUser = existingUsers?.users?.find(
-      (u) => u.phone === phoneNumber
-    );
-
-    if (listError && !existingUser) {
-      // Fallback: search in our public.users table
-      const { data: publicUser } = await supabase
-        .from("users")
-        .select("id, created_at")
-        .eq("phone", phoneNumber)
-        .single();
-
-      if (publicUser) {
-        supabaseUserId = publicUser.id;
-        accountAgeHours =
-          (Date.now() - new Date(publicUser.created_at).getTime()) / 3_600_000;
-      } else {
-        // Truly new user — create in Supabase Auth
-        const { data: newUser, error: createError } =
-          await supabase.auth.admin.createUser({
-            phone: phoneNumber,
-            phone_confirm: true,
-            app_metadata: { firebase_uid: claims.uid },
-          });
-
-        if (createError || !newUser.user) {
-          throw new Error(`Failed to create user: ${createError?.message}`);
-        }
-        supabaseUserId = newUser.user.id;
-        isNewUser = true;
+    if (existingUser) {
+      if (authMode === "signup") {
+        return errorResponse(
+          409,
+          "Phone number already registered. Please sign in instead.",
+          "PHONE_ALREADY_REGISTERED",
+        );
       }
-    } else if (existingUser) {
+
       supabaseUserId = existingUser.id;
       accountAgeHours =
         (Date.now() - new Date(existingUser.created_at).getTime()) / 3_600_000;
     } else {
-      // First time: create the Supabase Auth user
-      const { data: newUser, error: createError } =
-        await supabase.auth.admin.createUser({
+      if (authMode === "signin") {
+        return errorResponse(
+          404,
+          "No account found with this phone number.",
+          "PHONE_NOT_REGISTERED",
+        );
+      }
+
+      const { data: newUser, error: createError } = await supabase.auth.admin
+        .createUser({
           phone: phoneNumber,
           phone_confirm: true,
           app_metadata: { firebase_uid: claims.uid },
         });
 
       if (createError || !newUser.user) {
+        if (
+          createError?.message?.toLowerCase().includes(
+            "phone number already registered",
+          )
+        ) {
+          return errorResponse(
+            409,
+            "Phone number already registered. Please sign in instead.",
+            "PHONE_ALREADY_REGISTERED",
+          );
+        }
+
         throw new Error(`Failed to create user: ${createError?.message}`);
       }
+
       supabaseUserId = newUser.user.id;
       isNewUser = true;
     }
 
-    // ── New-device circuit-breaker ─────────────────────────────
-    // If the account is >30 days old and this is an unrecognized device,
-    // pause the session and require secondary verification (DOB or PIN).
-    // This protects against SIM-swap / telecom number recycling attacks.
+    await ensurePublicUser(supabaseUserId, phoneNumber);
+
     if (!isNewUser) {
       const accountAgeDays = accountAgeHours / 24;
       const isEstablishedAccount = accountAgeDays > ACCOUNT_AGE_THRESHOLD_DAYS;
 
       if (isEstablishedAccount) {
-        // Check if device_id is in the user's known devices
         const { data: knownDevice } = await supabase
           .from("user_devices")
           .select("id")
@@ -137,111 +219,103 @@ Deno.serve(async (req: Request) => {
           .maybeSingle();
 
         if (!knownDevice) {
-          // Unknown device on an established account — require 2FA verification
           return new Response(
             JSON.stringify({
               status: "secondary_verification_required",
               message:
                 "New device detected. Please verify your identity to continue.",
               user_id: supabaseUserId,
-              // Flutter shows a DOB or PIN entry screen
             }),
             {
               status: 200,
               headers: { ...corsHeaders, "Content-Type": "application/json" },
-            }
+            },
           );
         }
       }
-
-      // Known device or young account — register device if not tracked
-      await supabase.from("user_devices").upsert({
-        user_id: supabaseUserId,
-        device_id,
-        last_seen_at: new Date().toISOString(),
-        app_version: app_version ?? "unknown",
-      }, { onConflict: "user_id,device_id" });
-    } else {
-      // New user: register this as their first device
-      await supabase.from("user_devices").upsert({
-        user_id: supabaseUserId,
-        device_id,
-        last_seen_at: new Date().toISOString(),
-        app_version: app_version ?? "unknown",
-      }, { onConflict: "user_id,device_id" });
     }
 
-    // ── Issue Supabase session via admin link ──────────────────
-    // Using generateLink avoids manual JWT signing vulnerabilities.
-    // We generate a magiclink token and immediately exchange it for a session.
-    const { data: linkData, error: linkError } =
-      await supabase.auth.admin.generateLink({
+    await supabase.from("user_devices").upsert({
+      user_id: supabaseUserId,
+      device_id,
+      last_seen_at: new Date().toISOString(),
+      app_version: app_version ?? "unknown",
+    }, { onConflict: "user_id,device_id" });
+
+    const dummyEmail = `${supabaseUserId}@mithaq.internal`;
+    const { error: updateError } = await supabase.auth.admin.updateUserById(
+      supabaseUserId,
+      {
+        email: dummyEmail,
+        email_confirm: true,
+      },
+    );
+
+    if (updateError) {
+      throw new Error(`Failed to prepare session user: ${updateError.message}`);
+    }
+
+    const { data: linkData, error: linkError } = await supabase.auth.admin
+      .generateLink({
         type: "magiclink",
-        email: `${supabaseUserId}@noor.internal`, // Dummy email for phone-based users
+        email: dummyEmail,
       });
 
     if (linkError || !linkData?.properties?.hashed_token) {
-      // Fallback: generate a short-lived sign-in token directly
-      // This is acceptable since we've already verified the Firebase token
-      const { data: sessionData, error: sessionError } =
-        await supabase.auth.admin.createSession({ userId: supabaseUserId });
+      throw new Error(`Failed to generate admin link: ${linkError?.message}`);
+    }
 
-      if (sessionError || !sessionData?.session) {
-        throw new Error(`Failed to create session: ${sessionError?.message}`);
-      }
+    const { data: sessionData, error: sessionError } = await supabase.auth
+      .verifyOtp({
+        token_hash: linkData.properties.hashed_token,
+        type: "email",
+      });
 
-      return new Response(
-        JSON.stringify({
-          status: "authenticated",
-          is_new_user: isNewUser,
-          access_token:  sessionData.session.access_token,
-          refresh_token: sessionData.session.refresh_token,
-          expires_in:    sessionData.session.expires_in,
-          user_id:       supabaseUserId,
-        }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+    if (sessionError || !sessionData?.session) {
+      throw new Error(
+        `Failed to exchange link for session: ${sessionError?.message}`,
       );
     }
 
-    // Exchange hashed_token for an actual session
-    const { data: verifyData, error: verifyError } =
-      await supabase.auth.verifyOtp({
-        token_hash: linkData.properties.hashed_token,
-        type: "magiclink",
-      });
-
-    if (verifyError || !verifyData.session) {
-      throw new Error(`Session exchange failed: ${verifyError?.message}`);
-    }
-
-    // ── Return session to Flutter ──────────────────────────────
     return new Response(
       JSON.stringify({
         status: "authenticated",
         is_new_user: isNewUser,
-        access_token:  verifyData.session.access_token,
-        refresh_token: verifyData.session.refresh_token,
-        expires_in:    verifyData.session.expires_in,
-        user_id:       supabaseUserId,
+        access_token: sessionData.session.access_token,
+        refresh_token: sessionData.session.refresh_token,
+        expires_in: sessionData.session.expires_in,
+        user_id: supabaseUserId,
       }),
       {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      },
     );
   } catch (err) {
     console.error("[firebase-auth-exchange] Error:", err);
-    const message = err instanceof Error ? err.message : "Authentication failed.";
-    return errorResponse(401, message);
+    const message = err instanceof Error
+      ? err.message
+      : "Authentication failed.";
+
+    if (message.includes("Phone number already registered")) {
+      return errorResponse(
+        409,
+        "Phone number already registered. Please sign in instead.",
+        "PHONE_ALREADY_REGISTERED",
+      );
+    }
+
+    return errorResponse(401, message, "AUTH_EXCHANGE_FAILED");
   }
 });
 
-function errorResponse(status: number, message: string): Response {
+function errorResponse(
+  status: number,
+  message: string,
+  code = "AUTH_ERROR",
+): Response {
   return new Response(
-    JSON.stringify({ status: "error", message }),
-    { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    JSON.stringify({ status: "error", code, message }),
+    { status, headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );
 }

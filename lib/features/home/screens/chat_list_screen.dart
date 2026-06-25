@@ -1,6 +1,6 @@
 // lib/features/home/screens/chat_list_screen.dart
 // ============================================================
-// NOOR — Chat List (Step 8 — Complete)
+// MITHAQ — Chat List (Step 8 — Complete)
 //
 // Blueprint (Part 8, Conversations):
 //   • Sorted by most recent message
@@ -32,6 +32,9 @@ class ChatListScreen extends StatefulWidget {
 
 class _ChatListScreenState extends State<ChatListScreen>
     with AutomaticKeepAliveClientMixin {
+  bool _isSearching = false;
+  String _searchQuery = '';
+
   @override
   bool get wantKeepAlive => true;
 
@@ -40,7 +43,13 @@ class _ChatListScreenState extends State<ChatListScreen>
     super.build(context);
     return BlocBuilder<ChatCubit, ChatState>(
       builder: (context, state) {
-        final conversations = state.sortedConversations;
+        final query = _searchQuery.trim().toLowerCase();
+        final conversations = state.sortedConversations.where((conversation) {
+          if (query.isEmpty) return true;
+          return conversation.matchName.toLowerCase().contains(query) ||
+              conversation.matchLastInitial.toLowerCase().contains(query) ||
+              conversation.lastMessagePreview.toLowerCase().contains(query);
+        }).toList();
 
         return Column(
           children: [
@@ -52,8 +61,47 @@ class _ChatListScreenState extends State<ChatListScreen>
               ),
               child: Row(
                 children: [
-                  const Text('Messages', style: AppTypography.screenTitle),
-                  const Spacer(),
+                  if (_isSearching)
+                    Expanded(
+                      child: TextField(
+                        autofocus: true,
+                        onChanged: (value) =>
+                            setState(() => _searchQuery = value),
+                        style: AppTypography.body,
+                        cursorColor: AppColors.champagneGold,
+                        decoration: InputDecoration(
+                          hintText: 'Search messages',
+                          hintStyle: AppTypography.body.copyWith(
+                            color: AppColors.slateMist,
+                          ),
+                          isDense: true,
+                          filled: true,
+                          fillColor: AppColors.surfaceGlass,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: AppDimensions.space12,
+                            vertical: AppDimensions.space12,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(
+                                AppDimensions.radiusButton),
+                            borderSide:
+                                const BorderSide(color: AppColors.cardBorder),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(
+                                AppDimensions.radiusButton),
+                            borderSide:
+                                const BorderSide(color: AppColors.goldBorder),
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    const Text('Messages', style: AppTypography.screenTitle),
+                  if (_isSearching)
+                    const SizedBox(width: AppDimensions.space8)
+                  else
+                    const Spacer(),
                   // Total unread badge on header
                   if (state.totalUnread > 0)
                     Container(
@@ -72,23 +120,10 @@ class _ChatListScreenState extends State<ChatListScreen>
                   // Search icon — TD3: wrapped in GestureDetector
                   GestureDetector(
                     onTap: () {
-                      ScaffoldMessenger.of(context)
-                        ..clearSnackBars()
-                        ..showSnackBar(
-                          SnackBar(
-                            content: const Text('Search coming soon',
-                                style: AppTypography.body),
-                            backgroundColor: AppColors.surfaceGlassHover,
-                            behavior: SnackBarBehavior.floating,
-                            duration: const Duration(seconds: 1),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                  AppDimensions.radiusButton),
-                              side: const BorderSide(
-                                  color: AppColors.cardBorder),
-                            ),
-                          ),
-                        );
+                      setState(() {
+                        if (_isSearching) _searchQuery = '';
+                        _isSearching = !_isSearching;
+                      });
                     },
                     child: Container(
                       width:  AppDimensions.minTouchTarget,
@@ -98,8 +133,10 @@ class _ChatListScreenState extends State<ChatListScreen>
                         borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
                         border:       Border.all(color: AppColors.cardBorder),
                       ),
-                      child: const Icon(
-                        Icons.search_rounded,
+                      child: Icon(
+                        _isSearching
+                            ? Icons.close_rounded
+                            : Icons.search_rounded,
                         color: AppColors.slateMist,
                         size:  AppDimensions.iconSizeLarge,
                       ),

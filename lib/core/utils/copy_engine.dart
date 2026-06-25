@@ -1,6 +1,6 @@
 // lib/core/utils/copy_engine.dart
 // ============================================================
-// NOOR — Copy Engine
+// MITHAQ — Copy Engine
 // Returns the correct UI copy string based on who is creating
 // the profile (self / parent / sibling / guardian).
 //
@@ -9,7 +9,7 @@
 //   Text(CopyEngine.hijabQuestion(relation, 'female'))
 // ============================================================
 
-import 'package:noor/l10n/generated/app_localizations.dart';
+import 'package:mithaq/l10n/generated/app_localizations.dart';
 
 class CopyEngine {
   CopyEngine._();

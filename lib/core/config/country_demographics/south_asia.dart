@@ -1,5 +1,5 @@
 // lib/core/config/country_demographics/south_asia.dart
-// NOOR — South Asian Demographics (IN, PK, BD, LK, MV, NP, AF)
+// MITHAQ — South Asian Demographics (IN, PK, BD, LK, MV, NP, AF)
 
 const kSouthAsiaDemographics = <String, Map<String, List<String>>>{
   'IN': {

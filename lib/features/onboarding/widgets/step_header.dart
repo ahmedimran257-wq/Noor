@@ -1,6 +1,6 @@
 // lib/features/onboarding/widgets/step_header.dart
 // ============================================================
-// NOOR — Step Header
+// MITHAQ — Step Header
 // Decorative gold ornament + screen title (Playfair) + subtitle (Inter muted).
 // ============================================================
 

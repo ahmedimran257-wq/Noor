@@ -1,27 +1,18 @@
 // lib/core/services/subscription_service.dart
 // ============================================================
-// NOOR — RevenueCat Subscription Service
-//
-// Fixes Audit Finding 8.1 (High):
-//   Hardcoded Dart pricing table is a liability during currency
-//   crashes. This service fetches pricing EXCLUSIVELY from
-//   RevenueCat Offerings. No hardcoded fallback.
-//
-// If RevenueCat is unreachable, an error state is shown instead
-// of stale prices. This prevents split-brain pricing where the
-// UI shows one price but Apple/Google charges another.
-//
-// Usage:
-//   final service = SubscriptionService();
-//   await service.initialize();
-//   final pricing = service.currentPricing;
+// MITHAQ - RevenueCat Subscription Service
+// Pricing comes from RevenueCat, with country/tier offering selection.
+// No hardcoded prices.
 // ============================================================
 
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-/// Represents pricing information for display in the UI.
+import 'supabase_service.dart';
+
 class DisplayPricing {
   const DisplayPricing({
     required this.monthlyPrice,
@@ -30,6 +21,9 @@ class DisplayPricing {
     required this.annualCta,
     required this.savingsPercent,
     required this.source,
+    this.countryCode,
+    this.pricingTier,
+    this.offeringId,
   });
 
   final String monthlyPrice;
@@ -38,16 +32,19 @@ class DisplayPricing {
   final String annualCta;
   final int savingsPercent;
   final PricingSource source;
+  final String? countryCode;
+  final String? pricingTier;
+  final String? offeringId;
 
-  /// Creates from a RevenueCat Package.
   factory DisplayPricing.fromPackages({
     required Package monthlyPackage,
     required Package annualPackage,
+    String? countryCode,
+    String? pricingTier,
+    String? offeringId,
   }) {
     final monthlyProduct = monthlyPackage.storeProduct;
     final annualProduct = annualPackage.storeProduct;
-
-    // Calculate savings percentage
     final monthlyAnnualized = monthlyProduct.price * 12;
     final savings = monthlyAnnualized > 0
         ? ((1 - (annualProduct.price / monthlyAnnualized)) * 100).round()
@@ -56,91 +53,69 @@ class DisplayPricing {
     return DisplayPricing(
       monthlyPrice: monthlyProduct.priceString,
       annualPrice: annualProduct.priceString,
-      monthlyCta: 'Subscribe — ${monthlyProduct.priceString} / month',
-      annualCta: 'Subscribe — ${annualProduct.priceString} / year',
+      monthlyCta: 'Subscribe - ${monthlyProduct.priceString} / month',
+      annualCta: 'Subscribe - ${annualProduct.priceString} / year',
       savingsPercent: savings,
       source: PricingSource.revenueCat,
+      countryCode: countryCode,
+      pricingTier: pricingTier,
+      offeringId: offeringId,
     );
   }
 
-  /// Error state when RevenueCat is unreachable.
-  ///
-  /// Shows a user-friendly message instead of stale/incorrect prices.
-  /// This prevents the dangerous "split-brain" scenario where the UI
-  /// shows one price but the app store charges a different amount.
   factory DisplayPricing.unavailable() => const DisplayPricing(
-    monthlyPrice: '--',
-    annualPrice: '--',
-    monthlyCta: 'Premium features currently unavailable',
-    annualCta: 'Please check your connection and try again',
-    savingsPercent: 0,
-    source: PricingSource.unavailable,
-  );
+        monthlyPrice: '--',
+        annualPrice: '--',
+        monthlyCta: 'Premium features currently unavailable',
+        annualCta: 'Please check your connection and try again',
+        savingsPercent: 0,
+        source: PricingSource.unavailable,
+      );
 
-  /// Whether pricing is available for purchase.
   bool get isAvailable => source == PricingSource.revenueCat;
 }
 
 enum PricingSource { revenueCat, unavailable }
 
-/// Manages RevenueCat subscriptions and pricing display.
-///
-/// Primary and ONLY pricing source: RevenueCat Offerings.
-/// If RevenueCat is unreachable, displays an error state with
-/// automatic retry (3 attempts, 30s apart).
-///
-/// **No hardcoded fallback prices.** Showing a user a price that
-/// doesn't match the actual billing amount is a legal liability
-/// (deceptive pricing → chargebacks → app store bans).
 class SubscriptionService {
   SubscriptionService._();
   static final instance = SubscriptionService._();
 
   final _pricingController = StreamController<DisplayPricing>.broadcast();
 
-  /// Stream of pricing updates. Emits whenever pricing changes
-  /// (e.g., on init, on offering refresh, on retry success).
   Stream<DisplayPricing> get pricingStream => _pricingController.stream;
 
   DisplayPricing? _currentPricing;
-
-  /// The current display pricing. Null until [initialize] completes.
   DisplayPricing? get currentPricing => _currentPricing;
 
   bool _isSubscribed = false;
-
-  /// Whether the current user has an active subscription.
   bool get isSubscribed => _isSubscribed;
 
   CustomerInfo? _customerInfo;
-
-  /// Current RevenueCat customer info.
   CustomerInfo? get customerInfo => _customerInfo;
 
-  // Retry state
   Timer? _retryTimer;
   int _retryCount = 0;
   static const _maxRetries = 3;
   static const _retryInterval = Duration(seconds: 30);
 
-  /// Initialize RevenueCat and fetch current offerings.
-  ///
-  /// Call this once during app startup, after authentication.
-  /// If RevenueCat is unreachable, shows an error state and
-  /// retries up to 3 times at 30-second intervals.
+  String? _userId;
+  String? _countryCode;
+  String? _pricingTier;
+  Offering? _activeOffering;
+
   Future<void> initialize({required String userId}) async {
     try {
-      // Log in the user with RevenueCat
+      _userId = userId;
       await Purchases.logIn(userId);
+      await _syncSubscriberAttributes(userId);
 
-      // Fetch customer info to check subscription status
       _customerInfo = await Purchases.getCustomerInfo();
-      _isSubscribed = _customerInfo?.entitlements.active.containsKey('premium') ?? false;
+      _isSubscribed =
+          _customerInfo?.entitlements.active.containsKey('premium') ?? false;
 
-      // Fetch offerings for pricing display
       await _refreshPricing();
 
-      // Listen for subscription changes
       Purchases.addCustomerInfoUpdateListener((info) {
         _customerInfo = info;
         _isSubscribed = info.entitlements.active.containsKey('premium');
@@ -152,104 +127,26 @@ class SubscriptionService {
     }
   }
 
-  /// Refresh pricing from RevenueCat offerings.
-  Future<void> _refreshPricing() async {
-    try {
-      final offerings = await Purchases.getOfferings();
-      final currentOffering = offerings.current;
-
-      if (currentOffering == null) {
-        debugPrint('[SubscriptionService] No current offering configured in RevenueCat.');
-        _setPricingUnavailable();
-        _scheduleRetry();
-        return;
-      }
-
-      final monthlyPackage = currentOffering.monthly;
-      final annualPackage = currentOffering.annual;
-
-      if (monthlyPackage == null || annualPackage == null) {
-        debugPrint('[SubscriptionService] Missing monthly/annual package in offering.');
-        _setPricingUnavailable();
-        _scheduleRetry();
-        return;
-      }
-
-      _currentPricing = DisplayPricing.fromPackages(
-        monthlyPackage: monthlyPackage,
-        annualPackage: annualPackage,
-      );
-      _pricingController.add(_currentPricing!);
-
-      // Reset retry state on success
-      _retryTimer?.cancel();
-      _retryCount = 0;
-
-      debugPrint(
-        '[SubscriptionService] ✅ Pricing loaded from RevenueCat: '
-        '${_currentPricing!.monthlyPrice}/mo, ${_currentPricing!.annualPrice}/yr',
-      );
-    } catch (e) {
-      debugPrint('[SubscriptionService] Offerings fetch error: $e');
-      _setPricingUnavailable();
-      _scheduleRetry();
-    }
-  }
-
-  /// Set pricing to unavailable error state.
-  void _setPricingUnavailable() {
-    _currentPricing = DisplayPricing.unavailable();
-    _pricingController.add(_currentPricing!);
-    debugPrint(
-      '[SubscriptionService] ⚠️ RevenueCat unreachable. '
-      'Pricing unavailable. Retry $_retryCount/$_maxRetries.',
-    );
-  }
-
-  /// Schedule a retry attempt if we haven't exceeded the max.
-  void _scheduleRetry() {
-    if (_retryCount >= _maxRetries) {
-      debugPrint('[SubscriptionService] ❌ Max retries reached. Pricing unavailable.');
-      return;
-    }
-
-    _retryTimer?.cancel();
-    _retryCount++;
-    _retryTimer = Timer(_retryInterval, () async {
-      debugPrint('[SubscriptionService] 🔄 Retry attempt $_retryCount/$_maxRetries...');
-      await _refreshPricing();
-    });
-  }
-
-  /// Manually trigger a pricing refresh (e.g., from a "Try Again" button).
   Future<void> retryPricing() async {
     _retryCount = 0;
     await _refreshPricing();
   }
 
-  /// Purchase a subscription package.
-  ///
-  /// [isAnnual] determines whether to purchase the monthly or annual plan.
-  /// Returns true if purchase was successful.
   Future<bool> purchase({required bool isAnnual}) async {
     try {
-      final offerings = await Purchases.getOfferings();
-      final currentOffering = offerings.current;
-
-      if (currentOffering == null) {
-        throw Exception('No offerings available');
+      Offering? offering = _activeOffering;
+      if (offering == null) {
+        final offerings = await Purchases.syncAttributesAndOfferingsIfNeeded();
+        offering = _selectOffering(offerings);
       }
+      if (offering == null) throw Exception('No offerings available');
 
-      final package = isAnnual ? currentOffering.annual : currentOffering.monthly;
-
-      if (package == null) {
-        throw Exception('Package not available');
-      }
+      final package = isAnnual ? offering.annual : offering.monthly;
+      if (package == null) throw Exception('Package not available');
 
       final result = await Purchases.purchasePackage(package);
       _isSubscribed = result.entitlements.active.containsKey('premium');
       _customerInfo = result;
-
       return _isSubscribed;
     } catch (e) {
       debugPrint('[SubscriptionService] Purchase error: $e');
@@ -257,7 +154,6 @@ class SubscriptionService {
     }
   }
 
-  /// Restore previous purchases (e.g., after reinstall).
   Future<bool> restorePurchases() async {
     try {
       final info = await Purchases.restorePurchases();
@@ -270,9 +166,202 @@ class SubscriptionService {
     }
   }
 
-  /// Dispose of resources.
   void dispose() {
     _retryTimer?.cancel();
     _pricingController.close();
   }
+
+  Future<void> _refreshPricing() async {
+    try {
+      if (_userId != null) {
+        await _syncSubscriberAttributes(_userId!);
+      }
+
+      final offerings = await Purchases.syncAttributesAndOfferingsIfNeeded();
+      final offering = _selectOffering(offerings);
+      if (offering == null) {
+        debugPrint('[SubscriptionService] No offering configured.');
+        _setPricingUnavailable();
+        _scheduleRetry();
+        return;
+      }
+      _activeOffering = offering;
+
+      final monthlyPackage = offering.monthly;
+      final annualPackage = offering.annual;
+      if (monthlyPackage == null || annualPackage == null) {
+        debugPrint('[SubscriptionService] Missing monthly/annual package.');
+        _setPricingUnavailable();
+        _scheduleRetry();
+        return;
+      }
+
+      _currentPricing = DisplayPricing.fromPackages(
+        monthlyPackage: monthlyPackage,
+        annualPackage: annualPackage,
+        countryCode: _countryCode,
+        pricingTier: _pricingTier,
+        offeringId: offering.identifier,
+      );
+      _pricingController.add(_currentPricing!);
+
+      _retryTimer?.cancel();
+      _retryCount = 0;
+
+      debugPrint(
+        '[SubscriptionService] Pricing loaded: '
+        '${_currentPricing!.monthlyPrice}/mo, '
+        '${_currentPricing!.annualPrice}/yr, '
+        'offering=${offering.identifier}, '
+        'country=${_countryCode ?? "store"}, '
+        'tier=${_pricingTier ?? "default"}',
+      );
+    } catch (e) {
+      debugPrint('[SubscriptionService] Offerings fetch error: $e');
+      _setPricingUnavailable();
+      _scheduleRetry();
+    }
+  }
+
+  void _setPricingUnavailable() {
+    _currentPricing = DisplayPricing.unavailable();
+    _pricingController.add(_currentPricing!);
+  }
+
+  void _scheduleRetry() {
+    if (_retryCount >= _maxRetries) return;
+    _retryTimer?.cancel();
+    _retryCount++;
+    _retryTimer = Timer(_retryInterval, _refreshPricing);
+  }
+
+  Offering? _selectOffering(Offerings offerings) {
+    final country = _countryCode?.toLowerCase();
+    final tier = _pricingTier?.toLowerCase();
+    final candidates = <String>[
+      if (country != null) 'country_$country',
+      if (country != null) 'mithaq_$country',
+      if (country != null) country,
+      if (tier != null) 'tier_$tier',
+      if (tier != null) 'mithaq_$tier',
+      if (tier != null) tier,
+    ];
+
+    for (final id in candidates) {
+      final offering = offerings.getOffering(id);
+      if (offering != null) return offering;
+    }
+    return offerings.current;
+  }
+
+  Future<void> _syncSubscriberAttributes(String userId) async {
+    final context = await _loadPricingContext(userId);
+    _countryCode = context.countryCode;
+    _pricingTier = context.pricingTier;
+
+    final attributes = <String, String>{
+      if (_countryCode != null) 'country_code': _countryCode!,
+      if (_pricingTier != null) 'pricing_tier': _pricingTier!,
+    };
+    if (attributes.isNotEmpty) {
+      await Purchases.setAttributes(attributes);
+    }
+    if (context.email != null && context.email!.isNotEmpty) {
+      await Purchases.setEmail(context.email!);
+    }
+    if (context.verifiedPhone != null && context.verifiedPhone!.isNotEmpty) {
+      await Purchases.setPhoneNumber(context.verifiedPhone!);
+    }
+  }
+
+  Future<_PricingContext> _loadPricingContext(String userId) async {
+    String? countryCode;
+    String? email;
+    String? verifiedPhone;
+    String? pricingTier;
+
+    if (SupabaseService.isInitialized) {
+      try {
+        final user = await SupabaseService.client
+            .from('users')
+            .select('email, phone, phone_verified_at, country_code')
+            .eq('id', userId)
+            .maybeSingle();
+        countryCode = (user?['country_code'] as String?)?.toUpperCase();
+        email = user?['email'] as String?;
+        final phoneVerifiedAt = user?['phone_verified_at'] as String?;
+        if (phoneVerifiedAt != null && phoneVerifiedAt.isNotEmpty) {
+          verifiedPhone = user?['phone'] as String?;
+        }
+      } catch (e) {
+        debugPrint('[SubscriptionService] user context error: $e');
+      }
+
+      if (countryCode == null || countryCode.isEmpty) {
+        try {
+          final profile = await SupabaseService.client
+              .from('profiles')
+              .select('country_code')
+              .eq('user_id', userId)
+              .maybeSingle();
+          countryCode = (profile?['country_code'] as String?)?.toUpperCase();
+        } catch (e) {
+          debugPrint('[SubscriptionService] profile context error: $e');
+        }
+      }
+
+      if (countryCode != null && countryCode.isNotEmpty) {
+        pricingTier = await _loadPricingTier(countryCode);
+      }
+    }
+
+    if (countryCode == null || countryCode.isEmpty) {
+      final prefs = await SharedPreferences.getInstance();
+      countryCode = prefs.getString('user_country_code')?.toUpperCase();
+    }
+
+    return _PricingContext(
+      countryCode: countryCode,
+      pricingTier: pricingTier,
+      email: email,
+      verifiedPhone: verifiedPhone,
+    );
+  }
+
+  Future<String?> _loadPricingTier(String countryCode) async {
+    try {
+      final row = await SupabaseService.client
+          .from('countries')
+          .select('pricing_tier')
+          .eq('code', countryCode)
+          .maybeSingle();
+      return row?['pricing_tier'] as String?;
+    } catch (_) {
+      try {
+        final row = await SupabaseService.client
+            .from('countries')
+            .select('pricing_tier')
+            .eq('iso_code', countryCode)
+            .maybeSingle();
+        return row?['pricing_tier'] as String?;
+      } catch (e) {
+        debugPrint('[SubscriptionService] pricing tier lookup error: $e');
+        return null;
+      }
+    }
+  }
+}
+
+class _PricingContext {
+  const _PricingContext({
+    this.countryCode,
+    this.pricingTier,
+    this.email,
+    this.verifiedPhone,
+  });
+
+  final String? countryCode;
+  final String? pricingTier;
+  final String? email;
+  final String? verifiedPhone;
 }

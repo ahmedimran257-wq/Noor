@@ -1,6 +1,6 @@
 // lib/features/home/widgets/interest_note_sheet.dart
 // ============================================================
-// NOOR — Interest Note Sheet (D1)
+// MITHAQ — Interest Note Sheet (D1)
 //
 // Shows a compact bottom sheet where the user can optionally
 // attach a personal note to their interest before sending.

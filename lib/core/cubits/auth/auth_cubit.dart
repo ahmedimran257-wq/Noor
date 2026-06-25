@@ -1,50 +1,48 @@
 // lib/core/cubits/auth/auth_cubit.dart
 // ============================================================
-// NOOR — Auth Cubit
-// Supports both mock mode (no Supabase) and real Firebase+Supabase auth.
-// Checks SupabaseService.isInitialized to determine which to use.
+// MITHAQ - Auth Cubit
+// Mock auth locally; production auth uses Supabase email OTP.
 // ============================================================
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../services/supabase_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
+
 import '../../services/referral_service.dart';
+import '../../services/email_address_validation.dart';
+import '../../services/supabase_service.dart';
 import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   AuthCubit() : super(const AuthInitial());
 
-  /// Whether we're in real backend mode (Supabase configured)
   bool get _isRealMode => SupabaseService.isInitialized;
 
-  // ── Session Check on App Start ────────────────────────────
+  String? _pendingEmail;
+  String _pendingAuthMode = 'signin';
 
-  /// Called in main.dart / app router on startup.
-  /// In production: checks Supabase for existing valid session.
-  /// In mock: always returns unauthenticated so splash is shown.
   Future<void> checkSession() async {
     emit(const AuthLoading());
 
     if (_isRealMode) {
-      // Real mode: check Supabase for existing session
       try {
         final session = SupabaseService.client.auth.currentSession;
         if (session != null) {
-          // Load user profile data from our users table
           final userId = session.user.id;
           final prefs = await SharedPreferences.getInstance();
           final countryCode = prefs.getString('user_country_code');
-
-          // Load gender from users table and onboarding state from profiles
           final authData = await _loadUserProfile(userId);
+          final onboardingStep = _returningUserStep(authData);
 
           emit(AuthAuthenticated(
             userId: userId,
-            onboardingStep: authData.onboardingStep,
+            onboardingStep: onboardingStep,
             gender: authData.gender,
+            email: session.user.email,
             countryCode: countryCode,
             isGuardianPath: authData.isGuardianPath,
+            onboardingCompleted: authData.onboardingCompleted,
           ));
           return;
         }
@@ -52,123 +50,151 @@ class AuthCubit extends Cubit<AuthState> {
         debugPrint('Session check error: $e');
       }
       emit(const AuthUnauthenticated());
-    } else {
-      // Mock mode: simulate session check delay
-      await Future.delayed(const Duration(milliseconds: 800));
-      emit(const AuthUnauthenticated());
-    }
-  }
-
-  // ── OTP Flow ──────────────────────────────────────────────
-
-  /// Simulates sending an OTP to the provided phone number.
-  /// In real mode: calls Firebase Auth verifyPhoneNumber() on device,
-  /// then exchanges the Firebase ID token via Edge Function.
-  Future<void> sendOtp(String phone) async {
-    if (phone.trim().length < 7) {
-      emit(const AuthError(message: 'Please enter a valid phone number.'));
       return;
     }
-    emit(const AuthLoading());
 
-    if (_isRealMode) {
-      // Real mode: Use Firebase Auth SDK to send OTP
-      // TODO: Implement with firebase_auth package
-      // For now, fall through to mock behavior
+    await Future.delayed(const Duration(milliseconds: 800));
+    emit(const AuthUnauthenticated());
+  }
+
+  /// Sends an OTP to the provided email address.
+  Future<void> sendOtp(
+    String email, {
+    String mode = 'signin',
+    String? countryCode,
+    bool isResend = false,
+  }) async {
+    final normalizedEmail = EmailAddressValidation.normalize(email);
+    final emailError = EmailAddressValidation.validate(normalizedEmail);
+    if (emailError != null) {
+      emit(AuthError(message: _emailValidationMessage(emailError)));
+      return;
     }
 
-    // Mock: simulate SMS send latency
+    emit(const AuthLoading());
+    _pendingEmail = normalizedEmail;
+    _pendingAuthMode = mode == 'signup' ? 'signup' : 'signin';
+
+    if (_isRealMode) {
+      try {
+        final registered = await _isEmailRegistered(normalizedEmail);
+        if (!isResend && _pendingAuthMode == 'signup' && registered) {
+          emit(const AuthError(
+            message: 'Account already exists. Please log in instead.',
+          ));
+          return;
+        }
+        if (!isResend && _pendingAuthMode == 'signin' && !registered) {
+          emit(const AuthError(
+            message: 'No account found. Please create an account first.',
+          ));
+          return;
+        }
+
+        await SupabaseService.client.auth.signInWithOtp(
+          email: normalizedEmail,
+          shouldCreateUser: _pendingAuthMode == 'signup',
+        );
+        emit(AuthOtpSent(email: normalizedEmail));
+      } catch (e) {
+        debugPrint('AuthCubit: send email OTP error: $e');
+        emit(AuthError(message: _friendlyAuthError(e)));
+      }
+      return;
+    }
+
     await Future.delayed(const Duration(milliseconds: 1200));
-    emit(AuthOtpSent(phone: phone));
+    emit(AuthOtpSent(email: normalizedEmail));
+  }
+
+  Future<void> resendOtp() async {
+    final email = _pendingEmail;
+    if (email == null || email.isEmpty) {
+      emit(const AuthError(
+        message:
+            'Your verification code has expired. Please enter your email again.',
+      ));
+      return;
+    }
+    await sendOtp(email, mode: _pendingAuthMode, isResend: true);
   }
 
   /// Verifies the entered OTP code.
-  /// In real mode: receives Firebase ID token, exchanges via Edge Function.
-  /// In mock mode: any 6-digit code is accepted.
-  Future<void> verifyOtp(String code, {String? firebaseIdToken, String? deviceId}) async {
-    if (code.length != 6) {
-      emit(const AuthError(message: 'Please enter the complete 6-digit code.'));
+  Future<void> verifyOtp(String code, {String? deviceId}) async {
+    if (!RegExp(r'^\d{6}$').hasMatch(code)) {
+      emit(const AuthError(
+        message: 'Please enter the complete 6-digit verification code.',
+      ));
       return;
     }
+
     emit(const AuthLoading());
 
-    String? userId;
-    String? countryCode;
-
-    if (_isRealMode && firebaseIdToken != null) {
-      // Real mode: exchange Firebase token for Supabase session
-      try {
-        final response = await SupabaseService.client.functions.invoke(
-          'firebase-auth-exchange',
-          body: {
-            'firebase_id_token': firebaseIdToken,
-            'device_id': deviceId ?? 'unknown',
-          },
-        );
-
-        if (response.data != null) {
-          final data = response.data as Map<String, dynamic>;
-          if (data['status'] == 'authenticated') {
-            await SupabaseService.client.auth.setSession(
-              data['refresh_token'] as String,
-            );
-            userId = SupabaseService.client.auth.currentUser?.id;
-
-            // Apply pending referral code if any exists in SharedPreferences
-            try {
-              final prefs = await SharedPreferences.getInstance();
-              final pendingCode = prefs.getString('pending_referral_code');
-              if (pendingCode != null && pendingCode.isNotEmpty) {
-                await ReferralService.instance.applyCode(pendingCode);
-                await prefs.remove('pending_referral_code');
-              }
-            } catch (e) {
-              debugPrint('Failed to apply pending referral code: $e');
-            }
-          } else if (data['status'] == 'secondary_verification_required') {
-            emit(const AuthError(message: 'New device detected. Please verify your identity.'));
-            return;
-          }
-        }
-      } catch (e) {
-        debugPrint('Auth exchange error: $e');
-        emit(const AuthError(message: 'Authentication failed. Please try again.'));
+    if (_isRealMode) {
+      final email = _pendingEmail;
+      if (email == null) {
+        emit(const AuthError(
+          message:
+              'Your verification code has expired. Please request a new code.',
+        ));
         return;
       }
-    } else {
-      // Mock mode: simulate verification delay
-      await Future.delayed(const Duration(milliseconds: 1000));
+
+      try {
+        final response = await SupabaseService.client.auth.verifyOTP(
+          email: email,
+          token: code,
+          type: OtpType.email,
+        );
+
+        final user = response.user ?? SupabaseService.client.auth.currentUser;
+        if (user == null) {
+          emit(const AuthError(message: 'Authentication failed. No user ID.'));
+          return;
+        }
+
+        await _ensurePublicUser(user.id, email);
+        await _applyPendingReferral();
+
+        final prefs = await SharedPreferences.getInstance();
+        final countryCode = prefs.getString('user_country_code');
+        final authData = await _loadUserProfile(user.id);
+        final onboardingStep = _pendingAuthMode == 'signup'
+            ? authData.onboardingStep
+            : _returningUserStep(authData);
+
+        emit(AuthAuthenticated(
+          userId: user.id,
+          onboardingStep: onboardingStep,
+          gender: authData.gender,
+          email: email,
+          countryCode: countryCode,
+          isGuardianPath: authData.isGuardianPath,
+          onboardingCompleted: authData.onboardingCompleted,
+        ));
+      } catch (e) {
+        debugPrint('AuthCubit: verify email OTP error: $e');
+        emit(AuthError(message: _friendlyAuthError(e)));
+      }
+      return;
     }
 
-    // Load country code from SharedPreferences for regional pricing
+    if (!kDebugMode) {
+      emit(
+          const AuthError(message: 'Authentication failed. Please try again.'));
+      return;
+    }
+
+    await Future.delayed(const Duration(milliseconds: 1000));
     final prefs = await SharedPreferences.getInstance();
-    countryCode = prefs.getString('user_country_code');
-
-    // Use mock user ID if not set (mock mode or failed real auth)
-    userId ??= 'mock-user-id-001';
-
-    if (_isRealMode) {
-      // Real mode: load actual gender and onboarding step from DB
-      final authData = await _loadUserProfile(userId);
-      emit(AuthAuthenticated(
-        userId:          userId,
-        onboardingStep:  authData.onboardingStep,
-        gender:          authData.gender,
-        countryCode:     countryCode,
-        isGuardianPath:  authData.isGuardianPath,
-      ));
-    } else {
-      // Mock mode: new user starts at step 0, gender set during onboarding
-      emit(AuthAuthenticated(
-        userId:          userId,
-        onboardingStep:  0,
-        gender:          null,
-        countryCode:     countryCode,
-      ));
-    }
+    emit(AuthAuthenticated(
+      userId: 'mock-user-id-001',
+      onboardingStep: 0,
+      gender: null,
+      email: _pendingEmail,
+      countryCode: prefs.getString('user_country_code'),
+    ));
   }
-
-  // ── Sign Out ──────────────────────────────────────────────
 
   Future<void> signOut() async {
     emit(const AuthLoading());
@@ -186,39 +212,41 @@ class AuthCubit extends Cubit<AuthState> {
     emit(const AuthUnauthenticated());
   }
 
-  // ── Update onboarding step locally (called by OnboardingCubit) ───
-
-  /// Updates the cached onboarding step after each step is saved.
-  /// Also propagates gender once the ProfileForWhom screen sets it.
-  void updateOnboardingStep(int step, {String? gender, bool? isGuardianPath}) {
+  void updateOnboardingStep(
+    int step, {
+    String? gender,
+    bool? isGuardianPath,
+    bool? onboardingCompleted,
+  }) {
     final current = state;
     if (current is AuthAuthenticated) {
       emit(AuthAuthenticated(
-        userId:         current.userId,
+        userId: current.userId,
         onboardingStep: step,
-        gender:         gender ?? current.gender,
+        gender: gender ?? current.gender,
+        email: current.email,
+        countryCode: current.countryCode,
         isGuardianPath: isGuardianPath ?? current.isGuardianPath,
+        onboardingCompleted: onboardingCompleted ?? current.onboardingCompleted,
       ));
     }
   }
 
-  /// Called by ProfileForWhomScreen after gender is selected.
-  /// Sets gender on AuthAuthenticated so all downstream widgets
-  /// (subscription gate, profile card) read the correct value.
   void setGender(String gender) {
     final current = state;
     if (current is AuthAuthenticated) {
       emit(AuthAuthenticated(
-        userId:         current.userId,
+        userId: current.userId,
         onboardingStep: current.onboardingStep,
-        gender:         gender,
-        countryCode:    current.countryCode,
+        gender: gender,
+        email: current.email,
+        countryCode: current.countryCode,
         isGuardianPath: current.isGuardianPath,
+        onboardingCompleted: current.onboardingCompleted,
       ));
     }
   }
 
-  /// Sets country code for regional pricing and persists to SharedPreferences.
   Future<void> setCountryCode(String countryCode) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('user_country_code', countryCode);
@@ -226,26 +254,115 @@ class AuthCubit extends Cubit<AuthState> {
     final current = state;
     if (current is AuthAuthenticated) {
       emit(AuthAuthenticated(
-        userId:         current.userId,
+        userId: current.userId,
         onboardingStep: current.onboardingStep,
-        gender:         current.gender,
-        countryCode:    countryCode,
+        gender: current.gender,
+        email: current.email,
+        countryCode: countryCode,
         isGuardianPath: current.isGuardianPath,
+        onboardingCompleted: current.onboardingCompleted,
       ));
     }
   }
 
-  // ── DB Profile Loader ────────────────────────────────────
+  Future<void> _ensurePublicUser(String userId, String email) async {
+    final prefs = await SharedPreferences.getInstance();
+    final countryCode = prefs.getString('user_country_code')?.toUpperCase();
+    try {
+      await SupabaseService.client.from('users').upsert({
+        'id': userId,
+        'email': email,
+        if (countryCode != null && countryCode.isNotEmpty)
+          'country_code': countryCode,
+      }, onConflict: 'id');
+    } catch (_) {
+      await SupabaseService.client.auth.signOut();
+      rethrow;
+    }
+  }
 
-  /// Loads gender, onboarding_step, and guardian mode from Supabase.
-  /// Returns safe defaults if the user/profile rows don't exist yet.
+  Future<bool> _isEmailRegistered(String email) async {
+    final registered = await SupabaseService.client.rpc<bool>(
+      'email_is_registered',
+      params: {'p_email': email},
+    );
+    return registered;
+  }
+
+  Future<void> _applyPendingReferral() async {
+    final prefs = await SharedPreferences.getInstance();
+    final pendingCode = prefs.getString('pending_referral_code');
+    if (pendingCode == null || pendingCode.isEmpty) return;
+
+    try {
+      await ReferralService.instance.applyCode(pendingCode);
+      await prefs.remove('pending_referral_code');
+    } catch (e) {
+      debugPrint('Failed to apply pending referral code: $e');
+    }
+  }
+
+  String _emailValidationMessage(EmailAddressError error) {
+    switch (error) {
+      case EmailAddressError.missing:
+        return 'Please enter your email address.';
+      case EmailAddressError.invalid:
+        return 'Please enter a valid email address.';
+      case EmailAddressError.disposable:
+        return EmailAddressValidation.temporaryEmailMessage;
+    }
+  }
+
+  String _friendlyAuthError(Object? error, {String? code}) {
+    final raw = error?.toString() ?? '';
+    final upperCode = code?.toUpperCase();
+
+    if (upperCode == 'EMAIL_ALREADY_REGISTERED' ||
+        raw.contains('User already registered')) {
+      return 'This email is already registered. Please sign in instead.';
+    }
+    final normalized = raw.toLowerCase();
+    if (normalized.contains('invalid-verification-code') ||
+        normalized.contains('token has expired or is invalid') ||
+        normalized.contains('otp expired') ||
+        normalized.contains('invalid otp') ||
+        normalized.contains('token is expired') ||
+        normalized.contains('email link is invalid')) {
+      return 'This verification code is invalid or has expired. Please request a new code.';
+    }
+    if (raw.contains('Failed to exchange link for session') ||
+        raw.contains('Only the token_hash and type should be provided')) {
+      return 'Authentication failed while creating your session. Please try again.';
+    }
+    if (normalized.contains('too-many-requests') ||
+        normalized.contains('too many attempts') ||
+        normalized.contains('rate limit') ||
+        normalized.contains('email rate limit exceeded')) {
+      return 'Too many verification code requests. Please wait a moment and try again.';
+    }
+    if (normalized.contains('disposable') ||
+        normalized.contains('temporary email')) {
+      return EmailAddressValidation.temporaryEmailMessage;
+    }
+
+    if (raw.contains('No user found') ||
+        raw.contains('User not found') ||
+        raw.contains('Signups not allowed')) {
+      return 'No account found. Please create an account first.';
+    }
+
+    return 'Authentication failed. Please try again.';
+  }
+
   Future<_UserProfileData> _loadUserProfile(String userId) async {
     String? gender;
     int onboardingStep = 0;
     bool isGuardianPath = false;
+    bool onboardingCompleted = false;
+    bool hasUserRow = false;
+    bool hasProfileRow = false;
 
     try {
-      // Load gender from users table
       final userRow = await SupabaseService.client
           .from('users')
           .select('gender')
@@ -253,23 +370,25 @@ class AuthCubit extends Cubit<AuthState> {
           .maybeSingle();
 
       if (userRow != null) {
+        hasUserRow = true;
         gender = userRow['gender'] as String?;
       }
 
-      // Load onboarding step, guardian mode, and gender fallback from profiles table
       final profileRow = await SupabaseService.client
           .from('profiles')
-          .select('onboarding_step, guardian_mode, gender')
+          .select(
+              'onboarding_step, guardian_mode, gender, onboarding_completed')
           .eq('user_id', userId)
           .maybeSingle();
 
       if (profileRow != null) {
+        hasProfileRow = true;
         onboardingStep = (profileRow['onboarding_step'] as int?) ?? 0;
         final guardianMode = profileRow['guardian_mode'] as String?;
         isGuardianPath = guardianMode != null && guardianMode != 'none';
-        
-        // Fallback: also check profiles.gender if users.gender is null
         gender ??= profileRow['gender'] as String?;
+        onboardingCompleted =
+            profileRow['onboarding_completed'] as bool? ?? false;
       }
     } catch (e) {
       debugPrint('AuthCubit: Error loading user profile: $e');
@@ -279,18 +398,31 @@ class AuthCubit extends Cubit<AuthState> {
       gender: gender,
       onboardingStep: onboardingStep,
       isGuardianPath: isGuardianPath,
+      hasUserRow: hasUserRow,
+      hasProfileRow: hasProfileRow,
+      onboardingCompleted: onboardingCompleted,
     );
+  }
+
+  int _returningUserStep(_UserProfileData authData) {
+    return authData.onboardingStep;
   }
 }
 
-/// Internal data holder for profile loading results.
 class _UserProfileData {
   const _UserProfileData({
     required this.gender,
     required this.onboardingStep,
     required this.isGuardianPath,
+    required this.hasUserRow,
+    required this.hasProfileRow,
+    required this.onboardingCompleted,
   });
+
   final String? gender;
   final int onboardingStep;
   final bool isGuardianPath;
+  final bool hasUserRow;
+  final bool hasProfileRow;
+  final bool onboardingCompleted;
 }

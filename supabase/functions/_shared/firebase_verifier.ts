@@ -8,7 +8,7 @@
 // ============================================================
 
 interface FirebasePublicKeys {
-  [kid: string]: string;
+  [kid: string]: JsonWebKey;
 }
 
 interface CachedKeys {
@@ -18,8 +18,8 @@ interface CachedKeys {
 
 let keyCache: CachedKeys | null = null;
 
-const FIREBASE_CERTS_URL =
-  "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com";
+const FIREBASE_JWK_URL =
+  "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";
 
 async function getFirebasePublicKeys(): Promise<FirebasePublicKeys> {
   const now = Date.now();
@@ -27,7 +27,7 @@ async function getFirebasePublicKeys(): Promise<FirebasePublicKeys> {
     return keyCache.keys;
   }
 
-  const res = await fetch(FIREBASE_CERTS_URL);
+  const res = await fetch(FIREBASE_JWK_URL);
   if (!res.ok) {
     throw new Error(`Failed to fetch Firebase public keys: ${res.status}`);
   }
@@ -37,7 +37,18 @@ async function getFirebasePublicKeys(): Promise<FirebasePublicKeys> {
   const maxAgeMatch = cc.match(/max-age=(\d+)/);
   const ttlMs = maxAgeMatch ? parseInt(maxAgeMatch[1]) * 1000 : 3600_000;
 
-  const keys: FirebasePublicKeys = await res.json();
+  const data = await res.json();
+  const keys: FirebasePublicKeys = {};
+
+  // Convert JWK array to dictionary by kid
+  if (data.keys && Array.isArray(data.keys)) {
+    for (const key of data.keys) {
+      if (key.kid) {
+        keys[key.kid] = key;
+      }
+    }
+  }
+
   keyCache = { keys, expiresAt: now + ttlMs };
   return keys;
 }
@@ -80,14 +91,14 @@ export async function verifyFirebaseToken(
   }
 
   // Verify RSA signature using the matched public key
-  const pubKeyPem = keys[header.kid];
-  if (!pubKeyPem) {
+  const jwk = keys[header.kid];
+  if (!jwk) {
     throw new Error(`No Firebase public key found for kid '${header.kid}'.`);
   }
 
   const pubKey = await crypto.subtle.importKey(
-    "spki",
-    pemToArrayBuffer(pubKeyPem),
+    "jwk",
+    jwk,
     { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
     false,
     ["verify"]
@@ -109,14 +120,6 @@ export async function verifyFirebaseToken(
 }
 
 // ── Utility functions ────────────────────────────────────────
-
-function pemToArrayBuffer(pem: string): ArrayBuffer {
-  const b64 = pem
-    .replace(/-----BEGIN CERTIFICATE-----/, "")
-    .replace(/-----END CERTIFICATE-----/, "")
-    .replace(/\s/g, "");
-  return base64ToArrayBuffer(b64);
-}
 
 function base64ToArrayBuffer(b64: string): ArrayBuffer {
   const binary = atob(b64);

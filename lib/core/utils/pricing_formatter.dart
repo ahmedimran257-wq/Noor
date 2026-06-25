@@ -1,6 +1,6 @@
 // lib/core/utils/pricing_formatter.dart
 // ============================================================
-// NOOR — Pricing Formatter Utility
+// MITHAQ — Pricing Formatter Utility
 // Formats price amounts with proper currency symbols and
 // locale-appropriate number formatting.
 // ============================================================

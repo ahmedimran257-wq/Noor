@@ -1,28 +1,17 @@
 // lib/core/services/country_context_service.dart
 // ============================================================
-// NOOR — Country Context Service
+// MITHAQ — Country Context Service
 //
-// Two real APIs:
-//   1. REST Countries API  → official languages for any country
-//   2. Google Places API   → city search with postal code + address
+// Two optional, free data providers:
+//   1. Wikidata           → location-specific language enrichment
+//   2. Photon             → city search with coordinates
 //
 // Two curated data sources (no API exists for these):
 //   3. CountryCommunityData → Muslim communities by country
 //   4. CountrySectData      → Sect options adapted by country
 //
-// SETUP REQUIRED:
-//   Add your Google Places API key to AppConfig:
-//     static const googlePlacesApiKey = 'YOUR_KEY_HERE';
-//
-//   Enable in Google Cloud Console:
-//     - Places API (New)
-//     - Geocoding API
-//
-//   Free tier: 28,500 requests/month — sufficient for MVP.
-//
-// REST Countries API:
-//   No key required. Hosted at https://restcountries.com/v3.1/
-//   Returns official languages, spoken languages, currency, region.
+// Official country languages are bundled from Wikidata (CC0), so onboarding
+// remains globally functional when external providers are unavailable.
 // ============================================================
 
 import 'dart:convert';
@@ -30,8 +19,8 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../config/app_config.dart';
 import '../data/country_communities_data.dart';
+import '../data/country_languages_data.dart';
 import '../data/country_sects_data.dart';
 import 'supabase_service.dart';
 
@@ -54,8 +43,8 @@ class CityResult {
   final String state;
   final String country;
   final String countryCode;
-  final String postalCode;   // Pincode / ZIP / Postcode
-  final String fullAddress;  // "Andheri West, Mumbai, Maharashtra 400053, India"
+  final String postalCode; // Pincode / ZIP / Postcode
+  final String fullAddress; // "Andheri West, Mumbai, Maharashtra 400053, India"
   final String placeId;
   final double lat;
   final double lng;
@@ -82,100 +71,214 @@ class CountryContextService {
   CountryContextService._();
   static final CountryContextService instance = CountryContextService._();
 
-  // Simple in-memory cache — REST Countries response rarely changes
+  // Simple in-memory cache for bundled and location-enriched language lists.
   final _languageCache = <String, List<String>>{};
+  final _locationLanguageCache = <String, List<String>>{};
+
+  @visibleForTesting
+  Future<List<CityResult>> Function(String query, String countryCode)?
+      cityCacheSearchOverride;
+  @visibleForTesting
+  Future<http.Response> Function(Uri uri)? photonRequestOverride;
+  @visibleForTesting
+  Duration photonTimeout = const Duration(seconds: 5);
+
+  @visibleForTesting
+  void resetCitySearchTestOverrides() {
+    cityCacheSearchOverride = null;
+    photonRequestOverride = null;
+    photonTimeout = const Duration(seconds: 5);
+  }
 
   // ── 1. GET LANGUAGES FOR COUNTRY ──────────────────────────
   //
-  // Calls: GET https://restcountries.com/v3.1/alpha/{iso2}?fields=languages
-  // Returns all officially recognised + spoken languages for the country.
-  // Cached in memory for the app session + SharedPreferences for offline.
+  // Returns bundled official languages for every supported country. Cached in
+  // SharedPreferences for consistent behavior with location enrichment.
 
   Future<List<String>> getLanguages(String iso2) async {
     final key = iso2.toUpperCase();
 
-    // Memory cache hit
-    if (_languageCache.containsKey(key)) return _languageCache[key]!;
+    // Ignore a stale fallback-only cache from an older failed lookup.
+    final memoryCached = _languageCache[key];
+    if (_hasUsableLanguages(memoryCached)) return memoryCached!;
+    _languageCache.remove(key);
 
     // SharedPreferences offline cache
     try {
       final prefs = await SharedPreferences.getInstance();
       final cached = prefs.getStringList('lang_cache_$key');
-      if (cached != null && cached.isNotEmpty) {
-        _languageCache[key] = cached;
+      if (_hasUsableLanguages(cached)) {
+        _languageCache[key] = cached!;
         return cached;
       }
     } catch (_) {}
 
-    // Live API call
+    final languages = _fallbackLanguages(key);
+    _languageCache[key] = languages;
     try {
-      final uri = Uri.parse(
-        'https://restcountries.com/v3.1/alpha/$key?fields=languages',
-      );
-      final response = await http.get(uri).timeout(
-        const Duration(seconds: 6),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final langMap = (data['languages'] as Map<String, dynamic>?) ?? {};
-        // REST Countries returns { "hin": "Hindi", "eng": "English", ... }
-        final langs = langMap.values.cast<String>().toList()..sort();
-        // Always append "Other" at end
-        if (!langs.contains('Other')) langs.add('Other');
-
-        // Cache it
-        _languageCache[key] = langs;
-        try {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setStringList('lang_cache_$key', langs);
-        } catch (_) {}
-
-        return langs;
-      }
-    } catch (e) {
-      debugPrint('[CountryContextService] Language fetch failed for $key: $e');
-    }
-
-    // Fallback to curated data if API fails
-    return _fallbackLanguages(key);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList('lang_cache_$key', languages);
+    } catch (_) {}
+    return languages;
   }
 
-  // ── 2. SEARCH CITIES (Google Places Autocomplete) ─────────
-  //
-  // Restricts results to the given country code.
-  // Returns city name, state, postal code, full formatted address,
-  // lat/lng, and placeId (used for detail fetch).
+  // ── 2. SEARCH CITIES (Supabase cache → Photon) ───────────
+
+  Future<List<String>> getLanguagesForLocation({
+    required String countryCode,
+    String? stateName,
+    String? cityName,
+  }) async {
+    final code = countryCode.toUpperCase();
+    final state = stateName?.trim() ?? '';
+    final city = cityName?.trim() ?? '';
+    final cacheKey = [
+      code,
+      if (state.isNotEmpty) state.toLowerCase(),
+      if (city.isNotEmpty) city.toLowerCase(),
+    ].join('|');
+
+    final memoryCached = _locationLanguageCache[cacheKey];
+    if (_hasUsableLanguages(memoryCached)) return memoryCached!;
+    _locationLanguageCache.remove(cacheKey);
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cached = prefs.getStringList('loc_lang_cache_$cacheKey');
+      if (_hasUsableLanguages(cached)) {
+        _locationLanguageCache[cacheKey] = cached!;
+        return cached;
+      }
+    } catch (_) {}
+
+    final locationLangs = <String>[];
+    for (final placeName in <String>[state, city]) {
+      if (placeName.isEmpty) continue;
+      final langs = await _fetchWikidataLocationLanguages(
+        placeName: placeName,
+        countryCode: code,
+      );
+      locationLangs.addAll(langs);
+      if (locationLangs.length >= 8) break;
+    }
+
+    final merged = _uniqueLanguages([
+      ...locationLangs,
+      ...await getLanguages(code),
+      ..._fallbackLanguages(code),
+    ]);
+    if (!merged.contains('Other')) merged.add('Other');
+
+    _locationLanguageCache[cacheKey] = merged;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList('loc_lang_cache_$cacheKey', merged);
+    } catch (_) {}
+
+    return merged;
+  }
+
+  Future<List<String>> _fetchWikidataLocationLanguages({
+    required String placeName,
+    required String countryCode,
+  }) async {
+    final escapedName = _escapeSparqlString(placeName);
+    final escapedCode = _escapeSparqlString(countryCode.toUpperCase());
+    final query = '''
+SELECT DISTINCT ?languageLabel WHERE {
+  ?country wdt:P297 "$escapedCode".
+  ?place rdfs:label "$escapedName"@en.
+  ?place (wdt:P17|wdt:P131*/wdt:P17) ?country.
+  {
+    ?place (wdt:P37|wdt:P2936) ?language.
+  } UNION {
+    ?place wdt:P131* ?admin.
+    ?admin (wdt:P37|wdt:P2936) ?language.
+  }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+}
+LIMIT 12
+''';
+
+    try {
+      final uri = Uri.https(
+        'query.wikidata.org',
+        '/sparql',
+        {
+          'query': query,
+          'format': 'json',
+        },
+      );
+      final response = await http.get(
+        uri,
+        headers: {
+          'Accept': 'application/sparql-results+json',
+          'User-Agent':
+              'MithaqApp/1.0 (contact@mithaq.app; language resolution)',
+        },
+      ).timeout(const Duration(seconds: 6));
+
+      if (response.statusCode != 200) return const [];
+      final data =
+          jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      final results = data['results'] as Map<String, dynamic>? ?? {};
+      final bindings = results['bindings'] as List<dynamic>? ?? const [];
+
+      return _uniqueLanguages(bindings.map((binding) {
+        final map = binding as Map<String, dynamic>;
+        final label = map['languageLabel'] as Map<String, dynamic>?;
+        return label?['value'] as String? ?? '';
+      }));
+    } catch (e) {
+      debugPrint(
+        '[CountryContextService] Wikidata language fetch failed for '
+        '$placeName, $countryCode: $e',
+      );
+      return const [];
+    }
+  }
 
   Future<List<CityResult>> searchCities(
     String query, {
-    String? countryCode,
+    required String countryCode,
   }) async {
-    debugPrint('[CountryContextService] searchCities query: "$query", countryCode: "$countryCode"');
-    if (query.trim().length < 2) return [];
+    debugPrint(
+        '[CountryContextService] searchCities query: "$query", countryCode: "$countryCode"');
+    final selectedCountry = countryCode.trim().toUpperCase();
+    if (query.trim().length < 2 || selectedCountry.isEmpty) return [];
 
-    // 1. Try Supabase first if initialized
-    if (SupabaseService.isInitialized) {
+    // 1. Try the Supabase city cache first.
+    if (cityCacheSearchOverride != null) {
       try {
-        debugPrint('[CountryContextService] Querying Supabase rpc search_cities...');
+        final cached = await cityCacheSearchOverride!(query, selectedCountry);
+        if (cached.isNotEmpty) return cached;
+      } catch (error) {
+        debugPrint('[CountryContextService] Test city cache failed: $error');
+      }
+    } else if (SupabaseService.isInitialized) {
+      try {
+        debugPrint(
+            '[CountryContextService] Querying Supabase rpc search_cities...');
         final response = await SupabaseService.client.rpc(
           'search_cities',
           params: {
             'search_term': query,
-            if (countryCode != null) 'country_filter': countryCode,
+            'country_filter': selectedCountry,
           },
         );
         debugPrint('[CountryContextService] Supabase response: $response');
         if (response != null) {
           final list = response as List<dynamic>;
           if (list.isNotEmpty) {
-            debugPrint('[CountryContextService] Found ${list.length} cities from Supabase');
+            debugPrint(
+                '[CountryContextService] Found ${list.length} cities from Supabase');
             return list.map((row) {
               final map = row as Map<String, dynamic>;
               final cityName = map['name'] as String? ?? '';
               final stateName = map['state'] as String? ?? '';
               final countryName = map['country'] as String? ?? '';
-              final code = map['country_code'] as String? ?? countryCode ?? '';
+              final code = (map['country_code'] as String? ?? selectedCountry)
+                  .toUpperCase();
               final lat = (map['lat'] as num?)?.toDouble() ?? 0.0;
               final lng = (map['lng'] as num?)?.toDouble() ?? 0.0;
               return CityResult(
@@ -201,99 +304,66 @@ class CountryContextService {
       }
     }
 
-    // 2. Try Google Places API
-    const apiKey = AppConfig.googlePlacesApiKey;
-    if (apiKey.isNotEmpty && apiKey != 'YOUR_GOOGLE_PLACES_API_KEY') {
-      try {
-        debugPrint('[CountryContextService] Querying Google Places API...');
-        // Autocomplete with locality + sublocality types
-        final uri = Uri.https(
-          'maps.googleapis.com',
-          '/maps/api/place/autocomplete/json',
-          {
-            'input':       query,
-            'types':       '(cities)',
-            if (countryCode != null) 'components':  'country:${countryCode.toLowerCase()}',
-            'key':         apiKey,
-            'language':    'en',
-          },
-        );
-
-        final response = await http.get(uri).timeout(
-          const Duration(seconds: 5),
-        );
-
-        if (response.statusCode == 200) {
-          final data    = jsonDecode(response.body) as Map<String, dynamic>;
-          final status  = data['status'] as String?;
-          if (status == 'OK' || status == 'ZERO_RESULTS') {
-            final predictions = (data['predictions'] as List<dynamic>? ?? []);
-            final results = <CityResult>[];
-            for (final pred in predictions.take(5)) {
-              final placeId = pred['place_id'] as String? ?? '';
-              if (placeId.isEmpty) continue;
-
-              final detail = await _fetchPlaceDetail(placeId, apiKey);
-              if (detail != null) results.add(detail);
-            }
-            if (results.isNotEmpty) {
-              debugPrint('[CountryContextService] Found ${results.length} cities from Google Places API');
-              return results;
-            }
-          }
-        }
-      } catch (e) {
-        debugPrint('[CountryContextService] Google Places city search failed: $e');
-      }
-    }
-
-    // 3. Try Photon (Komoot/OSM) Geocoding API (Free fallback, no key required, structured global cities/districts)
+    // 2. Photon is the global no-key fallback when the city cache misses.
     try {
-      debugPrint('[CountryContextService] Querying Photon Geocoding API for "$query" (countryCode: $countryCode)...');
+      debugPrint(
+          '[CountryContextService] Querying Photon Geocoding API for "$query" (countryCode: $countryCode)...');
       final uri = Uri.https(
         'photon.komoot.io',
         '/api',
         {
           'q': query,
-          'limit': '20',
+          'limit': '5',
+          'osm_tag': 'place:city,place:town,place:village',
         },
       );
 
-      final response = await http.get(
-        uri,
-        headers: {
-          'User-Agent': 'NoorApp/1.0 (contact@noorapp.com; matchmaking app)',
-        },
-      ).timeout(
-        const Duration(seconds: 5),
-      );
+      final request = photonRequestOverride != null
+          ? photonRequestOverride!(uri)
+          : http.get(
+              uri,
+              headers: {
+                'User-Agent':
+                    'MithaqApp/1.0 (contact@noorapp.com; matchmaking app)',
+              },
+            );
+      final response = await request.timeout(photonTimeout);
 
-      debugPrint('[CountryContextService] Photon status code: ${response.statusCode}');
+      debugPrint(
+          '[CountryContextService] Photon status code: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+        final data =
+            jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
         final features = data['features'] as List<dynamic>? ?? [];
         final parsedResults = <CityResult>[];
-        
+
         for (final feat in features) {
           final map = feat as Map<String, dynamic>;
           final properties = map['properties'] as Map<String, dynamic>? ?? {};
           final geometry = map['geometry'] as Map<String, dynamic>? ?? {};
           final coords = geometry['coordinates'] as List<dynamic>? ?? [];
-          
+
           final cCode = properties['countrycode'] as String? ?? '';
-          
-          // Filter to requested country code if provided
-          if (countryCode != null && cCode.toLowerCase() != countryCode.toLowerCase()) {
+
+          // The public Photon endpoint does not reliably enforce a country
+          // filter, so reject any result outside the selected ISO country.
+          if (cCode.toUpperCase() != selectedCountry) {
             continue;
           }
-          
+
           final cityName = properties['name'] as String? ?? '';
           final stateName = properties['state'] as String? ?? '';
           final countryName = properties['country'] as String? ?? '';
-          final lng = coords.isNotEmpty ? (coords[0] as num).toDouble() : 0.0;
-          final lat = coords.length > 1 ? (coords[1] as num).toDouble() : 0.0;
-          
+          if (cityName.isEmpty ||
+              coords.length < 2 ||
+              coords[0] is! num ||
+              coords[1] is! num) {
+            continue;
+          }
+          final lng = (coords[0] as num).toDouble();
+          final lat = (coords[1] as num).toDouble();
+
           // Formatted address: "Kurnool, Andhra Pradesh, India"
           final fullAddr = [
             cityName,
@@ -306,16 +376,17 @@ class CountryContextService {
             state: stateName,
             country: countryName,
             countryCode: cCode.toUpperCase(),
-            postalCode: '',
+            postalCode: properties['postcode'] as String? ?? '',
             fullAddress: fullAddr,
             placeId: 'photon-${properties['osm_id'] ?? cityName.toLowerCase()}',
             lat: lat,
             lng: lng,
           ));
         }
-        
+
         if (parsedResults.isNotEmpty) {
-          debugPrint('[CountryContextService] Found ${parsedResults.length} cities from Photon');
+          debugPrint(
+              '[CountryContextService] Found ${parsedResults.length} cities from Photon');
           return parsedResults;
         }
       }
@@ -323,84 +394,13 @@ class CountryContextService {
       debugPrint('[CountryContextService] Photon search failed: $e');
     }
 
-    // 4. Fallback: Return empty list (allowing custom city entries if enabled)
-    debugPrint('[CountryContextService] No matches found, returning empty list.');
+    // 3. Do not accept unverified free text: matching needs real coordinates.
+    debugPrint(
+        '[CountryContextService] No matches found, returning empty list.');
     return const [];
   }
 
   // ── Place detail fetch (postal code, lat/lng, components) ──
-
-  Future<CityResult?> _fetchPlaceDetail(
-    String placeId,
-    String apiKey,
-  ) async {
-    try {
-      final uri = Uri.https(
-        'maps.googleapis.com',
-        '/maps/api/place/details/json',
-        {
-          'place_id': placeId,
-          'fields':   'address_components,geometry,formatted_address,name',
-          'key':      apiKey,
-        },
-      );
-
-      final res = await http.get(uri).timeout(const Duration(seconds: 4));
-      if (res.statusCode != 200) return null;
-
-      final data   = jsonDecode(res.body) as Map<String, dynamic>;
-      final result = data['result'] as Map<String, dynamic>?;
-      if (result == null) return null;
-
-      final components =
-          (result['address_components'] as List<dynamic>? ?? [])
-              .cast<Map<String, dynamic>>();
-
-      String city       = '';
-      String state      = '';
-      String country    = '';
-      String countryCode = '';
-      String postalCode = '';
-
-      for (final comp in components) {
-        final types = (comp['types'] as List<dynamic>).cast<String>();
-        final longName  = comp['long_name']  as String? ?? '';
-        final shortName = comp['short_name'] as String? ?? '';
-
-        if (types.contains('locality')) city = longName;
-        if (types.contains('sublocality_level_1') && city.isEmpty) {
-          city = longName;
-        }
-        if (types.contains('administrative_area_level_1')) state = longName;
-        if (types.contains('country')) {
-          country     = longName;
-          countryCode = shortName;
-        }
-        if (types.contains('postal_code')) postalCode = longName;
-      }
-
-      final geometry = result['geometry'] as Map<String, dynamic>?;
-      final location = geometry?['location'] as Map<String, dynamic>?;
-      final lat = (location?['lat'] as num?)?.toDouble() ?? 0.0;
-      final lng = (location?['lng'] as num?)?.toDouble() ?? 0.0;
-
-      final formatted = result['formatted_address'] as String? ?? '';
-
-      return CityResult(
-        city:        city.isEmpty ? (result['name'] as String? ?? '') : city,
-        state:       state,
-        country:     country,
-        countryCode: countryCode,
-        postalCode:  postalCode,
-        fullAddress: formatted,
-        placeId:     placeId,
-        lat:         lat,
-        lng:         lng,
-      );
-    } catch (_) {
-      return null;
-    }
-  }
 
   // ── 3. GET COMMUNITIES FOR COUNTRY ────────────────────────
   //
@@ -427,30 +427,44 @@ class CountryContextService {
   Future<CountryContext> getContext(String iso2) async {
     final langs = await getLanguages(iso2);
     return CountryContext(
-      languages:   langs,
+      languages: langs,
       communities: getCommunities(iso2),
-      sects:       getSects(iso2).displaySects,
+      sects: getSects(iso2).displaySects,
     );
   }
 
   // ── Language fallback ──────────────────────────────────────
 
   static List<String> _fallbackLanguages(String iso2) {
-    // Minimal fallback per region — only used if API + cache both fail
-    const Map<String, List<String>> fallback = {
-      'IN': ['Urdu', 'Hindi', 'Tamil', 'Telugu', 'Malayalam', 'Bengali', 'Other'],
-      'PK': ['Urdu', 'Punjabi', 'Sindhi', 'Pashto', 'Balochi', 'Other'],
-      'BD': ['Bengali', 'Other'],
-      'ID': ['Indonesian', 'Javanese', 'Sundanese', 'Other'],
-      'SA': ['Arabic', 'English', 'Urdu', 'Other'],
-      'AE': ['Arabic', 'English', 'Urdu', 'Hindi', 'Other'],
-      'TR': ['Turkish', 'Kurdish', 'Other'],
-      'EG': ['Arabic', 'English', 'Other'],
-      'NG': ['Hausa', 'Yoruba', 'Igbo', 'English', 'Other'],
-      'GB': ['English', 'Urdu', 'Arabic', 'Bengali', 'Other'],
-      'US': ['English', 'Arabic', 'Urdu', 'Somali', 'Other'],
-      'MY': ['Malay', 'English', 'Mandarin', 'Tamil', 'Other'],
-    };
-    return fallback[iso2] ?? ['Arabic', 'English', 'Other'];
+    return _uniqueLanguages([
+      ...?kCountryLanguages[iso2.toUpperCase()],
+      'Other',
+    ]);
+  }
+
+  static bool _hasUsableLanguages(List<String>? languages) {
+    return languages != null &&
+        languages.any((language) => language.trim().toLowerCase() != 'other');
+  }
+
+  static String _escapeSparqlString(String value) {
+    return value.replaceAll(r'\', r'\\').replaceAll('"', r'\"');
+  }
+
+  static List<String> _uniqueLanguages(Iterable<String> values) {
+    final seen = <String>{};
+    final result = <String>[];
+    for (final value in values) {
+      final normalized = value.trim();
+      if (normalized.isEmpty) continue;
+      final key = normalized.toLowerCase();
+      if (seen.add(key)) result.add(normalized);
+    }
+    result.sort((a, b) {
+      if (a == 'Other') return 1;
+      if (b == 'Other') return -1;
+      return a.compareTo(b);
+    });
+    return result;
   }
 }

@@ -1,6 +1,6 @@
 // lib/core/config/country_demographics/index.dart
 // ============================================================
-// NOOR — Country Demographics Barrel File
+// MITHAQ — Country Demographics Barrel File
 // Merges all regional demographic maps into one unified map.
 // ============================================================
 

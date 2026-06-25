@@ -1,5 +1,5 @@
 // lib/core/config/country_demographics/sub_saharan_africa.dart
-// NOOR — Sub-Saharan Africa Demographics
+// MITHAQ — Sub-Saharan Africa Demographics
 
 const kSubSaharanAfricaDemographics = <String, Map<String, List<String>>>{
   'NG': {

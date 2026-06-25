@@ -24,6 +24,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+import { isAuthorizedCronRequest } from "../_shared/cron_auth.ts";
 
 const SUPABASE_URL         = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -39,9 +40,7 @@ Deno.serve(async (req: Request) => {
 
   // ── This endpoint is internal-only (cron-triggered) ────────
   // Verify the Authorization header is the service role key
-  const authHeader = req.headers.get("Authorization") ?? "";
-  if (!authHeader.includes(SUPABASE_SERVICE_KEY.slice(-12))) {
-    // Note: In production, use a separate CRON_SECRET env var
+  if (!(await isAuthorizedCronRequest(req))) {
     console.warn("[admin-purge] Unauthorized invocation blocked.");
     return new Response("Unauthorized", { status: 401 });
   }

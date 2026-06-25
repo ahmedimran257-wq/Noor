@@ -1,5 +1,5 @@
 // lib/core/config/country_demographics/europe.dart
-// NOOR — European Demographics
+// MITHAQ — European Demographics
 
 const kEuropeDemographics = <String, Map<String, List<String>>>{
   'GB': {

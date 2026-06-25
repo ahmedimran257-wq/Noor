@@ -26,6 +26,7 @@ const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const SUPABASE_ANON_KEY    = Deno.env.get("SUPABASE_ANON_KEY")!;
 
 const BUCKET_NAME       = "profile-photos";
+const KYC_BUCKET_NAME   = "kyc-documents";
 const MAX_PHOTOS        = 4;
 const URL_EXPIRES_IN    = 300;           // 5 minutes — client must upload within this window
 const RATE_LIMIT_WINDOW = 60 * 60;      // 1 hour in seconds
@@ -77,19 +78,26 @@ Deno.serve(async (req: Request) => {
     }
 
     // ── Parse request ──────────────────────────────────────────
-    const { order_index, file_extension } = await req.json() as {
-      order_index: number;
+    const { order_index, file_extension, purpose } = await req.json() as {
+      order_index?: number;
       file_extension?: string;
+      purpose?: "kyc_selfie" | "kyc_id";
     };
+
+    const ext = (file_extension ?? "webp").toLowerCase();
+    const allowedTypes = ["webp", "jpg", "jpeg", "png"];
+    if (!allowedTypes.includes(ext)) {
+      return errorResponse(400, "Only webp, jpg, jpeg, and png are allowed.");
+    }
+
+    // KYC uploads use a dedicated private bucket. They never create a public
+    // photo record and are always scoped to the authenticated user's folder.
+    if (purpose === "kyc_selfie" || purpose === "kyc_id") {
+      return await createKycSignedUploadUrl(userId, purpose, ext);
+    }
 
     if (order_index === undefined || order_index < 0 || order_index > 3) {
       return errorResponse(400, "order_index must be 0, 1, 2, or 3.");
-    }
-
-    const ext = file_extension ?? "webp";
-    const allowedTypes = ["webp", "jpg", "jpeg"];
-    if (!allowedTypes.includes(ext.toLowerCase())) {
-      return errorResponse(400, "Only webp, jpg, and jpeg are allowed.");
     }
 
     // ── Service-role client for DB operations ──────────────────
@@ -180,6 +188,32 @@ Deno.serve(async (req: Request) => {
     return errorResponse(500, message);
   }
 });
+
+async function createKycSignedUploadUrl(
+  userId: string,
+  purpose: "kyc_selfie" | "kyc_id",
+  extension: string,
+): Promise<Response> {
+  const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const storagePath = `${userId}/${purpose}_${crypto.randomUUID()}.${extension}`;
+  const { data, error } = await adminClient.storage
+    .from(KYC_BUCKET_NAME)
+    .createSignedUploadUrl(storagePath);
+  if (error || !data?.signedUrl) {
+    throw new Error(`Failed to generate KYC upload URL: ${error?.message}`);
+  }
+  return new Response(
+    JSON.stringify({
+      signed_url: data.signedUrl,
+      storage_path: storagePath,
+      token: data.token,
+      expires_in: URL_EXPIRES_IN,
+    }),
+    { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+  );
+}
 
 // ── Generate a read URL for a photo (separate endpoint) ────────
 // Called by Flutter when displaying photos, not included in quota.

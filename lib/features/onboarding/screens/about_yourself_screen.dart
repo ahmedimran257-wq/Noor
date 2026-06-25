@@ -1,12 +1,13 @@
 // lib/features/onboarding/screens/about_yourself_screen.dart
 // ============================================================
-// NOOR — About Yourself Screen (Onboarding Step 6)
+// MITHAQ — About Yourself Screen (Onboarding Step 6)
 // Bio (300 chars with content filter), interests (max 6), languages.
 // ============================================================
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
+import '../../../core/services/country_context_service.dart';
 import '../../../core/cubits/onboarding/onboarding_state.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -14,7 +15,7 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/content_filter.dart';
 import '../../../core/utils/validation_snackbar.dart';
-import '../../../core/widgets/inputs/noor_text_field.dart';
+import '../../../core/widgets/inputs/mithaq_text_field.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
@@ -31,7 +32,8 @@ const _kInterestCategories = [
   (name: 'Social',    icon: Icons.volunteer_activism_outlined, tags: ['Community work', 'Teaching', 'Mentoring', 'Family gatherings']),
 ];
 
-const _kLanguages = [
+// Fallback list — used while REST Countries API response loads
+const _kLanguagesFallback = [
   'English', 'Arabic', 'Urdu', 'Hindi', 'Malay', 'Indonesian',
   'Turkish', 'French', 'German', 'Bengali', 'Punjabi', 'Tamil',
   'Persian', 'Swahili', 'Hausa', 'Pashto', 'Sindhi',
@@ -61,6 +63,9 @@ class _AboutYourselfScreenState extends State<AboutYourselfScreen> {
   final Set<String> _interests = {};
   final Set<String> _languages = {};
 
+  /// Dynamic language list — loaded from REST Countries API based on user's country
+  List<String> _availableLanguages = _kLanguagesFallback;
+
   @override
   void initState() {
     super.initState();
@@ -68,6 +73,24 @@ class _AboutYourselfScreenState extends State<AboutYourselfScreen> {
     _bioCtrl.text = data.bio ?? '';
     _interests.addAll(data.interests ?? []);
     _languages.addAll(data.languages ?? []);
+    _loadDynamicLanguages(data.countryCode);
+  }
+
+  /// Fetch real languages from REST Countries for the user's selected country.
+  /// Merges with global fallback so user always sees a comprehensive list.
+  Future<void> _loadDynamicLanguages(String? countryCode) async {
+    if (countryCode == null || countryCode.isEmpty) return;
+    try {
+      final apiLangs = await CountryContextService.instance.getLanguages(countryCode);
+      // Merge: API languages first (country-relevant), then global fallback (deduped)
+      final merged = <String>[...apiLangs];
+      for (final lang in _kLanguagesFallback) {
+        if (!merged.contains(lang)) merged.add(lang);
+      }
+      if (mounted) setState(() => _availableLanguages = merged);
+    } catch (_) {
+      // Keep fallback on error
+    }
   }
 
   static const _maxBio       = 300;
@@ -172,7 +195,7 @@ class _AboutYourselfScreenState extends State<AboutYourselfScreen> {
               // Bio field
               Text(isGuardian ? l10n.about_label_bio_guardian : l10n.about_label_bio_self, style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space8),
-              NoorTextField(
+              MithaqTextField(
                 controller:      _bioCtrl,
                 hint:            isGuardian
                     ? l10n.about_hint_bio_guardian(getRelationString())
@@ -276,7 +299,7 @@ class _AboutYourselfScreenState extends State<AboutYourselfScreen> {
               Wrap(
                 spacing:    AppDimensions.space8,
                 runSpacing: AppDimensions.space8,
-                children: _kLanguages.map((lang) {
+                children: _availableLanguages.map((lang) {
                   final isSel = _languages.contains(lang);
                   return GestureDetector(
                     onTap: () => _toggleLanguage(lang),

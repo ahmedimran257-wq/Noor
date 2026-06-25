@@ -1,6 +1,6 @@
 // lib/features/onboarding/screens/family_screen.dart
 // ============================================================
-// NOOR — Family Background Screen (Onboarding Step 5)
+// MITHAQ — Family Background Screen (Onboarding Step 5)
 // Family type, sibling count, parents status, marital history.
 // Phase 2: Post-marriage living expectations added.
 // ============================================================

@@ -1,13 +1,13 @@
 // lib/features/onboarding/screens/islamic_identity_screen.dart
 // ============================================================
-// NOOR — Islamic Identity Screen (Onboarding Step 2)
+// MITHAQ — Islamic Identity Screen (Onboarding Step 2)
 // Phase 2: CopyEngine for guardian-aware copy.
 // Phase 2: Lifestyle & Diet section added.
 // ============================================================
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:noor/l10n/generated/app_localizations.dart';
+import 'package:mithaq/l10n/generated/app_localizations.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_state.dart';
 import '../../../core/models/onboarding_data.dart';

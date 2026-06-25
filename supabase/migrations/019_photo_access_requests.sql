@@ -127,7 +127,7 @@ BEGIN
     'photo_access_request',
     'Photo access request',
     format('%s would like to see your photos', COALESCE(v_requester_name, 'Someone')),
-    'noor://photo-requests'
+    'mithaq://photo-requests'
   );
 
   RETURN NEW;
@@ -154,7 +154,7 @@ BEGIN
       'photo_access_granted',
       'Photo access granted',
       format('%s has shared their photos with you', COALESCE(v_owner_name, 'Someone')),
-      format('noor://profile/%s', (SELECT id FROM profiles WHERE user_id = NEW.owner_id))
+      format('mithaq://profile/%s', (SELECT id FROM profiles WHERE user_id = NEW.owner_id))
     );
   END IF;
 

@@ -1,6 +1,6 @@
 // lib/core/services/connectivity_service.dart
 // ============================================================
-// NOOR — Connectivity Service
+// MITHAQ — Connectivity Service
 // Lightweight connectivity checker using dart:io.
 // No extra dependency needed — uses InternetAddress.lookup().
 //
@@ -17,8 +17,8 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:noor/core/config/app_config.dart';
-import 'package:noor/core/services/supabase_service.dart';
+import 'package:mithaq/core/config/app_config.dart';
+import 'package:mithaq/core/services/supabase_service.dart';
 
 class ConnectivityService {
   ConnectivityService._({

@@ -1,6 +1,6 @@
 // lib/features/home/screens/discovery_feed_screen.dart
 // ============================================================
-// NOOR — Discovery Feed (Step 5 — Blueprint Complete)
+// MITHAQ — Discovery Feed (Step 5 — Blueprint Complete)
 //
 // Blueprint requirements (Part 8):
 //   • Horizontal paged carousel — one card at a time
@@ -29,8 +29,8 @@ import '../../../core/services/bookmark_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/cards/noor_profile_card.dart';
-import '../../../core/widgets/loaders/noor_shimmer.dart';
+import '../../../core/widgets/cards/mithaq_profile_card.dart';
+import '../../../core/widgets/loaders/mithaq_shimmer.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../widgets/discovery_filter_bar.dart';
 import '../widgets/interest_ceremony_overlay.dart';
@@ -50,8 +50,8 @@ class DiscoveryFeedScreen extends StatefulWidget {
 class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
     with AutomaticKeepAliveClientMixin {
   late final PageController _pageCtrl;
-  int         _currentPage = 0;
-  double      _pageOffset  = 0.0; // Continuous scroll offset for smooth scaling
+  int _currentPage = 0;
+  double _pageOffset = 0.0; // Continuous scroll offset for smooth scaling
   final Set<String> _sentInterests = {};
   // Bookmarks now use profile IDs (String) for persistence
   Set<String> _bookmarked = {};
@@ -112,11 +112,12 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
     );
     if (note == null || !mounted) return; // cancelled
 
+    final sent = await context.read<InterestsCubit>().sendInterest(
+          fp.profile,
+          note: note.isNotEmpty ? note : null,
+        );
+    if (!mounted || !sent) return;
     setState(() => _sentInterests.add(fp.profile.id));
-    context.read<InterestsCubit>().sendInterest(
-      fp.profile,
-      note: note.isNotEmpty ? note : null,
-    );
     HapticFeedback.mediumImpact();
     await showInterestCeremony(context, firstName: fp.profile.firstName);
   }
@@ -160,10 +161,11 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => ProfileDetailScreen(
-          profile:        fp.profile,
-          heroTag:        'profile_card_$index',
+          profile: fp.profile,
+          heroTag: 'profile_card_$index',
           isInterestSent: _sentInterests.contains(fp.profile.id),
-          onInterestSent: () => setState(() => _sentInterests.add(fp.profile.id)),
+          onInterestSent: () =>
+              setState(() => _sentInterests.add(fp.profile.id)),
         ),
       ),
     );
@@ -180,7 +182,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
           color: AppColors.champagneGold,
           backgroundColor: AppColors.obsidianNight,
           onRefresh: () async {
-            context.read<DiscoveryFeedCubit>().loadInitial();
+            context.read<DiscoveryFeedCubit>().loadInitial(force: true);
             // Wait a bit for the cubit to emit new state
             await Future.delayed(const Duration(milliseconds: 800));
           },
@@ -197,9 +199,10 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
                   ),
                   child: Row(
                     children: [
-                      Text('نور', style: AppTypography.wordmark.copyWith(fontSize: 26)),
+                      Text('ميثاق',
+                          style: AppTypography.wordmark.copyWith(fontSize: 26)),
                       const SizedBox(width: AppDimensions.space8),
-                      const Text('NOOR', style: AppTypography.wordmark),
+                      const Text('MITHAQ', style: AppTypography.wordmark),
                       const Spacer(),
                       // Free-tier counter badge
                       if (feedState.status == FeedStatus.loaded ||
@@ -214,7 +217,8 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
 
               // ── Filter bar ──────────────────────────────────
               const SliverToBoxAdapter(child: DiscoveryFilterBar()),
-              const SliverToBoxAdapter(child: SizedBox(height: AppDimensions.space16)),
+              const SliverToBoxAdapter(
+                  child: SizedBox(height: AppDimensions.space16)),
 
               // ── Card carousel ────────────────────────────────
               SliverFillRemaining(
@@ -239,19 +243,31 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
       return const _EmptyFeed();
     }
 
+    if (feedState.status == FeedStatus.error) {
+      return _DiscoveryError(
+        message: feedState.errorMessage ??
+            'Unable to load profiles. Please try again.',
+        onRetry: () =>
+            context.read<DiscoveryFeedCubit>().loadInitial(force: true),
+      );
+    }
+
     // G11 (D5): Profile completeness gate — ≤40% → nudge to complete
     final onbData = context.read<OnboardingCubit>().currentData;
     final completeness = _quickCompleteness(onbData);
-    if (completeness <= 40) {
+    final hasPrimaryPhoto =
+        onbData.photoLocalPaths != null && onbData.photoLocalPaths!.isNotEmpty;
+    if (!hasPrimaryPhoto) {
       return _IncompleteProfileGate(score: completeness);
     }
 
-    final profiles     = feedState.profiles;
+    final profiles = feedState.profiles;
     final isLoadingMore = feedState.status == FeedStatus.loadingMore;
 
     // M9: Check free-tier browse limit for non-subscribers
     final subState = context.read<SubscriptionCubit>().state;
-    final isLimited = feedState.isFreeTierLimitReached && !subState.isSubscribed;
+    final isLimited =
+        feedState.isFreeTierLimitReached && !subState.isSubscribed;
 
     if (isLimited) {
       return _FreeTierLimitReached(
@@ -259,13 +275,13 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
       );
     }
 
-    final itemCount    = profiles.length + (isLoadingMore ? 1 : 0);
+    final itemCount = profiles.length + (isLoadingMore ? 1 : 0);
 
     return PageView.builder(
-      controller:   _pageCtrl,
-      itemCount:    itemCount,
+      controller: _pageCtrl,
+      itemCount: itemCount,
       onPageChanged: (page) => setState(() => _currentPage = page),
-      itemBuilder:  (context, index) {
+      itemBuilder: (context, index) {
         // Continuous scale: 1.0 at center, 0.95 at 1.0 page distance
         final double offset = (index - _pageOffset).abs();
         final double scale = (1.0 - (offset * 0.05)).clamp(0.95, 1.0);
@@ -275,14 +291,13 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
           return _cardPadding(
             child: Transform.scale(
               scale: scale,
-              child: const NoorProfileCardShimmer(),
+              child: const MithaqProfileCardShimmer(),
             ),
           );
         }
 
         final fp = profiles[index];
-        final p  = fp.profile;
-
+        final p = fp.profile;
 
         return _cardPadding(
           child: Stack(
@@ -291,35 +306,35 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
               // Main card (with Hero for shared-element to detail)
               Hero(
                 tag: 'profile_card_$index',
-                child: NoorProfileCard(
-                  firstName:       p.firstName,
+                child: MithaqProfileCard(
+                  firstName: p.firstName,
                   lastNameInitial: p.lastNameInitial,
-                  age:             p.age,
-                  cityName:        p.cityName,
-                  sect:            p.sect,
-                  deenLevel:       p.deenLevel,
-                  profession:      p.occupation,
-                  photoUrl:        p.photoUrl,
-                  photoCount:      p.photoCount,
-                  isPhotoPrivate:  p.isPhotoPrivate,
-                  isVerified:      p.isVerified,
+                  age: p.age,
+                  cityName: p.cityName,
+                  sect: p.sect,
+                  deenLevel: p.deenLevel,
+                  profession: p.occupation,
+                  photoUrl: p.photoUrl,
+                  photoCount: p.photoCount,
+                  isPhotoPrivate: p.isPhotoPrivate,
+                  isVerified: p.isVerified,
                   lastActiveLabel: fp.lastActiveLabel,
-                  isFocused:       true, // Scale handled externally now
-                  cardScale:       scale,
-                  isInterestSent:  _sentInterests.contains(p.id),
-                  onTap:           () => _openProfile(index, fp),
-                  onSendInterest:  _sentInterests.contains(p.id)
+                  isFocused: true, // Scale handled externally now
+                  cardScale: scale,
+                  isInterestSent: _sentInterests.contains(p.id),
+                  onTap: () => _openProfile(index, fp),
+                  onSendInterest: _sentInterests.contains(p.id)
                       ? null
                       : () => _handleSendInterest(index, fp),
-                  onBookmark:      () => _handleBookmark(index, fp),
+                  onBookmark: () => _handleBookmark(index, fp),
                 ),
               ),
 
               // Wild-card label — "Someone you might connect with"
               if (fp.isWildCard)
                 Positioned(
-                  top:   -12,
-                  left:  AppDimensions.space12,
+                  top: -12,
+                  left: AppDimensions.space12,
                   right: AppDimensions.space12,
                   child: Center(
                     child: _WildCardLabel(),
@@ -336,9 +351,47 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.space6,
-        vertical:   AppDimensions.space4,
+        vertical: AppDimensions.space4,
       ),
       child: child,
+    );
+  }
+}
+
+class _DiscoveryError extends StatelessWidget {
+  const _DiscoveryError({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppDimensions.space32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.cloud_off_rounded,
+              color: AppColors.slateMist,
+              size: 40,
+            ),
+            const SizedBox(height: AppDimensions.space16),
+            Text(
+              message,
+              style: AppTypography.bodyMuted,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppDimensions.space16),
+            TextButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Try again'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -352,19 +405,19 @@ class _WildCardLabel extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.space12,
-        vertical:   AppDimensions.space4,
+        vertical: AppDimensions.space4,
       ),
       decoration: BoxDecoration(
-        color:        AppColors.champagneGold.withValues(alpha: 0.15),
+        color: AppColors.champagneGold.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
-        border: Border.all(
-            color: AppColors.champagneGold.withValues(alpha: 0.5)),
+        border:
+            Border.all(color: AppColors.champagneGold.withValues(alpha: 0.5)),
       ),
       child: Text(
         l10n.discovery_wildcard_label,
         style: AppTypography.caption.copyWith(
-          color:        AppColors.champagneGold,
-          fontSize:     11,
+          color: AppColors.champagneGold,
+          fontSize: 11,
           letterSpacing: 0.3,
         ),
       ),
@@ -385,7 +438,7 @@ class _FreeTierCounter extends StatelessWidget {
       duration: AppDimensions.durationTransition,
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.space10,
-        vertical:   AppDimensions.space4,
+        vertical: AppDimensions.space4,
       ),
       decoration: BoxDecoration(
         color: remaining <= 3
@@ -399,7 +452,7 @@ class _FreeTierCounter extends StatelessWidget {
       child: Text(
         l10n.discovery_remaining_profiles(remaining.toString()),
         style: AppTypography.caption.copyWith(
-          color:    remaining <= 3 ? AppColors.errorRed : AppColors.slateMist,
+          color: remaining <= 3 ? AppColors.errorRed : AppColors.slateMist,
           fontSize: 11,
         ),
       ),
@@ -422,17 +475,17 @@ class _NotificationButton extends StatelessWidget {
         );
       },
       child: Container(
-        width:  AppDimensions.minTouchTarget,
+        width: AppDimensions.minTouchTarget,
         height: AppDimensions.minTouchTarget,
         decoration: BoxDecoration(
-          color:        AppColors.surfaceGlass,
+          color: AppColors.surfaceGlass,
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          border:       Border.all(color: AppColors.cardBorder),
+          border: Border.all(color: AppColors.cardBorder),
         ),
         child: const Icon(
           Icons.notifications_none_rounded,
           color: AppColors.slateMist,
-          size:  AppDimensions.iconSizeLarge,
+          size: AppDimensions.iconSizeLarge,
         ),
       ),
     );
@@ -450,23 +503,23 @@ class _InitialShimmer extends StatelessWidget {
         Padding(
           padding: EdgeInsets.symmetric(
             horizontal: AppDimensions.space6,
-            vertical:   AppDimensions.space4,
+            vertical: AppDimensions.space4,
           ),
-          child: NoorProfileCardShimmer(),
+          child: MithaqProfileCardShimmer(),
         ),
         Padding(
           padding: EdgeInsets.symmetric(
             horizontal: AppDimensions.space6,
-            vertical:   AppDimensions.space4,
+            vertical: AppDimensions.space4,
           ),
-          child: NoorProfileCardShimmer(),
+          child: MithaqProfileCardShimmer(),
         ),
         Padding(
           padding: EdgeInsets.symmetric(
             horizontal: AppDimensions.space6,
-            vertical:   AppDimensions.space4,
+            vertical: AppDimensions.space4,
           ),
-          child: NoorProfileCardShimmer(),
+          child: MithaqProfileCardShimmer(),
         ),
       ],
     );
@@ -496,7 +549,7 @@ class _EmptyFeed extends StatelessWidget {
               child: const Icon(
                 Icons.explore_outlined,
                 color: AppColors.champagneGold,
-                size:  48,
+                size: 48,
               ),
             ),
             const SizedBox(height: AppDimensions.space24),
@@ -533,16 +586,16 @@ class _FreeTierLimitReached extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width:  100,
+              width: 100,
               height: 100,
               decoration: BoxDecoration(
-                color:  AppColors.champagneGold.withValues(alpha: 0.1),
-                shape:  BoxShape.circle,
+                color: AppColors.champagneGold.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
                 border: Border.all(color: AppColors.goldBorder),
                 boxShadow: const [
                   BoxShadow(
-                    color:        AppColors.goldGlow,
-                    blurRadius:   24,
+                    color: AppColors.goldGlow,
+                    blurRadius: 24,
                     spreadRadius: 4,
                   ),
                 ],
@@ -550,7 +603,7 @@ class _FreeTierLimitReached extends StatelessWidget {
               child: const Icon(
                 Icons.lock_clock_rounded,
                 color: AppColors.champagneGold,
-                size:  44,
+                size: 44,
               ),
             ),
             const SizedBox(height: AppDimensions.space28),
@@ -570,13 +623,15 @@ class _FreeTierLimitReached extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppDimensions.space24,
-                  vertical:   AppDimensions.space14,
+                  vertical: AppDimensions.space14,
                 ),
                 decoration: BoxDecoration(
-                  color:        AppColors.champagneGold,
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                  color: AppColors.champagneGold,
+                  borderRadius:
+                      BorderRadius.circular(AppDimensions.radiusButton),
                 ),
-                child: Text(l10n.discovery_limit_button, style: AppTypography.button),
+                child: Text(l10n.discovery_limit_button,
+                    style: AppTypography.button),
               ),
             ),
           ],
@@ -621,23 +676,26 @@ class _IncompleteProfileGate extends StatelessWidget {
           children: [
             // Circular progress
             SizedBox(
-              width: 100, height: 100,
+              width: 100,
+              height: 100,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
                   SizedBox(
-                    width: 100, height: 100,
+                    width: 100,
+                    height: 100,
                     child: CircularProgressIndicator(
-                      value:           score / 100,
-                      strokeWidth:     5,
+                      value: score / 100,
+                      strokeWidth: 5,
                       backgroundColor: AppColors.surfaceGlassHover,
-                      valueColor:      const AlwaysStoppedAnimation(AppColors.champagneGold),
+                      valueColor:
+                          const AlwaysStoppedAnimation(AppColors.champagneGold),
                     ),
                   ),
                   Text(
                     '$score%',
                     style: AppTypography.screenTitle.copyWith(
-                      color:    AppColors.champagneGold,
+                      color: AppColors.champagneGold,
                       fontSize: 22,
                     ),
                   ),
@@ -658,22 +716,25 @@ class _IncompleteProfileGate extends StatelessWidget {
             ),
             const SizedBox(height: AppDimensions.space24),
             SizedBox(
-              width:  double.infinity,
+              width: double.infinity,
               height: AppDimensions.buttonHeight,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.champagneGold,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                    borderRadius:
+                        BorderRadius.circular(AppDimensions.radiusButton),
                   ),
                   elevation: 0,
                 ),
                 icon: const Icon(Icons.edit_outlined,
                     color: AppColors.obsidianNight, size: 18),
-                label: Text(l10n.discovery_completeness_button, style: AppTypography.button),
+                label: Text(l10n.discovery_completeness_button,
+                    style: AppTypography.button),
                 onPressed: () {
                   // Switch to Profile tab (index 3) via HomeScreen
-                  final homeState = context.findAncestorStateOfType<HomeScreenState>();
+                  final homeState =
+                      context.findAncestorStateOfType<HomeScreenState>();
                   homeState?.switchToTab(3);
                 },
               ),

@@ -1,6 +1,6 @@
 // lib/core/services/supabase_service.dart
 // ============================================================
-// NOOR — Supabase Service
+// MITHAQ — Supabase Service
 // Provides singleton Supabase client throughout the app.
 // ============================================================
 

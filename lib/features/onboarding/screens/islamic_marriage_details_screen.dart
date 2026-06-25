@@ -1,6 +1,6 @@
 // lib/features/onboarding/screens/islamic_marriage_details_screen.dart
 // ============================================================
-// NOOR — Marriage & Deen Details Screen
+// MITHAQ — Marriage & Deen Details Screen
 // Collects: quranMemorization, religiousEducation,
 //           marriageTimeline,
 //           + gender-specific: niqab/mahr/work (female),
@@ -9,7 +9,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:noor/l10n/generated/app_localizations.dart';
+import 'package:mithaq/l10n/generated/app_localizations.dart';
 
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_state.dart';

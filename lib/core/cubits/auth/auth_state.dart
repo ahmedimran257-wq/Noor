@@ -1,7 +1,7 @@
 // lib/core/cubits/auth/auth_state.dart
 // ============================================================
-// NOOR — Auth Cubit States
-// Mock auth for Step 4. Real Firebase OTP wired in Step 5.
+// MITHAQ — Auth Cubit States
+// Mock auth for local development. Real auth uses Supabase email OTP.
 // ============================================================
 
 import 'package:equatable/equatable.dart';
@@ -25,12 +25,12 @@ class AuthLoading extends AuthState {
 
 /// OTP has been sent (mock: always succeeds immediately).
 class AuthOtpSent extends AuthState {
-  const AuthOtpSent({required this.phone});
+  const AuthOtpSent({required this.email});
 
-  final String phone;
+  final String email;
 
   @override
-  List<Object?> get props => [phone];
+  List<Object?> get props => [email];
 }
 
 /// Successfully authenticated. Holds userId for routing decisions.
@@ -39,27 +39,47 @@ class AuthAuthenticated extends AuthState {
     required this.userId,
     required this.onboardingStep,
     this.gender,
+    this.email,
     this.countryCode,
     this.isGuardianPath = false,
+    this.onboardingCompleted = false,
   });
 
-  final String  userId;
-  /// 0–10: still in onboarding (myself shortest). ≥11: complete.
-  /// Myself path: 11 steps (0–10), Guardian path: 12 steps (0–11).
-  final int     onboardingStep;
+  final String userId;
+
+  /// Fast-start onboarding uses steps 0-4. Completion is tracked by
+  /// [onboardingCompleted], not inferred from this number.
+  final int onboardingStep;
+
   /// 'male' | 'female' | null (unknown until onboarding sets it)
   final String? gender;
+
+  /// Supabase email OTP auth identifier.
+  final String? email;
+
   /// Country code for regional pricing (e.g., 'IN', 'US', 'AE')
   final String? countryCode;
+
   /// Whether the user is on the guardian onboarding path.
-  /// Guardian path has 12 steps (0–11), myself path has 11 steps (0–10).
+  /// Guardian and self paths now share the same five-step fast-start flow.
   final bool isGuardianPath;
 
-  /// Completion threshold: guardians complete at step 12, myself at 11.
-  bool get isOnboardingComplete => onboardingStep >= (isGuardianPath ? 12 : 11);
+  /// Persisted server-side. Do not infer completion from a numeric step.
+  final bool onboardingCompleted;
+
+  /// Completion is persisted server-side.
+  bool get isOnboardingComplete => onboardingCompleted;
 
   @override
-  List<Object?> get props => [userId, onboardingStep, gender, countryCode, isGuardianPath];
+  List<Object?> get props => [
+        userId,
+        onboardingStep,
+        gender,
+        email,
+        countryCode,
+        isGuardianPath,
+        onboardingCompleted
+      ];
 }
 
 /// Session check found no active session.

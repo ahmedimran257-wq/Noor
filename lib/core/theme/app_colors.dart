@@ -1,6 +1,6 @@
 // lib/core/theme/app_colors.dart
 // ============================================================
-// NOOR Design DNA — Color Tokens
+// MITHAQ Design DNA — Color Tokens
 // Source of truth for every color in the app.
 // NEVER hardcode hex values elsewhere — always reference this.
 // ============================================================
@@ -20,6 +20,18 @@ abstract final class AppColors {
   /// The accent color. Used SPARINGLY — CTAs, badges, borders, gold moments.
   /// "Champagne Gold" — not trophy gold. Muted and sophisticated.
   static const Color champagneGold = Color(0xFFC5A059);
+
+  /// Warm highlight used only inside premium gold gradients.
+  static const Color champagneLight = Color(0xFFE4C77A);
+
+  /// Deep antique gold used for button depth and pressed states.
+  static const Color antiqueGold = Color(0xFF8F7137);
+
+  /// Cool ink accent that keeps the palette from becoming one-note gold.
+  static const Color inkTeal = Color(0xFF143A3B);
+
+  /// Deep plum surface accent for premium panels and background depth.
+  static const Color midnightPlum = Color(0xFF181220);
 
   /// Primary text. Soft muted white (Apple-style) — not stark white.
   /// Reduces eye strain. Feels premium.
@@ -65,7 +77,7 @@ abstract final class AppColors {
   static const Color softCoral = Color(0xFFE67E7E);
 
   /// Alias used by UI components that need a clear error/danger signal.
-  static const Color errorRed  = softCoral;
+  static const Color errorRed = softCoral;
 
   // ── Derived / Utility ─────────────────────────────────────
 
@@ -97,21 +109,25 @@ abstract final class AppColors {
 
   // ── New Surface Tokens ────────────────────────────────────
   static const Color surfaceElevated = Color(0xFF13131A);
-  static const Color surfaceMid      = Color(0xFF12121A);
-  static const Color surfaceDark     = Color(0xFF1A1A25);
+  static const Color surfaceMid = Color(0xFF12121A);
+  static const Color surfaceDark = Color(0xFF1A1A25);
+  static const Color surfacePressed = Color(0xFF201E25);
+  static const Color surfacePanelTop = Color(0xFF17151F);
 
   // ── Phase 3 Color System Cleanup ─────────────────────────
-  static const Color premiumGold     = Color(0xFFF6C344);  // Bright gold — subscription badges
-  static const Color onlineGreen     = Color(0xFF4ADE80);  // Online status indicator
-  static const Color messageBlue     = Color(0xFF5B9BD5);  // New message notification
-  static const Color expiryAmber     = Color(0xFFFFBF47);  // Expiry warning
-  static const Color navyCharcoal    = Color(0xFF151522);  // Gradient core (onboarding)
-  static const Color dropdownSurface = Color(0xFF14141E);  // Dropdown background
-  static const Color snackbarSurface = Color(0xFF1A1A24);  // Snackbar background
-  static const Color navBarSurface   = Color(0xCC0A0A0F);  // Nav bar frosted
-  static const Color navBarBorder    = Color(0x14FFFFFF);  // Nav bar border
-  static const Color overlayBlack55  = Color(0x8C000000);  // 55% black overlay
-  static const Color overlayBlack45  = Color(0x73000000);  // 45% black overlay
-  static const Color overlayBlack87  = Color(0xDE000000);  // 87% black overlay
+  static const Color premiumGold =
+      Color(0xFFF6C344); // Bright gold — subscription badges
+  static const Color onlineGreen = Color(0xFF4ADE80); // Online status indicator
+  static const Color messageBlue =
+      Color(0xFF5B9BD5); // New message notification
+  static const Color expiryAmber = Color(0xFFFFBF47); // Expiry warning
+  static const Color navyCharcoal =
+      Color(0xFF151522); // Gradient core (onboarding)
+  static const Color dropdownSurface = Color(0xFF14141E); // Dropdown background
+  static const Color snackbarSurface = Color(0xFF1A1A24); // Snackbar background
+  static const Color navBarSurface = Color(0xCC0A0A0F); // Nav bar frosted
+  static const Color navBarBorder = Color(0x14FFFFFF); // Nav bar border
+  static const Color overlayBlack55 = Color(0x8C000000); // 55% black overlay
+  static const Color overlayBlack45 = Color(0x73000000); // 45% black overlay
+  static const Color overlayBlack87 = Color(0xDE000000); // 87% black overlay
 }
-

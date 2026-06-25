@@ -1,6 +1,6 @@
 // lib/features/home/screens/interests_screen.dart
 // ============================================================
-// NOOR — Interests Inbox (Items 17, 18, 19, 21, 22, 26)
+// MITHAQ — Interests Inbox (Items 17, 18, 19, 21, 22, 26)
 //
 // Items implemented here:
 //   17 — Daily limit counter banner in Sent tab header (male only)
@@ -8,7 +8,7 @@
 //   19 — Withdraw confirm dialog on Sent tab
 //   21 — Match modal: remove 48h note, show "Bismillah" CTA
 //   22 — All cooling period text removed
-//   26 — NoorEmptyState on both tabs
+//   26 — MithaqEmptyState on both tabs
 // ============================================================
 
 import 'dart:ui';
@@ -22,7 +22,7 @@ import '../../../core/mock/mock_profiles.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/noor_empty_state.dart';
+import '../../../core/widgets/mithaq_empty_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import 'chat_screen.dart';
 
@@ -317,7 +317,7 @@ class _InterestsScreenState extends State<InterestsScreen>
                 children: [
                   // ── Received tab ──────────────────────────
                   state.displayReceived.isEmpty
-                      ? const NoorEmptyState(
+                      ? const MithaqEmptyState(
                           icon:     Icons.favorite_border_rounded,
                           title:    'No interests yet',
                           subtitle: 'When someone sends you an interest it appears here.',
@@ -346,7 +346,7 @@ class _InterestsScreenState extends State<InterestsScreen>
 
                       Expanded(
                         child: state.sent.isEmpty
-                            ? const NoorEmptyState(
+                            ? const MithaqEmptyState(
                                 icon:     Icons.send_outlined,
                                 title:    "You haven't sent any interests",
                                 subtitle: 'Browse profiles and send your first interest.',

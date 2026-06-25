@@ -50,19 +50,18 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyC6LwSFbmY7fuQhAYEqzNBy2CK5MRW7HtI',
-    appId: '1:444078304823:android:4103d46c052383810d19b2',
-    messagingSenderId: '444078304823',
-    projectId: 'noor-82e23',
-    storageBucket: 'noor-82e23.firebasestorage.app',
+    apiKey: 'AIzaSyAGKqQtW9lsVOgpls3tPjGUdoC6jVbJ0ws',
+    appId: '1:163379661830:android:d784f1e0b6774796edc787',
+    messagingSenderId: '163379661830',
+    projectId: 'mithaq-fcf44',
+    storageBucket: 'mithaq-fcf44.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBcjDHIwzAfizfVJwyAYw1dg25YSrKcE-o',
-    appId: '1:444078304823:ios:792254578f2cbf430d19b2',
-    messagingSenderId: '444078304823',
-    projectId: 'noor-82e23',
-    storageBucket: 'noor-82e23.firebasestorage.app',
-    iosBundleId: 'com.noor.app.noor',
+    apiKey: 'AIzaSyCCW4nNYSSUxjEixqd3GelQA0bqqoqeg4I',
+    appId: '1:163379661830:ios:22715dcc7a13fdadedc787',
+    messagingSenderId: '163379661830',
+    projectId: 'mithaq-fcf44',
+    storageBucket: 'mithaq-fcf44.firebasestorage.app',
+    iosBundleId: 'com.mithaq.app.mithaq',
   );
 }

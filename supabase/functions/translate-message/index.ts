@@ -2,7 +2,7 @@
 // EDGE FUNCTION: translate-message
 // supabase/functions/translate-message/index.ts
 //
-// Performs server-side translation for messages in Noor.
+// Performs server-side translation for messages in Mithaq.
 // Keyless translation using MyMemory API.
 // ============================================================
 
@@ -57,7 +57,7 @@ Deno.serve(async (req: Request) => {
 
     const response = await fetch(uri.toString(), {
       headers: {
-        "User-Agent": "NoorApp/1.0 (contact@noorapp.com; matchmaking app)",
+        "User-Agent": "MithaqApp/1.0 (contact@mithaqapp.com; matchmaking app)",
       },
     });
 

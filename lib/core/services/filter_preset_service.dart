@@ -1,6 +1,6 @@
 // lib/core/services/filter_preset_service.dart
 // ============================================================
-// NOOR — Filter Preset Service (Feature 9)
+// MITHAQ — Filter Preset Service (Feature 9)
 // Persists up to 3 named DiscoveryFilter presets via
 // shared_preferences as JSON.
 // ============================================================

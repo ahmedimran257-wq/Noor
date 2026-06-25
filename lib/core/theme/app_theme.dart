@@ -1,8 +1,8 @@
 // lib/core/theme/app_theme.dart
 // ============================================================
-// NOOR Design DNA — ThemeData
+// MITHAQ Design DNA — ThemeData
 // Dark mode by default. Zero Material widgets allowed to
-// show through — every component uses NOOR's design language.
+// show through — every component uses MITHAQ's design language.
 // ============================================================
 
 import 'package:flutter/material.dart';
@@ -10,10 +10,10 @@ import 'package:flutter/services.dart';
 import 'app_colors.dart';
 import 'app_dimensions.dart';
 import 'app_typography.dart';
-import 'noor_spring.dart';
+import 'mithaq_spring.dart';
 
 abstract final class AppTheme {
-  // ── Dark Theme (NOOR Default) ─────────────────────────────
+  // ── Dark Theme (MITHAQ Default) ─────────────────────────────
 
   static ThemeData get darkTheme {
     return ThemeData(
@@ -62,7 +62,7 @@ abstract final class AppTheme {
       ),
 
       // ── Eliminate ALL Material ripple/ink effects ─────────
-      // NOOR uses scale-based press animations instead.
+      // MITHAQ uses scale-based press animations instead.
       splashFactory:         NoSplash.splashFactory,
       highlightColor:        Colors.transparent,
       splashColor:           Colors.transparent,
@@ -76,7 +76,7 @@ abstract final class AppTheme {
       ),
 
       // ── Elevated Button Theme (for default button overrides)
-      // NOTE: Use NoorPrimaryButton widget directly.
+      // NOTE: Use MithaqPrimaryButton widget directly.
       // This theme is a fallback so any accidentally placed
       // ElevatedButton still looks correct.
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -242,7 +242,7 @@ abstract final class AppTheme {
         linearTrackColor: AppColors.progressBarBase,
       ),
 
-      // ── Snack Bar — replaced by bottom sheets in NOOR ────
+      // ── Snack Bar — replaced by bottom sheets in MITHAQ ────
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.surfaceGlassHover,
         contentTextStyle: AppTypography.body,
@@ -252,7 +252,7 @@ abstract final class AppTheme {
         behavior: SnackBarBehavior.floating,
       ),
 
-      // ── Dialog → use NoorBottomSheet instead ─────────────
+      // ── Dialog → use MithaqBottomSheet instead ─────────────
       dialogTheme: DialogThemeData(
         backgroundColor: AppColors.obsidianNight,
         shape: RoundedRectangleBorder(
@@ -266,8 +266,8 @@ abstract final class AppTheme {
       // Overridden globally via GoRouter — kept here as fallback.
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
-          TargetPlatform.android: NoorPageTransition(),
-          TargetPlatform.iOS:     NoorPageTransition(),
+          TargetPlatform.android: MithaqPageTransition(),
+          TargetPlatform.iOS:     MithaqPageTransition(),
         },
       ),
     );
@@ -277,8 +277,8 @@ abstract final class AppTheme {
 // ── Custom Page Transition Builder ───────────────────────────
 // "The Unfolding Effect: fade in + shift upward 20px → 0px."
 
-class NoorPageTransition extends PageTransitionsBuilder {
-  const NoorPageTransition();
+class MithaqPageTransition extends PageTransitionsBuilder {
+  const MithaqPageTransition();
 
   @override
   Widget buildTransitions<T>(
@@ -290,7 +290,7 @@ class NoorPageTransition extends PageTransitionsBuilder {
   ) {
     // Gentle spring curve for both animations
     const springCurve = SpringCurve(
-      spring: NoorSpring.gentle,
+      spring: MithaqSpring.gentle,
       duration: Duration(milliseconds: 500),
     );
 

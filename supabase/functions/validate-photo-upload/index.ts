@@ -18,6 +18,7 @@ import { encode } from "https://esm.sh/blurhash@2.0.5";
 
 const SUPABASE_URL         = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SUPABASE_ANON_KEY    = Deno.env.get("SUPABASE_ANON_KEY")!;
 
 const BUCKET_NAME = "profile-photos";
 const MAX_PHOTOS  = 4;
@@ -32,23 +33,64 @@ interface StorageWebhookPayload {
   };
 }
 
+interface DirectValidationPayload {
+  storage_path: string;
+  moderation: {
+    status: "safe" | "unsafe" | "scanFailed";
+    is_nsfw: boolean;
+    confidence: number;
+    category: string;
+    threshold: number;
+  };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const payload = await req.json() as StorageWebhookPayload;
+    const payload = await req.json() as StorageWebhookPayload | DirectValidationPayload;
 
-    // Only process ObjectCreated events
-    if (payload.type !== "ObjectCreated") {
+    let storagePath: string;
+    let moderation: DirectValidationPayload["moderation"] | null = null;
+    if ("record" in payload && payload.type === "ObjectCreated") {
+      storagePath = payload.record.name;
+    } else if ("storage_path" in payload) {
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader?.startsWith("Bearer ")) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        global: { headers: { Authorization: authHeader } },
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const { data: { user }, error: authError } = await userClient.auth.getUser();
+      if (authError || !user || !payload.storage_path.startsWith(`${user.id}/`)) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      storagePath = payload.storage_path;
+      moderation = payload.moderation ?? null;
+    } else {
       return new Response(JSON.stringify({ action: "ignored" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const storagePath = payload.record.name;
+    // Ignore storage delete webhook events.
+    if ("type" in payload && payload.type !== "ObjectCreated") {
+      return new Response(JSON.stringify({ action: "ignored" }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Extract user_id from the storage path (format: {user_id}/{filename}.webp)
     const pathParts = storagePath.split("/");
@@ -65,6 +107,42 @@ Deno.serve(async (req: Request) => {
     const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+
+    // Storage webhooks cannot prove that the on-device model ran. Keep those
+    // rows pending; only the authenticated client validation path can activate.
+    if (moderation === null) {
+      return new Response(JSON.stringify({ action: "awaiting_client_scan" }), {
+        status: 202,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const moderationIsValid =
+      moderation.status === "safe" &&
+      moderation.is_nsfw === false &&
+      Number.isFinite(moderation.confidence) &&
+      moderation.confidence >= 0 && moderation.confidence <= 1 &&
+      Number.isFinite(moderation.threshold) &&
+      moderation.threshold >= 0.3 && moderation.threshold <= 1 &&
+      typeof moderation.category === "string" &&
+      moderation.category.length > 0;
+
+    if (!moderationIsValid) {
+      await adminClient.storage.from(BUCKET_NAME).remove([storagePath]);
+      await adminClient.from("photos").delete().eq("storage_path", storagePath);
+      await adminClient.from("admin_notifications").insert({
+        type: "photo_moderation_rejected",
+        message: `On-device NSFW moderation rejected photo ${storagePath}.`,
+        related_user_id: userId,
+      });
+      return new Response(
+        JSON.stringify({ action: "rejected", reason: "photo_moderation_failed" }),
+        {
+          status: 422,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
 
     // Get the user's profile
     const { data: profile, error: profileError } = await adminClient
@@ -135,7 +213,17 @@ Deno.serve(async (req: Request) => {
     // Quota OK — activate the photo if it's still in pending_upload
     const { error: updateError } = await adminClient
       .from("photos")
-      .update({ status: "active" })
+      .update({
+        status: "active",
+        // Approval is server-controlled. Replace this automated baseline with
+        // a human moderation workflow without changing the client contract.
+        admin_approved: true,
+        nsfw_cleared: true,
+        nsfw_score: moderation.confidence,
+        nsfw_category: moderation.category,
+        nsfw_scanned_at: new Date().toISOString(),
+        moderation_source: "nsfw_detect_on_device",
+      })
       .eq("profile_id", profile.id)
       .eq("storage_path", storagePath)
       .eq("status", "pending_upload");

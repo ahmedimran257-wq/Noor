@@ -132,7 +132,7 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
 
         final profile = MockProfile(
           id: viewerProfileId,
-          firstName: viewerData['first_name'] as String? ?? 'Noor User',
+          firstName: viewerData['first_name'] as String? ?? 'Mithaq User',
           lastNameInitial: ((viewerData['last_name'] as String?) ?? '').isNotEmpty
               ? (viewerData['last_name'] as String)[0]
               : '',

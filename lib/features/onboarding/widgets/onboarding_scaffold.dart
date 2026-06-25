@@ -1,19 +1,14 @@
-// lib/features/onboarding/widgets/onboarding_scaffold.dart
-// ============================================================
-// NOOR — Onboarding Scaffold
-// Shared shell used by form steps 0–9.
-// Provides: SafeArea, progress bar, back button, scrollable body,
-//           and a pinned bottom CTA + skip area.
-// ============================================================
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/models/onboarding_data.dart';
+import '../../../core/onboarding/onboarding_flow.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/buttons/noor_primary_button.dart';
+import '../../../core/widgets/buttons/mithaq_pressable.dart';
+import '../../../core/widgets/buttons/mithaq_primary_button.dart';
 import 'onboarding_progress_bar.dart';
 
 class OnboardingScaffold extends StatelessWidget {
@@ -32,8 +27,6 @@ class OnboardingScaffold extends StatelessWidget {
     this.onCtaDisabledTap,
   });
 
-  /// 0-indexed position in the form steps (used for progress bar).
-  /// If null, reads from [OnboardingCubit.currentStep].
   final int? step;
   final Widget body;
   final String ctaLabel;
@@ -42,11 +35,8 @@ class OnboardingScaffold extends StatelessWidget {
   final bool isCtaLoading;
   final String? skipLabel;
   final VoidCallback? onSkip;
-  /// Total steps for progress bar. If null, computed from guardian/myself path:
-  ///   Guardian → 12 steps (0–11), Myself → 11 steps (0–10).
   final int? totalSteps;
   final VoidCallback? onBack;
-  /// Called when CTA is tapped while disabled — use to show validation feedback.
   final VoidCallback? onCtaDisabledTap;
 
   @override
@@ -54,114 +44,180 @@ class OnboardingScaffold extends StatelessWidget {
     final cubit = context.read<OnboardingCubit>();
     final resolvedStep = step ?? cubit.currentStep;
     final isGuardian = cubit.currentData.profileFor == ProfileFor.guardian;
-    final resolvedTotal = totalSteps ?? (isGuardian ? 12 : 11);
+    final resolvedTotal = totalSteps ?? OnboardingFlow.completeAt(isGuardian);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment(0, -0.5),  // slightly above center
-            radius: 1.2,
-            colors: [
-              AppColors.navyCharcoal,  // Deep premium navy-charcoal core
-              AppColors.obsidianNight,  // Deep midnight edges
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // ── Top bar: back + progress ──────────────────
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppDimensions.space24,
-                  vertical:   AppDimensions.space16,
-                ),
-                child: Row(
-                  children: [
-                    // Back button (RTL-aware)
-                    _BackButton(onBack: onBack ?? () => context.read<OnboardingCubit>().goBack()),
-                    const SizedBox(width: AppDimensions.space16),
-                    // Progress bar fills remaining width
-                    Expanded(
-                      child: OnboardingProgressBar(
-                        currentStep: resolvedStep,
-                        totalSteps:  resolvedTotal,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-  
-              // ── Scrollable body ───────────────────────────
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
+      backgroundColor: AppColors.obsidianNight,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            const Positioned.fill(child: _OnboardingBackdrop()),
+            Column(
+              children: [
+                Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppDimensions.space24,
+                    vertical: AppDimensions.space16,
                   ),
-                  child: body,
-                ),
-              ),
-  
-              // ── Bottom CTA ────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppDimensions.space24,
-                  AppDimensions.space16,
-                  AppDimensions.space24,
-                  AppDimensions.space32,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // When disabled, IgnorePointer stops the button from
-                    // absorbing the tap (NoorPressable uses opaque hit-testing).
-                    // The overlay GestureDetector then catches it for validation.
-                    if (!isCtaEnabled && onCtaDisabledTap != null)
-                      GestureDetector(
-                        onTap: onCtaDisabledTap,
-                        behavior: HitTestBehavior.opaque,
-                        child: IgnorePointer(
-                          child: NoorPrimaryButton(
-                            label:     ctaLabel,
-                            onTap:     null,
-                            isLoading: isCtaLoading,
-                          ),
-                        ),
-                      )
-                    else
-                      NoorPrimaryButton(
-                        label:     ctaLabel,
-                        onTap:     isCtaEnabled ? onCta : null,
-                        isLoading: isCtaLoading,
+                  child: Row(
+                    children: [
+                      _BackButton(
+                        onBack: onBack ??
+                            () => context.read<OnboardingCubit>().goBack(),
                       ),
-                    if (skipLabel != null && onSkip != null) ...[
-                      const SizedBox(height: AppDimensions.space12),
-                      GestureDetector(
-                        onTap: onSkip,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: AppDimensions.space8,
-                          ),
-                          child: Text(
-                            skipLabel!,
-                            style: AppTypography.buttonGhost.copyWith(
-                              color: AppColors.slateMist,
-                              fontSize: 14,
-                            ),
-                          ),
+                      const SizedBox(width: AppDimensions.space16),
+                      Expanded(
+                        child: OnboardingProgressBar(
+                          currentStep: resolvedStep,
+                          totalSteps: resolvedTotal,
                         ),
                       ),
                     ],
-                  ],
+                  ),
                 ),
-              ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppDimensions.space24,
+                    ),
+                    child: _RevealOnStep(
+                      step: resolvedStep,
+                      child: body,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppDimensions.space24,
+                    AppDimensions.space16,
+                    AppDimensions.space24,
+                    AppDimensions.space32,
+                  ),
+                  child: _RevealOnStep(
+                    step: resolvedStep,
+                    delay: const Duration(milliseconds: 70),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (!isCtaEnabled && onCtaDisabledTap != null)
+                          GestureDetector(
+                            onTap: onCtaDisabledTap,
+                            behavior: HitTestBehavior.opaque,
+                            child: IgnorePointer(
+                              child: MithaqPrimaryButton(
+                                label: ctaLabel,
+                                onTap: null,
+                                isLoading: isCtaLoading,
+                              ),
+                            ),
+                          )
+                        else
+                          MithaqPrimaryButton(
+                            label: ctaLabel,
+                            onTap: isCtaEnabled ? onCta : null,
+                            isLoading: isCtaLoading,
+                          ),
+                        if (skipLabel != null && onSkip != null) ...[
+                          const SizedBox(height: AppDimensions.space12),
+                          MithaqPressable(
+                            onTap: onSkip,
+                            haptic: false,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: AppDimensions.space8,
+                                horizontal: AppDimensions.space12,
+                              ),
+                              child: Text(
+                                skipLabel!,
+                                style: AppTypography.buttonGhost.copyWith(
+                                  color: AppColors.slateMist,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OnboardingBackdrop extends StatelessWidget {
+  const _OnboardingBackdrop();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.midnightPlum.withValues(alpha: 0.64),
+            AppColors.obsidianNight,
+            AppColors.inkTeal.withValues(alpha: 0.26),
+          ],
+          stops: const [0, 0.54, 1],
+        ),
+      ),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: RadialGradient(
+            center: const Alignment(0.18, -0.62),
+            radius: 1.25,
+            colors: [
+              AppColors.champagneGold.withValues(alpha: 0.13),
+              AppColors.navyCharcoal.withValues(alpha: 0.18),
+              Colors.transparent,
             ],
+            stops: const [0, 0.36, 1],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _RevealOnStep extends StatelessWidget {
+  const _RevealOnStep({
+    required this.step,
+    required this.child,
+    this.delay = Duration.zero,
+  });
+
+  final int step;
+  final Widget child;
+  final Duration delay;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      key: ValueKey('${step}_${delay.inMilliseconds}'),
+      tween: Tween(begin: 0, end: 1),
+      duration: AppDimensions.durationReveal + delay,
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        final progress = delay == Duration.zero
+            ? value
+            : ((value - 0.18).clamp(0.0, 1.0) / 0.82);
+        return Opacity(
+          opacity: progress,
+          child: Transform.translate(
+            offset: Offset(0, 14 * (1 - progress)),
+            child: child,
+          ),
+        );
+      },
+      child: child,
     );
   }
 }
@@ -172,23 +228,37 @@ class _BackButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return MithaqPressable(
       onTap: onBack,
+      haptic: false,
       child: Container(
-        width:  40,
+        width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color:  AppColors.surfaceGlass,
-          shape:  BoxShape.circle,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.surfaceGlassHover,
+              AppColors.surfaceGlass.withValues(alpha: 0.28),
+            ],
+          ),
+          shape: BoxShape.circle,
           border: Border.all(color: AppColors.cardBorder),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.obsidianNight.withValues(alpha: 0.35),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
         child: Icon(
-          // Mirror for RTL
           Directionality.of(context) == TextDirection.rtl
               ? Icons.arrow_forward_ios_rounded
               : Icons.arrow_back_ios_new_rounded,
           color: AppColors.pearlWhite,
-          size:  16,
+          size: 16,
         ),
       ),
     );

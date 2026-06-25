@@ -1,6 +1,6 @@
 // lib/core/cubits/onboarding/onboarding_cubit.dart
 // ============================================================
-// NOOR — Onboarding Cubit
+// MITHAQ — Onboarding Cubit
 // Manages the multi-step onboarding flow.
 // Each step: locally validates → emits OnboardingLoading →
 //            mock-saves → emits OnboardingSaved.
@@ -16,8 +16,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/onboarding_data.dart';
+import '../../onboarding/onboarding_flow.dart';
 import '../../services/profile_write_service.dart';
 import '../auth/auth_cubit.dart';
+import '../auth/auth_state.dart';
 import 'onboarding_state.dart';
 
 class OnboardingCubit extends Cubit<OnboardingState> {
@@ -49,10 +51,19 @@ class OnboardingCubit extends Cubit<OnboardingState> {
         if (rawJson != null && rawJson.isNotEmpty) {
           final mapped = jsonDecode(rawJson) as Map<String, dynamic>;
           data = OnboardingData.fromJson(mapped);
-          debugPrint('OnboardingCubit: Successfully restored data from SharedPreferences cache.');
+          debugPrint(
+              'OnboardingCubit: Successfully restored data from SharedPreferences cache.');
         }
       } catch (e) {
         debugPrint('OnboardingCubit: Error loading from SharedPreferences: $e');
+      }
+    }
+
+    final authState = _authCubit.state;
+    if (data.email == null && authState is AuthAuthenticated) {
+      final email = authState.email;
+      if (email != null && email.isNotEmpty) {
+        data = data.copyWith(email: email);
       }
     }
 
@@ -63,7 +74,8 @@ class OnboardingCubit extends Cubit<OnboardingState> {
         final code = prefs.getString('user_country_code');
         if (code != null && code.isNotEmpty) {
           data = data.copyWith(countryCode: code.toUpperCase());
-          debugPrint('OnboardingCubit: Prefilled countryCode from user_country_code: $code');
+          debugPrint(
+              'OnboardingCubit: Prefilled countryCode from user_country_code: $code');
         }
       } catch (_) {}
     }
@@ -92,13 +104,11 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     );
 
     if (!success) {
-      debugPrint('OnboardingCubit: Failed to save step $currentStep, proceeding anyway');
+      debugPrint(
+          'OnboardingCubit: Failed to save step $currentStep, proceeding anyway');
     }
 
     final nextStep = currentStep + 1;
-
-    // Sync the step into AuthCubit so the router can redirect correctly
-    _authCubit.updateOnboardingStep(nextStep, isGuardianPath: isGuardianPath);
 
     // Also update the onboarding_step in the DB
     await ProfileWriteService.updateOnboardingStep(nextStep);
@@ -106,11 +116,18 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     // Completion thresholds:
     //   Myself   → 11 steps (0–10)
     //   Guardian → 12 steps (0–11)
-    final completeAt = isGuardianPath ? 12 : 11;
+    final completeAt = OnboardingFlow.completeAt(isGuardianPath);
 
     if (nextStep >= completeAt) {
+      await ProfileWriteService.markOnboardingComplete();
+      _authCubit.updateOnboardingStep(
+        nextStep,
+        isGuardianPath: isGuardianPath,
+        onboardingCompleted: true,
+      );
       emit(const OnboardingComplete());
     } else {
+      _authCubit.updateOnboardingStep(nextStep, isGuardianPath: isGuardianPath);
       emit(OnboardingSaved(step: nextStep, data: updatedData));
     }
   }
@@ -149,6 +166,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   void updateProfile(OnboardingData data) async {
     emit(OnboardingActive(step: _currentStep, data: data));
     await _persistLocalCache(data);
+    await ProfileWriteService.saveFullProfile(data);
   }
 
   /// Called by screens after router pushes the next page to mark active again.
@@ -162,12 +180,9 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     final data = _currentData;
     emit(OnboardingLoading(step: currentStep, data: data));
     await Future.delayed(const Duration(milliseconds: 200));
-    
+
     final nextStep = currentStep + 1;
     final isGuardianPath = data.profileFor == ProfileFor.guardian;
-
-    // Fixed Flaw 7: Sync the skipped step to AuthCubit with guardian path support
-    _authCubit.updateOnboardingStep(nextStep, isGuardianPath: isGuardianPath);
 
     // Fixed Flaw 7: Persist skipped step to the DB
     await ProfileWriteService.updateOnboardingStep(nextStep);
@@ -175,12 +190,19 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     // Completion thresholds:
     //   Myself   → 11 steps (0–10)
     //   Guardian → 12 steps (0–11)
-    final completeAt = isGuardianPath ? 12 : 11;
+    final completeAt = OnboardingFlow.completeAt(isGuardianPath);
 
     if (nextStep >= completeAt) {
+      await ProfileWriteService.markOnboardingComplete();
+      _authCubit.updateOnboardingStep(
+        nextStep,
+        isGuardianPath: isGuardianPath,
+        onboardingCompleted: true,
+      );
       // Fixed Flaw 7: Correctly emit OnboardingComplete() when skipping past threshold
       emit(const OnboardingComplete());
     } else {
+      _authCubit.updateOnboardingStep(nextStep, isGuardianPath: isGuardianPath);
       emit(OnboardingSaved(step: nextStep, data: data));
     }
   }
@@ -192,7 +214,8 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_kCacheKey, jsonEncode(data.toJson()));
     } catch (e) {
-      debugPrint('OnboardingCubit: Failed to write SharedPreferences cache: $e');
+      debugPrint(
+          'OnboardingCubit: Failed to write SharedPreferences cache: $e');
     }
   }
 
@@ -200,19 +223,19 @@ class OnboardingCubit extends Cubit<OnboardingState> {
 
   int get _currentStep {
     final s = state;
-    if (s is OnboardingActive)  return s.step;
+    if (s is OnboardingActive) return s.step;
     if (s is OnboardingLoading) return s.step;
-    if (s is OnboardingSaved)   return s.step;
-    if (s is OnboardingError)   return s.step;
+    if (s is OnboardingSaved) return s.step;
+    if (s is OnboardingError) return s.step;
     return 0;
   }
 
   OnboardingData get _currentData {
     final s = state;
-    if (s is OnboardingActive)  return s.data;
+    if (s is OnboardingActive) return s.data;
     if (s is OnboardingLoading) return s.data;
-    if (s is OnboardingSaved)   return s.data;
-    if (s is OnboardingError)   return s.data;
+    if (s is OnboardingSaved) return s.data;
+    if (s is OnboardingError) return s.data;
     return const OnboardingData();
   }
 

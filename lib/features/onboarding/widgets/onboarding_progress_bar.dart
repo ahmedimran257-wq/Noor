@@ -1,6 +1,6 @@
 // lib/features/onboarding/widgets/onboarding_progress_bar.dart
 // ============================================================
-// NOOR — Onboarding Progress Bar
+// MITHAQ — Onboarding Progress Bar
 // Thin segmented bar + "Step X of Y" counter.
 // Filled segments animate in Champagne Gold.
 // ============================================================
@@ -27,34 +27,52 @@ class OnboardingProgressBar extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Step counter label
-        Text(
-          'Step ${(currentStep + 1).clamp(1, totalSteps)} of $totalSteps',
+        AnimatedDefaultTextStyle(
+          duration: AppDimensions.durationTransition,
           style: AppTypography.caption.copyWith(
             fontSize: 10,
-            color: AppColors.champagneGold,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
+            color: AppColors.champagneLight,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0,
+          ),
+          child: Text(
+            'Step ${(currentStep + 1).clamp(1, totalSteps)} of $totalSteps',
           ),
         ),
-        const SizedBox(height: 4),
-        // Segmented bar
+        const SizedBox(height: 6),
         Row(
           children: List.generate(totalSteps, (index) {
             final isFilled = index <= currentStep;
+            final isCurrent = index == currentStep;
             return Expanded(
               child: AnimatedContainer(
-                duration: AppDimensions.durationTransition,
+                duration: const Duration(milliseconds: 260),
                 curve: Curves.easeOutCubic,
-                height: 3,
+                height: isCurrent ? 4 : 3,
                 margin: EdgeInsetsDirectional.only(
                   end: index < totalSteps - 1 ? 4 : 0,
                 ),
                 decoration: BoxDecoration(
-                  color: isFilled
-                      ? AppColors.champagneGold
-                      : AppColors.progressBarBase,
+                  gradient: isFilled
+                      ? const LinearGradient(
+                          colors: [
+                            AppColors.champagneLight,
+                            AppColors.champagneGold,
+                            AppColors.antiqueGold,
+                          ],
+                        )
+                      : null,
+                  color: isFilled ? null : AppColors.progressBarBase,
                   borderRadius: BorderRadius.circular(2),
+                  boxShadow: isCurrent
+                      ? [
+                          BoxShadow(
+                            color:
+                                AppColors.champagneGold.withValues(alpha: 0.3),
+                            blurRadius: 10,
+                          ),
+                        ]
+                      : null,
                 ),
               ),
             );

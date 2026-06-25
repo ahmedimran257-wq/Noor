@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Noor</string>
+	<string>Mithaq</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>noor</string>
+	<string>mithaq</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -24,6 +24,17 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>mithaq</string>
+			</array>
+		</dict>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
@@ -67,10 +78,12 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>NSCameraUsageDescription</key>
-	<string>NOOR requires camera access to let you capture a verification selfie and upload profile photos.</string>
+	<string>Mithaq requires camera access to let you capture a verification selfie and upload profile photos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>NOOR requires access to your photo library to let you choose and upload profile photos.</string>
+	<string>Mithaq requires access to your photo library to let you choose and upload profile photos.</string>
 	<key>NSFaceIDUsageDescription</key>
-	<string>NOOR requires Face ID permission to securely authenticate and protect your private account data.</string>
+	<string>Mithaq requires Face ID permission to securely authenticate and protect your private account data.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Mithaq uses your approximate location only when you choose a nearby-distance filter.</string>
 </dict>
 </plist>

@@ -1,6 +1,6 @@
 // lib/core/services/referral_service.dart
 // ============================================================
-// NOOR — Referral Service
+// MITHAQ — Referral Service
 //
 // Fixes Audit Finding 7.1 (High):
 //   No viral or ambassador mechanics. Handles referral code
@@ -73,9 +73,9 @@ class ReferralService {
   /// Gets the referral share text with the user's code.
   Future<String> getShareText() async {
     final code = await getOrCreateCode();
-    return 'Join NOOR — the most trusted Muslim matrimony app. '
+    return 'Join MITHAQ — the most trusted Muslim matrimony app. '
         'Use my referral code: $code\n\n'
-        'Download: https://noor.app/r/$code';
+        'Download: https://mithaq.app/r/$code';
   }
 
   /// Gets the user's referral statistics.

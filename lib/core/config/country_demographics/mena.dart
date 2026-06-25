@@ -1,5 +1,5 @@
 // lib/core/config/country_demographics/mena.dart
-// NOOR — Middle East & North Africa Demographics
+// MITHAQ — Middle East & North Africa Demographics
 
 const kMenaDemographics = <String, Map<String, List<String>>>{
   'SA': {

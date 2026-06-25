@@ -145,7 +145,7 @@ BEGIN
     'verification_approved',
     '✅ Profile Verified!',
     'Your identity has been verified. Verified profiles receive more interest and rank higher in search.',
-    'noor://profile'
+    'mithaq://profile'
   );
 
   RETURN jsonb_build_object(

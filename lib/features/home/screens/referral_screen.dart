@@ -1,6 +1,6 @@
 // lib/features/home/screens/referral_screen.dart
 // ============================================================
-// NOOR — Referral & Ambassador Screen
+// MITHAQ — Referral & Ambassador Screen
 // Allows users to view their referral code, copy/share it,
 // and track their rewards (7 days of free premium per opposite
 // gender referral).
@@ -84,7 +84,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
     if (SupabaseService.isInitialized) {
       shareText = await _service.getShareText();
     } else {
-      shareText = 'Join NOOR — the most trusted Muslim matrimony app. Use my referral code: $_code\n\nDownload: https://noor.app/r/$_code';
+      shareText = 'Join MITHAQ — the most trusted Muslim matrimony app. Use my referral code: $_code\n\nDownload: https://mithaq.app/r/$_code';
     }
     await Clipboard.setData(ClipboardData(text: shareText));
     _showSnackBar('Referral link & code copied! Paste it to share.');
@@ -150,7 +150,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                   ),
                   const SizedBox(height: AppDimensions.space12),
                   const Text(
-                    'Invite your friends to NOOR. When someone of the opposite gender completes onboarding using your code, you both get 7 days of FREE Premium!',
+                    'Invite your friends to MITHAQ. When someone of the opposite gender completes onboarding using your code, you both get 7 days of FREE Premium!',
                     style: AppTypography.bodyMuted,
                     textAlign: TextAlign.center,
                   ),

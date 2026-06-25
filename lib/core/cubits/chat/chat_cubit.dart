@@ -1,6 +1,6 @@
 // lib/core/cubits/chat/chat_cubit.dart
 // ============================================================
-// NOOR — Chat Cubit (Real Supabase + Mock Fallback)
+// MITHAQ — Chat Cubit (Real Supabase + Mock Fallback)
 // ============================================================
 
 import 'dart:async';
@@ -10,7 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/supabase_service.dart';
 import '../../services/translation_service.dart';
 import '../../utils/content_filter.dart';
-import '../../utils/noor_compute.dart';
+import '../../utils/mithaq_compute.dart';
 import 'chat_state.dart';
 
 class ChatCubit extends Cubit<ChatState> {
@@ -36,7 +36,7 @@ class ChatCubit extends Cubit<ChatState> {
     try {
       final me = SupabaseService.currentUserId;
       if (me == null) {
-        _initMockConversations();
+        emit(state.copyWith(isLoading: false));
         return;
       }
 
@@ -114,7 +114,7 @@ class ChatCubit extends Cubit<ChatState> {
       _setupRealtime();
     } catch (e) {
       debugPrint('ChatCubit: Error loading conversations: $e');
-      _initMockConversations();
+      emit(state.copyWith(isLoading: false));
     }
   }
 

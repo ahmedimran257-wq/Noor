@@ -48,16 +48,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get about_title_self => 'نبذة عنك';
 
   @override
-  String get appName => 'نور';
+  String get appName => 'ميثاق';
 
   @override
   String get appTagline => 'ابدأ بسم الله';
 
   @override
-  String get auth_button_resendOtp => 'إعادة إرسال الرمز';
+  String get auth_button_resendOtp => 'إعادة إرسال رمز التحقق';
 
   @override
-  String get auth_button_sendCode => 'إرسال الرمز';
+  String get auth_button_sendCode => 'إرسال رمز التحقق';
 
   @override
   String get auth_button_sendOtp => 'إرسال رمز التحقق';
@@ -72,17 +72,18 @@ class AppLocalizationsAr extends AppLocalizations {
   String get auth_label_changeNumber => 'رقم خاطئ؟ قم بتغييره';
 
   @override
-  String get auth_label_enterOtp => 'أدخل الرمز المكوّن من 6 أرقام المرسل إلى';
+  String get auth_label_enterOtp =>
+      'أدخل رمز التحقق المكوّن من 6 أرقام المرسل إلى';
 
   @override
   String get auth_label_phoneNumber => 'رقم الهاتف';
 
   @override
-  String get auth_label_resendCode => 'إعادة إرسال الرمز';
+  String get auth_label_resendCode => 'إعادة إرسال رمز التحقق';
 
   @override
   String auth_label_resendCodeIn(Object seconds) {
-    return 'إعادة إرسال الرمز خلال $secondsث';
+    return 'إعادة إرسال رمز التحقق خلال $secondsث';
   }
 
   @override
@@ -92,13 +93,13 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get auth_label_sentCodeTo =>
-      'لقد أرسلنا رمزًا مكونًا من 6 أرقام إلى\n';
+      'لقد أرسلنا رمز تحقق مكونًا من 6 أرقام إلى\n';
 
   @override
   String get auth_subtitle_verifyOtp => 'سوف نتحقق منه برمز لمرة واحدة.';
 
   @override
-  String get auth_title_enterCode => 'أدخل الرمز';
+  String get auth_title_enterCode => 'أدخل رمز التحقق';
 
   @override
   String get auth_title_yourNumber => 'رقم هاتفك';
@@ -227,7 +228,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get chat_label_subscribeToMessage =>
-      'اشترك لفتح المراسلة. تراسل النساء مجانًا دائمًا في نور.';
+      'اشترك لفتح المراسلة. تراسل النساء مجانًا دائمًا في ميثاق.';
 
   @override
   String get chat_matchClosed_banner => 'تم إغلاق هذا التطابق باحترام.';
@@ -341,7 +342,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get discovery_empty_title => 'لقد شاهدت الجميع بالقرب منك';
 
   @override
-  String get discovery_header_title => 'نور';
+  String get discovery_header_title => 'ميثاق';
 
   @override
   String get discovery_label_interestSent => 'تم الإرسال ✓';
@@ -1038,16 +1039,16 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get onboarding_error_under18 =>
-      'نور مخصص لمن هم في سن 18 عامًا أو أكثر.';
+      'ميثاق مخصص لمن هم في سن 18 عامًا أو أكثر.';
 
   @override
   String onboarding_error_under18_guardian(String relation) {
-    return 'يجب أن يكون $relation بعمر 18 عامًا أو أكثر لاستخدام نور.';
+    return 'يجب أن يكون $relation بعمر 18 عامًا أو أكثر لاستخدام ميثاق.';
   }
 
   @override
   String get onboarding_error_under18_self =>
-      'يجب أن تكون بعمر 18 عامًا أو أكثر لاستخدام نور. نتطلع إلى الترحيب بك حينها.';
+      'يجب أن تكون بعمر 18 عامًا أو أكثر لاستخدام ميثاق. نتطلع إلى الترحيب بك حينها.';
 
   @override
   String get onboarding_habit_frequently => 'كثيراً';
@@ -1851,7 +1852,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'الملفات الشخصية المكتملة بنسبة 80%+ تحصل على 3 أضعاف الاهتمامات.';
 
   @override
-  String get settings_brand_credit => 'نور (NOOR) · لوجه الله';
+  String get settings_brand_credit => 'ميثاق (Mithaq) · لوجه الله';
 
   @override
   String get settings_button_deleteAccount => 'حذف الحساب';
@@ -2160,5 +2161,5 @@ class AppLocalizationsAr extends AppLocalizations {
       'تراسل النساء مجانًا. يشترك الرجال للتواصل.';
 
   @override
-  String get subscription_title => 'افتح نور';
+  String get subscription_title => 'افتح ميثاق';
 }

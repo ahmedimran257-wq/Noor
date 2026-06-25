@@ -1,12 +1,12 @@
 // lib/features/onboarding/screens/splash_brand_screen.dart
 // ============================================================
-// NOOR — Splash Brand Screen (Step 0 in the overall flow)
+// MITHAQ — Splash Brand Screen (Step 0 in the overall flow)
 // Spec from blueprint:
 //   0ms    — Dark background #0A0A0F
-//   300ms  — نور fades in, scales 0.8→1.0 (600ms ease-out-cubic)
+//   300ms  — ميثاق fades in, scales 0.8→1.0 (600ms ease-out-cubic)
 //   600ms  — 6 light rays emanate from center (staggered 50ms)
 //   900ms  — Rays fade out (400ms)
-//   1000ms — "NOOR" wordmark fades in (400ms)
+//   1000ms — "MITHAQ" wordmark fades in (400ms)
 //   1400ms — Tagline "Begin with bismillah" fades in (300ms)
 //   2000ms — Buttons slide up from bottom (400ms)
 //   2500ms — Everything settled, interactive
@@ -19,8 +19,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/buttons/noor_primary_button.dart';
-import '../../../core/widgets/buttons/noor_secondary_button.dart';
+import '../../../core/widgets/buttons/mithaq_primary_button.dart';
+import '../../../core/widgets/buttons/mithaq_secondary_button.dart';
 import '../../../core/router/app_router.dart';
 import '../../../l10n/generated/app_localizations.dart';
 
@@ -33,17 +33,17 @@ class SplashBrandScreen extends StatefulWidget {
 
 class _SplashBrandScreenState extends State<SplashBrandScreen>
     with TickerProviderStateMixin {
-
   // ── Animation controllers ─────────────────────────────────
-  late final AnimationController _noorCtrl;
+  late final AnimationController _mithaqCtrl;
   late final AnimationController _raysCtrl;
   late final AnimationController _wordmarkCtrl;
   late final AnimationController _taglineCtrl;
   late final AnimationController _buttonsCtrl;
+  bool _sequenceCancelled = false;
 
   // ── Animations ────────────────────────────────────────────
-  late final Animation<double> _noorOpacity;
-  late final Animation<double> _noorScale;
+  late final Animation<double> _mithaqOpacity;
+  late final Animation<double> _mithaqScale;
   late final Animation<double> _raysOpacity;
   late final Animation<double> _raysLength;
   late final Animation<double> _wordmarkOpacity;
@@ -55,14 +55,15 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
   void initState() {
     super.initState();
 
-    // نور letterform — 600ms
-    _noorCtrl = AnimationController(
+    // ميثاق letterform — 600ms
+    _mithaqCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
-    _noorOpacity = CurvedAnimation(parent: _noorCtrl, curve: Curves.easeOut);
-    _noorScale   = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _noorCtrl, curve: Curves.easeOutCubic),
+    _mithaqOpacity =
+        CurvedAnimation(parent: _mithaqCtrl, curve: Curves.easeOut);
+    _mithaqScale = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _mithaqCtrl, curve: Curves.easeOutCubic),
     );
 
     // Light rays — 800ms total (start fading at 400ms)
@@ -78,7 +79,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
       CurvedAnimation(parent: _raysCtrl, curve: Curves.easeOut),
     );
 
-    // NOOR wordmark — 400ms
+    // MITHAQ wordmark — 400ms
     _wordmarkCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 400),
@@ -105,8 +106,9 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
     );
     _buttonsSlide = Tween<Offset>(
       begin: const Offset(0, 0.6),
-      end:   Offset.zero,
-    ).animate(CurvedAnimation(parent: _buttonsCtrl, curve: Curves.easeOutCubic));
+      end: Offset.zero,
+    ).animate(
+        CurvedAnimation(parent: _buttonsCtrl, curve: Curves.easeOutCubic));
     _buttonsOpacity = CurvedAnimation(
       parent: _buttonsCtrl,
       curve: Curves.easeOut,
@@ -116,21 +118,27 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
   }
 
   Future<void> _runSequence() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    _noorCtrl.forward();
-    await Future.delayed(const Duration(milliseconds: 300));
+    Future<bool> wait(Duration delay) async {
+      await Future<void>.delayed(delay);
+      return mounted && !_sequenceCancelled;
+    }
+
+    if (!await wait(const Duration(milliseconds: 300))) return;
+    _mithaqCtrl.forward();
+    if (!await wait(const Duration(milliseconds: 300))) return;
     _raysCtrl.forward();
-    await Future.delayed(const Duration(milliseconds: 400));
+    if (!await wait(const Duration(milliseconds: 400))) return;
     _wordmarkCtrl.forward();
-    await Future.delayed(const Duration(milliseconds: 400));
+    if (!await wait(const Duration(milliseconds: 400))) return;
     _taglineCtrl.forward();
-    await Future.delayed(const Duration(milliseconds: 600));
+    if (!await wait(const Duration(milliseconds: 600))) return;
     _buttonsCtrl.forward();
   }
 
   @override
   void dispose() {
-    _noorCtrl.dispose();
+    _sequenceCancelled = true;
+    _mithaqCtrl.dispose();
     _raysCtrl.dispose();
     _wordmarkCtrl.dispose();
     _taglineCtrl.dispose();
@@ -183,16 +191,20 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                     fillColor: AppColors.inputSurface,
                     counterText: '',
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusButton),
                       borderSide: const BorderSide(color: AppColors.cardBorder),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusButton),
                       borderSide: const BorderSide(color: AppColors.cardBorder),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                      borderSide: const BorderSide(color: AppColors.champagneGold, width: 2),
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusButton),
+                      borderSide: const BorderSide(
+                          color: AppColors.champagneGold, width: 2),
                     ),
                   ),
                 ),
@@ -201,9 +213,11 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.champagneGold,
                     foregroundColor: AppColors.obsidianNight,
-                    minimumSize: const Size(double.infinity, AppDimensions.buttonHeight),
+                    minimumSize:
+                        const Size(double.infinity, AppDimensions.buttonHeight),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusButton),
                     ),
                   ),
                   onPressed: () async {
@@ -233,14 +247,16 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                           backgroundColor: AppColors.surfaceGlassHover,
                           behavior: SnackBarBehavior.floating,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                            borderRadius: BorderRadius.circular(
+                                AppDimensions.radiusButton),
                             side: const BorderSide(color: AppColors.cardBorder),
                           ),
                         ),
                       );
                     }
                   },
-                  child: Text(l10n.splash_referral_button, style: AppTypography.button),
+                  child: Text(l10n.splash_referral_button,
+                      style: AppTypography.button),
                 ),
                 const SizedBox(height: AppDimensions.space12),
               ],
@@ -261,9 +277,9 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
           // ── Radial glow from center ───────────────────────
           Center(
             child: AnimatedBuilder(
-              animation: _noorCtrl,
+              animation: _mithaqCtrl,
               builder: (context, _) => Opacity(
-                opacity: _noorCtrl.value * 0.4,
+                opacity: _mithaqCtrl.value * 0.4,
                 child: Container(
                   width: 280,
                   height: 280,
@@ -289,7 +305,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                 size: const Size(280, 280),
                 painter: _RaysPainter(
                   opacity: _raysOpacity.value,
-                  length:  _raysLength.value,
+                  length: _raysLength.value,
                 ),
               ),
             ),
@@ -301,15 +317,15 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
               children: [
                 const Spacer(flex: 3),
 
-                // نور Arabic letterform
+                // ميثاق Arabic letterform
                 AnimatedBuilder(
-                  animation: _noorCtrl,
+                  animation: _mithaqCtrl,
                   builder: (context, _) => Opacity(
-                    opacity: _noorOpacity.value,
+                    opacity: _mithaqOpacity.value,
                     child: Transform.scale(
-                      scale: _noorScale.value,
+                      scale: _mithaqScale.value,
                       child: Text(
-                        l10n.localeName == 'ar' ? 'ميثاق' : 'نور',
+                        l10n.localeName == 'ar' ? 'ميثاق' : 'ميثاق',
                         style: TextStyle(
                           fontFamily: 'serif',
                           fontSize: 72,
@@ -317,7 +333,8 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                           height: 1.0,
                           shadows: [
                             Shadow(
-                              color: AppColors.champagneGold.withValues(alpha: 0.4),
+                              color: AppColors.champagneGold
+                                  .withValues(alpha: 0.4),
                               blurRadius: 24,
                             ),
                           ],
@@ -330,7 +347,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
 
                 const SizedBox(height: AppDimensions.space16),
 
-                // NOOR wordmark
+                // MITHAQ wordmark
                 FadeTransition(
                   opacity: _wordmarkOpacity,
                   child: Text(l10n.appName, style: AppTypography.wordmark),
@@ -360,14 +377,15 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                       ),
                       child: Column(
                         children: [
-                          NoorPrimaryButton(
+                          MithaqPrimaryButton(
                             label: l10n.splash_button_createProfile,
                             onTap: () => context.push(AppRoutes.legal),
                           ),
                           const SizedBox(height: AppDimensions.space12),
-                          NoorSecondaryButton(
+                          MithaqSecondaryButton(
                             label: l10n.splash_button_signIn,
-                            onTap: () => context.push(AppRoutes.phone),
+                            onTap: () =>
+                                context.push('${AppRoutes.email}?mode=signin'),
                           ),
                           const SizedBox(height: AppDimensions.space16),
                           TextButton(
@@ -409,9 +427,9 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                       border: Border.all(color: AppColors.cardBorder),
                     ),
                     child: const Icon(
-                      Icons.arrow_back_ios_new_rounded,
+                      Icons.language_rounded,
                       color: AppColors.pearlWhite,
-                      size: 18,
+                      size: 20,
                     ),
                   ),
                 ),
@@ -436,16 +454,16 @@ class _RaysPainter extends CustomPainter {
     if (opacity <= 0) return;
 
     final center = Offset(size.width / 2, size.height / 2);
-    final paint  = Paint()
-      ..color       = AppColors.champagneGold.withValues(alpha: opacity * 0.7)
+    final paint = Paint()
+      ..color = AppColors.champagneGold.withValues(alpha: opacity * 0.7)
       ..strokeWidth = 1.5
-      ..strokeCap   = StrokeCap.round;
+      ..strokeCap = StrokeCap.round;
 
     for (int i = 0; i < 6; i++) {
       final angle = (i * 60) * (math.pi / 180);
       const startR = 48.0;
-      final endR   = startR + (80 * length);
-      final start  = Offset(
+      final endR = startR + (80 * length);
+      final start = Offset(
         center.dx + startR * math.cos(angle),
         center.dy + startR * math.sin(angle),
       );

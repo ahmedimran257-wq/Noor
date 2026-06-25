@@ -1,6 +1,6 @@
 // lib/core/utils/validation_snackbar.dart
 // ============================================================
-// NOOR — Validation Snackbar Helper
+// MITHAQ — Validation Snackbar Helper
 // Shows a themed snackbar listing missing mandatory fields.
 // ============================================================
 

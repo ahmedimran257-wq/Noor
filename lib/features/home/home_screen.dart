@@ -1,7 +1,7 @@
 // lib/features/home/home_screen.dart
 // ============================================================
-// NOOR — Home Screen Shell
-// IndexedStack with 4 tabs + NoorBottomNav.
+// MITHAQ — Home Screen Shell
+// IndexedStack with 4 tabs + MithaqBottomNav.
 // Preserves scroll state across tab switches.
 // ============================================================
 
@@ -11,7 +11,7 @@ import 'screens/discovery_feed_screen.dart';
 import 'screens/interests_screen.dart';
 import 'screens/chat_list_screen.dart';
 import 'screens/my_profile_screen.dart';
-import 'widgets/noor_bottom_nav.dart';
+import 'widgets/mithaq_bottom_nav.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.initialTab});
@@ -65,7 +65,7 @@ class HomeScreenState extends State<HomeScreen> {
           children: _screens,
         ),
       ),
-      bottomNavigationBar: NoorBottomNav(
+      bottomNavigationBar: MithaqBottomNav(
         currentIndex:  _currentTab,
         onTabSelected: (index) => setState(() => _currentTab = index),
       ),

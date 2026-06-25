@@ -1,6 +1,6 @@
 // lib/features/onboarding/screens/legal_gate_screen.dart
 // ============================================================
-// NOOR — Legal Gate Screen
+// MITHAQ — Legal Gate Screen
 // Two mandatory checkboxes (age + terms).
 // Cannot proceed without both checked.
 // Consent version logged (in production: to user_consents table).
@@ -12,10 +12,11 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/buttons/noor_primary_button.dart';
+import '../../../core/widgets/buttons/mithaq_primary_button.dart';
 import '../../../core/router/app_router.dart';
 import '../../home/screens/legal_doc_screen.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../../core/services/supabase_service.dart';
 
 class LegalGateScreen extends StatefulWidget {
   const LegalGateScreen({super.key});
@@ -25,10 +26,12 @@ class LegalGateScreen extends StatefulWidget {
 }
 
 class _LegalGateScreenState extends State<LegalGateScreen> {
-  bool _ageConfirmed   = false;
+  bool _ageConfirmed = false;
   bool _termsConfirmed = false;
+  bool _specialCategoryConsent = false;
 
-  bool get _canProceed => _ageConfirmed && _termsConfirmed;
+  bool get _canProceed =>
+      _ageConfirmed && _termsConfirmed && _specialCategoryConsent;
 
   @override
   Widget build(BuildContext context) {
@@ -38,11 +41,11 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: RadialGradient(
-            center: Alignment(0, -0.5),  // slightly above center
+            center: Alignment(0, -0.5), // slightly above center
             radius: 1.2,
             colors: [
-              AppColors.navyCharcoal,  // Deep premium navy-charcoal core
-              AppColors.obsidianNight,  // Deep midnight edges
+              AppColors.navyCharcoal, // Deep premium navy-charcoal core
+              AppColors.obsidianNight, // Deep midnight edges
             ],
           ),
         ),
@@ -64,10 +67,11 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
                     GestureDetector(
                       onTap: () => context.pop(),
                       child: Container(
-                        width: 40, height: 40,
+                        width: 40,
+                        height: 40,
                         decoration: BoxDecoration(
-                          color:  AppColors.surfaceGlass,
-                          shape:  BoxShape.circle,
+                          color: AppColors.surfaceGlass,
+                          shape: BoxShape.circle,
                           border: Border.all(color: AppColors.cardBorder),
                         ),
                         child: Icon(
@@ -75,13 +79,12 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
                               ? Icons.arrow_forward_ios_rounded
                               : Icons.arrow_back_ios_new_rounded,
                           color: AppColors.pearlWhite,
-                          size:  16,
+                          size: 16,
                         ),
                       ),
                     ),
                     const SizedBox(height: AppDimensions.space32),
-                    Text(l10n.legal_title,
-                        style: AppTypography.screenTitle),
+                    Text(l10n.legal_title, style: AppTypography.screenTitle),
                     const SizedBox(height: AppDimensions.space8),
                     Text(
                       l10n.legal_subtitle,
@@ -90,31 +93,33 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
                   ],
                 ),
               ),
-  
+
               // ── Scrollable body ────────────────────────────
               Expanded(
                 child: SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppDimensions.space24,
-                    vertical:   AppDimensions.space24,
+                    vertical: AppDimensions.space24,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _TermsSummaryCard(),
                       const SizedBox(height: AppDimensions.space24),
-  
+
                       // ── Checkboxes ─────────────────────────
-                      _NoorCheckbox(
-                        value:    _ageConfirmed,
-                        onChanged: (v) => setState(() => _ageConfirmed = v ?? false),
-                        label:    l10n.legal_checkbox_age,
+                      _MithaqCheckbox(
+                        value: _ageConfirmed,
+                        onChanged: (v) =>
+                            setState(() => _ageConfirmed = v ?? false),
+                        label: l10n.legal_checkbox_age,
                       ),
                       const SizedBox(height: AppDimensions.space16),
-                      _NoorCheckbox(
-                        value:    _termsConfirmed,
-                        onChanged: (v) => setState(() => _termsConfirmed = v ?? false),
+                      _MithaqCheckbox(
+                        value: _termsConfirmed,
+                        onChanged: (v) =>
+                            setState(() => _termsConfirmed = v ?? false),
                         richLabel: TextSpan(
                           style: AppTypography.body,
                           children: l10n.localeName == 'ar'
@@ -122,51 +127,109 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
                                   const TextSpan(text: 'أوافق على'),
                                   TextSpan(
                                     text: ' شروط الخدمة',
-                                    style: AppTypography.body.copyWith(color: AppColors.champagneGold),
+                                    style: AppTypography.body.copyWith(
+                                        color: AppColors.champagneGold),
                                     recognizer: TapGestureRecognizer()
                                       ..onTap = () {
                                         Navigator.of(context).push(
-                                          MaterialPageRoute(builder: (_) => const LegalDocScreen(type: 'tos')),
+                                          MaterialPageRoute(
+                                              builder: (_) =>
+                                                  const LegalDocScreen(
+                                                      type: 'tos')),
                                         );
                                       },
                                   ),
                                   const TextSpan(text: ' و '),
                                   TextSpan(
                                     text: 'سياسة الخصوصية',
-                                    style: AppTypography.body.copyWith(color: AppColors.champagneGold),
+                                    style: AppTypography.body.copyWith(
+                                        color: AppColors.champagneGold),
                                     recognizer: TapGestureRecognizer()
                                       ..onTap = () {
                                         Navigator.of(context).push(
-                                          MaterialPageRoute(builder: (_) => const LegalDocScreen(type: 'privacy')),
+                                          MaterialPageRoute(
+                                              builder: (_) =>
+                                                  const LegalDocScreen(
+                                                      type: 'privacy')),
                                         );
                                       },
                                   ),
                                   const TextSpan(text: '.'),
                                 ]
                               : [
-                                  const TextSpan(text: 'I have read and agree to the'),
+                                  const TextSpan(
+                                      text: 'I have read and agree to the'),
                                   TextSpan(
                                     text: ' Terms of Service',
-                                    style: AppTypography.body.copyWith(color: AppColors.champagneGold),
+                                    style: AppTypography.body.copyWith(
+                                        color: AppColors.champagneGold),
                                     recognizer: TapGestureRecognizer()
                                       ..onTap = () {
                                         Navigator.of(context).push(
-                                          MaterialPageRoute(builder: (_) => const LegalDocScreen(type: 'tos')),
+                                          MaterialPageRoute(
+                                              builder: (_) =>
+                                                  const LegalDocScreen(
+                                                      type: 'tos')),
                                         );
                                       },
                                   ),
                                   const TextSpan(text: ' and '),
                                   TextSpan(
                                     text: 'Privacy Policy',
-                                    style: AppTypography.body.copyWith(color: AppColors.champagneGold),
+                                    style: AppTypography.body.copyWith(
+                                        color: AppColors.champagneGold),
                                     recognizer: TapGestureRecognizer()
                                       ..onTap = () {
                                         Navigator.of(context).push(
-                                          MaterialPageRoute(builder: (_) => const LegalDocScreen(type: 'privacy')),
+                                          MaterialPageRoute(
+                                              builder: (_) =>
+                                                  const LegalDocScreen(
+                                                      type: 'privacy')),
                                         );
                                       },
                                   ),
                                   const TextSpan(text: '.'),
+                                ],
+                        ),
+                      ),
+                      const SizedBox(height: AppDimensions.space16),
+                      _MithaqCheckbox(
+                        value: _specialCategoryConsent,
+                        onChanged: (v) => setState(
+                            () => _specialCategoryConsent = v ?? false),
+                        richLabel: TextSpan(
+                          style: AppTypography.body,
+                          children: l10n.localeName == 'ar'
+                              ? [
+                                  const TextSpan(
+                                      text: 'أوافق صراحةً على معالجة MITHAQ '),
+                                  TextSpan(
+                                    text: 'معلوماتي الدينية',
+                                    style: AppTypography.body.copyWith(
+                                        color: AppColors.champagneGold),
+                                  ),
+                                  const TextSpan(
+                                    text:
+                                        ' (المذهب، الممارسة الدينية، الهوية الإسلامية) '
+                                        'لتوفير مطابقة التوافق. لا تتم مشاركة هذه البيانات مع أطراف '
+                                        'ثالثة أو استخدامها للإعلان.',
+                                  ),
+                                ]
+                              : [
+                                  const TextSpan(
+                                      text:
+                                          'I explicitly consent to MITHAQ processing my '),
+                                  TextSpan(
+                                    text: 'religious information',
+                                    style: AppTypography.body.copyWith(
+                                        color: AppColors.champagneGold),
+                                  ),
+                                  const TextSpan(
+                                    text:
+                                        ' (sect, prayer practice, Islamic identity) to provide '
+                                        'compatibility matching. This data is never shared with '
+                                        'third parties or used for advertising.',
+                                  ),
                                 ],
                         ),
                       ),
@@ -175,7 +238,7 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
                   ),
                 ),
               ),
-  
+
               // ── Bottom CTA ─────────────────────────────────
               Padding(
                 padding: const EdgeInsets.fromLTRB(
@@ -185,12 +248,36 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
                   AppDimensions.space32,
                 ),
                 child: AnimatedOpacity(
-                  opacity:  _canProceed ? 1.0 : 0.45,
+                  opacity: _canProceed ? 1.0 : 0.45,
                   duration: AppDimensions.durationTransition,
-                  child: NoorPrimaryButton(
+                  child: MithaqPrimaryButton(
                     label: l10n.legal_button_continue,
                     onTap: _canProceed
-                        ? () => context.push(AppRoutes.phone)
+                        ? () async {
+                            // Log Special Category consent to DB
+                            if (SupabaseService.isInitialized) {
+                              try {
+                                final userId = SupabaseService.currentUserId;
+                                if (userId != null) {
+                                  await SupabaseService.client
+                                      .from('user_consents')
+                                      .insert({
+                                    'user_id': userId,
+                                    'consent_type':
+                                        'special_category_religious',
+                                    'version': '1.0',
+                                    'granted_at': DateTime.now()
+                                        .toUtc()
+                                        .toIso8601String(),
+                                  });
+                                }
+                              } catch (e) {
+                                debugPrint('LegalGate: consent log error: $e');
+                              }
+                            }
+                            if (!context.mounted) return;
+                            context.push('${AppRoutes.email}?mode=signup');
+                          }
                         : null,
                   ),
                 ),
@@ -235,9 +322,9 @@ class _TermsSummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppDimensions.space20),
       decoration: BoxDecoration(
-        color:        AppColors.surfaceGlass,
+        color: AppColors.surfaceGlass,
         borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-        border:       Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: AppColors.cardBorder),
       ),
       child: Column(
         children: items.map((item) {
@@ -277,10 +364,10 @@ class _TermsSummaryCard extends StatelessWidget {
   }
 }
 
-// ── Noor Checkbox ─────────────────────────────────────────────
+// ── Mithaq Checkbox ─────────────────────────────────────────────
 
-class _NoorCheckbox extends StatelessWidget {
-  const _NoorCheckbox({
+class _MithaqCheckbox extends StatelessWidget {
+  const _MithaqCheckbox({
     required this.value,
     required this.onChanged,
     this.label = '',
@@ -301,7 +388,7 @@ class _NoorCheckbox extends StatelessWidget {
         children: [
           AnimatedContainer(
             duration: AppDimensions.durationTransition,
-            width:  24,
+            width: 24,
             height: 24,
             decoration: BoxDecoration(
               color: value ? AppColors.champagneGold : AppColors.surfaceGlass,

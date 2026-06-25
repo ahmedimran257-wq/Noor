@@ -1,98 +1,40 @@
 // lib/core/cubits/discovery/discovery_feed_cubit.dart
 // ============================================================
-// NOOR — Discovery Feed Cubit (Step 6 — Filter-aware)
+// MITHAQ — Discovery Feed Cubit (Step 6 — Filter-aware)
 //
 // Blueprint (Part 8):
 //   • Cursor-based pagination — no offset drift, no duplicates
 //   • Every 10th profile: "Someone you might connect with"
 //   • Free-tier counter
-//   • Sector / Deen / Age / Verified / FamilyType filters
-//     applied in-memory against the mock pool
+//   • Sect / Deen / Age / Verified / FamilyType filters applied by Supabase
 //
 // Filter persistence: active filter is saved to SharedPreferences
 // so it survives app restarts.
 // ============================================================
 
 import 'dart:convert';
-import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../mock/mock_profiles.dart';
 import '../../services/supabase_service.dart';
 import '../../services/profile_write_service.dart';
+import '../../services/location_service.dart';
 import '../../models/onboarding_data.dart';
-import '../../utils/noor_compute.dart';
-import '../block_report/block_report_cubit.dart';
+import '../../utils/mithaq_compute.dart';
 import 'discovery_feed_state.dart';
 
 class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
-  DiscoveryFeedCubit({this.blockReportCubit}) : super(const DiscoveryFeedState());
+  DiscoveryFeedCubit() : super(const DiscoveryFeedState());
 
-  /// Optional reference to BlockReportCubit for filtering blocked profiles.
-  final BlockReportCubit? blockReportCubit;
+  static const _batchSize = 8;
+  static const _kFilterKey = 'discovery_active_filter';
+  static const _kViewCountKey = 'discovery_views_today';
+  static const _kViewResetKey = 'discovery_views_reset_date';
 
-  static const _batchSize       = 8;
-  static const _kFilterKey       = 'discovery_active_filter';
-  static const _kViewCountKey    = 'discovery_views_today';
-  static const _kViewResetKey    = 'discovery_views_reset_date';
-
-  // Extended mock pool with UNIQUE IDs for each rotation (Fixed Flaw 19)
-  static final List<MockProfile> _pool = _generateUniquePool();
-
-  static List<MockProfile> _generateUniquePool() {
-    final list = <MockProfile>[];
-    for (int rotation = 0; rotation < 5; rotation++) {
-      final baseList = rotation.isEven ? kMockProfiles : kMockProfiles.reversed.toList();
-      for (final p in baseList) {
-        if (rotation == 0) {
-          list.add(p);
-        } else {
-          list.add(MockProfile(
-            firstName: p.firstName,
-            lastNameInitial: '${p.lastNameInitial}_$rotation',
-            age: p.age,
-            cityName: p.cityName,
-            sect: p.sect,
-            deenLevel: p.deenLevel,
-            photoUrl: p.photoUrl,
-            photoCount: p.photoCount,
-            isPhotoPrivate: p.isPhotoPrivate,
-            isVerified: p.isVerified,
-            occupation: p.occupation,
-            education: p.education,
-            bio: p.bio,
-            languages: p.languages,
-            maritalStatus: p.maritalStatus,
-            familyType: p.familyType,
-            interests: p.interests,
-            partnerAgeMin: p.partnerAgeMin,
-            partnerAgeMax: p.partnerAgeMax,
-            heightCm: p.heightCm,
-            complexion: p.complexion,
-            motherTongue: p.motherTongue,
-            smokingHabit: p.smokingHabit,
-            vapingHabit: p.vapingHabit,
-            hookahHabit: p.hookahHabit,
-            community: p.community,
-            dietType: p.dietType,
-            livingExpectation: p.livingExpectation,
-            quranMemorization: p.quranMemorization,
-            religiousEducation: p.religiousEducation,
-            marriageTimeline: p.marriageTimeline,
-            willingToRelocate: p.willingToRelocate,
-            gender: p.gender,
-            hasChildren: p.hasChildren,
-            lastActiveAt: p.lastActiveAt,
-            countryCode: p.countryCode,
-          ));
-        }
-      }
-    }
-    return list;
-  }
-
-  int _cursor = 0;
+  double? _backendCursorScore;
+  String? _backendCursorId;
+  bool _discoveryLocationPrepared = false;
 
   // ── Public API ────────────────────────────────────────────
 
@@ -116,8 +58,8 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
 
   /// Initial page load — shows skeleton loaders first.
   /// Also restores saved filter and browse counter from SharedPreferences.
-  Future<void> loadInitial() async {
-    if (state.status != FeedStatus.initial) return;
+  Future<void> loadInitial({bool force = false}) async {
+    if (!force && state.status != FeedStatus.initial) return;
     emit(state.copyWith(status: FeedStatus.loading));
 
     final viewerProfile = await _getViewerProfile();
@@ -130,35 +72,44 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       filter = DiscoveryFilter(
         ageMin: viewerProfile.preferredAgeMin,
         ageMax: viewerProfile.preferredAgeMax,
-        sect: viewerProfile.preferredSect != null && viewerProfile.preferredSect != 'Any' ? viewerProfile.preferredSect : null,
-        deenLevel: viewerProfile.preferredDeenLevel != null && viewerProfile.preferredDeenLevel != 'Any' ? viewerProfile.preferredDeenLevel : null,
-        diasporaMode: viewerProfile.locationPreference == LocationPreference.diaspora,
-        distanceLabel: viewerProfile.locationPreference == LocationPreference.sameCity
-            ? 'Same City'
-            : (viewerProfile.locationPreference == LocationPreference.sameCountry
-                ? 'Same Country'
-                : 'Anywhere'),
+        sect: viewerProfile.preferredSect != null &&
+                viewerProfile.preferredSect != 'Any'
+            ? viewerProfile.preferredSect
+            : null,
+        deenLevel: viewerProfile.preferredDeenLevel != null &&
+                viewerProfile.preferredDeenLevel != 'Any'
+            ? viewerProfile.preferredDeenLevel
+            : null,
+        diasporaMode:
+            viewerProfile.locationPreference == LocationPreference.diaspora,
+        distanceLabel:
+            viewerProfile.locationPreference == LocationPreference.sameCity
+                ? 'Same City'
+                : (viewerProfile.locationPreference ==
+                        LocationPreference.sameCountry
+                    ? 'Same Country'
+                    : 'Anywhere'),
       );
     }
 
     // G5: Restore persisted browse counter (daily reset)
     final restoredViews = await _restoreBrowseCounter();
 
-    await Future.delayed(const Duration(milliseconds: 1200));
-
-    _cursor = 0;
-    final activePool = await _getPool(filter: filter);
-    final filtered = _applyFilter(activePool, filter, viewerProfile);
-    final batch    = _nextBatch(filtered, offset: 0);
-
-    if (!isClosed) {
-      emit(state.copyWith(
-        status:              batch.isEmpty ? FeedStatus.empty : FeedStatus.loaded,
-        profiles:            batch,
-        hasMore:             _cursor < filtered.length,
-        activeFilter:        filter,
-        profilesViewedToday: restoredViews,
-      ));
+    try {
+      _resetCursors();
+      final profiles = await _getPool(filter: filter);
+      final batch = _toFeedProfiles(profiles, offset: 0);
+      if (!isClosed) {
+        emit(state.copyWith(
+          status: batch.isEmpty ? FeedStatus.empty : FeedStatus.loaded,
+          profiles: batch,
+          hasMore: profiles.length == _batchSize,
+          activeFilter: filter,
+          profilesViewedToday: restoredViews,
+        ));
+      }
+    } catch (e) {
+      _emitDiscoveryError(e);
     }
   }
 
@@ -168,19 +119,21 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     if (!state.hasMore) return;
 
     emit(state.copyWith(status: FeedStatus.loadingMore));
-    await Future.delayed(const Duration(milliseconds: 1400));
-
-    final viewerProfile = await _getViewerProfile();
-    final activePool = await _getPool(filter: state.activeFilter);
-    final filtered = _applyFilter(activePool, state.activeFilter, viewerProfile);
-    final batch    = _nextBatch(filtered, offset: state.profiles.length);
-
-    if (!isClosed) {
-      emit(state.copyWith(
-        status:   FeedStatus.loaded,
-        profiles: [...state.profiles, ...batch],
-        hasMore:  _cursor < filtered.length,
-      ));
+    try {
+      final profiles = await _getPool(filter: state.activeFilter);
+      final batch = _toFeedProfiles(
+        profiles,
+        offset: state.profiles.length,
+      );
+      if (!isClosed) {
+        emit(state.copyWith(
+          status: FeedStatus.loaded,
+          profiles: [...state.profiles, ...batch],
+          hasMore: profiles.length == _batchSize,
+        ));
+      }
+    } catch (e) {
+      _emitDiscoveryError(e, keepProfiles: true);
     }
   }
 
@@ -191,20 +144,19 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     // Persist the filter
     await _saveFilterToPrefs(filter);
 
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    _cursor = 0;
-    final viewerProfile = await _getViewerProfile();
-    final activePool = await _getPool(filter: filter);
-    final filtered = _applyFilter(activePool, filter, viewerProfile);
-    final batch    = _nextBatch(filtered, offset: 0);
-
-    if (!isClosed) {
-      emit(state.copyWith(
-        status:   batch.isEmpty ? FeedStatus.empty : FeedStatus.loaded,
-        profiles: batch,
-        hasMore:  _cursor < filtered.length,
-      ));
+    try {
+      _resetCursors();
+      final profiles = await _getPool(filter: filter);
+      final batch = _toFeedProfiles(profiles, offset: 0);
+      if (!isClosed) {
+        emit(state.copyWith(
+          status: batch.isEmpty ? FeedStatus.empty : FeedStatus.loaded,
+          profiles: batch,
+          hasMore: profiles.length == _batchSize,
+        ));
+      }
+    } catch (e) {
+      _emitDiscoveryError(e);
     }
   }
 
@@ -223,7 +175,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
 
   Future<int> _restoreBrowseCounter() async {
     try {
-      final prefs   = await SharedPreferences.getInstance();
+      final prefs = await SharedPreferences.getInstance();
       final savedDate = prefs.getString(_kViewResetKey);
       if (savedDate == null) return 0;
 
@@ -260,33 +212,35 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   Future<DiscoveryFilter?> _loadFilterFromPrefs() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final raw   = prefs.getString(_kFilterKey);
+      final raw = prefs.getString(_kFilterKey);
       if (raw == null || raw.isEmpty) return null;
 
       final j = jsonDecode(raw) as Map<String, dynamic>;
       return DiscoveryFilter(
-        ageMin:             j['ageMin'] as int?,
-        ageMax:             j['ageMax'] as int?,
-        sect:               j['sect'] as String?,
-        deenLevel:          j['deenLevel'] as String?,
-        verifiedOnly:       (j['verifiedOnly'] as bool?) ?? false,
+        ageMin: j['ageMin'] as int?,
+        ageMax: j['ageMax'] as int?,
+        sect: j['sect'] as String?,
+        deenLevel: j['deenLevel'] as String?,
+        verifiedOnly: (j['verifiedOnly'] as bool?) ?? false,
         activeRecentlyOnly: (j['activeRecentlyOnly'] as bool?) ?? false,
-        maxDistanceKm:      j['maxDistanceKm'] as int?,
-        familyType:         j['familyType'] as String?,
-        openToDivorced:     (j['openToDivorced'] as bool?) ?? false,
-        genderPref:         j['genderPref'] as String?,
-        maritalStatus:      j['maritalStatus'] as String?,
-        hasChildren:        j['hasChildren'] as String?,
-        educationMin:       j['educationMin'] as String?,
-        distanceLabel:      j['distanceLabel'] as String?,
-        motherTongue:       j['motherTongue'] as String?,
-        community:          j['community'] as String?,
-        livingExpectation:  j['livingExpectation'] as String?,
-        quranMemorization:  j['quranMemorization'] as String?,
-        marriageTimeline:   j['marriageTimeline'] as String?,
-        willingToRelocate:  j['willingToRelocate'] as String?,
-        diasporaMode:       (j['diasporaMode'] as bool?) ?? false,
-        diasporaCountries:  j['diasporaCountries'] != null ? List<String>.from(j['diasporaCountries'] as Iterable) : null,
+        maxDistanceKm: j['maxDistanceKm'] as int?,
+        familyType: j['familyType'] as String?,
+        openToDivorced: (j['openToDivorced'] as bool?) ?? false,
+        genderPref: j['genderPref'] as String?,
+        maritalStatus: j['maritalStatus'] as String?,
+        hasChildren: j['hasChildren'] as String?,
+        educationMin: j['educationMin'] as String?,
+        distanceLabel: j['distanceLabel'] as String?,
+        motherTongue: j['motherTongue'] as String?,
+        community: j['community'] as String?,
+        livingExpectation: j['livingExpectation'] as String?,
+        quranMemorization: j['quranMemorization'] as String?,
+        marriageTimeline: j['marriageTimeline'] as String?,
+        willingToRelocate: j['willingToRelocate'] as String?,
+        diasporaMode: (j['diasporaMode'] as bool?) ?? false,
+        diasporaCountries: j['diasporaCountries'] != null
+            ? List<String>.from(j['diasporaCountries'] as Iterable)
+            : null,
       );
     } catch (e) {
       debugPrint('DiscoveryFeedCubit: failed to load filter: $e');
@@ -302,28 +256,28 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         return;
       }
       final json = jsonEncode({
-        'ageMin':             f.ageMin,
-        'ageMax':             f.ageMax,
-        'sect':               f.sect,
-        'deenLevel':          f.deenLevel,
-        'verifiedOnly':       f.verifiedOnly,
+        'ageMin': f.ageMin,
+        'ageMax': f.ageMax,
+        'sect': f.sect,
+        'deenLevel': f.deenLevel,
+        'verifiedOnly': f.verifiedOnly,
         'activeRecentlyOnly': f.activeRecentlyOnly,
-        'maxDistanceKm':      f.maxDistanceKm,
-        'familyType':         f.familyType,
-        'openToDivorced':     f.openToDivorced,
-        'genderPref':         f.genderPref,
-        'maritalStatus':      f.maritalStatus,
-        'hasChildren':        f.hasChildren,
-        'educationMin':       f.educationMin,
-        'distanceLabel':      f.distanceLabel,
-        'motherTongue':       f.motherTongue,
-        'community':          f.community,
-        'livingExpectation':  f.livingExpectation,
-        'quranMemorization':  f.quranMemorization,
-        'marriageTimeline':   f.marriageTimeline,
-        'willingToRelocate':  f.willingToRelocate,
-        'diasporaMode':       f.diasporaMode,
-        'diasporaCountries':  f.diasporaCountries,
+        'maxDistanceKm': f.maxDistanceKm,
+        'familyType': f.familyType,
+        'openToDivorced': f.openToDivorced,
+        'genderPref': f.genderPref,
+        'maritalStatus': f.maritalStatus,
+        'hasChildren': f.hasChildren,
+        'educationMin': f.educationMin,
+        'distanceLabel': f.distanceLabel,
+        'motherTongue': f.motherTongue,
+        'community': f.community,
+        'livingExpectation': f.livingExpectation,
+        'quranMemorization': f.quranMemorization,
+        'marriageTimeline': f.marriageTimeline,
+        'willingToRelocate': f.willingToRelocate,
+        'diasporaMode': f.diasporaMode,
+        'diasporaCountries': f.diasporaCountries,
       });
       await prefs.setString(_kFilterKey, json);
     } catch (e) {
@@ -331,88 +285,39 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     }
   }
 
-  List<MockProfile> _applyFilter(List<MockProfile> pool, DiscoveryFilter f, OnboardingData? viewer) {
-    // T3: Get hidden profile IDs from BlockReportCubit
-    final hidden = blockReportCubit?.state.hiddenProfileIds ?? <String>{};
-
-    return pool.where((p) {
-      // T3: Blocked profiles filtered from discovery feed
-      if (hidden.isNotEmpty && hidden.contains(p.id)) return false;
-
-      // Filter by location / distance preference if viewer is available
-      if (viewer != null) {
-        if (f.distanceLabel == 'Same City') {
-          if (p.cityName.toLowerCase() != viewer.cityName?.toLowerCase()) return false;
-        } else if (f.distanceLabel == 'Same Country') {
-          if (p.countryCode?.toLowerCase() != viewer.countryCode?.toLowerCase()) return false;
-        } else if (f.distanceLabel == '50km' || f.distanceLabel == '100km') {
-          if (f.distanceLabel == '50km') {
-            if (p.cityName.toLowerCase() != viewer.cityName?.toLowerCase()) return false;
-          } else {
-            if (p.countryCode?.toLowerCase() != viewer.countryCode?.toLowerCase()) return false;
-          }
-        }
-      }
-
-      // Standard filters (only applied when filter is active)
-      if (f.isActive) {
-        if (f.sect != null && f.sect!.isNotEmpty && p.sect != f.sect) return false;
-        if (f.deenLevel != null && f.deenLevel!.isNotEmpty && p.deenLevel != f.deenLevel) return false;
-        if (f.verifiedOnly && !p.isVerified) return false;
-        if (f.ageMin != null && p.age < f.ageMin!) return false;
-        if (f.ageMax != null && p.age > f.ageMax!) return false;
-        if (f.familyType != null && f.familyType!.isNotEmpty && p.familyType != f.familyType) return false;
-        if (!f.openToDivorced && p.maritalStatus != null && p.maritalStatus != 'Never Married') return false;
-        // Phase 7 filters
-        if (f.quranMemorization != null && f.quranMemorization!.isNotEmpty && p.quranMemorization != f.quranMemorization) return false;
-        if (f.marriageTimeline != null && f.marriageTimeline!.isNotEmpty && p.marriageTimeline != f.marriageTimeline) return false;
-        if (f.willingToRelocate != null && f.willingToRelocate!.isNotEmpty && p.willingToRelocate != f.willingToRelocate) return false;
-        if (f.motherTongue != null && f.motherTongue!.isNotEmpty && p.motherTongue != f.motherTongue) return false;
-        if (f.community != null && f.community!.isNotEmpty && p.community != f.community) return false;
-        if (f.livingExpectation != null && f.livingExpectation!.isNotEmpty && p.livingExpectation != f.livingExpectation) return false;
-        if (f.genderPref != null && f.genderPref!.isNotEmpty && p.gender != f.genderPref) return false;
-        if (f.hasChildren != null && f.hasChildren == 'no' && p.hasChildren) return false;
-        if (f.diasporaMode && f.diasporaCountries != null && f.diasporaCountries!.isNotEmpty) {
-          if (p.countryCode == null || !f.diasporaCountries!.contains(p.countryCode)) return false;
-        }
-      }
-      return true;
-    }).toList();
+  void _resetCursors() {
+    _backendCursorScore = null;
+    _backendCursorId = null;
   }
 
-  // G1: Seeded RNG for consistent but varied lastActiveAt values
-  static final _rng = math.Random(42);
+  List<FeedProfile> _toFeedProfiles(
+    List<MockProfile> profiles, {
+    required int offset,
+  }) {
+    return [
+      for (var i = 0; i < profiles.length; i++)
+        FeedProfile(
+          profile: profiles[i],
+          isWildCard: offset + i > 0 && (offset + i + 1) % 10 == 0,
+          lastActiveAt: profiles[i].lastActiveAt,
+        ),
+    ];
+  }
 
-  /// Produce next batch with wild-card injection every 10th profile.
-  List<FeedProfile> _nextBatch(List<MockProfile> filtered, {required int offset}) {
-    if (_cursor >= filtered.length) return [];
+  void _updateBackendCursor(List<dynamic> rows) {
+    if (rows.isEmpty) return;
 
-    final end  = (_cursor + _batchSize).clamp(0, filtered.length);
-    final list = <FeedProfile>[];
-    final now  = DateTime.now();
-
-    for (int i = _cursor; i < end; i++) {
-      final feedIndex = offset + (i - _cursor);
-      final isWild    = feedIndex > 0 && (feedIndex + 1) % 10 == 0;
-      // G1: Generate realistic lastActiveAt (0 min → 5 days ago)
-      final minutesAgo = _rng.nextInt(7200); // 0–5 days in minutes
-      list.add(FeedProfile(
-        profile:      filtered[i],
-        isWildCard:   isWild,
-        lastActiveAt: now.subtract(Duration(minutes: minutesAgo)),
-      ));
+    final last = Map<String, dynamic>.from(rows.last as Map);
+    final score = (last['rank_score'] as num?)?.toDouble();
+    final profileId = last['profile_id'] as String?;
+    if (score != null && profileId != null) {
+      _backendCursorScore = score;
+      _backendCursorId = profileId;
     }
-    _cursor = end;
-    return list;
   }
 
   Map<String, dynamic> _mapFilterToJson(DiscoveryFilter f) {
-    int? maxKm;
-    if (f.distanceLabel == '50km') {
-      maxKm = 50;
-    } else if (f.distanceLabel == '100km') {
-      maxKm = 100;
-    }
+    final maxKm = f.effectiveMaxDistanceKm;
 
     return {
       if (maxKm != null) 'max_distance_km': maxKm,
@@ -421,49 +326,150 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       if (f.distanceLabel == 'Anywhere') 'anywhere': true,
       if (f.ageMin != null) 'age_min': f.ageMin,
       if (f.ageMax != null) 'age_max': f.ageMax,
+      'active_recently': f.activeRecentlyOnly,
       if (f.sect != null && f.sect != 'Any') 'sect': f.sect!.toLowerCase(),
-      if (f.deenLevel != null && f.deenLevel != 'Any') 'deen_level': f.deenLevel!.toLowerCase(),
+      if (f.deenLevel != null && f.deenLevel != 'Any')
+        'deen_level': f.deenLevel!.toLowerCase(),
       'verified_only': f.verifiedOnly,
-      if (f.familyType != null && f.familyType != 'Any') 'family_type': f.familyType!.toLowerCase(),
+      if (f.familyType != null && f.familyType != 'Any')
+        'family_type': f.familyType!.toLowerCase(),
       if (f.maritalStatus != null && f.maritalStatus != 'Any')
-        'marital_status': f.maritalStatus == 'Never Married' ? 'no' : f.maritalStatus!.toLowerCase(),
+        'marital_status': f.maritalStatus == 'Never Married'
+            ? 'no'
+            : f.maritalStatus!.toLowerCase(),
       'open_to_divorced': f.openToDivorced,
-      if (f.motherTongue != null && f.motherTongue != 'Any') 'mother_tongue': f.motherTongue,
+      if (_educationRank(f.educationMin) != null)
+        'education_min': _educationRank(f.educationMin),
+      if (f.motherTongue != null && f.motherTongue != 'Any')
+        'mother_tongue': f.motherTongue,
       if (f.community != null && f.community != 'Any') 'community': f.community,
-      if (f.livingExpectation != null && f.livingExpectation != 'Any') 'living_expectation': f.livingExpectation,
-      if (f.quranMemorization != null && f.quranMemorization != 'Any') 'quran_memorization': f.quranMemorization,
-      if (f.marriageTimeline != null && f.marriageTimeline != 'Any') 'marriage_timeline': f.marriageTimeline,
-      if (f.willingToRelocate != null && f.willingToRelocate != 'Any') 'willing_to_relocate': f.willingToRelocate,
+      if (f.livingExpectation != null && f.livingExpectation != 'Any')
+        'living_expectation': f.livingExpectation,
+      if (f.quranMemorization != null && f.quranMemorization != 'Any')
+        'quran_memorization': f.quranMemorization,
+      if (f.marriageTimeline != null && f.marriageTimeline != 'Any')
+        'marriage_timeline': f.marriageTimeline,
+      if (f.willingToRelocate != null && f.willingToRelocate != 'Any')
+        'willing_to_relocate': f.willingToRelocate,
       if (f.hasChildren != null) 'has_children': f.hasChildren!.toLowerCase(),
     };
   }
 
-  /// Fetches candidates pool. In real mode (Supabase configured), loads from
-  /// the matchmaking RPC get_discovery_feed.
-  /// Falls back to local unique mock pool when in mock mode.
+  /// Fetches real candidates and their stated compatibility preferences.
   Future<List<MockProfile>> _getPool({DiscoveryFilter? filter}) async {
-    if (SupabaseService.isInitialized) {
+    if (!SupabaseService.isInitialized) {
+      throw StateError('Discovery requires a Supabase connection.');
+    }
+    final currentUserId = SupabaseService.currentUserId;
+    if (currentUserId == null) {
+      throw StateError('Please sign in to view discovery profiles.');
+    }
+
+    try {
+      final payload =
+          filter != null ? _mapFilterToJson(filter) : <String, dynamic>{};
+      if (filter?.effectiveMaxDistanceKm != null &&
+          !_discoveryLocationPrepared) {
+        await LocationService.refreshDiscoveryLocation();
+        _discoveryLocationPrepared = true;
+      }
+      final response = await SupabaseService.client.rpc(
+        'get_discovery_feed',
+        params: {
+          'p_viewer_id': currentUserId,
+          'p_cursor_score': _backendCursorScore,
+          'p_cursor_id': _backendCursorId,
+          'p_page_size': _batchSize,
+          'p_filters': payload,
+        },
+      );
+
+      final rows = (response as List<dynamic>)
+          .map((row) => Map<String, dynamic>.from(row as Map))
+          .toList();
+      _updateBackendCursor(rows);
+      await _attachCompatibilityPreferences(rows);
+      final profiles = await compute(parseProfilesInBackground, rows);
+      return _signPhotoUrls(profiles);
+    } catch (e) {
+      debugPrint('DiscoveryFeedCubit: Supabase discovery failed: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> _attachCompatibilityPreferences(
+    List<Map<String, dynamic>> rows,
+  ) async {
+    if (rows.isEmpty) return;
+    final profileIds = rows
+        .map((row) => row['profile_id'] as String?)
+        .whereType<String>()
+        .toList();
+    if (profileIds.isEmpty) return;
+
+    final response = await SupabaseService.client.rpc(
+      'get_discovery_compatibility_preferences',
+      params: {'p_profile_ids': profileIds},
+    );
+    final preferencesByProfile = <String, Map<String, dynamic>>{
+      for (final raw in response as List<dynamic>)
+        if ((raw as Map)['profile_id'] != null)
+          raw['profile_id'] as String: Map<String, dynamic>.from(raw),
+    };
+    for (final row in rows) {
+      final preferences = preferencesByProfile[row['profile_id']];
+      if (preferences != null) row.addAll(preferences);
+    }
+  }
+
+  void _emitDiscoveryError(Object error, {bool keepProfiles = false}) {
+    if (isClosed) return;
+    emit(state.copyWith(
+      status: FeedStatus.error,
+      profiles: keepProfiles ? state.profiles : const [],
+      hasMore: false,
+      errorMessage: error is StateError
+          ? error.message
+          : 'Unable to load profiles. Please try again.',
+    ));
+  }
+
+  int? _educationRank(String? label) {
+    switch (label) {
+      case 'Matric':
+        return 1;
+      case 'Intermediate':
+        return 2;
+      case "Bachelor's":
+        return 3;
+      case "Master's":
+        return 4;
+      case 'PhD':
+        return 5;
+      default:
+        return null;
+    }
+  }
+
+  Future<List<MockProfile>> _signPhotoUrls(List<MockProfile> profiles) async {
+    final signed = <MockProfile>[];
+    for (final profile in profiles) {
+      final path = profile.photoUrl;
+      if (path == null || path.isEmpty || profile.isPhotoPrivate) {
+        signed.add(profile);
+        continue;
+      }
+
       try {
-        final currentUserId = SupabaseService.currentUserId;
-        if (currentUserId != null) {
-          final payload = filter != null ? _mapFilterToJson(filter) : <String, dynamic>{};
-          
-          final response = await SupabaseService.client.rpc(
-            'get_discovery_feed',
-            params: {
-              'p_viewer_id': currentUserId,
-              'p_page_size': 1000,
-              'p_filters': payload,
-            },
-          );
-          
-          final list = response as List<dynamic>;
-          return compute(parseProfilesInBackground, list);
-        }
+        final url = await SupabaseService.client.storage
+            .from('profile-photos')
+            .createSignedUrl(path, 60 * 60);
+        signed.add(profile.copyWith(photoUrl: url));
       } catch (e) {
-        debugPrint('DiscoveryFeedCubit: Error fetching from Supabase RPC, falling back to mock: $e');
+        debugPrint('DiscoveryFeedCubit: failed to sign photo URL: $e');
+        signed.add(profile.copyWith(clearPhotoUrl: true));
       }
     }
-    return _pool;
+    return signed;
   }
 }

@@ -1,5 +1,5 @@
 // lib/core/config/country_demographics/central_asia.dart
-// NOOR — Central Asian Demographics
+// MITHAQ — Central Asian Demographics
 
 const kCentralAsiaDemographics = <String, Map<String, List<String>>>{
   'TR': {

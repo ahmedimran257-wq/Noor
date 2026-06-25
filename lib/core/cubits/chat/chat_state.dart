@@ -1,6 +1,6 @@
 // lib/core/cubits/chat/chat_state.dart
 // ============================================================
-// NOOR — Chat State
+// MITHAQ — Chat State
 //
 // Blueprint (Part 8, Conversations):
 //   • Conversations list sorted by newest message

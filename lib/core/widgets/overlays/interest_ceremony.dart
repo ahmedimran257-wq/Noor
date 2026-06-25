@@ -23,7 +23,7 @@ import 'package:flutter/services.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimensions.dart';
 import '../../theme/app_typography.dart';
-import '../../theme/noor_spring.dart';
+import '../../theme/mithaq_spring.dart';
 
 // ── Public API ────────────────────────────────────────────────
 
@@ -89,7 +89,7 @@ class _InterestCeremonyOverlayState extends State<_InterestCeremonyOverlay>
       CurvedAnimation(
         parent: _ringController,
         curve: const SpringCurve(
-          spring: NoorSpring.bouncy,
+          spring: MithaqSpring.bouncy,
           duration: Duration(milliseconds: 500),
         ),
       ),
@@ -109,7 +109,7 @@ class _InterestCeremonyOverlayState extends State<_InterestCeremonyOverlay>
       CurvedAnimation(
         parent: _particleController,
         curve: const SpringCurve(
-          spring: NoorSpring.standard,
+          spring: MithaqSpring.standard,
           duration: Duration(milliseconds: 400),
         ),
       ),
@@ -126,7 +126,7 @@ class _InterestCeremonyOverlayState extends State<_InterestCeremonyOverlay>
       CurvedAnimation(
         parent: _checkController,
         curve: const SpringCurve(
-          spring: NoorSpring.bouncy,
+          spring: MithaqSpring.bouncy,
           duration: Duration(milliseconds: 400),
         ),
       ),

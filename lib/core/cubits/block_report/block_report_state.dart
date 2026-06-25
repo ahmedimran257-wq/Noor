@@ -1,6 +1,6 @@
 // lib/core/cubits/block_report/block_report_state.dart
 // ============================================================
-// NOOR — Block / Report State
+// MITHAQ — Block / Report State
 //
 // Blueprint (Part 9):
 //   - Blocking is silent. The blocked person is not notified.

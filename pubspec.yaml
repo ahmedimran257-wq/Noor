@@ -1,5 +1,5 @@
-name: noor
-description: "NOOR (نور) — Premium Muslim Matrimony App"
+name: mithaq
+description: "Mithaq (ميثاق) — Premium Muslim Matrimony App"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -25,7 +25,7 @@ dependencies:
   # ── Backend ───────────────────────────────────────────────
   supabase_flutter: ^2.9.0
   firebase_core: ^3.8.0           # Firebase initialization
-  firebase_auth: ^5.3.2          # Phone OTP auth
+  firebase_crashlytics: ^4.3.2   # Production crash reporting (free)
   purchases_flutter: ^8.9.0     # RevenueCat subscriptions (v8 — Flutter v2 embedding)
   firebase_messaging: ^15.2.0    # Push notifications via FCM (free & unlimited)
   uuid: ^4.5.1                   # Device ID generation
@@ -37,22 +37,29 @@ dependencies:
   shared_preferences: ^2.3.3      # Locale + theme persistence
   image_picker: ^1.1.2            # Camera / Gallery photo picking
   flutter_image_compress: ^2.3.0  # Compress before upload
-  google_mlkit_face_detection: ^0.12.0  # On-device face detection (free)
+  google_mlkit_face_detection: ^0.11.1  # Compatible with text recognition ^0.13.0
+  google_mlkit_text_recognition: ^0.13.0 # On-device ID OCR (free)
+  tflite_flutter: ^0.12.1               # Compatible on-device MobileFaceNet inference
+  app_links: ^7.0.0                     # DigiLocker OAuth callback handling
+  url_launcher: ^6.3.2                  # Opens optional DigiLocker consent
   path_provider: ^2.1.4                 # Temp dir for face detection
 
   # ── Networking ──────────────────────────────────────────────
-  http: ^1.2.2                    # REST Countries + Google Places API
+  http: ^1.2.2                    # Photon + Wikidata requests
 
   # ── Animations & Images ───────────────────────────────────
   flutter_animate: ^4.5.2         # City search dropdown animations
   cached_network_image: ^3.4.1    # Network image caching
   blurhash_dart: ^1.2.1          # BlurHash decode for photo placeholders
   image: ^4.3.0                  # Required by blurhash_dart for pixel buffer
+  geolocator: ^14.0.3
+  nsfw_detect: ^2.6.4
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true
@@ -71,5 +78,13 @@ flutter:
 
   # ── Assets ───────────────────────────────────────────────────
   # Add local asset paths here when needed, e.g.:\n  # assets:
-  #   - assets/images/
-  #   - assets/icons/
+  assets:
+    - assets/icon/
+    - assets/models/mobilefacenet.tflite
+    - assets/licenses/mobilefacenet-Apache-2.0.txt
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  min_sdk_android: 21

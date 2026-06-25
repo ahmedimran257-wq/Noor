@@ -1,6 +1,6 @@
 // lib/features/onboarding/screens/partner_preferences_screen.dart
 // ============================================================
-// NOOR — Partner Preferences Screen (Onboarding Step 7)
+// MITHAQ — Partner Preferences Screen (Onboarding Step 7)
 // Age range slider, location preference, sect/deen/education prefs,
 // openness toggles, living arrangement preference (Phase 2).
 // ============================================================

@@ -1,6 +1,6 @@
 // lib/features/verification/screens/selfie_verification_screen.dart
 // ============================================================
-// NOOR — Selfie Verification Screen
+// MITHAQ — Selfie Verification Screen
 //
 // 4-step flow:
 //   Step 0: Intro — "Verify Your Profile" with trust benefits
@@ -8,7 +8,7 @@
 //   Step 2: Processing — ML Kit analysis with animated feedback
 //   Step 3: Result — Success (teal) or Failure (coral) with actions
 //
-// Design: NOOR DNA — obsidian background, gold accents,
+// Design: MITHAQ DNA — obsidian background, gold accents,
 //         Playfair headings, Inter body, glassmorphism cards.
 // ============================================================
 

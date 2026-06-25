@@ -1,6 +1,6 @@
 // lib/features/home/screens/edit_profile_screen.dart
 // ============================================================
-// NOOR — Edit Profile Screen
+// MITHAQ — Edit Profile Screen
 //
 // Full editable profile with sections matching OnboardingData:
 //   Photos · Basic Info · Islamic Identity · About
@@ -20,6 +20,7 @@ import '../../../core/models/onboarding_data.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../onboarding/screens/photo_upload_screen.dart';
 
 // ── City data import — reuse same list from basic_identity_screen ──
 // (Inline minimal wrapper to avoid cross-file private access)
@@ -211,15 +212,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 const _SectionHeader(label: 'Photos'),
                 const SizedBox(height: AppDimensions.space12),
                 _PhotoGrid(
-                  onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Photo management coming soon',
-                          style: AppTypography.body),
-                      backgroundColor: AppColors.surfaceGlassHover,
-                      behavior:        SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                            AppDimensions.radiusButton),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<bool>(
+                      builder: (_) => const PhotoUploadScreen(
+                        returnToPreviousOnSave: true,
                       ),
                     ),
                   ),
@@ -229,19 +225,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 // ── Basic Info ───────────────────────────────
                 const _SectionHeader(label: 'Basic Info'),
                 const SizedBox(height: AppDimensions.space12),
-                _NoorTextField(
+                _MithaqTextField(
                   label:        'First name',
                   controller:   _firstNameCtrl,
                   onChanged:    (_) => setState(() {}),
                 ),
                 const SizedBox(height: AppDimensions.space12),
-                _NoorTextField(
+                _MithaqTextField(
                   label:        'Last name',
                   controller:   _lastNameCtrl,
                   onChanged:    (_) => setState(() {}),
                 ),
                 const SizedBox(height: AppDimensions.space12),
-                _NoorTextField(
+                _MithaqTextField(
                   label:        'City',
                   hint:         'e.g. Dubai, London, Karachi',
                   controller:   _cityCtrl,
@@ -304,7 +300,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 // ── About ────────────────────────────────────
                 const _SectionHeader(label: 'About'),
                 const SizedBox(height: AppDimensions.space12),
-                _NoorTextField(
+                _MithaqTextField(
                   label:      'Bio',
                   hint:       'Describe yourself with honesty and dignity.',
                   controller: _bioCtrl,
@@ -337,7 +333,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   onChanged: (v) => setState(() => _educationLabel = v),
                 ),
                 const SizedBox(height: AppDimensions.space12),
-                _NoorTextField(
+                _MithaqTextField(
                   label:      'Profession',
                   hint:       'e.g. Software Engineer',
                   controller: _professionCtrl,
@@ -598,10 +594,10 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-// ── NOOR Text Field ───────────────────────────────────────────
+// ── MITHAQ Text Field ───────────────────────────────────────────
 
-class _NoorTextField extends StatefulWidget {
-  const _NoorTextField({
+class _MithaqTextField extends StatefulWidget {
+  const _MithaqTextField({
     required this.label,
     required this.controller,
     required this.onChanged,
@@ -617,10 +613,10 @@ class _NoorTextField extends StatefulWidget {
   final ValueChanged<String> onChanged;
 
   @override
-  State<_NoorTextField> createState() => _NoorTextFieldState();
+  State<_MithaqTextField> createState() => _MithaqTextFieldState();
 }
 
-class _NoorTextFieldState extends State<_NoorTextField> {
+class _MithaqTextFieldState extends State<_MithaqTextField> {
   bool _focused = false;
 
   @override

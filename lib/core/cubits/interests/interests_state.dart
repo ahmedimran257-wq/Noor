@@ -1,6 +1,6 @@
 // lib/core/cubits/interests/interests_state.dart
 // ============================================================
-// NOOR — Interests State (Items 17 + 18)
+// MITHAQ — Interests State (Items 17 + 18)
 //
 // Blueprint (Part 8, Interest Lifecycle State Machine):
 //   PENDING → ACCEPTED → MATCH_CREATED (chat unlocked)

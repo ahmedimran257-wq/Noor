@@ -1,6 +1,6 @@
 // lib/core/services/profile_write_service.dart
 // ============================================================
-// NOOR — Profile Write Service
+// MITHAQ — Profile Write Service
 // Maps OnboardingData fields → Supabase column names and
 // performs partial upserts per onboarding step.
 //
@@ -51,7 +51,8 @@ class ProfileWriteService {
 
       // Success! Clear retry flag
       await prefs.remove(_keyPendingPhoneRetry);
-      debugPrint('ProfileWriteService: Successfully retried setting guardian phone');
+      debugPrint(
+          'ProfileWriteService: Successfully retried setting guardian phone');
     } catch (e) {
       debugPrint('ProfileWriteService: Failed retrying guardian phone: $e');
     }
@@ -82,12 +83,10 @@ class ProfileWriteService {
       }
 
       // Upsert to profiles table
-      await SupabaseService.client
-          .from('profiles')
-          .upsert({
-            'user_id': _userId,
-            ...fields,
-          }, onConflict: 'user_id');
+      await SupabaseService.client.from('profiles').upsert({
+        'user_id': _userId,
+        ...fields,
+      }, onConflict: 'user_id');
 
       // If this step includes preferences, upsert those too
       final prefFields = _preferenceFieldsForStep(step, data);
@@ -99,12 +98,10 @@ class ProfileWriteService {
             .eq('user_id', _userId!)
             .single();
 
-        await SupabaseService.client
-            .from('profile_preferences')
-            .upsert({
-              'profile_id': profileRes['id'],
-              ...prefFields,
-            }, onConflict: 'profile_id');
+        await SupabaseService.client.from('profile_preferences').upsert({
+          'profile_id': profileRes['id'],
+          ...prefFields,
+        }, onConflict: 'profile_id');
       }
 
       // Guardian phone: encrypt via set_guardian_phone() SECURITY DEFINER RPC
@@ -122,17 +119,20 @@ class ProfileWriteService {
             'p_phone': data.guardianPhone,
           });
         } catch (rpcErr) {
-          debugPrint('ProfileWriteService: RPC set_guardian_phone failed, queueing for retry: $rpcErr');
+          debugPrint(
+              'ProfileWriteService: RPC set_guardian_phone failed, queueing for retry: $rpcErr');
           try {
             final prefs = await SharedPreferences.getInstance();
             await prefs.setString(_keyPendingPhoneRetry, data.guardianPhone!);
           } catch (prefErr) {
-            debugPrint('ProfileWriteService: Failed to save phone for retry: $prefErr');
+            debugPrint(
+                'ProfileWriteService: Failed to save phone for retry: $prefErr');
           }
         }
       }
 
-      debugPrint('ProfileWriteService: Step $step saved (${fields.length} fields)');
+      debugPrint(
+          'ProfileWriteService: Step $step saved (${fields.length} fields)');
       return true;
     } catch (e) {
       debugPrint('ProfileWriteService: Error saving step $step: $e');
@@ -146,10 +146,59 @@ class ProfileWriteService {
     try {
       await SupabaseService.client
           .from('profiles')
-          .update({'onboarding_step': step})
-          .eq('user_id', _userId!);
+          .update({'onboarding_step': step}).eq('user_id', _userId!);
     } catch (e) {
       debugPrint('ProfileWriteService: Error updating step: $e');
+    }
+  }
+
+  static Future<void> markOnboardingComplete() async {
+    if (!_canWrite || _userId == null) return;
+    try {
+      await SupabaseService.client.from('profiles').update({
+        'onboarding_completed': true,
+        'onboarding_flow_version': 3,
+      }).eq('user_id', _userId!);
+    } catch (e) {
+      debugPrint('ProfileWriteService: Error marking onboarding complete: $e');
+    }
+  }
+
+  /// Persists deferred profile sections from Edit Profile after fast-start
+  /// onboarding. This keeps "complete later" real, not just locally cached.
+  static Future<bool> saveFullProfile(OnboardingData data) async {
+    if (!_canWrite || _userId == null) {
+      await Future.delayed(const Duration(milliseconds: 250));
+      return true;
+    }
+
+    try {
+      final fields = _fullProfileFields(data);
+      if (fields.isNotEmpty) {
+        await SupabaseService.client.from('profiles').upsert({
+          'user_id': _userId,
+          ...fields,
+        }, onConflict: 'user_id');
+      }
+
+      final prefFields = _preferenceFields(data);
+      if (prefFields.isNotEmpty) {
+        final profileRes = await SupabaseService.client
+            .from('profiles')
+            .select('id')
+            .eq('user_id', _userId!)
+            .single();
+
+        await SupabaseService.client.from('profile_preferences').upsert({
+          'profile_id': profileRes['id'],
+          ...prefFields,
+        }, onConflict: 'profile_id');
+      }
+
+      return true;
+    } catch (e) {
+      debugPrint('ProfileWriteService: Error saving full profile: $e');
+      return false;
     }
   }
 
@@ -162,41 +211,38 @@ class ProfileWriteService {
     OnboardingData data,
     bool isGuardianPath,
   ) {
-    // Guardian path shifts steps by +1 (step 1 = guardian details)
-    final effectiveStep = isGuardianPath ? step - 1 : step;
+    // Fast-start v3 uses the same five step numbers for self and guardian.
+    final effectiveStep = step;
 
-    // Guardian details (only on guardian path, step 1)
-    if (isGuardianPath && step == 1) {
-      // Map 'parent' / 'sibling' / 'guardian' relation to accepted DB constraint ('other' if parent/sibling)
-      String? dbRelation = 'other';
-      if (data.guardianRelationship == 'guardian') {
-        dbRelation = 'other';
-      }
+    // Quick Location is a dedicated mandatory step in flow version 2.
+    if (effectiveStep == 1) {
+      return _locationFields(data);
+    }
 
+    if (effectiveStep == 4) {
       return _compactMap({
-        'guardian_name': data.guardianName,
-        'guardian_relationship': dbRelation,
-        'guardian_email': data.guardianEmail,
-        'guardian_authority_scope': data.guardianAuthorityScope,
-        'guardian_phone_country_code': data.guardianPhoneCountryCode,
-        'guardian_mode': data.guardianMode ?? 'passive',
-        'profile_creator_relation': data.profileCreatorRelation == 'son' || data.profileCreatorRelation == 'daughter'
-            ? 'parent'
-            : (data.profileCreatorRelation == 'brother' || data.profileCreatorRelation == 'sister' ? 'sibling' : data.profileCreatorRelation),
+        'photo_privacy': _photoPrivacyToString(data.photoPrivacy),
       });
     }
 
-    switch (effectiveStep) {
+    // The remaining screens preserve their legacy field mapping, shifted by
+    // one because Quick Location was inserted before Basic Identity.
+    final legacyEffectiveStep = effectiveStep <= 0 ? 0 : effectiveStep - 1;
+    switch (legacyEffectiveStep) {
       // Step 0 — ProfileForWhom (no DB fields, just local state)
       case 0:
         final relation = data.profileCreatorRelation ??
-              (data.profileFor == ProfileFor.myself ? 'self' : 'guardian');
+            (data.profileFor == ProfileFor.myself ? 'self' : 'guardian');
         final dbRelation = relation == 'son' || relation == 'daughter'
             ? 'parent'
-            : (relation == 'brother' || relation == 'sister' ? 'sibling' : relation);
+            : (relation == 'brother' || relation == 'sister'
+                ? 'sibling'
+                : relation);
 
         return _compactMap({
           'profile_creator_relation': dbRelation,
+          'guardian_mode':
+              data.profileFor == ProfileFor.guardian ? 'passive' : 'none',
         });
 
       // Step 1 — Basic Identity
@@ -206,16 +252,13 @@ class ProfileWriteService {
           'last_name': data.lastName,
           'date_of_birth': data.dateOfBirth?.toIso8601String().split('T')[0],
           'gender': _genderToString(data.gender),
-          'city_id': (data.cityId != null && RegExp(r'^\d+$').hasMatch(data.cityId!))
-              ? int.parse(data.cityId!)
-              : null,
-          'country_code': data.countryCode,
           'height_cm': data.heightCm,
           'complexion': data.complexion?.toLowerCase().replaceAll(' ', '_'),
           'mother_tongue': data.motherTongue,
           'community': data.community,
           'residency_status': data.residencyStatus,
-          'special_needs': data.specialNeeds, // Fixed Flaw 22: Written in step 1
+          'special_needs':
+              data.specialNeeds, // Fixed Flaw 22: Written in step 1
         });
 
       // Step 2 — Islamic Identity
@@ -273,7 +316,8 @@ class ProfileWriteService {
           'profession': data.profession,
           'employment_status': _employmentStatusToString(data.employmentStatus),
           'income_bracket': data.incomeBracketId, // Fixed Flaw 16: Persisted
-          'income_visibility': data.incomeVisibility, // Fixed Flaw 16: Persisted
+          'income_visibility':
+              data.incomeVisibility, // Fixed Flaw 16: Persisted
         });
 
       // Step 5 — Family
@@ -325,9 +369,9 @@ class ProfileWriteService {
     int step,
     OnboardingData data,
   ) {
-    // Only step 7 (myself) or 8 (guardian) writes preferences
+    // Quick Location shifts preferences by one for both paths.
     final isGuardian = data.profileFor == ProfileFor.guardian;
-    final prefStep = isGuardian ? 8 : 7;
+    final prefStep = isGuardian ? 9 : 8;
     if (step != prefStep) return {};
 
     return _compactMap({
@@ -341,8 +385,123 @@ class ProfileWriteService {
       'open_to_has_children': data.openToWithChildren,
       'preferred_living_expectation': data.preferredLivingExpectation,
       'diaspora_mode': data.locationPreference == LocationPreference.diaspora,
-      'location_preference': data.locationPreference?.name, // Fixed Flaw 21: Persist LocationPreference name
+      'location_preference': data.locationPreference
+          ?.name, // Fixed Flaw 21: Persist LocationPreference name
     });
+  }
+
+  static Map<String, dynamic> _fullProfileFields(OnboardingData data) {
+    final fields = <String, dynamic>{
+      ..._locationFields(data),
+      'profile_creator_relation': _creatorRelationForDb(data),
+      'guardian_mode': data.profileFor == ProfileFor.guardian
+          ? data.guardianMode ?? 'passive'
+          : 'none',
+      'guardian_name': data.guardianName,
+      'guardian_relationship': data.guardianRelationship == 'guardian'
+          ? 'other'
+          : data.guardianRelationship,
+      'guardian_email': data.guardianEmail,
+      'guardian_authority_scope': data.guardianAuthorityScope,
+      'guardian_phone_country_code': data.guardianPhoneCountryCode,
+      'first_name': data.firstName,
+      'last_name': data.lastName,
+      'date_of_birth': data.dateOfBirth?.toIso8601String().split('T')[0],
+      'gender': _genderToString(data.gender),
+      'height_cm': data.heightCm,
+      'complexion': data.complexion?.toLowerCase().replaceAll(' ', '_'),
+      'mother_tongue': data.motherTongue,
+      'community': data.community,
+      'residency_status': data.residencyStatus,
+      'special_needs': data.specialNeeds,
+      'sect': _sectToString(data.sect),
+      'sub_sect': data.subSect,
+      'deen_level': _deenLevelToString(data.deenLevel),
+      'prays_five_daily': data.praysFiveDaily,
+      'hijab': data.hijabStyle,
+      'beard': data.beardStyle,
+      'diet_type': data.dietType,
+      'smoking_habit': data.smokingHabit,
+      'vaping_habit': data.vapingHabit,
+      'hookah_habit': data.hookahHabit,
+      'education_level': data.educationLabel,
+      'education_rank': data.educationRank,
+      'field_of_study': data.fieldOfStudy,
+      'profession': data.profession,
+      'employment_status': _employmentStatusToString(data.employmentStatus),
+      'income_bracket': data.incomeBracketId,
+      'income_visibility': data.incomeVisibility,
+      'family_type': _familyTypeToString(data.familyType),
+      'sibling_count': data.siblingCount,
+      'is_eldest_child': data.isEldestChild,
+      'parents_status': data.parentsStatus,
+      'previously_married': data.previouslyMarried,
+      'children_count': data.childrenCount,
+      'living_expectation': data.livingExpectation,
+      'bio': data.bio,
+      'interests': data.interests,
+      'languages': data.languages,
+      'photo_privacy': _photoPrivacyToString(data.photoPrivacy),
+      'quran_memorization': data.quranMemorization,
+      'religious_education': data.religiousEducation,
+      'is_revert': data.isRevert,
+      'marriage_timeline': data.marriageTimeline,
+      'willing_to_relocate': data.willingToRelocate,
+      'religious_leadership': data.religiousLeadership,
+    };
+
+    if (data.gender == Gender.female) {
+      fields.addAll({
+        'niqab_preference': data.niqabPreference,
+        'mahr_expectation': data.mahrExpectation,
+        'willing_to_work_after_marriage': data.willingToWorkAfterMarriage,
+        'polygamy_acceptance': data.polygamyAcceptance,
+      });
+    } else if (data.gender == Gender.male) {
+      fields.addAll({
+        'mahr_budget': data.mahrBudget,
+        'can_provide_housing': data.canProvideHousing,
+        'can_provide_maintenance': data.canProvideMaintenance,
+        'debt_status': data.debtStatus,
+        'polygamy_status': data.polygamyStatus,
+      });
+    }
+
+    return _compactMap(fields);
+  }
+
+  static Map<String, dynamic> _locationFields(OnboardingData data) {
+    return _compactMap({
+      'city_id':
+          (data.cityId != null && RegExp(r'^\d+$').hasMatch(data.cityId!))
+              ? int.parse(data.cityId!)
+              : null,
+      'country_code': data.countryCode,
+    });
+  }
+
+  static Map<String, dynamic> _preferenceFields(OnboardingData data) {
+    return _compactMap({
+      'preferred_age_min': data.preferredAgeMin,
+      'preferred_age_max': data.preferredAgeMax,
+      'sect_preference': data.preferredSect,
+      'deen_preference': data.preferredDeenLevel,
+      'min_education_rank': data.minEducationRank,
+      'open_to_divorced': data.openToDivorced,
+      'open_to_widowed': data.openToWidowed,
+      'open_to_has_children': data.openToWithChildren,
+      'preferred_living_expectation': data.preferredLivingExpectation,
+      'diaspora_mode': data.locationPreference == LocationPreference.diaspora,
+      'location_preference': data.locationPreference?.name,
+    });
+  }
+
+  static String? _creatorRelationForDb(OnboardingData data) {
+    final relation = data.profileCreatorRelation ??
+        (data.profileFor == ProfileFor.myself ? 'self' : 'guardian');
+    if (relation == 'son' || relation == 'daughter') return 'parent';
+    if (relation == 'brother' || relation == 'sister') return 'sibling';
+    return relation;
   }
 
   /// Loads profile data from Supabase for the current user to restore onboarding state.
@@ -359,7 +518,19 @@ class ProfileWriteService {
 
       if (profileRes == null) return null;
 
-      // 2. Fetch profile_preferences table row if it exists
+      // 2. Fetch users row for auth/contact metadata.
+      Map<String, dynamic>? userRes;
+      try {
+        userRes = await SupabaseService.client
+            .from('users')
+            .select('email, phone')
+            .eq('id', _userId!)
+            .maybeSingle();
+      } catch (e) {
+        debugPrint('ProfileWriteService: User row not found or error: $e');
+      }
+
+      // 3. Fetch profile_preferences table row if it exists
       Map<String, dynamic>? prefRes;
       try {
         prefRes = await SupabaseService.client
@@ -368,11 +539,12 @@ class ProfileWriteService {
             .eq('profile_id', profileRes['id'])
             .maybeSingle();
       } catch (e) {
-        debugPrint('ProfileWriteService: Preferences row not found or error: $e');
+        debugPrint(
+            'ProfileWriteService: Preferences row not found or error: $e');
       }
 
-      // 3. Construct and return OnboardingData
-      return _mapDbToOnboardingData(profileRes, prefRes);
+      // 4. Construct and return OnboardingData
+      return _mapDbToOnboardingData(profileRes, prefRes, userRes);
     } catch (e) {
       debugPrint('ProfileWriteService: Error loading profile: $e');
       return null;
@@ -382,10 +554,12 @@ class ProfileWriteService {
   static OnboardingData _mapDbToOnboardingData(
     Map<String, dynamic> p,
     Map<String, dynamic>? pr,
+    Map<String, dynamic>? u,
   ) {
     final creatorRel = p['profile_creator_relation'] as String?;
     final guardianMode = p['guardian_mode'] as String?;
-    final isGuardian = creatorRel != 'self' && (guardianMode != null && guardianMode != 'none');
+    final isGuardian = creatorRel != 'self' &&
+        (guardianMode != null && guardianMode != 'none');
 
     // Parse date of birth
     DateTime? dob;
@@ -404,12 +578,23 @@ class ProfileWriteService {
     String? complexion;
     if (complexionVal != null) {
       switch (complexionVal) {
-        case 'fair': complexion = 'Fair'; break;
-        case 'medium': complexion = 'Medium'; break;
-        case 'olive': complexion = 'Olive'; break;
-        case 'dark': complexion = 'Dark'; break;
-        case 'prefer_not_to_say': complexion = 'Prefer not to say'; break;
-        default: complexion = complexionVal;
+        case 'fair':
+          complexion = 'Fair';
+          break;
+        case 'medium':
+          complexion = 'Medium';
+          break;
+        case 'olive':
+          complexion = 'Olive';
+          break;
+        case 'dark':
+          complexion = 'Dark';
+          break;
+        case 'prefer_not_to_say':
+          complexion = 'Prefer not to say';
+          break;
+        default:
+          complexion = complexionVal;
       }
     }
 
@@ -417,10 +602,18 @@ class ProfileWriteService {
     Sect? sect;
     if (p['sect'] != null) {
       switch (p['sect'] as String) {
-        case 'sunni': sect = Sect.sunni; break;
-        case 'shia': sect = Sect.shia; break;
-        case 'prefer_not_to_say': sect = Sect.preferNotToSay; break;
-        case 'other': sect = Sect.other; break;
+        case 'sunni':
+          sect = Sect.sunni;
+          break;
+        case 'shia':
+          sect = Sect.shia;
+          break;
+        case 'prefer_not_to_say':
+          sect = Sect.preferNotToSay;
+          break;
+        case 'other':
+          sect = Sect.other;
+          break;
       }
     }
 
@@ -428,9 +621,15 @@ class ProfileWriteService {
     DeenLevel? deen;
     if (p['deen_level'] != null) {
       switch (p['deen_level'] as String) {
-        case 'practicing': deen = DeenLevel.practicing; break;
-        case 'moderate': deen = DeenLevel.moderate; break;
-        case 'cultural': deen = DeenLevel.cultural; break;
+        case 'practicing':
+          deen = DeenLevel.practicing;
+          break;
+        case 'moderate':
+          deen = DeenLevel.moderate;
+          break;
+        case 'cultural':
+          deen = DeenLevel.cultural;
+          break;
       }
     }
 
@@ -438,10 +637,18 @@ class ProfileWriteService {
     EmploymentStatus? empStatus;
     if (p['employment_status'] != null) {
       switch (p['employment_status'] as String) {
-        case 'employed': empStatus = EmploymentStatus.employed; break;
-        case 'self_employed': empStatus = EmploymentStatus.selfEmployed; break;
-        case 'student': empStatus = EmploymentStatus.student; break;
-        case 'not_working': empStatus = EmploymentStatus.notWorking; break;
+        case 'employed':
+          empStatus = EmploymentStatus.employed;
+          break;
+        case 'self_employed':
+          empStatus = EmploymentStatus.selfEmployed;
+          break;
+        case 'student':
+          empStatus = EmploymentStatus.student;
+          break;
+        case 'not_working':
+          empStatus = EmploymentStatus.notWorking;
+          break;
       }
     }
 
@@ -449,9 +656,15 @@ class ProfileWriteService {
     FamilyType? famType;
     if (p['family_type'] != null) {
       switch (p['family_type'] as String) {
-        case 'nuclear': famType = FamilyType.nuclear; break;
-        case 'joint': famType = FamilyType.joint; break;
-        case 'extended': famType = FamilyType.extended; break;
+        case 'nuclear':
+          famType = FamilyType.nuclear;
+          break;
+        case 'joint':
+          famType = FamilyType.joint;
+          break;
+        case 'extended':
+          famType = FamilyType.extended;
+          break;
       }
     }
 
@@ -460,9 +673,15 @@ class ProfileWriteService {
     final previouslyMarried = p['previously_married'] as String?;
     if (previouslyMarried != null) {
       switch (previouslyMarried) {
-        case 'no': marStatus = MaritalStatus.neverMarried; break;
-        case 'divorced': marStatus = MaritalStatus.divorced; break;
-        case 'widowed': marStatus = MaritalStatus.widowed; break;
+        case 'no':
+          marStatus = MaritalStatus.neverMarried;
+          break;
+        case 'divorced':
+          marStatus = MaritalStatus.divorced;
+          break;
+        case 'widowed':
+          marStatus = MaritalStatus.widowed;
+          break;
       }
     }
 
@@ -539,8 +758,12 @@ class ProfileWriteService {
       childrenCount: p['children_count'] as int?,
       livingExpectation: p['living_expectation'] as String?,
       bio: p['bio'] as String?,
-      interests: p['interests'] != null ? List<String>.from(p['interests'] as Iterable) : null,
-      languages: p['languages'] != null ? List<String>.from(p['languages'] as Iterable) : null,
+      interests: p['interests'] != null
+          ? List<String>.from(p['interests'] as Iterable)
+          : null,
+      languages: p['languages'] != null
+          ? List<String>.from(p['languages'] as Iterable)
+          : null,
       preferredAgeMin: pr?['preferred_age_min'] as int?,
       preferredAgeMax: pr?['preferred_age_max'] as int?,
       locationPreference: locPref,
@@ -550,7 +773,8 @@ class ProfileWriteService {
       openToDivorced: pr?['open_to_divorced'] as bool?,
       openToWidowed: pr?['open_to_widowed'] as bool?,
       openToWithChildren: pr?['open_to_has_children'] as bool?,
-      preferredLivingExpectation: pr?['preferred_living_expectation'] as String?,
+      preferredLivingExpectation:
+          pr?['preferred_living_expectation'] as String?,
       photoPrivacy: p['photo_privacy'] == 'mutual_only'
           ? PhotoPrivacy.mutualOnly
           : p['photo_privacy'] == 'request_only'
@@ -568,6 +792,8 @@ class ProfileWriteService {
       canProvideMaintenance: p['can_provide_maintenance'] as bool?,
       debtStatus: p['debt_status'] as String?,
       religiousLeadership: p['religious_leadership'] as String?,
+      email: u?['email'] as String?,
+      phone: u?['phone'] as String?,
       guardianName: p['guardian_name'] as String?,
       guardianRelationship: guardianRelationship,
       guardianPhoneCountryCode: p['guardian_phone_country_code'] as String?,
@@ -587,55 +813,74 @@ class ProfileWriteService {
   static String? _genderToString(Gender? g) {
     if (g == null) return null;
     switch (g) {
-      case Gender.male:   return 'male';
-      case Gender.female: return 'female';
+      case Gender.male:
+        return 'male';
+      case Gender.female:
+        return 'female';
     }
   }
 
   static String? _sectToString(Sect? s) {
     if (s == null) return null;
     switch (s) {
-      case Sect.sunni:          return 'sunni';
-      case Sect.shia:           return 'shia';
-      case Sect.preferNotToSay: return 'prefer_not_to_say';
-      case Sect.other:          return 'other';
+      case Sect.sunni:
+        return 'sunni';
+      case Sect.shia:
+        return 'shia';
+      case Sect.preferNotToSay:
+        return 'prefer_not_to_say';
+      case Sect.other:
+        return 'other';
     }
   }
 
   static String? _deenLevelToString(DeenLevel? d) {
     if (d == null) return null;
     switch (d) {
-      case DeenLevel.practicing: return 'practicing';
-      case DeenLevel.moderate:   return 'moderate';
-      case DeenLevel.cultural:   return 'cultural';
+      case DeenLevel.practicing:
+        return 'practicing';
+      case DeenLevel.moderate:
+        return 'moderate';
+      case DeenLevel.cultural:
+        return 'cultural';
     }
   }
 
   static String? _familyTypeToString(FamilyType? f) {
     if (f == null) return null;
     switch (f) {
-      case FamilyType.nuclear:  return 'nuclear';
-      case FamilyType.joint:    return 'joint';
-      case FamilyType.extended: return 'extended';
+      case FamilyType.nuclear:
+        return 'nuclear';
+      case FamilyType.joint:
+        return 'joint';
+      case FamilyType.extended:
+        return 'extended';
     }
   }
 
   static String? _employmentStatusToString(EmploymentStatus? e) {
     if (e == null) return null;
     switch (e) {
-      case EmploymentStatus.employed:     return 'employed';
-      case EmploymentStatus.selfEmployed: return 'self_employed';
-      case EmploymentStatus.student:      return 'student';
-      case EmploymentStatus.notWorking:   return 'not_working';
+      case EmploymentStatus.employed:
+        return 'employed';
+      case EmploymentStatus.selfEmployed:
+        return 'self_employed';
+      case EmploymentStatus.student:
+        return 'student';
+      case EmploymentStatus.notWorking:
+        return 'not_working';
     }
   }
 
   static String? _photoPrivacyToString(PhotoPrivacy? p) {
     if (p == null) return null;
     switch (p) {
-      case PhotoPrivacy.publicAll:    return 'public';
-      case PhotoPrivacy.mutualOnly:   return 'mutual_only';
-      case PhotoPrivacy.requestOnly:  return 'request_only';
+      case PhotoPrivacy.publicAll:
+        return 'public';
+      case PhotoPrivacy.mutualOnly:
+        return 'mutual_only';
+      case PhotoPrivacy.requestOnly:
+        return 'request_only';
     }
   }
 

@@ -1,0 +1,7 @@
+import { requireAdmin } from "@/lib/auth";
+import { getSubscribers } from "@/lib/operations";
+
+export default async function SubscriptionsPage() {
+  await requireAdmin(); const subscribers = await getSubscribers(); const total = subscribers.reduce((sum, item) => sum + Number(item.total_paid ?? 0), 0);
+  return <section className="dashboard-page"><p className="eyebrow">Commercial operations</p><h1>Subscriptions</h1><div className="metric-grid"><article className="metric-card"><span>Active subscribers</span><strong>{subscribers.length}</strong></article><article className="metric-card"><span>Recorded lifetime revenue</span><strong>{total.toLocaleString(undefined,{style:"currency",currency:"INR",maximumFractionDigits:0})}</strong></article></div><h2 className="section-title">Current subscribers</h2><div className="table-wrap"><table><thead><tr><th>Name</th><th>Country</th><th>Plan</th><th>Status</th><th>Renews</th><th>Total paid</th></tr></thead><tbody>{subscribers.map((item) => <tr key={item.user_id}><td>{item.name}</td><td>{item.country_code}</td><td>{item.product_id ?? "Unknown"}</td><td>{item.subscription_status}</td><td>{item.subscription_expires_at ? new Date(item.subscription_expires_at).toLocaleDateString() : "N/A"}</td><td>{Number(item.total_paid ?? 0).toLocaleString(undefined,{style:"currency",currency:"INR",maximumFractionDigits:0})}</td></tr>)}</tbody></table></div></section>;
+}

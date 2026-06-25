@@ -1,6 +1,6 @@
 // lib/core/services/bookmark_service.dart
 // ============================================================
-// NOOR — Bookmark Service
+// MITHAQ — Bookmark Service
 // Persists a Set<String> of bookmarked profile IDs using
 // SharedPreferences so bookmarks survive app restarts.
 // ============================================================

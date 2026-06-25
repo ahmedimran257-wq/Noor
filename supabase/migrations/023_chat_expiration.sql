@@ -65,7 +65,7 @@ BEGIN
     'match_expiring',
     '⏳ Match expiring soon',
     format('Your match will expire tomorrow. Send a message to keep the conversation going!'),
-    format('noor://chat/%s', m.id),
+    format('mithaq://chat/%s', m.id),
     NOW()
   FROM matches m
   LEFT JOIN LATERAL (
@@ -80,7 +80,7 @@ BEGIN
     AND NOT EXISTS (
       SELECT 1 FROM notifications n
       WHERE n.type = 'match_expiring'
-        AND n.deep_link = format('noor://chat/%s', m.id)
+        AND n.deep_link = format('mithaq://chat/%s', m.id)
         AND n.created_at > NOW() - INTERVAL '2 days'
     );
 
@@ -94,7 +94,7 @@ BEGIN
     'match_expiring',
     '⏳ Conversation expiring',
     'Your conversation will expire in 2 days if there''s no response.',
-    format('noor://chat/%s', m.id),
+    format('mithaq://chat/%s', m.id),
     NOW()
   FROM matches m
   JOIN LATERAL (
@@ -108,7 +108,7 @@ BEGIN
     AND NOT EXISTS (
       SELECT 1 FROM notifications n
       WHERE n.type = 'match_expiring'
-        AND n.deep_link = format('noor://chat/%s', m.id)
+        AND n.deep_link = format('mithaq://chat/%s', m.id)
         AND n.created_at > NOW() - INTERVAL '2 days'
     );
 

@@ -270,7 +270,7 @@ BEGIN
        AND v_expires > NOW() - INTERVAL '24 hours' THEN
       RETURN NEW;
     END IF;
-    RAISE EXCEPTION 'Subscribe to unlock messaging. Women always message free on NOOR.';
+    RAISE EXCEPTION 'Subscribe to unlock messaging. Women always message free on Mithaq.';
   END IF;
 
   RETURN NEW;  -- Women always pass

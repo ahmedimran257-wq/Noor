@@ -1,6 +1,6 @@
 // lib/core/cubits/block_report/block_report_cubit.dart
 // ============================================================
-// NOOR — Block / Report Cubit (Real Supabase + Mock Fallback)
+// MITHAQ — Block / Report Cubit (Real Supabase + Mock Fallback)
 //
 // Blueprint (Part 9):
 //   "Blocking is silent. The blocked person is not notified.

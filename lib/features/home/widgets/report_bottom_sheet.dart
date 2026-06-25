@@ -1,6 +1,6 @@
 // lib/features/home/widgets/report_bottom_sheet.dart
 // ============================================================
-// NOOR — Report Bottom Sheet (Item 28 — 3-Step Multi-Flow)
+// MITHAQ — Report Bottom Sheet (Item 28 — 3-Step Multi-Flow)
 //
 // Blueprint (Part 9 — Report Reasons):
 //   fake_profile, inappropriate_photos, harassment, scam,

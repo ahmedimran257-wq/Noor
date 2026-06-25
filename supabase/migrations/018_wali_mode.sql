@@ -86,7 +86,7 @@ BEGIN
         ELSE format('New message from %s', COALESCE(v_other_name, 'someone'))
       END,
       LEFT(NEW.content, 100),  -- First 100 chars of message
-      format('noor://chat/%s', NEW.match_id)
+      format('mithaq://chat/%s', NEW.match_id)
     );
   END LOOP;
 
@@ -304,7 +304,7 @@ BEGIN
       'guardian_sent_message',
       'Your guardian sent a message',
       'Your guardian responded on your behalf in a conversation.',
-      format('noor://chat/%s', NEW.match_id)
+      format('mithaq://chat/%s', NEW.match_id)
     );
   END IF;
 

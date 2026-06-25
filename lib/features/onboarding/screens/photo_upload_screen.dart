@@ -1,6 +1,6 @@
 // lib/features/onboarding/screens/photo_upload_screen.dart
 // ============================================================
-// NOOR — Photo Upload Screen (Onboarding Step 8)
+// MITHAQ — Photo Upload Screen (Onboarding Step 8)
 // 4-slot grid. Slot 0 = primary photo (required to proceed).
 // Real image picking via image_picker (Camera / Gallery).
 // Compression via flutter_image_compress (webp, 800px, q82).
@@ -19,6 +19,8 @@ import 'package:path_provider/path_provider.dart' show getTemporaryDirectory;
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_state.dart';
 import '../../../core/models/onboarding_data.dart';
+import '../../../core/services/profile_photo_service.dart';
+import '../../../core/services/photo_moderation_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
@@ -35,7 +37,7 @@ enum _FaceResult { found, notFound }
 Future<_FaceResult> _detectFace(Uint8List bytes) async {
   try {
     final tempDir = await getTemporaryDirectory();
-    final tempFile = File('${tempDir.path}/noor_face_check_${DateTime.now().millisecondsSinceEpoch}.webp');
+    final tempFile = File('${tempDir.path}/mithaq_face_check_${DateTime.now().millisecondsSinceEpoch}.webp');
     await tempFile.writeAsBytes(bytes);
 
     final inputImage = InputImage.fromFilePath(tempFile.path);
@@ -59,16 +61,21 @@ Future<_FaceResult> _detectFace(Uint8List bytes) async {
 
     return faces.isNotEmpty ? _FaceResult.found : _FaceResult.notFound;
   } catch (_) {
-    // If ML Kit fails (e.g. missing native libs in emulator),
-    // allow the photo through and let backend moderation catch it.
-    return _FaceResult.found;
+    // Fail closed: an unavailable detector must not make a photo eligible for
+    // the primary-profile requirement.
+    return _FaceResult.notFound;
   }
 }
 
 // ── Screen ────────────────────────────────────────────────────
 
 class PhotoUploadScreen extends StatefulWidget {
-  const PhotoUploadScreen({super.key});
+  const PhotoUploadScreen({
+    super.key,
+    this.returnToPreviousOnSave = false,
+  });
+
+  final bool returnToPreviousOnSave;
 
   @override
   State<PhotoUploadScreen> createState() => _PhotoUploadScreenState();
@@ -96,7 +103,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         final file = File(path);
         if (file.existsSync()) {
           final fileName = file.path.split('/').last.split('\\').last;
-          final match = RegExp(r'noor_photo_slot_(\d+)').firstMatch(fileName);
+          final match = RegExp(r'mithaq_photo_slot_(\d+)').firstMatch(fileName);
           if (match != null) {
             final idx = int.parse(match.group(1)!);
             if (idx >= 0 && idx < 4) {
@@ -165,9 +172,9 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       if (result == null) {
         // Fallback: use raw bytes
         final raw = await File(xfile.path).readAsBytes();
-        _setSlot(index, raw);
+        await _setSlot(index, raw);
       } else {
-        _setSlot(index, result);
+        await _setSlot(index, result);
       }
     } catch (e) {
       if (mounted) {
@@ -187,8 +194,22 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
 
   Future<void> _setSlot(int index, Uint8List bytes) async {
     final tempDir = await getTemporaryDirectory();
-    final file = File('${tempDir.path}/noor_photo_slot_$index.webp');
+    final file = File('${tempDir.path}/mithaq_photo_slot_$index.webp');
     await file.writeAsBytes(bytes);
+
+    final moderation =
+        await PhotoModerationService.instance.scanFile(file.path);
+    if (!mounted) return;
+    if (!moderation.isSafe) {
+      await file.delete().catchError((_) => file);
+      _showPhotoSafetyError(
+        moderation.decision == PhotoModerationDecision.unsafe
+            ? 'This photo cannot be used because it may contain explicit content.'
+            : 'The photo safety check could not be completed. Please choose another photo.',
+      );
+      return;
+    }
+
     _paths[index] = file.path;
 
     // Show loading while face detection runs
@@ -287,7 +308,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
     });
   }
 
-  void _advance() {
+  Future<void> _advance() async {
     final paths = <String>[];
     for (int i = 0; i < 4; i++) {
       if (_paths[i] != null) paths.add(_paths[i]!);
@@ -296,7 +317,52 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       photoLocalPaths: paths,
       photoPrivacy:    _privacy,
     );
-    context.read<OnboardingCubit>().saveAndAdvance(data);
+    setState(() => _uploading = true);
+    try {
+      await ProfilePhotoService.instance.syncLocalPhotos(
+        paths,
+        privacy: _privacy,
+      );
+      if (!mounted) return;
+      final cubit = context.read<OnboardingCubit>();
+      if (widget.returnToPreviousOnSave) {
+        cubit.updateProfile(data);
+        Navigator.pop(context, true);
+      } else {
+        cubit.saveAndAdvance(data);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          SnackBar(
+            content: const Text('Could not upload photos. Please try again.',
+                style: AppTypography.body),
+            backgroundColor: AppColors.surfaceGlassHover,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+              side: const BorderSide(color: AppColors.cardBorder),
+            ),
+          ),
+        );
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  void _showPhotoSafetyError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: AppTypography.body),
+        backgroundColor: AppColors.softCoral,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+        ),
+      ),
+    );
   }
 
   @override

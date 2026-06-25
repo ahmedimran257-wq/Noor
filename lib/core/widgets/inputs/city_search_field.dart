@@ -1,11 +1,11 @@
 // lib/core/widgets/inputs/city_search_field.dart
 // ============================================================
-// NOOR — City Search Field
+// MITHAQ — City Search Field
 //
-// Uses Google Places Autocomplete → Place Details.
+// Uses the Supabase city cache with Photon as the global fallback.
 // Shows: city name, state, country, postal code (pincode).
 //
-// Degrades gracefully to free-text when no API key is set.
+// Requires a verified result so matching always has coordinates.
 //
 // Usage:
 //   CitySearchField(
@@ -39,6 +39,7 @@ class CitySearchField extends StatefulWidget {
     this.initialValue,
     this.label,
     this.hint,
+    this.enabled = true,
   });
 
   final String? countryCode;
@@ -46,17 +47,18 @@ class CitySearchField extends StatefulWidget {
   final String? initialValue;
   final String? label;
   final String? hint;
+  final bool enabled;
 
   @override
   State<CitySearchField> createState() => _CitySearchFieldState();
 }
 
 class _CitySearchFieldState extends State<CitySearchField> {
-  final _ctrl    = TextEditingController();
-  final _focus   = FocusNode();
+  final _ctrl = TextEditingController();
+  final _focus = FocusNode();
   final _service = CountryContextService.instance;
 
-  List<CityResult> _results  = [];
+  List<CityResult> _results = [];
   bool _loading = false;
   bool _showDropdown = false;
   Timer? _debounce;
@@ -69,7 +71,7 @@ class _CitySearchFieldState extends State<CitySearchField> {
   void initState() {
     super.initState();
     if (widget.initialValue != null) {
-      _ctrl.text       = widget.initialValue!;
+      _ctrl.text = widget.initialValue!;
       _selectedDisplay = widget.initialValue;
     }
     _focus.addListener(_onFocusChange);
@@ -97,6 +99,7 @@ class _CitySearchFieldState extends State<CitySearchField> {
   }
 
   void _onFocusChange() {
+    if (!widget.enabled) return;
     if (_focus.hasFocus) {
       if (_ctrl.text.trim().length >= 2 && !_showDropdown) {
         setState(() {
@@ -117,14 +120,15 @@ class _CitySearchFieldState extends State<CitySearchField> {
   }
 
   void _onChanged(String value) {
+    if (!widget.enabled) return;
     // If value matches selected, don't re-search
     if (value == _selectedDisplay) return;
 
     _debounce?.cancel();
     if (value.trim().length < 2) {
       setState(() {
-        _results       = [];
-        _showDropdown  = false;
+        _results = [];
+        _showDropdown = false;
         _hideOverlay();
       });
       return;
@@ -132,6 +136,16 @@ class _CitySearchFieldState extends State<CitySearchField> {
 
     _debounce = Timer(const Duration(milliseconds: 400), () async {
       if (!mounted) return;
+      final countryCode = widget.countryCode;
+      if (countryCode == null || countryCode.trim().isEmpty) {
+        setState(() {
+          _results = [];
+          _loading = false;
+          _showDropdown = false;
+          _hideOverlay();
+        });
+        return;
+      }
       setState(() {
         _loading = true;
         _showDropdown = true;
@@ -140,13 +154,13 @@ class _CitySearchFieldState extends State<CitySearchField> {
 
       final results = await _service.searchCities(
         value,
-        countryCode: widget.countryCode,
+        countryCode: countryCode,
       );
 
       if (!mounted) return;
       setState(() {
-        _results  = results;
-        _loading  = false;
+        _results = results;
+        _loading = false;
         if (_showDropdown) {
           _showOverlay();
         }
@@ -161,12 +175,12 @@ class _CitySearchFieldState extends State<CitySearchField> {
 
     setState(() {
       _selectedDisplay = display;
-      _showDropdown    = false;
-      _results         = [];
+      _showDropdown = false;
+      _results = [];
       _hideOverlay();
     });
     _ctrl.value = TextEditingValue(
-      text:      display,
+      text: display,
       selection: TextSelection.collapsed(offset: display.length),
     );
     _focus.unfocus();
@@ -226,7 +240,7 @@ class _CitySearchFieldState extends State<CitySearchField> {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       decoration: BoxDecoration(
-        color:        AppColors.inputSurface,
+        color: AppColors.inputSurface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
         border: Border.all(
           color: _focus.hasFocus
@@ -236,10 +250,11 @@ class _CitySearchFieldState extends State<CitySearchField> {
         ),
       ),
       child: TextField(
+        enabled: widget.enabled,
         controller: _ctrl,
-        focusNode:  _focus,
-        onChanged:  _onChanged,
-        style:      AppTypography.inputText,
+        focusNode: _focus,
+        onChanged: _onChanged,
+        style: AppTypography.inputText,
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
           hintText: widget.hint ?? 'Search city or area',
@@ -253,7 +268,8 @@ class _CitySearchFieldState extends State<CitySearchField> {
               ? const Padding(
                   padding: EdgeInsets.all(14),
                   child: SizedBox(
-                    width: 16, height: 16,
+                    width: 16,
+                    height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 1.5,
                       color: AppColors.champagneGold,
@@ -285,10 +301,10 @@ class _CitySearchFieldState extends State<CitySearchField> {
                       ),
                     )
                   : null,
-          border:          InputBorder.none,
+          border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 0,
-            vertical:   18,
+            vertical: 18,
           ),
         ),
       ),
@@ -300,19 +316,19 @@ class _CitySearchFieldState extends State<CitySearchField> {
     final showFallback = queryText.isNotEmpty;
 
     return Material(
-      color:       Colors.transparent,
+      color: Colors.transparent,
       borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-      elevation:   0,
+      elevation: 0,
       child: Container(
         decoration: BoxDecoration(
-          color:        AppColors.dropdownSurface,
+          color: AppColors.dropdownSurface,
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
           border: Border.all(color: AppColors.cardBorder),
           boxShadow: [
             BoxShadow(
-              color:      Colors.black.withValues(alpha: 0.4),
+              color: Colors.black.withValues(alpha: 0.4),
               blurRadius: 24,
-              offset:     const Offset(0, 8),
+              offset: const Offset(0, 8),
             ),
           ],
         ),
@@ -325,19 +341,19 @@ class _CitySearchFieldState extends State<CitySearchField> {
                 ),
               )
             : ListView.separated(
-                shrinkWrap:       true,
-                physics:          const NeverScrollableScrollPhysics(),
-                itemCount:        _results.length + (showFallback ? 1 : 0),
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _results.length + (showFallback ? 1 : 0),
                 separatorBuilder: (_, __) => const Divider(
                   height: 1,
-                  color:  AppColors.cardBorder,
+                  color: AppColors.cardBorder,
                 ),
                 itemBuilder: (context, i) {
                   if (i < _results.length) {
                     final r = _results[i];
                     return _CityTile(
                       result: r,
-                      onTap:  () => _selectResult(r),
+                      onTap: () => _selectResult(r),
                     );
                   } else {
                     return _CustomCityTile(
@@ -361,8 +377,10 @@ class _CitySearchFieldState extends State<CitySearchField> {
               ),
       ),
     ).animate().fadeIn(duration: 180.ms).slideY(
-          begin: -0.04, end: 0,
-          duration: 220.ms, curve: Curves.easeOutCubic,
+          begin: -0.04,
+          end: 0,
+          duration: 220.ms,
+          curve: Curves.easeOutCubic,
         );
   }
 }
@@ -376,30 +394,30 @@ class _CustomCityTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap:       onTap,
+      onTap: onTap,
       splashColor: AppColors.goldGlow,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
             Container(
-              width:  36,
+              width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color:        AppColors.champagneGold.withValues(alpha: 0.08),
+                color: AppColors.champagneGold.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
                 Icons.add_location_alt_rounded,
                 color: AppColors.champagneGold,
-                size:  18,
+                size: 18,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize:       MainAxisSize.min,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     'Use "$query" as custom city',
@@ -407,8 +425,8 @@ class _CustomCityTile extends StatelessWidget {
                       fontWeight: FontWeight.w500,
                       color: AppColors.champagneGold,
                     ),
-                    maxLines:  1,
-                    overflow:  TextOverflow.ellipsis,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -416,8 +434,8 @@ class _CustomCityTile extends StatelessWidget {
                     style: AppTypography.caption.copyWith(
                       color: AppColors.slateMist,
                     ),
-                    maxLines:  1,
-                    overflow:  TextOverflow.ellipsis,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
@@ -434,7 +452,7 @@ class _CustomCityTile extends StatelessWidget {
 class _CityTile extends StatelessWidget {
   const _CityTile({required this.result, required this.onTap});
 
-  final CityResult   result;
+  final CityResult result;
   final VoidCallback onTap;
 
   @override
@@ -445,38 +463,38 @@ class _CityTile extends StatelessWidget {
     ].join(' · ');
 
     return InkWell(
-      onTap:       onTap,
+      onTap: onTap,
       splashColor: AppColors.goldGlow,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
             Container(
-              width:  36,
+              width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color:        AppColors.champagneGold.withValues(alpha: 0.08),
+                color: AppColors.champagneGold.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
                 Icons.location_city_rounded,
                 color: AppColors.champagneGold,
-                size:  18,
+                size: 18,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize:       MainAxisSize.min,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     result.city.isNotEmpty ? result.city : result.fullAddress,
                     style: AppTypography.body.copyWith(
                       fontWeight: FontWeight.w500,
                     ),
-                    maxLines:  1,
-                    overflow:  TextOverflow.ellipsis,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   if (subtitle.isNotEmpty) ...[
                     const SizedBox(height: 2),
@@ -485,8 +503,8 @@ class _CityTile extends StatelessWidget {
                       style: AppTypography.caption.copyWith(
                         color: AppColors.slateMist,
                       ),
-                      maxLines:  1,
-                      overflow:  TextOverflow.ellipsis,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ],
@@ -496,10 +514,11 @@ class _CityTile extends StatelessWidget {
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 8, vertical: 4,
+                  horizontal: 8,
+                  vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color:        AppColors.champagneGold.withValues(alpha: 0.08),
+                  color: AppColors.champagneGold.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
                     color: AppColors.champagneGold.withValues(alpha: 0.2),
@@ -508,8 +527,8 @@ class _CityTile extends StatelessWidget {
                 child: Text(
                   result.postalCode,
                   style: AppTypography.caption.copyWith(
-                    color:       AppColors.champagneGold,
-                    fontWeight:  FontWeight.w600,
+                    color: AppColors.champagneGold,
+                    fontWeight: FontWeight.w600,
                     letterSpacing: 0.5,
                   ),
                 ),

@@ -1,6 +1,6 @@
 // lib/features/onboarding/screens/welcome_screen.dart
 // ============================================================
-// NOOR — Welcome Screen (Onboarding Step 10 → Complete)
+// MITHAQ — Welcome Screen (Onboarding Step 10 → Complete)
 // Celebration animation + community guidelines.
 // "Start Browsing" routes to /home.
 // ============================================================
@@ -8,12 +8,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:noor/l10n/generated/app_localizations.dart';
+import 'package:mithaq/l10n/generated/app_localizations.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
+import '../../../core/services/profile_write_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/buttons/noor_primary_button.dart';
+import '../../../core/widgets/buttons/mithaq_primary_button.dart';
 import '../../../core/router/app_router.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -160,8 +161,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   
                         Text(
                           isAr
-                              ? 'ملفك الشخصي مرئي الآن على نور.\nيسّر الله لك أمرك.'
-                              : 'Your profile is now visible on NOOR.\n'
+                              ? 'ملفك الشخصي مرئي الآن على ميثاق.\nيسّر الله لك أمرك.'
+                              : 'Your profile is now visible on Mithaq.\n'
                                 'May Allah make it easy for you.',
                           style: AppTypography.bodyMuted,
                           textAlign: TextAlign.center,
@@ -221,12 +222,17 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   
                         const Spacer(flex: 3),
   
-                        NoorPrimaryButton(
+                        MithaqPrimaryButton(
                           label: isAr ? 'ابدأ التصفح' : 'Start Browsing',
-                          onTap: () {
-                            // Mark onboarding as fully complete (step >= 14)
-                            // so the router redirect allows /home navigation.
-                            context.read<AuthCubit>().updateOnboardingStep(14);
+                          onTap: () async {
+                            const completedStep = 14;
+                            await ProfileWriteService.updateOnboardingStep(
+                              completedStep,
+                            );
+                            if (!context.mounted) return;
+                            context
+                                .read<AuthCubit>()
+                                .updateOnboardingStep(completedStep);
                             context.go(AppRoutes.home);
                           },
                         ),

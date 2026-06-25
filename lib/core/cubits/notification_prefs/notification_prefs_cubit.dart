@@ -1,6 +1,6 @@
 // lib/core/cubits/notification_prefs/notification_prefs_cubit.dart
 // ============================================================
-// NOOR — Notification Preferences Cubit (Real Supabase + Mock)
+// MITHAQ — Notification Preferences Cubit (Real Supabase + Mock)
 //
 // Each toggle maps directly to a column in the notification_prefs
 // DB table. In real mode: upserts to Supabase on every toggle.

@@ -1,6 +1,6 @@
 // lib/features/home/screens/delete_account_screen.dart
 // ============================================================
-// NOOR — Delete Account Screen (Feature 15)
+// MITHAQ — Delete Account Screen (Feature 15)
 // Multi-step AnimatedSwitcher flow:
 //   Step 1: Warning + 30-day grace info
 //   Step 2: Reason selection
@@ -57,6 +57,8 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
           // 1. Update users table in Supabase (sets deleted_at, triggering soft-delete cascade)
           await SupabaseService.client.from('users').update({
             'deletion_status': 'pending_deletion',
+            'deletion_reason': _reason,
+            'deletion_requested_at': DateTime.now().toUtc().toIso8601String(),
             'deleted_at': DateTime.now().toUtc().toIso8601String(),
           }).eq('id', userId);
 
@@ -205,7 +207,7 @@ class _Step1 extends StatelessWidget {
             icon:  Icons.credit_card_off_outlined,
             color: AppColors.slateMist,
             title: 'Subscriptions cancelled',
-            body:  'Any active NOOR Premium subscription will be cancelled at the end of the current billing period.',
+            body:  'Any active MITHAQ Premium subscription will be cancelled at the end of the current billing period.',
           ),
           const SizedBox(height: AppDimensions.space40),
           SizedBox(
@@ -260,7 +262,7 @@ class _Step2 extends StatelessWidget {
   final VoidCallback onContinue;
 
   static const _reasons = [
-    'Found my match on NOOR',
+    'Found my match on MITHAQ',
     'Found match elsewhere',
     'Taking a break',
     'Privacy concerns',
@@ -279,7 +281,7 @@ class _Step2 extends StatelessWidget {
           Text('Why are you leaving?',
               style: AppTypography.screenTitle.copyWith(fontSize: 22)),
           const SizedBox(height: AppDimensions.space8),
-          const Text('This helps us improve NOOR for others.',
+          const Text('This helps us improve MITHAQ for others.',
               style: AppTypography.bodyMuted),
           const SizedBox(height: AppDimensions.space24),
           Container(

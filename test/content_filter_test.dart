@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:noor/core/utils/content_filter.dart';
+import 'package:mithaq/core/utils/content_filter.dart';
 
 void main() {
   group('ContentFilter Tests', () {

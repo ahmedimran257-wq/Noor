@@ -1,6 +1,6 @@
 // lib/features/onboarding/screens/guardian_details_screen.dart
 // ============================================================
-// NOOR — Guardian Details Screen (Onboarding Step 0.5)
+// MITHAQ — Guardian Details Screen (Onboarding Step 0.5)
 //
 // Shown when user selects Guardian → Son/Daughter/Brother/Sister
 // in ProfileForWhomScreen. The candidate's gender and the

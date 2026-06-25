@@ -2,7 +2,7 @@
   "@@locale": "fr",
   "@@last_modified": "2026-05-09",
 
-  "appName": "NOOR",
+  "appName": "MITHAQ",
   "appTagline": "Commencez par bismillah",
 
   "common_button_next": "Suivant",
@@ -53,7 +53,7 @@
   "onboarding_label_female": "Femme",
   "onboarding_label_city": "Ville",
   "onboarding_hint_searchCity": "Recherchez votre ville…",
-  "onboarding_error_under18": "NOOR est réservé aux personnes de 18 ans et plus. Cette exigence protège notre communauté.",
+  "onboarding_error_under18": "MITHAQ est réservé aux personnes de 18 ans et plus. Cette exigence protège notre communauté.",
 
   "onboarding_islamicIdentity_title": "Votre identité islamique",
   "onboarding_label_sect": "Courant",
@@ -125,7 +125,7 @@
   "onboarding_error_noFace": "Veuillez utiliser une photo où votre visage est clairement visible.",
   "onboarding_error_multipleFaces": "Les photos de groupe ne peuvent pas être votre photo principale.",
 
-  "discovery_header_title": "NOOR",
+  "discovery_header_title": "MITHAQ",
   "discovery_label_profilesRemaining": "{count} profils restants aujourd'hui",
   "discovery_button_sendInterest": "Envoyer un intérêt",
   "discovery_label_interestSent": "Intérêt envoyé ✓",
@@ -135,7 +135,7 @@
 
   "chat_placeholder_typeMessage": "Écrire un message…",
   "chat_label_probation": "La messagerie se déverrouille dans {hours} heures. Vous pouvez envoyer des intérêts maintenant.",
-  "chat_label_subscribeToMessage": "Abonnez-vous pour déverrouiller la messagerie. Les femmes envoient toujours des messages gratuitement sur NOOR.",
+  "chat_label_subscribeToMessage": "Abonnez-vous pour déverrouiller la messagerie. Les femmes envoient toujours des messages gratuitement sur MITHAQ.",
   "chat_opener_1": "Assalamu Alaikum ! J'ai vu votre profil et j'ai été sincèrement impressionné(e). Puis-je me présenter ?",
   "chat_opener_2": "Bismillah. Votre profil a attiré mon attention. J'aimerais en savoir plus sur vous.",
   "chat_opener_3": "Assalamu Alaikum. Je crois que nous partageons des valeurs similaires. Seriez-vous ouvert(e) à faire connaissance ?",
@@ -154,7 +154,7 @@
   "filter_label_community": "Communauté / Biradari",
   "filter_label_livingExpectation": "Logement après mariage",
 
-  "subscription_title": "Débloquez NOOR",
+  "subscription_title": "Débloquez MITHAQ",
   "subscription_subtitle": "Les femmes envoient des messages gratuitement. Les hommes s'abonnent pour se connecter.",
   "subscription_button_monthly": "S'abonner — {price}/mois",
   "subscription_label_bestValue": "Meilleure offre",

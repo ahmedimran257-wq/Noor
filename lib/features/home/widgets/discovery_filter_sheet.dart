@@ -1,6 +1,6 @@
 // lib/features/home/widgets/discovery_filter_sheet.dart
 // ============================================================
-// NOOR — Full Filter Bottom Sheet (Feature 8 + 9)
+// MITHAQ — Full Filter Bottom Sheet (Feature 8 + 9)
 //
 // Sections (scrollable):
 //   Gender · Age Range · Sect · Deen Level · Education
@@ -28,7 +28,7 @@ import '../../../core/services/filter_preset_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/overlays/noor_bottom_sheet.dart';
+import '../../../core/widgets/overlays/mithaq_bottom_sheet.dart';
 import '../screens/subscription_screen.dart';
 import '../../../core/data/country_data.dart';
 
@@ -40,11 +40,12 @@ Future<void> showDiscoveryFilterSheet(
   String? scrollToSection,
 }) async {
   await Navigator.of(context).push(
-    NoorBottomSheetRoute<void>(
+    MithaqBottomSheetRoute<void>(
       builder: (sheetCtx) => BlocProvider.value(
         value: context.read<DiscoveryFeedCubit>(),
         child: DiscoveryFilterSheet(
-          initial:         initial ?? context.read<DiscoveryFeedCubit>().state.activeFilter,
+          initial:
+              initial ?? context.read<DiscoveryFeedCubit>().state.activeFilter,
           scrollToSection: scrollToSection,
         ),
       ),
@@ -64,7 +65,7 @@ class DiscoveryFilterSheet extends StatefulWidget {
   });
 
   final DiscoveryFilter initial;
-  final String?         scrollToSection;
+  final String? scrollToSection;
 
   @override
   State<DiscoveryFilterSheet> createState() => _DiscoveryFilterSheetState();
@@ -72,27 +73,27 @@ class DiscoveryFilterSheet extends StatefulWidget {
 
 class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
   late DiscoveryFilter _draft;
-  final _scrollCtrl  = ScrollController();
+  final _scrollCtrl = ScrollController();
   List<FilterPreset> _presets = [];
   bool _showSaveField = false;
   final _presetNameCtrl = TextEditingController();
 
   // Section GlobalKeys for scroll-to
-  final _genderKey    = GlobalKey();
-  final _ageKey       = GlobalKey();
-  final _sectKey      = GlobalKey();
-  final _deenKey      = GlobalKey();
-  final _eduKey       = GlobalKey();
-  final _familyKey    = GlobalKey();
-  final _maritalKey   = GlobalKey();
-  final _childrenKey  = GlobalKey();
-  final _verifiedKey  = GlobalKey();
-  final _distanceKey  = GlobalKey();
+  final _genderKey = GlobalKey();
+  final _ageKey = GlobalKey();
+  final _sectKey = GlobalKey();
+  final _deenKey = GlobalKey();
+  final _eduKey = GlobalKey();
+  final _familyKey = GlobalKey();
+  final _maritalKey = GlobalKey();
+  final _childrenKey = GlobalKey();
+  final _verifiedKey = GlobalKey();
+  final _distanceKey = GlobalKey();
   // Phase 2
-  final _tongueKey    = GlobalKey();
+  final _tongueKey = GlobalKey();
   final _communityKey = GlobalKey();
-  final _livingKey    = GlobalKey();
-  final _diasporaKey  = GlobalKey();
+  final _livingKey = GlobalKey();
+  final _diasporaKey = GlobalKey();
 
   @override
   void initState() {
@@ -100,7 +101,8 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
     _draft = widget.initial;
     _loadPresets();
     if (widget.scrollToSection != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollTo(widget.scrollToSection!));
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => _scrollTo(widget.scrollToSection!));
     }
   }
 
@@ -118,26 +120,27 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
 
   void _scrollTo(String section) {
     final key = switch (section) {
-      'gender'    => _genderKey,
-      'age'       => _ageKey,
-      'sect'      => _sectKey,
-      'deen'      => _deenKey,
+      'gender' => _genderKey,
+      'age' => _ageKey,
+      'sect' => _sectKey,
+      'deen' => _deenKey,
       'education' => _eduKey,
-      'family'    => _familyKey,
-      'marital'   => _maritalKey,
-      'children'  => _childrenKey,
-      'verified'  => _verifiedKey,
-      'distance'  => _distanceKey,
-      'diaspora'  => _diasporaKey,
-      'tongue'    => _tongueKey,
+      'family' => _familyKey,
+      'marital' => _maritalKey,
+      'children' => _childrenKey,
+      'verified' => _verifiedKey,
+      'distance' => _distanceKey,
+      'diaspora' => _diasporaKey,
+      'tongue' => _tongueKey,
       'community' => _communityKey,
-      'living'    => _livingKey,
-      _           => _genderKey,
+      'living' => _livingKey,
+      _ => _genderKey,
     };
     final ctx = key.currentContext;
     if (ctx != null) {
       Scrollable.ensureVisible(ctx,
-          duration: const Duration(milliseconds: 400), curve: Curves.easeOutCubic);
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOutCubic);
     }
   }
 
@@ -148,15 +151,15 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
     await FilterPresetService.save(updated);
     if (mounted) {
       setState(() {
-        _presets        = updated.take(FilterPresetService.maxPresets).toList();
-        _showSaveField  = false;
+        _presets = updated.take(FilterPresetService.maxPresets).toList();
+        _showSaveField = false;
         _presetNameCtrl.clear();
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content:          Text('Preset "$name" saved', style: AppTypography.body),
-          backgroundColor:  AppColors.surfaceGlassHover,
-          behavior:         SnackBarBehavior.floating,
+          content: Text('Preset "$name" saved', style: AppTypography.body),
+          backgroundColor: AppColors.surfaceGlassHover,
+          behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
           ),
@@ -218,8 +221,8 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
         MediaQuery.of(context).padding.bottom;
     return DraggableScrollableSheet(
       initialChildSize: 0.92,
-      minChildSize:     0.5,
-      maxChildSize:     0.97,
+      minChildSize: 0.5,
+      maxChildSize: 0.97,
       builder: (ctx, scrollCtrl) {
         return Container(
           decoration: const BoxDecoration(
@@ -230,7 +233,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
           child: Column(
             children: [
               // Handle
-              const Center(child: NoorPulseHandle()),
+              const Center(child: MithaqPulseHandle()),
 
               // Header
               Padding(
@@ -238,13 +241,15 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                 child: Row(
                   children: [
                     Text('Filters',
-                        style: AppTypography.screenTitle.copyWith(fontSize: 20)),
+                        style:
+                            AppTypography.screenTitle.copyWith(fontSize: 20)),
                     const Spacer(),
                     TextButton(
-                      onPressed: () => setState(() => _showSaveField = !_showSaveField),
+                      onPressed: () =>
+                          setState(() => _showSaveField = !_showSaveField),
                       child: Text('Save preset',
-                          style: AppTypography.caption.copyWith(
-                              color: AppColors.champagneGold)),
+                          style: AppTypography.caption
+                              .copyWith(color: AppColors.champagneGold)),
                     ),
                   ],
                 ),
@@ -265,10 +270,12 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                     GestureDetector(
                       onTap: _savePreset,
                       child: Container(
-                        width: 44, height: 44,
+                        width: 44,
+                        height: 44,
                         decoration: BoxDecoration(
-                          color:        AppColors.champagneGold,
-                          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                          color: AppColors.champagneGold,
+                          borderRadius:
+                              BorderRadius.circular(AppDimensions.radiusButton),
                         ),
                         child: const Icon(Icons.check_rounded,
                             color: AppColors.obsidianNight, size: 20),
@@ -284,20 +291,22 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                   child: SizedBox(
                     height: 36,
                     child: ListView.separated(
-                      scrollDirection:  Axis.horizontal,
-                      itemCount:        _presets.length,
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _presets.length,
                       separatorBuilder: (_, __) => const SizedBox(width: 8),
                       itemBuilder: (_, i) {
                         final p = _presets[i];
                         return GestureDetector(
-                          onTap:      () => _applyPreset(p),
+                          onTap: () => _applyPreset(p),
                           onLongPress: () => _deletePreset(i),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: AppColors.champagneGold.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+                              color: AppColors.champagneGold
+                                  .withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(
+                                  AppDimensions.radiusChip),
                               border: Border.all(color: AppColors.goldBorder),
                             ),
                             child: Row(
@@ -326,16 +335,15 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                   controller: scrollCtrl,
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
                   children: [
-
                     // ── GENDER PREFERENCE ──────────────────────
                     _SectionLabel(key: _genderKey, label: 'GENDER PREFERENCE'),
                     const SizedBox(height: 8),
                     _RadioGroup<String?>(
                       options: const [null, 'Male', 'Female'],
-                      labels:  const ['Any', 'Male', 'Female'],
-                      value:   _draft.genderPref,
-                      onChanged: (v) => setState(() =>
-                          _draft = _draft.copyWith(genderPref: v, clearGenderPref: v == null)),
+                      labels: const ['Any', 'Male', 'Female'],
+                      value: _draft.genderPref,
+                      onChanged: (v) => setState(() => _draft = _draft.copyWith(
+                          genderPref: v, clearGenderPref: v == null)),
                     ),
                     const SizedBox(height: 20),
 
@@ -345,9 +353,11 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                     _AgeRangeField(
                       min: (_draft.ageMin ?? 22).toDouble(),
                       max: (_draft.ageMax ?? 35).toDouble(),
-                      onChanged: (lo, hi) => setState(() => _draft = _draft.copyWith(
-                        ageMin: lo.round(), ageMax: hi.round(),
-                      )),
+                      onChanged: (lo, hi) =>
+                          setState(() => _draft = _draft.copyWith(
+                                ageMin: lo.round(),
+                                ageMax: hi.round(),
+                              )),
                     ),
                     const SizedBox(height: 20),
 
@@ -355,7 +365,12 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                     _SectionLabel(key: _sectKey, label: 'SECT'),
                     const SizedBox(height: 8),
                     _MultiChipGroup(
-                      options: const ['Any', 'Sunni', 'Shia', 'Prefer not to say'],
+                      options: const [
+                        'Any',
+                        'Sunni',
+                        'Shia',
+                        'Prefer not to say'
+                      ],
                       selected: _draft.sect,
                       onChanged: (v) => setState(() => _draft =
                           _draft.copyWith(sect: v, clearSect: v == null)),
@@ -366,11 +381,21 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                     _SectionLabel(key: _deenKey, label: 'DEEN LEVEL'),
                     const SizedBox(height: 8),
                     _MultiChipGroup(
-                      options:      const ['Any', 'practicing', 'moderate', 'cultural'],
-                      optionLabels: const ['Any', 'Practicing', 'Moderate', 'Cultural'],
+                      options: const [
+                        'Any',
+                        'practicing',
+                        'moderate',
+                        'cultural'
+                      ],
+                      optionLabels: const [
+                        'Any',
+                        'Practicing',
+                        'Moderate',
+                        'Cultural'
+                      ],
                       selected: _draft.deenLevel,
-                      onChanged: (v) => setState(() => _draft =
-                          _draft.copyWith(deenLevel: v, clearDeenLevel: v == null)),
+                      onChanged: (v) => setState(() => _draft = _draft.copyWith(
+                          deenLevel: v, clearDeenLevel: v == null)),
                     ),
                     const SizedBox(height: 20),
 
@@ -380,13 +405,17 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                     _DropdownRow(
                       value: _draft.educationMin ?? 'Any',
                       options: const [
-                        'Any', 'Matric', 'Intermediate',
-                        "Bachelor's", "Master's", 'PhD',
+                        'Any',
+                        'Matric',
+                        'Intermediate',
+                        "Bachelor's",
+                        "Master's",
+                        'PhD',
                       ],
                       onChanged: (v) => setState(() => _draft = _draft.copyWith(
-                        educationMin: v == 'Any' ? null : v,
-                        clearEducationMin: v == 'Any',
-                      )),
+                            educationMin: v == 'Any' ? null : v,
+                            clearEducationMin: v == 'Any',
+                          )),
                     ),
                     const SizedBox(height: 20),
 
@@ -397,8 +426,9 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                       options: const ['Any', 'Nuclear', 'Joint', 'Extended'],
                       selected: _draft.familyType,
                       onChanged: (v) => setState(() => _draft = _draft.copyWith(
-                        familyType: v, clearFamilyType: v == null,
-                      )),
+                            familyType: v,
+                            clearFamilyType: v == null,
+                          )),
                     ),
                     const SizedBox(height: 20),
 
@@ -406,11 +436,17 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                     _SectionLabel(key: _maritalKey, label: 'MARITAL STATUS'),
                     const SizedBox(height: 8),
                     _MultiChipGroup(
-                      options: const ['Never Married', 'Divorced', 'Widowed', 'Any'],
+                      options: const [
+                        'Never Married',
+                        'Divorced',
+                        'Widowed',
+                        'Any'
+                      ],
                       selected: _draft.maritalStatus,
                       onChanged: (v) => setState(() => _draft = _draft.copyWith(
-                        maritalStatus: v, clearMaritalStatus: v == null,
-                      )),
+                            maritalStatus: v,
+                            clearMaritalStatus: v == null,
+                          )),
                     ),
                     const SizedBox(height: 20),
 
@@ -419,11 +455,12 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                     const SizedBox(height: 8),
                     _RadioGroup<String?>(
                       options: const [null, 'No', 'Yes'],
-                      labels:  const ["Doesn't matter", 'No', 'Yes'],
-                      value:   _draft.hasChildren,
+                      labels: const ["Doesn't matter", 'No', 'Yes'],
+                      value: _draft.hasChildren,
                       onChanged: (v) => setState(() => _draft = _draft.copyWith(
-                        hasChildren: v, clearHasChildren: v == null,
-                      )),
+                            hasChildren: v,
+                            clearHasChildren: v == null,
+                          )),
                     ),
                     const SizedBox(height: 20),
 
@@ -432,10 +469,10 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                     const SizedBox(height: 8),
                     _SubscriberGate(
                       child: _ToggleRow(
-                        label:     'Show verified profiles only',
-                        value:     _draft.verifiedOnly,
-                        onChanged: (v) => setState(() =>
-                            _draft = _draft.copyWith(verifiedOnly: v)),
+                        label: 'Show verified profiles only',
+                        value: _draft.verifiedOnly,
+                        onChanged: (v) => setState(
+                            () => _draft = _draft.copyWith(verifiedOnly: v)),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -446,15 +483,52 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                     _SubscriberGate(
                       child: _MultiChipGroup(
                         options: const [
-                          'Same City', '50km', '100km',
-                          'Same Country', 'Anywhere',
+                          'Same City',
+                          '25km',
+                          '50km',
+                          '100km',
+                          '250km',
+                          'Same Country',
+                          'Anywhere',
                         ],
                         selected: _draft.distanceLabel,
-                        onChanged: (v) => setState(() => _draft = _draft.copyWith(
-                          distanceLabel: v, clearDistanceLabel: v == null,
-                        )),
+                        onChanged: (v) {
+                          final radius = RegExp(r'^(\d+)km$')
+                              .firstMatch(v ?? '')
+                              ?.group(1);
+                          setState(() => _draft = _draft.copyWith(
+                                distanceLabel: v,
+                                maxDistanceKm: int.tryParse(radius ?? ''),
+                                clearDistanceLabel: v == null,
+                                clearMaxDistance: radius == null,
+                              ));
+                        },
                       ),
                     ),
+                    if (_draft.effectiveMaxDistanceKm case final km?) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Within $km km',
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.champagneGold,
+                        ),
+                      ),
+                      Slider(
+                        value: km.clamp(10, 500).toDouble(),
+                        min: 10,
+                        max: 500,
+                        divisions: 49,
+                        activeColor: AppColors.champagneGold,
+                        inactiveColor: AppColors.surfaceGlassHover,
+                        onChanged: (value) => setState(() {
+                          final radius = value.round();
+                          _draft = _draft.copyWith(
+                            maxDistanceKm: radius,
+                            distanceLabel: '${radius}km',
+                          );
+                        }),
+                      ),
+                    ],
                     const SizedBox(height: 20),
 
                     // ── DIASPORA MODE (Premium) ──────────────────
@@ -490,22 +564,28 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                                 ...(_draft.diasporaCountries ?? []).map((code) {
                                   final country = kAllCountries.firstWhere(
                                     (c) => c.iso2 == code,
-                                    orElse: () => CountryInfo(iso2: code, dialCode: '', name: code),
+                                    orElse: () => CountryInfo(
+                                        iso2: code, dialCode: '', name: code),
                                   );
                                   return Chip(
-                                    backgroundColor: AppColors.champagneGold.withValues(alpha: 0.12),
-                                    side: const BorderSide(color: AppColors.goldBorder),
+                                    backgroundColor: AppColors.champagneGold
+                                        .withValues(alpha: 0.12),
+                                    side: const BorderSide(
+                                        color: AppColors.goldBorder),
                                     label: Text(
                                       '${country.flag} ${country.name}',
-                                      style: AppTypography.chipLabel.copyWith(color: AppColors.champagneGold),
+                                      style: AppTypography.chipLabel.copyWith(
+                                          color: AppColors.champagneGold),
                                     ),
                                     onDeleted: () {
                                       setState(() {
-                                        final current = List<String>.from(_draft.diasporaCountries ?? []);
+                                        final current = List<String>.from(
+                                            _draft.diasporaCountries ?? []);
                                         current.remove(code);
                                         _draft = _draft.copyWith(
                                           diasporaCountries: current,
-                                          clearDiasporaCountries: current.isEmpty,
+                                          clearDiasporaCountries:
+                                              current.isEmpty,
                                         );
                                       });
                                     },
@@ -514,9 +594,12 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                                 }),
                                 ActionChip(
                                   backgroundColor: AppColors.surfaceGlass,
-                                  side: const BorderSide(color: AppColors.cardBorder),
-                                  avatar: const Icon(Icons.add, color: AppColors.slateMist, size: 16),
-                                  label: const Text('Add Country', style: AppTypography.chipLabel),
+                                  side: const BorderSide(
+                                      color: AppColors.cardBorder),
+                                  avatar: const Icon(Icons.add,
+                                      color: AppColors.slateMist, size: 16),
+                                  label: const Text('Add Country',
+                                      style: AppTypography.chipLabel),
                                   onPressed: _showCountrySelector,
                                 ),
                               ],
@@ -534,39 +617,64 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                       child: _DropdownRow(
                         value: _draft.motherTongue ?? 'Any',
                         options: const [
-                          'Any', 'Arabic', 'Urdu', 'Bengali', 'Punjabi',
-                          'English', 'Turkish', 'Malay', 'Indonesian',
-                          'Hausa', 'Somali', 'French', 'Other',
+                          'Any',
+                          'Arabic',
+                          'Urdu',
+                          'Bengali',
+                          'Punjabi',
+                          'English',
+                          'Turkish',
+                          'Malay',
+                          'Indonesian',
+                          'Hausa',
+                          'Somali',
+                          'French',
+                          'Other',
                         ],
-                        onChanged: (v) => setState(() => _draft = _draft.copyWith(
-                          motherTongue: v == 'Any' ? null : v,
-                          clearMotherTongue: v == 'Any',
-                        )),
+                        onChanged: (v) =>
+                            setState(() => _draft = _draft.copyWith(
+                                  motherTongue: v == 'Any' ? null : v,
+                                  clearMotherTongue: v == 'Any',
+                                )),
                       ),
                     ),
                     const SizedBox(height: 20),
 
                     // ── COMMUNITY / BIRADARI (Premium) ──────
-                    _SectionLabel(key: _communityKey, label: 'COMMUNITY / BIRADARI'),
+                    _SectionLabel(
+                        key: _communityKey, label: 'COMMUNITY / BIRADARI'),
                     const SizedBox(height: 8),
                     _SubscriberGate(
                       child: _DropdownRow(
                         value: _draft.community ?? 'Any',
                         options: const [
-                          'Any', 'Syed', 'Pathan', 'Qureshi', 'Memon',
-                          'Rajput', 'Ansari', 'Sheikh', 'Arain', 'Arab',
-                          'Malay', 'Turkish', 'Hausa', 'Other',
+                          'Any',
+                          'Syed',
+                          'Pathan',
+                          'Qureshi',
+                          'Memon',
+                          'Rajput',
+                          'Ansari',
+                          'Sheikh',
+                          'Arain',
+                          'Arab',
+                          'Malay',
+                          'Turkish',
+                          'Hausa',
+                          'Other',
                         ],
-                        onChanged: (v) => setState(() => _draft = _draft.copyWith(
-                          community: v == 'Any' ? null : v,
-                          clearCommunity: v == 'Any',
-                        )),
+                        onChanged: (v) =>
+                            setState(() => _draft = _draft.copyWith(
+                                  community: v == 'Any' ? null : v,
+                                  clearCommunity: v == 'Any',
+                                )),
                       ),
                     ),
                     const SizedBox(height: 20),
 
                     // ── LIVING EXPECTATION (Premium) ────────
-                    _SectionLabel(key: _livingKey, label: 'POST-MARRIAGE LIVING'),
+                    _SectionLabel(
+                        key: _livingKey, label: 'POST-MARRIAGE LIVING'),
                     const SizedBox(height: 8),
                     _SubscriberGate(
                       child: _MultiChipGroup(
@@ -583,10 +691,11 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                           'Open to Discussion',
                         ],
                         selected: _draft.livingExpectation,
-                        onChanged: (v) => setState(() => _draft = _draft.copyWith(
-                          livingExpectation: v,
-                          clearLivingExpectation: v == null,
-                        )),
+                        onChanged: (v) =>
+                            setState(() => _draft = _draft.copyWith(
+                                  livingExpectation: v,
+                                  clearLivingExpectation: v == null,
+                                )),
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -606,11 +715,13 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: AppColors.cardBorder),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                              borderRadius: BorderRadius.circular(
+                                  AppDimensions.radiusButton),
                             ),
                           ),
                           onPressed: _clearAll,
-                          child: const Text('Clear All', style: AppTypography.body),
+                          child: const Text('Clear All',
+                              style: AppTypography.body),
                         ),
                       ),
                     ),
@@ -623,7 +734,8 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.champagneGold,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                              borderRadius: BorderRadius.circular(
+                                  AppDimensions.radiusButton),
                             ),
                           ),
                           onPressed: _apply,
@@ -644,7 +756,8 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
 
   void _showCountrySelector() {
     final searchCtrl = TextEditingController();
-    List<String> tempSelected = List<String>.from(_draft.diasporaCountries ?? []);
+    List<String> tempSelected =
+        List<String>.from(_draft.diasporaCountries ?? []);
 
     showModalBottomSheet<void>(
       context: context,
@@ -675,7 +788,8 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                         style: AppTypography.screenTitle.copyWith(fontSize: 18),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close, color: AppColors.slateMist),
+                        icon:
+                            const Icon(Icons.close, color: AppColors.slateMist),
                         onPressed: () => Navigator.pop(sheetCtx),
                       ),
                     ],
@@ -687,21 +801,26 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                     decoration: InputDecoration(
                       hintText: 'Search countries...',
                       hintStyle: AppTypography.bodyMuted,
-                      prefixIcon: const Icon(Icons.search, color: AppColors.slateMist),
+                      prefixIcon:
+                          const Icon(Icons.search, color: AppColors.slateMist),
                       fillColor: AppColors.surfaceGlass,
                       filled: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.cardBorder),
+                        borderSide:
+                            const BorderSide(color: AppColors.cardBorder),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.cardBorder),
+                        borderSide:
+                            const BorderSide(color: AppColors.cardBorder),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.champagneGold),
+                        borderSide:
+                            const BorderSide(color: AppColors.champagneGold),
                       ),
                     ),
                     onChanged: (_) => setSheetState(() {}),
@@ -722,13 +841,18 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                           title: Text(
                             country.name,
                             style: AppTypography.body.copyWith(
-                              color: isSel ? AppColors.champagneGold : AppColors.pearlWhite,
-                              fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                              color: isSel
+                                  ? AppColors.champagneGold
+                                  : AppColors.pearlWhite,
+                              fontWeight:
+                                  isSel ? FontWeight.bold : FontWeight.normal,
                             ),
                           ),
                           trailing: isSel
-                              ? const Icon(Icons.check_circle, color: AppColors.champagneGold)
-                              : const Icon(Icons.circle_outlined, color: AppColors.slateMist),
+                              ? const Icon(Icons.check_circle,
+                                  color: AppColors.champagneGold)
+                              : const Icon(Icons.circle_outlined,
+                                  color: AppColors.slateMist),
                           onTap: () {
                             setSheetState(() {
                               if (isSel) {
@@ -750,7 +874,8 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.champagneGold,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                          borderRadius:
+                              BorderRadius.circular(AppDimensions.radiusButton),
                         ),
                       ),
                       onPressed: () {
@@ -804,18 +929,18 @@ class _RadioGroup<T> extends StatelessWidget {
     required this.value,
     required this.onChanged,
   });
-  final List<T>         options;
-  final List<String>    labels;
-  final T               value;
+  final List<T> options;
+  final List<String> labels;
+  final T value;
   final ValueChanged<T> onChanged;
 
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      spacing:    AppDimensions.space8,
+      spacing: AppDimensions.space8,
       runSpacing: AppDimensions.space8,
       children: List.generate(options.length, (i) {
-        final opt      = options[i];
+        final opt = options[i];
         final isSelected = opt == value;
         return GestureDetector(
           onTap: () {
@@ -825,20 +950,26 @@ class _RadioGroup<T> extends StatelessWidget {
           child: AnimatedContainer(
             duration: AppDimensions.durationTransition,
             padding: const EdgeInsets.symmetric(
-                horizontal: AppDimensions.space14, vertical: AppDimensions.space8),
+                horizontal: AppDimensions.space14,
+                vertical: AppDimensions.space8),
             decoration: BoxDecoration(
               color: isSelected
                   ? AppColors.champagneGold.withValues(alpha: 0.15)
                   : AppColors.surfaceGlass,
               borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
               border: Border.all(
-                color: isSelected ? AppColors.champagneGold : AppColors.cardBorder,
-                width: isSelected ? AppDimensions.borderFocus : AppDimensions.borderThin,
+                color:
+                    isSelected ? AppColors.champagneGold : AppColors.cardBorder,
+                width: isSelected
+                    ? AppDimensions.borderFocus
+                    : AppDimensions.borderThin,
               ),
             ),
             child: Text(labels[i],
                 style: AppTypography.chipLabel.copyWith(
-                  color: isSelected ? AppColors.champagneGold : AppColors.slateMist,
+                  color: isSelected
+                      ? AppColors.champagneGold
+                      : AppColors.slateMist,
                 )),
           ),
         );
@@ -854,18 +985,18 @@ class _MultiChipGroup extends StatelessWidget {
     required this.selected,
     required this.onChanged,
   });
-  final List<String>   options;
-  final List<String>?  optionLabels;
-  final String?        selected;
+  final List<String> options;
+  final List<String>? optionLabels;
+  final String? selected;
   final ValueChanged<String?> onChanged;
 
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      spacing:    AppDimensions.space8,
+      spacing: AppDimensions.space8,
       runSpacing: AppDimensions.space8,
       children: List.generate(options.length, (i) {
-        final val   = options[i];
+        final val = options[i];
         final label = optionLabels?[i] ?? val;
         final isAny = val == 'Any';
         final isSelected = isAny ? selected == null : selected == val;
@@ -877,20 +1008,26 @@ class _MultiChipGroup extends StatelessWidget {
           child: AnimatedContainer(
             duration: AppDimensions.durationTransition,
             padding: const EdgeInsets.symmetric(
-                horizontal: AppDimensions.space14, vertical: AppDimensions.space8),
+                horizontal: AppDimensions.space14,
+                vertical: AppDimensions.space8),
             decoration: BoxDecoration(
               color: isSelected
                   ? AppColors.champagneGold.withValues(alpha: 0.15)
                   : AppColors.surfaceGlass,
               borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
               border: Border.all(
-                color: isSelected ? AppColors.champagneGold : AppColors.cardBorder,
-                width: isSelected ? AppDimensions.borderFocus : AppDimensions.borderThin,
+                color:
+                    isSelected ? AppColors.champagneGold : AppColors.cardBorder,
+                width: isSelected
+                    ? AppDimensions.borderFocus
+                    : AppDimensions.borderThin,
               ),
             ),
             child: Text(label,
                 style: AppTypography.chipLabel.copyWith(
-                  color: isSelected ? AppColors.champagneGold : AppColors.slateMist,
+                  color: isSelected
+                      ? AppColors.champagneGold
+                      : AppColors.slateMist,
                 )),
           ),
         );
@@ -923,18 +1060,18 @@ class _AgeRangeField extends StatelessWidget {
         const SizedBox(height: 8),
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
-            activeTrackColor:   AppColors.champagneGold,
+            activeTrackColor: AppColors.champagneGold,
             inactiveTrackColor: AppColors.surfaceGlassHover,
-            thumbColor:         AppColors.champagneGold,
-            overlayColor:       AppColors.champagneGold.withValues(alpha: 0.12),
+            thumbColor: AppColors.champagneGold,
+            overlayColor: AppColors.champagneGold.withValues(alpha: 0.12),
             rangeThumbShape:
                 const RoundRangeSliderThumbShape(enabledThumbRadius: 10),
             trackHeight: 3,
           ),
           child: RangeSlider(
-            values:    RangeValues(min, max),
-            min:       18,
-            max:       65,
+            values: RangeValues(min, max),
+            min: 18,
+            max: 65,
             divisions: 47,
             labels: RangeLabels('${min.round()}', '${max.round()}'),
             onChanged: (v) => onChanged(v.start, v.end),
@@ -962,13 +1099,13 @@ class _AgeLabel extends StatelessWidget {
       padding: const EdgeInsets.symmetric(
           horizontal: AppDimensions.space16, vertical: AppDimensions.space8),
       decoration: BoxDecoration(
-        color:        AppColors.champagneGold.withValues(alpha: 0.12),
+        color: AppColors.champagneGold.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-        border:       Border.all(color: AppColors.goldBorder),
+        border: Border.all(color: AppColors.goldBorder),
       ),
       child: Text('$age yrs',
-          style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.champagneGold)),
+          style: AppTypography.bodyMedium
+              .copyWith(color: AppColors.champagneGold)),
     );
   }
 }
@@ -979,7 +1116,7 @@ class _DropdownRow extends StatelessWidget {
     required this.options,
     required this.onChanged,
   });
-  final String       value;
+  final String value;
   final List<String> options;
   final ValueChanged<String?> onChanged;
 
@@ -990,20 +1127,22 @@ class _DropdownRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(
           horizontal: AppDimensions.space16, vertical: AppDimensions.space4),
       decoration: BoxDecoration(
-        color:        AppColors.surfaceGlass,
+        color: AppColors.surfaceGlass,
         borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-        border:       Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: AppColors.cardBorder),
       ),
       child: DropdownButtonFormField<String>(
-        initialValue:  safe,
-        style:         AppTypography.inputText,
+        initialValue: safe,
+        style: AppTypography.inputText,
         dropdownColor: AppColors.surfaceElevated,
         decoration: const InputDecoration(border: InputBorder.none),
         icon: const Icon(Icons.expand_more_rounded, color: AppColors.slateMist),
-        items: options.map((o) => DropdownMenuItem(
-          value: o,
-          child: Text(o, style: AppTypography.body),
-        )).toList(),
+        items: options
+            .map((o) => DropdownMenuItem(
+                  value: o,
+                  child: Text(o, style: AppTypography.body),
+                ))
+            .toList(),
         onChanged: onChanged,
       ),
     );
@@ -1016,8 +1155,8 @@ class _ToggleRow extends StatelessWidget {
     required this.value,
     required this.onChanged,
   });
-  final String             label;
-  final bool               value;
+  final String label;
+  final bool value;
   final ValueChanged<bool> onChanged;
 
   @override
@@ -1026,18 +1165,18 @@ class _ToggleRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(
           horizontal: AppDimensions.space16, vertical: AppDimensions.space12),
       decoration: BoxDecoration(
-        color:        AppColors.surfaceGlass,
+        color: AppColors.surfaceGlass,
         borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-        border:       Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: AppColors.cardBorder),
       ),
       child: Row(
         children: [
           Expanded(child: Text(label, style: AppTypography.body)),
           Switch(
-            value:              value,
-            onChanged:          onChanged,
-            activeThumbColor:   AppColors.obsidianNight,
-            activeTrackColor:   AppColors.champagneGold,
+            value: value,
+            onChanged: onChanged,
+            activeThumbColor: AppColors.obsidianNight,
+            activeTrackColor: AppColors.champagneGold,
             inactiveThumbColor: AppColors.slateMist,
             inactiveTrackColor: AppColors.surfaceGlassHover,
           ),
@@ -1050,25 +1189,25 @@ class _ToggleRow extends StatelessWidget {
 class _SheetTextField extends StatelessWidget {
   const _SheetTextField({required this.controller, required this.hint});
   final TextEditingController controller;
-  final String                hint;
+  final String hint;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 44,
       decoration: BoxDecoration(
-        color:        AppColors.surfaceGlass,
+        color: AppColors.surfaceGlass,
         borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-        border:       Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: AppColors.cardBorder),
       ),
       alignment: Alignment.centerLeft,
       child: TextField(
         controller: controller,
-        style:      AppTypography.body,
+        style: AppTypography.body,
         decoration: InputDecoration(
-          hintText:       hint,
-          hintStyle:      AppTypography.bodyMuted,
-          border:         InputBorder.none,
+          hintText: hint,
+          hintStyle: AppTypography.bodyMuted,
+          border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
               horizontal: AppDimensions.space12, vertical: 0),
         ),

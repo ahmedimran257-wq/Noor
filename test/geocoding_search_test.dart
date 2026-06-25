@@ -1,7 +1,7 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:noor/core/services/country_context_service.dart';
+import 'package:mithaq/core/services/country_context_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {

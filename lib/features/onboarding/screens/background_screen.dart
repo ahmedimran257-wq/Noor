@@ -1,6 +1,6 @@
 // lib/features/onboarding/screens/background_screen.dart
 // ============================================================
-// NOOR — Background & Education Screen (Onboarding Step 3)
+// MITHAQ — Background & Education Screen (Onboarding Step 3)
 // Education level (7 ranks), field of study, profession,
 // employment status, income bracket (optional).
 // ============================================================
@@ -13,7 +13,7 @@ import '../../../core/models/onboarding_data.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/inputs/noor_text_field.dart';
+import '../../../core/widgets/inputs/mithaq_text_field.dart';
 import '../../../core/utils/validation_snackbar.dart';
 import '../../../core/data/country_income_brackets.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -220,7 +220,7 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
               const SizedBox(height: AppDimensions.space20),
 
               // Field of study
-              NoorTextField(
+              MithaqTextField(
                 controller:         _studyCtrl,
                 label:              l10n.background_label_study,
                 prefixIcon:         Icons.school_outlined,
@@ -231,7 +231,7 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
               const SizedBox(height: AppDimensions.space16),
 
               // Profession
-              NoorTextField(
+              MithaqTextField(
                 controller:         _professionCtrl,
                 label:              l10n.background_label_profession,
                 prefixIcon:         Icons.work_outline_rounded,

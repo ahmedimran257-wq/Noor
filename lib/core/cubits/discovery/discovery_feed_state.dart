@@ -1,6 +1,6 @@
 // lib/core/cubits/discovery/discovery_feed_state.dart
 // ============================================================
-// NOOR — Discovery Feed State (Step 6 update)
+// MITHAQ — Discovery Feed State (Step 6 update)
 // ============================================================
 
 import 'package:equatable/equatable.dart';

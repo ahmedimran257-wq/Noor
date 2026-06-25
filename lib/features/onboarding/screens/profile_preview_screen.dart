@@ -1,6 +1,6 @@
 // lib/features/onboarding/screens/profile_preview_screen.dart
 // ============================================================
-// NOOR — Profile Preview Screen (Onboarding Step 9)
+// MITHAQ — Profile Preview Screen (Onboarding Step 9)
 // Read-only rendering of the full profile as others will see it.
 // Tappable "Edit" labels navigate back to specific steps.
 // ============================================================
@@ -13,7 +13,7 @@ import '../../../core/models/onboarding_data.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/buttons/noor_primary_button.dart';
+import '../../../core/widgets/buttons/mithaq_primary_button.dart';
 import '../../../l10n/generated/app_localizations.dart';
 
 class ProfilePreviewScreen extends StatelessWidget {
@@ -363,7 +363,7 @@ class ProfilePreviewScreen extends StatelessWidget {
                     AppDimensions.space24,
                     AppDimensions.space32,
                   ),
-                  child: NoorPrimaryButton(
+                  child: MithaqPrimaryButton(
                     label:     l10n.preview_submit_btn,
                     isLoading: isLoading,
                     onTap:     isLoading ? null : () => cubit.saveAndAdvance(data),

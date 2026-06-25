@@ -1,6 +1,6 @@
 // lib/features/home/screens/profile_detail_screen.dart
 // ============================================================
-// NOOR — Profile Detail Screen (Step 5 — Blueprint Complete)
+// MITHAQ — Profile Detail Screen (Step 5 — Blueprint Complete)
 //
 // Blueprint requirements (Part 8):
 //   • Full-screen hero photo: 55% of screen height
@@ -18,11 +18,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../core/widgets/loaders/noor_blur_image.dart';
+import '../../../core/widgets/loaders/mithaq_blur_image.dart';
 import '../../../core/mock/mock_profiles.dart';
 import '../../../core/cubits/block_report/block_report_cubit.dart';
 import '../../../core/cubits/interests/interests_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
+import '../../../core/services/compatibility_service.dart';
 import '../../../core/services/bookmark_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
@@ -41,11 +42,11 @@ class ProfileDetailScreen extends StatefulWidget {
     this.isMutualMatch = false,
   });
 
-  final MockProfile  profile;
-  final String       heroTag;
-  final bool         isInterestSent;
+  final MockProfile profile;
+  final String heroTag;
+  final bool isInterestSent;
   final VoidCallback onInterestSent;
-  final bool         isMutualMatch;
+  final bool isMutualMatch;
 
   @override
   State<ProfileDetailScreen> createState() => _ProfileDetailScreenState();
@@ -54,7 +55,7 @@ class ProfileDetailScreen extends StatefulWidget {
 class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   late bool _interestSent;
   bool _bookmarked = false;
-  int  _photoPage  = 0;
+  int _photoPage = 0;
 
   // Mock photo count — real app reads from profile.photoCount
   int get _totalPhotos => widget.profile.photoCount.clamp(1, 4);
@@ -66,8 +67,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     // Load persisted bookmark state
     BookmarkService.load().then((ids) {
       if (mounted) {
-        setState(() =>
-        _bookmarked = ids.contains(widget.profile.id));
+        setState(() => _bookmarked = ids.contains(widget.profile.id));
       }
     });
   }
@@ -83,13 +83,14 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     // null = user cancelled
     if (note == null || !mounted) return;
 
+    // M6: Sync interest to cubit so feed state stays consistent
+    final sent = await context.read<InterestsCubit>().sendInterest(
+          widget.profile,
+          note: note.isNotEmpty ? note : null,
+        );
+    if (!mounted || !sent) return;
     setState(() => _interestSent = true);
     widget.onInterestSent();
-    // M6: Sync interest to cubit so feed state stays consistent
-    context.read<InterestsCubit>().sendInterest(
-      widget.profile,
-      note: note.isNotEmpty ? note : null,
-    );
     HapticFeedback.mediumImpact();
     await showInterestCeremony(context, firstName: widget.profile.firstName);
   }
@@ -111,15 +112,15 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   void _handleShare() {
     HapticFeedback.selectionClick();
     // TD4: Copy a share link to clipboard
-    final shareText = 'Check out ${widget.profile.firstName} on NOOR — '
-        'noor.app/profile/${widget.profile.id}';
+    final shareText = 'Check out ${widget.profile.firstName} on MITHAQ — '
+        'mithaq.app/profile/${widget.profile.id}';
     Clipboard.setData(ClipboardData(text: shareText));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content:         const Text('Profile link copied to clipboard'),
+        content: const Text('Profile link copied to clipboard'),
         backgroundColor: AppColors.surfaceGlassHover,
-        behavior:        SnackBarBehavior.floating,
-        duration:        const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
           side: const BorderSide(color: AppColors.cardBorder),
@@ -131,8 +132,8 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   void _showMoreMenu() {
     HapticFeedback.selectionClick();
     showModalBottomSheet(
-      context:            context,
-      backgroundColor:    Colors.transparent,
+      context: context,
+      backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (_) => BlocProvider.value(
         value: context.read<BlockReportCubit>(),
@@ -140,15 +141,15 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
           profile: widget.profile,
           onBlock: () {
             context.read<BlockReportCubit>().blockUser(
-              userId:      widget.profile.id,
-              name:        widget.profile.firstName,
-              lastInitial: widget.profile.lastNameInitial,
-            );
+                  userId: widget.profile.id,
+                  name: widget.profile.firstName,
+                  lastInitial: widget.profile.lastNameInitial,
+                );
           },
           onReport: () => ReportBottomSheet.show(
             context,
             reportedUserId: widget.profile.id,
-            reportedName:   widget.profile.firstName,
+            reportedName: widget.profile.firstName,
           ),
         ),
       ),
@@ -171,31 +172,31 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
               // ── Photo hero with parallax + carousel ──────────
               SliverAppBar(
                 expandedHeight: MediaQuery.of(context).size.height * 0.55,
-                pinned:         true,
-                stretch:        true,
+                pinned: true,
+                stretch: true,
                 backgroundColor: AppColors.obsidianNight,
                 leading: _HeaderButton(
-                  icon:    Icons.arrow_back_rounded,
-                  onTap:   () => Navigator.pop(context),
+                  icon: Icons.arrow_back_rounded,
+                  onTap: () => Navigator.pop(context),
                 ),
                 actions: [
                   _HeaderButton(
-                    icon:  Icons.ios_share_rounded,
+                    icon: Icons.ios_share_rounded,
                     onTap: _handleShare,
                   ),
                   const SizedBox(width: AppDimensions.space4),
                   _HeaderButton(
-                    icon:  Icons.more_vert_rounded,
+                    icon: Icons.more_vert_rounded,
                     onTap: _showMoreMenu,
                   ),
                   const SizedBox(width: AppDimensions.space8),
                 ],
                 flexibleSpace: FlexibleSpaceBar(
                   stretchModes: const [StretchMode.zoomBackground],
-                  background:   Hero(
+                  background: Hero(
                     tag: widget.heroTag,
                     child: _PhotoCarousel(
-                      profile:    p,
+                      profile: p,
                       totalPhotos: _totalPhotos,
                       currentPage: _photoPage,
                       onPageChanged: (i) => setState(() => _photoPage = i),
@@ -232,32 +233,56 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                     ],
 
                     // Islamic Background
-                    if (p.sect != null || p.deenLevel != null ||
-                        p.motherTongue != null || p.smokingHabit != null ||
-                        p.quranMemorization != null || p.religiousEducation != null) ...[
+                    if (p.sect != null ||
+                        p.deenLevel != null ||
+                        p.motherTongue != null ||
+                        p.smokingHabit != null ||
+                        p.quranMemorization != null ||
+                        p.religiousEducation != null) ...[
                       const _SectionHeader(label: 'Islamic Life'),
                       const SizedBox(height: AppDimensions.space12),
                       _DetailGrid(items: [
-                        if (p.sect      != null) _DetailItem(label: 'Sect',       value: p.sect!),
-                        if (p.deenLevel != null) _DetailItem(label: 'Deen Level', value: _formatDeen(p.deenLevel!)),
-                        if (p.motherTongue != null) _DetailItem(label: 'Mother Tongue', value: p.motherTongue!),
-                        if (p.quranMemorization != null) _DetailItem(label: 'Quran', value: _formatQuran(p.quranMemorization!)),
-                        if (p.religiousEducation != null) _DetailItem(label: 'Religious Education', value: _formatReligiousEdu(p.religiousEducation!)),
-                        if (p.smokingHabit != null) _DetailItem(label: 'Smoking', value: p.smokingHabit!),
-                        if (p.vapingHabit != null) _DetailItem(label: 'Vaping', value: p.vapingHabit!),
-                        if (p.hookahHabit != null) _DetailItem(label: 'Hookah', value: p.hookahHabit!),
+                        if (p.sect != null)
+                          _DetailItem(label: 'Sect', value: p.sect!),
+                        if (p.deenLevel != null)
+                          _DetailItem(
+                              label: 'Deen Level',
+                              value: _formatDeen(p.deenLevel!)),
+                        if (p.motherTongue != null)
+                          _DetailItem(
+                              label: 'Mother Tongue', value: p.motherTongue!),
+                        if (p.quranMemorization != null)
+                          _DetailItem(
+                              label: 'Quran',
+                              value: _formatQuran(p.quranMemorization!)),
+                        if (p.religiousEducation != null)
+                          _DetailItem(
+                              label: 'Religious Education',
+                              value:
+                                  _formatReligiousEdu(p.religiousEducation!)),
+                        if (p.smokingHabit != null)
+                          _DetailItem(label: 'Smoking', value: p.smokingHabit!),
+                        if (p.vapingHabit != null)
+                          _DetailItem(label: 'Vaping', value: p.vapingHabit!),
+                        if (p.hookahHabit != null)
+                          _DetailItem(label: 'Hookah', value: p.hookahHabit!),
                       ]),
                       const SizedBox(height: AppDimensions.space28),
                     ],
 
                     // Background
                     // Education & Career (no marital/family — those go in Family)
-                    if (p.occupation != null || p.education != null || p.incomeBracket != null) ...[
+                    if (p.occupation != null ||
+                        p.education != null ||
+                        p.incomeBracket != null) ...[
                       const _SectionHeader(label: 'Education & Career'),
                       const SizedBox(height: AppDimensions.space12),
                       _DetailGrid(items: [
-                        if (p.occupation != null) _DetailItem(label: 'Occupation', value: p.occupation!),
-                        if (p.education  != null) _DetailItem(label: 'Education',  value: p.education!),
+                        if (p.occupation != null)
+                          _DetailItem(
+                              label: 'Occupation', value: p.occupation!),
+                        if (p.education != null)
+                          _DetailItem(label: 'Education', value: p.education!),
                         if (p.incomeBracket != null)
                           _DetailItem(
                             label: 'Income Bracket',
@@ -270,16 +295,32 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                     ],
 
                     // Family — blueprint section 5 of 6
-                    if (p.familyType != null || p.maritalStatus != null ||
-                        p.marriageTimeline != null || p.willingToRelocate != null || p.familyOriginCity != null) ...[
+                    if (p.familyType != null ||
+                        p.maritalStatus != null ||
+                        p.marriageTimeline != null ||
+                        p.willingToRelocate != null ||
+                        p.familyOriginCity != null) ...[
                       const _SectionHeader(label: 'Family & Future'),
                       const SizedBox(height: AppDimensions.space12),
                       _DetailGrid(items: [
-                        if (p.familyType    != null) _DetailItem(label: 'Family Type',    value: p.familyType!),
-                        if (p.maritalStatus != null) _DetailItem(label: 'Marital Status', value: p.maritalStatus!),
-                        if (p.marriageTimeline != null) _DetailItem(label: 'Timeline', value: _formatTimeline(p.marriageTimeline!)),
-                        if (p.willingToRelocate != null) _DetailItem(label: 'Relocate', value: _formatRelocate(p.willingToRelocate!)),
-                        if (p.livingExpectation != null) _DetailItem(label: 'Living', value: _formatLiving(p.livingExpectation!)),
+                        if (p.familyType != null)
+                          _DetailItem(
+                              label: 'Family Type', value: p.familyType!),
+                        if (p.maritalStatus != null)
+                          _DetailItem(
+                              label: 'Marital Status', value: p.maritalStatus!),
+                        if (p.marriageTimeline != null)
+                          _DetailItem(
+                              label: 'Timeline',
+                              value: _formatTimeline(p.marriageTimeline!)),
+                        if (p.willingToRelocate != null)
+                          _DetailItem(
+                              label: 'Relocate',
+                              value: _formatRelocate(p.willingToRelocate!)),
+                        if (p.livingExpectation != null)
+                          _DetailItem(
+                              label: 'Living',
+                              value: _formatLiving(p.livingExpectation!)),
                         if (p.familyOriginCity != null)
                           _DetailItem(
                             label: 'Origin City',
@@ -296,7 +337,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                       const _SectionHeader(label: 'Interests'),
                       const SizedBox(height: AppDimensions.space12),
                       Wrap(
-                        spacing:    AppDimensions.space8,
+                        spacing: AppDimensions.space8,
                         runSpacing: AppDimensions.space8,
                         children: p.interests!
                             .map((i) => _GoldChip(label: i))
@@ -310,7 +351,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                       const _SectionHeader(label: 'Languages'),
                       const SizedBox(height: AppDimensions.space12),
                       Wrap(
-                        spacing:    AppDimensions.space8,
+                        spacing: AppDimensions.space8,
                         runSpacing: AppDimensions.space8,
                         children: p.languages!
                             .map((l) => _DetailChip(label: l))
@@ -330,7 +371,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                             value: '${p.partnerAgeMin} – ${p.partnerAgeMax}',
                           ),
                         if (p.sect != null)
-                          _DetailItem(label: 'Sect Preference', value: 'Same (${p.sect})'),
+                          _DetailItem(
+                              label: 'Sect Preference',
+                              value: 'Same (${p.sect})'),
                       ]),
                     ],
                   ]),
@@ -341,15 +384,15 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
           // ── Sticky bottom bar ─────────────────────────────────
           Positioned(
-            left:   0,
-            right:  0,
+            left: 0,
+            right: 0,
             bottom: 0,
             child: _CtaBar(
-              firstName:      p.firstName,
+              firstName: p.firstName,
               isInterestSent: _interestSent,
-              isBookmarked:   _bookmarked,
+              isBookmarked: _bookmarked,
               onSendInterest: _interestSent ? null : _handleSendInterest,
-              onBookmark:     _handleBookmark,
+              onBookmark: _handleBookmark,
             ),
           ),
         ],
@@ -359,60 +402,89 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
   String _formatDeen(String raw) {
     switch (raw) {
-      case 'practicing': return 'Practicing';
-      case 'moderate':   return 'Moderate';
-      case 'cultural':   return 'Cultural';
-      default:           return raw;
+      case 'practicing':
+        return 'Practicing';
+      case 'moderate':
+        return 'Moderate';
+      case 'cultural':
+        return 'Cultural';
+      default:
+        return raw;
     }
   }
 
   String _formatQuran(String raw) {
     switch (raw) {
-      case 'none':        return 'None';
-      case 'some_surahs': return 'Some Surahs';
-      case 'partial':     return 'Partial';
-      case 'hafiz':       return 'Hafiz';
-      default:            return raw;
+      case 'none':
+        return 'None';
+      case 'some_surahs':
+        return 'Some Surahs';
+      case 'partial':
+        return 'Partial';
+      case 'hafiz':
+        return 'Hafiz';
+      default:
+        return raw;
     }
   }
 
   String _formatReligiousEdu(String raw) {
     switch (raw) {
-      case 'self_taught': return 'Self-taught';
-      case 'madrasa':     return 'Madrasa';
-      case 'islamic_uni': return 'Islamic University';
-      case 'alim_course': return 'Alim Course';
-      case 'none':        return 'None';
-      default:            return raw;
+      case 'self_taught':
+        return 'Self-taught';
+      case 'madrasa':
+        return 'Madrasa';
+      case 'islamic_uni':
+        return 'Islamic University';
+      case 'alim_course':
+        return 'Alim Course';
+      case 'none':
+        return 'None';
+      default:
+        return raw;
     }
   }
 
   String _formatTimeline(String raw) {
     switch (raw) {
-      case 'asap':         return 'ASAP';
-      case '6_months':     return '6 Months';
-      case '1_year':       return '1 Year';
-      case '2_plus_years': return '2+ Years';
-      case 'not_sure':     return 'Not Sure';
-      default:             return raw;
+      case 'asap':
+        return 'ASAP';
+      case '6_months':
+        return '6 Months';
+      case '1_year':
+        return '1 Year';
+      case '2_plus_years':
+        return '2+ Years';
+      case 'not_sure':
+        return 'Not Sure';
+      default:
+        return raw;
     }
   }
 
   String _formatRelocate(String raw) {
     switch (raw) {
-      case 'yes':                return 'Yes';
-      case 'no':                 return 'No';
-      case 'open_to_discussion': return 'Open';
-      default:                   return raw;
+      case 'yes':
+        return 'Yes';
+      case 'no':
+        return 'No';
+      case 'open_to_discussion':
+        return 'Open';
+      default:
+        return raw;
     }
   }
 
   String _formatLiving(String raw) {
     switch (raw) {
-      case 'with_inlaws':        return 'With In-Laws';
-      case 'separate':           return 'Separate';
-      case 'open_to_discussion': return 'Flexible';
-      default:                   return raw;
+      case 'with_inlaws':
+        return 'With In-Laws';
+      case 'separate':
+        return 'Separate';
+      case 'open_to_discussion':
+        return 'Flexible';
+      default:
+        return raw;
     }
   }
 }
@@ -429,10 +501,10 @@ class _PhotoCarousel extends StatelessWidget {
   });
 
   final MockProfile profile;
-  final int         totalPhotos;
-  final int         currentPage;
+  final int totalPhotos;
+  final int currentPage;
   final ValueChanged<int> onPageChanged;
-  final bool        isMutualMatch;
+  final bool isMutualMatch;
 
   @override
   Widget build(BuildContext context) {
@@ -441,11 +513,11 @@ class _PhotoCarousel extends StatelessWidget {
       children: [
         // Page-swipeable photo area
         PageView.builder(
-          itemCount:     totalPhotos,
+          itemCount: totalPhotos,
           onPageChanged: onPageChanged,
-          itemBuilder:   (_, i) => _SinglePhotoSlide(
-            profile:  profile,
-            index:    i,
+          itemBuilder: (_, i) => _SinglePhotoSlide(
+            profile: profile,
+            index: i,
             isMutualMatch: isMutualMatch,
           ),
         ),
@@ -455,7 +527,7 @@ class _PhotoCarousel extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
-              end:   Alignment.bottomCenter,
+              end: Alignment.bottomCenter,
               colors: [Colors.transparent, AppColors.obsidianNight],
               stops: [0.5, 1.0],
             ),
@@ -466,17 +538,17 @@ class _PhotoCarousel extends StatelessWidget {
         if (totalPhotos > 1)
           Positioned(
             bottom: AppDimensions.space20,
-            left:   0,
-            right:  0,
+            left: 0,
+            right: 0,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 for (int i = 0; i < totalPhotos; i++)
                   AnimatedContainer(
                     duration: AppDimensions.durationTransition,
-                    margin:   const EdgeInsets.symmetric(horizontal: 3),
-                    width:    i == currentPage ? 16 : 6,
-                    height:   4,
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    width: i == currentPage ? 16 : 6,
+                    height: 4,
                     decoration: BoxDecoration(
                       color: i == currentPage
                           ? AppColors.champagneGold
@@ -499,8 +571,8 @@ class _SinglePhotoSlide extends StatelessWidget {
     required this.isMutualMatch,
   });
   final MockProfile profile;
-  final int         index;
-  final bool        isMutualMatch;
+  final int index;
+  final bool isMutualMatch;
 
   @override
   Widget build(BuildContext context) {
@@ -512,13 +584,16 @@ class _SinglePhotoSlide extends StatelessWidget {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
-            end:   Alignment.bottomCenter,
+            end: Alignment.bottomCenter,
             colors: [Color(0xFF1A1A2F), AppColors.obsidianNight],
           ),
         ),
         child: isPrivate
             ? _PrivateSlide(photoCount: profile.photoCount)
-            : _PublicSlide(photoUrl: profile.photoUrl, index: index, blurhash: profile.blurhash),
+            : _PublicSlide(
+                photoUrl: profile.photoUrl,
+                index: index,
+                blurhash: profile.blurhash),
       ),
     );
   }
@@ -527,9 +602,9 @@ class _SinglePhotoSlide extends StatelessWidget {
     // Full-screen viewer — tapping a photo zooms it
     Navigator.of(context).push(
       PageRouteBuilder(
-        opaque:              false,
-        barrierColor:        AppColors.overlayBlack87,
-        barrierDismissible:  true,
+        opaque: false,
+        barrierColor: AppColors.overlayBlack87,
+        barrierDismissible: true,
         pageBuilder: (ctx, animation, _) => FadeTransition(
           opacity: animation,
           child: _FullScreenPhotoViewer(
@@ -544,15 +619,16 @@ class _SinglePhotoSlide extends StatelessWidget {
 }
 
 class _PublicSlide extends StatelessWidget {
-  const _PublicSlide({required this.photoUrl, required this.index, this.blurhash});
+  const _PublicSlide(
+      {required this.photoUrl, required this.index, this.blurhash});
   final String? photoUrl;
-  final int     index;
+  final int index;
   final String? blurhash;
 
   @override
   Widget build(BuildContext context) {
     if (photoUrl != null && index == 0) {
-      return NoorBlurImage(
+      return MithaqBlurImage(
         imageUrl: photoUrl!,
         blurhash: blurhash,
         fit: BoxFit.cover,
@@ -573,7 +649,7 @@ class _PrivateSlide extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width:  88,
+            width: 88,
             height: 88,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
@@ -582,7 +658,7 @@ class _PrivateSlide extends StatelessWidget {
             child: const Icon(
               Icons.lock_outline_rounded,
               color: AppColors.slateMist,
-              size:  40,
+              size: 40,
             ),
           ),
           const SizedBox(height: AppDimensions.space16),
@@ -603,7 +679,8 @@ class _PersonPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Center(
-      child: Icon(Icons.person_outline_rounded, color: AppColors.slateMist, size: 80),
+      child: Icon(Icons.person_outline_rounded,
+          color: AppColors.slateMist, size: 80),
     );
   }
 }
@@ -617,12 +694,13 @@ class _FullScreenPhotoViewer extends StatelessWidget {
     required this.isMutualMatch,
   });
   final MockProfile profile;
-  final int         initialIndex;
-  final bool        isMutualMatch;
+  final int initialIndex;
+  final bool isMutualMatch;
 
   @override
   Widget build(BuildContext context) {
-    final isPrivate = profile.isPhotoPrivate && initialIndex > 0 && !isMutualMatch;
+    final isPrivate =
+        profile.isPhotoPrivate && initialIndex > 0 && !isMutualMatch;
 
     return Stack(
       children: [
@@ -634,12 +712,12 @@ class _FullScreenPhotoViewer extends StatelessWidget {
         Center(
           child: InteractiveViewer(
             child: Container(
-              width:  double.infinity,
+              width: double.infinity,
               height: MediaQuery.of(context).size.height * 0.8,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
-                  end:   Alignment.bottomCenter,
+                  end: Alignment.bottomCenter,
                   colors: [Color(0xFF1A1A2F), AppColors.obsidianNight],
                 ),
               ),
@@ -648,19 +726,21 @@ class _FullScreenPhotoViewer extends StatelessWidget {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.lock_outline_rounded, color: AppColors.slateMist, size: 60),
+                          Icon(Icons.lock_outline_rounded,
+                              color: AppColors.slateMist, size: 60),
                           SizedBox(height: 12),
                           Text('Locked', style: AppTypography.bodyMuted),
                         ],
                       ),
                     )
                   : (profile.photoUrl != null && initialIndex == 0
-                      ? NoorBlurImage(
+                      ? MithaqBlurImage(
                           imageUrl: profile.photoUrl!,
                           blurhash: profile.blurhash,
                           fit: BoxFit.contain,
                         )
-                      : const Icon(Icons.person_outline_rounded, color: AppColors.slateMist, size: 120)),
+                      : const Icon(Icons.person_outline_rounded,
+                          color: AppColors.slateMist, size: 120)),
             ),
           ),
         ),
@@ -670,14 +750,15 @@ class _FullScreenPhotoViewer extends StatelessWidget {
             child: GestureDetector(
               onTap: () => Navigator.pop(context),
               child: Container(
-                width:  40,
+                width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color:        AppColors.surfaceGlass,
-                  shape:        BoxShape.circle,
-                  border:       Border.all(color: AppColors.cardBorder),
+                  color: AppColors.surfaceGlass,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.cardBorder),
                 ),
-                child: const Icon(Icons.close_rounded, color: AppColors.pearlWhite, size: 20),
+                child: const Icon(Icons.close_rounded,
+                    color: AppColors.pearlWhite, size: 20),
               ),
             ),
           ),
@@ -691,7 +772,7 @@ class _FullScreenPhotoViewer extends StatelessWidget {
 
 class _HeaderButton extends StatelessWidget {
   const _HeaderButton({required this.icon, required this.onTap});
-  final IconData     icon;
+  final IconData icon;
   final VoidCallback onTap;
 
   @override
@@ -700,14 +781,15 @@ class _HeaderButton extends StatelessWidget {
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.all(AppDimensions.space4),
-        width:  40,
+        width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color:        AppColors.surfaceGlass,
-          shape:        BoxShape.circle,
-          border:       Border.all(color: AppColors.cardBorder),
+          color: AppColors.surfaceGlass,
+          shape: BoxShape.circle,
+          border: Border.all(color: AppColors.cardBorder),
         ),
-        child: Icon(icon, color: AppColors.pearlWhite, size: AppDimensions.iconSizeMedium),
+        child: Icon(icon,
+            color: AppColors.pearlWhite, size: AppDimensions.iconSizeMedium),
       ),
     );
   }
@@ -747,8 +829,7 @@ class _NameBlock extends StatelessWidget {
                 style: AppTypography.screenTitle.copyWith(fontSize: 30),
               ),
             ),
-            if (profile.isVerified)
-              _VerifiedPill(),
+            if (profile.isVerified) _VerifiedPill(),
           ],
         ),
         const SizedBox(height: AppDimensions.space8),
@@ -771,22 +852,23 @@ class _VerifiedPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.space8,
-        vertical:   AppDimensions.space4,
+        vertical: AppDimensions.space4,
       ),
       decoration: BoxDecoration(
-        color:        AppColors.verifiedTeal.withValues(alpha: 0.15),
+        color: AppColors.verifiedTeal.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
-        border:       Border.all(color: AppColors.verifiedTeal),
+        border: Border.all(color: AppColors.verifiedTeal),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.verified_rounded, color: AppColors.verifiedTeal, size: 12),
+          const Icon(Icons.verified_rounded,
+              color: AppColors.verifiedTeal, size: 12),
           const SizedBox(width: AppDimensions.space4),
           Text(
             'Verified',
             style: AppTypography.caption.copyWith(
-              color:      AppColors.verifiedTeal,
+              color: AppColors.verifiedTeal,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -809,81 +891,45 @@ class _CompatibilityIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Read the viewer's own profile data
     final myData = context.read<OnboardingCubit>().currentData;
-
-    // Build preference check list: (hasPreference, doesViewerMatch)
-    final checks = <bool>[];
-
-    // 1. Age preference
-    if (profile.partnerAgeMin != null && profile.partnerAgeMax != null) {
-      final myDob = myData.dateOfBirth;
-      if (myDob != null) {
-        final myAge = DateTime.now().difference(myDob).inDays ~/ 365;
-        checks.add(myAge >= profile.partnerAgeMin! && myAge <= profile.partnerAgeMax!);
-      } else {
-        checks.add(false); // can't determine
-      }
-    }
-
-    // 2. Sect preference
-    if (profile.sect != null) {
-      final mySect = myData.sect?.name;
-      checks.add(mySect != null && mySect.toLowerCase() == profile.sect!.toLowerCase());
-    }
-
-    // 3. Deen level preference
-    if (profile.deenLevel != null) {
-      final myDeen = myData.deenLevel?.name;
-      checks.add(myDeen != null && myDeen.toLowerCase() == profile.deenLevel!.toLowerCase());
-    }
-
-    // 4. Education preference
-    if (profile.education != null) {
-      final myEdu = myData.educationLabel;
-      checks.add(myEdu != null && myEdu.isNotEmpty);
-    }
-
-    // 5. Family type preference
-    if (profile.familyType != null) {
-      final myFamily = myData.familyType?.name;
-      checks.add(myFamily != null && myFamily.toLowerCase() == profile.familyType!.toLowerCase());
-    }
-
-    final totalPrefs = checks.length;
-    final matched = checks.where((b) => b).length;
+    final compatibility = calculateCompatibility(
+      viewer: myData,
+      candidate: profile,
+    );
+    final totalPrefs = compatibility.total;
+    final matched = compatibility.matched;
 
     if (totalPrefs == 0) return const SizedBox.shrink();
 
-    final fraction = matched / totalPrefs;
+    final fraction = compatibility.fraction;
 
     return Container(
       padding: const EdgeInsets.all(AppDimensions.space16),
       decoration: BoxDecoration(
-        color:        AppColors.champagneGold.withValues(alpha: 0.08),
+        color: AppColors.champagneGold.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-        border:       Border.all(color: AppColors.goldBorder),
+        border: Border.all(color: AppColors.goldBorder),
       ),
       child: Row(
         children: [
           // Progress arc ring
           SizedBox(
-            width:  44,
+            width: 44,
             height: 44,
             child: Stack(
               alignment: Alignment.center,
               children: [
                 CircularProgressIndicator(
-                  value:           fraction,
+                  value: fraction,
                   backgroundColor: AppColors.surfaceGlassHover,
-                  color:           AppColors.champagneGold,
-                  strokeWidth:     3,
+                  color: AppColors.champagneGold,
+                  strokeWidth: 3,
                 ),
                 Text(
                   '${(fraction * 100).round()}%',
                   style: AppTypography.caption.copyWith(
-                    color:      AppColors.champagneGold,
-                    fontSize:   10,
+                    color: AppColors.champagneGold,
+                    fontSize: 10,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -950,9 +996,9 @@ class _DetailGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      spacing:    AppDimensions.space12,
+      spacing: AppDimensions.space12,
       runSpacing: AppDimensions.space12,
-      children:   items.map((item) => _DetailTile(item: item)).toList(),
+      children: items.map((item) => _DetailTile(item: item)).toList(),
     );
   }
 }
@@ -967,12 +1013,12 @@ class _DetailTile extends StatelessWidget {
       constraints: const BoxConstraints(minWidth: 120),
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.space16,
-        vertical:   AppDimensions.space12,
+        vertical: AppDimensions.space12,
       ),
       decoration: BoxDecoration(
-        color:        AppColors.surfaceGlass,
+        color: AppColors.surfaceGlass,
         borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-        border:       Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: AppColors.cardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -997,12 +1043,13 @@ class _GoldChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.space12,
-        vertical:   AppDimensions.space6,
+        vertical: AppDimensions.space6,
       ),
       decoration: BoxDecoration(
-        color:        AppColors.champagneGold.withValues(alpha: 0.1),
+        color: AppColors.champagneGold.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
-        border: Border.all(color: AppColors.champagneGold.withValues(alpha: 0.5)),
+        border:
+            Border.all(color: AppColors.champagneGold.withValues(alpha: 0.5)),
       ),
       child: Text(
         label,
@@ -1023,12 +1070,12 @@ class _DetailChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.space12,
-        vertical:   AppDimensions.space6,
+        vertical: AppDimensions.space6,
       ),
       decoration: BoxDecoration(
-        color:        AppColors.surfaceGlass,
+        color: AppColors.surfaceGlass,
         borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
-        border:       Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: AppColors.cardBorder),
       ),
       child: Text(label, style: AppTypography.chipLabel),
     );
@@ -1046,9 +1093,9 @@ class _CtaBar extends StatelessWidget {
     required this.onBookmark,
   });
 
-  final String    firstName;
-  final bool      isInterestSent;
-  final bool      isBookmarked;
+  final String firstName;
+  final bool isInterestSent;
+  final bool isBookmarked;
   final Future<void> Function()? onSendInterest;
   final VoidCallback onBookmark;
 
@@ -1063,8 +1110,8 @@ class _CtaBar extends StatelessWidget {
       ),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          begin:  Alignment.topCenter,
-          end:    Alignment.bottomCenter,
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
           colors: [Colors.transparent, AppColors.obsidianNight],
         ),
       ),
@@ -1075,21 +1122,27 @@ class _CtaBar extends StatelessWidget {
             onTap: onBookmark,
             child: AnimatedContainer(
               duration: AppDimensions.durationTransition,
-              width:    AppDimensions.buttonHeight,
-              height:   AppDimensions.buttonHeight,
+              width: AppDimensions.buttonHeight,
+              height: AppDimensions.buttonHeight,
               decoration: BoxDecoration(
                 color: isBookmarked
                     ? AppColors.champagneGold.withValues(alpha: 0.15)
                     : AppColors.surfaceGlass,
                 borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
                 border: Border.all(
-                  color: isBookmarked ? AppColors.champagneGold : AppColors.cardBorder,
+                  color: isBookmarked
+                      ? AppColors.champagneGold
+                      : AppColors.cardBorder,
                 ),
               ),
               child: Icon(
-                isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
-                color: isBookmarked ? AppColors.champagneGold : AppColors.pearlWhite,
-                size:  AppDimensions.iconSizeLarge,
+                isBookmarked
+                    ? Icons.bookmark_rounded
+                    : Icons.bookmark_outline_rounded,
+                color: isBookmarked
+                    ? AppColors.champagneGold
+                    : AppColors.pearlWhite,
+                size: AppDimensions.iconSizeLarge,
               ),
             ),
           ),
@@ -1106,16 +1159,20 @@ class _CtaBar extends StatelessWidget {
                   color: isInterestSent
                       ? AppColors.champagneGold.withValues(alpha: 0.15)
                       : AppColors.champagneGold,
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                  borderRadius:
+                      BorderRadius.circular(AppDimensions.radiusButton),
                   border: isInterestSent
                       ? Border.all(color: AppColors.champagneGold)
                       : null,
                 ),
                 child: Center(
                   child: Text(
-                    isInterestSent ? 'Interest Sent ✓' : 'Send Interest to $firstName',
+                    isInterestSent
+                        ? 'Interest Sent ✓'
+                        : 'Send Interest to $firstName',
                     style: isInterestSent
-                        ? AppTypography.button.copyWith(color: AppColors.champagneGold)
+                        ? AppTypography.button
+                            .copyWith(color: AppColors.champagneGold)
                         : AppTypography.button,
                   ),
                 ),
@@ -1128,7 +1185,6 @@ class _CtaBar extends StatelessWidget {
   }
 }
 
-
 // ── Report / Block Bottom Sheet ───────────────────────────────
 // Upgraded to use BlockReportCubit + ReportBottomSheet (Step 10)
 
@@ -1139,19 +1195,19 @@ class _ReportBlockSheet extends StatelessWidget {
     required this.onReport,
   });
 
-  final MockProfile  profile;
+  final MockProfile profile;
   final VoidCallback onBlock;
   final VoidCallback onReport;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin:  const EdgeInsets.all(AppDimensions.space16),
+      margin: const EdgeInsets.all(AppDimensions.space16),
       padding: const EdgeInsets.all(AppDimensions.space24),
       decoration: BoxDecoration(
-        color:        AppColors.surfaceElevated,
+        color: AppColors.surfaceElevated,
         borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-        border:       Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: AppColors.cardBorder),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1160,9 +1216,10 @@ class _ReportBlockSheet extends StatelessWidget {
           // Handle
           Center(
             child: Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               decoration: BoxDecoration(
-                color:        AppColors.cardBorder,
+                color: AppColors.cardBorder,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1170,7 +1227,7 @@ class _ReportBlockSheet extends StatelessWidget {
           const SizedBox(height: AppDimensions.space24),
 
           _SheetAction(
-            icon:  Icons.flag_outlined,
+            icon: Icons.flag_outlined,
             label: 'Report ${profile.firstName}',
             color: AppColors.softCoral,
             onTap: () {
@@ -1183,7 +1240,7 @@ class _ReportBlockSheet extends StatelessWidget {
           const Divider(color: AppColors.divider),
           const SizedBox(height: AppDimensions.space4),
           _SheetAction(
-            icon:  Icons.block_rounded,
+            icon: Icons.block_rounded,
             label: 'Block ${profile.firstName}',
             color: AppColors.softCoral,
             onTap: () {
@@ -1198,20 +1255,21 @@ class _ReportBlockSheet extends StatelessWidget {
                   backgroundColor: AppColors.surfaceGlassHover,
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               );
             },
           ),
           const SizedBox(height: AppDimensions.space12),
           SizedBox(
-            width:  double.infinity,
+            width: double.infinity,
             height: AppDimensions.buttonHeightSmall,
             child: OutlinedButton(
               style: OutlinedButton.styleFrom(
-                side:  const BorderSide(color: AppColors.cardBorder),
+                side: const BorderSide(color: AppColors.cardBorder),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                  borderRadius:
+                      BorderRadius.circular(AppDimensions.radiusButton),
                 ),
               ),
               onPressed: () => Navigator.pop(context),
@@ -1235,9 +1293,9 @@ class _SheetAction extends StatelessWidget {
     required this.onTap,
   });
 
-  final IconData     icon;
-  final String       label;
-  final Color        color;
+  final IconData icon;
+  final String label;
+  final Color color;
   final VoidCallback onTap;
 
   @override
@@ -1247,19 +1305,18 @@ class _SheetAction extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: AppDimensions.space16,
-          vertical:   AppDimensions.space14,
+          vertical: AppDimensions.space14,
         ),
         decoration: BoxDecoration(
-          color:        color.withValues(alpha: 0.08),
+          color: color.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          border:       Border.all(color: color.withValues(alpha: 0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
             Icon(icon, color: color, size: AppDimensions.iconSizeLarge),
             const SizedBox(width: AppDimensions.space12),
-            Text(label,
-                style: AppTypography.bodyMedium.copyWith(color: color)),
+            Text(label, style: AppTypography.bodyMedium.copyWith(color: color)),
           ],
         ),
       ),

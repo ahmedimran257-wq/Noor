@@ -1,6 +1,6 @@
 // lib/core/theme/app_typography.dart
 // ============================================================
-// NOOR Design DNA — Typography System
+// MITHAQ Design DNA — Typography System
 //
 // DUAL FONT-PAIRING STRATEGY (high-end magazine / editorial feel):
 //
@@ -15,7 +15,7 @@
 //     Weight: Regular (400) for body, Medium (500) for labels.
 //
 // This contrast between serif headings and sans-serif body creates
-// the "private gallery" editorial DNA that separates NOOR from
+// the "private gallery" editorial DNA that separates MITHAQ from
 // generic apps.
 // ============================================================
 
@@ -71,7 +71,7 @@ abstract final class AppTypography {
         height: 1.4,
       );
 
-  /// NOOR wordmark in the header — Inter 22px ExtraBold, Gold
+  /// MITHAQ wordmark in the header — Inter 22px ExtraBold, Gold
   /// (Wordmark stays geometric sans-serif for brand identity)
   static const TextStyle wordmark = TextStyle(
         fontFamily: _body,
@@ -247,7 +247,7 @@ abstract final class AppTypography {
 
   // ── TextTheme Builder ─────────────────────────────────────
 
-  /// Builds a Material TextTheme mapped to NOOR's type scale.
+  /// Builds a Material TextTheme mapped to MITHAQ's type scale.
   /// Used in AppTheme.darkTheme
   static TextTheme get textTheme => TextTheme(
         displayLarge:   screenTitle,

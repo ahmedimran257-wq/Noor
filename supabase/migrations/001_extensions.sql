@@ -1,6 +1,6 @@
 -- ============================================================
 -- MIGRATION 001: EXTENSIONS
--- NOOR Muslim Matrimony App
+-- Mithaq Muslim Matrimony App
 -- Run FIRST before any other migration.
 -- ============================================================
 

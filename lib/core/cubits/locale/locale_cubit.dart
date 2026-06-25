@@ -1,6 +1,6 @@
 // lib/core/cubits/locale/locale_cubit.dart
 // ============================================================
-// NOOR — Locale Cubit (Feature 16)
+// MITHAQ — Locale Cubit (Feature 16)
 // Holds the active Locale and persists to SharedPreferences.
 // main.dart reads this to set MaterialApp.locale.
 // ============================================================

@@ -1,6 +1,6 @@
 // lib/core/services/fcm_service.dart
 // ============================================================
-// NOOR — Firebase Cloud Messaging Service
+// MITHAQ — Firebase Cloud Messaging Service
 //
 // Handles FCM token lifecycle:
 //   - Request notification permissions
@@ -139,10 +139,10 @@ class FcmService {
   /// Get or create a persistent device ID stored in SharedPreferences.
   Future<String> _getOrCreateDeviceId() async {
     final prefs = await SharedPreferences.getInstance();
-    var deviceId = prefs.getString('noor_device_id');
+    var deviceId = prefs.getString('mithaq_device_id');
     if (deviceId == null) {
       deviceId = const Uuid().v4();
-      await prefs.setString('noor_device_id', deviceId);
+      await prefs.setString('mithaq_device_id', deviceId);
     }
     return deviceId;
   }

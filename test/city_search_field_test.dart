@@ -1,0 +1,50 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mithaq/core/services/country_context_service.dart';
+import 'package:mithaq/core/widgets/inputs/city_search_field.dart';
+
+void main() {
+  testWidgets('clears the selected city when the country changes',
+      (tester) async {
+    final country = ValueNotifier('IN');
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ValueListenableBuilder<String>(
+            valueListenable: country,
+            builder: (_, value, __) => CitySearchField(
+              countryCode: value,
+              initialValue: 'Delhi, Delhi',
+              onSelected: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        'Delhi, Delhi');
+
+    country.value = 'US';
+    await tester.pump();
+
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        isEmpty);
+  });
+
+  testWidgets('does not enable city search without a selected country',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CitySearchField(
+            countryCode: null,
+            enabled: false,
+            onSelected: (CityResult _) {},
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.widget<TextField>(find.byType(TextField)).enabled, isFalse);
+  });
+}

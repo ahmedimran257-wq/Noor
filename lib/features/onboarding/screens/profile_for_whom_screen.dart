@@ -1,6 +1,6 @@
 // lib/features/onboarding/screens/profile_for_whom_screen.dart
 // ============================================================
-// NOOR — Profile For Whom Screen (Onboarding Step 0)
+// MITHAQ — Profile For Whom Screen (Onboarding Step 0)
 // Two primary options: Myself / Guardian.
 // Selecting Guardian expands to show relationship sub-options:
 //   Son, Daughter, Brother, Sister.
@@ -10,10 +10,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:noor/l10n/generated/app_localizations.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mithaq/l10n/generated/app_localizations.dart';
+import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_state.dart';
 import '../../../core/models/onboarding_data.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
@@ -105,6 +108,13 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
     ));
   }
 
+  Future<void> _exitOnboarding() async {
+    HapticFeedback.lightImpact();
+    await context.read<AuthCubit>().signOut();
+    if (!mounted) return;
+    context.go(AppRoutes.splash);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -120,7 +130,29 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: AppDimensions.space32),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: GestureDetector(
+                    onTap: _exitOnboarding,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceGlass,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.cardBorder),
+                      ),
+                      child: Icon(
+                        Directionality.of(context) == TextDirection.rtl
+                            ? Icons.arrow_forward_ios_rounded
+                            : Icons.arrow_back_ios_new_rounded,
+                        color: AppColors.pearlWhite,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppDimensions.space24),
                 StepHeader(
                   title:    l10n.onboarding_profileForWhom_title,
                   subtitle: l10n.onboarding_profileForWhom_subtitle,

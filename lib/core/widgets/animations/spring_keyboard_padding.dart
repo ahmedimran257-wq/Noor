@@ -1,12 +1,12 @@
 // lib/core/widgets/animations/spring_keyboard_padding.dart
 // ============================================================
-// NOOR — Spring Keyboard Padding
+// MITHAQ — Spring Keyboard Padding
 // Animates bottom padding to match keyboard height changes using spring physics.
 // Replaces default Scaffold resizing for a premium Telegram-like experience.
 // ============================================================
 
 import 'package:flutter/widgets.dart';
-import '../../theme/noor_spring.dart';
+import '../../theme/mithaq_spring.dart';
 
 class SpringKeyboardPadding extends StatefulWidget {
   const SpringKeyboardPadding({super.key, required this.child});
@@ -53,7 +53,7 @@ class _SpringKeyboardPaddingState extends State<SpringKeyboardPadding>
       final start = _currentPadding;
       _targetPadding = keyboardHeight;
       _controller.animateWithSpring(
-        NoorSpring.gentle,
+        MithaqSpring.gentle,
         from: start,
         to: _targetPadding,
       );

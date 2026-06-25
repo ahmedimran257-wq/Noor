@@ -1,6 +1,6 @@
 // lib/core/services/translation_service.dart
 // ============================================================
-// NOOR — Translation Service (Muslima Feature)
+// MITHAQ — Translation Service (Muslima Feature)
 //
 // Communicates with MyMemory Free Translation API.
 // Requires no keys/billing. Free tier up to 1,000 words/day.
@@ -64,7 +64,7 @@ class TranslationService {
       final response = await http.get(
         uri,
         headers: {
-          'User-Agent': 'NoorApp/1.0 (contact@noorapp.com; matchmaking app)',
+          'User-Agent': 'MithaqApp/1.0 (contact@noorapp.com; matchmaking app)',
         },
       ).timeout(const Duration(seconds: 5));
 

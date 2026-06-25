@@ -1,6 +1,6 @@
 // lib/core/cubits/subscription/subscription_state.dart
 // ============================================================
-// NOOR — Subscription State
+// MITHAQ — Subscription State
 //
 // Blueprint (Part 2 & Part 14):
 //   • Gender-split: women always free, men must subscribe to message

@@ -1,6 +1,6 @@
 // lib/features/home/widgets/discovery_filter_bar.dart
 // ============================================================
-// NOOR — Discovery Filter Bar (Step 6 — Functional)
+// MITHAQ — Discovery Filter Bar (Step 6 — Functional)
 //
 // Blueprint (Part 8, Search & Filters):
 //   "A full-height bottom sheet with all available filters.

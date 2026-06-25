@@ -1,11 +1,12 @@
 // lib/features/home/screens/my_profile_screen.dart
 // ============================================================
-// NOOR — My Profile Screen
+// MITHAQ — My Profile Screen
 // Self-view: completeness bar, boost section, profile views
 // row, saved profiles, settings sections, sign out.
 // ============================================================
 
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -20,11 +21,12 @@ import '../../../core/cubits/subscription/subscription_state.dart';
 import '../../../core/cubits/notifications/notifications_cubit.dart';
 import '../../../core/models/onboarding_data.dart';
 import '../../../core/mock/mock_profiles.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/services/bookmark_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/noor_empty_state.dart';
+import '../../../core/widgets/mithaq_empty_state.dart';
 import 'edit_profile_screen.dart';
 import 'delete_account_screen.dart';
 import 'legal_doc_screen.dart';
@@ -34,12 +36,14 @@ import 'profile_views_screen.dart';
 import 'notifications_screen.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/services/selfie_verification_service.dart';
+import '../../../core/services/profile_photo_service.dart';
 
 // ── Completeness score ────────────────────────────────────────
 
 ({int score, String? nudge}) _calcCompleteness(OnboardingData d) {
   int score = 0;
-  final hasPrimaryPhoto = d.photoLocalPaths != null && d.photoLocalPaths!.isNotEmpty;
+  final hasPrimaryPhoto =
+      d.photoLocalPaths != null && d.photoLocalPaths!.isNotEmpty;
   if (hasPrimaryPhoto) score += 25;
   final hasBio = (d.bio?.length ?? 0) >= 50;
   if (hasBio) score += 15;
@@ -50,9 +54,11 @@ import '../../../core/services/selfie_verification_service.dart';
   if (hasEduPro) score += 10;
   final hasFamily = d.familyType != null;
   if (hasFamily) score += 10;
-  final hasPartnerPrefs = d.preferredAgeMin != null && d.preferredAgeMax != null;
+  final hasPartnerPrefs =
+      d.preferredAgeMin != null && d.preferredAgeMax != null;
   if (hasPartnerPrefs) score += 10;
-  final hasSecondPhoto = d.photoLocalPaths != null && d.photoLocalPaths!.length >= 2;
+  final hasSecondPhoto =
+      d.photoLocalPaths != null && d.photoLocalPaths!.length >= 2;
   if (hasSecondPhoto) score += 8;
   final hasIncome = d.incomeBracketId != null;
   if (hasIncome) score += 4;
@@ -60,15 +66,25 @@ import '../../../core/services/selfie_verification_service.dart';
   if (hasLangs) score += 3;
 
   String? nudge;
-  if (!hasPrimaryPhoto)      { nudge = 'Add a profile photo to reach ${score + 25}%'; }
-  else if (!hasBio)          { nudge = 'Add a bio to reach ${score + 15}%'; }
-  else if (!hasIslamic)      { nudge = 'Complete Islamic identity to reach ${score + 15}%'; }
-  else if (!hasEduPro)       { nudge = 'Add education & profession to reach ${score + 10}%'; }
-  else if (!hasFamily)       { nudge = 'Add family background to reach ${score + 10}%'; }
-  else if (!hasPartnerPrefs) { nudge = 'Set partner preferences to reach ${score + 10}%'; }
-  else if (!hasSecondPhoto)  { nudge = 'Add a second photo to reach ${score + 8}%'; }
-  else if (!hasIncome)       { nudge = 'Add income range to reach ${score + 4}%'; }
-  else if (!hasLangs)        { nudge = 'Add languages to reach ${score + 3}%'; }
+  if (!hasPrimaryPhoto) {
+    nudge = 'Add a profile photo to reach ${score + 25}%';
+  } else if (!hasBio) {
+    nudge = 'Add a bio to reach ${score + 15}%';
+  } else if (!hasIslamic) {
+    nudge = 'Complete Islamic identity to reach ${score + 15}%';
+  } else if (!hasEduPro) {
+    nudge = 'Add education & profession to reach ${score + 10}%';
+  } else if (!hasFamily) {
+    nudge = 'Add family background to reach ${score + 10}%';
+  } else if (!hasPartnerPrefs) {
+    nudge = 'Set partner preferences to reach ${score + 10}%';
+  } else if (!hasSecondPhoto) {
+    nudge = 'Add a second photo to reach ${score + 8}%';
+  } else if (!hasIncome) {
+    nudge = 'Add income range to reach ${score + 4}%';
+  } else if (!hasLangs) {
+    nudge = 'Add languages to reach ${score + 3}%';
+  }
 
   return (score: score.clamp(0, 100), nudge: nudge);
 }
@@ -86,6 +102,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     with AutomaticKeepAliveClientMixin {
   Set<String> _bookmarked = {};
   bool _guardianEnabled = false;
+  String? _primaryPhotoUrl;
 
   int _viewCount = 10;
 
@@ -97,6 +114,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     super.initState();
     _loadBookmarks();
     _loadGuardian();
+    _loadPrimaryPhoto();
     if (SupabaseService.isInitialized) {
       _loadViewsCount();
     }
@@ -110,9 +128,16 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   Future<void> _loadGuardian() async {
     final prefs = await SharedPreferences.getInstance();
     if (mounted) {
-      setState(() =>
-          _guardianEnabled = prefs.getBool('guardian_enabled') ?? false);
+      setState(
+          () => _guardianEnabled = prefs.getBool('guardian_enabled') ?? false);
     }
+  }
+
+  Future<void> _loadPrimaryPhoto() async {
+    try {
+      final url = await ProfilePhotoService.instance.getPrimaryPhotoUrl();
+      if (mounted) setState(() => _primaryPhotoUrl = url);
+    } catch (_) {}
   }
 
   Future<void> _loadViewsCount() async {
@@ -131,7 +156,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           .from('profile_views')
           .select('id')
           .eq('viewed_profile_id', myProfileId);
-      
+
       final count = response.length;
       if (mounted) {
         setState(() => _viewCount = count);
@@ -170,7 +195,8 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                             height: AppDimensions.minTouchTarget,
                             decoration: BoxDecoration(
                               color: AppColors.surfaceGlass,
-                              borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                              borderRadius: BorderRadius.circular(
+                                  AppDimensions.radiusButton),
                               border: Border.all(color: AppColors.cardBorder),
                             ),
                             child: const Icon(
@@ -181,9 +207,10 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                           ),
                           if (ns.unreadCount > 0)
                             Positioned(
-                              top: 6, right: 6,
+                              top: 6,
+                              right: 6,
                               child: Container(
-                                width:  8,
+                                width: 8,
                                 height: 8,
                                 decoration: const BoxDecoration(
                                   color: AppColors.champagneGold,
@@ -208,7 +235,8 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                     height: AppDimensions.minTouchTarget,
                     decoration: BoxDecoration(
                       color: AppColors.surfaceGlass,
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusButton),
                       border: Border.all(color: AppColors.cardBorder),
                     ),
                     child: const Icon(
@@ -229,13 +257,14 @@ class _MyProfileScreenState extends State<MyProfileScreen>
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: BlocBuilder<OnboardingCubit, OnboardingState>(
               builder: (context, _) {
-                final data   = context.read<OnboardingCubit>().currentData;
+                final data = context.read<OnboardingCubit>().currentData;
                 final result = _calcCompleteness(data);
                 return _ProfilePreviewCard(
                   score: result.score,
                   nudge: result.nudge,
-                  data:  data,
+                  data: data,
                   guardianEnabled: _guardianEnabled,
+                  primaryPhotoUrl: _primaryPhotoUrl,
                 );
               },
             ),
@@ -254,23 +283,24 @@ class _MyProfileScreenState extends State<MyProfileScreen>
               child: Container(
                 padding: const EdgeInsets.all(AppDimensions.space16),
                 decoration: BoxDecoration(
-                  color:        AppColors.surfaceGlass,
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                  border:       Border.all(color: AppColors.cardBorder),
+                  color: AppColors.surfaceGlass,
+                  borderRadius:
+                      BorderRadius.circular(AppDimensions.radiusButton),
+                  border: Border.all(color: AppColors.cardBorder),
                 ),
                 child: Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(AppDimensions.space8),
                       decoration: BoxDecoration(
-                        color:  AppColors.champagneGold.withValues(alpha: 0.12),
-                        shape:  BoxShape.circle,
+                        color: AppColors.champagneGold.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
                         border: Border.all(color: AppColors.goldBorder),
                       ),
                       child: const Icon(
                         Icons.remove_red_eye_outlined,
                         color: AppColors.champagneGold,
-                        size:  AppDimensions.iconSizeMedium,
+                        size: AppDimensions.iconSizeMedium,
                       ),
                     ),
                     const SizedBox(width: AppDimensions.space12),
@@ -278,7 +308,8 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Profile Views', style: AppTypography.bodyMedium),
+                          Text('Profile Views',
+                              style: AppTypography.bodyMedium),
                           Text('This week', style: AppTypography.caption),
                         ],
                       ),
@@ -287,13 +318,13 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color:        AppColors.champagneGold,
+                        color: AppColors.champagneGold,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         '$_viewCount',
-                        style: AppTypography.captionMedium.copyWith(
-                            color: AppColors.obsidianNight),
+                        style: AppTypography.captionMedium
+                            .copyWith(color: AppColors.obsidianNight),
                       ),
                     ),
                     const SizedBox(width: AppDimensions.space8),
@@ -308,10 +339,10 @@ class _MyProfileScreenState extends State<MyProfileScreen>
 
           const SizedBox(height: AppDimensions.space16),
 
-          // Verification card
+          // Verification badge card
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: _VerificationCard(),
+            child: _BadgeCard(),
           ),
 
           const SizedBox(height: AppDimensions.space16),
@@ -328,13 +359,15 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: GestureDetector(
-              onTap: () => context.push('/referral'),
+              onTap: () => context.push(AppRoutes.referral),
               child: Container(
                 padding: const EdgeInsets.all(AppDimensions.space16),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceGlass,
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                  border: Border.all(color: AppColors.goldBorder.withValues(alpha: 0.5)),
+                  borderRadius:
+                      BorderRadius.circular(AppDimensions.radiusButton),
+                  border: Border.all(
+                      color: AppColors.goldBorder.withValues(alpha: 0.5)),
                   boxShadow: [
                     BoxShadow(
                       color: AppColors.champagneGold.withValues(alpha: 0.02),
@@ -363,8 +396,10 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Refer a Friend', style: AppTypography.bodyMedium),
-                          Text('Get 7 days of Premium for free', style: AppTypography.caption),
+                          Text('Refer a Friend',
+                              style: AppTypography.bodyMedium),
+                          Text('Get 7 days of Premium for free',
+                              style: AppTypography.caption),
                         ],
                       ),
                     ),
@@ -391,19 +426,21 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: SizedBox(
-              width:  double.infinity,
+              width: double.infinity,
               height: AppDimensions.buttonHeight,
               child: OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: AppColors.champagneGold),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                    borderRadius:
+                        BorderRadius.circular(AppDimensions.radiusButton),
                   ),
                 ),
                 icon: const Icon(Icons.edit_outlined,
                     color: AppColors.champagneGold,
-                    size:  AppDimensions.iconSizeMedium),
-                label: const Text('Edit Profile', style: AppTypography.buttonSecondary),
+                    size: AppDimensions.iconSizeMedium),
+                label: const Text('Edit Profile',
+                    style: AppTypography.buttonSecondary),
                 onPressed: () => Navigator.of(context).push(
                   PageRouteBuilder(
                     transitionDuration: AppDimensions.durationReveal,
@@ -431,22 +468,24 @@ class _MyProfileScreenState extends State<MyProfileScreen>
             title: 'Privacy',
             items: [
               _SettingsItem(
-                icon:     Icons.visibility_outlined,
-                label:    'Profile Visibility',
-                trailing: 'Public',
+                icon: Icons.visibility_outlined,
+                label: 'Profile Visibility',
+                trailing: 'Manage',
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
-                    builder: (_) => const SettingsScreen(initialSection: 'privacy'),
+                    builder: (_) =>
+                        const SettingsScreen(initialSection: 'privacy'),
                   ),
                 ),
               ),
               _SettingsItem(
-                icon:     Icons.photo_library_outlined,
-                label:    'Photo Privacy',
-                trailing: 'After Acceptance',
+                icon: Icons.photo_library_outlined,
+                label: 'Photo Privacy',
+                trailing: 'Manage',
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
-                    builder: (_) => const SettingsScreen(initialSection: 'privacy'),
+                    builder: (_) =>
+                        const SettingsScreen(initialSection: 'privacy'),
                   ),
                 ),
               ),
@@ -459,20 +498,22 @@ class _MyProfileScreenState extends State<MyProfileScreen>
               _SettingsItem(
                 icon: Icons.notifications_outlined,
                 label: 'New Interests',
-                isToggle: true, isOn: true,
+                trailing: 'Manage',
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
-                    builder: (_) => const SettingsScreen(),
+                    builder: (_) =>
+                        const SettingsScreen(initialSection: 'notifications'),
                   ),
                 ),
               ),
               _SettingsItem(
                 icon: Icons.chat_bubble_outline_rounded,
                 label: 'New Messages',
-                isToggle: true, isOn: true,
+                trailing: 'Manage',
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
-                    builder: (_) => const SettingsScreen(),
+                    builder: (_) =>
+                        const SettingsScreen(initialSection: 'notifications'),
                   ),
                 ),
               ),
@@ -483,16 +524,12 @@ class _MyProfileScreenState extends State<MyProfileScreen>
             title: 'Account',
             items: [
               _SettingsItem(
-                icon:  Icons.help_outline_rounded,
+                icon: Icons.help_outline_rounded,
                 label: 'Help & Support',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const SettingsScreen(initialSection: 'help'),
-                  ),
-                ),
+                onTap: () => context.push(AppRoutes.helpSupport),
               ),
               _SettingsItem(
-                icon:  Icons.privacy_tip_outlined,
+                icon: Icons.privacy_tip_outlined,
                 label: 'Privacy Policy',
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
@@ -501,7 +538,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                 ),
               ),
               _SettingsItem(
-                icon:  Icons.delete_outline_rounded,
+                icon: Icons.delete_outline_rounded,
                 label: 'Delete Account',
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
@@ -524,21 +561,22 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: SizedBox(
-              width:  double.infinity,
+              width: double.infinity,
               height: AppDimensions.buttonHeight,
               child: OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
-                  side:  const BorderSide(color: AppColors.softCoral),
+                  side: const BorderSide(color: AppColors.softCoral),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                    borderRadius:
+                        BorderRadius.circular(AppDimensions.radiusButton),
                   ),
                 ),
                 icon: const Icon(Icons.logout_rounded,
                     color: AppColors.softCoral,
-                    size:  AppDimensions.iconSizeMedium),
+                    size: AppDimensions.iconSizeMedium),
                 label: Text('Sign Out',
-                    style: AppTypography.buttonSecondary.copyWith(
-                        color: AppColors.softCoral)),
+                    style: AppTypography.buttonSecondary
+                        .copyWith(color: AppColors.softCoral)),
                 onPressed: () => context.read<AuthCubit>().signOut(),
               ),
             ),
@@ -559,7 +597,7 @@ class _BoostSection extends StatefulWidget {
 
 class _BoostSectionState extends State<_BoostSection> {
   DateTime? _boostedAt;
-  Timer?    _timer;
+  Timer? _timer;
 
   @override
   void initState() {
@@ -575,7 +613,7 @@ class _BoostSectionState extends State<_BoostSection> {
 
   Future<void> _loadBoostState() async {
     final prefs = await SharedPreferences.getInstance();
-    final ms    = prefs.getInt('boost_activated_at');
+    final ms = prefs.getInt('boost_activated_at');
     if (ms != null) {
       final at = DateTime.fromMillisecondsSinceEpoch(ms);
       if (DateTime.now().difference(at) < const Duration(hours: 2)) {
@@ -593,8 +631,8 @@ class _BoostSectionState extends State<_BoostSection> {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (_boostedAt == null) return;
-      final remaining = const Duration(hours: 2) -
-          DateTime.now().difference(_boostedAt!);
+      final remaining =
+          const Duration(hours: 2) - DateTime.now().difference(_boostedAt!);
       if (remaining.isNegative) {
         setState(() => _boostedAt = null);
         _timer?.cancel();
@@ -606,7 +644,7 @@ class _BoostSectionState extends State<_BoostSection> {
 
   Future<void> _activate() async {
     final prefs = await SharedPreferences.getInstance();
-    final now   = DateTime.now();
+    final now = DateTime.now();
     await prefs.setInt('boost_activated_at', now.millisecondsSinceEpoch);
     if (mounted) {
       setState(() => _boostedAt = now);
@@ -621,7 +659,7 @@ class _BoostSectionState extends State<_BoostSection> {
                 style: AppTypography.body),
           ]),
           backgroundColor: AppColors.surfaceGlassHover,
-          behavior:        SnackBarBehavior.floating,
+          behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
             side: const BorderSide(color: AppColors.goldBorder),
@@ -634,8 +672,8 @@ class _BoostSectionState extends State<_BoostSection> {
 
   String _countdown() {
     if (_boostedAt == null) return '';
-    final remaining = const Duration(hours: 2) -
-        DateTime.now().difference(_boostedAt!);
+    final remaining =
+        const Duration(hours: 2) - DateTime.now().difference(_boostedAt!);
     if (remaining.isNegative) return '00:00:00';
     final h = remaining.inHours.toString().padLeft(2, '0');
     final m = (remaining.inMinutes % 60).toString().padLeft(2, '0');
@@ -648,9 +686,8 @@ class _BoostSectionState extends State<_BoostSection> {
     // Blueprint: Women always free. Never show subscription
     // messaging to female users.
     final authState = context.watch<AuthCubit>().state;
-    final gender = authState is AuthAuthenticated
-        ? (authState.gender ?? 'male')
-        : 'male';
+    final gender =
+        authState is AuthAuthenticated ? (authState.gender ?? 'male') : 'male';
     final isFemale = gender == 'female';
 
     return BlocBuilder<SubscriptionCubit, SubscriptionState>(
@@ -673,17 +710,19 @@ class _BoostSectionState extends State<_BoostSection> {
                       AppColors.champagneGold.withValues(alpha: 0.06),
                     ],
                     begin: Alignment.topLeft,
-                    end:   Alignment.bottomRight,
+                    end: Alignment.bottomRight,
                   )
                 : null,
             color: showAsSubscribed ? null : AppColors.surfaceGlass,
             border: Border.all(
-              color: showAsSubscribed ? AppColors.goldBorder : AppColors.cardBorder,
+              color: showAsSubscribed
+                  ? AppColors.goldBorder
+                  : AppColors.cardBorder,
             ),
           ),
           child: showAsSubscribed
               ? _BoostActiveOrAvailable(
-                  isActive:  isActive,
+                  isActive: isActive,
                   countdown: _countdown(),
                   onActivate: _activate,
                 )
@@ -705,8 +744,8 @@ class _BoostActiveOrAvailable extends StatelessWidget {
     required this.countdown,
     required this.onActivate,
   });
-  final bool         isActive;
-  final String       countdown;
+  final bool isActive;
+  final String countdown;
   final VoidCallback onActivate;
 
   @override
@@ -719,8 +758,9 @@ class _BoostActiveOrAvailable extends StatelessWidget {
             const Icon(Icons.rocket_launch_rounded,
                 color: AppColors.champagneGold, size: 22),
             const SizedBox(width: AppDimensions.space8),
-            Text('Boost Profile', style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.champagneGold)),
+            Text('Boost Profile',
+                style: AppTypography.bodyMedium
+                    .copyWith(color: AppColors.champagneGold)),
             const Spacer(),
             if (isActive)
               Container(
@@ -732,8 +772,8 @@ class _BoostActiveOrAvailable extends StatelessWidget {
                 ),
                 child: Text('ACTIVE',
                     style: AppTypography.caption.copyWith(
-                      color:      AppColors.champagneGold,
-                      fontSize:   9,
+                      color: AppColors.champagneGold,
+                      fontSize: 9,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.8,
                     )),
@@ -749,7 +789,7 @@ class _BoostActiveOrAvailable extends StatelessWidget {
         ),
         const SizedBox(height: AppDimensions.space12),
         SizedBox(
-          width:  double.infinity,
+          width: double.infinity,
           height: AppDimensions.buttonHeightSmall,
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -766,7 +806,7 @@ class _BoostActiveOrAvailable extends StatelessWidget {
               style: AppTypography.button.copyWith(
                 color: isActive ? AppColors.slateMist : AppColors.obsidianNight,
                 fontVariations: const [FontVariation('wght', 700)],
-                letterSpacing:  isActive ? 2 : 0,
+                letterSpacing: isActive ? 2 : 0,
               ),
             ),
           ),
@@ -793,8 +833,9 @@ class _BoostLocked extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Profile Boost', style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.slateMist)),
+                Text('Profile Boost',
+                    style: AppTypography.bodyMedium
+                        .copyWith(color: AppColors.slateMist)),
                 const SizedBox(height: AppDimensions.space4),
                 const Text('Subscribe to unlock weekly profile boost.',
                     style: AppTypography.caption),
@@ -815,17 +856,16 @@ class _SubscriptionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authState = context.watch<AuthCubit>().state;
-    final gender = authState is AuthAuthenticated
-        ? (authState.gender ?? 'male')
-        : 'male';
+    final gender =
+        authState is AuthAuthenticated ? (authState.gender ?? 'male') : 'male';
     if (gender == 'female') return const SizedBox.shrink();
 
     return BlocBuilder<SubscriptionCubit, SubscriptionState>(
       builder: (context, state) {
         return switch (state.status) {
           SubscriptionStatus.active => _buildActive(context, state),
-          SubscriptionStatus.grace  => _buildGrace(context),
-          SubscriptionStatus.none   => _buildUpgrade(context),
+          SubscriptionStatus.grace => _buildGrace(context),
+          SubscriptionStatus.none => _buildUpgrade(context),
         };
       },
     );
@@ -835,20 +875,20 @@ class _SubscriptionCard extends StatelessWidget {
     final expiry = state.expiresAt;
     return _CardShell(
       borderColor: AppColors.verifiedTeal,
-      glowColor:   AppColors.verifiedTeal.withValues(alpha: 0.1),
+      glowColor: AppColors.verifiedTeal.withValues(alpha: 0.1),
       child: Row(children: [
         const Icon(Icons.workspace_premium_rounded,
             color: AppColors.verifiedTeal, size: 22),
         const SizedBox(width: 10),
-        Expanded(child: Column(
+        Expanded(
+            child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('NOOR Premium · Active',
-                style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.verifiedTeal)),
+            Text('MITHAQ Premium · Active',
+                style: AppTypography.bodyMedium
+                    .copyWith(color: AppColors.verifiedTeal)),
             if (expiry != null)
-              Text('Renews ${_fmtDate(expiry)}',
-                  style: AppTypography.caption),
+              Text('Renews ${_fmtDate(expiry)}', style: AppTypography.caption),
           ],
         )),
       ]),
@@ -858,19 +898,20 @@ class _SubscriptionCard extends StatelessWidget {
   Widget _buildGrace(BuildContext context) {
     return _CardShell(
       borderColor: AppColors.premiumGold,
-      glowColor:   AppColors.premiumGold.withValues(alpha: 0.1),
+      glowColor: AppColors.premiumGold.withValues(alpha: 0.1),
       child: Row(children: [
         const Icon(Icons.warning_amber_rounded,
             color: AppColors.premiumGold, size: 22),
         const SizedBox(width: 10),
-        const Expanded(child: Text('Payment issue — subscription in grace period.',
-            style: AppTypography.caption)),
+        const Expanded(
+            child: Text('Payment issue — subscription in grace period.',
+                style: AppTypography.caption)),
         TextButton(
-          onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-                builder: (_) => const SubscriptionScreen())),
-          child: Text('Fix', style: AppTypography.captionMedium
-              .copyWith(color: AppColors.premiumGold)),
+          onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+              builder: (_) => const SubscriptionScreen())),
+          child: Text('Fix',
+              style: AppTypography.captionMedium
+                  .copyWith(color: AppColors.premiumGold)),
         ),
       ]),
     );
@@ -879,21 +920,21 @@ class _SubscriptionCard extends StatelessWidget {
   Widget _buildUpgrade(BuildContext context) {
     return GestureDetector(
       onTap: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-            builder: (_) => const SubscriptionScreen())),
+          MaterialPageRoute<void>(builder: (_) => const SubscriptionScreen())),
       child: _CardShell(
         borderColor: AppColors.goldBorder,
-        glowColor:   AppColors.goldGlow,
+        glowColor: AppColors.goldGlow,
         child: Row(children: [
           const Icon(Icons.lock_outline_rounded,
               color: AppColors.champagneGold, size: 22),
           const SizedBox(width: 10),
-          Expanded(child: Column(
+          Expanded(
+              child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Upgrade to NOOR Premium',
-                  style: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.champagneGold)),
+              Text('Upgrade to MITHAQ Premium',
+                  style: AppTypography.bodyMedium
+                      .copyWith(color: AppColors.champagneGold)),
               const Text('Unlock messaging from ₹249/mo',
                   style: AppTypography.caption),
             ],
@@ -901,11 +942,13 @@ class _SubscriptionCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color:        AppColors.champagneGold,
+              color: AppColors.champagneGold,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text('Plans', style: AppTypography.caption.copyWith(
-              color: AppColors.obsidianNight, fontWeight: FontWeight.w600)),
+            child: Text('Plans',
+                style: AppTypography.caption.copyWith(
+                    color: AppColors.obsidianNight,
+                    fontWeight: FontWeight.w600)),
           ),
         ]),
       ),
@@ -916,16 +959,29 @@ class _SubscriptionCard extends StatelessWidget {
       '${dt.day} ${_months[dt.month - 1]} ${dt.year}';
 
   static const _months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 }
 
 class _CardShell extends StatelessWidget {
-  const _CardShell({required this.child, required this.borderColor, required this.glowColor});
+  const _CardShell(
+      {required this.child,
+      required this.borderColor,
+      required this.glowColor});
   final Widget child;
-  final Color  borderColor;
-  final Color  glowColor;
+  final Color borderColor;
+  final Color glowColor;
 
   @override
   Widget build(BuildContext context) {
@@ -944,7 +1000,188 @@ class _CardShell extends StatelessWidget {
   }
 }
 
+// ── Badge Card (Phase 2.5) ────────────────────────────────────
+
+class _BadgeCard extends StatefulWidget {
+  @override
+  State<_BadgeCard> createState() => _BadgeCardState();
+}
+
+class _BadgeCardState extends State<_BadgeCard> {
+  bool _hasBadge = false;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkBadge();
+  }
+
+  Future<void> _checkBadge() async {
+    final prefs = await SharedPreferences.getInstance();
+    final local = prefs.getBool('has_verification_badge') ?? false;
+    if (mounted) {
+      setState(() {
+        _hasBadge = local;
+        _loading = false;
+      });
+    }
+
+    // Also check server if available
+    if (SupabaseService.isInitialized) {
+      try {
+        final hasBadge = await SelfieVerificationService.instance.hasBadge();
+        if (mounted && hasBadge != _hasBadge) {
+          setState(() => _hasBadge = hasBadge);
+          await prefs.setBool('has_verification_badge', hasBadge);
+        }
+      } catch (_) {}
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) return const SizedBox.shrink();
+
+    if (_hasBadge) {
+      return Container(
+        padding: const EdgeInsets.all(AppDimensions.space16),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceGlass,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+          border:
+              Border.all(color: AppColors.champagneGold.withValues(alpha: 0.5)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(AppDimensions.space8),
+              decoration: BoxDecoration(
+                color: AppColors.champagneGold.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.goldBorder),
+              ),
+              child: const Icon(Icons.verified_rounded,
+                  color: AppColors.champagneGold,
+                  size: AppDimensions.iconSizeMedium),
+            ),
+            const SizedBox(width: AppDimensions.space12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Verification Badge',
+                      style: AppTypography.bodyMedium
+                          .copyWith(color: AppColors.champagneGold)),
+                  const Text('Earned ✓', style: AppTypography.caption),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: () async {
+        await context.push(AppRoutes.badgeVerification);
+        _checkBadge();
+      },
+      child: Container(
+        padding: const EdgeInsets.all(AppDimensions.space16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+          gradient: LinearGradient(
+            colors: [
+              AppColors.champagneGold.withValues(alpha: 0.15),
+              AppColors.champagneGold.withValues(alpha: 0.04),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          border: Border.all(color: AppColors.goldBorder),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(AppDimensions.space8),
+              decoration: BoxDecoration(
+                color: AppColors.champagneGold.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.goldBorder),
+              ),
+              child: const Icon(Icons.verified_outlined,
+                  color: AppColors.champagneGold,
+                  size: AppDimensions.iconSizeMedium),
+            ),
+            const SizedBox(width: AppDimensions.space12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Verify Your Profile',
+                      style: AppTypography.bodyMedium
+                          .copyWith(color: AppColors.champagneGold)),
+                  const Text('3-pose check • Get 3× more interest',
+                      style: AppTypography.caption),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded,
+                color: AppColors.champagneGold,
+                size: AppDimensions.iconSizeMedium),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ── Profile Preview Card ──────────────────────────────────────
+
+class _ProfileAvatar extends StatelessWidget {
+  const _ProfileAvatar({
+    required this.primaryPhotoUrl,
+    required this.localPath,
+  });
+
+  final String? primaryPhotoUrl;
+  final String? localPath;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget child = const Icon(
+      Icons.person_outline_rounded,
+      color: AppColors.slateMist,
+      size: 36,
+    );
+
+    if (primaryPhotoUrl != null && primaryPhotoUrl!.isNotEmpty) {
+      child = Image.network(
+        primaryPhotoUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const Icon(
+          Icons.person_outline_rounded,
+          color: AppColors.slateMist,
+          size: 36,
+        ),
+      );
+    } else if (localPath != null && File(localPath!).existsSync()) {
+      child = Image.file(File(localPath!), fit: BoxFit.cover);
+    }
+
+    return Container(
+      width: 72,
+      height: 72,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppColors.surfaceGlassHover,
+        border: Border.all(color: AppColors.goldBorder, width: 2),
+      ),
+      child: ClipOval(child: child),
+    );
+  }
+}
 
 class _ProfilePreviewCard extends StatelessWidget {
   const _ProfilePreviewCard({
@@ -952,11 +1189,13 @@ class _ProfilePreviewCard extends StatelessWidget {
     required this.nudge,
     required this.data,
     required this.guardianEnabled,
+    required this.primaryPhotoUrl,
   });
-  final int          score;
-  final String?      nudge;
+  final int score;
+  final String? nudge;
   final OnboardingData data;
-  final bool         guardianEnabled;
+  final bool guardianEnabled;
+  final String? primaryPhotoUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -972,14 +1211,16 @@ class _ProfilePreviewCard extends StatelessWidget {
       final now = DateTime.now();
       age = now.year - dob.year;
       if (now.month < dob.month ||
-          (now.month == dob.month && now.day < dob.day)) { age--; }
+          (now.month == dob.month && now.day < dob.day)) {
+        age--;
+      }
     }
     return Container(
       padding: const EdgeInsets.all(AppDimensions.space20),
       decoration: BoxDecoration(
-        color:        AppColors.surfaceGlass,
+        color: AppColors.surfaceGlass,
         borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-        border:       Border.all(color: AppColors.goldBorder),
+        border: Border.all(color: AppColors.goldBorder),
         boxShadow: const [BoxShadow(color: AppColors.goldGlow, blurRadius: 20)],
       ),
       child: Column(
@@ -987,18 +1228,15 @@ class _ProfilePreviewCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Container(
-                width: 72, height: 72,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.surfaceGlassHover,
-                  border: Border.all(color: AppColors.goldBorder, width: 2),
-                ),
-                child: const Icon(Icons.person_outline_rounded,
-                    color: AppColors.slateMist, size: 36),
+              _ProfileAvatar(
+                primaryPhotoUrl: primaryPhotoUrl,
+                localPath: data.photoLocalPaths?.isNotEmpty == true
+                    ? data.photoLocalPaths!.first
+                    : null,
               ),
               const SizedBox(width: AppDimensions.space16),
-              Expanded(child: Column(
+              Expanded(
+                  child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(children: [
@@ -1012,13 +1250,14 @@ class _ProfilePreviewCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color:        AppColors.champagneGold.withValues(alpha: 0.12),
+                          color:
+                              AppColors.champagneGold.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(color: AppColors.goldBorder),
                         ),
                         child: Text('Guardian Mode',
                             style: AppTypography.caption.copyWith(
-                              color:    AppColors.champagneGold,
+                              color: AppColors.champagneGold,
                               fontSize: 10,
                             )),
                       ),
@@ -1031,32 +1270,31 @@ class _ProfilePreviewCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppDimensions.space16),
-
           LayoutBuilder(builder: (context, constraints) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(children: [
                   Text('$score% complete',
-                      style: AppTypography.captionMedium.copyWith(
-                          color: AppColors.champagneGold)),
+                      style: AppTypography.captionMedium
+                          .copyWith(color: AppColors.champagneGold)),
                   const Spacer(),
                   Text(score >= 80 ? '✓ Great profile!' : 'Keep going!',
-                      style: AppTypography.caption.copyWith(
-                          color: AppColors.champagneGold)),
+                      style: AppTypography.caption
+                          .copyWith(color: AppColors.champagneGold)),
                 ]),
                 const SizedBox(height: AppDimensions.space8),
                 Container(
                   height: 6,
                   width: constraints.maxWidth,
                   decoration: BoxDecoration(
-                    color:        AppColors.progressBarBase,
+                    color: AppColors.progressBarBase,
                     borderRadius: BorderRadius.circular(3),
                   ),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 600),
-                    curve:    Curves.easeOutCubic,
-                    width:    constraints.maxWidth * pct,
+                    curve: Curves.easeOutCubic,
+                    width: constraints.maxWidth * pct,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(colors: [
                         AppColors.champagneGold,
@@ -1065,7 +1303,7 @@ class _ProfilePreviewCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(3),
                       boxShadow: [
                         BoxShadow(
-                          color:      AppColors.champagneGold.withValues(alpha: 0.4),
+                          color: AppColors.champagneGold.withValues(alpha: 0.4),
                           blurRadius: 6,
                         ),
                       ],
@@ -1078,9 +1316,10 @@ class _ProfilePreviewCard extends StatelessWidget {
                     const Icon(Icons.info_outline_rounded,
                         color: AppColors.champagneGold, size: 13),
                     const SizedBox(width: 4),
-                    Expanded(child: Text(nudge!,
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.champagneGold, fontSize: 11))),
+                    Expanded(
+                        child: Text(nudge!,
+                            style: AppTypography.caption.copyWith(
+                                color: AppColors.champagneGold, fontSize: 11))),
                   ]),
                 ],
               ],
@@ -1107,7 +1346,8 @@ class _SavedProfilesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final saved = kMockProfiles.where((p) => bookmarked.contains(p.id)).toList();
+    final saved =
+        kMockProfiles.where((p) => bookmarked.contains(p.id)).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1115,9 +1355,9 @@ class _SavedProfilesSection extends StatelessWidget {
         const Text('SAVED PROFILES', style: AppTypography.sectionLabel),
         const SizedBox(height: AppDimensions.space12),
         if (saved.isEmpty)
-          const NoorEmptyState(
-            icon:     Icons.bookmark_border_rounded,
-            title:    'No saved profiles yet',
+          const MithaqEmptyState(
+            icon: Icons.bookmark_border_rounded,
+            title: 'No saved profiles yet',
             subtitle: 'Tap the bookmark icon on any\nprofile to save it here.',
           )
         else
@@ -1125,7 +1365,7 @@ class _SavedProfilesSection extends StatelessWidget {
             height: 120,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount:       saved.length,
+              itemCount: saved.length,
               separatorBuilder: (_, __) =>
                   const SizedBox(width: AppDimensions.space12),
               itemBuilder: (context, i) {
@@ -1142,19 +1382,20 @@ class _SavedProfilesSection extends StatelessWidget {
                   },
                   child: Container(
                     width: 90,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 10),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                     decoration: BoxDecoration(
-                      color:        AppColors.surfaceGlass,
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                      border:       Border.all(color: AppColors.cardBorder),
+                      color: AppColors.surfaceGlass,
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusButton),
+                      border: Border.all(color: AppColors.cardBorder),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         // Avatar circle — 52 px
                         Container(
-                          width:  52,
+                          width: 52,
                           height: 52,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
@@ -1165,7 +1406,7 @@ class _SavedProfilesSection extends StatelessWidget {
                           child: const Icon(
                             Icons.person_outline_rounded,
                             color: AppColors.slateMist,
-                            size:  24,
+                            size: 24,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -1173,9 +1414,9 @@ class _SavedProfilesSection extends StatelessWidget {
                         Text(
                           p.firstName,
                           style: AppTypography.caption.copyWith(
-                            color:      AppColors.pearlWhite,
+                            color: AppColors.pearlWhite,
                             fontWeight: FontWeight.w600,
-                            fontSize:   12,
+                            fontSize: 12,
                           ),
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,
@@ -1206,7 +1447,7 @@ class _SavedProfilesSection extends StatelessWidget {
 
 class _SettingsSection extends StatelessWidget {
   const _SettingsSection({required this.title, required this.items});
-  final String              title;
+  final String title;
   final List<_SettingsItem> items;
 
   @override
@@ -1220,16 +1461,18 @@ class _SettingsSection extends StatelessWidget {
           const SizedBox(height: AppDimensions.space10),
           Container(
             decoration: BoxDecoration(
-              color:        AppColors.surfaceGlass,
+              color: AppColors.surfaceGlass,
               borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-              border:       Border.all(color: AppColors.cardBorder),
+              border: Border.all(color: AppColors.cardBorder),
             ),
-            child: Column(children: items.asMap().entries.map((e) {
+            child: Column(
+                children: items.asMap().entries.map((e) {
               final isLast = e.key == items.length - 1;
               return Column(children: [
                 _SettingsTile(item: e.value),
                 if (!isLast)
-                  const Divider(color: AppColors.divider, height: 1, indent: 16),
+                  const Divider(
+                      color: AppColors.divider, height: 1, indent: 16),
               ]);
             }).toList()),
           ),
@@ -1244,15 +1487,11 @@ class _SettingsItem {
     required this.icon,
     required this.label,
     this.trailing,
-    this.isToggle = false,
-    this.isOn     = false,
     this.onTap,
   });
   final IconData icon;
-  final String   label;
-  final String?  trailing;
-  final bool     isToggle;
-  final bool     isOn;
+  final String label;
+  final String? trailing;
   final VoidCallback? onTap;
 }
 
@@ -1264,10 +1503,6 @@ class _SettingsTile extends StatefulWidget {
 }
 
 class _SettingsTileState extends State<_SettingsTile> {
-  late bool _isOn;
-  @override
-  void initState() { super.initState(); _isOn = widget.item.isOn; }
-
   @override
   Widget build(BuildContext context) {
     return ListTile(
@@ -1279,32 +1514,19 @@ class _SettingsTileState extends State<_SettingsTile> {
             }
           : null,
       splashColor: AppColors.champagneGold.withValues(alpha: 0.08),
-      leading: Icon(widget.item.icon, color: AppColors.slateMist,
-          size: AppDimensions.iconSizeMedium),
+      leading: Icon(widget.item.icon,
+          color: AppColors.slateMist, size: AppDimensions.iconSizeMedium),
       title: Text(widget.item.label, style: AppTypography.body),
-      trailing: widget.item.isToggle
-          ? Switch(
-              value: _isOn,
-              onChanged: (v) {
-                HapticFeedback.selectionClick();
-                setState(() => _isOn = v);
-              },
-              activeThumbColor:   AppColors.obsidianNight,
-              activeTrackColor:   AppColors.champagneGold,
-              inactiveThumbColor: AppColors.slateMist,
-              inactiveTrackColor: AppColors.surfaceGlassHover,
-            )
-          : widget.item.trailing != null
-              ? Row(mainAxisSize: MainAxisSize.min, children: [
-                  Text(widget.item.trailing!, style: AppTypography.caption),
-                  const SizedBox(width: 4),
-                  const Icon(Icons.chevron_right_rounded,
-                      color: AppColors.slateMist,
-                      size: AppDimensions.iconSizeMedium),
-                ])
-              : const Icon(Icons.chevron_right_rounded,
+      trailing: widget.item.trailing != null
+          ? Row(mainAxisSize: MainAxisSize.min, children: [
+              Text(widget.item.trailing!, style: AppTypography.caption),
+              const SizedBox(width: 4),
+              const Icon(Icons.chevron_right_rounded,
                   color: AppColors.slateMist,
                   size: AppDimensions.iconSizeMedium),
+            ])
+          : const Icon(Icons.chevron_right_rounded,
+              color: AppColors.slateMist, size: AppDimensions.iconSizeMedium),
     );
   }
 }
@@ -1317,7 +1539,7 @@ class _IFoundMyMatchButton extends StatelessWidget {
     return GestureDetector(
       onTap: () => _showConfirmation(context),
       child: Container(
-        width:   double.infinity,
+        width: double.infinity,
         padding: const EdgeInsets.all(AppDimensions.space16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
@@ -1327,7 +1549,7 @@ class _IFoundMyMatchButton extends StatelessWidget {
               AppColors.champagneGold.withValues(alpha: 0.04),
             ],
             begin: Alignment.topLeft,
-            end:   Alignment.bottomRight,
+            end: Alignment.bottomRight,
           ),
           border: Border.all(color: AppColors.goldBorder),
         ),
@@ -1336,14 +1558,14 @@ class _IFoundMyMatchButton extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(AppDimensions.space8),
               decoration: BoxDecoration(
-                color:  AppColors.champagneGold.withValues(alpha: 0.15),
-                shape:  BoxShape.circle,
+                color: AppColors.champagneGold.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
                 border: Border.all(color: AppColors.goldBorder),
               ),
               child: const Icon(
                 Icons.favorite_rounded,
                 color: AppColors.champagneGold,
-                size:  AppDimensions.iconSizeMedium,
+                size: AppDimensions.iconSizeMedium,
               ),
             ),
             const SizedBox(width: AppDimensions.space12),
@@ -1351,13 +1573,15 @@ class _IFoundMyMatchButton extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('I Found My Match',
+                  Text(
+                    'I Found My Match',
                     style: AppTypography.bodyMedium.copyWith(
                       color: AppColors.champagneGold,
                     ),
                   ),
                   const SizedBox(height: AppDimensions.space4),
-                  const Text('Alhamdulillah! Deactivate your profile.',
+                  const Text(
+                    'Alhamdulillah! Deactivate your profile.',
                     style: AppTypography.caption,
                   ),
                 ],
@@ -1374,21 +1598,23 @@ class _IFoundMyMatchButton extends StatelessWidget {
 
   void _showConfirmation(BuildContext context) {
     showModalBottomSheet<void>(
-      context:         context,
+      context: context,
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
-        margin:  const EdgeInsets.all(AppDimensions.space16),
+        margin: const EdgeInsets.all(AppDimensions.space16),
         padding: const EdgeInsets.all(AppDimensions.space24),
         decoration: BoxDecoration(
-          color:        AppColors.surfaceElevated,
+          color: AppColors.surfaceElevated,
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-          border:       Border.all(color: AppColors.goldBorder),
+          border: Border.all(color: AppColors.goldBorder),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Center(child: Container(
-              width: 40, height: 4,
+            Center(
+                child: Container(
+              width: 40,
+              height: 4,
               decoration: BoxDecoration(
                 color: AppColors.cardBorder,
                 borderRadius: BorderRadius.circular(2),
@@ -1398,9 +1624,11 @@ class _IFoundMyMatchButton extends StatelessWidget {
             const Icon(Icons.favorite_rounded,
                 color: AppColors.champagneGold, size: 48),
             const SizedBox(height: AppDimensions.space16),
-            Text('Alhamdulillah!',
+            Text(
+              'Alhamdulillah!',
               style: AppTypography.screenTitle.copyWith(
-                color: AppColors.champagneGold, fontSize: 24,
+                color: AppColors.champagneGold,
+                fontSize: 24,
               ),
             ),
             const SizedBox(height: AppDimensions.space8),
@@ -1417,13 +1645,14 @@ class _IFoundMyMatchButton extends StatelessWidget {
             ),
             const SizedBox(height: AppDimensions.space24),
             SizedBox(
-              width:  double.infinity,
+              width: double.infinity,
               height: AppDimensions.buttonHeight,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.champagneGold,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                    borderRadius:
+                        BorderRadius.circular(AppDimensions.radiusButton),
                   ),
                   elevation: 0,
                 ),
@@ -1438,32 +1667,35 @@ class _IFoundMyMatchButton extends StatelessWidget {
                         style: AppTypography.body,
                       ),
                       backgroundColor: AppColors.surfaceGlassHover,
-                      behavior:        SnackBarBehavior.floating,
+                      behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusButton),
                         side: const BorderSide(color: AppColors.goldBorder),
                       ),
                     ),
                   );
                 },
-                child: const Text('Confirm & Deactivate', style: AppTypography.button),
+                child: const Text('Confirm & Deactivate',
+                    style: AppTypography.button),
               ),
             ),
             const SizedBox(height: AppDimensions.space8),
             SizedBox(
-              width:  double.infinity,
+              width: double.infinity,
               height: AppDimensions.buttonHeightSmall,
               child: OutlinedButton(
                 style: OutlinedButton.styleFrom(
-                  side:  const BorderSide(color: AppColors.cardBorder),
+                  side: const BorderSide(color: AppColors.cardBorder),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                    borderRadius:
+                        BorderRadius.circular(AppDimensions.radiusButton),
                   ),
                 ),
                 onPressed: () => Navigator.pop(context),
                 child: Text('Cancel',
-                    style: AppTypography.button.copyWith(
-                        color: AppColors.slateMist)),
+                    style: AppTypography.button
+                        .copyWith(color: AppColors.slateMist)),
               ),
             ),
             const SizedBox(height: AppDimensions.space8),
@@ -1476,6 +1708,7 @@ class _IFoundMyMatchButton extends StatelessWidget {
 
 // ── Verification Card ─────────────────────────────────────────
 
+// ignore: unused_element
 class _VerificationCard extends StatefulWidget {
   @override
   State<_VerificationCard> createState() => _VerificationCardState();
@@ -1506,7 +1739,7 @@ class _VerificationCardState extends State<_VerificationCard> {
       final status = await SelfieVerificationService.instance.getStatus();
       if (!mounted) return;
       final isVerified = status.status == 'verified';
-      
+
       setState(() {
         _isVerified = isVerified;
         _verifiedAt = status.verifiedAt;
@@ -1514,17 +1747,19 @@ class _VerificationCardState extends State<_VerificationCard> {
 
       await prefs.setBool('selfie_verified', isVerified);
       if (status.verifiedAt != null) {
-        await prefs.setString('selfie_verified_at', status.verifiedAt!.toIso8601String());
+        await prefs.setString(
+            'selfie_verified_at', status.verifiedAt!.toIso8601String());
       } else {
         await prefs.remove('selfie_verified_at');
       }
     } catch (e) {
-      debugPrint('MyProfileScreen: _loadStatus error fetching fresh status: $e');
+      debugPrint(
+          'MyProfileScreen: _loadStatus error fetching fresh status: $e');
     }
   }
 
   Future<void> _navigateToVerify() async {
-    await context.push('/verify');
+    await context.push(AppRoutes.verify);
     // Refresh status after returning
     _loadStatus();
   }
@@ -1622,8 +1857,7 @@ class _VerificationCardState extends State<_VerificationCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Verify Your Profile',
-                      style: AppTypography.bodyMedium),
+                  Text('Verify Your Profile', style: AppTypography.bodyMedium),
                   Text('Earn a verified badge • 30 seconds',
                       style: AppTypography.caption),
                 ],

@@ -1,6 +1,6 @@
 // lib/features/home/screens/paywall_gate_screen.dart
 // ============================================================
-// NOOR — Paywall Gate (Step 9)
+// MITHAQ — Paywall Gate (Step 9)
 //
 // Shown as a bottom sheet when a male non-subscriber tries
 // to open a chat conversation.
@@ -8,7 +8,7 @@
 // Blueprint (Part 8):
 //   "Non-subscriber men who try to open a chat see:
 //    'Subscribe to unlock messaging. Women always message
-//     free on NOOR.' The price shown is in their local currency."
+//     free on MITHAQ.' The price shown is in their local currency."
 //
 // Usage:
 //   PaywallGateSheet.show(context);
@@ -26,7 +26,7 @@ import 'subscription_screen.dart';
 class PaywallGateSheet {
   /// Shows the paywall as a modal bottom sheet.
   ///
-  /// Blueprint: "Women always message free on NOOR."
+  /// Blueprint: "Women always message free on MITHAQ."
   /// This method is a no-op if the current user is female —
   /// defence-in-depth on top of the call-site check in
   /// chat_list_screen.dart and chat_screen.dart.
@@ -104,7 +104,7 @@ class _PaywallGateContent extends StatelessWidget {
           const SizedBox(height: 10),
 
           Text(
-            'Women always message free on NOOR.\nMen subscribe to start conversations.',
+            'Women always message free on MITHAQ.\nMen subscribe to start conversations.',
             style: AppTypography.bodyMuted.copyWith(height: 1.6),
             textAlign: TextAlign.center,
           ),

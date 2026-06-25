@@ -27,7 +27,7 @@ CREATE INDEX idx_referral_codes_owner ON referral_codes(owner_id);
 
 COMMENT ON TABLE referral_codes IS
   'One referral code per user. 6-character alphanumeric uppercase. '
-  'Shareable via deep link: noor.app/r/{CODE}';
+  'Shareable via deep link: mithaq.app/r/{CODE}';
 
 -- ── 2. Referrals tracking ─────────────────────────────────────
 CREATE TABLE referrals (
@@ -198,7 +198,7 @@ BEGIN
       'referral_reward',
       '🎉 Referral reward!',
       'Your referral completed their profile! You''ve earned 7 days of free premium.',
-      'noor://settings/subscription'
+      'mithaq://settings/subscription'
     );
   ELSE
     -- Same gender referral: mark as completed but no reward
@@ -213,7 +213,7 @@ BEGIN
       'referral_completed',
       'Referral joined!',
       'Your referral completed their profile. Refer someone of the opposite gender to earn premium!',
-      'noor://settings/referral'
+      'mithaq://settings/referral'
     );
   END IF;
 

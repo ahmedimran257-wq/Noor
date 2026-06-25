@@ -1,6 +1,6 @@
 // lib/features/home/screens/guardian_dashboard_screen.dart
 // ============================================================
-// NOOR — Guardian (Wali) Dashboard Screen
+// MITHAQ — Guardian (Wali) Dashboard Screen
 //
 // Full in-app chat mirror for guardians. This is the guardian's
 // primary interface when they log in. Shows all active
@@ -10,7 +10,7 @@
 //   • Match approval controls (active mode)
 //   • Read-only or interactive chat access
 //
-// This is NOOR's biggest competitive moat against Muzz/Salams.
+// This is MITHAQ's biggest competitive moat against Muzz/Salams.
 // ============================================================
 
 import 'package:flutter/material.dart';
@@ -138,7 +138,7 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
         elevation: 0,
         title: Row(
           children: [
-            Text('نور', style: AppTypography.wordmark.copyWith(fontSize: 22)),
+            Text('ميثاق', style: AppTypography.wordmark.copyWith(fontSize: 22)),
             const SizedBox(width: AppDimensions.space6),
             Text('GUARDIAN', style: AppTypography.wordmark.copyWith(fontSize: 16)),
             const Spacer(),

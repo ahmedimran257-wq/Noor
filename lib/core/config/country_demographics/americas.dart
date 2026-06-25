@@ -1,5 +1,5 @@
 // lib/core/config/country_demographics/americas.dart
-// NOOR — Americas Demographics
+// MITHAQ — Americas Demographics
 
 const kAmericasDemographics = <String, Map<String, List<String>>>{
   'US': {

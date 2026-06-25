@@ -1,6 +1,6 @@
 // lib/core/cubits/discovery/discovery_filter.dart
 // ============================================================
-// NOOR — Discovery Filter Model
+// MITHAQ — Discovery Filter Model
 // Active filter selections, serialisation helpers, and
 // label generation for the chip bar.
 //
@@ -16,11 +16,11 @@ class DiscoveryFilter {
     this.ageMax,
     this.sect,
     this.deenLevel,
-    this.verifiedOnly       = false,
+    this.verifiedOnly = false,
     this.activeRecentlyOnly = false,
     this.maxDistanceKm,
     this.familyType,
-    this.openToDivorced     = false,
+    this.openToDivorced = false,
     // Feature 8
     this.genderPref,
     this.maritalStatus,
@@ -39,15 +39,15 @@ class DiscoveryFilter {
     this.diasporaCountries,
   });
 
-  final int?    ageMin;
-  final int?    ageMax;
+  final int? ageMin;
+  final int? ageMax;
   final String? sect;
   final String? deenLevel;
-  final bool    verifiedOnly;
-  final bool    activeRecentlyOnly;
-  final int?    maxDistanceKm;
+  final bool verifiedOnly;
+  final bool activeRecentlyOnly;
+  final int? maxDistanceKm;
   final String? familyType;
-  final bool    openToDivorced;
+  final bool openToDivorced;
 
   // Feature 8
   final String? genderPref;
@@ -57,17 +57,29 @@ class DiscoveryFilter {
   final String? distanceLabel;
 
   // Phase 2
-  final String? motherTongue;       // e.g. 'Urdu', 'Arabic', 'Bengali'
-  final String? community;          // e.g. 'Syed', 'Pathan', 'Arab'
-  final String? livingExpectation;  // 'with_inlaws' | 'separate' | 'open_to_discussion'
+  final String? motherTongue; // e.g. 'Urdu', 'Arabic', 'Bengali'
+  final String? community; // e.g. 'Syed', 'Pathan', 'Arab'
+  final String?
+      livingExpectation; // 'with_inlaws' | 'separate' | 'open_to_discussion'
 
   // Phase 7
-  final String? quranMemorization;  // 'none','some_surahs','partial','hafiz'
-  final String? marriageTimeline;   // 'asap','6_months','1_year','2_plus_years','not_sure'
-  final String? willingToRelocate;  // 'yes','no','open_to_discussion'
+  final String? quranMemorization; // 'none','some_surahs','partial','hafiz'
+  final String?
+      marriageTimeline; // 'asap','6_months','1_year','2_plus_years','not_sure'
+  final String? willingToRelocate; // 'yes','no','open_to_discussion'
 
-  final bool    diasporaMode;
+  final bool diasporaMode;
   final List<String>? diasporaCountries;
+
+  /// Canonical radius used by PostGIS. Legacy label-only filters are retained
+  /// so existing saved presets continue to work after the numeric migration.
+  int? get effectiveMaxDistanceKm {
+    final explicit = maxDistanceKm;
+    if (explicit != null) return explicit.clamp(1, 20000).toInt();
+    final match = RegExp(r'^(\d+)\s*km$', caseSensitive: false)
+        .firstMatch(distanceLabel ?? '');
+    return int.tryParse(match?.group(1) ?? '')?.clamp(1, 20000).toInt();
+  }
 
   // Whether any filter is active
   bool get isActive =>
@@ -101,14 +113,18 @@ class DiscoveryFilter {
     if (deenLevel != null) count++;
     if (verifiedOnly) count++;
     if (activeRecentlyOnly) count++;
-    if (maxDistanceKm != null) count++;
+    if (maxDistanceKm != null ||
+        RegExp(r'^\d+\s*km$', caseSensitive: false)
+            .hasMatch(distanceLabel ?? '')) {
+      count++;
+    }
     if (familyType != null) count++;
     if (openToDivorced) count++;
     if (genderPref != null) count++;
     if (maritalStatus != null) count++;
     if (hasChildren != null) count++;
     if (educationMin != null) count++;
-    if (distanceLabel != null) count++;
+    if (distanceLabel != null && effectiveMaxDistanceKm == null) count++;
     if (motherTongue != null) count++;
     if (community != null) count++;
     if (livingExpectation != null) count++;
@@ -120,15 +136,15 @@ class DiscoveryFilter {
   }
 
   DiscoveryFilter copyWith({
-    int?    ageMin,
-    int?    ageMax,
+    int? ageMin,
+    int? ageMax,
     String? sect,
     String? deenLevel,
-    bool?   verifiedOnly,
-    bool?   activeRecentlyOnly,
-    int?    maxDistanceKm,
+    bool? verifiedOnly,
+    bool? activeRecentlyOnly,
+    int? maxDistanceKm,
     String? familyType,
-    bool?   openToDivorced,
+    bool? openToDivorced,
     String? genderPref,
     String? maritalStatus,
     String? hasChildren,
@@ -140,50 +156,65 @@ class DiscoveryFilter {
     String? quranMemorization,
     String? marriageTimeline,
     String? willingToRelocate,
-    bool?   diasporaMode,
+    bool? diasporaMode,
     List<String>? diasporaCountries,
     // Nulling sentinels
-    bool clearSect              = false,
-    bool clearDeenLevel         = false,
-    bool clearMaxDistance       = false,
-    bool clearFamilyType        = false,
-    bool clearAgeRange          = false,
-    bool clearGenderPref        = false,
-    bool clearMaritalStatus     = false,
-    bool clearHasChildren       = false,
-    bool clearEducationMin      = false,
-    bool clearDistanceLabel     = false,
-    bool clearMotherTongue      = false,
-    bool clearCommunity         = false,
+    bool clearSect = false,
+    bool clearDeenLevel = false,
+    bool clearMaxDistance = false,
+    bool clearFamilyType = false,
+    bool clearAgeRange = false,
+    bool clearGenderPref = false,
+    bool clearMaritalStatus = false,
+    bool clearHasChildren = false,
+    bool clearEducationMin = false,
+    bool clearDistanceLabel = false,
+    bool clearMotherTongue = false,
+    bool clearCommunity = false,
     bool clearLivingExpectation = false,
     bool clearQuranMemorization = false,
-    bool clearMarriageTimeline  = false,
+    bool clearMarriageTimeline = false,
     bool clearWillingToRelocate = false,
     bool clearDiasporaCountries = false,
   }) {
     return DiscoveryFilter(
-      ageMin:             clearAgeRange          ? null : (ageMin           ?? this.ageMin),
-      ageMax:             clearAgeRange          ? null : (ageMax           ?? this.ageMax),
-      sect:               clearSect              ? null : (sect             ?? this.sect),
-      deenLevel:          clearDeenLevel         ? null : (deenLevel        ?? this.deenLevel),
-      verifiedOnly:       verifiedOnly           ?? this.verifiedOnly,
-      activeRecentlyOnly: activeRecentlyOnly     ?? this.activeRecentlyOnly,
-      maxDistanceKm:      clearMaxDistance       ? null : (maxDistanceKm    ?? this.maxDistanceKm),
-      familyType:         clearFamilyType        ? null : (familyType       ?? this.familyType),
-      openToDivorced:     openToDivorced         ?? this.openToDivorced,
-      genderPref:         clearGenderPref        ? null : (genderPref       ?? this.genderPref),
-      maritalStatus:      clearMaritalStatus     ? null : (maritalStatus    ?? this.maritalStatus),
-      hasChildren:        clearHasChildren       ? null : (hasChildren      ?? this.hasChildren),
-      educationMin:       clearEducationMin      ? null : (educationMin     ?? this.educationMin),
-      distanceLabel:      clearDistanceLabel     ? null : (distanceLabel    ?? this.distanceLabel),
-      motherTongue:       clearMotherTongue      ? null : (motherTongue     ?? this.motherTongue),
-      community:          clearCommunity         ? null : (community        ?? this.community),
-      livingExpectation:  clearLivingExpectation ? null : (livingExpectation ?? this.livingExpectation),
-      quranMemorization:  clearQuranMemorization ? null : (quranMemorization ?? this.quranMemorization),
-      marriageTimeline:   clearMarriageTimeline  ? null : (marriageTimeline  ?? this.marriageTimeline),
-      willingToRelocate:  clearWillingToRelocate ? null : (willingToRelocate ?? this.willingToRelocate),
-      diasporaMode:       diasporaMode           ?? this.diasporaMode,
-      diasporaCountries:  clearDiasporaCountries ? null : (diasporaCountries  ?? this.diasporaCountries),
+      ageMin: clearAgeRange ? null : (ageMin ?? this.ageMin),
+      ageMax: clearAgeRange ? null : (ageMax ?? this.ageMax),
+      sect: clearSect ? null : (sect ?? this.sect),
+      deenLevel: clearDeenLevel ? null : (deenLevel ?? this.deenLevel),
+      verifiedOnly: verifiedOnly ?? this.verifiedOnly,
+      activeRecentlyOnly: activeRecentlyOnly ?? this.activeRecentlyOnly,
+      maxDistanceKm:
+          clearMaxDistance ? null : (maxDistanceKm ?? this.maxDistanceKm),
+      familyType: clearFamilyType ? null : (familyType ?? this.familyType),
+      openToDivorced: openToDivorced ?? this.openToDivorced,
+      genderPref: clearGenderPref ? null : (genderPref ?? this.genderPref),
+      maritalStatus:
+          clearMaritalStatus ? null : (maritalStatus ?? this.maritalStatus),
+      hasChildren: clearHasChildren ? null : (hasChildren ?? this.hasChildren),
+      educationMin:
+          clearEducationMin ? null : (educationMin ?? this.educationMin),
+      distanceLabel:
+          clearDistanceLabel ? null : (distanceLabel ?? this.distanceLabel),
+      motherTongue:
+          clearMotherTongue ? null : (motherTongue ?? this.motherTongue),
+      community: clearCommunity ? null : (community ?? this.community),
+      livingExpectation: clearLivingExpectation
+          ? null
+          : (livingExpectation ?? this.livingExpectation),
+      quranMemorization: clearQuranMemorization
+          ? null
+          : (quranMemorization ?? this.quranMemorization),
+      marriageTimeline: clearMarriageTimeline
+          ? null
+          : (marriageTimeline ?? this.marriageTimeline),
+      willingToRelocate: clearWillingToRelocate
+          ? null
+          : (willingToRelocate ?? this.willingToRelocate),
+      diasporaMode: diasporaMode ?? this.diasporaMode,
+      diasporaCountries: clearDiasporaCountries
+          ? null
+          : (diasporaCountries ?? this.diasporaCountries),
     );
   }
 
