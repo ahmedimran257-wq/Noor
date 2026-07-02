@@ -101,6 +101,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
   // Temp file paths for each slot
   final List<String?> _paths = [null, null, null, null];
   bool _uploading = false;
+  bool _isScanning = false;
   PhotoPrivacy _privacy = PhotoPrivacy.publicAll;
 
   @override
@@ -140,6 +141,12 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
   /// Shows bottom sheet to pick source, then picks + compresses + scans.
   /// For slot 3 (verification selfie), forces camera — no gallery access.
   Future<void> _pickPhoto(int index) async {
+    if (_isScanning || _uploading) return;
+    setState(() {
+      _isScanning = true;
+      _uploading = true;
+    });
+
     final ImageSource? source;
 
     // T1: Enforce proof-of-life selfie — slot 3 is camera-only
@@ -149,10 +156,16 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       source = await _showSourceSheet();
     }
 
-    if (source == null) return;
+    if (source == null) {
+      if (mounted) {
+        setState(() {
+          _isScanning = false;
+          _uploading = false;
+        });
+      }
+      return;
+    }
     if (!mounted) return;
-
-    setState(() => _uploading = true);
 
     try {
       final XFile? xfile = await _picker.pickImage(
@@ -161,10 +174,11 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         maxHeight: 1600,
         imageQuality: 90,
       );
-      if (xfile == null || !mounted) {
-        setState(() => _uploading = false);
+      if (xfile == null) {
+        if (mounted) setState(() => _uploading = false);
         return;
       }
+      if (!mounted) return;
 
       // Compress to webp
       final result = await FlutterImageCompress.compressWithFile(
@@ -197,7 +211,12 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         );
       }
     } finally {
-      if (mounted) setState(() => _uploading = false);
+      if (mounted) {
+        setState(() {
+          _isScanning = false;
+          _uploading = false;
+        });
+      }
     }
   }
 
@@ -211,10 +230,17 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
     if (!mounted) return;
     if (!moderation.isSafe) {
       await file.delete().catchError((_) => file);
+      if (moderation.decision == PhotoModerationDecision.scanFailed) {
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+        if (!mounted) return;
+        _showPhotoSafetyError(
+          'Safety check failed. Please try a different photo or try again.',
+        );
+        return;
+      }
+
       _showPhotoSafetyError(
-        moderation.decision == PhotoModerationDecision.unsafe
-            ? 'This photo cannot be used because it may contain explicit content.'
-            : 'The photo safety check could not be completed. Please choose another photo.',
+        'This photo cannot be used because it may contain explicit content.',
       );
       return;
     }

@@ -580,25 +580,10 @@ class ProfileWriteService {
     OnboardingData data,
     bool isGuardianPath,
   ) {
-    // Fast-start v3 uses the same five step numbers for self and guardian.
-    final effectiveStep = step;
-
-    // Quick Location is the dedicated mandatory location step in flow v3.
-    if (effectiveStep == 1) {
-      return _locationFields(data);
-    }
-
-    if (effectiveStep == 4) {
-      return _compactMap({
-        'photo_privacy': _photoPrivacyToString(data.photoPrivacy),
-      });
-    }
-
-    // Fast-start steps reuse the existing profile column groups. Later groups
-    // are kept for deferred profile completion saves outside required signup.
-    final profileSection = effectiveStep <= 0 ? 0 : effectiveStep - 1;
-    switch (profileSection) {
-      // Profile owner
+    // Keep this switch aligned exactly with app_router._screenForStep():
+    // 0 ProfileForWhom, 1 QuickLocation, 2 BasicIdentity,
+    // 3 IslamicIdentity, 4 PhotoUpload. Do not offset these numbers.
+    switch (step) {
       case 0:
         final relation = data.profileCreatorRelation ??
             (data.profileFor == ProfileFor.myself ? 'self' : 'guardian');
@@ -616,8 +601,10 @@ class ProfileWriteService {
           'guardian_user_id': _isGuardianData(data) ? _userId : null,
         });
 
-      // Basic identity
       case 1:
+        return _locationFields(data);
+
+      case 2:
         final isGuardian = _isGuardianData(data);
         return _compactMap({
           ..._locationFields(data),
@@ -647,8 +634,7 @@ class ProfileWriteService {
           'special_needs': _specialNeedsToDb(data.specialNeeds),
         });
 
-      // Islamic identity
-      case 2:
+      case 3:
         return _compactMap({
           'sect': _sectToString(data.sect),
           'sub_sect': data.subSect,
@@ -662,8 +648,14 @@ class ProfileWriteService {
           'hookah_habit': _habitToDb(data.hookahHabit),
         });
 
-      // Deferred Islamic marriage details
-      case 3:
+      case 4:
+        return _compactMap({
+          'photo_privacy': _photoPrivacyToString(data.photoPrivacy),
+        });
+
+      // Deferred Islamic marriage details. This is not part of the required
+      // fast-start onboarding path, so it must never run for route step 3.
+      case 5:
         final fields = <String, dynamic>{
           'quran_memorization': data.quranMemorization,
           'religious_education': data.religiousEducation,
@@ -694,7 +686,7 @@ class ProfileWriteService {
         return _compactMap(fields);
 
       // Deferred education and work
-      case 4:
+      case 6:
         return _compactMap({
           'education_level': data.educationLabel,
           'education_rank': data.educationRank,
@@ -706,7 +698,7 @@ class ProfileWriteService {
         });
 
       // Deferred family details
-      case 5:
+      case 7:
         return _compactMap({
           'family_type': _familyTypeToString(data.familyType),
           'sibling_count': data.siblingCount,
@@ -718,7 +710,7 @@ class ProfileWriteService {
         });
 
       // Deferred bio and interests
-      case 6:
+      case 8:
         return _compactMap({
           'bio': data.bio,
           'interests': data.interests,
@@ -726,21 +718,15 @@ class ProfileWriteService {
         });
 
       // Deferred partner preferences
-      case 7:
+      case 9:
         return {}; // Handled by _preferenceFieldsForStep
 
-      // Photo privacy
-      case 8:
-        return _compactMap({
-          'photo_privacy': _photoPrivacyToString(data.photoPrivacy),
-        });
-
       // Review section has no direct fields
-      case 9:
+      case 10:
         return {};
 
       // Completion section has no direct fields
-      case 10:
+      case 11:
         return {};
 
       default:
@@ -755,9 +741,7 @@ class ProfileWriteService {
   ) {
     // Partner preferences are no longer part of the required five-step flow.
     // This mapper remains for edit-profile/deferred completion saves.
-    final isGuardian = data.profileFor == ProfileFor.guardian;
-    final prefStep = isGuardian ? 9 : 8;
-    if (step != prefStep) return {};
+    if (step != 9) return {};
 
     return _compactMap({
       'preferred_age_min': data.preferredAgeMin,

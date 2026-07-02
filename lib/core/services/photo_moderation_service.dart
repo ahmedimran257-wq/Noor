@@ -98,11 +98,7 @@ class PhotoModerationService {
         defaultThreshold: confidenceThreshold,
       ));
       await NsfwDetector.instance.models.ensureReady(ModelIds.openNsfw2);
-    }()
-        .catchError((Object error) {
-      _classifierReady = null;
-      throw error;
-    });
+    }();
   }
 
   static Uint8List? _normalizeForClassifier(Uint8List bytes) {
