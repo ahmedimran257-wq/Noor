@@ -37,9 +37,18 @@ enum _FaceResult { found, notFound }
 Future<_FaceResult> _detectFace(Uint8List bytes) async {
   try {
     final tempDir = await getTemporaryDirectory();
+    final analysisBytes = await FlutterImageCompress.compressWithList(
+      bytes,
+      minWidth: 800,
+      minHeight: 800,
+      quality: 90,
+      format: CompressFormat.jpeg,
+      keepExif: false,
+    );
     final tempFile = File(
-        '${tempDir.path}/mithaq_face_check_${DateTime.now().millisecondsSinceEpoch}.webp');
-    await tempFile.writeAsBytes(bytes);
+      '${tempDir.path}/mithaq_face_check_${DateTime.now().millisecondsSinceEpoch}.jpg',
+    );
+    await tempFile.writeAsBytes(analysisBytes);
 
     final inputImage = InputImage.fromFilePath(tempFile.path);
     final detector = FaceDetector(

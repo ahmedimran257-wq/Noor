@@ -114,6 +114,31 @@ class ProfileWriteService {
           return false;
         }
         dataToWrite = preparedData;
+        attemptedFields = _fieldsForStep(step, dataToWrite, isGuardianPath);
+        final saved = await _saveBasicIdentityStep(
+          dataToWrite,
+          isGuardianPath: isGuardianPath,
+        );
+        if (!saved) return false;
+
+        if (isGuardianPath &&
+            dataToWrite.guardianPhone?.trim().isNotEmpty == true) {
+          await _saveGuardianPhone(dataToWrite);
+        }
+
+        debugPrint(
+          'ProfileWriteService: Step $step saved '
+          '(${attemptedFields.length} fields via RPC)',
+        );
+        return true;
+      }
+
+      if (step > 2) {
+        final profileReady = await _ensureProfileRowForPartialStep(
+          dataToWrite,
+          isGuardianPath: isGuardianPath,
+        );
+        if (!profileReady) return false;
       }
 
       final fields = _fieldsForStep(step, dataToWrite, isGuardianPath);
@@ -123,11 +148,18 @@ class ProfileWriteService {
         return true;
       }
 
-      // Upsert to profiles table
-      await SupabaseService.client.from('profiles').upsert({
-        'user_id': _userId,
-        ...fields,
-      }, onConflict: 'user_id');
+      final updatedProfile = await SupabaseService.client
+          .from('profiles')
+          .update(fields)
+          .eq('user_id', _userId!)
+          .select('id')
+          .maybeSingle();
+      if (updatedProfile == null) {
+        debugPrint(
+          'ProfileWriteService: Missing profile row for partial step $step',
+        );
+        return false;
+      }
 
       // If this step includes preferences, upsert those too
       final prefFields = _preferenceFieldsForStep(step, dataToWrite);
@@ -147,36 +179,6 @@ class ProfileWriteService {
 
       // Guardian phone: encrypt via set_guardian_phone() SECURITY DEFINER RPC
       // This must happen AFTER the profiles upsert so the profile row exists.
-      if (isGuardianPath &&
-          step == 2 &&
-          dataToWrite.guardianPhone?.trim().isNotEmpty == true) {
-        try {
-          final profileRes = await SupabaseService.client
-              .from('profiles')
-              .select('id')
-              .eq('user_id', _userId!)
-              .single();
-
-          await SupabaseService.client.rpc('set_guardian_phone', params: {
-            'p_profile_id': profileRes['id'],
-            'p_phone': dataToWrite.guardianPhone!.trim(),
-          });
-        } catch (rpcErr) {
-          debugPrint(
-              'ProfileWriteService: RPC set_guardian_phone failed, queueing for retry: $rpcErr');
-          try {
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.setString(
-              _keyPendingPhoneRetry,
-              dataToWrite.guardianPhone!.trim(),
-            );
-          } catch (prefErr) {
-            debugPrint(
-                'ProfileWriteService: Failed to save phone for retry: $prefErr');
-          }
-        }
-      }
-
       debugPrint(
           'ProfileWriteService: Step $step saved (${fields.length} fields)');
       return true;
@@ -253,16 +255,145 @@ class ProfileWriteService {
   static Future<OnboardingData?> _prepareBasicIdentityWrite(
     OnboardingData data,
   ) async {
-    final locationData = await _ensureLocationRows(data);
-    if (locationData == null) return null;
+    final countryCode = _normalCountryCode(data.countryCode);
+    final cityName = _cityNameForWrite(data);
+    if (countryCode == null ||
+        cityName == null ||
+        data.lat == null ||
+        data.lng == null) {
+      debugPrint(
+        'ProfileWriteService: Basic Identity missing location payload '
+        '(country=${data.countryCode}, city=${data.cityName}, '
+        'lat=${data.lat}, lng=${data.lng})',
+      );
+      return null;
+    }
 
-    final genderMirrored = await _mirrorGenderForProfileTrigger(locationData);
-    if (!genderMirrored) return null;
+    return data.copyWith(countryCode: countryCode, cityName: cityName);
+  }
 
-    final locationSaved = await _writeOnboardingLocation(locationData);
-    if (!locationSaved) return null;
+  static Future<bool> _ensureProfileRowForPartialStep(
+    OnboardingData data, {
+    required bool isGuardianPath,
+  }) async {
+    try {
+      final existing = await SupabaseService.client
+          .from('profiles')
+          .select('id')
+          .eq('user_id', _userId!)
+          .maybeSingle();
+      if (existing != null) return true;
+    } catch (e) {
+      _logSupabaseError('check profile row before partial onboarding save', e);
+      return false;
+    }
 
-    return locationData;
+    debugPrint(
+      'ProfileWriteService: Recovering missing Basic Identity row before '
+      'partial onboarding save.',
+    );
+    final preparedData = await _prepareBasicIdentityWrite(data);
+    if (preparedData == null) return false;
+    return _saveBasicIdentityStep(
+      preparedData,
+      isGuardianPath: isGuardianPath,
+    );
+  }
+
+  static Future<bool> _saveBasicIdentityStep(
+    OnboardingData data, {
+    required bool isGuardianPath,
+  }) async {
+    final countryCode = _normalCountryCode(data.countryCode);
+    final cityName = _cityNameForWrite(data);
+    final gender = _genderToString(data.gender);
+    final dateOfBirth = data.dateOfBirth?.toIso8601String().split('T').first;
+    if (countryCode == null ||
+        cityName == null ||
+        data.lat == null ||
+        data.lng == null ||
+        gender == null ||
+        dateOfBirth == null ||
+        _cleanText(data.firstName) == null ||
+        data.heightCm == null) {
+      debugPrint(
+        'ProfileWriteService: Basic Identity required payload missing '
+        '(country=$countryCode, city=$cityName, lat=${data.lat}, '
+        'lng=${data.lng}, gender=$gender, dob=$dateOfBirth, '
+        'firstName=${data.firstName}, height=${data.heightCm})',
+      );
+      return false;
+    }
+
+    final isGuardian = isGuardianPath || _isGuardianData(data);
+    try {
+      await SupabaseService.client.rpc('save_basic_identity_step', params: {
+        'p_profile_owner_type': _profileOwnerTypeForDb(data),
+        'p_profile_creator_relation': _creatorRelationForDb(data),
+        'p_ward_relationship': _wardRelationshipForDb(data),
+        'p_guardian_mode': isGuardian ? data.guardianMode ?? 'passive' : 'none',
+        'p_guardian_relationship': isGuardian
+            ? _guardianRelationshipForDb(data.guardianRelationship)
+            : null,
+        'p_relationship_to_ward': isGuardian
+            ? _relationshipToWardForDb(data.guardianRelationship)
+            : null,
+        'p_guardian_email': isGuardian ? data.guardianEmail : null,
+        'p_guardian_authority_scope':
+            isGuardian ? data.guardianAuthorityScope ?? 'full' : null,
+        'p_first_name': _cleanText(data.firstName),
+        'p_last_name': _cleanText(data.lastName),
+        'p_date_of_birth': dateOfBirth,
+        'p_gender': gender,
+        'p_height_cm': data.heightCm,
+        'p_complexion': data.complexion?.toLowerCase().replaceAll(' ', '_'),
+        'p_mother_tongue': _cleanText(data.motherTongue),
+        'p_community': _cleanText(data.community),
+        'p_residency_status': _residencyStatusToDb(data.residencyStatus),
+        'p_special_needs': _specialNeedsToDb(data.specialNeeds),
+        'p_country_code': countryCode,
+        'p_city_name': cityName,
+        'p_state_name': _cleanText(data.stateName),
+        'p_postal_code': _cleanText(data.postalCode),
+        'p_lat': data.lat,
+        'p_lng': data.lng,
+      });
+      return true;
+    } catch (e) {
+      _logSupabaseError('save_basic_identity_step', e);
+      return false;
+    }
+  }
+
+  static Future<void> _saveGuardianPhone(OnboardingData data) async {
+    try {
+      final profileRes = await SupabaseService.client
+          .from('profiles')
+          .select('id')
+          .eq('user_id', _userId!)
+          .single();
+
+      await SupabaseService.client.rpc('set_guardian_phone', params: {
+        'p_profile_id': profileRes['id'],
+        'p_phone': data.guardianPhone!.trim(),
+      });
+    } catch (rpcErr) {
+      debugPrint(
+        'ProfileWriteService: RPC set_guardian_phone failed, '
+        'queueing for retry: $rpcErr',
+      );
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(
+          _keyPendingPhoneRetry,
+          data.guardianPhone!.trim(),
+        );
+      } catch (prefErr) {
+        debugPrint(
+          'ProfileWriteService: Failed to save phone for retry: $prefErr',
+        );
+      }
+    }
   }
 
   static Future<OnboardingData?> _ensureLocationRows(
@@ -316,44 +447,6 @@ class ProfileWriteService {
     }
   }
 
-  static Future<bool> _mirrorGenderForProfileTrigger(
-    OnboardingData data,
-  ) async {
-    final gender = _genderToString(data.gender);
-    if (gender == null) {
-      debugPrint(
-        'ProfileWriteService: Missing gender before Basic Identity write',
-      );
-      return false;
-    }
-
-    try {
-      final countryCode = _normalCountryCode(data.countryCode);
-      // profiles.gender is enforced by a database trigger from public.users.
-      // Writing it here makes this service safe even if a screen skipped the
-      // earlier AuthCubit gender propagation or a retry races with app resume.
-      final updatedUser = await SupabaseService.client
-          .from('users')
-          .update({
-            'gender': gender,
-            if (countryCode != null) 'country_code': countryCode,
-          })
-          .eq('id', _userId!)
-          .select('id')
-          .maybeSingle();
-      if (updatedUser == null) {
-        debugPrint(
-          'ProfileWriteService: User row missing before Basic Identity write',
-        );
-        return false;
-      }
-      return true;
-    } catch (e) {
-      _logSupabaseError('mirror users.gender before Basic Identity save', e);
-      return false;
-    }
-  }
-
   /// Updates the onboarding_step column on the profiles table.
   static Future<bool> updateOnboardingStep(
     int step, {
@@ -398,25 +491,10 @@ class ProfileWriteService {
   static Future<bool> markOnboardingComplete() async {
     if (!_canWrite || _userId == null) return false;
     try {
-      final updated = await SupabaseService.client
-          .from('profiles')
-          .update({
-            'onboarding_completed': true,
-            'onboarding_flow_version': 3,
-          })
-          .eq('user_id', _userId!)
-          .select('id')
-          .maybeSingle();
-      if (updated == null) return false;
-      final userProgressSaved = await _updateUserOnboardingProgress(
-        5,
-        onboardingCompleted: true,
-        writeStepDirectly: true,
-      );
-      if (!userProgressSaved) return false;
+      await SupabaseService.client.rpc('complete_onboarding_profile');
       return true;
     } catch (e) {
-      debugPrint('ProfileWriteService: Error marking onboarding complete: $e');
+      _logSupabaseError('complete_onboarding_profile', e);
       return false;
     }
   }
@@ -576,12 +654,12 @@ class ProfileWriteService {
           'sub_sect': data.subSect,
           'deen_level': _deenLevelToString(data.deenLevel),
           'prays_five_daily': data.praysFiveDaily,
-          'hijab': data.hijabStyle,
-          'beard': data.beardStyle,
+          'hijab': _modestyOptionToDb(data.hijabStyle),
+          'beard': _modestyOptionToDb(data.beardStyle),
           'diet_type': data.dietType,
-          'smoking_habit': data.smokingHabit,
-          'vaping_habit': data.vapingHabit,
-          'hookah_habit': data.hookahHabit,
+          'smoking_habit': _habitToDb(data.smokingHabit),
+          'vaping_habit': _habitToDb(data.vapingHabit),
+          'hookah_habit': _habitToDb(data.hookahHabit),
         });
 
       // Deferred Islamic marriage details
@@ -732,12 +810,12 @@ class ProfileWriteService {
       'sub_sect': data.subSect,
       'deen_level': _deenLevelToString(data.deenLevel),
       'prays_five_daily': data.praysFiveDaily,
-      'hijab': data.hijabStyle,
-      'beard': data.beardStyle,
+      'hijab': _modestyOptionToDb(data.hijabStyle),
+      'beard': _modestyOptionToDb(data.beardStyle),
       'diet_type': data.dietType,
-      'smoking_habit': data.smokingHabit,
-      'vaping_habit': data.vapingHabit,
-      'hookah_habit': data.hookahHabit,
+      'smoking_habit': _habitToDb(data.smokingHabit),
+      'vaping_habit': _habitToDb(data.vapingHabit),
+      'hookah_habit': _habitToDb(data.hookahHabit),
       'education_level': data.educationLabel,
       'education_rank': data.educationRank,
       'field_of_study': data.fieldOfStudy,
@@ -826,6 +904,83 @@ class ProfileWriteService {
     if (response is int) return response;
     if (response is num) return response.toInt();
     return int.tryParse(response?.toString() ?? '');
+  }
+
+  static String? _habitToDb(String? value) {
+    switch (_normalizeOption(value)?.replaceAll('_', ' ')) {
+      case 'never':
+        return 'never';
+      case 'occasionally':
+        return 'occasionally';
+      case 'frequently':
+        return 'frequently';
+      case 'prefer not':
+      case 'prefer not to say':
+        return 'prefer_not';
+      default:
+        return null;
+    }
+  }
+
+  static String? _habitFromDb(String? value) {
+    switch (_normalizeOption(value)) {
+      case 'never':
+        return 'Never';
+      case 'occasionally':
+        return 'Occasionally';
+      case 'frequently':
+        return 'Frequently';
+      case 'prefer_not':
+        return 'Prefer not to say';
+      default:
+        return value;
+    }
+  }
+
+  static String? _modestyOptionToDb(String? value) {
+    switch (_normalizeOption(value)?.replaceAll('_', ' ')) {
+      case 'always':
+        return 'always';
+      case 'sometimes':
+        return 'sometimes';
+      case 'yes':
+        return 'yes';
+      case 'no':
+        return 'no';
+      case 'prefer not to say':
+      case 'prefer not':
+        return 'prefer_not_to_say';
+      default:
+        return value;
+    }
+  }
+
+  static String? _hijabFromDb(String? value) {
+    switch (_normalizeOption(value)) {
+      case 'always':
+        return 'Always';
+      case 'sometimes':
+        return 'Sometimes';
+      case 'no':
+        return 'No';
+      case 'prefer_not_to_say':
+        return 'Prefer not to say';
+      default:
+        return value;
+    }
+  }
+
+  static String? _beardFromDb(String? value) {
+    switch (_normalizeOption(value)) {
+      case 'yes':
+        return 'yes';
+      case 'no':
+        return 'no';
+      case 'prefer_not_to_say':
+        return 'prefer_not_to_say';
+      default:
+        return value;
+    }
   }
 
   static void _logSupabaseError(String context, Object error) {
@@ -1166,12 +1321,12 @@ class ProfileWriteService {
       subSect: p['sub_sect'] as String?,
       deenLevel: deen,
       praysFiveDaily: p['prays_five_daily'] as bool?,
-      hijabStyle: p['hijab'] as String?,
-      beardStyle: p['beard'] as String?,
+      hijabStyle: _hijabFromDb(p['hijab'] as String?),
+      beardStyle: _beardFromDb(p['beard'] as String?),
       dietType: p['diet_type'] as String?,
-      smokingHabit: p['smoking_habit'] as String?,
-      vapingHabit: p['vaping_habit'] as String?,
-      hookahHabit: p['hookah_habit'] as String?,
+      smokingHabit: _habitFromDb(p['smoking_habit'] as String?),
+      vapingHabit: _habitFromDb(p['vaping_habit'] as String?),
+      hookahHabit: _habitFromDb(p['hookah_habit'] as String?),
       educationRank: p['education_rank'] as int?,
       educationLabel: p['education_level'] as String?,
       fieldOfStudy: p['field_of_study'] as String?,

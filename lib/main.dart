@@ -25,6 +25,7 @@ import 'core/config/app_config.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/supabase_service.dart';
 import 'core/services/connectivity_service.dart';
+import 'core/services/photo_moderation_service.dart';
 import 'core/services/subscription_service.dart';
 import 'core/services/wali_mode_service.dart';
 import 'core/services/fcm_service.dart';
@@ -148,6 +149,7 @@ void main() async {
   runApp(MithaqApp(
     initialLocation: introCompleted ? AppRoutes.splash : AppRoutes.assalam,
   ));
+  unawaited(_warmPhotoSafetyModel());
 }
 
 Future<void> _configureRevenueCat() async {
@@ -159,6 +161,14 @@ Future<void> _configureRevenueCat() async {
     await Purchases.configure(PurchasesConfiguration(rcKey));
   } catch (e) {
     debugPrint('[main] RevenueCat configure skipped: $e');
+  }
+}
+
+Future<void> _warmPhotoSafetyModel() async {
+  try {
+    await PhotoModerationService.warmUp();
+  } catch (e) {
+    debugPrint('[main] Photo safety model warm-up skipped: $e');
   }
 }
 
