@@ -35,7 +35,9 @@ class CitySearchField extends StatefulWidget {
   const CitySearchField({
     super.key,
     this.countryCode,
+    this.regionName,
     required this.onSelected,
+    this.onCleared,
     this.initialValue,
     this.label,
     this.hint,
@@ -43,7 +45,9 @@ class CitySearchField extends StatefulWidget {
   });
 
   final String? countryCode;
+  final String? regionName;
   final ValueChanged<CityResult> onSelected;
+  final VoidCallback? onCleared;
   final String? initialValue;
   final String? label;
   final String? hint;
@@ -63,6 +67,7 @@ class _CitySearchFieldState extends State<CitySearchField> {
   bool _showDropdown = false;
   Timer? _debounce;
   String? _selectedDisplay;
+  int _searchVersion = 0;
 
   OverlayEntry? _overlayEntry;
   final _layerLink = LayerLink();
@@ -80,12 +85,15 @@ class _CitySearchFieldState extends State<CitySearchField> {
   @override
   void didUpdateWidget(CitySearchField old) {
     super.didUpdateWidget(old);
-    // When country changes, clear the selection
-    if (old.countryCode != widget.countryCode) {
-      _ctrl.clear();
-      _selectedDisplay = null;
-      _results.clear();
-      _hideOverlay();
+    // Cascading location fix: a country or region change invalidates the
+    // selected city. Clear locally and tell the parent so stale city IDs cannot
+    // be saved with a new country/region.
+    if (old.countryCode != widget.countryCode ||
+        old.regionName != widget.regionName) {
+      _clearSelection(notifyParent: false);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.onCleared?.call();
+      });
     }
   }
 
@@ -136,6 +144,7 @@ class _CitySearchFieldState extends State<CitySearchField> {
 
     _debounce = Timer(const Duration(milliseconds: 400), () async {
       if (!mounted) return;
+      final version = ++_searchVersion;
       final countryCode = widget.countryCode;
       if (countryCode == null || countryCode.trim().isEmpty) {
         setState(() {
@@ -155,9 +164,10 @@ class _CitySearchFieldState extends State<CitySearchField> {
       final results = await _service.searchCities(
         value,
         countryCode: countryCode,
+        regionName: widget.regionName,
       );
 
-      if (!mounted) return;
+      if (!mounted || version != _searchVersion) return;
       setState(() {
         _results = results;
         _loading = false;
@@ -169,9 +179,7 @@ class _CitySearchFieldState extends State<CitySearchField> {
   }
 
   void _selectResult(CityResult result) {
-    final display = result.city.isNotEmpty
-        ? '${result.city}${result.state.isNotEmpty ? ', ${result.state}' : ''}'
-        : result.fullAddress;
+    final display = _displayLocation(result);
 
     setState(() {
       _selectedDisplay = display;
@@ -185,6 +193,18 @@ class _CitySearchFieldState extends State<CitySearchField> {
     );
     _focus.unfocus();
     widget.onSelected(result);
+  }
+
+  void _clearSelection({bool notifyParent = true}) {
+    _searchVersion++;
+    _debounce?.cancel();
+    _ctrl.clear();
+    _selectedDisplay = null;
+    _results = [];
+    _loading = false;
+    _showDropdown = false;
+    _hideOverlay();
+    if (notifyParent) widget.onCleared?.call();
   }
 
   void _showOverlay() {
@@ -254,6 +274,7 @@ class _CitySearchFieldState extends State<CitySearchField> {
         controller: _ctrl,
         focusNode: _focus,
         onChanged: _onChanged,
+        onTapOutside: (_) => _focus.unfocus(),
         style: AppTypography.inputText,
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
@@ -278,22 +299,7 @@ class _CitySearchFieldState extends State<CitySearchField> {
                 )
               : _selectedDisplay != null
                   ? GestureDetector(
-                      onTap: () => setState(() {
-                        _ctrl.clear();
-                        _selectedDisplay = null;
-                        _hideOverlay();
-                        widget.onSelected(const CityResult(
-                          city: '',
-                          state: '',
-                          country: '',
-                          countryCode: '',
-                          postalCode: '',
-                          fullAddress: '',
-                          placeId: '',
-                          lat: 0.0,
-                          lng: 0.0,
-                        ));
-                      }),
+                      onTap: () => setState(() => _clearSelection()),
                       child: const Icon(
                         Icons.close_rounded,
                         color: AppColors.slateMist,
@@ -312,9 +318,6 @@ class _CitySearchFieldState extends State<CitySearchField> {
   }
 
   Widget _buildDropdown() {
-    final queryText = _ctrl.text.trim();
-    final showFallback = queryText.isNotEmpty;
-
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
@@ -332,49 +335,38 @@ class _CitySearchFieldState extends State<CitySearchField> {
             ),
           ],
         ),
-        child: _results.isEmpty && !showFallback
+        child: _loading
             ? const Padding(
                 padding: EdgeInsets.all(16),
                 child: Text(
-                  'No cities found. Try a different spelling.',
+                  'Searching cities...',
                   style: AppTypography.bodyMuted,
                 ),
               )
-            : ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _results.length + (showFallback ? 1 : 0),
-                separatorBuilder: (_, __) => const Divider(
-                  height: 1,
-                  color: AppColors.cardBorder,
-                ),
-                itemBuilder: (context, i) {
-                  if (i < _results.length) {
-                    final r = _results[i];
-                    return _CityTile(
-                      result: r,
-                      onTap: () => _selectResult(r),
-                    );
-                  } else {
-                    return _CustomCityTile(
-                      query: queryText,
-                      onTap: () {
-                        _selectResult(CityResult(
-                          city: queryText,
-                          state: '',
-                          country: '',
-                          countryCode: widget.countryCode ?? '',
-                          postalCode: '',
-                          fullAddress: queryText,
-                          placeId: 'custom-city-${queryText.toLowerCase()}',
-                          lat: 0.0,
-                          lng: 0.0,
-                        ));
-                      },
-                    );
-                  }
-                },
-              ),
+            : _results.isEmpty
+                ? const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text(
+                      'No matching city or area found. Try a different spelling.',
+                      style: AppTypography.bodyMuted,
+                    ),
+                  )
+                : ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _results.length,
+                    separatorBuilder: (_, __) => const Divider(
+                      height: 1,
+                      color: AppColors.cardBorder,
+                    ),
+                    itemBuilder: (context, i) {
+                      final r = _results[i];
+                      return _CityTile(
+                        result: r,
+                        onTap: () => _selectResult(r),
+                      );
+                    },
+                  ),
       ),
     ).animate().fadeIn(duration: 180.ms).slideY(
           begin: -0.04,
@@ -382,68 +374,6 @@ class _CitySearchFieldState extends State<CitySearchField> {
           duration: 220.ms,
           curve: Curves.easeOutCubic,
         );
-  }
-}
-
-class _CustomCityTile extends StatelessWidget {
-  const _CustomCityTile({required this.query, required this.onTap});
-
-  final String query;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      splashColor: AppColors.goldGlow,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: AppColors.champagneGold.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.add_location_alt_rounded,
-                color: AppColors.champagneGold,
-                size: 18,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Use "$query" as custom city',
-                    style: AppTypography.body.copyWith(
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.champagneGold,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Specify state/region in the next field',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.slateMist,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 
@@ -458,7 +388,9 @@ class _CityTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final subtitle = [
-      if (result.state.isNotEmpty) result.state,
+      if (result.state.isNotEmpty &&
+          result.state.toLowerCase() != result.city.toLowerCase())
+        result.state,
       if (result.postalCode.isNotEmpty) result.postalCode,
     ].join(' · ');
 
@@ -539,4 +471,16 @@ class _CityTile extends StatelessWidget {
       ),
     );
   }
+}
+
+String _displayLocation(CityResult result) {
+  final parts = <String>[
+    if (result.city.isNotEmpty) result.city,
+    if (result.state.isNotEmpty &&
+        result.state.toLowerCase() != result.city.toLowerCase())
+      result.state,
+    if (result.city.isEmpty && result.fullAddress.isNotEmpty)
+      result.fullAddress,
+  ];
+  return parts.isNotEmpty ? parts.join(', ') : result.fullAddress;
 }

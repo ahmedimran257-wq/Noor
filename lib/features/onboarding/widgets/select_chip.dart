@@ -26,7 +26,10 @@ class SelectChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MithaqPressable(
-      onTap: onTap,
+      onTap: () {
+        FocusManager.instance.primaryFocus?.unfocus();
+        onTap();
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeOutCubic,

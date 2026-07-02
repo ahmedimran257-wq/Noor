@@ -1,14 +1,14 @@
 // lib/core/cubits/onboarding/onboarding_cubit.dart
 // ============================================================
 // MITHAQ — Onboarding Cubit
-// Manages the multi-step onboarding flow.
+// Manages the five-step fast-start onboarding flow.
 // Each step: locally validates → emits OnboardingLoading →
-//            mock-saves → emits OnboardingSaved.
+//            saves → emits OnboardingSaved.
 // The router listens and pushes the next screen.
 //
 // Completion thresholds:
-//   Myself   → completeAt 11
-//   Guardian → completeAt 12
+//   Myself   → completeAt 5
+//   Guardian → completeAt 5
 // ============================================================
 
 import 'dart:convert';
@@ -30,6 +30,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   final AuthCubit _authCubit;
 
   static const String _kCacheKey = 'onboarding_data_cache';
+  bool _saveInFlight = false;
 
   // ── Initialization ────────────────────────────────────────
 
@@ -44,10 +45,12 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       data = dbData;
       debugPrint('OnboardingCubit: Successfully restored data from Supabase.');
     } else {
-      // 2. Fallback to SharedPreferences cache if DB is empty/unconfigured
+      // 2. Fallback to this authenticated user's local cache if the database
+      // has no row yet. The key is user-scoped to avoid carrying a previous
+      // account's self/guardian onboarding data into this session.
       try {
         final prefs = await SharedPreferences.getInstance();
-        final rawJson = prefs.getString(_kCacheKey);
+        final rawJson = prefs.getString(_cacheKey);
         if (rawJson != null && rawJson.isNotEmpty) {
           final mapped = jsonDecode(rawJson) as Map<String, dynamic>;
           data = OnboardingData.fromJson(mapped);
@@ -80,55 +83,139 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       } catch (_) {}
     }
 
-    emit(OnboardingActive(step: startStep, data: data));
+    final resolvedStep = _clampStepForData(startStep, data);
+    if (resolvedStep != startStep && authState is AuthAuthenticated) {
+      _authCubit.updateOnboardingStep(
+        resolvedStep,
+        isGuardianPath:
+            data.profileFor == ProfileFor.guardian || authState.isGuardianPath,
+        allowRegression: true,
+      );
+    }
+
+    emit(OnboardingActive(step: resolvedStep, data: data));
   }
 
   // ── Step Advance ──────────────────────────────────────────
 
   /// Saves the partial data for the current step and advances to next.
   /// In production: writes to Supabase profiles table via ProfileWriteService.
-  /// In mock mode: simulates a delay.
+  /// Requires Supabase persistence.
   Future<void> saveAndAdvance(OnboardingData updatedData) async {
+    // Race fix: block double taps/slow retries from advancing the same step
+    // more than once.
+    if (_saveInFlight) return;
+    _saveInFlight = true;
     final currentStep = _currentStep;
-    emit(OnboardingLoading(step: currentStep, data: updatedData));
+    try {
+      emit(OnboardingLoading(step: currentStep, data: updatedData));
 
-    // Persist to SharedPreferences cache immediately (offline fallback)
-    await _persistLocalCache(updatedData);
+      final validationMessage = _validateMandatoryStep(
+        currentStep,
+        updatedData,
+      );
+      if (validationMessage != null) {
+        emit(OnboardingError(
+          step: currentStep,
+          data: updatedData,
+          message: validationMessage,
+        ));
+        return;
+      }
 
-    // Persist to Supabase (or mock delay if not configured)
-    final isGuardianPath = updatedData.profileFor == ProfileFor.guardian;
-    final success = await ProfileWriteService.saveStep(
-      step: currentStep,
-      data: updatedData,
-      isGuardianPath: isGuardianPath,
-    );
+      // Cache locally so transitions keep entered data; Supabase remains the
+      // authoritative profile store once the row has enough required fields.
+      await _persistLocalCache(updatedData);
 
-    if (!success) {
-      debugPrint(
-          'OnboardingCubit: Failed to save step $currentStep, proceeding anyway');
-    }
+      final isGuardianPath = updatedData.profileFor == ProfileFor.guardian;
 
-    final nextStep = currentStep + 1;
+      // Steps before Basic Identity do not have gender/date-of-birth yet. Their
+      // required data is saved on users via RPCs so app restarts and new-device
+      // resumes remain server-backed without creating invalid profile rows.
+      if (currentStep == 0) {
+        final success =
+            await ProfileWriteService.saveProfileTypeResume(updatedData);
+        if (!success) {
+          emit(OnboardingError(
+            step: currentStep,
+            data: updatedData,
+            message: 'Could not save. Please try again.',
+          ));
+          return;
+        }
+      } else if (currentStep == 1) {
+        final success =
+            await ProfileWriteService.saveOnboardingLocation(updatedData);
+        if (!success) {
+          emit(OnboardingError(
+            step: currentStep,
+            data: updatedData,
+            message: 'Could not save. Please try again.',
+          ));
+          return;
+        }
+      } else if (currentStep >= 2) {
+        final success = await ProfileWriteService.saveStep(
+          step: currentStep,
+          data: updatedData,
+          isGuardianPath: isGuardianPath,
+        );
 
-    // Also update the onboarding_step in the DB
-    await ProfileWriteService.updateOnboardingStep(nextStep);
+        if (!success) {
+          debugPrint('OnboardingCubit: Failed to save step $currentStep');
+          emit(OnboardingError(
+            step: currentStep,
+            data: updatedData,
+            message: 'Could not save. Please try again.',
+          ));
+          return;
+        }
+      }
 
-    // Completion thresholds:
-    //   Myself   → 11 steps (0–10)
-    //   Guardian → 12 steps (0–11)
-    final completeAt = OnboardingFlow.completeAt(isGuardianPath);
+      final nextStep = currentStep + 1;
 
-    if (nextStep >= completeAt) {
-      await ProfileWriteService.markOnboardingComplete();
-      _authCubit.updateOnboardingStep(
+      // Persist progress for every step. Before Basic Identity there may be no
+      // profiles row yet, so ProfileWriteService also mirrors the resume marker
+      // onto public.users. That keeps app restarts from sending users backward.
+      final progressSaved = await ProfileWriteService.updateOnboardingStep(
         nextStep,
         isGuardianPath: isGuardianPath,
-        onboardingCompleted: true,
       );
-      emit(const OnboardingComplete());
-    } else {
-      _authCubit.updateOnboardingStep(nextStep, isGuardianPath: isGuardianPath);
-      emit(OnboardingSaved(step: nextStep, data: updatedData));
+      if (!progressSaved) {
+        emit(OnboardingError(
+          step: currentStep,
+          data: updatedData,
+          message: 'Could not save. Please try again.',
+        ));
+        return;
+      }
+
+      // Completion threshold: fast-start v3 completes after 5 steps.
+      final completeAt = OnboardingFlow.completeAt(isGuardianPath);
+
+      if (nextStep >= completeAt) {
+        final completed = await ProfileWriteService.markOnboardingComplete();
+        if (!completed) {
+          emit(OnboardingError(
+            step: currentStep,
+            data: updatedData,
+            message: 'Could not save. Please try again.',
+          ));
+          return;
+        }
+        _authCubit.updateOnboardingStep(
+          nextStep,
+          isGuardianPath: isGuardianPath,
+          onboardingCompleted: true,
+        );
+        emit(const OnboardingComplete());
+      } else {
+        _authCubit.updateOnboardingStep(nextStep,
+            isGuardianPath: isGuardianPath);
+        emit(OnboardingSaved(step: nextStep, data: updatedData));
+      }
+    } finally {
+      _saveInFlight = false;
     }
   }
 
@@ -152,13 +239,23 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     if (newStep != null && data != null) {
       final isGuardianPath = data.profileFor == ProfileFor.guardian;
       // Update AuthCubit so the router redirect navigates to the previous screen
-      _authCubit.updateOnboardingStep(newStep, isGuardianPath: isGuardianPath);
+      _authCubit.updateOnboardingStep(
+        newStep,
+        isGuardianPath: isGuardianPath,
+        allowRegression: true,
+      );
 
-      // Fixed Flaw 24: Persist the decremented step back to the DB
-      await ProfileWriteService.updateOnboardingStep(newStep);
+      // Explicit back navigation is the only allowed step regression.
+      await ProfileWriteService.setOnboardingStepForBack(newStep);
 
       emit(OnboardingActive(step: newStep, data: data));
     }
+  }
+
+  Future<void> retryFailedSave() async {
+    final current = state;
+    if (current is! OnboardingError) return;
+    await saveAndAdvance(current.data);
   }
 
   /// Updates the profile data in-place without advancing the step.
@@ -171,40 +268,21 @@ class OnboardingCubit extends Cubit<OnboardingState> {
 
   /// Called by screens after router pushes the next page to mark active again.
   void markActive(int step, OnboardingData data) {
-    emit(OnboardingActive(step: step, data: data));
+    emit(OnboardingActive(step: _clampStepForData(step, data), data: data));
   }
 
-  /// Skips a step (optional steps like income).
-  Future<void> skipStep() async {
-    final currentStep = _currentStep;
+  /// Keeps GoRouter's `/onboarding/:step` route and this cubit's step in sync.
+  /// This prevents stale async state from making Continue/Back operate on a
+  /// different step than the one currently visible on screen.
+  void syncRouteStep(int step) {
+    final current = state;
+    if (current is OnboardingLoading) return;
+
     final data = _currentData;
-    emit(OnboardingLoading(step: currentStep, data: data));
-    await Future.delayed(const Duration(milliseconds: 200));
+    final safeStep = _clampStepForData(step, data);
+    if (current is OnboardingActive && current.step == safeStep) return;
 
-    final nextStep = currentStep + 1;
-    final isGuardianPath = data.profileFor == ProfileFor.guardian;
-
-    // Fixed Flaw 7: Persist skipped step to the DB
-    await ProfileWriteService.updateOnboardingStep(nextStep);
-
-    // Completion thresholds:
-    //   Myself   → 11 steps (0–10)
-    //   Guardian → 12 steps (0–11)
-    final completeAt = OnboardingFlow.completeAt(isGuardianPath);
-
-    if (nextStep >= completeAt) {
-      await ProfileWriteService.markOnboardingComplete();
-      _authCubit.updateOnboardingStep(
-        nextStep,
-        isGuardianPath: isGuardianPath,
-        onboardingCompleted: true,
-      );
-      // Fixed Flaw 7: Correctly emit OnboardingComplete() when skipping past threshold
-      emit(const OnboardingComplete());
-    } else {
-      _authCubit.updateOnboardingStep(nextStep, isGuardianPath: isGuardianPath);
-      emit(OnboardingSaved(step: nextStep, data: data));
-    }
+    emit(OnboardingActive(step: safeStep, data: data));
   }
 
   // ── Cache Persistence Helper ──────────────────────────────
@@ -212,7 +290,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   Future<void> _persistLocalCache(OnboardingData data) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_kCacheKey, jsonEncode(data.toJson()));
+      await prefs.setString(_cacheKey, jsonEncode(data.toJson()));
     } catch (e) {
       debugPrint(
           'OnboardingCubit: Failed to write SharedPreferences cache: $e');
@@ -220,6 +298,108 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   }
 
   // ── Helpers ───────────────────────────────────────────────
+
+  String get _cacheKey {
+    final authState = _authCubit.state;
+    if (authState is AuthAuthenticated) {
+      return '${_kCacheKey}_${authState.userId}';
+    }
+    return _kCacheKey;
+  }
+
+  int _clampStepForData(int step, OnboardingData data) {
+    final authState = _authCubit.state;
+    final isGuardianPath = data.profileFor == ProfileFor.guardian ||
+        (authState is AuthAuthenticated && authState.isGuardianPath);
+    final completeAt = OnboardingFlow.completeAt(isGuardianPath);
+    var safeStep = step.clamp(0, completeAt - 1).toInt();
+
+    if (safeStep > 0 && data.profileFor == null) {
+      safeStep = 0;
+    } else if (safeStep > OnboardingFlow.quickLocationStep(isGuardianPath) &&
+        !OnboardingFlow.hasValidLocation(data)) {
+      safeStep = OnboardingFlow.quickLocationStep(isGuardianPath);
+    } else if (safeStep > 2 && _validateMandatoryStep(2, data) != null) {
+      safeStep = 2;
+    } else if (safeStep > 3 && _validateMandatoryStep(3, data) != null) {
+      safeStep = 3;
+    }
+
+    return safeStep;
+  }
+
+  String? _validateMandatoryStep(int step, OnboardingData data) {
+    final isGuardian = data.profileFor == ProfileFor.guardian ||
+        data.profileOwnerType == ProfileOwnerType.guardian ||
+        data.isGuardianMode;
+
+    switch (step) {
+      case 0:
+        if (data.profileFor == null) {
+          return 'Please select who this profile is for.';
+        }
+        if (isGuardian && !_isWardRelationship(data.wardRelationship)) {
+          return 'Please select who you are registering.';
+        }
+        return null;
+      case 1:
+        return OnboardingFlow.hasValidLocation(data)
+            ? null
+            : 'Please select a verified city from the list.';
+      case 2:
+        if (data.firstName?.trim().isNotEmpty != true ||
+            data.lastName?.trim().isNotEmpty != true ||
+            data.dateOfBirth == null ||
+            data.gender == null ||
+            data.motherTongue?.trim().isNotEmpty != true ||
+            !OnboardingFlow.hasValidLocation(data)) {
+          return 'Please complete all required profile details.';
+        }
+        if (data.age == null || data.age! < 18) {
+          return 'You must be at least 18 to continue.';
+        }
+        if (isGuardian) {
+          if (!_isWardRelationship(data.wardRelationship)) {
+            return 'Please select who you are registering.';
+          }
+          if (!_isValidEmail(data.guardianEmail)) {
+            return 'Please enter a valid guardian email.';
+          }
+        }
+        return null;
+      case 3:
+        if (data.deenLevel == null ||
+            data.praysFiveDaily == null ||
+            data.dietType?.trim().isNotEmpty != true ||
+            data.smokingHabit?.trim().isNotEmpty != true ||
+            data.vapingHabit?.trim().isNotEmpty != true ||
+            data.hookahHabit?.trim().isNotEmpty != true) {
+          return 'Please complete all required Islamic identity details.';
+        }
+        return null;
+      case 4:
+        if (data.photoLocalPaths == null || data.photoLocalPaths!.isEmpty) {
+          return 'Please add a primary profile photo.';
+        }
+        if (data.photoPrivacy == null) {
+          return 'Please choose a photo privacy setting.';
+        }
+        return null;
+      default:
+        return null;
+    }
+  }
+
+  bool _isWardRelationship(String? value) {
+    const allowed = {'son', 'daughter', 'brother', 'sister'};
+    return allowed.contains(value?.trim().toLowerCase());
+  }
+
+  bool _isValidEmail(String? value) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) return false;
+    return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(trimmed);
+  }
 
   int get _currentStep {
     final s = state;

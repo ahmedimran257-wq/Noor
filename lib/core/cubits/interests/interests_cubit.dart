@@ -1,6 +1,6 @@
 // lib/core/cubits/interests/interests_cubit.dart
 // ============================================================
-// MITHAQ — Interests Cubit (Real Supabase + Mock Fallback)
+// MITHAQ — Interests Cubit (Supabase production flow)
 //
 // Blueprint lifecycle:
 //   send → PENDING  (gated by daily limit — Item 17)
@@ -10,14 +10,14 @@
 //   14 days → EXPIRED (DB cron job)
 //
 // Real mode: all operations hit Supabase interests/matches tables.
-// Mock mode: in-memory data with simulated delays.
+// Production mode: all operations hit Supabase.
 // ============================================================
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'interests_state.dart';
-import '../../mock/mock_profiles.dart';
+import '../../models/discovery_profile.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/content_filter.dart';
 import '../../utils/mithaq_compute.dart';
@@ -30,15 +30,13 @@ class InterestsCubit extends Cubit<InterestsState> {
   static const _keyInterestsSentToday = 'interests_sent_today';
   static const _keyInterestsResetDate = 'interests_reset_date';
 
-  bool get _isRealMode => SupabaseService.isInitialized;
-
   // ── Init ──────────────────────────────────────────────────
 
   Future<void> _initData() async {
-    if (_isRealMode) {
+    if (SupabaseService.isInitialized) {
       await _loadFromDb();
     } else {
-      _initMockData();
+      emit(const InterestsState());
     }
   }
 
@@ -162,7 +160,7 @@ class InterestsCubit extends Cubit<InterestsState> {
   }
 
   /// Load a real profile for a given user ID from Supabase.
-  Future<MockProfile?> _loadProfileForUser(String userId) async {
+  Future<DiscoveryProfile?> _loadProfileForUser(String userId) async {
     try {
       final row = await SupabaseService.client
           .from('profiles')
@@ -223,74 +221,6 @@ class InterestsCubit extends Cubit<InterestsState> {
 
     return null;
   }
-
-  // ── Mock data init (fallback) ─────────────────────────────
-
-  void _initMockData() {
-    if (kMockProfiles.isEmpty) return;
-
-    final now = DateTime.now();
-
-    // Safe access with fallback to first profile
-    final p0 = kMockProfiles.first;
-    final p2 = kMockProfiles.elementAtOrNull(2) ?? p0;
-    final p3 = kMockProfiles.elementAtOrNull(3) ?? p0;
-    final p4 = kMockProfiles.elementAtOrNull(4) ?? p0;
-    final p6 = kMockProfiles.elementAtOrNull(6) ?? p0;
-
-    final initialReceived = [
-      InterestEntry(
-        id: 'r1',
-        profile: p2,
-        timeAgo: '2h ago',
-        sentAt: now.subtract(const Duration(hours: 2)),
-        createdAt: now.subtract(const Duration(hours: 2)),
-      ),
-      InterestEntry(
-        id: 'r2',
-        profile: p4,
-        timeAgo: '1d ago',
-        sentAt: now.subtract(const Duration(days: 1)),
-        createdAt: now.subtract(const Duration(days: 9)),
-      ),
-      InterestEntry(
-        id: 'r3',
-        profile: p6,
-        timeAgo: '3d ago',
-        sentAt: now.subtract(const Duration(days: 3)),
-        createdAt: now.subtract(const Duration(days: 11)),
-      ),
-    ];
-
-    final initialSent = [
-      InterestEntry(
-        id: 's1',
-        profile: p0,
-        timeAgo: 'Yesterday',
-        sentAt: now.subtract(const Duration(days: 1)),
-        createdAt: now.subtract(const Duration(days: 1)),
-        status: InterestStatus.pending,
-      ),
-      InterestEntry(
-        id: 's2',
-        profile: p3,
-        timeAgo: '2d ago',
-        sentAt: now.subtract(const Duration(days: 2)),
-        createdAt: now.subtract(const Duration(days: 12)),
-        status: InterestStatus.pending,
-      ),
-    ];
-
-    emit(InterestsState(
-      received: initialReceived,
-      sent: initialSent,
-      matches: const [],
-      interestsSentToday: 2,
-      dailyLimit: 3,
-      lastResetDate: now,
-    ));
-  }
-
   // ── Daily Limit (Item 17) ─────────────────────────────────
 
   void setDailyLimitForGender({
@@ -349,7 +279,9 @@ class InterestsCubit extends Cubit<InterestsState> {
 
   /// Accept an incoming interest → creates a match (via DB trigger).
   void acceptInterest(String id) async {
-    if (_isRealMode) {
+    if (!SupabaseService.isInitialized) return;
+
+    if (SupabaseService.isInitialized) {
       try {
         await SupabaseService.client
             .from('interests')
@@ -376,7 +308,9 @@ class InterestsCubit extends Cubit<InterestsState> {
 
   /// Decline an incoming interest.
   void declineInterest(String id) async {
-    if (_isRealMode) {
+    if (!SupabaseService.isInitialized) return;
+
+    if (SupabaseService.isInitialized) {
       try {
         await SupabaseService.client
             .from('interests')
@@ -398,7 +332,9 @@ class InterestsCubit extends Cubit<InterestsState> {
   // ── Sent actions ──────────────────────────────────────────
 
   /// Send an interest from the discovery feed or profile detail.
-  Future<bool> sendInterest(MockProfile profile, {String? note}) async {
+  Future<bool> sendInterest(DiscoveryProfile profile, {String? note}) async {
+    if (!SupabaseService.isInitialized) return false;
+
     // Check reset first
     final today = _dateOnly(DateTime.now());
     if (state.lastResetDate == null ||
@@ -427,35 +363,35 @@ class InterestsCubit extends Cubit<InterestsState> {
 
     String? interestId;
 
-    if (_isRealMode) {
-      final myId = SupabaseService.currentUserId;
-      if (myId == null) return false;
-      try {
-        final result = await SupabaseService.client
-            .from('interests')
-            .insert({
-              'sender_id': myId,
-              'receiver_id': profile.id,
-              if (filteredNote != null) 'note': filteredNote,
-            })
-            .select('id')
-            .single();
-        interestId = result['id'] as String;
-      } catch (e) {
-        debugPrint('[InterestsCubit] Error sending interest: $e');
-        // If the DB rejects (e.g., daily limit hit by trigger), surface the error
-        if (e.toString().contains('Daily interest limit')) {
-          emit(state.copyWith(limitError: true));
-          return false;
-        }
-        // For duplicate errors, treat as success
-        if (e.toString().contains('already sent')) return true;
+    final myId = SupabaseService.currentUserId;
+    if (myId == null) return false;
+    try {
+      final result = await SupabaseService.client
+          .from('interests')
+          .insert({
+            'sender_id': myId,
+            'receiver_id': profile.id,
+            if (filteredNote != null) 'note': filteredNote,
+          })
+          .select('id')
+          .single();
+      interestId = result['id'] as String;
+    } catch (e) {
+      debugPrint('[InterestsCubit] Error sending interest: $e');
+      // If the DB rejects (e.g., daily limit hit by trigger), surface the error.
+      if (e.toString().contains('Daily interest limit')) {
+        emit(state.copyWith(limitError: true));
         return false;
       }
+      // For duplicate errors, treat as success because the server already has it.
+      if (e.toString().contains('already sent')) return true;
+      return false;
     }
 
+    if (interestId.isEmpty) return false;
+
     final entry = InterestEntry(
-      id: interestId ?? 'sent_${now.millisecondsSinceEpoch}',
+      id: interestId,
       profile: profile,
       timeAgo: 'Just now',
       sentAt: now,
@@ -485,7 +421,9 @@ class InterestsCubit extends Cubit<InterestsState> {
 
   /// Withdraw a pending sent interest (silent — no notification to recipient).
   void withdrawInterest(String id) async {
-    if (_isRealMode) {
+    if (!SupabaseService.isInitialized) return;
+
+    if (SupabaseService.isInitialized) {
       try {
         await SupabaseService.client
             .from('interests')
@@ -505,24 +443,6 @@ class InterestsCubit extends Cubit<InterestsState> {
   }
 
   // ── Simulation helpers ────────────────────────────────────
-
-  void simulateAcceptance(String sentId) {
-    final updated = List<InterestEntry>.from(state.sent);
-    final idx = updated.indexWhere((e) => e.id == sentId);
-    if (idx == -1) return;
-
-    updated[idx] = updated[idx].copyWith(status: InterestStatus.accepted);
-    emit(state.copyWith(sent: updated));
-  }
-
-  void simulateDecline(String sentId) {
-    final updated = List<InterestEntry>.from(state.sent);
-    final idx = updated.indexWhere((e) => e.id == sentId);
-    if (idx == -1) return;
-
-    updated[idx] = updated[idx].copyWith(status: InterestStatus.declined);
-    emit(state.copyWith(sent: updated));
-  }
 
   // ── Helpers ───────────────────────────────────────────────
 

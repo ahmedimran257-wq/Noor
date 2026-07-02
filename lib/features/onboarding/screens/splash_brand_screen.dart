@@ -1,6 +1,6 @@
 // lib/features/onboarding/screens/splash_brand_screen.dart
 // ============================================================
-// MITHAQ — Splash Brand Screen (Step 0 in the overall flow)
+// MITHAQ - Splash Brand Screen
 // Spec from blueprint:
 //   0ms    — Dark background #0A0A0F
 //   300ms  — ميثاق fades in, scales 0.8→1.0 (600ms ease-out-cubic)
@@ -147,6 +147,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
   }
 
   void _showReferralSheet(BuildContext context) {
+    FocusManager.instance.primaryFocus?.unfocus();
     final l10n = AppLocalizations.of(context);
     final codeCtrl = TextEditingController();
     showModalBottomSheet<void>(
@@ -181,6 +182,8 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                 const SizedBox(height: AppDimensions.space24),
                 TextField(
                   controller: codeCtrl,
+                  onTapOutside: (_) =>
+                      FocusManager.instance.primaryFocus?.unfocus(),
                   style: AppTypography.inputText,
                   textCapitalization: TextCapitalization.characters,
                   maxLength: 6,

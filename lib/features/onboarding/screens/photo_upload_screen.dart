@@ -1,6 +1,6 @@
 // lib/features/onboarding/screens/photo_upload_screen.dart
 // ============================================================
-// MITHAQ — Photo Upload Screen (Onboarding Step 8)
+// MITHAQ - Photo Upload Screen (fast-start step 5)
 // 4-slot grid. Slot 0 = primary photo (required to proceed).
 // Real image picking via image_picker (Camera / Gallery).
 // Compression via flutter_image_compress (webp, 800px, q82).
@@ -37,7 +37,8 @@ enum _FaceResult { found, notFound }
 Future<_FaceResult> _detectFace(Uint8List bytes) async {
   try {
     final tempDir = await getTemporaryDirectory();
-    final tempFile = File('${tempDir.path}/mithaq_face_check_${DateTime.now().millisecondsSinceEpoch}.webp');
+    final tempFile = File(
+        '${tempDir.path}/mithaq_face_check_${DateTime.now().millisecondsSinceEpoch}.webp');
     await tempFile.writeAsBytes(bytes);
 
     final inputImage = InputImage.fromFilePath(tempFile.path);
@@ -85,11 +86,11 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
   final _picker = ImagePicker();
 
   // Compressed bytes for each slot (null = empty)
-  final List<Uint8List?> _bytes     = [null, null, null, null];
+  final List<Uint8List?> _bytes = [null, null, null, null];
   // Face detection result per slot
-  final List<_FaceResult?> _faces   = [null, null, null, null];
+  final List<_FaceResult?> _faces = [null, null, null, null];
   // Temp file paths for each slot
-  final List<String?> _paths        = [null, null, null, null];
+  final List<String?> _paths = [null, null, null, null];
   bool _uploading = false;
   PhotoPrivacy _privacy = PhotoPrivacy.publicAll;
 
@@ -125,8 +126,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
   }
 
   bool get _hasPrimary => _bytes[0] != null;
-  Gender? get _gender =>
-      context.read<OnboardingCubit>().currentData.gender;
+  Gender? get _gender => context.read<OnboardingCubit>().currentData.gender;
 
   /// Shows bottom sheet to pick source, then picks + compresses + scans.
   /// For slot 3 (verification selfie), forces camera — no gallery access.
@@ -147,8 +147,8 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
 
     try {
       final XFile? xfile = await _picker.pickImage(
-        source:    source,
-        maxWidth:  1600,
+        source: source,
+        maxWidth: 1600,
         maxHeight: 1600,
         imageQuality: 90,
       );
@@ -160,11 +160,11 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       // Compress to webp
       final result = await FlutterImageCompress.compressWithFile(
         xfile.path,
-        minWidth:  800,
+        minWidth: 800,
         minHeight: 800,
-        quality:   82,
-        format:    CompressFormat.webp,
-        keepExif:  false,
+        quality: 82,
+        format: CompressFormat.webp,
+        keepExif: false,
       );
 
       if (!mounted) return;
@@ -241,7 +241,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
             ),
           ]),
           backgroundColor: AppColors.softCoral,
-          behavior:        SnackBarBehavior.floating,
+          behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
           ),
@@ -251,6 +251,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
   }
 
   Future<ImageSource?> _showSourceSheet() async {
+    FocusManager.instance.primaryFocus?.unfocus();
     final l10n = AppLocalizations.of(context);
     return showModalBottomSheet<ImageSource>(
       context: context,
@@ -264,9 +265,10 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
           children: [
             const SizedBox(height: AppDimensions.space16),
             Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               decoration: BoxDecoration(
-                color:        AppColors.slateMist.withValues(alpha: 0.4),
+                color: AppColors.slateMist.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -309,14 +311,18 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
   }
 
   Future<void> _advance() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    if (_uploading || !_hasPrimary || _faces[0] != _FaceResult.found) {
+      return;
+    }
     final paths = <String>[];
     for (int i = 0; i < 4; i++) {
       if (_paths[i] != null) paths.add(_paths[i]!);
     }
     final data = context.read<OnboardingCubit>().currentData.copyWith(
-      photoLocalPaths: paths,
-      photoPrivacy:    _privacy,
-    );
+          photoLocalPaths: paths,
+          photoPrivacy: _privacy,
+        );
     setState(() => _uploading = true);
     try {
       await ProfilePhotoService.instance.syncLocalPhotos(
@@ -329,16 +335,18 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         cubit.updateProfile(data);
         Navigator.pop(context, true);
       } else {
-        cubit.saveAndAdvance(data);
+        await cubit.saveAndAdvance(data);
       }
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
+      final message = e is StateError
+          ? e.message
+          : 'Could not upload photos. Please try again.';
       ScaffoldMessenger.of(context)
         ..clearSnackBars()
         ..showSnackBar(
           SnackBar(
-            content: const Text('Could not upload photos. Please try again.',
-                style: AppTypography.body),
+            content: Text(message, style: AppTypography.body),
             backgroundColor: AppColors.surfaceGlassHover,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -380,27 +388,33 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
             case 'son':
               return l10n.onboarding_profileForWhom_relation_son.toLowerCase();
             case 'daughter':
-              return l10n.onboarding_profileForWhom_relation_daughter.toLowerCase();
+              return l10n.onboarding_profileForWhom_relation_daughter
+                  .toLowerCase();
             case 'brother':
-              return l10n.onboarding_profileForWhom_relation_brother.toLowerCase();
+              return l10n.onboarding_profileForWhom_relation_brother
+                  .toLowerCase();
             case 'sister':
-              return l10n.onboarding_profileForWhom_relation_sister.toLowerCase();
+              return l10n.onboarding_profileForWhom_relation_sister
+                  .toLowerCase();
             default:
               return l10n.onboarding_profileForWhom_ward.toLowerCase();
           }
         }
 
         return OnboardingScaffold(
-          ctaLabel:     l10n.legal_button_continue,
-          onCta:        _advance,
-          isCtaEnabled: _hasPrimary && !_uploading && _faces[0] == _FaceResult.found,
+          ctaLabel: l10n.legal_button_continue,
+          onCta: _advance,
+          isCtaEnabled:
+              _hasPrimary && !_uploading && _faces[0] == _FaceResult.found,
           isCtaLoading: isLoading,
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: AppDimensions.space32),
               StepHeader(
-                title:    isGuardian ? l10n.photo_title_guardian : l10n.photo_title_self,
+                title: isGuardian
+                    ? l10n.photo_title_guardian
+                    : l10n.photo_title_self,
                 subtitle: isGuardian
                     ? l10n.photo_subtitle_guardian(getRelationString())
                     : l10n.photo_subtitle_self,
@@ -411,9 +425,10 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
               Container(
                 padding: const EdgeInsets.all(AppDimensions.space12),
                 decoration: BoxDecoration(
-                  color:        AppColors.goldGlow,
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                  border:       Border.all(color: AppColors.goldBorder),
+                  color: AppColors.goldGlow,
+                  borderRadius:
+                      BorderRadius.circular(AppDimensions.radiusButton),
+                  border: Border.all(color: AppColors.goldBorder),
                 ),
                 child: Row(
                   children: [
@@ -437,24 +452,23 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
               // Photo grid (2 × 2)
               GridView.builder(
                 shrinkWrap: true,
-                physics:    const NeverScrollableScrollPhysics(),
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount:   2,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
                   crossAxisSpacing: AppDimensions.space12,
-                  mainAxisSpacing:  AppDimensions.space12,
+                  mainAxisSpacing: AppDimensions.space12,
                   childAspectRatio: 3 / 4,
                 ),
                 itemCount: 4,
                 itemBuilder: (context, i) {
                   return _PhotoSlot(
-                    index:      i,
-                    isPrimary:  i == 0,
-                    bytes:      _bytes[i],
+                    index: i,
+                    isPrimary: i == 0,
+                    bytes: _bytes[i],
                     faceResult: _faces[i],
-                    uploading:  _uploading && _bytes[i] == null,
-                    onAdd:      () => _pickPhoto(i),
-                    onRemove:   () => _removePhoto(i),
+                    uploading: _uploading && _bytes[i] == null,
+                    onAdd: () => _pickPhoto(i),
+                    onRemove: () => _removePhoto(i),
                   );
                 },
               ),
@@ -463,25 +477,32 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
               const SizedBox(height: AppDimensions.space12),
               Row(
                 children: [
-                  Expanded(child: Center(
-                    child: _SlotLabel(l10n.photo_label_primary, isRequired: true),
+                  Expanded(
+                      child: Center(
+                    child:
+                        _SlotLabel(l10n.photo_label_primary, isRequired: true),
                   )),
                   const SizedBox(width: AppDimensions.space12),
-                  Expanded(child: Center(
-                    child: _SlotLabel(l10n.photo_label_photo2, isRequired: false),
+                  Expanded(
+                      child: Center(
+                    child:
+                        _SlotLabel(l10n.photo_label_photo2, isRequired: false),
                   )),
                 ],
               ),
               const SizedBox(height: AppDimensions.space4),
               Row(
                 children: [
-                  Expanded(child: Center(
-                    child: _SlotLabel(l10n.photo_label_photo3, isRequired: false),
+                  Expanded(
+                      child: Center(
+                    child:
+                        _SlotLabel(l10n.photo_label_photo3, isRequired: false),
                   )),
                   const SizedBox(width: AppDimensions.space12),
-                  Expanded(child: Center(
-                    child: _SlotLabel(l10n.photo_label_selfie,
-                        isRequired: false),
+                  Expanded(
+                      child: Center(
+                    child:
+                        _SlotLabel(l10n.photo_label_selfie, isRequired: false),
                   )),
                 ],
               ),
@@ -489,10 +510,11 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
               // Privacy toggle for women
               if (_gender == Gender.female) ...[
                 const SizedBox(height: AppDimensions.space24),
-                Text(l10n.photo_privacy_label, style: AppTypography.sectionLabel),
+                Text(l10n.photo_privacy_label,
+                    style: AppTypography.sectionLabel),
                 const SizedBox(height: AppDimensions.space12),
                 _PrivacyToggle(
-                  current:   _privacy,
+                  current: _privacy,
                   onChanged: (p) => setState(() => _privacy = p),
                 ),
               ],
@@ -519,26 +541,30 @@ class _PhotoSlot extends StatelessWidget {
     required this.onRemove,
   });
 
-  final int           index;
-  final bool          isPrimary;
-  final Uint8List?    bytes;
-  final _FaceResult?  faceResult;
-  final bool          uploading;
-  final VoidCallback  onAdd;
-  final VoidCallback  onRemove;
+  final int index;
+  final bool isPrimary;
+  final Uint8List? bytes;
+  final _FaceResult? faceResult;
+  final bool uploading;
+  final VoidCallback onAdd;
+  final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isFilled = bytes != null;
     return GestureDetector(
-      onTap: isFilled ? null : onAdd,
+      onTap: isFilled
+          ? null
+          : () {
+              FocusManager.instance.primaryFocus?.unfocus();
+              onAdd();
+            },
       child: AnimatedContainer(
         duration: AppDimensions.durationTransition,
         decoration: BoxDecoration(
-          color: isFilled
-              ? AppColors.surfaceGlassHover
-              : AppColors.surfaceGlass,
+          color:
+              isFilled ? AppColors.surfaceGlassHover : AppColors.surfaceGlass,
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
           border: Border.all(
             color: isFilled
@@ -546,9 +572,8 @@ class _PhotoSlot extends StatelessWidget {
                 : isPrimary
                     ? AppColors.champagneGold.withValues(alpha: 0.3)
                     : AppColors.cardBorder,
-            width: isFilled
-                ? AppDimensions.borderFocus
-                : AppDimensions.borderThin,
+            width:
+                isFilled ? AppDimensions.borderFocus : AppDimensions.borderThin,
           ),
         ),
         child: Stack(
@@ -556,8 +581,7 @@ class _PhotoSlot extends StatelessWidget {
           children: [
             if (isFilled)
               ClipRRect(
-                borderRadius:
-                    BorderRadius.circular(AppDimensions.radiusCard),
+                borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
                 child: Image.memory(
                   bytes!,
                   fit: BoxFit.cover,
@@ -576,18 +600,20 @@ class _PhotoSlot extends StatelessWidget {
             // Face detection banner (bottom of filled slot)
             if (isFilled && faceResult != null)
               Positioned(
-                bottom: 0, left: 0, right: 0,
+                bottom: 0,
+                left: 0,
+                right: 0,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppDimensions.space8,
-                    vertical:   AppDimensions.space4,
+                    vertical: AppDimensions.space4,
                   ),
                   decoration: BoxDecoration(
                     color: faceResult == _FaceResult.found
                         ? AppColors.verifiedTeal.withValues(alpha: 0.9)
                         : AppColors.softCoral.withValues(alpha: 0.9),
                     borderRadius: const BorderRadius.only(
-                      bottomLeft:  Radius.circular(AppDimensions.radiusCard),
+                      bottomLeft: Radius.circular(AppDimensions.radiusCard),
                       bottomRight: Radius.circular(AppDimensions.radiusCard),
                     ),
                   ),
@@ -599,7 +625,7 @@ class _PhotoSlot extends StatelessWidget {
                             ? Icons.check_circle_outline_rounded
                             : Icons.warning_amber_rounded,
                         color: Colors.white,
-                        size:  12,
+                        size: 12,
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -607,7 +633,7 @@ class _PhotoSlot extends StatelessWidget {
                             ? l10n.photo_face_detected
                             : l10n.photo_no_face,
                         style: AppTypography.caption.copyWith(
-                          color:    Colors.white,
+                          color: Colors.white,
                           fontSize: 10,
                         ),
                       ),
@@ -619,11 +645,16 @@ class _PhotoSlot extends StatelessWidget {
             // Remove button
             if (isFilled)
               Positioned(
-                top: 8, right: 8,
+                top: 8,
+                right: 8,
                 child: GestureDetector(
-                  onTap: onRemove,
+                  onTap: () {
+                    FocusManager.instance.primaryFocus?.unfocus();
+                    onRemove();
+                  },
                   child: Container(
-                    width: 28, height: 28,
+                    width: 28,
+                    height: 28,
                     decoration: BoxDecoration(
                       color: AppColors.softCoral.withValues(alpha: 0.9),
                       shape: BoxShape.circle,
@@ -655,18 +686,16 @@ class _EmptySlot extends StatelessWidget {
               ? Icons.add_photo_alternate_outlined
               : Icons.add_a_photo_outlined,
           color: isPrimary ? AppColors.champagneGold : AppColors.slateMist,
-          size:  AppDimensions.iconSizeXLarge,
+          size: AppDimensions.iconSizeXLarge,
         ),
         const SizedBox(height: AppDimensions.space8),
         Padding(
-          padding: const EdgeInsets.symmetric(
-              horizontal: AppDimensions.space12),
+          padding:
+              const EdgeInsets.symmetric(horizontal: AppDimensions.space12),
           child: Text(
             isPrimary ? l10n.photo_add_main_required : l10n.photo_add_photo,
             style: AppTypography.caption.copyWith(
-              color: isPrimary
-                  ? AppColors.champagneGold
-                  : AppColors.slateMist,
+              color: isPrimary ? AppColors.champagneGold : AppColors.slateMist,
             ),
             textAlign: TextAlign.center,
           ),
@@ -679,7 +708,7 @@ class _EmptySlot extends StatelessWidget {
 class _SlotLabel extends StatelessWidget {
   const _SlotLabel(this.text, {required this.isRequired});
   final String text;
-  final bool   isRequired;
+  final bool isRequired;
 
   @override
   Widget build(BuildContext context) {
@@ -689,9 +718,10 @@ class _SlotLabel extends StatelessWidget {
         Text(text, style: AppTypography.caption),
         if (isRequired) ...[
           const SizedBox(width: 4),
-          Text('*', style: AppTypography.caption.copyWith(
-            color: AppColors.softCoral,
-          )),
+          Text('*',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.softCoral,
+              )),
         ],
       ],
     );
@@ -711,27 +741,27 @@ class _PrivacyToggle extends StatelessWidget {
     return Column(
       children: [
         _PrivacyTile(
-          icon:       Icons.public_outlined,
-          label:      l10n.photo_privacy_everyone,
-          subtitle:   l10n.photo_privacy_everyone_sub,
+          icon: Icons.public_outlined,
+          label: l10n.photo_privacy_everyone,
+          subtitle: l10n.photo_privacy_everyone_sub,
           isSelected: current == PhotoPrivacy.publicAll,
-          onTap:      () => onChanged(PhotoPrivacy.publicAll),
+          onTap: () => onChanged(PhotoPrivacy.publicAll),
         ),
         const SizedBox(height: AppDimensions.space8),
         _PrivacyTile(
-          icon:       Icons.lock_outline_rounded,
-          label:      l10n.photo_privacy_mutual,
-          subtitle:   l10n.photo_privacy_mutual_sub,
+          icon: Icons.lock_outline_rounded,
+          label: l10n.photo_privacy_mutual,
+          subtitle: l10n.photo_privacy_mutual_sub,
           isSelected: current == PhotoPrivacy.mutualOnly,
-          onTap:      () => onChanged(PhotoPrivacy.mutualOnly),
+          onTap: () => onChanged(PhotoPrivacy.mutualOnly),
         ),
         const SizedBox(height: AppDimensions.space8),
         _PrivacyTile(
-          icon:       Icons.visibility_off_outlined,
-          label:      l10n.photo_privacy_request,
-          subtitle:   l10n.photo_privacy_request_sub,
+          icon: Icons.visibility_off_outlined,
+          label: l10n.photo_privacy_request,
+          subtitle: l10n.photo_privacy_request_sub,
           isSelected: current == PhotoPrivacy.requestOnly,
-          onTap:      () => onChanged(PhotoPrivacy.requestOnly),
+          onTap: () => onChanged(PhotoPrivacy.requestOnly),
         ),
       ],
     );
@@ -747,15 +777,18 @@ class _PrivacyTile extends StatelessWidget {
     required this.onTap,
   });
   final IconData icon;
-  final String   label;
-  final String   subtitle;
-  final bool     isSelected;
+  final String label;
+  final String subtitle;
+  final bool isSelected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        FocusManager.instance.primaryFocus?.unfocus();
+        onTap();
+      },
       child: AnimatedContainer(
         duration: AppDimensions.durationTransition,
         padding: const EdgeInsets.all(AppDimensions.space16),
@@ -774,20 +807,20 @@ class _PrivacyTile extends StatelessWidget {
         child: Row(
           children: [
             Icon(icon,
-                color: isSelected
-                    ? AppColors.champagneGold
-                    : AppColors.slateMist,
+                color:
+                    isSelected ? AppColors.champagneGold : AppColors.slateMist,
                 size: AppDimensions.iconSizeLarge),
             const SizedBox(width: AppDimensions.space12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: AppTypography.bodyMedium.copyWith(
-                    color: isSelected
-                        ? AppColors.champagneGold
-                        : AppColors.pearlWhite,
-                  )),
+                  Text(label,
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: isSelected
+                            ? AppColors.champagneGold
+                            : AppColors.pearlWhite,
+                      )),
                   const SizedBox(height: AppDimensions.space4),
                   Text(subtitle, style: AppTypography.caption),
                 ],
@@ -795,7 +828,8 @@ class _PrivacyTile extends StatelessWidget {
             ),
             if (isSelected)
               Container(
-                width: 20, height: 20,
+                width: 20,
+                height: 20,
                 decoration: const BoxDecoration(
                   color: AppColors.champagneGold,
                   shape: BoxShape.circle,

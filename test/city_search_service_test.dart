@@ -1,100 +1,91 @@
-import 'dart:async';
-import 'dart:convert';
-
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:mithaq/core/services/country_context_service.dart';
 
 void main() {
   final service = CountryContextService.instance;
 
-  tearDown(service.resetCitySearchTestOverrides);
-
-  test('returns the Supabase cache before Photon', () async {
-    var photonCalled = false;
-    service.cityCacheSearchOverride = (_, __) async => const [
-          CityResult(
-            city: 'Hyderabad',
-            state: 'Telangana',
-            country: 'India',
-            countryCode: 'IN',
-            postalCode: '',
-            fullAddress: 'Hyderabad, Telangana, India',
-            placeId: '42',
-            lat: 17.385,
-            lng: 78.4867,
-          ),
-        ];
-    service.photonRequestOverride = (_) {
-      photonCalled = true;
-      return Future.value(http.Response('{}', 200));
-    };
-
-    final results = await service.searchCities('hyde', countryCode: 'IN');
-
-    expect(results.single.placeId, '42');
-    expect(photonCalled, isFalse);
+  test('returns empty results before there is enough query text', () async {
+    expect(
+      await service.searchCities('d', countryCode: 'IN'),
+      isEmpty,
+    );
+    expect(
+      await service.searchRegions('d', countryCode: 'IN'),
+      isEmpty,
+    );
   });
 
-  test('falls back to Photon and keeps only the selected country', () async {
-    service.cityCacheSearchOverride = (_, __) async => const [];
-    service.photonRequestOverride = (_) async => http.Response(
-          jsonEncode({
-            'features': [
-              _photonFeature('Kurnool', 'IN', 78.04, 15.83),
-              _photonFeature('Kurnool', 'US', -122.0, 37.0),
-            ],
-          }),
-          200,
-        );
-
+  test('uses live Photon fallback and keeps only the selected country',
+      () async {
     final results = await service.searchCities('kurnool', countryCode: 'IN');
 
-    expect(results, hasLength(1));
-    expect(results.single.countryCode, 'IN');
-    expect(results.single.city, 'Kurnool');
+    expect(results, isNotEmpty);
+    expect(results.every((r) => r.countryCode == 'IN'), isTrue);
+    expect(results.first.city.toLowerCase(), contains('kurnool'));
+    expect(results.first.placeId, startsWith('photon-'));
   });
 
-  test('returns empty results after a Photon timeout', () async {
-    service.cityCacheSearchOverride = (_, __) async => const [];
-    service.photonTimeout = const Duration(milliseconds: 1);
-    service.photonRequestOverride = (_) => Completer<http.Response>().future;
+  test('uses live Photon fallback for global capital cities', () async {
+    final results = await service.searchCities('jakarta', countryCode: 'ID');
 
-    expect(
-      await service.searchCities('delhi', countryCode: 'IN'),
-      isEmpty,
-    );
+    expect(results, isNotEmpty);
+    expect(results.every((r) => r.countryCode == 'ID'), isTrue);
+    expect(results.any((r) => r.city.toLowerCase() == 'jakarta'), isTrue);
   });
 
-  test('returns empty results when Photon has no features', () async {
-    service.cityCacheSearchOverride = (_, __) async => const [];
-    service.photonRequestOverride = (_) async => http.Response(
-          jsonEncode({'features': []}),
-          200,
-        );
+  test('uses the same live Photon fallback across global countries', () async {
+    final samples = <({String query, String countryCode})>[
+      (query: 'london', countryCode: 'GB'),
+      (query: 'cairo', countryCode: 'EG'),
+      (query: 'kuala lumpur', countryCode: 'MY'),
+      (query: 'nairobi', countryCode: 'KE'),
+      (query: 'toronto', countryCode: 'CA'),
+      (query: 'sydney', countryCode: 'AU'),
+    ];
 
-    expect(
-      await service.searchCities('unknown', countryCode: 'IN'),
-      isEmpty,
+    for (final sample in samples) {
+      final results = await service.searchCities(
+        sample.query,
+        countryCode: sample.countryCode,
+      );
+
+      expect(results, isNotEmpty, reason: sample.query);
+      expect(
+        results.every((r) => r.countryCode == sample.countryCode),
+        isTrue,
+        reason: sample.query,
+      );
+      expect(
+        results.every((r) => r.lat != 0 && r.lng != 0),
+        isTrue,
+        reason: sample.query,
+      );
+    }
+  });
+
+  test('uses live Photon fallback for global states and regions', () async {
+    final regions = await service.searchRegions('bali', countryCode: 'ID');
+
+    expect(regions, isNotEmpty);
+    expect(regions.every((r) => r.countryCode == 'ID'), isTrue);
+    expect(regions.any((r) => r.name.toLowerCase() == 'bali'), isTrue);
+  });
+
+  test('accepts real areas when users type them into city search', () async {
+    final results = await service.searchCities('bali', countryCode: 'ID');
+
+    expect(results, isNotEmpty);
+    expect(results.every((r) => r.countryCode == 'ID'), isTrue);
+    expect(results.any((r) => r.city.toLowerCase().contains('bali')), isTrue);
+  });
+
+  test('region filter rejects cities outside the selected state', () async {
+    final results = await service.searchCities(
+      'kurnool',
+      countryCode: 'IN',
+      regionName: 'Kerala',
     );
+
+    expect(results, isEmpty);
   });
 }
-
-Map<String, Object> _photonFeature(
-  String city,
-  String countryCode,
-  double lng,
-  double lat,
-) =>
-    {
-      'properties': {
-        'name': city,
-        'state': 'State',
-        'country': 'Country',
-        'countrycode': countryCode.toLowerCase(),
-        'osm_id': 1,
-      },
-      'geometry': {
-        'coordinates': [lng, lat],
-      },
-    };

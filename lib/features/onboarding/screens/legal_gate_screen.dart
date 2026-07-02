@@ -3,7 +3,7 @@
 // MITHAQ — Legal Gate Screen
 // Two mandatory checkboxes (age + terms).
 // Cannot proceed without both checked.
-// Consent version logged (in production: to user_consents table).
+// Consent is cached pre-auth and flushed to user_consents after email OTP auth.
 // ============================================================
 
 import 'package:flutter/gestures.dart';
@@ -13,10 +13,11 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/buttons/mithaq_primary_button.dart';
+import '../../../core/widgets/buttons/mithaq_secondary_button.dart';
 import '../../../core/router/app_router.dart';
 import '../../home/screens/legal_doc_screen.dart';
 import '../../../l10n/generated/app_localizations.dart';
-import '../../../core/services/supabase_service.dart';
+import '../../../core/services/legal_consent_service.dart';
 
 class LegalGateScreen extends StatefulWidget {
   const LegalGateScreen({super.key});
@@ -29,9 +30,34 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
   bool _ageConfirmed = false;
   bool _termsConfirmed = false;
   bool _specialCategoryConsent = false;
+  bool _isSaving = false;
+  String? _saveError;
 
   bool get _canProceed =>
-      _ageConfirmed && _termsConfirmed && _specialCategoryConsent;
+      !_isSaving && _ageConfirmed && _termsConfirmed && _specialCategoryConsent;
+
+  Future<void> _continue() async {
+    if (!_canProceed) return;
+    setState(() {
+      _isSaving = true;
+      _saveError = null;
+    });
+
+    final saved =
+        await LegalConsentService.instance.recordPendingOnboardingConsents();
+    if (!mounted) return;
+
+    if (!saved) {
+      setState(() {
+        _isSaving = false;
+        _saveError = 'Could not save. Please try again.';
+      });
+      return;
+    }
+
+    setState(() => _isSaving = false);
+    context.push('${AppRoutes.email}?mode=signup');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -248,37 +274,25 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
                   AppDimensions.space32,
                 ),
                 child: AnimatedOpacity(
-                  opacity: _canProceed ? 1.0 : 0.45,
+                  opacity: _canProceed || _isSaving ? 1.0 : 0.45,
                   duration: AppDimensions.durationTransition,
-                  child: MithaqPrimaryButton(
-                    label: l10n.legal_button_continue,
-                    onTap: _canProceed
-                        ? () async {
-                            // Log Special Category consent to DB
-                            if (SupabaseService.isInitialized) {
-                              try {
-                                final userId = SupabaseService.currentUserId;
-                                if (userId != null) {
-                                  await SupabaseService.client
-                                      .from('user_consents')
-                                      .insert({
-                                    'user_id': userId,
-                                    'consent_type':
-                                        'special_category_religious',
-                                    'version': '1.0',
-                                    'granted_at': DateTime.now()
-                                        .toUtc()
-                                        .toIso8601String(),
-                                  });
-                                }
-                              } catch (e) {
-                                debugPrint('LegalGate: consent log error: $e');
-                              }
-                            }
-                            if (!context.mounted) return;
-                            context.push('${AppRoutes.email}?mode=signup');
-                          }
-                        : null,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (_saveError != null) ...[
+                        _LegalSaveError(
+                          message: _saveError!,
+                          isLoading: _isSaving,
+                          onRetry: _continue,
+                        ),
+                        const SizedBox(height: AppDimensions.space12),
+                      ],
+                      MithaqPrimaryButton(
+                        label: l10n.legal_button_continue,
+                        onTap: _canProceed ? _continue : null,
+                        isLoading: _isSaving,
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -291,6 +305,64 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
 }
 
 // ── Terms Summary Card ────────────────────────────────────────
+
+class _LegalSaveError extends StatelessWidget {
+  const _LegalSaveError({
+    required this.message,
+    required this.isLoading,
+    required this.onRetry,
+  });
+
+  final String message;
+  final bool isLoading;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppDimensions.space14),
+      decoration: BoxDecoration(
+        color: AppColors.softCoral.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+        border: Border.all(
+          color: AppColors.softCoral.withValues(alpha: 0.55),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.error_outline_rounded,
+                color: AppColors.softCoral,
+                size: AppDimensions.iconSizeMedium,
+              ),
+              const SizedBox(width: AppDimensions.space8),
+              Expanded(
+                child: Text(
+                  message,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.pearlWhite,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppDimensions.space10),
+          MithaqSecondaryButton(
+            label: 'Retry',
+            icon: Icons.refresh_rounded,
+            isLoading: isLoading,
+            onTap: onRetry,
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _TermsSummaryCard extends StatelessWidget {
   @override
@@ -382,7 +454,10 @@ class _MithaqCheckbox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => onChanged(!value),
+      onTap: () {
+        FocusManager.instance.primaryFocus?.unfocus();
+        onChanged(!value);
+      },
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

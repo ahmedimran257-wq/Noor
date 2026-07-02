@@ -1,11 +1,8 @@
 // lib/features/onboarding/screens/basic_identity_screen.dart
 // ============================================================
-// MITHAQ — Basic Identity Screen (Onboarding Step 1)
-// First name, last name, date of birth, gender, city search,
-// height stepper, complexion (optional), community (optional),
-// mother tongue (required, country-based),
-// residency status (optional), special needs (optional).
-// Phase 2: DemographicsConfig + CopyEngine integrated.
+// MITHAQ - Basic Identity Screen (fast-start step 3)
+// Saves required profile identity after gender is mirrored to public.users.
+// Location is read from Quick Location and shown as confirmed context.
 // ============================================================
 
 import 'package:flutter/material.dart';
@@ -15,6 +12,7 @@ import 'package:mithaq/l10n/generated/app_localizations.dart';
 import '../../../core/data/country_data.dart';
 import '../../../core/services/country_context_service.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
+import '../../../core/cubits/auth/auth_state.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_state.dart';
 import '../../../core/models/onboarding_data.dart';
@@ -27,9 +25,6 @@ import '../../../core/widgets/inputs/mithaq_text_field.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
 
-// ── City data — 300+ cities with country metadata ─────────────
-
-/// Each map has keys: 'name', 'country' (ISO-2), 'countryName'.
 // ── Complexion options ─────────────────────────────────────────
 
 const _kComplexions = <String>[
@@ -74,6 +69,8 @@ class BasicIdentityScreen extends StatefulWidget {
 class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
   final _firstNameCtrl = TextEditingController();
   final _lastNameCtrl = TextEditingController();
+  final _guardianEmailCtrl = TextEditingController();
+  final _guardianPhoneCtrl = TextEditingController();
   DateTime? _dob;
   Gender? _gender;
   String _dobError = '';
@@ -100,22 +97,33 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
 
   // Guardian mode — derived from previous screens
   bool _isGuardianMode = false;
-  bool _genderLocked = false; // true if gender was pre-filled by guardian flow
   String _candidateLabel = ''; // 'son', 'daughter', 'brother', 'sister'
 
   @override
   void initState() {
     super.initState();
+    _firstNameCtrl.addListener(_refreshCtaState);
+    _lastNameCtrl.addListener(_refreshCtaState);
+    _guardianEmailCtrl.addListener(_refreshCtaState);
+    _guardianPhoneCtrl.addListener(_refreshCtaState);
     final data = context.read<OnboardingCubit>().currentData;
-    _isGuardianMode = data.isGuardianMode;
-    _candidateLabel = data.profileCreatorRelation ?? 'self';
+    final authState = context.read<AuthCubit>().state;
+    _isGuardianMode = data.profileOwnerType == ProfileOwnerType.guardian ||
+        data.profileFor == ProfileFor.guardian ||
+        data.isGuardianMode ||
+        (authState is AuthAuthenticated && authState.isGuardianPath);
+    _candidateLabel =
+        data.wardRelationship ?? data.profileCreatorRelation ?? 'self';
+    final authEmail = authState is AuthAuthenticated ? authState.email : null;
+    _guardianEmailCtrl.text =
+        data.guardianEmail ?? data.email ?? authEmail ?? '';
+    _guardianPhoneCtrl.text = data.guardianPhone ?? '';
 
-    if (_isGuardianMode && data.gender != null) {
-      _gender = data.gender;
-      _genderLocked = true;
-    } else {
-      _gender = data.gender;
-    }
+    _gender = _isGuardianMode
+        ? data.wardGender ??
+            data.gender ??
+            _wardGenderForRelation(_candidateLabel)
+        : data.gender;
 
     _firstNameCtrl.text = data.firstName ?? '';
     _lastNameCtrl.text = data.lastName ?? '';
@@ -136,11 +144,16 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       }
     }
 
+    final savedStateName = data.stateName?.trim();
+    if (savedStateName != null && savedStateName.isNotEmpty) {
+      _selectedStateName = savedStateName;
+    }
+
     if (data.cityName != null) {
       final parts = data.cityName!.split(', ');
       if (parts.length > 1) {
         _selectedCity = parts[0];
-        _selectedStateName = parts[1];
+        _selectedStateName ??= parts[1];
       } else {
         _selectedCity = data.cityName;
       }
@@ -194,16 +207,27 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       context.read<OnboardingCubit>().currentData.profileCreatorRelation ??
       'self';
 
+  bool get _hasConfirmedLocation {
+    final data = context.read<OnboardingCubit>().currentData;
+    return _selectedCountryCode != null &&
+        _selectedCity != null &&
+        data.lat != null &&
+        data.lng != null;
+  }
+
+  bool get _hasGuardianDetails {
+    if (!_isGuardianMode) return true;
+    return _isValidEmail(_guardianEmailCtrl.text.trim());
+  }
+
   bool get _canProceed =>
       _firstNameCtrl.text.trim().isNotEmpty &&
       _lastNameCtrl.text.trim().isNotEmpty &&
       _dob != null &&
       _dobError.isEmpty &&
       _gender != null &&
-      _selectedCountryCode != null &&
-      _selectedCity != null &&
-      _selectedStateName != null &&
-      _selectedStateName!.trim().isNotEmpty &&
+      _hasGuardianDetails &&
+      _hasConfirmedLocation &&
       _motherTongue != null;
 
   void _showValidation() {
@@ -214,22 +238,29 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
     if (_dob == null) missing.add('Date of birth');
     if (_dobError.isNotEmpty) missing.add('Valid date of birth (18+)');
     if (_gender == null) missing.add('Gender');
-    if (_selectedCountryCode == null) missing.add('Country');
-    if (_selectedCity == null || _selectedCity!.trim().isEmpty) {
-      missing.add('City');
+    if (_isGuardianMode && !_isValidEmail(_guardianEmailCtrl.text.trim())) {
+      missing.add('Guardian email');
     }
-    if (_selectedStateName == null || _selectedStateName!.trim().isEmpty) {
-      missing.add('State / Region');
-    }
+    if (!_hasConfirmedLocation) missing.add('Confirmed location');
     if (_motherTongue == null) missing.add('Mother tongue');
     showValidationSnackbar(context, missing);
   }
 
   @override
   void dispose() {
+    _firstNameCtrl.removeListener(_refreshCtaState);
+    _lastNameCtrl.removeListener(_refreshCtaState);
+    _guardianEmailCtrl.removeListener(_refreshCtaState);
+    _guardianPhoneCtrl.removeListener(_refreshCtaState);
     _firstNameCtrl.dispose();
     _lastNameCtrl.dispose();
+    _guardianEmailCtrl.dispose();
+    _guardianPhoneCtrl.dispose();
     super.dispose();
+  }
+
+  void _refreshCtaState() {
+    if (mounted) setState(() {});
   }
 
   String _getLocalizedRelation(AppLocalizations l10n) {
@@ -246,6 +277,39 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       return l10n.onboarding_profileForWhom_relation_sister;
     }
     return _candidateLabel;
+  }
+
+  String _wardPhrase() {
+    switch (_candidateLabel) {
+      case 'son':
+        return 'your son';
+      case 'daughter':
+        return 'your daughter';
+      case 'brother':
+        return 'your brother';
+      case 'sister':
+        return 'your sister';
+      default:
+        return "the person you're registering";
+    }
+  }
+
+  Gender? _wardGenderForRelation(String relation) {
+    switch (relation) {
+      case 'daughter':
+      case 'sister':
+        return Gender.female;
+      case 'son':
+      case 'brother':
+        return Gender.male;
+      default:
+        return null;
+    }
+  }
+
+  bool _isValidEmail(String value) {
+    if (value.isEmpty) return false;
+    return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value);
   }
 
   String _getLocalizedComplexion(AppLocalizations l10n, String raw) {
@@ -307,6 +371,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
   }
 
   void _pickDob() async {
+    _dismissKeyboard();
     final l10n = AppLocalizations.of(context);
     final picked = await showDatePicker(
       context: context,
@@ -354,7 +419,10 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       '${d.month.toString().padLeft(2, '0')} / '
       '${d.year}';
 
+  void _dismissKeyboard() => FocusManager.instance.primaryFocus?.unfocus();
+
   void _showMotherTonguePicker() {
+    _dismissKeyboard();
     final l10n = AppLocalizations.of(context);
     if (_selectedCountryCode == null || _selectedCity == null) {
       showValidationSnackbar(context, ['City']);
@@ -380,6 +448,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
         options: _loadedLanguages,
         selected: _motherTongue,
         onSelected: (v) {
+          _dismissKeyboard();
           setState(() => _motherTongue = v);
           Navigator.pop(context);
         },
@@ -388,6 +457,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
   }
 
   void _showCommunityPicker() {
+    _dismissKeyboard();
     final l10n = AppLocalizations.of(context);
     showModalBottomSheet<void>(
       context: context,
@@ -401,6 +471,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
         options: _loadedCommunities,
         selected: _community,
         onSelected: (v) {
+          _dismissKeyboard();
           setState(() => _community = v);
           Navigator.pop(context);
         },
@@ -408,11 +479,23 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
     );
   }
 
-  void _advance() async {
+  Future<void> _advance() async {
+    _dismissKeyboard();
     final authCubit = context.read<AuthCubit>();
     final onboardingCubit = context.read<OnboardingCubit>();
+    final guardianPhone = _guardianPhoneCtrl.text.trim();
 
     final data = onboardingCubit.currentData.copyWith(
+      profileFor: _isGuardianMode ? ProfileFor.guardian : ProfileFor.myself,
+      profileOwnerType:
+          _isGuardianMode ? ProfileOwnerType.guardian : ProfileOwnerType.self,
+      wardRelationship: _isGuardianMode ? _candidateLabel : null,
+      wardGender: _isGuardianMode ? _gender : null,
+      isGuardianMode: _isGuardianMode,
+      guardianMode: _isGuardianMode ? 'passive' : 'none',
+      guardianEmail: _isGuardianMode ? _guardianEmailCtrl.text.trim() : null,
+      guardianPhone:
+          _isGuardianMode && guardianPhone.isNotEmpty ? guardianPhone : null,
       firstName: _firstNameCtrl.text.trim(),
       lastName: _lastNameCtrl.text.trim(),
       dateOfBirth: _dob,
@@ -426,15 +509,26 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
     );
 
     // ── Gender & Country propagation ──────────────────────────
-    // Propagate gender to AuthCubit NOW so all subscription gates read the correct value immediately.
-    // Fixed Flaw 20: Avoid calling setGender twice in guardian flow.
-    if (_gender != null && !_isGuardianMode) {
-      authCubit.setGender(_gender == Gender.female ? 'female' : 'male');
+    // Persist gender before profile writes so DB triggers use the same value.
+    if (_gender != null) {
+      try {
+        // public.users.gender is the DB source of truth. The profiles.gender
+        // trigger reads from it, so this must finish before saveAndAdvance().
+        await authCubit.setGender(_gender == Gender.female ? 'female' : 'male');
+      } catch (_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not save gender. Please try again.'),
+          ),
+        );
+        return;
+      }
     }
 
     // Save country code for regional pricing (subscription screen)
     if (mounted) {
-      onboardingCubit.saveAndAdvance(data);
+      await onboardingCubit.saveAndAdvance(data);
     }
   }
 
@@ -489,14 +583,37 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
 
               StepHeader(
                 title: _isGuardianMode
-                    ? l10n.onboarding_basicIdentity_title_guardian(
-                        localizedRelation)
+                    ? 'Tell us about ${_wardPhrase()}'
                     : l10n.onboarding_basicIdentity_title,
                 subtitle: _isGuardianMode
-                    ? l10n.onboarding_basicIdentity_subtitle_guardian
+                    ? 'These details describe the person you are registering, not you.'
                     : l10n.onboarding_basicIdentity_subtitle_self,
               ),
               const SizedBox(height: AppDimensions.space32),
+
+              if (_isGuardianMode) ...[
+                const Text('GUARDIAN CONTACT INFO',
+                    style: AppTypography.sectionLabel),
+                const SizedBox(height: AppDimensions.space8),
+                MithaqTextField(
+                  controller: _guardianEmailCtrl,
+                  label: 'Guardian email',
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  prefixIcon: Icons.email_outlined,
+                  readOnly: true,
+                ),
+                const SizedBox(height: AppDimensions.space12),
+                MithaqTextField(
+                  controller: _guardianPhoneCtrl,
+                  label: 'Guardian phone (optional)',
+                  keyboardType: TextInputType.phone,
+                  textInputAction: TextInputAction.next,
+                  prefixIcon: Icons.phone_outlined,
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: AppDimensions.space28),
+              ],
 
               // Name row
               Row(
@@ -569,57 +686,15 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                         .copyWith(color: AppColors.softCoral)),
               ],
 
-              const SizedBox(height: AppDimensions.space20),
+              if (!_isGuardianMode) ...[
+                const SizedBox(height: AppDimensions.space20),
 
-              // Gender
-              Text(
-                _isGuardianMode
-                    ? l10n.onboarding_label_gender_guardian.toUpperCase()
-                    : l10n.onboarding_label_gender_self.toUpperCase(),
-                style: AppTypography.sectionLabel,
-              ),
-              const SizedBox(height: AppDimensions.space8),
-              if (_genderLocked) ...[
-                // Gender is pre-set by guardian flow — show read-only
-                Container(
-                  height: AppDimensions.buttonHeight,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppDimensions.space16,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.champagneGold.withValues(alpha: 0.08),
-                    borderRadius:
-                        BorderRadius.circular(AppDimensions.radiusButton),
-                    border: Border.all(color: AppColors.champagneGold),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        _gender == Gender.male
-                            ? Icons.male_rounded
-                            : Icons.female_rounded,
-                        color: AppColors.champagneGold,
-                        size: 20,
-                      ),
-                      const SizedBox(width: AppDimensions.space12),
-                      Text(
-                        _gender == Gender.male
-                            ? l10n.onboarding_label_male
-                            : l10n.onboarding_label_female,
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: AppColors.champagneGold,
-                        ),
-                      ),
-                      const Spacer(),
-                      const Icon(
-                        Icons.lock_outline_rounded,
-                        color: AppColors.slateMist,
-                        size: 14,
-                      ),
-                    ],
-                  ),
+                // Gender
+                Text(
+                  l10n.onboarding_label_gender_self.toUpperCase(),
+                  style: AppTypography.sectionLabel,
                 ),
-              ] else ...[
+                const SizedBox(height: AppDimensions.space8),
                 Row(
                   children: [
                     Expanded(
@@ -627,7 +702,10 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                         label: l10n.onboarding_label_male,
                         icon: Icons.male_rounded,
                         isSelected: _gender == Gender.male,
-                        onTap: () => setState(() => _gender = Gender.male),
+                        onTap: () {
+                          _dismissKeyboard();
+                          setState(() => _gender = Gender.male);
+                        },
                       ),
                     ),
                     const SizedBox(width: AppDimensions.space12),
@@ -636,61 +714,21 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                         label: l10n.onboarding_label_female,
                         icon: Icons.female_rounded,
                         isSelected: _gender == Gender.female,
-                        onTap: () => setState(() => _gender = Gender.female),
+                        onTap: () {
+                          _dismissKeyboard();
+                          setState(() => _gender = Gender.female);
+                        },
                       ),
                     ),
                   ],
                 ),
               ],
 
+              // Location comes only from Quick Location; Basic Identity shows it read-only.
               const SizedBox(height: AppDimensions.space20),
 
-              // ── Country Selector ──────────────────────────────────
-              Text(
-                  _isGuardianMode
-                      ? l10n.onboarding_label_country_guardian.toUpperCase()
-                      : l10n.onboarding_label_country_self.toUpperCase(),
-                  style: AppTypography.sectionLabel),
-              const SizedBox(height: AppDimensions.space12),
-              GestureDetector(
-                onTap: null,
-                child: Container(
-                  height: AppDimensions.buttonHeight,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: AppDimensions.space16),
-                  decoration: BoxDecoration(
-                    color: AppColors.champagneGold.withValues(alpha: 0.08),
-                    borderRadius:
-                        BorderRadius.circular(AppDimensions.radiusButton),
-                    border: Border.all(color: AppColors.champagneGold),
-                  ),
-                  child: Row(children: [
-                    const Icon(Icons.public_rounded,
-                        color: AppColors.champagneGold,
-                        size: AppDimensions.iconSizeMedium),
-                    const SizedBox(width: AppDimensions.space12),
-                    Expanded(
-                        child: Text(
-                      _selectedCountryName ??
-                          l10n.onboarding_hint_selectCountry,
-                      style: AppTypography.inputText.copyWith(
-                        color: AppColors.champagneGold,
-                      ),
-                    )),
-                    const Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: AppColors.slateMist,
-                      size: AppDimensions.iconSizeMedium,
-                    ),
-                  ]),
-                ),
-              ),
-
-              const SizedBox(height: AppDimensions.space20),
-
-              // ── City Search with Autocomplete ────────────────────
               // Premium Confirmed Location Card
-              if (_selectedCity != null) ...[
+              if (_hasConfirmedLocation && _selectedCity != null) ...[
                 const SizedBox(height: AppDimensions.space12),
                 Container(
                   padding: const EdgeInsets.all(AppDimensions.space16),
@@ -781,6 +819,15 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                     ],
                   ),
                 ),
+              ] else ...[
+                const SizedBox(height: AppDimensions.space12),
+                _MissingLocationCard(
+                  countryName: _selectedCountryName,
+                  onTap: () {
+                    _dismissKeyboard();
+                    context.read<OnboardingCubit>().goBack();
+                  },
+                ),
               ],
 
               const SizedBox(height: AppDimensions.space28),
@@ -850,7 +897,10 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space12),
               _HeightStepper(
                 heightCm: _heightCm,
-                onChanged: (v) => setState(() => _heightCm = v),
+                onChanged: (v) {
+                  _dismissKeyboard();
+                  setState(() => _heightCm = v);
+                },
               ),
 
               const SizedBox(height: AppDimensions.space24),
@@ -1005,6 +1055,68 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
 
 // ── Gender pill button ────────────────────────────────────────
 
+class _MissingLocationCard extends StatelessWidget {
+  const _MissingLocationCard({
+    required this.countryName,
+    required this.onTap,
+  });
+
+  final String? countryName;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.space16),
+      decoration: BoxDecoration(
+        color: AppColors.softCoral.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+        border: Border.all(color: AppColors.softCoral.withValues(alpha: 0.32)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.location_off_outlined,
+              color: AppColors.softCoral, size: 20),
+          const SizedBox(width: AppDimensions.space12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Complete confirmed location',
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.pearlWhite,
+                  ),
+                ),
+                const SizedBox(height: AppDimensions.space4),
+                Text(
+                  countryName == null
+                      ? 'Choose your country and city before continuing.'
+                      : 'Choose a city in $countryName before continuing.',
+                  style: AppTypography.caption,
+                ),
+                const SizedBox(height: AppDimensions.space10),
+                GestureDetector(
+                  onTap: onTap,
+                  child: Text(
+                    'Go to location step',
+                    style: AppTypography.captionMedium.copyWith(
+                      color: AppColors.champagneGold,
+                      decoration: TextDecoration.underline,
+                      decorationColor: AppColors.champagneGold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _GenderPill extends StatelessWidget {
   const _GenderPill({
     required this.label,
@@ -1020,7 +1132,10 @@ class _GenderPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        FocusManager.instance.primaryFocus?.unfocus();
+        onTap();
+      },
       child: AnimatedContainer(
         duration: AppDimensions.durationTransition,
         height: AppDimensions.buttonHeight,
@@ -1140,7 +1255,12 @@ class _StepperButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final enabled = onTap != null;
     return GestureDetector(
-      onTap: onTap,
+      onTap: onTap == null
+          ? null
+          : () {
+              FocusManager.instance.primaryFocus?.unfocus();
+              onTap!();
+            },
       child: Container(
         width: 40,
         height: 40,
@@ -1178,7 +1298,10 @@ class _SelectChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        FocusManager.instance.primaryFocus?.unfocus();
+        onTap();
+      },
       child: AnimatedContainer(
         duration: AppDimensions.durationTransition,
         padding: const EdgeInsets.symmetric(
@@ -1282,6 +1405,8 @@ class _GenericListPickerState extends State<_GenericListPicker> {
               child: TextField(
                 controller: _searchCtrl,
                 onChanged: _onSearch,
+                onTapOutside: (_) =>
+                    FocusManager.instance.primaryFocus?.unfocus(),
                 style: AppTypography.inputText,
                 decoration: InputDecoration(
                   hintText: 'Search…',
@@ -1336,7 +1461,10 @@ class _GenericListPickerState extends State<_GenericListPicker> {
                               : null,
                           selected: isSel,
                           selectedColor: AppColors.champagneGold,
-                          onTap: () => widget.onSelected(item),
+                          onTap: () {
+                            FocusManager.instance.primaryFocus?.unfocus();
+                            widget.onSelected(item);
+                          },
                         );
                       },
                     ),

@@ -4,7 +4,7 @@
 //
 // Two optional, free data providers:
 //   1. Wikidata           → location-specific language enrichment
-//   2. Photon             → city search with coordinates
+//   2. Photon             → region/city/area search with coordinates
 //
 // Two curated data sources (no API exists for these):
 //   3. CountryCommunityData → Muslim communities by country
@@ -53,6 +53,23 @@ class CityResult {
   String toString() => fullAddress;
 }
 
+class RegionResult {
+  const RegionResult({
+    required this.id,
+    required this.name,
+    required this.countryCode,
+    required this.country,
+  });
+
+  final String id;
+  final String name;
+  final String countryCode;
+  final String country;
+
+  @override
+  String toString() => name;
+}
+
 class CountryContext {
   const CountryContext({
     required this.languages,
@@ -75,20 +92,30 @@ class CountryContextService {
   final _languageCache = <String, List<String>>{};
   final _locationLanguageCache = <String, List<String>>{};
 
-  @visibleForTesting
-  Future<List<CityResult>> Function(String query, String countryCode)?
-      cityCacheSearchOverride;
-  @visibleForTesting
-  Future<http.Response> Function(Uri uri)? photonRequestOverride;
-  @visibleForTesting
-  Duration photonTimeout = const Duration(seconds: 5);
-
-  @visibleForTesting
-  void resetCitySearchTestOverrides() {
-    cityCacheSearchOverride = null;
-    photonRequestOverride = null;
-    photonTimeout = const Duration(seconds: 5);
-  }
+  static const _photonUserAgent =
+      'MithaqApp/1.0 (contact@noorapp.com; matchmaking app)';
+  static const _photonRegionOsmValues = {
+    'state',
+    'province',
+    'region',
+  };
+  static const _photonCityAreaOsmValues = {
+    'city',
+    'town',
+    'village',
+    'hamlet',
+    'locality',
+    'municipality',
+    'suburb',
+    'quarter',
+    'neighbourhood',
+    'district',
+    'borough',
+    'island',
+    'state',
+    'province',
+    'region',
+  };
 
   // ── 1. GET LANGUAGES FOR COUNTRY ──────────────────────────
   //
@@ -238,32 +265,71 @@ LIMIT 12
     }
   }
 
+  Future<List<RegionResult>> searchRegions(
+    String query, {
+    required String countryCode,
+  }) async {
+    final selectedCountry = countryCode.trim().toUpperCase();
+    if (query.trim().length < 2 || selectedCountry.isEmpty) return [];
+
+    try {
+      if (SupabaseService.isInitialized) {
+        final response = await SupabaseService.client.rpc(
+          'search_regions',
+          params: {
+            'search_term': query.trim(),
+            'country_filter': selectedCountry,
+          },
+        );
+        final rows = response as List<dynamic>? ?? const [];
+        final cached = rows
+            .map((row) {
+              final map = row as Map<String, dynamic>;
+              final name = (map['name'] as String? ?? '').trim();
+              final code =
+                  (map['country_code'] as String? ?? selectedCountry).trim();
+              if (name.isEmpty || code.isEmpty) return null;
+              return RegionResult(
+                id: map['id']?.toString() ?? '',
+                name: name,
+                countryCode: code.toUpperCase(),
+                country: (map['country'] as String? ?? '').trim(),
+              );
+            })
+            .whereType<RegionResult>()
+            .toList();
+        if (cached.isNotEmpty) return cached;
+      }
+    } catch (e) {
+      debugPrint('[CountryContextService] search_regions failed: $e');
+    }
+
+    return _searchPhotonRegions(query.trim(), selectedCountry);
+  }
+
   Future<List<CityResult>> searchCities(
     String query, {
     required String countryCode,
+    String? regionName,
   }) async {
     debugPrint(
         '[CountryContextService] searchCities query: "$query", countryCode: "$countryCode"');
     final selectedCountry = countryCode.trim().toUpperCase();
+    final selectedRegion = regionName?.trim();
     if (query.trim().length < 2 || selectedCountry.isEmpty) return [];
 
     // 1. Try the Supabase city cache first.
-    if (cityCacheSearchOverride != null) {
-      try {
-        final cached = await cityCacheSearchOverride!(query, selectedCountry);
-        if (cached.isNotEmpty) return cached;
-      } catch (error) {
-        debugPrint('[CountryContextService] Test city cache failed: $error');
-      }
-    } else if (SupabaseService.isInitialized) {
+    if (SupabaseService.isInitialized) {
       try {
         debugPrint(
             '[CountryContextService] Querying Supabase rpc search_cities...');
         final response = await SupabaseService.client.rpc(
           'search_cities',
           params: {
-            'search_term': query,
+            'search_term': query.trim(),
             'country_filter': selectedCountry,
+            if (selectedRegion != null && selectedRegion.isNotEmpty)
+              'region_filter': selectedRegion,
           },
         );
         debugPrint('[CountryContextService] Supabase response: $response');
@@ -272,31 +338,14 @@ LIMIT 12
           if (list.isNotEmpty) {
             debugPrint(
                 '[CountryContextService] Found ${list.length} cities from Supabase');
-            return list.map((row) {
-              final map = row as Map<String, dynamic>;
-              final cityName = map['name'] as String? ?? '';
-              final stateName = map['state'] as String? ?? '';
-              final countryName = map['country'] as String? ?? '';
-              final code = (map['country_code'] as String? ?? selectedCountry)
-                  .toUpperCase();
-              final lat = (map['lat'] as num?)?.toDouble() ?? 0.0;
-              final lng = (map['lng'] as num?)?.toDouble() ?? 0.0;
-              return CityResult(
-                city: cityName,
-                state: stateName,
-                country: countryName,
-                countryCode: code,
-                postalCode: '',
-                fullAddress: [
-                  cityName,
-                  if (stateName.isNotEmpty) stateName,
-                  if (countryName.isNotEmpty) countryName,
-                ].join(', '),
-                placeId: map['id']?.toString() ?? '',
-                lat: lat,
-                lng: lng,
-              );
-            }).toList();
+            return list
+                .map((row) => _cityResultFromSupabaseRow(
+                      row as Map<String, dynamic>,
+                      selectedCountry: selectedCountry,
+                      selectedRegion: selectedRegion,
+                    ))
+                .whereType<CityResult>()
+                .toList();
           }
         }
       } catch (e) {
@@ -304,91 +353,27 @@ LIMIT 12
       }
     }
 
-    // 2. Photon is the global no-key fallback when the city cache misses.
+    // 2. Photon is the global no-key fallback when the city cache misses. Query
+    // broadly because users type real areas too: districts, islands, suburbs,
+    // and provinces are valid onboarding locations when they have coordinates.
     try {
       debugPrint(
           '[CountryContextService] Querying Photon Geocoding API for "$query" (countryCode: $countryCode)...');
-      final uri = Uri.https(
-        'photon.komoot.io',
-        '/api',
-        {
-          'q': query,
-          'limit': '5',
-          'osm_tag': 'place:city,place:town,place:village',
-        },
-      );
+      final features = await _fetchPhotonFeatures(query.trim(), limit: 15);
+      final parsedResults = <CityResult>[];
+      for (final feat in features) {
+        final result = _cityResultFromPhotonFeature(
+          feat,
+          selectedCountry: selectedCountry,
+          selectedRegion: selectedRegion,
+        );
+        if (result != null) parsedResults.add(result);
+      }
 
-      final request = photonRequestOverride != null
-          ? photonRequestOverride!(uri)
-          : http.get(
-              uri,
-              headers: {
-                'User-Agent':
-                    'MithaqApp/1.0 (contact@noorapp.com; matchmaking app)',
-              },
-            );
-      final response = await request.timeout(photonTimeout);
-
-      debugPrint(
-          '[CountryContextService] Photon status code: ${response.statusCode}');
-
-      if (response.statusCode == 200) {
-        final data =
-            jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
-        final features = data['features'] as List<dynamic>? ?? [];
-        final parsedResults = <CityResult>[];
-
-        for (final feat in features) {
-          final map = feat as Map<String, dynamic>;
-          final properties = map['properties'] as Map<String, dynamic>? ?? {};
-          final geometry = map['geometry'] as Map<String, dynamic>? ?? {};
-          final coords = geometry['coordinates'] as List<dynamic>? ?? [];
-
-          final cCode = properties['countrycode'] as String? ?? '';
-
-          // The public Photon endpoint does not reliably enforce a country
-          // filter, so reject any result outside the selected ISO country.
-          if (cCode.toUpperCase() != selectedCountry) {
-            continue;
-          }
-
-          final cityName = properties['name'] as String? ?? '';
-          final stateName = properties['state'] as String? ?? '';
-          final countryName = properties['country'] as String? ?? '';
-          if (cityName.isEmpty ||
-              coords.length < 2 ||
-              coords[0] is! num ||
-              coords[1] is! num) {
-            continue;
-          }
-          final lng = (coords[0] as num).toDouble();
-          final lat = (coords[1] as num).toDouble();
-
-          // Formatted address: "Kurnool, Andhra Pradesh, India"
-          final fullAddr = [
-            cityName,
-            if (stateName.isNotEmpty) stateName,
-            if (countryName.isNotEmpty) countryName,
-          ].join(', ');
-
-          parsedResults.add(CityResult(
-            city: cityName,
-            state: stateName,
-            country: countryName,
-            countryCode: cCode.toUpperCase(),
-            postalCode: properties['postcode'] as String? ?? '',
-            fullAddress: fullAddr,
-            placeId: 'photon-${properties['osm_id'] ?? cityName.toLowerCase()}',
-            lat: lat,
-            lng: lng,
-          ));
-        }
-
-        if (parsedResults.isNotEmpty) {
-          debugPrint(
-              '[CountryContextService] Found ${parsedResults.length} cities from Photon');
-          return parsedResults;
-        }
+      if (parsedResults.isNotEmpty) {
+        debugPrint(
+            '[CountryContextService] Found ${parsedResults.length} cities from Photon');
+        return _rankPhotonCities(parsedResults, query.trim());
       }
     } catch (e) {
       debugPrint('[CountryContextService] Photon search failed: $e');
@@ -398,6 +383,226 @@ LIMIT 12
     debugPrint(
         '[CountryContextService] No matches found, returning empty list.');
     return const [];
+  }
+
+  Future<List<RegionResult>> _searchPhotonRegions(
+    String query,
+    String selectedCountry,
+  ) async {
+    try {
+      final features = await _fetchPhotonFeatures(
+        query,
+        limit: 12,
+        osmTags: const ['place:state'],
+      );
+      final results = <RegionResult>[];
+      final seen = <String>{};
+
+      for (final feat in features) {
+        final properties = feat['properties'] as Map<String, dynamic>? ?? {};
+        final code = (properties['countrycode'] as String? ?? '').toUpperCase();
+        final name = (properties['name'] as String? ?? '').trim();
+        final country = (properties['country'] as String? ?? '').trim();
+        final osmValue =
+            (properties['osm_value'] as String? ?? '').trim().toLowerCase();
+        if (code != selectedCountry ||
+            name.isEmpty ||
+            !_photonRegionOsmValues.contains(osmValue)) {
+          continue;
+        }
+
+        final key = '$code|${name.toLowerCase()}';
+        if (!seen.add(key)) continue;
+        results.add(RegionResult(
+          id: 'photon-${properties['osm_id'] ?? name.toLowerCase()}',
+          name: name,
+          countryCode: code,
+          country: country,
+        ));
+      }
+      return results;
+    } catch (e) {
+      debugPrint('[CountryContextService] Photon region search failed: $e');
+      return const [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchPhotonFeatures(
+    String query, {
+    int limit = 10,
+    List<String>? osmTags,
+  }) async {
+    final params = <String, dynamic>{
+      'q': query,
+      'limit': limit.clamp(1, 20).toString(),
+      if (osmTags != null && osmTags.isNotEmpty) 'osm_tag': osmTags,
+    };
+    final uri = Uri.https('photon.komoot.io', '/api', params);
+    final response = await http.get(
+      uri,
+      headers: {'User-Agent': _photonUserAgent},
+    ).timeout(const Duration(seconds: 6));
+
+    debugPrint(
+        '[CountryContextService] Photon status code: ${response.statusCode}');
+
+    if (response.statusCode != 200) return const [];
+    final data =
+        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    final features = data['features'] as List<dynamic>? ?? const [];
+    return features.whereType<Map<String, dynamic>>().toList();
+  }
+
+  CityResult? _cityResultFromPhotonFeature(
+    Map<String, dynamic> feature, {
+    required String selectedCountry,
+    String? selectedRegion,
+  }) {
+    final properties = feature['properties'] as Map<String, dynamic>? ?? {};
+    final geometry = feature['geometry'] as Map<String, dynamic>? ?? {};
+    final coords = geometry['coordinates'] as List<dynamic>? ?? const [];
+    final cCode = (properties['countrycode'] as String? ?? '').toUpperCase();
+    final osmKey = (properties['osm_key'] as String? ?? '').toLowerCase();
+    final osmValue = (properties['osm_value'] as String? ?? '').toLowerCase();
+
+    // Photon public search is global, so the app enforces both country and
+    // acceptable location type before anything can be selected or saved.
+    if (cCode != selectedCountry ||
+        osmKey != 'place' ||
+        !_photonCityAreaOsmValues.contains(osmValue)) {
+      return null;
+    }
+
+    final cityName = (properties['name'] as String? ?? '').trim();
+    final rawState = (properties['state'] as String? ?? '').trim();
+    final countryName = (properties['country'] as String? ?? '').trim();
+    if (cityName.isEmpty ||
+        coords.length < 2 ||
+        coords[0] is! num ||
+        coords[1] is! num) {
+      return null;
+    }
+
+    final isRegionLike = _photonRegionOsmValues.contains(osmValue);
+    final stateName = rawState.isNotEmpty
+        ? rawState
+        : isRegionLike
+            ? cityName
+            : '';
+    if (selectedRegion != null &&
+        selectedRegion.isNotEmpty &&
+        stateName.isNotEmpty &&
+        !_sameLocationName(stateName, selectedRegion)) {
+      return null;
+    }
+
+    return CityResult(
+      city: cityName,
+      state: stateName,
+      country: countryName,
+      countryCode: cCode,
+      postalCode: properties['postcode'] as String? ?? '',
+      fullAddress: _joinDistinctLocationParts([
+        cityName,
+        stateName,
+        countryName,
+      ]),
+      placeId: 'photon-${properties['osm_id'] ?? cityName.toLowerCase()}',
+      lat: (coords[1] as num).toDouble(),
+      lng: (coords[0] as num).toDouble(),
+    );
+  }
+
+  List<CityResult> _rankPhotonCities(List<CityResult> results, String query) {
+    final q = query.trim().toLowerCase();
+    final ranked = [...results];
+    ranked.sort((a, b) {
+      final aExact = a.city.toLowerCase() == q ? 0 : 1;
+      final bExact = b.city.toLowerCase() == q ? 0 : 1;
+      if (aExact != bExact) return aExact.compareTo(bExact);
+
+      final aStarts = a.city.toLowerCase().startsWith(q) ? 0 : 1;
+      final bStarts = b.city.toLowerCase().startsWith(q) ? 0 : 1;
+      if (aStarts != bStarts) return aStarts.compareTo(bStarts);
+
+      return a.city.length.compareTo(b.city.length);
+    });
+
+    final seen = <String>{};
+    return ranked
+        .where((result) {
+          final key =
+              '${result.countryCode}|${result.city.toLowerCase()}|${result.state.toLowerCase()}';
+          return seen.add(key);
+        })
+        .take(8)
+        .toList();
+  }
+
+  CityResult? _cityResultFromSupabaseRow(
+    Map<String, dynamic> map, {
+    required String selectedCountry,
+    String? selectedRegion,
+  }) {
+    final cityName = (map['name'] as String? ?? '').trim();
+    final stateName = (map['state'] as String? ?? '').trim();
+    final countryName = (map['country'] as String? ?? '').trim();
+    final code = (map['country_code'] as String? ?? selectedCountry)
+        .trim()
+        .toUpperCase();
+    final lat = (map['lat'] as num?)?.toDouble();
+    final lng = (map['lng'] as num?)?.toDouble();
+    if (cityName.isEmpty ||
+        code != selectedCountry ||
+        lat == null ||
+        lng == null) {
+      return null;
+    }
+    if (selectedRegion != null &&
+        selectedRegion.trim().isNotEmpty &&
+        !_sameLocationName(stateName, selectedRegion)) {
+      return null;
+    }
+    return CityResult(
+      city: cityName,
+      state: stateName,
+      country: countryName,
+      countryCode: code,
+      postalCode: '',
+      fullAddress: _joinDistinctLocationParts([
+        cityName,
+        stateName,
+        countryName,
+      ]),
+      placeId: map['id']?.toString() ?? '',
+      lat: lat,
+      lng: lng,
+    );
+  }
+
+  static bool _sameLocationName(String a, String b) {
+    final left = _normalizeLocationName(a);
+    final right = _normalizeLocationName(b);
+    if (left.isEmpty || right.isEmpty) return false;
+    return left == right || left.contains(right) || right.contains(left);
+  }
+
+  static String _normalizeLocationName(String value) {
+    return value
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
+  String _joinDistinctLocationParts(List<String> parts) {
+    final seen = <String>{};
+    final cleaned = <String>[];
+    for (final part in parts.map((p) => p.trim()).where((p) => p.isNotEmpty)) {
+      final key = part.toLowerCase();
+      if (seen.add(key)) cleaned.add(part);
+    }
+    return cleaned.join(', ');
   }
 
   // ── Place detail fetch (postal code, lat/lng, components) ──

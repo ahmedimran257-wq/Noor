@@ -16,7 +16,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../mock/mock_profiles.dart';
+import '../../models/discovery_profile.dart';
 import '../../services/supabase_service.dart';
 import '../../services/profile_write_service.dart';
 import '../../services/location_service.dart';
@@ -35,6 +35,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   double? _backendCursorScore;
   String? _backendCursorId;
   bool _discoveryLocationPrepared = false;
+  int _requestVersion = 0;
 
   // ── Public API ────────────────────────────────────────────
 
@@ -60,12 +61,15 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   /// Also restores saved filter and browse counter from SharedPreferences.
   Future<void> loadInitial({bool force = false}) async {
     if (!force && state.status != FeedStatus.initial) return;
+    final requestVersion = _nextRequestVersion();
     emit(state.copyWith(status: FeedStatus.loading));
 
     final viewerProfile = await _getViewerProfile();
+    if (!_isCurrentRequest(requestVersion)) return;
 
     // Restore saved filter
     final savedFilter = await _loadFilterFromPrefs();
+    if (!_isCurrentRequest(requestVersion)) return;
     DiscoveryFilter filter = savedFilter ?? state.activeFilter;
 
     if (savedFilter == null && viewerProfile != null) {
@@ -94,10 +98,13 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
 
     // G5: Restore persisted browse counter (daily reset)
     final restoredViews = await _restoreBrowseCounter();
+    if (!_isCurrentRequest(requestVersion)) return;
 
     try {
       _resetCursors();
-      final profiles = await _getPool(filter: filter);
+      final profiles =
+          await _getPool(filter: filter, requestVersion: requestVersion);
+      if (!_isCurrentRequest(requestVersion)) return;
       final batch = _toFeedProfiles(profiles, offset: 0);
       if (!isClosed) {
         emit(state.copyWith(
@@ -109,7 +116,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         ));
       }
     } catch (e) {
-      _emitDiscoveryError(e);
+      if (_isCurrentRequest(requestVersion)) _emitDiscoveryError(e);
     }
   }
 
@@ -118,35 +125,46 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     if (state.status == FeedStatus.loadingMore) return;
     if (!state.hasMore) return;
 
+    final requestVersion = _nextRequestVersion();
+    final baseProfiles = state.profiles;
+    final filter = state.activeFilter;
     emit(state.copyWith(status: FeedStatus.loadingMore));
     try {
-      final profiles = await _getPool(filter: state.activeFilter);
+      final profiles =
+          await _getPool(filter: filter, requestVersion: requestVersion);
+      if (!_isCurrentRequest(requestVersion)) return;
       final batch = _toFeedProfiles(
         profiles,
-        offset: state.profiles.length,
+        offset: baseProfiles.length,
       );
       if (!isClosed) {
         emit(state.copyWith(
           status: FeedStatus.loaded,
-          profiles: [...state.profiles, ...batch],
+          profiles: [...baseProfiles, ...batch],
           hasMore: profiles.length == _batchSize,
         ));
       }
     } catch (e) {
-      _emitDiscoveryError(e, keepProfiles: true);
+      if (_isCurrentRequest(requestVersion)) {
+        _emitDiscoveryError(e, keepProfiles: true);
+      }
     }
   }
 
   /// Apply new filters — resets the feed and reloads from cursor 0.
   Future<void> applyFilter(DiscoveryFilter filter) async {
+    final requestVersion = _nextRequestVersion();
     emit(state.copyWith(status: FeedStatus.loading, activeFilter: filter));
 
     // Persist the filter
     await _saveFilterToPrefs(filter);
+    if (!_isCurrentRequest(requestVersion)) return;
 
     try {
       _resetCursors();
-      final profiles = await _getPool(filter: filter);
+      final profiles =
+          await _getPool(filter: filter, requestVersion: requestVersion);
+      if (!_isCurrentRequest(requestVersion)) return;
       final batch = _toFeedProfiles(profiles, offset: 0);
       if (!isClosed) {
         emit(state.copyWith(
@@ -156,7 +174,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         ));
       }
     } catch (e) {
-      _emitDiscoveryError(e);
+      if (_isCurrentRequest(requestVersion)) _emitDiscoveryError(e);
     }
   }
 
@@ -290,8 +308,13 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     _backendCursorId = null;
   }
 
+  int _nextRequestVersion() => ++_requestVersion;
+
+  bool _isCurrentRequest(int requestVersion) =>
+      !isClosed && requestVersion == _requestVersion;
+
   List<FeedProfile> _toFeedProfiles(
-    List<MockProfile> profiles, {
+    List<DiscoveryProfile> profiles, {
     required int offset,
   }) {
     return [
@@ -356,7 +379,10 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   }
 
   /// Fetches real candidates and their stated compatibility preferences.
-  Future<List<MockProfile>> _getPool({DiscoveryFilter? filter}) async {
+  Future<List<DiscoveryProfile>> _getPool({
+    DiscoveryFilter? filter,
+    required int requestVersion,
+  }) async {
     if (!SupabaseService.isInitialized) {
       throw StateError('Discovery requires a Supabase connection.');
     }
@@ -387,9 +413,14 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       final rows = (response as List<dynamic>)
           .map((row) => Map<String, dynamic>.from(row as Map))
           .toList();
+      // Race fix: stale discovery responses must not advance the shared cursor
+      // or overwrite a newer filter/load request.
+      if (!_isCurrentRequest(requestVersion)) return const [];
       _updateBackendCursor(rows);
       await _attachCompatibilityPreferences(rows);
+      if (!_isCurrentRequest(requestVersion)) return const [];
       final profiles = await compute(parseProfilesInBackground, rows);
+      if (!_isCurrentRequest(requestVersion)) return const [];
       return _signPhotoUrls(profiles);
     } catch (e) {
       debugPrint('DiscoveryFeedCubit: Supabase discovery failed: $e');
@@ -451,8 +482,9 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     }
   }
 
-  Future<List<MockProfile>> _signPhotoUrls(List<MockProfile> profiles) async {
-    final signed = <MockProfile>[];
+  Future<List<DiscoveryProfile>> _signPhotoUrls(
+      List<DiscoveryProfile> profiles) async {
+    final signed = <DiscoveryProfile>[];
     for (final profile in profiles) {
       final path = profile.photoUrl;
       if (path == null || path.isEmpty || profile.isPhotoPrivate) {

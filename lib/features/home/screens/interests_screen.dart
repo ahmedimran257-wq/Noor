@@ -18,7 +18,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/cubits/interests/interests_cubit.dart';
 import '../../../core/cubits/interests/interests_state.dart';
 import '../../../core/cubits/chat/chat_cubit.dart';
-import '../../../core/mock/mock_profiles.dart';
+import '../../../core/models/discovery_profile.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
@@ -54,7 +54,7 @@ class _InterestsScreenState extends State<InterestsScreen>
 
   // ── Mutual match ceremony modal (Item 21 + 22) ───────────
 
-  void _showMutualMatchModal(MockProfile profile) {
+  void _showMutualMatchModal(DiscoveryProfile profile) {
     HapticFeedback.mediumImpact();
     showDialog(
       context: context,
@@ -63,21 +63,21 @@ class _InterestsScreenState extends State<InterestsScreen>
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Center(
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-                horizontal: AppDimensions.space24),
+            padding:
+                const EdgeInsets.symmetric(horizontal: AppDimensions.space24),
             child: Material(
-              color:        Colors.transparent,
+              color: Colors.transparent,
               borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
               child: Container(
                 padding: const EdgeInsets.all(AppDimensions.space32),
                 decoration: BoxDecoration(
-                  color:        AppColors.surfaceElevated,
+                  color: AppColors.surfaceElevated,
                   borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-                  border:       Border.all(color: AppColors.goldBorder, width: 1.5),
+                  border: Border.all(color: AppColors.goldBorder, width: 1.5),
                   boxShadow: const [
                     BoxShadow(
-                      color:       AppColors.goldGlow,
-                      blurRadius:  40,
+                      color: AppColors.goldGlow,
+                      blurRadius: 40,
                       spreadRadius: 8,
                     ),
                   ],
@@ -98,8 +98,8 @@ class _InterestsScreenState extends State<InterestsScreen>
                     const SizedBox(height: AppDimensions.space4),
                     Text(
                       'You have a mutual interest.',
-                      style: AppTypography.screenTitle.copyWith(
-                          color: AppColors.pearlWhite, fontSize: 18),
+                      style: AppTypography.screenTitle
+                          .copyWith(color: AppColors.pearlWhite, fontSize: 18),
                     ),
                     const SizedBox(height: AppDimensions.space12),
 
@@ -113,15 +113,15 @@ class _InterestsScreenState extends State<InterestsScreen>
 
                     // Message Now CTA — gold, full width
                     SizedBox(
-                      width:  double.infinity,
+                      width: double.infinity,
                       height: AppDimensions.buttonHeight,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.champagneGold,
                           foregroundColor: AppColors.obsidianNight,
                           shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(AppDimensions.radiusButton),
+                            borderRadius: BorderRadius.circular(
+                                AppDimensions.radiusButton),
                           ),
                           elevation: 0,
                         ),
@@ -130,12 +130,16 @@ class _InterestsScreenState extends State<InterestsScreen>
                           final chatCubit = context.read<ChatCubit>();
                           final navigator = Navigator.of(context);
                           navigator.pop();
-                          final convId = await chatCubit.openOrCreateConversation(
-                              profile.id, profile.firstName, profile.lastNameInitial);
+                          final convId =
+                              await chatCubit.openOrCreateConversation(
+                                  profile.id,
+                                  profile.firstName,
+                                  profile.lastNameInitial);
                           if (convId.isNotEmpty) {
                             navigator.push(
                               PageRouteBuilder(
-                                transitionDuration: AppDimensions.durationReveal,
+                                transitionDuration:
+                                    AppDimensions.durationReveal,
                                 pageBuilder: (ctx, anim, _) => FadeTransition(
                                   opacity: anim,
                                   child: ChatScreen(conversationId: convId),
@@ -155,8 +159,8 @@ class _InterestsScreenState extends State<InterestsScreen>
                       onPressed: () => Navigator.of(context).pop(),
                       child: Text(
                         'Maybe later',
-                        style: AppTypography.caption.copyWith(
-                            color: AppColors.slateMist),
+                        style: AppTypography.caption
+                            .copyWith(color: AppColors.slateMist),
                       ),
                     ),
                   ],
@@ -182,8 +186,8 @@ class _InterestsScreenState extends State<InterestsScreen>
           side: const BorderSide(color: AppColors.cardBorder),
         ),
         title: Text('Withdraw interest?',
-            style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.pearlWhite, fontSize: 17)),
+            style: AppTypography.bodyMedium
+                .copyWith(color: AppColors.pearlWhite, fontSize: 17)),
         content: const Text(
           "They won't be notified.",
           style: AppTypography.bodyMuted,
@@ -192,8 +196,8 @@ class _InterestsScreenState extends State<InterestsScreen>
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text('Cancel',
-                style: AppTypography.caption.copyWith(
-                    color: AppColors.slateMist)),
+                style:
+                    AppTypography.caption.copyWith(color: AppColors.slateMist)),
           ),
           TextButton(
             onPressed: () {
@@ -201,8 +205,8 @@ class _InterestsScreenState extends State<InterestsScreen>
               context.read<InterestsCubit>().withdrawInterest(entry.id);
             },
             child: Text('Withdraw',
-                style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.softCoral, fontSize: 14)),
+                style: AppTypography.bodyMedium
+                    .copyWith(color: AppColors.softCoral, fontSize: 14)),
           ),
         ],
       ),
@@ -215,15 +219,14 @@ class _InterestsScreenState extends State<InterestsScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return BlocConsumer<InterestsCubit, InterestsState>(
-      listenWhen: (prev, curr) =>
-          !prev.limitError && curr.limitError,
+      listenWhen: (prev, curr) => !prev.limitError && curr.limitError,
       listener: (context, state) {
         // Item 17: show SnackBar when daily limit is hit
         final isSubscribed = state.dailyLimit >= 20;
         final msg = isSubscribed
             ? 'Daily limit reached. Resets at midnight.'
             : 'Daily limit reached. Resets at midnight. '
-              'Subscribe for 20 interests per day.';
+                'Subscribe for 20 interests per day.';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(msg, style: AppTypography.body),
@@ -244,37 +247,42 @@ class _InterestsScreenState extends State<InterestsScreen>
             // Header
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppDimensions.space24, AppDimensions.space16,
-                AppDimensions.space24, 0,
+                AppDimensions.space24,
+                AppDimensions.space16,
+                AppDimensions.space24,
+                0,
               ),
               child: Align(
                 alignment: AlignmentDirectional.centerStart,
-                child: Text(AppLocalizations.of(context).interests_title, style: AppTypography.screenTitle),
+                child: Text(AppLocalizations.of(context).interests_title,
+                    style: AppTypography.screenTitle),
               ),
             ),
             const SizedBox(height: AppDimensions.space16),
 
             // Tab bar
             Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: AppDimensions.space24),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: AppDimensions.space24),
               child: Container(
                 decoration: BoxDecoration(
-                  color:        AppColors.surfaceGlass,
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                  border:       Border.all(color: AppColors.cardBorder),
+                  color: AppColors.surfaceGlass,
+                  borderRadius:
+                      BorderRadius.circular(AppDimensions.radiusButton),
+                  border: Border.all(color: AppColors.cardBorder),
                 ),
                 child: TabBar(
-                  controller:          _tabCtrl,
-                  labelStyle:          AppTypography.bodyMedium.copyWith(fontSize: 14),
-                  unselectedLabelStyle: AppTypography.bodyMuted.copyWith(fontSize: 14),
-                  labelColor:          AppColors.champagneGold,
+                  controller: _tabCtrl,
+                  labelStyle: AppTypography.bodyMedium.copyWith(fontSize: 14),
+                  unselectedLabelStyle:
+                      AppTypography.bodyMuted.copyWith(fontSize: 14),
+                  labelColor: AppColors.champagneGold,
                   unselectedLabelColor: AppColors.slateMist,
-                  indicatorSize:       TabBarIndicatorSize.tab,
+                  indicatorSize: TabBarIndicatorSize.tab,
                   indicator: BoxDecoration(
-                    color:        AppColors.champagneGold.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(
-                        AppDimensions.radiusButton - 2),
+                    color: AppColors.champagneGold.withValues(alpha: 0.12),
+                    borderRadius:
+                        BorderRadius.circular(AppDimensions.radiusButton - 2),
                     border: Border.all(color: AppColors.goldBorder),
                   ),
                   dividerColor: Colors.transparent,
@@ -283,7 +291,8 @@ class _InterestsScreenState extends State<InterestsScreen>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(AppLocalizations.of(context).interests_tab_received),
+                          Text(AppLocalizations.of(context)
+                              .interests_tab_received),
                           if (state.pendingReceived.isNotEmpty) ...[
                             const SizedBox(width: AppDimensions.space6),
                             _CountBadge(count: state.pendingReceived.length),
@@ -297,7 +306,8 @@ class _InterestsScreenState extends State<InterestsScreen>
                         children: [
                           Text(AppLocalizations.of(context).interests_tab_sent),
                           if (state.sent.any((e) =>
-                              e.effectiveStatus == InterestStatus.accepted)) ...[
+                              e.effectiveStatus ==
+                              InterestStatus.accepted)) ...[
                             const SizedBox(width: AppDimensions.space6),
                             const _NewBadge(),
                           ],
@@ -318,13 +328,14 @@ class _InterestsScreenState extends State<InterestsScreen>
                   // ── Received tab ──────────────────────────
                   state.displayReceived.isEmpty
                       ? const MithaqEmptyState(
-                          icon:     Icons.favorite_border_rounded,
-                          title:    'No interests yet',
-                          subtitle: 'When someone sends you an interest it appears here.',
+                          icon: Icons.favorite_border_rounded,
+                          title: 'No interests yet',
+                          subtitle:
+                              'When someone sends you an interest it appears here.',
                         )
                       : _ReceivedList(
-                          entries:   state.displayReceived,
-                          onAccept:  (entry) {
+                          entries: state.displayReceived,
+                          onAccept: (entry) {
                             context
                                 .read<InterestsCubit>()
                                 .acceptInterest(entry.id);
@@ -347,12 +358,13 @@ class _InterestsScreenState extends State<InterestsScreen>
                       Expanded(
                         child: state.sent.isEmpty
                             ? const MithaqEmptyState(
-                                icon:     Icons.send_outlined,
-                                title:    "You haven't sent any interests",
-                                subtitle: 'Browse profiles and send your first interest.',
+                                icon: Icons.send_outlined,
+                                title: "You haven't sent any interests",
+                                subtitle:
+                                    'Browse profiles and send your first interest.',
                               )
                             : _SentList(
-                                entries:    state.sent,
+                                entries: state.sent,
                                 onWithdraw: (entry) =>
                                     _showWithdrawDialog(entry),
                               ),
@@ -381,36 +393,30 @@ class _DailyLimitBanner extends StatelessWidget {
     // We use 9999 as the "unlimited" sentinel for female users.
     if (state.dailyLimit >= 9999) return const SizedBox.shrink();
 
-    final sent  = state.interestsSentToday;
+    final sent = state.interestsSentToday;
     final limit = state.dailyLimit;
-    final frac  = limit > 0 ? (sent / limit).clamp(0.0, 1.0) : 0.0;
+    final frac = limit > 0 ? (sent / limit).clamp(0.0, 1.0) : 0.0;
     final atLimit = state.isDailyLimitReached;
 
-
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppDimensions.space24, 0, AppDimensions.space24, AppDimensions.space12),
+      padding: const EdgeInsets.fromLTRB(AppDimensions.space24, 0,
+          AppDimensions.space24, AppDimensions.space12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Icon(
-                atLimit
-                    ? Icons.block_rounded
-                    : Icons.favorite_outline_rounded,
-                size:  14,
-                color: atLimit
-                    ? AppColors.softCoral
-                    : AppColors.champagneGold,
+                atLimit ? Icons.block_rounded : Icons.favorite_outline_rounded,
+                size: 14,
+                color: atLimit ? AppColors.softCoral : AppColors.champagneGold,
               ),
               const SizedBox(width: AppDimensions.space6),
               Text(
                 '$sent of $limit interests sent today',
                 style: AppTypography.caption.copyWith(
-                  color: atLimit
-                      ? AppColors.softCoral
-                      : AppColors.champagneGold,
+                  color:
+                      atLimit ? AppColors.softCoral : AppColors.champagneGold,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -421,13 +427,11 @@ class _DailyLimitBanner extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(2),
             child: LinearProgressIndicator(
-              value:            frac,
-              minHeight:        3,
-              backgroundColor:  AppColors.surfaceGlassHover,
+              value: frac,
+              minHeight: 3,
+              backgroundColor: AppColors.surfaceGlassHover,
               valueColor: AlwaysStoppedAnimation<Color>(
-                atLimit
-                    ? AppColors.softCoral
-                    : AppColors.champagneGold,
+                atLimit ? AppColors.softCoral : AppColors.champagneGold,
               ),
             ),
           ),
@@ -459,14 +463,14 @@ class _MatchAvatarPair extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(AppDimensions.space8),
             decoration: BoxDecoration(
-              color:  AppColors.surfaceElevated,
-              shape:  BoxShape.circle,
+              color: AppColors.surfaceElevated,
+              shape: BoxShape.circle,
               border: Border.all(color: AppColors.champagneGold, width: 2),
             ),
             child: const Icon(
               Icons.favorite_rounded,
               color: AppColors.champagneGold,
-              size:  20,
+              size: 20,
             ),
           ),
         ],
@@ -482,17 +486,17 @@ class _Avatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width:  60,
+      width: 60,
       height: 60,
       decoration: BoxDecoration(
-        shape:  BoxShape.circle,
-        color:  AppColors.surfaceGlassHover,
+        shape: BoxShape.circle,
+        color: AppColors.surfaceGlassHover,
         border: Border.all(color: border, width: 2),
       ),
       child: const Icon(
         Icons.person_rounded,
         color: AppColors.slateMist,
-        size:  30,
+        size: 30,
       ),
     );
   }
@@ -506,25 +510,25 @@ class _ReceivedList extends StatelessWidget {
     required this.onAccept,
     required this.onDecline,
   });
-  final List<InterestEntry>          entries;
-  final ValueChanged<InterestEntry>  onAccept;
-  final ValueChanged<InterestEntry>  onDecline;
+  final List<InterestEntry> entries;
+  final ValueChanged<InterestEntry> onAccept;
+  final ValueChanged<InterestEntry> onDecline;
 
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.space24,
-        vertical:   AppDimensions.space4,
+        vertical: AppDimensions.space4,
       ),
-      itemCount:      entries.length,
+      itemCount: entries.length,
       separatorBuilder: (_, __) =>
           const SizedBox(height: AppDimensions.space12),
       itemBuilder: (_, i) {
         final entry = entries[i];
         return _ReceivedTile(
-          entry:     entry,
-          onAccept:  () => onAccept(entry),
+          entry: entry,
+          onAccept: () => onAccept(entry),
           onDecline: () => onDecline(entry),
         );
       },
@@ -539,22 +543,22 @@ class _ReceivedTile extends StatelessWidget {
     required this.onDecline,
   });
   final InterestEntry entry;
-  final VoidCallback  onAccept;
-  final VoidCallback  onDecline;
+  final VoidCallback onAccept;
+  final VoidCallback onDecline;
 
   @override
   Widget build(BuildContext context) {
-    final p          = entry.profile;
-    final status     = entry.effectiveStatus;
+    final p = entry.profile;
+    final status = entry.effectiveStatus;
     final isAccepted = status == InterestStatus.accepted;
     final isDeclined = status == InterestStatus.declined;
-    final isPending  = status == InterestStatus.pending;
+    final isPending = status == InterestStatus.pending;
 
     return AnimatedContainer(
       duration: AppDimensions.durationTransition,
       padding: const EdgeInsets.all(AppDimensions.space16),
       decoration: BoxDecoration(
-        color:        AppColors.surfaceGlass,
+        color: AppColors.surfaceGlass,
         borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
         border: Border.all(
           color: isAccepted
@@ -571,9 +575,8 @@ class _ReceivedTile extends StatelessWidget {
           Row(
             children: [
               _CircleAvatar(
-                borderColor: isAccepted
-                    ? AppColors.champagneGold
-                    : AppColors.cardBorder,
+                borderColor:
+                    isAccepted ? AppColors.champagneGold : AppColors.cardBorder,
                 opacity: isDeclined ? 0.5 : 1.0,
               ),
               const SizedBox(width: AppDimensions.space12),
@@ -608,7 +611,8 @@ class _ReceivedTile extends StatelessWidget {
                     const _StatusPill(
                         label: '✓ Matched', color: AppColors.champagneGold),
                   if (isDeclined)
-                    const _StatusPill(label: 'Declined', color: AppColors.slateMist),
+                    const _StatusPill(
+                        label: 'Declined', color: AppColors.slateMist),
                 ],
               ),
             ],
@@ -621,9 +625,9 @@ class _ReceivedTile extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(AppDimensions.space12),
               decoration: BoxDecoration(
-                color:        AppColors.champagneGold.withValues(alpha: 0.06),
+                color: AppColors.champagneGold.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                border:       Border.all(
+                border: Border.all(
                   color: AppColors.goldBorder.withValues(alpha: 0.4),
                 ),
               ),
@@ -638,7 +642,7 @@ class _ReceivedTile extends StatelessWidget {
                     child: Text(
                       entry.note!,
                       style: AppTypography.caption.copyWith(
-                        color:  AppColors.pearlWhite.withValues(alpha: 0.85),
+                        color: AppColors.pearlWhite.withValues(alpha: 0.85),
                         height: 1.5,
                       ),
                     ),
@@ -670,7 +674,9 @@ class _ReceivedTile extends StatelessWidget {
                       HapticFeedback.selectionClick();
                       onDecline();
                     },
-                    child: Text(AppLocalizations.of(context).interests_button_decline, style: AppTypography.bodyMuted),
+                    child: Text(
+                        AppLocalizations.of(context).interests_button_decline,
+                        style: AppTypography.bodyMuted),
                   ),
                 ),
                 const SizedBox(width: AppDimensions.space12),
@@ -689,7 +695,9 @@ class _ReceivedTile extends StatelessWidget {
                       HapticFeedback.mediumImpact();
                       onAccept();
                     },
-                    child: Text(AppLocalizations.of(context).interests_button_accept, style: AppTypography.button),
+                    child: Text(
+                        AppLocalizations.of(context).interests_button_accept,
+                        style: AppTypography.button),
                   ),
                 ),
               ],
@@ -752,11 +760,10 @@ class _ExpiryRow extends StatelessWidget {
     if (hours == null || hours > 72) return const SizedBox.shrink();
 
     final isUrgent = hours < 24;
-    final color    = isUrgent ? AppColors.softCoral : AppColors.expiryAmber;
-    final icon     = isUrgent
-        ? Icons.warning_amber_rounded
-        : Icons.access_time_rounded;
-    final text     = isUrgent
+    final color = isUrgent ? AppColors.softCoral : AppColors.expiryAmber;
+    final icon =
+        isUrgent ? Icons.warning_amber_rounded : Icons.access_time_rounded;
+    final text = isUrgent
         ? 'Expires today'
         : 'Expires in ${entry.daysRemaining} day${entry.daysRemaining == 1 ? '' : 's'}';
 
@@ -769,9 +776,9 @@ class _ExpiryRow extends StatelessWidget {
           Text(
             text,
             style: AppTypography.caption.copyWith(
-              color:      color,
+              color: color,
               fontWeight: FontWeight.w600,
-              fontSize:   11,
+              fontSize: 11,
             ),
           ),
         ],
@@ -787,7 +794,7 @@ class _SentList extends StatelessWidget {
     required this.entries,
     required this.onWithdraw,
   });
-  final List<InterestEntry>         entries;
+  final List<InterestEntry> entries;
   final ValueChanged<InterestEntry> onWithdraw;
 
   @override
@@ -795,15 +802,15 @@ class _SentList extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.space24,
-        vertical:   AppDimensions.space4,
+        vertical: AppDimensions.space4,
       ),
-      itemCount:      entries.length,
+      itemCount: entries.length,
       separatorBuilder: (_, __) =>
           const SizedBox(height: AppDimensions.space12),
       itemBuilder: (_, i) {
         final entry = entries[i];
         return _SentTile(
-          entry:      entry,
+          entry: entry,
           onWithdraw: () => onWithdraw(entry),
         );
       },
@@ -814,35 +821,32 @@ class _SentList extends StatelessWidget {
 class _SentTile extends StatelessWidget {
   const _SentTile({required this.entry, required this.onWithdraw});
   final InterestEntry entry;
-  final VoidCallback  onWithdraw;
+  final VoidCallback onWithdraw;
 
   @override
   Widget build(BuildContext context) {
-    final p           = entry.profile;
-    final status      = entry.effectiveStatus;
-    final isPending   = status == InterestStatus.pending;
-    final isAccepted  = status == InterestStatus.accepted;
-    final isExpired   = status == InterestStatus.expired;
+    final p = entry.profile;
+    final status = entry.effectiveStatus;
+    final isPending = status == InterestStatus.pending;
+    final isAccepted = status == InterestStatus.accepted;
+    final isExpired = status == InterestStatus.expired;
     final isWithdrawn = status == InterestStatus.withdrawn;
 
     return AnimatedContainer(
       duration: AppDimensions.durationTransition,
       padding: const EdgeInsets.all(AppDimensions.space16),
       decoration: BoxDecoration(
-        color:        AppColors.surfaceGlass,
+        color: AppColors.surfaceGlass,
         borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
         border: Border.all(
-          color: isAccepted
-              ? AppColors.goldBorder
-              : AppColors.cardBorder,
+          color: isAccepted ? AppColors.goldBorder : AppColors.cardBorder,
         ),
       ),
       child: Row(
         children: [
           _CircleAvatar(
-            borderColor: isAccepted
-                ? AppColors.champagneGold
-                : AppColors.cardBorder,
+            borderColor:
+                isAccepted ? AppColors.champagneGold : AppColors.cardBorder,
             opacity: (isWithdrawn || isExpired) ? 0.5 : 1.0,
           ),
           const SizedBox(width: AppDimensions.space12),
@@ -861,8 +865,7 @@ class _SentTile extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: AppDimensions.space2),
-                Text('${p.age} · ${p.cityName}',
-                    style: AppTypography.caption),
+                Text('${p.age} · ${p.cityName}', style: AppTypography.caption),
               ],
             ),
           ),
@@ -873,7 +876,6 @@ class _SentTile extends StatelessWidget {
             children: [
               Text(entry.timeAgo, style: AppTypography.caption),
               const SizedBox(height: AppDimensions.space6),
-
               if (isPending)
                 // Item 19: Withdraw text button (AppColors.softCoral)
                 GestureDetector(
@@ -884,8 +886,8 @@ class _SentTile extends StatelessWidget {
                   child: Text(
                     'Withdraw',
                     style: AppTypography.caption.copyWith(
-                      color:      AppColors.softCoral,
-                      fontSize:   12,
+                      color: AppColors.softCoral,
+                      fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -896,9 +898,11 @@ class _SentTile extends StatelessWidget {
               else if (isExpired)
                 const _StatusPill(label: 'Expired', color: AppColors.slateMist)
               else if (isWithdrawn)
-                const _StatusPill(label: 'Withdrawn', color: AppColors.slateMist)
+                const _StatusPill(
+                    label: 'Withdrawn', color: AppColors.slateMist)
               else
-                const _StatusPill(label: 'Declined', color: AppColors.softCoral),
+                const _StatusPill(
+                    label: 'Declined', color: AppColors.softCoral),
             ],
           ),
         ],
@@ -914,7 +918,7 @@ class _CircleAvatar extends StatelessWidget {
     required this.borderColor,
     this.opacity = 1.0,
   });
-  final Color  borderColor;
+  final Color borderColor;
   final double opacity;
 
   @override
@@ -922,17 +926,17 @@ class _CircleAvatar extends StatelessWidget {
     return Opacity(
       opacity: opacity,
       child: Container(
-        width:  52,
+        width: 52,
         height: 52,
         decoration: BoxDecoration(
-          shape:  BoxShape.circle,
-          color:  AppColors.surfaceGlassHover,
+          shape: BoxShape.circle,
+          color: AppColors.surfaceGlassHover,
           border: Border.all(color: borderColor),
         ),
         child: const Icon(
           Icons.person_outline_rounded,
           color: AppColors.slateMist,
-          size:  28,
+          size: 28,
         ),
       ),
     );
@@ -942,24 +946,24 @@ class _CircleAvatar extends StatelessWidget {
 class _StatusPill extends StatelessWidget {
   const _StatusPill({required this.label, required this.color});
   final String label;
-  final Color  color;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.space8,
-        vertical:   AppDimensions.space4,
+        vertical: AppDimensions.space4,
       ),
       decoration: BoxDecoration(
-        color:        color.withValues(alpha: 0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(AppDimensions.radiusTiny),
-        border:       Border.all(color: color.withValues(alpha: 0.4)),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
       child: Text(
         label,
         style: AppTypography.caption.copyWith(
-          color:    color,
+          color: color,
           fontSize: 11,
           fontWeight: FontWeight.w600,
         ),
@@ -976,11 +980,10 @@ class _NewBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color:        AppColors.champagneGold,
+        color: AppColors.champagneGold,
         borderRadius: BorderRadius.circular(AppDimensions.radiusTiny),
       ),
-      child: Text('new',
-          style: AppTypography.badge.copyWith(fontSize: 10)),
+      child: Text('new', style: AppTypography.badge.copyWith(fontSize: 10)),
     );
   }
 }
@@ -995,7 +998,7 @@ class _CountBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color:        AppColors.champagneGold,
+        color: AppColors.champagneGold,
         borderRadius: BorderRadius.circular(AppDimensions.radiusTiny),
       ),
       child: Text('$count', style: AppTypography.badge),

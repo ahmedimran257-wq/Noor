@@ -11,8 +11,6 @@
 //   • Diaspora community blends for Western countries
 //   • "Prefer not to say" + "Other" always at end
 //   • No offensive or derogatory community labels
-//
-// FUTURE: Supabase may supply country-specific editorial additions.
 // ============================================================
 
 import 'country_data.dart';
@@ -1280,6 +1278,339 @@ class CountryCommunityData {
       'Palestinian Danish',
       'Somali Danish',
       'Pakistani Danish',
+      'Other',
+      'Prefer not to say'
+    ],
+
+    // Countries previously covered only by generated fallback labels.
+    'AD': [
+      'Moroccan Andorran',
+      'Algerian Andorran',
+      'Pakistani Andorran',
+      'Convert / Revert',
+      'Other',
+      'Prefer not to say'
+    ],
+    'AM': [
+      'Azeri Muslim',
+      'Iranian Muslim',
+      'Kurdish Muslim',
+      'Levantine Arab',
+      'Convert / Revert',
+      'Other',
+      'Prefer not to say'
+    ],
+    'BF': [
+      'Mossi Muslim',
+      'Fulani / Peul',
+      'Dioula / Jula',
+      'Bissa Muslim',
+      'Gourmantche Muslim',
+      'Other',
+      'Prefer not to say'
+    ],
+    'BJ': [
+      'Yoruba Muslim',
+      'Bariba / Baatonum',
+      'Dendi',
+      'Fulani / Peul',
+      'Hausa',
+      'Fon Muslim',
+      'Other',
+      'Prefer not to say'
+    ],
+    'BW': [
+      'Indian Botswana Muslim',
+      'Pakistani Botswana Muslim',
+      'Somali Botswana Muslim',
+      'Arab diaspora',
+      'Convert / Revert',
+      'Other',
+      'Prefer not to say'
+    ],
+    'BY': [
+      'Belarusian Tatar',
+      'Azeri Belarusian',
+      'Chechen Belarusian',
+      'Central Asian Muslim',
+      'Convert / Revert',
+      'Other',
+      'Prefer not to say'
+    ],
+    'CZ': [
+      'Bosnian Czech',
+      'Turkish Czech',
+      'Arab diaspora',
+      'Chechen Czech',
+      'Convert / Revert',
+      'Other',
+      'Prefer not to say'
+    ],
+    'EE': [
+      'Estonian Tatar',
+      'Azeri Estonian',
+      'Chechen Estonian',
+      'Central Asian Muslim',
+      'Convert / Revert',
+      'Other',
+      'Prefer not to say'
+    ],
+    'GE': [
+      'Ajarian Muslim',
+      'Azerbaijani Georgian',
+      'Kist / Chechen',
+      'Meskhetian Turk',
+      'Laz Muslim',
+      'Other',
+      'Prefer not to say'
+    ],
+    'GM': [
+      'Mandinka',
+      'Wolof',
+      'Fula / Fulani',
+      'Jola',
+      'Sarahule / Soninke',
+      'Serer Muslim',
+      'Other',
+      'Prefer not to say'
+    ],
+    'GN': [
+      'Fula / Peul',
+      'Malinke / Mandinka',
+      'Susu',
+      'Kissi Muslim',
+      'Toma Muslim',
+      'Other',
+      'Prefer not to say'
+    ],
+    'HR': [
+      'Bosniak Croatian',
+      'Albanian Croatian',
+      'Roma Muslim',
+      'Turkish diaspora',
+      'Convert / Revert',
+      'Other',
+      'Prefer not to say'
+    ],
+    'HU': [
+      'Bosnian Hungarian',
+      'Turkish Hungarian',
+      'Arab diaspora',
+      'Roma Muslim',
+      'Convert / Revert',
+      'Other',
+      'Prefer not to say'
+    ],
+    'KM': [
+      'Ngazidja / Grande Comore',
+      'Ndzuwani / Anjouan',
+      'Mwali / Moheli',
+      'Mahorais / Comorian diaspora',
+      'Other',
+      'Prefer not to say'
+    ],
+    'LI': [
+      'Turkish Liechtenstein',
+      'Bosnian Liechtenstein',
+      'Albanian / Kosovar',
+      'Arab diaspora',
+      'Convert / Revert',
+      'Other',
+      'Prefer not to say'
+    ],
+    'LU': [
+      'Bosnian Luxembourgish',
+      'Turkish Luxembourgish',
+      'Moroccan Luxembourgish',
+      'Albanian / Kosovar',
+      'Convert / Revert',
+      'Other',
+      'Prefer not to say'
+    ],
+    'LV': [
+      'Latvian Tatar',
+      'Azeri Latvian',
+      'Chechen Latvian',
+      'Central Asian Muslim',
+      'Convert / Revert',
+      'Other',
+      'Prefer not to say'
+    ],
+    'MC': [
+      'Moroccan Monegasque',
+      'French Maghrebi Muslim',
+      'Turkish Monegasque',
+      'Arab diaspora',
+      'Convert / Revert',
+      'Other',
+      'Prefer not to say'
+    ],
+    'MD': [
+      'Moldovan Tatar',
+      'Azeri Moldovan',
+      'Turkish Moldovan',
+      'Roma Muslim',
+      'Convert / Revert',
+      'Other',
+      'Prefer not to say'
+    ],
+    'MO': [
+      'Indonesian Macau Muslim',
+      'Filipino Muslim',
+      'South Asian Muslim',
+      'Chinese / Hui Muslim',
+      'Convert / Revert',
+      'Other',
+      'Prefer not to say'
+    ],
+    'MT': [
+      'Libyan Maltese Muslim',
+      'Somali Maltese Muslim',
+      'Pakistani Maltese Muslim',
+      'Arab diaspora',
+      'Convert / Revert',
+      'Other',
+      'Prefer not to say'
+    ],
+    'MX': [
+      'Mexican Convert / Revert',
+      'Lebanese Mexican Muslim',
+      'Palestinian Mexican Muslim',
+      'Pakistani Mexican Muslim',
+      'North African diaspora',
+      'Other',
+      'Prefer not to say'
+    ],
+    'NE': [
+      'Hausa',
+      'Zarma / Songhai',
+      'Fulani / Peul',
+      'Tuareg',
+      'Kanuri',
+      'Arab',
+      'Other',
+      'Prefer not to say'
+    ],
+    'RS': [
+      'Bosniak / Sandzak',
+      'Albanian Muslim',
+      'Roma Muslim',
+      'Gorani',
+      'Turkish diaspora',
+      'Other',
+      'Prefer not to say'
+    ],
+    'SC': [
+      'Seychellois Muslim',
+      'South Asian Seychellois',
+      'Comorian Seychellois',
+      'Arab diaspora',
+      'Convert / Revert',
+      'Other',
+      'Prefer not to say'
+    ],
+    'SI': [
+      'Bosniak Slovenian',
+      'Albanian Slovenian',
+      'Turkish Slovenian',
+      'Roma Muslim',
+      'Convert / Revert',
+      'Other',
+      'Prefer not to say'
+    ],
+    'SK': [
+      'Bosnian Slovak',
+      'Turkish Slovak',
+      'Arab diaspora',
+      'Chechen Slovak',
+      'Convert / Revert',
+      'Other',
+      'Prefer not to say'
+    ],
+    'SM': [
+      'Italian Muslim',
+      'North African Muslim',
+      'Albanian / Balkan Muslim',
+      'Convert / Revert',
+      'Other',
+      'Prefer not to say'
+    ],
+    'SS': [
+      'South Sudanese Muslim',
+      'Sudanese Arab',
+      'Dinka Muslim',
+      'Nuer Muslim',
+      'Bari Muslim',
+      'Darfuri diaspora',
+      'Other',
+      'Prefer not to say'
+    ],
+    'ST': [
+      'Sao Tomean Muslim',
+      'Nigerian Muslim',
+      'Senegalese Muslim',
+      'Guinean Muslim',
+      'Convert / Revert',
+      'Other',
+      'Prefer not to say'
+    ],
+    'TD': [
+      'Chadian Arab',
+      'Kanembu / Kanuri',
+      'Zaghawa',
+      'Maba',
+      'Fulani / Peul',
+      'Hausa',
+      'Sara Muslim',
+      'Other',
+      'Prefer not to say'
+    ],
+    'TG': [
+      'Kotokoli / Tem',
+      'Hausa Togolese',
+      'Fulani / Peul',
+      'Yoruba Muslim',
+      'Dendi',
+      'Moba Muslim',
+      'Other',
+      'Prefer not to say'
+    ],
+    'TL': [
+      'Timorese Muslim',
+      'Indonesian Muslim',
+      'Arab / Hadhrami diaspora',
+      'Convert / Revert',
+      'Other',
+      'Prefer not to say'
+    ],
+    'UA': [
+      'Crimean Tatar',
+      'Volga Tatar',
+      'Azerbaijani Ukrainian',
+      'Turkish Ukrainian',
+      'Chechen Ukrainian',
+      'Central Asian Muslim',
+      'Ukrainian Convert / Revert',
+      'Other',
+      'Prefer not to say'
+    ],
+    'UG': [
+      'Baganda Muslim',
+      'Nubian Ugandan',
+      'Basoga Muslim',
+      'Banyankole Muslim',
+      'Somali Ugandan',
+      'Indian Ugandan Muslim',
+      'Other',
+      'Prefer not to say'
+    ],
+    'ZA': [
+      'Cape Malay',
+      'Indian South African Muslim',
+      'Somali South African',
+      'Pakistani South African',
+      'African Convert / Revert',
+      'Malawian / Zimbabwean Muslim',
       'Other',
       'Prefer not to say'
     ],

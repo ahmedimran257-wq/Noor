@@ -42,8 +42,9 @@ class _CountryPickerScreenState extends State<CountryPickerScreen> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: TextField(
-              autofocus: true,
               onChanged: (value) => setState(() => _query = value),
+              onTapOutside: (_) =>
+                  FocusManager.instance.primaryFocus?.unfocus(),
               style: AppTypography.body,
               decoration: const InputDecoration(
                 prefixIcon: Icon(Icons.search_rounded),
@@ -66,6 +67,7 @@ class _CountryPickerScreenState extends State<CountryPickerScreen> {
                           color: AppColors.champagneGold)
                       : null,
                   onTap: () {
+                    FocusManager.instance.primaryFocus?.unfocus();
                     widget.onSelected(country);
                     Navigator.of(context).pop();
                   },

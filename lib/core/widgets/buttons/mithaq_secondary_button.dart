@@ -79,26 +79,34 @@ class MithaqSecondaryButton extends StatelessWidget {
                     color: AppColors.champagneGold,
                   ),
                 )
-              : Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (icon != null) ...[
-                      Icon(
-                        icon,
-                        color: AppColors.champagneGold,
-                        size: AppDimensions.iconSizeMedium,
+              : Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (icon != null) ...[
+                        Icon(
+                          icon,
+                          color: AppColors.champagneGold,
+                          size: AppDimensions.iconSizeMedium,
+                        ),
+                        const SizedBox(width: AppDimensions.space8),
+                      ],
+                      Flexible(
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: AppTypography.buttonSecondary.copyWith(
+                            color: isActive
+                                ? AppColors.champagneLight
+                                : AppColors.slateMist,
+                          ),
+                        ),
                       ),
-                      const SizedBox(width: AppDimensions.space8),
                     ],
-                    Text(
-                      label,
-                      style: AppTypography.buttonSecondary.copyWith(
-                        color: isActive
-                            ? AppColors.champagneLight
-                            : AppColors.slateMist,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
         ),
       ),
@@ -144,7 +152,7 @@ class MithaqGhostButton extends StatelessWidget {
         ),
         child: Center(
           child: Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (icon != null) ...[
                 Icon(
@@ -154,10 +162,15 @@ class MithaqGhostButton extends StatelessWidget {
                 ),
                 const SizedBox(width: AppDimensions.space8),
               ],
-              Text(
-                label,
-                style: AppTypography.buttonGhost.copyWith(
-                  color: enabled ? AppColors.pearlWhite : AppColors.slateMist,
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.buttonGhost.copyWith(
+                    color: enabled ? AppColors.pearlWhite : AppColors.slateMist,
+                  ),
                 ),
               ),
             ],

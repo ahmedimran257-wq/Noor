@@ -122,9 +122,10 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
     await showInterestCeremony(context, firstName: fp.profile.firstName);
   }
 
-  void _handleBookmark(int index, FeedProfile fp) {
+  Future<void> _handleBookmark(int index, FeedProfile fp) async {
     HapticFeedback.selectionClick();
     final id = fp.profile.id;
+    final previous = Set<String>.from(_bookmarked);
     setState(() {
       if (_bookmarked.contains(id)) {
         _bookmarked.remove(id);
@@ -132,9 +133,17 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
         _bookmarked.add(id);
       }
     });
-    // Persist updated bookmark set
-    BookmarkService.save(Set<String>.from(_bookmarked));
 
+    final targetSaved = _bookmarked.contains(id);
+    try {
+      final saved = await BookmarkService.setSaved(id, targetSaved);
+      if (mounted) setState(() => _bookmarked = saved);
+    } catch (_) {
+      if (mounted) setState(() => _bookmarked = previous);
+      return;
+    }
+
+    if (!mounted) return;
     final l10n = AppLocalizations.of(context);
     ScaffoldMessenger.of(context)
       ..clearSnackBars()

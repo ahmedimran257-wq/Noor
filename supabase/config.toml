@@ -18,14 +18,23 @@ major_version = 17
 enabled = true
 port = 54323
 
-[inbucket]
+[local_smtp]
 enabled = true
+# Port to use for the email testing server web interface.
 port = 54324
+# Uncomment to expose additional ports for local app-level SMTP testing.
+# smtp_port = 54325
+# pop3_port = 54326
+# admin_email = "admin@email.com"
+# sender_name = "Admin"
 
 [storage]
 enabled = true
 # profile-photos bucket is created via Supabase Dashboard or CLI:
 # supabase storage create profile-photos --public=false
+
+[storage.vector]
+enabled = false
 
 [auth]
 site_url = "mithaq://"
@@ -50,12 +59,17 @@ otp_length = 6
 subject = "Your Mithaq verification code"
 content_path = "./supabase/auth/email_templates/mithaq_verification_code.html"
 
+[auth.hook.before_user_created]
+enabled = true
+uri = "pg-functions://postgres/public/hook_before_user_created"
+
 [auth.mfa.totp]
 enroll_enabled = true
 verify_enabled = true
 
 [auth.sms]
-# We use Firebase Auth for OTP — Supabase SMS is not used
+# Signup uses Supabase email OTP. SMS is disabled and reserved for later
+# premium phone verification/trust checks outside the signup flow.
 enable_signup = false
 enable_confirmations = false
 
@@ -70,4 +84,9 @@ enabled = true
 
 [functions.auth-before-user-created]
 # Supabase Auth calls this endpoint before an anonymous user session exists.
+verify_jwt = false
+
+[functions.revenuecat-webhook]
+# RevenueCat signs requests with REVENUECAT_WEBHOOK_SECRET; Supabase JWT
+# verification must stay off so external webhooks can reach our own verifier.
 verify_jwt = false

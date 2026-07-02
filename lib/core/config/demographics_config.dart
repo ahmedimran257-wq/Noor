@@ -4,9 +4,6 @@
 // Maps ISO country codes to communities and languages.
 // Uses regional files for 75+ countries.
 //
-// TODO (Phase 4): replace with Supabase query:
-// SELECT communities, languages FROM country_demographics
-// WHERE country_code = ?
 // ============================================================
 
 import 'country_demographics/index.dart';
@@ -17,7 +14,7 @@ class DemographicsConfig {
   /// Default fallback for any country not in the regional data.
   static const Map<String, List<String>> _fallback = {
     'communities': ['Arab', 'South Asian', 'African', 'Other'],
-    'languages':   ['Arabic', 'English', 'Urdu', 'French', 'Other'],
+    'languages': ['Arabic', 'English', 'Urdu', 'French', 'Other'],
   };
 
   // ── Public API ──────────────────────────────────────────────
@@ -26,7 +23,6 @@ class DemographicsConfig {
   /// for the given ISO-2 [countryCode]. Falls back to a default list for
   /// unknown country codes.
   ///
-  /// TODO (backend): replace with Supabase query when Phase 4 launches.
   static Map<String, List<String>> forCountry(String countryCode) {
     final entry = kAllDemographics[countryCode.toUpperCase()];
     if (entry != null) return entry;

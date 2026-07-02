@@ -3,7 +3,7 @@
 // Mithaq — Entry Point
 // "Begin with bismillah"
 // Step 4: GoRouter + MultiBlocProvider wired up.
-//         Auth-gated routing with mock OTP flow.
+//         Auth-gated routing with Supabase email OTP.
 // ============================================================
 
 import 'dart:async';
@@ -68,7 +68,7 @@ void main() async {
   );
 
   // ── Supabase Initialization ─────────────────────────────────
-  // Initialize Supabase client if configured (non-mock mode)
+  // Initialize Supabase client
   await SupabaseService.initialize();
 
   // ── Global Error Handling + Crashlytics ────────────────────
@@ -224,7 +224,11 @@ class _MithaqAppState extends State<MithaqApp> {
     _authCubit.checkSession();
     ConnectivityService.initialize();
     unawaited(_revenueCatReady.then((_) => _subscriptionCubit.initialize()));
-    unawaited(FcmService.instance.initialize());
+    // Widget tests run without a native Firebase app. Production still
+    // initializes FCM here after Firebase.initializeApp() in main().
+    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+      unawaited(FcmService.instance.initialize());
+    }
   }
 
   Future<void> _loginSubscriptionUser(String userId) async {

@@ -1,6 +1,6 @@
 // lib/core/cubits/chat/chat_cubit.dart
 // ============================================================
-// MITHAQ — Chat Cubit (Real Supabase + Mock Fallback)
+// MITHAQ — Chat Cubit (Supabase production flow)
 // ============================================================
 
 import 'dart:async';
@@ -15,20 +15,23 @@ import 'chat_state.dart';
 
 class ChatCubit extends Cubit<ChatState> {
   ChatCubit() : super(const ChatState()) {
-    loadConversations();
+    unawaited(loadConversations());
   }
 
   int _msgCounter = 0;
   RealtimeChannel? _messagesSubscription;
   RealtimeChannel? _matchesSubscription;
+  int _loadVersion = 0;
+  String? _realtimeUserId;
 
   bool get _isRealMode => SupabaseService.isInitialized;
 
   // ── DB Loading & Realtime ─────────────────────────────────
 
   Future<void> loadConversations() async {
+    final loadVersion = ++_loadVersion;
     if (!_isRealMode) {
-      _initMockConversations();
+      emit(state.copyWith(conversations: const [], isLoading: false));
       return;
     }
 
@@ -36,7 +39,9 @@ class ChatCubit extends Cubit<ChatState> {
     try {
       final me = SupabaseService.currentUserId;
       if (me == null) {
-        emit(state.copyWith(isLoading: false));
+        if (_isCurrentLoad(loadVersion)) {
+          emit(state.copyWith(isLoading: false));
+        }
         return;
       }
 
@@ -49,13 +54,16 @@ class ChatCubit extends Cubit<ChatState> {
 
       DateTime? suspendedUntil;
       if (userRow != null && userRow['messaging_suspended_until'] != null) {
-        suspendedUntil = DateTime.tryParse(userRow['messaging_suspended_until'] as String)?.toLocal();
+        suspendedUntil =
+            DateTime.tryParse(userRow['messaging_suspended_until'] as String)
+                ?.toLocal();
       }
+      if (!_isCurrentLoad(loadVersion)) return;
 
       // Fetch matches where current user is participant
       final matches = await SupabaseService.client
           .from('matches')
-          .select()
+          .select('id, user_a, user_b, status, closure_reason')
           .or('user_a.eq.$me,user_b.eq.$me');
 
       final List<Conversation> loaded = [];
@@ -75,14 +83,17 @@ class ChatCubit extends Cubit<ChatState> {
             .eq('user_id', otherUserId)
             .maybeSingle();
 
-        final matchName = profile != null ? (profile['first_name'] as String? ?? 'User') : 'User';
-        final lastName = profile != null ? (profile['last_name'] as String? ?? '') : '';
+        final matchName = profile != null
+            ? (profile['first_name'] as String? ?? 'User')
+            : 'User';
+        final lastName =
+            profile != null ? (profile['last_name'] as String? ?? '') : '';
         final matchLastInitial = lastName.isNotEmpty ? lastName[0] : '';
 
         // Fetch messages for this match
         final messagesData = await SupabaseService.client
             .from('messages')
-            .select()
+            .select('id, sender_id, content, created_at, read_at, translations')
             .eq('match_id', matchId)
             .order('created_at', ascending: true);
 
@@ -101,28 +112,38 @@ class ChatCubit extends Cubit<ChatState> {
           unreadCount: unreadCount,
           matchId: matchId,
           otherUserId: otherUserId,
-          isMatchClosed: status == 'closed' || status == 'expired' || status == 'blocked' || status == 'reported',
+          isMatchClosed: status == 'closed' ||
+              status == 'expired' ||
+              status == 'blocked' ||
+              status == 'reported',
           closureMessage: closureReason,
         ));
       }
 
+      if (!_isCurrentLoad(loadVersion)) return;
       emit(state.copyWith(
-        conversations: loaded,
+        conversations: _mergeLoadedConversations(state.conversations, loaded),
         isLoading: false,
         messagingSuspendedUntil: suspendedUntil,
       ));
       _setupRealtime();
     } catch (e) {
       debugPrint('ChatCubit: Error loading conversations: $e');
-      emit(state.copyWith(isLoading: false));
+      if (_isCurrentLoad(loadVersion)) emit(state.copyWith(isLoading: false));
     }
   }
 
   void _setupRealtime() {
     final me = SupabaseService.currentUserId;
     if (me == null) return;
+    if (_realtimeUserId == me &&
+        _messagesSubscription != null &&
+        _matchesSubscription != null) {
+      return;
+    }
 
     _disposeRealtime();
+    _realtimeUserId = me;
 
     // Subscribe to new incoming messages/updates where I am the receiver
     _messagesSubscription = SupabaseService.client
@@ -146,9 +167,13 @@ class ChatCubit extends Cubit<ChatState> {
               final msgId = newRecord['id'] as String?;
               final createdAtStr = newRecord['created_at'] as String?;
 
-              if (matchId != null && senderId != null && msgId != null && createdAtStr != null) {
+              if (matchId != null &&
+                  senderId != null &&
+                  msgId != null &&
+                  createdAtStr != null) {
                 if (senderId != me) {
-                  final sentAt = DateTime.tryParse(createdAtStr)?.toLocal() ?? DateTime.now();
+                  final sentAt = DateTime.tryParse(createdAtStr)?.toLocal() ??
+                      DateTime.now();
                   final chatMessage = ChatMessage(
                     id: msgId,
                     text: content,
@@ -167,7 +192,7 @@ class ChatCubit extends Cubit<ChatState> {
                 _updateMessageStatus(matchId, msgId, MessageStatus.read);
               }
             } else {
-              loadConversations();
+              unawaited(loadConversations());
             }
           },
         )
@@ -181,7 +206,7 @@ class ChatCubit extends Cubit<ChatState> {
           schema: 'public',
           table: 'matches',
           callback: (payload) {
-            loadConversations();
+            unawaited(loadConversations());
           },
         )
         .subscribe();
@@ -192,6 +217,7 @@ class ChatCubit extends Cubit<ChatState> {
     _matchesSubscription?.unsubscribe();
     _messagesSubscription = null;
     _matchesSubscription = null;
+    _realtimeUserId = null;
   }
 
   @override
@@ -200,88 +226,18 @@ class ChatCubit extends Cubit<ChatState> {
     return super.close();
   }
 
-  // ── Mock data fallback ─────────────────────────────────────
-
-  void _initMockConversations() {
-    final now = DateTime.now();
-
-    final conversations = [
-      Conversation(
-        id:               'c1',
-        matchName:        'Fatima',
-        matchLastInitial: 'A',
-        unreadCount:      2,
-        messages: [
-          ChatMessage(
-            id:     'm1',
-            text:   'Assalamu Alaikum! Mashallah your profile is very impressive.',
-            sentAt: now.subtract(const Duration(hours: 3)),
-            isMe:   false,
-            status: MessageStatus.delivered,
-          ),
-          ChatMessage(
-            id:     'm2',
-            text:   'Wa alaikum assalam! JazakAllah khair, that is very kind of you.',
-            sentAt: now.subtract(const Duration(hours: 2, minutes: 48)),
-            isMe:   true,
-            status: MessageStatus.read,
-          ),
-          ChatMessage(
-            id:     'm3',
-            text:   'I noticed we share a love of reading. What are you reading currently?',
-            sentAt: now.subtract(const Duration(minutes: 22)),
-            isMe:   false,
-            status: MessageStatus.delivered,
-          ),
-          ChatMessage(
-            id:     'm4',
-            text:   'Currently finishing "The Alchemist." Have you read it?',
-            sentAt: now.subtract(const Duration(minutes: 10)),
-            isMe:   false,
-            status: MessageStatus.delivered,
-          ),
-        ],
-      ),
-      Conversation(
-        id:               'c2',
-        matchName:        'Zainab',
-        matchLastInitial: 'H',
-        unreadCount:      0,
-        messages: [
-          ChatMessage(
-            id:     'm5',
-            text:   'Assalamu Alaikum. I came across your profile and was genuinely impressed.',
-            sentAt: now.subtract(const Duration(days: 1, hours: 2)),
-            isMe:   true,
-            status: MessageStatus.read,
-          ),
-          ChatMessage(
-            id:     'm6',
-            text:   'Wa alaikum assalam! Thank you, I appreciate that. What drew you to medicine?',
-            sentAt: now.subtract(const Duration(days: 1, hours: 1)),
-            isMe:   false,
-            status: MessageStatus.read,
-          ),
-          ChatMessage(
-            id:     'm7',
-            text:   'It is a noble calling. InshAllah we can talk more.',
-            sentAt: now.subtract(const Duration(days: 1)),
-            isMe:   true,
-            status: MessageStatus.read,
-          ),
-        ],
-      ),
-    ];
-
-    emit(state.copyWith(conversations: conversations, isLoading: false));
-  }
-
   // ── Public API ────────────────────────────────────────────
 
-  Future<String> openOrCreateConversation(String otherUserId, String matchName, String lastInitial) async {
+  Future<String> openOrCreateConversation(
+      String otherUserId, String matchName, String lastInitial) async {
     final existing = state.conversations.where((c) {
-      if (c.otherUserId != null && c.otherUserId == otherUserId) return true;
-      if (c.otherUserId == null && c.matchName.toLowerCase() == matchName.toLowerCase()) return true;
+      if (c.otherUserId != null && c.otherUserId == otherUserId) {
+        return true;
+      }
+      if (c.otherUserId == null &&
+          c.matchName.toLowerCase() == matchName.toLowerCase()) {
+        return true;
+      }
       return false;
     });
     if (existing.isNotEmpty) return existing.first.id;
@@ -291,8 +247,13 @@ class ChatCubit extends Cubit<ChatState> {
       // 1. Try reloading conversations first in case the realtime sync didn't complete yet
       await loadConversations().timeout(const Duration(seconds: 5));
       final existingAfterLoad = state.conversations.where((c) {
-        if (c.otherUserId != null && c.otherUserId == otherUserId) return true;
-        if (c.otherUserId == null && c.matchName.toLowerCase() == matchName.toLowerCase()) return true;
+        if (c.otherUserId != null && c.otherUserId == otherUserId) {
+          return true;
+        }
+        if (c.otherUserId == null &&
+            c.matchName.toLowerCase() == matchName.toLowerCase()) {
+          return true;
+        }
         return false;
       });
       if (existingAfterLoad.isNotEmpty) return existingAfterLoad.first.id;
@@ -314,25 +275,14 @@ class ChatCubit extends Cubit<ChatState> {
             return matchRow['id'] as String;
           }
         } catch (e) {
-          debugPrint('ChatCubit: Error finding match by otherUserId in real mode: $e');
+          debugPrint(
+              'ChatCubit: Error finding match by otherUserId in real mode: $e');
         }
       }
       return '';
     }
 
-    final newConv = Conversation(
-      id:               'c_${DateTime.now().millisecondsSinceEpoch}',
-      matchName:        matchName,
-      matchLastInitial: lastInitial,
-      messages:         const [],
-      unreadCount:      0,
-      otherUserId:      otherUserId,
-    );
-
-    emit(state.copyWith(
-      conversations: [newConv, ...state.conversations],
-    ));
-    return newConv.id;
+    return '';
   }
 
   Future<void> sendMessage(String conversationId, String text) async {
@@ -341,9 +291,8 @@ class ChatCubit extends Cubit<ChatState> {
 
     if (state.isSuspended) return;
 
-    final conv = state.conversations
-        .where((c) => c.id == conversationId)
-        .firstOrNull;
+    final conv =
+        state.conversations.where((c) => c.id == conversationId).firstOrNull;
     if (conv?.isMatchClosed == true) return;
 
     final validationError = ContentFilter.validate(trimmed);
@@ -351,7 +300,8 @@ class ChatCubit extends Cubit<ChatState> {
     final isUrl = trimmed.contains(RegExp(r'(https?://|www\.)\S+'));
 
     if (hasViolation) {
-      final currentViolations = (state.violationCounts[conversationId] ?? 0) + 1;
+      final currentViolations =
+          (state.violationCounts[conversationId] ?? 0) + 1;
       final updatedViolations = Map<String, int>.from(state.violationCounts)
         ..[conversationId] = currentViolations;
 
@@ -362,10 +312,10 @@ class ChatCubit extends Cubit<ChatState> {
           try {
             final me = SupabaseService.currentUserId;
             if (me != null) {
-              await SupabaseService.client
-                  .from('users')
-                  .update({'messaging_suspended_until': suspendedUntil.toUtc().toIso8601String()})
-                  .eq('id', me);
+              await SupabaseService.client.from('users').update({
+                'messaging_suspended_until':
+                    suspendedUntil.toUtc().toIso8601String()
+              }).eq('id', me);
             }
           } catch (e) {
             debugPrint('ChatCubit: Error suspending user: $e');
@@ -375,17 +325,18 @@ class ChatCubit extends Cubit<ChatState> {
 
       emit(state.copyWith(
         violationCounts: updatedViolations,
-        messagingSuspendedUntil: suspendedUntil ?? state.messagingSuspendedUntil,
+        messagingSuspendedUntil:
+            suspendedUntil ?? state.messagingSuspendedUntil,
       ));
 
       if (isUrl) {
         _msgCounter++;
         final tempMsgId = 'msg_$_msgCounter';
         final failedMsg = ChatMessage(
-          id:     tempMsgId,
-          text:   '[link blocked - safety violation]',
+          id: tempMsgId,
+          text: '[link blocked - safety violation]',
           sentAt: DateTime.now(),
-          isMe:   true,
+          isMe: true,
           status: MessageStatus.failed,
         );
         _appendMessage(conversationId, failedMsg);
@@ -394,90 +345,79 @@ class ChatCubit extends Cubit<ChatState> {
     }
 
     final filtered = ContentFilter.redact(trimmed);
+    if (!_isRealMode) return;
 
     _msgCounter++;
     final tempMsgId = 'msg_$_msgCounter';
-    final sent  = ChatMessage(
-      id:     tempMsgId,
-      text:   filtered,
+    final sent = ChatMessage(
+      id: tempMsgId,
+      text: filtered,
       sentAt: DateTime.now(),
-      isMe:   true,
+      isMe: true,
       status: MessageStatus.queued,
     );
 
     _appendMessage(conversationId, sent);
 
-    if (_isRealMode) {
-      final me = SupabaseService.currentUserId;
-      if (me == null) return;
+    final me = SupabaseService.currentUserId;
+    if (me == null) return;
 
-      final receiverId = conv?.otherUserId;
-      if (receiverId == null) {
-        debugPrint('ChatCubit: Error sending message: otherUserId not cached on conversation');
-        _updateMessageStatus(conversationId, tempMsgId, MessageStatus.failed);
-        return;
-      }
+    final receiverId = conv?.otherUserId;
+    if (receiverId == null) {
+      debugPrint(
+          'ChatCubit: Error sending message: otherUserId not cached on conversation');
+      _updateMessageStatus(conversationId, tempMsgId, MessageStatus.failed);
+      return;
+    }
 
-      try {
-        final insertedData = await SupabaseService.client.from('messages').insert({
-          'match_id': conversationId,
-          'sender_id': me,
-          'receiver_id': receiverId,
-          'content': filtered,
-        }).select('id, created_at').single().timeout(const Duration(seconds: 10));
+    try {
+      final insertedData = await SupabaseService.client
+          .from('messages')
+          .insert({
+            'match_id': conversationId,
+            'sender_id': me,
+            'receiver_id': receiverId,
+            'content': filtered,
+          })
+          .select('id, created_at')
+          .single()
+          .timeout(const Duration(seconds: 10));
 
-        final realMsgId = insertedData['id'] as String;
-        final createdAtStr = insertedData['created_at'] as String;
-        final sentAt = DateTime.tryParse(createdAtStr)?.toLocal() ?? DateTime.now();
+      final realMsgId = insertedData['id'] as String;
+      final createdAtStr = insertedData['created_at'] as String;
+      final sentAt =
+          DateTime.tryParse(createdAtStr)?.toLocal() ?? DateTime.now();
 
-        _updateLocalMessageDetails(conversationId, tempMsgId, realMsgId, sentAt, MessageStatus.sent);
-      } catch (e) {
-        debugPrint('ChatCubit: Error sending message: $e');
-        _updateMessageStatus(conversationId, tempMsgId, MessageStatus.failed);
-      }
-    } else {
-      // Simulate network delivery in mock mode
-      await Future.delayed(const Duration(milliseconds: 400));
-      _updateMessageStatus(conversationId, tempMsgId, MessageStatus.sent);
-
-      await Future.delayed(const Duration(milliseconds: 800));
-      _updateMessageStatus(conversationId, tempMsgId, MessageStatus.delivered);
-
-      await Future.delayed(const Duration(seconds: 3));
-      if (!isClosed) _simulateReply(conversationId);
+      _updateLocalMessageDetails(
+          conversationId, tempMsgId, realMsgId, sentAt, MessageStatus.sent);
+    } catch (e) {
+      debugPrint('ChatCubit: Error sending message: $e');
+      _updateMessageStatus(conversationId, tempMsgId, MessageStatus.failed);
     }
   }
 
-  void markRead(String conversationId) {
+  Future<void> markRead(String conversationId) async {
     final exists = state.conversations.any((c) => c.id == conversationId);
     if (!exists) return;
 
-    if (_isRealMode) {
-      final me = SupabaseService.currentUserId;
-      if (me == null) return;
+    final me = SupabaseService.currentUserId;
+    if (!_isRealMode || me == null) return;
 
-      try {
-        SupabaseService.client
-            .from('messages')
-            .update({'read_at': DateTime.now().toIso8601String()})
-            .eq('match_id', conversationId)
-            .eq('receiver_id', me)
-            .isFilter('read_at', null);
+    try {
+      await SupabaseService.client
+          .from('messages')
+          .update({'read_at': DateTime.now().toIso8601String()})
+          .eq('match_id', conversationId)
+          .eq('receiver_id', me)
+          .isFilter('read_at', null);
 
-        final updated = state.conversations.map((c) {
-          if (c.id != conversationId) return c;
-          return c.copyWith(unreadCount: 0);
-        }).toList();
-        emit(state.copyWith(conversations: updated));
-      } catch (e) {
-        debugPrint('ChatCubit: Error marking read: $e');
-      }
-    } else {
       final updated = state.conversations.map((c) {
         if (c.id != conversationId) return c;
         return c.copyWith(unreadCount: 0);
       }).toList();
       emit(state.copyWith(conversations: updated));
+    } catch (e) {
+      debugPrint('ChatCubit: Error marking read: $e');
     }
   }
 
@@ -494,63 +434,60 @@ class ChatCubit extends Cubit<ChatState> {
   }
 
   Future<void> closeMatch(String conversationId, String message) async {
+    if (!_isRealMode) return;
+
     _msgCounter++;
     final closureMsg = ChatMessage(
-      id:     'msg_$_msgCounter',
-      text:   message,
+      id: 'msg_$_msgCounter',
+      text: message,
       sentAt: DateTime.now(),
-      isMe:   true,
+      isMe: true,
       status: MessageStatus.sent,
     );
 
     final updated = state.conversations.map((c) {
       if (c.id != conversationId) return c;
       return c.copyWith(
-        messages:       [...c.messages, closureMsg],
-        isMatchClosed:  true,
+        messages: [...c.messages, closureMsg],
+        isMatchClosed: true,
         closureMessage: message,
       );
     }).toList();
     emit(state.copyWith(conversations: updated));
 
-    if (_isRealMode) {
-      final me = SupabaseService.currentUserId;
-      if (me == null) return;
+    final me = SupabaseService.currentUserId;
+    if (me == null) return;
 
-      try {
-        final matchData = await SupabaseService.client
-            .from('matches')
-            .select('user_a, user_b')
-            .eq('id', conversationId)
-            .single();
+    try {
+      final matchData = await SupabaseService.client
+          .from('matches')
+          .select('user_a, user_b')
+          .eq('id', conversationId)
+          .single();
 
-        final userA = matchData['user_a'] as String;
-        final userB = matchData['user_b'] as String;
-        final receiverId = (userA == me) ? userB : userA;
+      final userA = matchData['user_a'] as String;
+      final userB = matchData['user_b'] as String;
+      final receiverId = (userA == me) ? userB : userA;
 
-        // 1. Insert closure message so other participant sees it
-        await SupabaseService.client.from('messages').insert({
-          'match_id': conversationId,
-          'sender_id': me,
-          'receiver_id': receiverId,
-          'content': message,
-        });
+      // 1. Insert closure message so other participant sees it
+      await SupabaseService.client.from('messages').insert({
+        'match_id': conversationId,
+        'sender_id': me,
+        'receiver_id': receiverId,
+        'content': message,
+      });
 
-        // 2. Set status to closed in matches
-        await SupabaseService.client
-            .from('matches')
-            .update({
-              'status': 'closed',
-              'closed_by': me,
-              'closed_at': DateTime.now().toIso8601String(),
-              'closure_reason': message,
-            })
-            .eq('id', conversationId);
+      // 2. Set status to closed in matches
+      await SupabaseService.client.from('matches').update({
+        'status': 'closed',
+        'closed_by': me,
+        'closed_at': DateTime.now().toIso8601String(),
+        'closure_reason': message,
+      }).eq('id', conversationId);
 
-        await loadConversations();
-      } catch (e) {
-        debugPrint('ChatCubit: Error closing match: $e');
-      }
+      await loadConversations();
+    } catch (e) {
+      debugPrint('ChatCubit: Error closing match: $e');
     }
   }
 
@@ -559,13 +496,55 @@ class ChatCubit extends Cubit<ChatState> {
   void _appendMessage(String convId, ChatMessage msg) {
     final updated = state.conversations.map((c) {
       if (c.id != convId) return c;
-      return c.copyWith(messages: [...c.messages, msg]);
+      return c.copyWith(messages: _mergeMessagesById(c.messages, [msg]));
     }).toList();
     emit(state.copyWith(conversations: updated));
   }
 
-  void _updateMessageStatus(
-      String convId, String msgId, MessageStatus status) {
+  bool _isCurrentLoad(int loadVersion) =>
+      !isClosed && loadVersion == _loadVersion;
+
+  List<Conversation> _mergeLoadedConversations(
+    List<Conversation> current,
+    List<Conversation> loaded,
+  ) {
+    final currentById = {for (final c in current) c.id: c};
+    final loadedIds = loaded.map((c) => c.id).toSet();
+    final merged = <Conversation>[
+      for (final fresh in loaded)
+        _mergeConversation(currentById[fresh.id], fresh),
+      // Keep optimistic local conversations that the backend load does not yet
+      // know about instead of letting a stale load delete them.
+      for (final existing in current)
+        if (!loadedIds.contains(existing.id)) existing,
+    ];
+    return merged;
+  }
+
+  Conversation _mergeConversation(Conversation? current, Conversation loaded) {
+    if (current == null) return loaded;
+    return loaded.copyWith(
+      messages: _mergeMessagesById(current.messages, loaded.messages),
+      unreadCount: loaded.unreadCount,
+      isMatchClosed: loaded.isMatchClosed,
+      closureMessage: loaded.closureMessage,
+    );
+  }
+
+  List<ChatMessage> _mergeMessagesById(
+    List<ChatMessage> current,
+    List<ChatMessage> incoming,
+  ) {
+    final byId = <String, ChatMessage>{for (final m in current) m.id: m};
+    for (final message in incoming) {
+      byId[message.id] = message;
+    }
+    final merged = byId.values.toList()
+      ..sort((a, b) => a.sentAt.compareTo(b.sentAt));
+    return merged;
+  }
+
+  void _updateMessageStatus(String convId, String msgId, MessageStatus status) {
     if (isClosed) return;
     final updated = state.conversations.map((c) {
       if (c.id != convId) return c;
@@ -578,8 +557,8 @@ class ChatCubit extends Cubit<ChatState> {
     emit(state.copyWith(conversations: updated));
   }
 
-  void _updateLocalMessageDetails(
-      String convId, String tempMsgId, String realMsgId, DateTime sentAt, MessageStatus status) {
+  void _updateLocalMessageDetails(String convId, String tempMsgId,
+      String realMsgId, DateTime sentAt, MessageStatus status) {
     if (isClosed) return;
     final updated = state.conversations.map((c) {
       if (c.id != convId) return c;
@@ -605,43 +584,10 @@ class ChatCubit extends Cubit<ChatState> {
     if (isClosed) return;
     final updated = state.conversations.map((c) {
       if (c.id != convId) return c;
+      final alreadyPresent = c.messages.any((m) => m.id == msg.id);
       return c.copyWith(
-        messages: [...c.messages, msg],
-        unreadCount: c.unreadCount + 1,
-      );
-    }).toList();
-    emit(state.copyWith(conversations: updated));
-  }
-
-  void _simulateReply(String convId) {
-    final conv = state.conversations
-        .where((c) => c.id == convId)
-        .firstOrNull;
-    if (conv == null || conv.isMatchClosed) return;
-
-    final replies = [
-      'JazakAllah khair for sharing that, mashAllah.',
-      'That is a beautiful perspective, subhanAllah.',
-      'I completely agree. InshAllah let us talk more.',
-      'Alhamdulillah! I am glad we matched.',
-      'I appreciate your honesty, that means a lot.',
-    ];
-    final reply = replies[_msgCounter % replies.length];
-
-    _msgCounter++;
-    final replyMsg = ChatMessage(
-      id:     'msg_$_msgCounter',
-      text:   reply,
-      sentAt: DateTime.now(),
-      isMe:   false,
-      status: MessageStatus.delivered,
-    );
-
-    final updated = state.conversations.map((c) {
-      if (c.id != convId) return c;
-      return c.copyWith(
-        messages:    [...c.messages, replyMsg],
-        unreadCount: 0,
+        messages: _mergeMessagesById(c.messages, [msg]),
+        unreadCount: alreadyPresent ? c.unreadCount : c.unreadCount + 1,
       );
     }).toList();
     emit(state.copyWith(conversations: updated));
@@ -649,8 +595,10 @@ class ChatCubit extends Cubit<ChatState> {
 
   // ── Translation ────────────────────────────────────────────
 
-  Future<void> translateMessage(String conversationId, String messageId, String targetLang) async {
-    final convIndex = state.conversations.indexWhere((c) => c.id == conversationId);
+  Future<void> translateMessage(
+      String conversationId, String messageId, String targetLang) async {
+    final convIndex =
+        state.conversations.indexWhere((c) => c.id == conversationId);
     if (convIndex == -1) return;
 
     final conv = state.conversations[convIndex];
@@ -664,51 +612,40 @@ class ChatCubit extends Cubit<ChatState> {
       return;
     }
 
-    if (_isRealMode) {
-      try {
-        // Fetch message translations from Supabase to check if cached in DB
-        final response = await SupabaseService.client
-            .from('messages')
-            .select('translations')
-            .eq('id', messageId)
-            .single();
+    if (!_isRealMode) return;
 
-        final dbTranslations = Map<String, dynamic>.from(response['translations'] ?? {});
+    try {
+      // Fetch message translations from Supabase to check if cached in DB
+      final response = await SupabaseService.client
+          .from('messages')
+          .select('translations')
+          .eq('id', messageId)
+          .single();
 
-        if (dbTranslations.containsKey(targetLang)) {
-          _updateMessageTranslations(conversationId, messageId, dbTranslations);
-          return;
-        }
+      final dbTranslations =
+          Map<String, dynamic>.from(response['translations'] ?? {});
 
-        // Call the Translation Service to translate content
-        final translated = await TranslationService.instance.translate(
-          text: msg.text,
-          targetLang: targetLang,
-        );
-
-        if (translated != null) {
-          dbTranslations[targetLang] = translated;
-          await SupabaseService.client
-              .from('messages')
-              .update({'translations': dbTranslations})
-              .eq('id', messageId);
-
-          _updateMessageTranslations(conversationId, messageId, dbTranslations);
-        }
-      } catch (e) {
-        debugPrint('ChatCubit: Error translating message in DB: $e');
+      if (dbTranslations.containsKey(targetLang)) {
+        _updateMessageTranslations(conversationId, messageId, dbTranslations);
+        return;
       }
-    } else {
-      // Mock mode translation fallback
+
+      // Call the Translation Service to translate content
       final translated = await TranslationService.instance.translate(
         text: msg.text,
         targetLang: targetLang,
       );
+
       if (translated != null) {
-        final newTranslations = Map<String, String>.from(msg.translations)
-          ..[targetLang] = translated;
-        _updateMessageTranslations(conversationId, messageId, newTranslations);
+        dbTranslations[targetLang] = translated;
+        await SupabaseService.client
+            .from('messages')
+            .update({'translations': dbTranslations}).eq('id', messageId);
+
+        _updateMessageTranslations(conversationId, messageId, dbTranslations);
       }
+    } catch (e) {
+      debugPrint('ChatCubit: Error translating message in DB: $e');
     }
   }
 

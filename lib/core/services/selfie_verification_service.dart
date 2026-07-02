@@ -149,9 +149,9 @@ class SelfieVerificationService {
     VerificationChallenge challenge,
   ) async {
     if (!SupabaseService.isInitialized) {
-      // Mock/development mode: bypass native FaceDetector to prevent desktop/emulator hangs
-      await Future.delayed(const Duration(milliseconds: 1500));
-      return const ValidationResult.success();
+      return const ValidationResult.failure(
+        FaceValidationError.noFace,
+      );
     }
 
     File? tempFile;

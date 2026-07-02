@@ -17,11 +17,26 @@ type HookPayload = {
   user?: { email?: string };
 };
 
-function response(body: Record<string, string>) {
-  return new Response(JSON.stringify(body), {
+function allow() {
+  return new Response("{}", {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });
+}
+
+function reject(message: string, status = 400) {
+  return new Response(
+    JSON.stringify({
+      error: {
+        http_code: status,
+        message,
+      },
+    }),
+    {
+      status,
+      headers: { "Content-Type": "application/json" },
+    },
+  );
 }
 
 function validEmail(email: string) {
@@ -35,9 +50,10 @@ Deno.serve(async (request) => {
 
   try {
     const payload = (await request.json()) as HookPayload;
-    const email = (payload.user?.email ?? payload.email ?? "").trim().toLowerCase();
+    const email = (payload.user?.email ?? payload.email ?? "").trim()
+      .toLowerCase();
     if (!validEmail(email)) {
-      return response({ decision: "abort", message: "Please enter a valid email address." });
+      return reject("Please enter a valid email address.");
     }
 
     const admin = createClient(supabaseUrl, serviceRoleKey, {
@@ -48,17 +64,17 @@ Deno.serve(async (request) => {
 
     if (error) throw error;
     if (data == true) {
-      return response({ decision: "abort", message: rejectedMessage });
+      return reject(rejectedMessage);
     }
 
-    return response({ decision: "continue" });
+    return allow();
   } catch (error) {
     console.error("auth-before-user-created failed", error);
     // Fail closed: fake-account protections should not disappear during an
     // infrastructure outage. Supabase will surface this message to signup.
-    return response({
-      decision: "abort",
-      message: "We could not validate this email address. Please try again.",
-    });
+    return reject(
+      "We could not validate this email address. Please try again.",
+      503,
+    );
   }
 });

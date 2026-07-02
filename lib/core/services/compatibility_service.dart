@@ -1,4 +1,4 @@
-import '../mock/mock_profiles.dart';
+import '../models/discovery_profile.dart';
 import '../models/onboarding_data.dart';
 
 class CompatibilityResult {
@@ -14,7 +14,7 @@ class CompatibilityResult {
 /// partner preferences. Candidate traits are never treated as preferences.
 CompatibilityResult calculateCompatibility({
   required OnboardingData viewer,
-  required MockProfile candidate,
+  required DiscoveryProfile candidate,
   DateTime? today,
 }) {
   final checks = <bool>[];

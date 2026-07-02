@@ -15,11 +15,6 @@ abstract final class AppConfig {
   static const String revenueCatIosKey =
       ''; // TODO: Add iOS key from RevenueCat Dashboard
 
-  // ── Mock Auth ─────────────────────────────────────────────
-  // Step 4 uses a mock OTP flow.
-  // Any 6-digit code is accepted as valid.
-  static const String mockOtpCode = '000000';
-
   // ── App Versioning ────────────────────────────────────────
   static const String appVersion = '1.0.0';
   static const String tosVersion = '1.0';

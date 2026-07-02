@@ -4,18 +4,18 @@ import '../../../core/cubits/interests/interests_cubit.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/cubits/auth/auth_state.dart';
 import '../../../core/services/supabase_service.dart';
-import '../../../core/mock/mock_profiles.dart';
+import '../../../core/models/discovery_profile.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-// ── Mock viewer model ─────────────────────────────────────────
+// ── Viewer row model ─────────────────────────────────────────
 
 class _Viewer {
   const _Viewer({required this.profile, required this.viewedAt});
-  final MockProfile profile;
-  final DateTime    viewedAt;
+  final DiscoveryProfile profile;
+  final DateTime viewedAt;
 }
 
 // ── Screen ────────────────────────────────────────────────────
@@ -32,37 +32,11 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
   List<_Viewer> _loadedViewers = [];
   bool _isLoading = false;
 
-  // Generate 10 mock viewers with staggered timestamps as fallback
-  static final List<_Viewer> _mockViewers = () {
-    final now = DateTime.now();
-    final offsets = [
-      const Duration(minutes: 15),
-      const Duration(minutes: 45),
-      const Duration(hours: 2),
-      const Duration(hours: 5),
-      const Duration(hours: 11),
-      const Duration(hours: 18),
-      const Duration(days: 1, hours: 3),
-      const Duration(days: 1, hours: 14),
-      const Duration(days: 2, hours: 6),
-      const Duration(days: 2, hours: 20),
-    ];
-    return List.generate(
-      offsets.length,
-      (i) => _Viewer(
-        profile:  kMockProfiles[i % kMockProfiles.length],
-        viewedAt: now.subtract(offsets[i]),
-      ),
-    );
-  }();
-
   @override
   void initState() {
     super.initState();
     if (SupabaseService.isInitialized) {
       _loadViews();
-    } else {
-      _loadedViewers = _mockViewers;
     }
   }
 
@@ -113,33 +87,44 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
       final List<_Viewer> viewersList = [];
 
       for (final row in rows) {
-        final viewedAt = DateTime.tryParse(row['viewed_at'] as String) ?? DateTime.now();
+        final viewedAt =
+            DateTime.tryParse(row['viewed_at'] as String) ?? DateTime.now();
         final viewerData = row['viewer'] as Map<String, dynamic>?;
         if (viewerData == null) continue;
 
+        final viewerUserId = (viewerData['user_id'] as String?)?.trim();
+        final firstName = (viewerData['first_name'] as String?)?.trim();
         final dobStr = viewerData['date_of_birth'] as String?;
         final dob = dobStr != null ? DateTime.tryParse(dobStr) : null;
-        final age = dob != null ? DateTime.now().difference(dob).inDays ~/ 365 : 25;
+        final age = dob == null ? null : _ageFromDob(dob);
+        if (viewerUserId == null ||
+            viewerUserId.isEmpty ||
+            firstName == null ||
+            firstName.isEmpty ||
+            age == null ||
+            age < 18) {
+          continue;
+        }
 
         final citiesData = viewerData['cities'];
         final cityName = citiesData is List && citiesData.isNotEmpty
-            ? (citiesData.first as Map<String, dynamic>)['name'] as String? ?? 'Unknown'
+            ? (citiesData.first as Map<String, dynamic>)['name'] as String?
             : citiesData is Map<String, dynamic>
-                ? citiesData['name'] as String? ?? 'Unknown'
-                : 'Unknown';
+                ? citiesData['name'] as String?
+                : null;
+        if (cityName == null || cityName.trim().isEmpty) continue;
 
-        final viewerProfileId = viewerData['id'] as String;
+        final lastName = (viewerData['last_name'] as String?)?.trim();
 
-        final profile = MockProfile(
-          id: viewerProfileId,
-          firstName: viewerData['first_name'] as String? ?? 'Mithaq User',
-          lastNameInitial: ((viewerData['last_name'] as String?) ?? '').isNotEmpty
-              ? (viewerData['last_name'] as String)[0]
-              : '',
+        final profile = DiscoveryProfile(
+          id: viewerUserId,
+          firstName: firstName,
+          lastNameInitial:
+              lastName != null && lastName.isNotEmpty ? lastName[0] : '',
           age: age,
-          cityName: cityName,
-          sect: ((viewerData['sect'] as String?) ?? 'sunni').toUpperCase(),
-          deenLevel: (viewerData['deen_level'] as String?) ?? 'moderate',
+          cityName: cityName.trim(),
+          sect: (viewerData['sect'] as String?)?.toUpperCase(),
+          deenLevel: viewerData['deen_level'] as String?,
           isVerified: viewerData['is_verified'] as bool? ?? false,
           bio: viewerData['bio'] as String? ?? '',
           gender: viewerData['gender'] as String?,
@@ -165,9 +150,19 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
   String _timeLabel(DateTime dt) {
     final diff = DateTime.now().difference(dt);
     if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours   < 24) return '${diff.inHours}h ago';
-    if (diff.inDays    == 1) return 'Yesterday';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays == 1) return 'Yesterday';
     return '${diff.inDays} days ago';
+  }
+
+  int _ageFromDob(DateTime dob) {
+    final today = DateTime.now();
+    var years = today.year - dob.year;
+    if (today.month < dob.month ||
+        (today.month == dob.month && today.day < dob.day)) {
+      years--;
+    }
+    return years;
   }
 
   @override
@@ -175,22 +170,22 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
     return Scaffold(
       backgroundColor: AppColors.obsidianNight,
       appBar: AppBar(
-        backgroundColor:  AppColors.obsidianNight,
+        backgroundColor: AppColors.obsidianNight,
         surfaceTintColor: Colors.transparent,
-        elevation:        0,
+        elevation: 0,
         leading: GestureDetector(
           onTap: () => Navigator.pop(context),
           child: Container(
             margin: const EdgeInsets.all(AppDimensions.space8),
             decoration: BoxDecoration(
-              color:  AppColors.surfaceGlass,
-              shape:  BoxShape.circle,
+              color: AppColors.surfaceGlass,
+              shape: BoxShape.circle,
               border: Border.all(color: AppColors.cardBorder),
             ),
             child: const Icon(
               Icons.arrow_back_rounded,
               color: AppColors.pearlWhite,
-              size:  AppDimensions.iconSizeMedium,
+              size: AppDimensions.iconSizeMedium,
             ),
           ),
         ),
@@ -214,46 +209,53 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
                     Expanded(
                       child: ListView.separated(
                         padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
-                        itemCount:      _loadedViewers.length,
+                        itemCount: _loadedViewers.length,
                         separatorBuilder: (_, __) =>
                             const SizedBox(height: AppDimensions.space8),
                         itemBuilder: (context, i) {
                           final viewer = _loadedViewers[i];
-                          final p      = viewer.profile;
-                          final sent   = _interestSent.contains(p.id);
+                          final p = viewer.profile;
+                          final sent = _interestSent.contains(p.id);
                           return _ViewerTile(
-                            firstName:        p.firstName,
-                            lastNameInitial:  p.lastNameInitial,
-                            age:              p.age,
-                            city:             p.cityName,
-                            timeLabel:        _timeLabel(viewer.viewedAt),
-                            isVerified:       p.isVerified,
-                            isInterestSent:   sent,
-                            onSendInterest:   sent ? null : () {
-                              HapticFeedback.mediumImpact();
-                              setState(() => _interestSent.add(p.id));
-                              context.read<InterestsCubit>().sendInterest(p);
-                              ScaffoldMessenger.of(context)
-                                ..clearSnackBars()
-                                ..showSnackBar(
-                                  SnackBar(
-                                    content: Row(children: [
-                                      const Icon(Icons.favorite_rounded,
-                                          color: AppColors.champagneGold, size: 16),
-                                      const SizedBox(width: 8),
-                                      Text('Interest sent to ${p.firstName}',
-                                          style: AppTypography.body),
-                                    ]),
-                                    backgroundColor: AppColors.surfaceGlassHover,
-                                    behavior:        SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(AppDimensions.radiusButton),
-                                    ),
-                                    duration: const Duration(seconds: 2),
-                                  ),
-                                );
-                            },
+                            firstName: p.firstName,
+                            lastNameInitial: p.lastNameInitial,
+                            age: p.age,
+                            city: p.cityName,
+                            timeLabel: _timeLabel(viewer.viewedAt),
+                            isVerified: p.isVerified,
+                            isInterestSent: sent,
+                            onSendInterest: sent
+                                ? null
+                                : () {
+                                    HapticFeedback.mediumImpact();
+                                    setState(() => _interestSent.add(p.id));
+                                    context
+                                        .read<InterestsCubit>()
+                                        .sendInterest(p);
+                                    ScaffoldMessenger.of(context)
+                                      ..clearSnackBars()
+                                      ..showSnackBar(
+                                        SnackBar(
+                                          content: Row(children: [
+                                            const Icon(Icons.favorite_rounded,
+                                                color: AppColors.champagneGold,
+                                                size: 16),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                                'Interest sent to ${p.firstName}',
+                                                style: AppTypography.body),
+                                          ]),
+                                          backgroundColor:
+                                              AppColors.surfaceGlassHover,
+                                          behavior: SnackBarBehavior.floating,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                                AppDimensions.radiusButton),
+                                          ),
+                                          duration: const Duration(seconds: 2),
+                                        ),
+                                      );
+                                  },
                           );
                         },
                       ),
@@ -387,13 +389,13 @@ class _ViewerTile extends StatelessWidget {
     required this.onSendInterest,
   });
 
-  final String       firstName;
-  final String       lastNameInitial;
-  final int          age;
-  final String       city;
-  final String       timeLabel;
-  final bool         isVerified;
-  final bool         isInterestSent;
+  final String firstName;
+  final String lastNameInitial;
+  final int age;
+  final String city;
+  final String timeLabel;
+  final bool isVerified;
+  final bool isInterestSent;
   final VoidCallback? onSendInterest;
 
   @override
@@ -401,9 +403,9 @@ class _ViewerTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppDimensions.space16),
       decoration: BoxDecoration(
-        color:        AppColors.surfaceGlass,
+        color: AppColors.surfaceGlass,
         borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-        border:       Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: AppColors.cardBorder),
       ),
       child: Row(
         children: [
@@ -411,11 +413,11 @@ class _ViewerTile extends StatelessWidget {
           Stack(
             children: [
               Container(
-                width:  52,
+                width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  shape:  BoxShape.circle,
-                  color:  AppColors.surfaceGlassHover,
+                  shape: BoxShape.circle,
+                  color: AppColors.surfaceGlassHover,
                   border: Border.all(
                     color: AppColors.goldBorder,
                     width: 1.5,
@@ -424,14 +426,15 @@ class _ViewerTile extends StatelessWidget {
                 child: const Icon(
                   Icons.person_outline_rounded,
                   color: AppColors.slateMist,
-                  size:  24,
+                  size: 24,
                 ),
               ),
               if (isVerified)
                 Positioned(
-                  bottom: 0, right: 0,
+                  bottom: 0,
+                  right: 0,
                   child: Container(
-                    width:  18,
+                    width: 18,
                     height: 18,
                     decoration: const BoxDecoration(
                       color: AppColors.verifiedTeal,
@@ -480,11 +483,12 @@ class _ViewerTile extends StatelessWidget {
                 ? Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: AppDimensions.space12,
-                        vertical:   AppDimensions.space8),
+                        vertical: AppDimensions.space8),
                     decoration: BoxDecoration(
-                      color:        AppColors.champagneGold.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                      border:       Border.all(color: AppColors.goldBorder),
+                      color: AppColors.champagneGold.withValues(alpha: 0.1),
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusButton),
+                      border: Border.all(color: AppColors.goldBorder),
                     ),
                     child: const Icon(Icons.favorite_rounded,
                         color: AppColors.champagneGold, size: 18),
@@ -494,10 +498,11 @@ class _ViewerTile extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: AppDimensions.space12,
-                          vertical:   AppDimensions.space8),
+                          vertical: AppDimensions.space8),
                       decoration: BoxDecoration(
-                        color:        AppColors.champagneGold,
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                        color: AppColors.champagneGold,
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusButton),
                       ),
                       child: const Icon(Icons.favorite_border_rounded,
                           color: AppColors.obsidianNight, size: 18),

@@ -36,11 +36,11 @@ class _Language {
     required this.emoji,
   });
 
-  final String code;         // BCP-47 language code
-  final String nativeName;   // Name in its own script (large)
-  final String englishName;  // English name (small, below)
-  final bool   isRtl;
-  final String emoji;        // Region flag
+  final String code; // BCP-47 language code
+  final String nativeName; // Name in its own script (large)
+  final String englishName; // English name (small, below)
+  final bool isRtl;
+  final String emoji; // Region flag
 }
 
 // ── Language list ─────────────────────────────────────────────
@@ -49,8 +49,18 @@ class _Language {
 
 const List<_Language> _kLanguages = [
   // ── Global / Major ─────────────────────────────────────
-  _Language(code: 'ar', nativeName: 'العربية',           englishName: 'Arabic',               isRtl: true,  emoji: '🇸🇦'),
-  _Language(code: 'en', nativeName: 'English',            englishName: 'English',              isRtl: false, emoji: '🌍'),
+  _Language(
+      code: 'ar',
+      nativeName: 'العربية',
+      englishName: 'Arabic',
+      isRtl: true,
+      emoji: '🇸🇦'),
+  _Language(
+      code: 'en',
+      nativeName: 'English',
+      englishName: 'English',
+      isRtl: false,
+      emoji: '🌍'),
 ];
 
 // ── Screen ────────────────────────────────────────────────────
@@ -65,7 +75,6 @@ class LanguageSelectionScreen extends StatefulWidget {
 
 class _LanguageSelectionScreenState extends State<LanguageSelectionScreen>
     with SingleTickerProviderStateMixin {
-
   String _selectedCode = 'en';
   String _searchQuery = '';
 
@@ -73,48 +82,49 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen>
   List<_Language> get _filteredLanguages {
     if (_searchQuery.isEmpty) return _kLanguages;
     final q = _searchQuery.toLowerCase();
-    return _kLanguages.where((lang) =>
-      lang.nativeName.toLowerCase().contains(q) ||
-      lang.englishName.toLowerCase().contains(q) ||
-      lang.code.toLowerCase().contains(q)
-    ).toList();
+    return _kLanguages
+        .where((lang) =>
+            lang.nativeName.toLowerCase().contains(q) ||
+            lang.englishName.toLowerCase().contains(q) ||
+            lang.code.toLowerCase().contains(q))
+        .toList();
   }
 
   // Entry animation — list slides up from bottom, header fades in.
   late final AnimationController _enterCtrl;
-  late final Animation<double>   _headerFade;
-  late final Animation<Offset>   _listSlide;
-  late final Animation<double>   _listFade;
-  late final Animation<double>   _buttonFade;
+  late final Animation<double> _headerFade;
+  late final Animation<Offset> _listSlide;
+  late final Animation<double> _listFade;
+  late final Animation<double> _buttonFade;
 
   @override
   void initState() {
     super.initState();
     _enterCtrl = AnimationController(
-      vsync:    this,
+      vsync: this,
       duration: const Duration(milliseconds: 700),
     )..forward();
 
     _headerFade = CurvedAnimation(
       parent: _enterCtrl,
-      curve:  const Interval(0.0, 0.5, curve: Curves.easeOut),
+      curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
     );
     _listSlide = Tween<Offset>(
       begin: const Offset(0.0, 0.08),
-      end:   Offset.zero,
+      end: Offset.zero,
     ).animate(
       CurvedAnimation(
         parent: _enterCtrl,
-        curve:  const Interval(0.2, 1.0, curve: Curves.easeOutCubic),
+        curve: const Interval(0.2, 1.0, curve: Curves.easeOutCubic),
       ),
     );
     _listFade = CurvedAnimation(
       parent: _enterCtrl,
-      curve:  const Interval(0.2, 0.8, curve: Curves.easeOut),
+      curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
     );
     _buttonFade = CurvedAnimation(
       parent: _enterCtrl,
-      curve:  const Interval(0.5, 1.0, curve: Curves.easeOut),
+      curve: const Interval(0.5, 1.0, curve: Curves.easeOut),
     );
   }
 
@@ -146,11 +156,11 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen>
       body: Container(
         decoration: const BoxDecoration(
           gradient: RadialGradient(
-            center: Alignment(0, -0.5),  // slightly above center
+            center: Alignment(0, -0.5), // slightly above center
             radius: 1.2,
             colors: [
-              AppColors.navyCharcoal,  // Deep premium navy-charcoal core
-              AppColors.obsidianNight,  // Deep midnight edges
+              AppColors.navyCharcoal, // Deep premium navy-charcoal core
+              AppColors.obsidianNight, // Deep midnight edges
             ],
           ),
         ),
@@ -162,7 +172,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen>
                 opacity: _headerFade,
                 child: _buildHeader(),
               ),
-  
+
               // ── Search bar ─────────────────────────────────────
               FadeTransition(
                 opacity: _listFade,
@@ -176,6 +186,8 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen>
                   child: TextField(
                     controller: _searchController,
                     onChanged: (val) => setState(() => _searchQuery = val),
+                    onTapOutside: (_) =>
+                        FocusManager.instance.primaryFocus?.unfocus(),
                     style: const TextStyle(
                       color: AppColors.pearlWhite,
                       fontSize: 15,
@@ -198,15 +210,20 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen>
                         vertical: 12,
                       ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                        borderSide: const BorderSide(color: AppColors.cardBorder),
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusButton),
+                        borderSide:
+                            const BorderSide(color: AppColors.cardBorder),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                        borderSide: const BorderSide(color: AppColors.cardBorder),
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusButton),
+                        borderSide:
+                            const BorderSide(color: AppColors.cardBorder),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusButton),
                         borderSide: BorderSide(
                           color: AppColors.champagneGold.withValues(alpha: 0.5),
                           width: 1.5,
@@ -216,7 +233,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen>
                   ),
                 ),
               ),
-  
+
               // ── Language list ──────────────────────────────────
               Expanded(
                 child: SlideTransition(
@@ -230,13 +247,13 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen>
                         AppDimensions.horizontalMargin,
                         AppDimensions.space16,
                       ),
-                      itemCount:  _filteredLanguages.length,
+                      itemCount: _filteredLanguages.length,
                       separatorBuilder: (_, __) =>
                           const SizedBox(height: AppDimensions.space8),
                       itemBuilder: (context, i) {
                         final lang = _filteredLanguages[i];
                         return _LanguageTile(
-                          language:   lang,
+                          language: lang,
                           isSelected: _selectedCode == lang.code,
                           onTap: () => setState(
                             () => _selectedCode = lang.code,
@@ -247,7 +264,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen>
                   ),
                 ),
               ),
-  
+
               // ── Continue button ────────────────────────────────
               FadeTransition(
                 opacity: _buttonFade,
@@ -287,12 +304,12 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen>
             'ميثاق',
             textDirection: TextDirection.rtl,
             style: TextStyle(
-              fontSize:      22,
-              fontWeight:    FontWeight.w700,
-              color:         AppColors.champagneGold.withValues(alpha: 0.85),
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: AppColors.champagneGold.withValues(alpha: 0.85),
               shadows: [
                 Shadow(
-                  color:      AppColors.champagneGold.withValues(alpha: 0.45),
+                  color: AppColors.champagneGold.withValues(alpha: 0.45),
                   blurRadius: 14,
                 ),
               ],
@@ -302,7 +319,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen>
           Text(
             'Choose your\nlanguage',
             style: AppTypography.screenTitle.copyWith(
-              height:      1.15,
+              height: 1.15,
               letterSpacing: 0.3,
             ),
           ),
@@ -340,20 +357,20 @@ class _LanguageTile extends StatelessWidget {
   });
 
   final _Language language;
-  final bool      isSelected;
+  final bool isSelected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
-      curve:    Curves.easeOutCubic,
+      curve: Curves.easeOutCubic,
       decoration: BoxDecoration(
-        color:        isSelected
+        color: isSelected
             ? AppColors.champagneGold.withValues(alpha: 0.08)
             : AppColors.surfaceGlass,
         borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-        border:       Border.all(
+        border: Border.all(
           color: isSelected
               ? AppColors.champagneGold.withValues(alpha: 0.55)
               : AppColors.cardBorder,
@@ -363,70 +380,70 @@ class _LanguageTile extends StatelessWidget {
       child: MithaqPressable(
         onTap: onTap,
         child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppDimensions.space16,
-              vertical:   AppDimensions.space14,
-            ),
-            child: Row(
-              children: [
-                // Emoji flag
-                Text(
-                  language.emoji,
-                  style: const TextStyle(fontSize: 24),
-                ),
-
-                const SizedBox(width: AppDimensions.space16),
-
-                // Names
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: language.isRtl
-                        ? CrossAxisAlignment.end
-                        : CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        language.nativeName,
-                        textDirection: language.isRtl
-                            ? TextDirection.rtl
-                            : TextDirection.ltr,
-                        style: TextStyle(
-                          fontSize:   18,
-                          fontWeight: FontWeight.w600,
-                          color:      isSelected
-                              ? AppColors.champagneGold
-                              : AppColors.pearlWhite,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        language.englishName,
-                        style: AppTypography.caption.copyWith(
-                          color: isSelected
-                              ? AppColors.champagneGold.withValues(alpha: 0.75)
-                              : AppColors.slateMist,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(width: AppDimensions.space12),
-
-                // Selection indicator
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  child: isSelected
-                      ? const _SelectedCheck(key: ValueKey('check'))
-                      : const SizedBox(
-                          key:    ValueKey('empty'),
-                          width:  22,
-                          height: 22,
-                        ),
-                ),
-              ],
-            ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.space16,
+            vertical: AppDimensions.space14,
           ),
+          child: Row(
+            children: [
+              // Emoji flag
+              Text(
+                language.emoji,
+                style: const TextStyle(fontSize: 24),
+              ),
+
+              const SizedBox(width: AppDimensions.space16),
+
+              // Names
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: language.isRtl
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      language.nativeName,
+                      textDirection: language.isRtl
+                          ? TextDirection.rtl
+                          : TextDirection.ltr,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: isSelected
+                            ? AppColors.champagneGold
+                            : AppColors.pearlWhite,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      language.englishName,
+                      style: AppTypography.caption.copyWith(
+                        color: isSelected
+                            ? AppColors.champagneGold.withValues(alpha: 0.75)
+                            : AppColors.slateMist,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: AppDimensions.space12),
+
+              // Selection indicator
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: isSelected
+                    ? const _SelectedCheck(key: ValueKey('check'))
+                    : const SizedBox(
+                        key: ValueKey('empty'),
+                        width: 22,
+                        height: 22,
+                      ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -439,7 +456,7 @@ class _SelectedCheck extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width:  22,
+      width: 22,
       height: 22,
       decoration: const BoxDecoration(
         shape: BoxShape.circle,
@@ -447,7 +464,7 @@ class _SelectedCheck extends StatelessWidget {
       ),
       child: const Icon(
         Icons.check_rounded,
-        size:  14,
+        size: 14,
         color: Color(0xFF0A0A0F), // obsidianNight
       ),
     );

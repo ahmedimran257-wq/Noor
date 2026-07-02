@@ -26,41 +26,35 @@ Future<void> showRespectfulClosureSheet(
   required String matchName,
 }) async {
   await showModalBottomSheet<void>(
-    context:            context,
-    backgroundColor:    Colors.transparent,
+    context: context,
+    backgroundColor: Colors.transparent,
     isScrollControlled: true,
     builder: (_) => BlocProvider.value(
       value: context.read<ChatCubit>(),
       child: RespectfulClosureSheet(
         conversationId: conversationId,
-        matchName:      matchName,
+        matchName: matchName,
       ),
     ),
   );
 }
 
 // ── Pre-written closure messages ──────────────────────────────
-// TODO (l10n): replace with AppLocalizations keys when l10n is complete.
-
 const _kClosureMessages = [
   'Assalamu Alaikum. After thoughtful reflection, I feel this may not be the right match for us. '
-  'I sincerely wish you all the best and pray that Allah blesses you with a wonderful partner. '
-  'JazakAllah khair.',
-
+      'I sincerely wish you all the best and pray that Allah blesses you with a wonderful partner. '
+      'JazakAllah khair.',
   'Assalamu Alaikum. I wanted to be honest and respectful with you. '
-  'I do not think we are the right match, but I pray that Allah opens better doors for you. '
-  'Wishing you all the best.',
-
+      'I do not think we are the right match, but I pray that Allah opens better doors for you. '
+      'Wishing you all the best.',
   'Assalamu Alaikum. After sincere consideration, I feel we may not be compatible. '
-  'I hope you find someone truly right for you. '
-  'May Allah make it easy for you. JazakAllah khair for your time.',
-
+      'I hope you find someone truly right for you. '
+      'May Allah make it easy for you. JazakAllah khair for your time.',
   'Assalamu Alaikum. I have reflected on our conversations and feel it is best to close this match '
-  'at this time. I have nothing but respect for you and I make dua that Allah blesses you with the best.',
-
+      'at this time. I have nothing but respect for you and I make dua that Allah blesses you with the best.',
   'Assalamu Alaikum. I wanted to be transparent with you rather than fade away. '
-  'I do not see this progressing further, but I truly appreciate your time and wish you every happiness. '
-  'May Allah bless you.',
+      'I do not see this progressing further, but I truly appreciate your time and wish you every happiness. '
+      'May Allah bless you.',
 ];
 
 // ── Widget ────────────────────────────────────────────────────
@@ -96,13 +90,14 @@ class _RespectfulClosureSheetState extends State<RespectfulClosureSheet> {
     return Container(
       margin: const EdgeInsets.all(AppDimensions.space16),
       decoration: BoxDecoration(
-        color:        AppColors.surfaceElevated,
+        color: AppColors.surfaceElevated,
         borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-        border:       Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: AppColors.cardBorder),
       ),
       child: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
-          AppDimensions.space24, AppDimensions.space20,
+          AppDimensions.space24,
+          AppDimensions.space20,
           AppDimensions.space24,
           AppDimensions.space16 + bottomPad,
         ),
@@ -110,11 +105,11 @@ class _RespectfulClosureSheetState extends State<RespectfulClosureSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             // Drag handle
             Center(
               child: Container(
-                width: 40, height: 4,
+                width: 40,
+                height: 4,
                 decoration: BoxDecoration(
                   color: AppColors.cardBorder,
                   borderRadius: BorderRadius.circular(2),
@@ -126,7 +121,8 @@ class _RespectfulClosureSheetState extends State<RespectfulClosureSheet> {
             // Title
             Text(
               'End match with ${widget.matchName}',
-              style: AppTypography.bodyMedium.copyWith(color: AppColors.pearlWhite),
+              style: AppTypography.bodyMedium
+                  .copyWith(color: AppColors.pearlWhite),
             ),
             const SizedBox(height: AppDimensions.space8),
             Text(
@@ -167,7 +163,7 @@ class _RespectfulClosureSheetState extends State<RespectfulClosureSheet> {
 
             // Message options
             ..._kClosureMessages.asMap().entries.map((entry) {
-              final i   = entry.key;
+              final i = entry.key;
               final msg = entry.value;
               final selected = _selectedIndex == i;
               return Padding(
@@ -184,10 +180,15 @@ class _RespectfulClosureSheetState extends State<RespectfulClosureSheet> {
                       color: selected
                           ? AppColors.champagneGold.withValues(alpha: 0.07)
                           : AppColors.surfaceGlass,
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusButton),
                       border: Border.all(
-                        color: selected ? AppColors.champagneGold : AppColors.cardBorder,
-                        width: selected ? AppDimensions.borderFocus : AppDimensions.borderThin,
+                        color: selected
+                            ? AppColors.champagneGold
+                            : AppColors.cardBorder,
+                        width: selected
+                            ? AppDimensions.borderFocus
+                            : AppDimensions.borderThin,
                       ),
                     ),
                     child: Row(
@@ -195,13 +196,18 @@ class _RespectfulClosureSheetState extends State<RespectfulClosureSheet> {
                       children: [
                         AnimatedContainer(
                           duration: AppDimensions.durationTransition,
-                          width:  20, height: 20,
+                          width: 20,
+                          height: 20,
                           margin: const EdgeInsets.only(top: 1, right: 10),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: selected ? AppColors.champagneGold : Colors.transparent,
+                            color: selected
+                                ? AppColors.champagneGold
+                                : Colors.transparent,
                             border: Border.all(
-                              color: selected ? AppColors.champagneGold : AppColors.slateMist,
+                              color: selected
+                                  ? AppColors.champagneGold
+                                  : AppColors.slateMist,
                             ),
                           ),
                           child: selected
@@ -213,9 +219,11 @@ class _RespectfulClosureSheetState extends State<RespectfulClosureSheet> {
                           child: Text(
                             msg,
                             style: AppTypography.caption.copyWith(
-                              color:     selected ? AppColors.pearlWhite : AppColors.slateMist,
+                              color: selected
+                                  ? AppColors.pearlWhite
+                                  : AppColors.slateMist,
                               fontStyle: FontStyle.italic,
-                              height:    1.5,
+                              height: 1.5,
                             ),
                           ),
                         ),
@@ -230,16 +238,17 @@ class _RespectfulClosureSheetState extends State<RespectfulClosureSheet> {
 
             // Send & End button
             SizedBox(
-              width:  double.infinity,
+              width: double.infinity,
               height: AppDimensions.buttonHeight,
               child: ElevatedButton(
                 onPressed: _selectedIndex != null ? _confirm : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor:        AppColors.softCoral.withValues(alpha: 0.85),
+                  backgroundColor: AppColors.softCoral.withValues(alpha: 0.85),
                   disabledBackgroundColor: AppColors.surfaceGlassHover,
-                  elevation:  0,
+                  elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                    borderRadius:
+                        BorderRadius.circular(AppDimensions.radiusButton),
                   ),
                 ),
                 child: Row(
@@ -269,18 +278,20 @@ class _RespectfulClosureSheetState extends State<RespectfulClosureSheet> {
 
             // Cancel
             SizedBox(
-              width:  double.infinity,
+              width: double.infinity,
               height: AppDimensions.buttonHeightSmall,
               child: OutlinedButton(
                 onPressed: () => Navigator.pop(context),
                 style: OutlinedButton.styleFrom(
-                  side:  const BorderSide(color: AppColors.cardBorder),
+                  side: const BorderSide(color: AppColors.cardBorder),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                    borderRadius:
+                        BorderRadius.circular(AppDimensions.radiusButton),
                   ),
                 ),
                 child: Text('Cancel',
-                    style: AppTypography.button.copyWith(color: AppColors.slateMist)),
+                    style: AppTypography.button
+                        .copyWith(color: AppColors.slateMist)),
               ),
             ),
           ],

@@ -8,6 +8,9 @@
 /// Who the profile is being created for.
 enum ProfileFor { myself, guardian }
 
+/// Explicit owner-type field for the fast-start branch.
+enum ProfileOwnerType { self, guardian }
+
 /// Gender options (matrimony context: binary only).
 enum Gender { male, female }
 
@@ -32,19 +35,23 @@ enum PhotoPrivacy { publicAll, mutualOnly, requestOnly }
 /// Location preference for partner.
 enum LocationPreference { sameCity, sameCountry, openToAbroad, diaspora }
 
-/// Immutable model that accumulates all form data across onboarding steps.
+/// Immutable model shared by fast-start onboarding and profile completion.
 class OnboardingData {
   const OnboardingData({
-    // Step 3 — Profile for whom
+    // Fast-start: profile owner
     this.profileFor,
+    this.profileOwnerType,
+    this.wardRelationship,
+    this.wardGender,
 
-    // Step 4 — Basic identity
+    // Fast-start: identity and confirmed location
     this.firstName,
     this.lastName,
     this.dateOfBirth,
     this.gender,
     this.cityId,
     this.cityName,
+    this.stateName,
     this.countryCode,
     this.heightCm,
     this.complexion,
@@ -52,7 +59,7 @@ class OnboardingData {
     this.smokingStatus,
     this.community,
 
-    // Step 5 — Islamic identity
+    // Fast-start: Islamic identity
     this.sect,
     this.subSect,
     this.deenLevel,
@@ -64,19 +71,19 @@ class OnboardingData {
     this.vapingHabit,
     this.hookahHabit,
 
-    // Step 6 — Background
+    // Profile completion: education and work
     this.educationRank,
     this.educationLabel,
     this.fieldOfStudy,
     this.profession,
     this.employmentStatus,
 
-    // Step 7 — Income
+    // Profile completion: income
     this.incomeBracketId, // int FK → income_brackets(id)
     this.incomeBracketLabel,
     this.incomeVisibility,
 
-    // Step 8 — Family
+    // Profile completion: family
     this.familyType,
     this.siblingCount,
     this.isEldestChild,
@@ -86,12 +93,12 @@ class OnboardingData {
     this.childrenCount,
     this.livingExpectation,
 
-    // Step 9 — About yourself
+    // Profile completion: bio and interests
     this.bio,
     this.interests,
     this.languages,
 
-    // Step 10 — Partner preferences
+    // Discovery preferences
     this.preferredAgeMin,
     this.preferredAgeMax,
     this.locationPreference,
@@ -103,7 +110,7 @@ class OnboardingData {
     this.openToWithChildren,
     this.preferredLivingExpectation,
 
-    // Step 11 — Photos
+    // Photo and privacy
     this.photoLocalPaths,
     this.photoPrivacy,
 
@@ -151,16 +158,20 @@ class OnboardingData {
     this.lng,
   });
 
-  // Step 3
+  // Fast-start: profile owner
   final ProfileFor? profileFor;
+  final ProfileOwnerType? profileOwnerType;
+  final String? wardRelationship; // 'son','daughter','brother','sister'
+  final Gender? wardGender; // Derived from wardRelationship for guardian flow.
 
-  // Step 4
+  // Fast-start: identity and confirmed location
   final String? firstName;
   final String? lastName;
   final DateTime? dateOfBirth;
   final Gender? gender;
-  final String? cityId; // UUID string — matches cities(id) uuid
+  final String? cityId; // Database city id as a string; persisted as INT.
   final String? cityName;
+  final String? stateName;
   final String? countryCode;
   final int? heightCm; // e.g. 165
   final String?
@@ -171,7 +182,7 @@ class OnboardingData {
   final String?
       community; // e.g. 'Syed','Pathan','Ansari','Memon','Rajput', etc.
 
-  // Step 5
+  // Fast-start: Islamic identity
   final Sect? sect;
   final String? subSect;
   final DeenLevel? deenLevel;
@@ -186,19 +197,19 @@ class OnboardingData {
   final String? vapingHabit; // 'never','occasionally','frequently','prefer_not'
   final String? hookahHabit; // 'never','occasionally','frequently','prefer_not'
 
-  // Step 6
+  // Profile completion: education and work
   final int? educationRank;
   final String? educationLabel;
   final String? fieldOfStudy;
   final String? profession;
   final EmploymentStatus? employmentStatus;
 
-  // Step 7
+  // Profile completion: income
   final int? incomeBracketId; // int FK → income_brackets(id)
   final String? incomeBracketLabel;
   final String? incomeVisibility;
 
-  // Step 8
+  // Profile completion: family
   final FamilyType? familyType;
   final int? siblingCount;
   final bool? isEldestChild;
@@ -209,12 +220,12 @@ class OnboardingData {
   final String?
       livingExpectation; // 'with_inlaws','separate','open_to_discussion'
 
-  // Step 9
+  // Profile completion: bio and interests
   final String? bio;
   final List<String>? interests;
   final List<String>? languages;
 
-  // Step 10
+  // Discovery preferences
   final int? preferredAgeMin;
   final int? preferredAgeMax;
   final LocationPreference? locationPreference;
@@ -227,7 +238,7 @@ class OnboardingData {
   final String?
       preferredLivingExpectation; // 'with_inlaws','separate','open_to_discussion','no_preference'
 
-  // Step 11
+  // Photo and privacy
   final List<String>? photoLocalPaths;
   final PhotoPrivacy? photoPrivacy;
 
@@ -277,12 +288,16 @@ class OnboardingData {
 
   OnboardingData copyWith({
     ProfileFor? profileFor,
+    ProfileOwnerType? profileOwnerType,
+    String? wardRelationship,
+    Gender? wardGender,
     String? firstName,
     String? lastName,
     DateTime? dateOfBirth,
     Gender? gender,
     String? cityId,
     String? cityName,
+    String? stateName,
     String? countryCode,
     int? heightCm,
     String? complexion,
@@ -364,12 +379,16 @@ class OnboardingData {
   }) {
     return OnboardingData(
       profileFor: profileFor ?? this.profileFor,
+      profileOwnerType: profileOwnerType ?? this.profileOwnerType,
+      wardRelationship: wardRelationship ?? this.wardRelationship,
+      wardGender: wardGender ?? this.wardGender,
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       gender: gender ?? this.gender,
       cityId: cityId ?? this.cityId,
       cityName: cityName ?? this.cityName,
+      stateName: stateName ?? this.stateName,
       countryCode: countryCode ?? this.countryCode,
       heightCm: heightCm ?? this.heightCm,
       complexion: complexion ?? this.complexion,
@@ -493,12 +512,16 @@ class OnboardingData {
   Map<String, dynamic> toJson() {
     return {
       'profileFor': profileFor?.name,
+      'profileOwnerType': profileOwnerType?.name,
+      'wardRelationship': wardRelationship,
+      'wardGender': wardGender?.name,
       'firstName': firstName,
       'lastName': lastName,
       'dateOfBirth': dateOfBirth?.toIso8601String(),
       'gender': gender?.name,
       'cityId': cityId,
       'cityName': cityName,
+      'stateName': stateName,
       'countryCode': countryCode,
       'heightCm': heightCm,
       'complexion': complexion,
@@ -585,6 +608,13 @@ class OnboardingData {
       profileFor: json['profileFor'] != null
           ? ProfileFor.values.byName(json['profileFor'] as String)
           : null,
+      profileOwnerType: json['profileOwnerType'] != null
+          ? ProfileOwnerType.values.byName(json['profileOwnerType'] as String)
+          : null,
+      wardRelationship: json['wardRelationship'] as String?,
+      wardGender: json['wardGender'] != null
+          ? Gender.values.byName(json['wardGender'] as String)
+          : null,
       firstName: json['firstName'] as String?,
       lastName: json['lastName'] as String?,
       dateOfBirth: json['dateOfBirth'] != null
@@ -595,6 +625,7 @@ class OnboardingData {
           : null,
       cityId: json['cityId'] as String?,
       cityName: json['cityName'] as String?,
+      stateName: json['stateName'] as String?,
       countryCode: json['countryCode'] as String?,
       heightCm: json['heightCm'] as int?,
       complexion: json['complexion'] as String?,

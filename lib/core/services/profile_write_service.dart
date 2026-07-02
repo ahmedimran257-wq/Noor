@@ -5,11 +5,12 @@
 // performs partial upserts per onboarding step.
 //
 // Used by OnboardingCubit.saveAndAdvance() to persist data
-// instead of the mock Future.delayed(600ms).
+// with no local success fallback.
 // ============================================================
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../data/country_data.dart';
 import '../models/onboarding_data.dart';
 import 'supabase_service.dart';
 
@@ -22,10 +23,40 @@ class ProfileWriteService {
   /// Current authenticated user ID, or null.
   static String? get _userId => SupabaseService.currentUserId;
 
+  static const _profileRestoreColumns = '''
+    id, profile_owner_type, profile_creator_relation, guardian_mode,
+    guardian_user_id, ward_relationship, relationship_to_ward, date_of_birth, gender,
+    complexion, sect, deen_level, employment_status, family_type,
+    previously_married, first_name, last_name, city_id, country_code,
+    height_cm, mother_tongue, community, residency_status, sub_sect,
+    prays_five_daily, hijab, beard, diet_type, smoking_habit, vaping_habit,
+    hookah_habit, education_rank, education_level, field_of_study, profession,
+    income_bracket, income_visibility, sibling_count, is_eldest_child,
+    parents_status, children_count, living_expectation, bio, interests,
+    languages, photo_privacy, quran_memorization, religious_education,
+    marriage_timeline, willing_to_relocate, niqab_preference, mahr_expectation,
+    willing_to_work_after_marriage, mahr_budget, can_provide_housing,
+    can_provide_maintenance, debt_status, religious_leadership, guardian_name,
+    guardian_phone_country_code, guardian_email, guardian_authority_scope,
+    is_revert, polygamy_status, polygamy_acceptance, special_needs
+  ''';
+
+  static const _preferenceRestoreColumns = '''
+    preferred_age_min, preferred_age_max, location_preference, diaspora_mode,
+    sect_preference, deen_preference, min_education_rank, open_to_divorced,
+    open_to_widowed, open_to_has_children, preferred_living_expectation
+  ''';
+
+  static const _userRestoreColumns = '''
+    email, phone, country_code, is_guardian_path, profile_owner_type,
+    onboarding_profile_for, onboarding_profile_creator_relation, onboarding_city_id,
+    onboarding_city_name, onboarding_state_name, onboarding_postal_code,
+    onboarding_lat, onboarding_lng
+  ''';
+
   // ── Step-based partial upsert ─────────────────────────────
 
   /// Persists the fields modified in [step] to Supabase.
-  /// In mock mode (Supabase not configured), simulates a delay.
   /// Returns true on success, false on error.
   static const _keyPendingPhoneRetry = 'pending_guardian_phone_retry';
 
@@ -59,7 +90,6 @@ class ProfileWriteService {
   }
 
   /// Persists the fields modified in [step] to Supabase.
-  /// In mock mode (Supabase not configured), simulates a delay.
   /// Returns true on success, false on error.
   static Future<bool> saveStep({
     required int step,
@@ -67,16 +97,26 @@ class ProfileWriteService {
     required bool isGuardianPath,
   }) async {
     if (!_canWrite || _userId == null) {
-      // Mock mode: simulate network latency
-      await Future.delayed(const Duration(milliseconds: 600));
-      return true;
+      return false;
     }
 
-    // Attempt retry asynchronously
-    retryPendingGuardianPhone();
+    // Retry before the current write so deferred guardian data cannot race this step.
+    await retryPendingGuardianPhone();
+
+    OnboardingData dataToWrite = data;
+    Map<String, dynamic> attemptedFields = const {};
 
     try {
-      final fields = _fieldsForStep(step, data, isGuardianPath);
+      if (step == 2) {
+        final preparedData = await _prepareBasicIdentityWrite(data);
+        if (preparedData == null) {
+          return false;
+        }
+        dataToWrite = preparedData;
+      }
+
+      final fields = _fieldsForStep(step, dataToWrite, isGuardianPath);
+      attemptedFields = fields;
       if (fields.isEmpty) {
         debugPrint('ProfileWriteService: No fields to write for step $step');
         return true;
@@ -89,7 +129,7 @@ class ProfileWriteService {
       }, onConflict: 'user_id');
 
       // If this step includes preferences, upsert those too
-      final prefFields = _preferenceFieldsForStep(step, data);
+      final prefFields = _preferenceFieldsForStep(step, dataToWrite);
       if (prefFields.isNotEmpty) {
         // Get the profile ID first
         final profileRes = await SupabaseService.client
@@ -106,7 +146,9 @@ class ProfileWriteService {
 
       // Guardian phone: encrypt via set_guardian_phone() SECURITY DEFINER RPC
       // This must happen AFTER the profiles upsert so the profile row exists.
-      if (isGuardianPath && step == 1 && data.guardianPhone != null) {
+      if (isGuardianPath &&
+          step == 2 &&
+          dataToWrite.guardianPhone?.trim().isNotEmpty == true) {
         try {
           final profileRes = await SupabaseService.client
               .from('profiles')
@@ -116,14 +158,17 @@ class ProfileWriteService {
 
           await SupabaseService.client.rpc('set_guardian_phone', params: {
             'p_profile_id': profileRes['id'],
-            'p_phone': data.guardianPhone,
+            'p_phone': dataToWrite.guardianPhone!.trim(),
           });
         } catch (rpcErr) {
           debugPrint(
               'ProfileWriteService: RPC set_guardian_phone failed, queueing for retry: $rpcErr');
           try {
             final prefs = await SharedPreferences.getInstance();
-            await prefs.setString(_keyPendingPhoneRetry, data.guardianPhone!);
+            await prefs.setString(
+              _keyPendingPhoneRetry,
+              dataToWrite.guardianPhone!.trim(),
+            );
           } catch (prefErr) {
             debugPrint(
                 'ProfileWriteService: Failed to save phone for retry: $prefErr');
@@ -135,32 +180,276 @@ class ProfileWriteService {
           'ProfileWriteService: Step $step saved (${fields.length} fields)');
       return true;
     } catch (e) {
-      debugPrint('ProfileWriteService: Error saving step $step: $e');
+      debugPrint(
+        'ProfileWriteService: Error saving step $step '
+        '(fields: ${attemptedFields.keys.join(', ')}): $e',
+      );
+      return false;
+    }
+  }
+
+  static Future<bool> saveProfileTypeResume(OnboardingData data) async {
+    if (!_canWrite || _userId == null) return false;
+    final ownerType = _profileOwnerTypeForDb(data);
+    final profileFor = ownerType == 'guardian' ? 'guardian' : 'myself';
+
+    try {
+      await SupabaseService.client.rpc(
+        'save_onboarding_profile_type',
+        params: {
+          'p_profile_for': profileFor,
+          'p_profile_creator_relation':
+              data.wardRelationship ?? data.profileCreatorRelation ?? 'self',
+        },
+      );
+      return true;
+    } catch (e) {
+      debugPrint('ProfileWriteService: Error saving profile type: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> saveOnboardingLocation(OnboardingData data) async {
+    if (!_canWrite || _userId == null) return false;
+    final resolvedData = await _ensureLocationRows(data);
+    if (resolvedData == null) return false;
+
+    return _writeOnboardingLocation(resolvedData);
+  }
+
+  static Future<bool> _writeOnboardingLocation(OnboardingData data) async {
+    final countryCode = _normalCountryCode(data.countryCode);
+    final cityName = _cityNameForWrite(data);
+    final cityId = int.tryParse(data.cityId ?? '');
+    if (countryCode == null ||
+        cityName == null ||
+        cityId == null ||
+        data.lat == null ||
+        data.lng == null) {
+      return false;
+    }
+
+    try {
+      await SupabaseService.client.rpc(
+        'save_onboarding_location',
+        params: {
+          'p_country_code': countryCode,
+          'p_city_id': cityId,
+          'p_city_name': cityName,
+          'p_state_name': data.stateName,
+          'p_postal_code': data.postalCode,
+          'p_lat': data.lat,
+          'p_lng': data.lng,
+        },
+      );
+      return true;
+    } catch (e) {
+      debugPrint('ProfileWriteService: Error saving onboarding location: $e');
+      return false;
+    }
+  }
+
+  static Future<OnboardingData?> _prepareBasicIdentityWrite(
+    OnboardingData data,
+  ) async {
+    final locationData = await _ensureLocationRows(data);
+    if (locationData == null) return null;
+
+    final genderMirrored = await _mirrorGenderForProfileTrigger(locationData);
+    if (!genderMirrored) return null;
+
+    final locationSaved = await _writeOnboardingLocation(locationData);
+    if (!locationSaved) return null;
+
+    return locationData;
+  }
+
+  static Future<OnboardingData?> _ensureLocationRows(
+    OnboardingData data,
+  ) async {
+    final countryCode = _normalCountryCode(data.countryCode);
+    final cityName = _cityNameForWrite(data);
+    if (countryCode == null ||
+        cityName == null ||
+        data.lat == null ||
+        data.lng == null) {
+      debugPrint(
+        'ProfileWriteService: Missing resolved location before profile write',
+      );
+      return null;
+    }
+
+    final regionName =
+        _cleanText(data.stateName) ?? _countryNameFor(countryCode);
+
+    try {
+      // Race/FK guard: the profile write references countries/cities by FK, so
+      // the final save boundary re-resolves the selected city instead of
+      // trusting a stale or malformed cityId from a previous UI step.
+      final response =
+          await SupabaseService.client.rpc('get_or_create_city', params: {
+        'p_city_name': cityName,
+        'p_region_name': regionName,
+        'p_country_name': _countryNameFor(countryCode),
+        'p_country_code': countryCode,
+        'p_latitude': data.lat,
+        'p_longitude': data.lng,
+      });
+
+      final cityId = _intFromRpc(response);
+      if (cityId == null) {
+        debugPrint(
+          'ProfileWriteService: get_or_create_city returned invalid id: $response',
+        );
+        return null;
+      }
+
+      return data.copyWith(
+        countryCode: countryCode,
+        cityId: cityId.toString(),
+        cityName: cityName,
+      );
+    } catch (e) {
+      debugPrint('ProfileWriteService: Failed to resolve location rows: $e');
+      return null;
+    }
+  }
+
+  static Future<bool> _mirrorGenderForProfileTrigger(
+    OnboardingData data,
+  ) async {
+    final gender = _genderToString(data.gender);
+    if (gender == null) {
+      debugPrint(
+        'ProfileWriteService: Missing gender before Basic Identity write',
+      );
+      return false;
+    }
+
+    try {
+      final countryCode = _normalCountryCode(data.countryCode);
+      // profiles.gender is enforced by a database trigger from public.users.
+      // Writing it here makes this service safe even if a screen skipped the
+      // earlier AuthCubit gender propagation or a retry races with app resume.
+      final updatedUser = await SupabaseService.client
+          .from('users')
+          .update({
+            'gender': gender,
+            if (countryCode != null) 'country_code': countryCode,
+          })
+          .eq('id', _userId!)
+          .select('id')
+          .maybeSingle();
+      if (updatedUser == null) {
+        debugPrint(
+          'ProfileWriteService: User row missing before Basic Identity write',
+        );
+        return false;
+      }
+      return true;
+    } catch (e) {
+      debugPrint('ProfileWriteService: Failed to mirror user gender: $e');
       return false;
     }
   }
 
   /// Updates the onboarding_step column on the profiles table.
-  static Future<void> updateOnboardingStep(int step) async {
-    if (!_canWrite || _userId == null) return;
+  static Future<bool> updateOnboardingStep(
+    int step, {
+    bool? isGuardianPath,
+    bool? onboardingCompleted,
+  }) async {
+    if (!_canWrite || _userId == null) return false;
+    try {
+      await SupabaseService.client
+          .rpc('advance_onboarding_step_monotonic', params: {'p_step': step});
+      final userProgressSaved = await _updateUserOnboardingProgress(
+        null,
+        isGuardianPath: isGuardianPath,
+        onboardingCompleted: onboardingCompleted,
+      );
+      if (!userProgressSaved) return false;
+      return true;
+    } catch (e) {
+      debugPrint('ProfileWriteService: Error updating step: $e');
+      return false;
+    }
+  }
+
+  /// Explicit Back button persistence. Forward writes use monotonic updates;
+  /// this separate method is the only intentional regression path.
+  static Future<bool> setOnboardingStepForBack(int step) async {
+    if (!_canWrite || _userId == null) return false;
     try {
       await SupabaseService.client
           .from('profiles')
           .update({'onboarding_step': step}).eq('user_id', _userId!);
+      return _updateUserOnboardingProgress(
+        step,
+        writeStepDirectly: true,
+      );
     } catch (e) {
-      debugPrint('ProfileWriteService: Error updating step: $e');
+      debugPrint('ProfileWriteService: Error setting back step: $e');
+      return false;
     }
   }
 
-  static Future<void> markOnboardingComplete() async {
-    if (!_canWrite || _userId == null) return;
+  static Future<bool> markOnboardingComplete() async {
+    if (!_canWrite || _userId == null) return false;
     try {
-      await SupabaseService.client.from('profiles').update({
-        'onboarding_completed': true,
-        'onboarding_flow_version': 3,
-      }).eq('user_id', _userId!);
+      final updated = await SupabaseService.client
+          .from('profiles')
+          .update({
+            'onboarding_completed': true,
+            'onboarding_flow_version': 3,
+          })
+          .eq('user_id', _userId!)
+          .select('id')
+          .maybeSingle();
+      if (updated == null) return false;
+      final userProgressSaved = await _updateUserOnboardingProgress(
+        5,
+        onboardingCompleted: true,
+        writeStepDirectly: true,
+      );
+      if (!userProgressSaved) return false;
+      return true;
     } catch (e) {
       debugPrint('ProfileWriteService: Error marking onboarding complete: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> _updateUserOnboardingProgress(
+    int? step, {
+    bool? isGuardianPath,
+    bool? onboardingCompleted,
+    bool writeStepDirectly = false,
+  }) async {
+    if (!_canWrite || _userId == null) return false;
+    final fields = <String, dynamic>{
+      // Forward steps are handled by advance_onboarding_step_monotonic() so a
+      // stale async response cannot regress users.onboarding_step. Exact step
+      // writes are reserved for explicit Back and final completion.
+      if (writeStepDirectly && step != null) 'onboarding_step': step,
+      if (isGuardianPath != null) 'is_guardian_path': isGuardianPath,
+      if (isGuardianPath != null)
+        'profile_owner_type': isGuardianPath ? 'guardian' : 'self',
+      if (onboardingCompleted != null)
+        'onboarding_completed': onboardingCompleted,
+    };
+
+    if (fields.isEmpty) return true;
+
+    try {
+      await SupabaseService.client
+          .from('users')
+          .update(fields)
+          .eq('id', _userId!);
+      return true;
+    } catch (e) {
+      debugPrint('ProfileWriteService: Error updating user progress: $e');
+      return false;
     }
   }
 
@@ -168,8 +457,9 @@ class ProfileWriteService {
   /// onboarding. This keeps "complete later" real, not just locally cached.
   static Future<bool> saveFullProfile(OnboardingData data) async {
     if (!_canWrite || _userId == null) {
-      await Future.delayed(const Duration(milliseconds: 250));
-      return true;
+      debugPrint(
+          'ProfileWriteService: Cannot save full profile without backend auth.');
+      return false;
     }
 
     try {
@@ -214,7 +504,7 @@ class ProfileWriteService {
     // Fast-start v3 uses the same five step numbers for self and guardian.
     final effectiveStep = step;
 
-    // Quick Location is a dedicated mandatory step in flow version 2.
+    // Quick Location is the dedicated mandatory location step in flow v3.
     if (effectiveStep == 1) {
       return _locationFields(data);
     }
@@ -225,11 +515,11 @@ class ProfileWriteService {
       });
     }
 
-    // The remaining screens preserve their legacy field mapping, shifted by
-    // one because Quick Location was inserted before Basic Identity.
-    final legacyEffectiveStep = effectiveStep <= 0 ? 0 : effectiveStep - 1;
-    switch (legacyEffectiveStep) {
-      // Step 0 — ProfileForWhom (no DB fields, just local state)
+    // Fast-start steps reuse the existing profile column groups. Later groups
+    // are kept for deferred profile completion saves outside required signup.
+    final profileSection = effectiveStep <= 0 ? 0 : effectiveStep - 1;
+    switch (profileSection) {
+      // Profile owner
       case 0:
         final relation = data.profileCreatorRelation ??
             (data.profileFor == ProfileFor.myself ? 'self' : 'guardian');
@@ -240,14 +530,32 @@ class ProfileWriteService {
                 : relation);
 
         return _compactMap({
+          'profile_owner_type': _profileOwnerTypeForDb(data),
           'profile_creator_relation': dbRelation,
-          'guardian_mode':
-              data.profileFor == ProfileFor.guardian ? 'passive' : 'none',
+          'ward_relationship': _wardRelationshipForDb(data),
+          'guardian_mode': _isGuardianData(data) ? 'passive' : 'none',
+          'guardian_user_id': _isGuardianData(data) ? _userId : null,
         });
 
-      // Step 1 — Basic Identity
+      // Basic identity
       case 1:
+        final isGuardian = _isGuardianData(data);
         return _compactMap({
+          ..._locationFields(data),
+          'profile_owner_type': _profileOwnerTypeForDb(data),
+          'profile_creator_relation': _creatorRelationForDb(data),
+          'ward_relationship': _wardRelationshipForDb(data),
+          'guardian_mode': isGuardian ? data.guardianMode ?? 'passive' : 'none',
+          'guardian_user_id': isGuardian ? _userId : null,
+          'guardian_relationship': isGuardian
+              ? _guardianRelationshipForDb(data.guardianRelationship)
+              : null,
+          'relationship_to_ward': isGuardian
+              ? _relationshipToWardForDb(data.guardianRelationship)
+              : null,
+          'guardian_email': isGuardian ? data.guardianEmail : null,
+          'guardian_authority_scope':
+              isGuardian ? data.guardianAuthorityScope ?? 'full' : null,
           'first_name': data.firstName,
           'last_name': data.lastName,
           'date_of_birth': data.dateOfBirth?.toIso8601String().split('T')[0],
@@ -256,12 +564,11 @@ class ProfileWriteService {
           'complexion': data.complexion?.toLowerCase().replaceAll(' ', '_'),
           'mother_tongue': data.motherTongue,
           'community': data.community,
-          'residency_status': data.residencyStatus,
-          'special_needs':
-              data.specialNeeds, // Fixed Flaw 22: Written in step 1
+          'residency_status': _residencyStatusToDb(data.residencyStatus),
+          'special_needs': _specialNeedsToDb(data.specialNeeds),
         });
 
-      // Step 2 — Islamic Identity
+      // Islamic identity
       case 2:
         return _compactMap({
           'sect': _sectToString(data.sect),
@@ -276,7 +583,7 @@ class ProfileWriteService {
           'hookah_habit': data.hookahHabit,
         });
 
-      // Step 3 — Islamic Marriage Details
+      // Deferred Islamic marriage details
       case 3:
         final fields = <String, dynamic>{
           'quran_memorization': data.quranMemorization,
@@ -307,7 +614,7 @@ class ProfileWriteService {
 
         return _compactMap(fields);
 
-      // Step 4 — Background
+      // Deferred education and work
       case 4:
         return _compactMap({
           'education_level': data.educationLabel,
@@ -315,12 +622,11 @@ class ProfileWriteService {
           'field_of_study': data.fieldOfStudy,
           'profession': data.profession,
           'employment_status': _employmentStatusToString(data.employmentStatus),
-          'income_bracket': data.incomeBracketId, // Fixed Flaw 16: Persisted
-          'income_visibility':
-              data.incomeVisibility, // Fixed Flaw 16: Persisted
+          'income_bracket': data.incomeBracketId,
+          'income_visibility': data.incomeVisibility,
         });
 
-      // Step 5 — Family
+      // Deferred family details
       case 5:
         return _compactMap({
           'family_type': _familyTypeToString(data.familyType),
@@ -330,10 +636,9 @@ class ProfileWriteService {
           'previously_married': data.previouslyMarried,
           'children_count': data.childrenCount,
           'living_expectation': data.livingExpectation,
-          // Fixed Flaw 22: 'special_needs' removed here since it is in step 1
         });
 
-      // Step 6 — About Yourself
+      // Deferred bio and interests
       case 6:
         return _compactMap({
           'bio': data.bio,
@@ -341,21 +646,21 @@ class ProfileWriteService {
           'languages': data.languages,
         });
 
-      // Step 7 — Partner Preferences (written to profile_preferences table)
+      // Deferred partner preferences
       case 7:
         return {}; // Handled by _preferenceFieldsForStep
 
-      // Step 8 — Photo Upload (handled by photo upload pipeline)
+      // Photo privacy
       case 8:
         return _compactMap({
           'photo_privacy': _photoPrivacyToString(data.photoPrivacy),
         });
 
-      // Step 9 — Profile Preview (no new fields)
+      // Review section has no direct fields
       case 9:
         return {};
 
-      // Step 10 — Welcome (no new fields)
+      // Completion section has no direct fields
       case 10:
         return {};
 
@@ -364,12 +669,13 @@ class ProfileWriteService {
     }
   }
 
-  /// Returns preference fields for step 7 (partner preferences).
+  /// Returns deferred partner preference fields.
   static Map<String, dynamic> _preferenceFieldsForStep(
     int step,
     OnboardingData data,
   ) {
-    // Quick Location shifts preferences by one for both paths.
+    // Partner preferences are no longer part of the required five-step flow.
+    // This mapper remains for edit-profile/deferred completion saves.
     final isGuardian = data.profileFor == ProfileFor.guardian;
     final prefStep = isGuardian ? 9 : 8;
     if (step != prefStep) return {};
@@ -391,19 +697,26 @@ class ProfileWriteService {
   }
 
   static Map<String, dynamic> _fullProfileFields(OnboardingData data) {
+    final isGuardian = _isGuardianData(data);
     final fields = <String, dynamic>{
       ..._locationFields(data),
+      'profile_owner_type': _profileOwnerTypeForDb(data),
       'profile_creator_relation': _creatorRelationForDb(data),
-      'guardian_mode': data.profileFor == ProfileFor.guardian
-          ? data.guardianMode ?? 'passive'
-          : 'none',
-      'guardian_name': data.guardianName,
-      'guardian_relationship': data.guardianRelationship == 'guardian'
-          ? 'other'
-          : data.guardianRelationship,
-      'guardian_email': data.guardianEmail,
-      'guardian_authority_scope': data.guardianAuthorityScope,
-      'guardian_phone_country_code': data.guardianPhoneCountryCode,
+      'ward_relationship': _wardRelationshipForDb(data),
+      'guardian_mode': isGuardian ? data.guardianMode ?? 'passive' : 'none',
+      'guardian_user_id': isGuardian ? _userId : null,
+      'guardian_name': isGuardian ? data.guardianName : null,
+      'guardian_relationship': isGuardian
+          ? _guardianRelationshipForDb(data.guardianRelationship)
+          : null,
+      'relationship_to_ward': isGuardian
+          ? _relationshipToWardForDb(data.guardianRelationship)
+          : null,
+      'guardian_email': isGuardian ? data.guardianEmail : null,
+      'guardian_authority_scope':
+          isGuardian ? data.guardianAuthorityScope : null,
+      'guardian_phone_country_code':
+          isGuardian ? data.guardianPhoneCountryCode : null,
       'first_name': data.firstName,
       'last_name': data.lastName,
       'date_of_birth': data.dateOfBirth?.toIso8601String().split('T')[0],
@@ -412,8 +725,8 @@ class ProfileWriteService {
       'complexion': data.complexion?.toLowerCase().replaceAll(' ', '_'),
       'mother_tongue': data.motherTongue,
       'community': data.community,
-      'residency_status': data.residencyStatus,
-      'special_needs': data.specialNeeds,
+      'residency_status': _residencyStatusToDb(data.residencyStatus),
+      'special_needs': _specialNeedsToDb(data.specialNeeds),
       'sect': _sectToString(data.sect),
       'sub_sect': data.subSect,
       'deen_level': _deenLevelToString(data.deenLevel),
@@ -476,8 +789,96 @@ class ProfileWriteService {
           (data.cityId != null && RegExp(r'^\d+$').hasMatch(data.cityId!))
               ? int.parse(data.cityId!)
               : null,
-      'country_code': data.countryCode,
+      'country_code': _normalCountryCode(data.countryCode),
     });
+  }
+
+  static String? _normalCountryCode(String? countryCode) {
+    final normalized = countryCode?.trim().toUpperCase();
+    if (normalized == null || normalized.length != 2) return null;
+    return normalized;
+  }
+
+  static String? _cleanText(String? value) {
+    final cleaned = value?.trim();
+    if (cleaned == null || cleaned.isEmpty) return null;
+    return cleaned;
+  }
+
+  static String? _cityNameForWrite(OnboardingData data) {
+    final raw = _cleanText(data.cityName);
+    if (raw == null) return null;
+    return raw.split(',').first.trim();
+  }
+
+  static String _countryNameFor(String countryCode) {
+    final normalized = countryCode.toUpperCase();
+    for (final country in kAllCountries) {
+      if (country.iso2.toUpperCase() == normalized) {
+        return country.name;
+      }
+    }
+    return normalized;
+  }
+
+  static int? _intFromRpc(dynamic response) {
+    if (response is int) return response;
+    if (response is num) return response.toInt();
+    return int.tryParse(response?.toString() ?? '');
+  }
+
+  static bool _isGuardianData(OnboardingData data) {
+    return data.profileOwnerType == ProfileOwnerType.guardian ||
+        data.profileFor == ProfileFor.guardian ||
+        data.isGuardianMode;
+  }
+
+  static String _profileOwnerTypeForDb(OnboardingData data) {
+    return _isGuardianData(data) ? 'guardian' : 'self';
+  }
+
+  static String? _guardianRelationshipForDb(String? value) {
+    final normalized = value?.trim().toLowerCase();
+    if (normalized == null || normalized.isEmpty) return null;
+    if (normalized == 'guardian') return 'other';
+    if (normalized == 'parent') return 'father';
+    if (normalized == 'sibling') return 'brother';
+    const allowed = {
+      'father',
+      'mother',
+      'brother',
+      'sister',
+      'uncle',
+      'aunt',
+      'other',
+    };
+    return allowed.contains(normalized) ? normalized : null;
+  }
+
+  static String? _relationshipToWardForDb(String? value) {
+    final normalized = value?.trim().toLowerCase();
+    if (normalized == null || normalized.isEmpty) return null;
+    if (normalized == 'parent') return 'father';
+    if (normalized == 'sibling') return 'brother';
+    const allowed = {
+      'father',
+      'mother',
+      'brother',
+      'sister',
+      'uncle',
+      'aunt',
+      'guardian',
+    };
+    return allowed.contains(normalized) ? normalized : null;
+  }
+
+  static String? _wardRelationshipForDb(OnboardingData data) {
+    if (!_isGuardianData(data)) return null;
+    final normalized = (data.wardRelationship ?? data.profileCreatorRelation)
+        ?.trim()
+        .toLowerCase();
+    const allowed = {'son', 'daughter', 'brother', 'sister'};
+    return allowed.contains(normalized) ? normalized : null;
   }
 
   static Map<String, dynamic> _preferenceFields(OnboardingData data) {
@@ -497,7 +898,8 @@ class ProfileWriteService {
   }
 
   static String? _creatorRelationForDb(OnboardingData data) {
-    final relation = data.profileCreatorRelation ??
+    final relation = data.wardRelationship ??
+        data.profileCreatorRelation ??
         (data.profileFor == ProfileFor.myself ? 'self' : 'guardian');
     if (relation == 'son' || relation == 'daughter') return 'parent';
     if (relation == 'brother' || relation == 'sister') return 'sibling';
@@ -509,33 +911,33 @@ class ProfileWriteService {
     if (!_canWrite || _userId == null) return null;
 
     try {
-      // 1. Fetch profiles table row
-      final profileRes = await SupabaseService.client
-          .from('profiles')
-          .select()
-          .eq('user_id', _userId!)
-          .maybeSingle();
-
-      if (profileRes == null) return null;
-
-      // 2. Fetch users row for auth/contact metadata.
+      // 1. Fetch users row first: early onboarding data exists before profiles.
       Map<String, dynamic>? userRes;
       try {
         userRes = await SupabaseService.client
             .from('users')
-            .select('email, phone')
+            .select(_userRestoreColumns)
             .eq('id', _userId!)
             .maybeSingle();
       } catch (e) {
         debugPrint('ProfileWriteService: User row not found or error: $e');
       }
 
+      // 2. Fetch profiles table row
+      final profileRes = await SupabaseService.client
+          .from('profiles')
+          .select(_profileRestoreColumns)
+          .eq('user_id', _userId!)
+          .maybeSingle();
+
+      if (profileRes == null) return _mapUserResumeToOnboardingData(userRes);
+
       // 3. Fetch profile_preferences table row if it exists
       Map<String, dynamic>? prefRes;
       try {
         prefRes = await SupabaseService.client
             .from('profile_preferences')
-            .select()
+            .select(_preferenceRestoreColumns)
             .eq('profile_id', profileRes['id'])
             .maybeSingle();
       } catch (e) {
@@ -556,10 +958,13 @@ class ProfileWriteService {
     Map<String, dynamic>? pr,
     Map<String, dynamic>? u,
   ) {
+    final ownerTypeRaw = p['profile_owner_type'] as String?;
     final creatorRel = p['profile_creator_relation'] as String?;
     final guardianMode = p['guardian_mode'] as String?;
-    final isGuardian = creatorRel != 'self' &&
-        (guardianMode != null && guardianMode != 'none');
+    final isGuardian = ownerTypeRaw == 'guardian' ||
+        (creatorRel != 'self' &&
+            guardianMode != null &&
+            guardianMode != 'none');
 
     // Parse date of birth
     DateTime? dob;
@@ -703,35 +1108,48 @@ class ProfileWriteService {
     }
 
     // Map profile_creator_relation back
-    String? profileCreatorRelation = creatorRel;
-    String? guardianRelationship;
+    String? wardRelationship = p['ward_relationship'] as String?;
+    String? profileCreatorRelation = wardRelationship ?? creatorRel;
+    String? guardianRelationship = (p['relationship_to_ward'] as String?) ??
+        (p['guardian_relationship'] as String?);
     if (isGuardian) {
-      if (creatorRel == 'parent') {
+      if (wardRelationship == null && creatorRel == 'parent') {
         profileCreatorRelation = gender == Gender.female ? 'daughter' : 'son';
-        guardianRelationship = 'parent';
-      } else if (creatorRel == 'sibling') {
+        wardRelationship = profileCreatorRelation;
+        guardianRelationship ??= 'father';
+      } else if (wardRelationship == null && creatorRel == 'sibling') {
         profileCreatorRelation = gender == Gender.female ? 'sister' : 'brother';
-        guardianRelationship = 'sibling';
+        wardRelationship = profileCreatorRelation;
+        guardianRelationship ??= 'brother';
       } else if (creatorRel == 'guardian') {
         profileCreatorRelation = 'guardian';
-        guardianRelationship = 'guardian';
+        guardianRelationship ??= 'guardian';
       }
     }
 
     return OnboardingData(
       profileFor: isGuardian ? ProfileFor.guardian : ProfileFor.myself,
+      profileOwnerType:
+          isGuardian ? ProfileOwnerType.guardian : ProfileOwnerType.self,
+      wardRelationship: wardRelationship,
+      wardGender: isGuardian ? gender : null,
       firstName: p['first_name'] as String?,
       lastName: p['last_name'] as String?,
       dateOfBirth: dob,
       gender: gender,
       cityId: p['city_id']?.toString(),
-      cityName: null, // Resolves locally in BasicIdentityScreen via _kCities
-      countryCode: p['country_code'] as String?,
+      cityName: u?['onboarding_city_name'] as String?,
+      stateName: u?['onboarding_state_name'] as String?,
+      postalCode: u?['onboarding_postal_code'] as String?,
+      lat: _toDouble(u?['onboarding_lat']),
+      lng: _toDouble(u?['onboarding_lng']),
+      countryCode:
+          (p['country_code'] as String?) ?? (u?['country_code'] as String?),
       heightCm: p['height_cm'] as int?,
       complexion: complexion,
       motherTongue: p['mother_tongue'] as String?,
       community: p['community'] as String?,
-      residencyStatus: p['residency_status'] as String?,
+      residencyStatus: _residencyStatusFromDb(p['residency_status'] as String?),
       sect: sect,
       subSect: p['sub_sect'] as String?,
       deenLevel: deen,
@@ -796,6 +1214,7 @@ class ProfileWriteService {
       phone: u?['phone'] as String?,
       guardianName: p['guardian_name'] as String?,
       guardianRelationship: guardianRelationship,
+      isGuardianMode: isGuardian,
       guardianPhoneCountryCode: p['guardian_phone_country_code'] as String?,
       profileCreatorRelation: profileCreatorRelation,
       guardianEmail: p['guardian_email'] as String?,
@@ -804,8 +1223,81 @@ class ProfileWriteService {
       isRevert: p['is_revert'] as String?,
       polygamyStatus: p['polygamy_status'] as String?,
       polygamyAcceptance: p['polygamy_acceptance'] as String?,
-      specialNeeds: p['special_needs'] as String?,
+      specialNeeds: _specialNeedsFromDb(p['special_needs'] as String?),
     );
+  }
+
+  static OnboardingData? _mapUserResumeToOnboardingData(
+    Map<String, dynamic>? u,
+  ) {
+    if (u == null) return null;
+
+    final profileForRaw = u['onboarding_profile_for'] as String?;
+    final ownerTypeRaw = u['profile_owner_type'] as String?;
+    final isGuardianPath = u['is_guardian_path'] as bool? ?? false;
+    final profileFor = ownerTypeRaw == 'guardian' ||
+            profileForRaw == 'guardian' ||
+            isGuardianPath
+        ? ProfileFor.guardian
+        : ownerTypeRaw == 'self' || profileForRaw == 'myself'
+            ? ProfileFor.myself
+            : null;
+    final cityName = u['onboarding_city_name'] as String?;
+    final countryCode = u['country_code'] as String?;
+    final wardRelationship =
+        u['onboarding_profile_creator_relation'] as String?;
+
+    final hasAnyResumeData = profileFor != null ||
+        (countryCode?.trim().isNotEmpty == true) ||
+        (cityName?.trim().isNotEmpty == true);
+    if (!hasAnyResumeData) return null;
+
+    return OnboardingData(
+      profileFor: profileFor,
+      profileOwnerType: profileFor == ProfileFor.guardian
+          ? ProfileOwnerType.guardian
+          : profileFor == ProfileFor.myself
+              ? ProfileOwnerType.self
+              : null,
+      isGuardianMode: profileFor == ProfileFor.guardian,
+      wardRelationship:
+          profileFor == ProfileFor.guardian ? wardRelationship : null,
+      wardGender: profileFor == ProfileFor.guardian
+          ? _wardGenderFromRelationship(wardRelationship)
+          : null,
+      gender: profileFor == ProfileFor.guardian
+          ? _wardGenderFromRelationship(wardRelationship)
+          : null,
+      profileCreatorRelation: wardRelationship,
+      email: u['email'] as String?,
+      phone: u['phone'] as String?,
+      countryCode: countryCode,
+      cityId: u['onboarding_city_id']?.toString(),
+      cityName: cityName,
+      stateName: u['onboarding_state_name'] as String?,
+      postalCode: u['onboarding_postal_code'] as String?,
+      lat: _toDouble(u['onboarding_lat']),
+      lng: _toDouble(u['onboarding_lng']),
+    );
+  }
+
+  static double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString());
+  }
+
+  static Gender? _wardGenderFromRelationship(String? relation) {
+    switch (relation?.trim().toLowerCase()) {
+      case 'daughter':
+      case 'sister':
+        return Gender.female;
+      case 'son':
+      case 'brother':
+        return Gender.male;
+      default:
+        return null;
+    }
   }
 
   // ── Enum → String converters ──────────────────────────────
@@ -882,6 +1374,100 @@ class ProfileWriteService {
       case PhotoPrivacy.requestOnly:
         return 'request_only';
     }
+  }
+
+  static String? _residencyStatusToDb(String? value) {
+    final normalized = _normalizeOption(value);
+    if (normalized == null) return null;
+    switch (normalized) {
+      case 'citizen':
+        return 'citizen';
+      case 'permanent resident':
+      case 'permanent_resident':
+        return 'permanent_resident';
+      case 'work visa':
+      case 'work_visa':
+        return 'work_visa';
+      case 'student visa':
+      case 'student_visa':
+        return 'student_visa';
+      case 'other':
+        return 'other';
+      case 'prefer not to say':
+      case 'prefer_not_to_say':
+        return 'prefer_not_to_say';
+      default:
+        return null;
+    }
+  }
+
+  static String? _residencyStatusFromDb(String? value) {
+    switch (_normalizeOption(value)) {
+      case 'citizen':
+        return 'Citizen';
+      case 'permanent_resident':
+        return 'Permanent Resident';
+      case 'work_visa':
+        return 'Work Visa';
+      case 'student_visa':
+        return 'Student Visa';
+      case 'other':
+        return 'Other';
+      case 'prefer_not_to_say':
+        return 'Prefer not to say';
+      default:
+        return value;
+    }
+  }
+
+  static String? _specialNeedsToDb(String? value) {
+    final normalized = _normalizeOption(value);
+    if (normalized == null) return null;
+    switch (normalized) {
+      case 'none':
+        return 'none';
+      case 'physical disability':
+      case 'physical':
+        return 'physical';
+      case 'hearing impairment':
+      case 'hearing':
+        return 'hearing';
+      case 'visual impairment':
+      case 'visual':
+        return 'visual';
+      case 'other':
+        return 'other';
+      case 'prefer not to say':
+      case 'prefer_not_to_say':
+        return 'prefer_not_to_say';
+      default:
+        return null;
+    }
+  }
+
+  static String? _specialNeedsFromDb(String? value) {
+    switch (_normalizeOption(value)) {
+      case 'none':
+        return 'None';
+      case 'physical':
+        return 'Physical disability';
+      case 'hearing':
+        return 'Hearing impairment';
+      case 'visual':
+        return 'Visual impairment';
+      case 'other':
+        return 'Other';
+      case 'prefer_not_to_say':
+        return 'Prefer not to say';
+      default:
+        return value;
+    }
+  }
+
+  static String? _normalizeOption(String? value) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) return null;
+    return trimmed.toLowerCase();
   }
 
   // ── Helpers ───────────────────────────────────────────────

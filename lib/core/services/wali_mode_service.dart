@@ -32,7 +32,9 @@ class WaliModeService {
 
   SupabaseClient get _supabase {
     if (!SupabaseService.isInitialized) {
-      throw StateError('Supabase is not initialized. Ensure SupabaseService.initialize() is called first.');
+      throw StateError(
+        'Supabase is not initialized. Ensure SupabaseService.initialize() is called first.',
+      );
     }
     return SupabaseService.client;
   }
@@ -97,11 +99,11 @@ class WaliModeService {
       return rows.map((row) {
         final r = row as Map<String, dynamic>;
         return GuardianDashboardItem(
-          wardName: r['ward_name'] as String? ?? 'Unknown',
+          wardName: _requiredText(r, 'ward_name'),
           wardProfileId: r['ward_profile_id'] as String,
           wardUserId: r['ward_user_id'] as String,
           matchId: r['match_id'] as String,
-          otherPartyName: r['other_party_name'] as String? ?? 'Unknown',
+          otherPartyName: _requiredText(r, 'other_party_name'),
           otherPartyPhoto: r['other_party_photo'] as String?,
           lastMessage: r['last_message'] as String?,
           lastMessageAt: r['last_message_at'] != null
@@ -131,9 +133,7 @@ class WaliModeService {
       final userId = _supabase.auth.currentUser?.id;
       if (userId == null) throw Exception('Not authenticated');
 
-      final response = await _supabase
-          .from('guardian_chat_mirrors')
-          .select('''
+      final response = await _supabase.from('guardian_chat_mirrors').select('''
             id,
             match_id,
             ward_id,
@@ -146,9 +146,7 @@ class WaliModeService {
               last_message_at,
               created_at
             )
-          ''')
-          .eq('guardian_id', userId)
-          .order('created_at', ascending: false);
+          ''').eq('guardian_id', userId).order('created_at', ascending: false);
 
       final mirrors = response as List<dynamic>;
 
@@ -179,9 +177,9 @@ class WaliModeService {
           mirrorId: mirror['id'] as String,
           matchId: mirror['match_id'] as String,
           wardId: mirror['ward_id'] as String,
-          wardName: wardProfile['first_name'] as String? ?? 'Unknown',
+          wardName: _requiredText(wardProfile, 'first_name'),
           otherPartyId: otherUserId,
-          otherPartyName: otherProfile['first_name'] as String? ?? 'Unknown',
+          otherPartyName: _requiredText(otherProfile, 'first_name'),
           mode: mirror['mode'] as String,
           matchStatus: match['status'] as String,
           lastMessageAt: match['last_message_at'] != null
@@ -228,21 +226,23 @@ class WaliModeService {
           table: 'messages',
           callback: (payload) {
             final newRecord = payload.newRecord;
-            debugPrint('[WaliModeService] Realtime message: ${newRecord['match_id']}');
+            debugPrint(
+                '[WaliModeService] Realtime message: ${newRecord['match_id']}');
             _messageController.add(newRecord);
             onNewMessage(newRecord);
           },
         )
         .subscribe((status, [error]) {
-          debugPrint('[WaliModeService] Realtime status: $status');
-          final isSubscribed = status == RealtimeSubscribeStatus.subscribed;
-          _isRealtimeConnected = isSubscribed;
-          if (onStatusChange != null) {
-            onStatusChange(isSubscribed);
-          }
-        });
+      debugPrint('[WaliModeService] Realtime status: $status');
+      final isSubscribed = status == RealtimeSubscribeStatus.subscribed;
+      _isRealtimeConnected = isSubscribed;
+      if (onStatusChange != null) {
+        onStatusChange(isSubscribed);
+      }
+    });
 
-    debugPrint('[WaliModeService] ✅ Realtime subscription active for guardian $userId');
+    debugPrint(
+        '[WaliModeService] ✅ Realtime subscription active for guardian $userId');
   }
 
   /// Marks the guardian's last-seen timestamp for a specific ward,
@@ -273,7 +273,7 @@ class WaliModeService {
     try {
       await _supabase.from('messages').insert({
         'match_id': matchId,
-        'sender_id': wardId,     // Sent as the ward
+        'sender_id': wardId, // Sent as the ward
         'receiver_id': receiverId,
         'content': content,
         'sent_by_guardian': true, // §3.2: Transparency flag
@@ -321,6 +321,62 @@ class WaliModeService {
     }
   }
 
+  /// Saves the ward's guardian settings on the profile row and encrypts the
+  /// phone through the existing SECURITY DEFINER RPC. SharedPreferences should
+  /// only be used by callers as a UI cache, never as the source of truth.
+  Future<void> saveMyGuardianSettings({
+    required bool enabled,
+    required String guardianName,
+    required String guardianPhone,
+    required String relationship,
+    required bool canReply,
+  }) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) {
+      throw StateError('Sign in is required to save guardian settings.');
+    }
+
+    final profile = await _supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
+    final profileId = profile?['id'] as String?;
+    if (profileId == null) {
+      throw StateError('Profile was not found for guardian settings.');
+    }
+
+    final mode = enabled ? (canReply ? 'active' : 'passive') : 'none';
+    await _supabase.from('profiles').update({
+      'guardian_name': enabled ? guardianName.trim() : null,
+      'guardian_relationship': enabled ? _dbRelationship(relationship) : null,
+      'guardian_mode': mode,
+      if (!enabled) 'guardian_user_id': null,
+    }).eq('id', profileId);
+
+    if (enabled && guardianPhone.trim().isNotEmpty) {
+      await _supabase.rpc('set_guardian_phone', params: {
+        'p_profile_id': profileId,
+        'p_phone': guardianPhone.trim(),
+      });
+    }
+  }
+
+  static String _dbRelationship(String label) {
+    switch (label.toLowerCase()) {
+      case 'father':
+        return 'father';
+      case 'mother':
+        return 'mother';
+      case 'brother':
+        return 'brother';
+      case 'uncle':
+        return 'uncle';
+      default:
+        return 'other';
+    }
+  }
+
   /// Gets the guardian info for the current user's profile.
   ///
   /// Returns null if no guardian is set.
@@ -331,11 +387,14 @@ class WaliModeService {
 
       final response = await _supabase
           .from('profiles')
-          .select('guardian_name, guardian_relationship, guardian_mode, guardian_user_id')
+          .select(
+            'guardian_name, guardian_relationship, guardian_mode, guardian_user_id',
+          )
           .eq('user_id', userId)
           .single();
 
-      if (response['guardian_mode'] == 'none' || response['guardian_name'] == null) {
+      if (response['guardian_mode'] == 'none' ||
+          response['guardian_name'] == null) {
         return null;
       }
 
@@ -369,6 +428,14 @@ class WaliModeService {
   }
 }
 
+String _requiredText(Map<String, dynamic> row, String key) {
+  final value = row[key]?.toString().trim();
+  if (value == null || value.isEmpty) {
+    throw StateError('Guardian data is missing required field "$key".');
+  }
+  return value;
+}
+
 // ── Data Models ───────────────────────────────────────────────
 
 /// Dashboard item returned by [WaliModeService.getDashboard].
@@ -398,13 +465,15 @@ class GuardianDashboardItem {
   final String? lastMessage;
   final DateTime? lastMessageAt;
   final int unreadCount;
-  final String guardianMode;   // 'passive' or 'active'
+  final String guardianMode; // 'passive' or 'active'
   final String matchStatus;
   final bool? guardianApproved;
   final DateTime? matchCreatedAt;
 
-  bool get canSendMessages => guardianMode == 'active' && matchStatus == 'active';
-  bool get needsApproval => guardianMode == 'active' && guardianApproved != true;
+  bool get canSendMessages =>
+      guardianMode == 'active' && matchStatus == 'active';
+  bool get needsApproval =>
+      guardianMode == 'active' && guardianApproved != true;
   bool get hasUnread => unreadCount > 0;
 }
 
@@ -428,7 +497,7 @@ class GuardianMirroredChat {
   final String wardName;
   final String otherPartyId;
   final String otherPartyName;
-  final String mode;  // 'passive' or 'active'
+  final String mode; // 'passive' or 'active'
   final String matchStatus;
   final DateTime? lastMessageAt;
 
@@ -446,7 +515,7 @@ class GuardianInfo {
 
   final String name;
   final String? relationship;
-  final String mode;  // 'passive' or 'active'
+  final String mode; // 'passive' or 'active'
 
   /// Whether the guardian has created their own account and linked it.
   final bool isLinked;

@@ -29,6 +29,7 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/services/supabase_service.dart';
+import '../../../core/services/wali_mode_service.dart';
 import 'legal_doc_screen.dart';
 import '../../../core/services/selfie_verification_service.dart';
 
@@ -659,6 +660,7 @@ class _GuardianSectionState extends State<_GuardianSection> {
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   bool _saved = false;
+  bool _saving = false;
 
   static const _relationships = [
     'Father',
@@ -683,6 +685,24 @@ class _GuardianSectionState extends State<_GuardianSection> {
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
+    final cachedPhone = prefs.getString(_kGuardianPhone) ?? '';
+
+    if (SupabaseService.isInitialized) {
+      final info = await WaliModeService.instance.getMyGuardianInfo();
+      if (!mounted) return;
+      if (info != null) {
+        setState(() {
+          _enabled = true;
+          _mirror = true;
+          _canReply = info.mode == 'active';
+          _relationship = _relationLabelFromDb(info.relationship);
+          _nameCtrl.text = info.name;
+          _phoneCtrl.text = cachedPhone;
+        });
+        return;
+      }
+    }
+
     if (!mounted) return;
     setState(() {
       _enabled = prefs.getBool(_kGuardianEnabled) ?? false;
@@ -695,6 +715,48 @@ class _GuardianSectionState extends State<_GuardianSection> {
   }
 
   Future<void> _save() async {
+    final l10n = AppLocalizations.of(context);
+    if (_enabled &&
+        (_nameCtrl.text.trim().isEmpty || _phoneCtrl.text.trim().isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${l10n.settings_guardian_name_hint} and ${l10n.settings_guardian_phone_hint} are required.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (!SupabaseService.isInitialized) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Guardian settings require a backend connection.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _saving = true);
+    try {
+      await WaliModeService.instance.saveMyGuardianSettings(
+        enabled: _enabled,
+        guardianName: _nameCtrl.text,
+        guardianPhone: _phoneCtrl.text,
+        relationship: _relationship,
+        canReply: _canReply,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not save guardian settings. Please try again.'),
+        ),
+      );
+      return;
+    }
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_kGuardianEnabled, _enabled);
     await prefs.setString(_kGuardianName, _nameCtrl.text.trim());
@@ -703,7 +765,10 @@ class _GuardianSectionState extends State<_GuardianSection> {
     await prefs.setBool(_kGuardianMirror, _mirror);
     await prefs.setBool(_kGuardianCanReply, _canReply);
     if (mounted) {
-      setState(() => _saved = true);
+      setState(() {
+        _saving = false;
+        _saved = true;
+      });
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) setState(() => _saved = false);
       });
@@ -727,6 +792,21 @@ class _GuardianSectionState extends State<_GuardianSection> {
     }
   }
 
+  String _relationLabelFromDb(String? relation) {
+    switch (relation) {
+      case 'father':
+        return 'Father';
+      case 'mother':
+        return 'Mother';
+      case 'brother':
+        return 'Brother';
+      case 'uncle':
+        return 'Uncle';
+      default:
+        return 'Other';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -741,7 +821,14 @@ class _GuardianSectionState extends State<_GuardianSection> {
             Text(l10n.settings_guardian_sub, style: AppTypography.caption),
         trailing: Switch(
           value: _enabled,
-          onChanged: (v) => setState(() => _enabled = v),
+          onChanged: (v) => setState(() {
+            _enabled = v;
+            if (v) _mirror = true;
+            if (!v) {
+              _mirror = false;
+              _canReply = false;
+            }
+          }),
           activeThumbColor: AppColors.obsidianNight,
           activeTrackColor: AppColors.champagneGold,
           inactiveThumbColor: AppColors.slateMist,
@@ -812,7 +899,10 @@ class _GuardianSectionState extends State<_GuardianSection> {
                       style: AppTypography.caption),
                   trailing: Switch(
                     value: _mirror,
-                    onChanged: (v) => setState(() => _mirror = v),
+                    onChanged: (v) => setState(() {
+                      _mirror = v;
+                      if (!v) _canReply = false;
+                    }),
                     activeThumbColor: AppColors.obsidianNight,
                     activeTrackColor: AppColors.champagneGold,
                     inactiveThumbColor: AppColors.slateMist,
@@ -832,7 +922,10 @@ class _GuardianSectionState extends State<_GuardianSection> {
                       style: AppTypography.caption),
                   trailing: Switch(
                     value: _canReply,
-                    onChanged: (v) => setState(() => _canReply = v),
+                    onChanged: (v) => setState(() {
+                      _canReply = v;
+                      if (v) _mirror = true;
+                    }),
                     activeThumbColor: AppColors.obsidianNight,
                     activeTrackColor: AppColors.champagneGold,
                     inactiveThumbColor: AppColors.slateMist,
@@ -854,24 +947,35 @@ class _GuardianSectionState extends State<_GuardianSection> {
                               BorderRadius.circular(AppDimensions.radiusButton),
                         ),
                       ),
-                      onPressed: _save,
+                      onPressed: _saving ? null : _save,
                       child: AnimatedSwitcher(
                         duration: AppDimensions.durationTransition,
-                        child: _saved
-                            ? Row(
-                                key: const ValueKey('saved'),
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.check_rounded,
-                                      color: AppColors.obsidianNight, size: 16),
-                                  const SizedBox(width: 6),
-                                  Text(l10n.settings_guardian_saved,
-                                      style: AppTypography.button),
-                                ],
+                        child: _saving
+                            ? const SizedBox(
+                                key: ValueKey('saving'),
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.obsidianNight,
+                                ),
                               )
-                            : Text(l10n.settings_guardian_save,
-                                key: const ValueKey('save'),
-                                style: AppTypography.button),
+                            : _saved
+                                ? Row(
+                                    key: const ValueKey('saved'),
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.check_rounded,
+                                          color: AppColors.obsidianNight,
+                                          size: 16),
+                                      const SizedBox(width: 6),
+                                      Text(l10n.settings_guardian_saved,
+                                          style: AppTypography.button),
+                                    ],
+                                  )
+                                : Text(l10n.settings_guardian_save,
+                                    key: const ValueKey('save'),
+                                    style: AppTypography.button),
                       ),
                     ),
                   ),

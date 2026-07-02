@@ -114,25 +114,33 @@ class MithaqPrimaryButton extends StatelessWidget {
                         color: AppColors.obsidianNight,
                       ),
                     )
-                  : Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (icon != null) ...[
-                          Icon(
-                            icon,
-                            color: AppColors.obsidianNight,
-                            size: AppDimensions.iconSizeMedium,
+                  : Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (icon != null) ...[
+                            Icon(
+                              icon,
+                              color: AppColors.obsidianNight,
+                              size: AppDimensions.iconSizeMedium,
+                            ),
+                            const SizedBox(width: AppDimensions.space8),
+                          ],
+                          Flexible(
+                            child: Text(
+                              label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: AppTypography.button.copyWith(
+                                color: AppColors.obsidianNight,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
                           ),
-                          const SizedBox(width: AppDimensions.space8),
                         ],
-                        Text(
-                          label,
-                          style: AppTypography.button.copyWith(
-                            color: AppColors.obsidianNight,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
             ),
           ],

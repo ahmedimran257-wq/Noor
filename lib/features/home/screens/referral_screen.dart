@@ -55,20 +55,8 @@ class _ReferralScreenState extends State<ReferralScreen> {
         debugPrint('[ReferralScreen] Error loading referral data: $e');
         if (mounted) setState(() => _isLoading = false);
       }
-    } else {
-      // Mock mode
-      await Future.delayed(const Duration(milliseconds: 600));
-      if (mounted) {
-        setState(() {
-          _code = 'MOCK99';
-          _stats = const ReferralStats(
-            totalReferrals: 5,
-            rewardsEarned: 2,
-            pendingReferrals: 3,
-          );
-          _isLoading = false;
-        });
-      }
+    } else if (mounted) {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -80,12 +68,8 @@ class _ReferralScreenState extends State<ReferralScreen> {
 
   Future<void> _shareReferral() async {
     HapticFeedback.mediumImpact();
-    String shareText = '';
-    if (SupabaseService.isInitialized) {
-      shareText = await _service.getShareText();
-    } else {
-      shareText = 'Join MITHAQ — the most trusted Muslim matrimony app. Use my referral code: $_code\n\nDownload: https://mithaq.app/r/$_code';
-    }
+    if (!SupabaseService.isInitialized) return;
+    final shareText = await _service.getShareText();
     await Clipboard.setData(ClipboardData(text: shareText));
     _showSnackBar('Referral link & code copied! Paste it to share.');
   }
@@ -114,13 +98,16 @@ class _ReferralScreenState extends State<ReferralScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.pearlWhite),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: AppColors.pearlWhite),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('Refer a Friend', style: AppTypography.screenTitle.copyWith(fontSize: 20)),
+        title: Text('Refer a Friend',
+            style: AppTypography.screenTitle.copyWith(fontSize: 20)),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.champagneGold))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.champagneGold))
           : SingleChildScrollView(
               padding: const EdgeInsets.all(AppDimensions.space24),
               child: Column(
@@ -162,11 +149,13 @@ class _ReferralScreenState extends State<ReferralScreen> {
                     padding: const EdgeInsets.all(AppDimensions.space24),
                     decoration: BoxDecoration(
                       color: AppColors.surfaceGlass,
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusCard),
                       border: Border.all(color: AppColors.goldBorder, width: 1),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.champagneGold.withValues(alpha: 0.03),
+                          color:
+                              AppColors.champagneGold.withValues(alpha: 0.03),
                           blurRadius: 24,
                           spreadRadius: 2,
                         ),
@@ -188,7 +177,8 @@ class _ReferralScreenState extends State<ReferralScreen> {
                             ),
                             decoration: BoxDecoration(
                               color: AppColors.inputSurface,
-                              borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                              borderRadius: BorderRadius.circular(
+                                  AppDimensions.radiusButton),
                               border: Border.all(color: AppColors.cardBorder),
                             ),
                             child: Row(
@@ -203,7 +193,8 @@ class _ReferralScreenState extends State<ReferralScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: AppDimensions.space16),
-                                const Icon(Icons.copy_rounded, color: AppColors.champagneGold, size: 20),
+                                const Icon(Icons.copy_rounded,
+                                    color: AppColors.champagneGold, size: 20),
                               ],
                             ),
                           ),
@@ -256,12 +247,14 @@ class _ReferralScreenState extends State<ReferralScreen> {
                         backgroundColor: AppColors.champagneGold,
                         foregroundColor: AppColors.obsidianNight,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                          borderRadius:
+                              BorderRadius.circular(AppDimensions.radiusButton),
                         ),
                         elevation: 0,
                       ),
                       icon: const Icon(Icons.share_rounded, size: 20),
-                      label: const Text('Share Code with Friends', style: AppTypography.button),
+                      label: const Text('Share Code with Friends',
+                          style: AppTypography.button),
                       onPressed: _shareReferral,
                     ),
                   ),
@@ -300,7 +293,8 @@ class _StatCard extends StatelessWidget {
             ? CrossAxisAlignment.center
             : CrossAxisAlignment.start,
         children: [
-          Text(label, style: AppTypography.captionMedium.copyWith(fontSize: 11)),
+          Text(label,
+              style: AppTypography.captionMedium.copyWith(fontSize: 11)),
           const SizedBox(height: 8),
           Text(
             value,
@@ -313,7 +307,8 @@ class _StatCard extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               subtitle!,
-              style: AppTypography.caption.copyWith(color: AppColors.champagneGold, fontSize: 10),
+              style: AppTypography.caption
+                  .copyWith(color: AppColors.champagneGold, fontSize: 10),
             ),
           ],
         ],

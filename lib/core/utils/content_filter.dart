@@ -5,7 +5,7 @@
 // external links, and phone numbers from user-generated text.
 //
 // Used in:
-//   • AboutYourselfScreen — bio validation
+//   - Profile/edit surfaces - bio validation
 //   • ChatCubit — real-time message filtering (T2)
 //   • InterestsCubit — interest note validation (D1)
 // ============================================================

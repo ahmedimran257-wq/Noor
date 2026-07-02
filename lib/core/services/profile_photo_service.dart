@@ -18,11 +18,15 @@ class ProfilePhotoService {
   }) async {
     if (!SupabaseService.isInitialized ||
         SupabaseService.currentUserId == null) {
-      return;
+      throw StateError(
+        'Profile photo upload is not available without an authenticated backend session.',
+      );
     }
 
     final profileId = await _currentProfileId();
-    if (profileId == null) return;
+    if (profileId == null) {
+      throw StateError('Profile must be saved before uploading photos.');
+    }
 
     await SupabaseService.client
         .from('profiles')

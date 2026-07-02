@@ -4,7 +4,7 @@
 // ============================================================
 
 import 'package:equatable/equatable.dart';
-import '../../mock/mock_profiles.dart';
+import '../../models/discovery_profile.dart';
 import 'discovery_filter.dart';
 
 export 'discovery_filter.dart';
@@ -18,7 +18,7 @@ class FeedProfile extends Equatable {
     this.lastActiveAt,
   });
 
-  final MockProfile profile;
+  final DiscoveryProfile profile;
   final bool isWildCard;
   final DateTime? lastActiveAt;
 
@@ -27,10 +27,10 @@ class FeedProfile extends Equatable {
     final t = lastActiveAt;
     if (t == null) return '';
     final diff = DateTime.now().difference(t);
-    if (diff.inMinutes < 5)  return 'Online now';
+    if (diff.inMinutes < 5) return 'Online now';
     if (diff.inMinutes < 60) return 'Active ${diff.inMinutes}m ago';
-    if (diff.inHours < 24)   return 'Active ${diff.inHours}h ago';
-    if (diff.inDays < 7)     return 'Active ${diff.inDays}d ago';
+    if (diff.inHours < 24) return 'Active ${diff.inHours}h ago';
+    if (diff.inDays < 7) return 'Active ${diff.inDays}d ago';
     return 'Active ${diff.inDays ~/ 7}w ago';
   }
 
@@ -40,49 +40,55 @@ class FeedProfile extends Equatable {
 
 class DiscoveryFeedState extends Equatable {
   const DiscoveryFeedState({
-    this.status              = FeedStatus.initial,
-    this.profiles            = const [],
+    this.status = FeedStatus.initial,
+    this.profiles = const [],
     this.errorMessage,
-    this.hasMore             = true,
+    this.hasMore = true,
     this.profilesViewedToday = 0,
-    this.dailyLimit          = 15,
-    this.activeFilter        = DiscoveryFilter.empty,
+    this.dailyLimit = 15,
+    this.activeFilter = DiscoveryFilter.empty,
   });
 
-  final FeedStatus          status;
-  final List<FeedProfile>   profiles;
-  final String?             errorMessage;
-  final bool                hasMore;
-  final int                 profilesViewedToday;
-  final int                 dailyLimit;
-  final DiscoveryFilter     activeFilter;
+  final FeedStatus status;
+  final List<FeedProfile> profiles;
+  final String? errorMessage;
+  final bool hasMore;
+  final int profilesViewedToday;
+  final int dailyLimit;
+  final DiscoveryFilter activeFilter;
 
-  int  get remainingToday          => (dailyLimit - profilesViewedToday).clamp(0, dailyLimit);
-  bool get isFreeTierLimitReached  => profilesViewedToday >= dailyLimit;
+  int get remainingToday =>
+      (dailyLimit - profilesViewedToday).clamp(0, dailyLimit);
+  bool get isFreeTierLimitReached => profilesViewedToday >= dailyLimit;
 
   DiscoveryFeedState copyWith({
-    FeedStatus?        status,
+    FeedStatus? status,
     List<FeedProfile>? profiles,
-    String?            errorMessage,
-    bool?              hasMore,
-    int?               profilesViewedToday,
-    int?               dailyLimit,
-    DiscoveryFilter?   activeFilter,
+    String? errorMessage,
+    bool? hasMore,
+    int? profilesViewedToday,
+    int? dailyLimit,
+    DiscoveryFilter? activeFilter,
   }) {
     return DiscoveryFeedState(
-      status:              status              ?? this.status,
-      profiles:            profiles            ?? this.profiles,
-      errorMessage:        errorMessage        ?? this.errorMessage,
-      hasMore:             hasMore             ?? this.hasMore,
+      status: status ?? this.status,
+      profiles: profiles ?? this.profiles,
+      errorMessage: errorMessage ?? this.errorMessage,
+      hasMore: hasMore ?? this.hasMore,
       profilesViewedToday: profilesViewedToday ?? this.profilesViewedToday,
-      dailyLimit:          dailyLimit          ?? this.dailyLimit,
-      activeFilter:        activeFilter        ?? this.activeFilter,
+      dailyLimit: dailyLimit ?? this.dailyLimit,
+      activeFilter: activeFilter ?? this.activeFilter,
     );
   }
 
   @override
   List<Object?> get props => [
-    status, profiles, errorMessage, hasMore,
-    profilesViewedToday, dailyLimit, activeFilter,
-  ];
+        status,
+        profiles,
+        errorMessage,
+        hasMore,
+        profilesViewedToday,
+        dailyLimit,
+        activeFilter,
+      ];
 }

@@ -22,6 +22,12 @@ void main() {
       expect(communities, isNotEmpty, reason: country.iso2);
       expect(communities, contains('Other'), reason: country.iso2);
       expect(communities, contains('Prefer not to say'), reason: country.iso2);
+      expect(
+        communities,
+        isNot(contains('${country.name} Muslim community')),
+        reason:
+            '${country.iso2} must have curated or regional options, not generated fallback copy.',
+      );
     }
   });
 }

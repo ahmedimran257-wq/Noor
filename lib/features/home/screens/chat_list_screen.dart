@@ -167,7 +167,7 @@ class _ChatListScreenState extends State<ChatListScreen>
                             // "Non-subscriber men who try to open a chat see:
                             //  'Subscribe to unlock messaging.'"
                             // Gender read from AuthState (set in Step 12 from
-                            // Supabase users table; mock default is 'male').
+                            // Supabase users table; default is 'male' when the row is missing gender).
                             final authState = context.read<AuthCubit>().state;
                             final gender = authState is AuthAuthenticated
                                 ? (authState.gender ?? 'male')

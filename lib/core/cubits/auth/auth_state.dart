@@ -1,7 +1,7 @@
 // lib/core/cubits/auth/auth_state.dart
 // ============================================================
 // MITHAQ — Auth Cubit States
-// Mock auth for local development. Real auth uses Supabase email OTP.
+// Auth state for Supabase email OTP.
 // ============================================================
 
 import 'package:equatable/equatable.dart';
@@ -23,7 +23,7 @@ class AuthLoading extends AuthState {
   const AuthLoading();
 }
 
-/// OTP has been sent (mock: always succeeds immediately).
+/// OTP has been sent.
 class AuthOtpSent extends AuthState {
   const AuthOtpSent({required this.email});
 

@@ -13,14 +13,14 @@
 // ============================================================
 
 import 'package:equatable/equatable.dart';
-import '../../mock/mock_profiles.dart';
+import '../../models/discovery_profile.dart';
 
 enum InterestStatus {
   pending,
   accepted,
   declined,
   withdrawn,
-  expired,   // Auto-set after 14 days (simulated)
+  expired, // Auto-set after 14 days
 }
 
 class InterestEntry extends Equatable {
@@ -29,18 +29,18 @@ class InterestEntry extends Equatable {
     required this.profile,
     required this.timeAgo,
     required this.sentAt,
-    required this.createdAt,   // Item 18: expiry tracking
+    required this.createdAt, // Item 18: expiry tracking
     this.status = InterestStatus.pending,
-    this.note,                 // D1: optional interest note
+    this.note, // D1: optional interest note
   });
 
-  final String         id;
-  final MockProfile    profile;
-  final String         timeAgo;
-  final DateTime       sentAt;
-  final DateTime       createdAt;  // Item 18
+  final String id;
+  final DiscoveryProfile profile;
+  final String timeAgo;
+  final DateTime sentAt;
+  final DateTime createdAt; // Item 18
   final InterestStatus status;
-  final String?        note;       // D1: personal interest note
+  final String? note; // D1: personal interest note
 
   /// Item 18: Interest expires 14 days after creation.
   DateTime get expiresAt => createdAt.add(const Duration(days: 14));
@@ -70,33 +70,34 @@ class InterestEntry extends Equatable {
 
   InterestEntry copyWith({
     InterestStatus? status,
-    String?         timeAgo,
-    String?         note,
+    String? timeAgo,
+    String? note,
   }) {
     return InterestEntry(
-      id:        id,
-      profile:   profile,
-      timeAgo:   timeAgo   ?? this.timeAgo,
-      sentAt:    sentAt,
+      id: id,
+      profile: profile,
+      timeAgo: timeAgo ?? this.timeAgo,
+      sentAt: sentAt,
       createdAt: createdAt,
-      status:    status    ?? this.status,
-      note:      note      ?? this.note,
+      status: status ?? this.status,
+      note: note ?? this.note,
     );
   }
 
   @override
-  List<Object?> get props => [id, profile, timeAgo, sentAt, createdAt, status, note];
+  List<Object?> get props =>
+      [id, profile, timeAgo, sentAt, createdAt, status, note];
 }
 
 class InterestsState extends Equatable {
   const InterestsState({
-    this.received             = const [],
-    this.sent                 = const [],
-    this.matches              = const [],
-    this.interestsSentToday   = 0,
-    this.dailyLimit           = 3,     // Default: free male
+    this.received = const [],
+    this.sent = const [],
+    this.matches = const [],
+    this.interestsSentToday = 0,
+    this.dailyLimit = 3, // Default: free male
     this.lastResetDate,
-    this.limitError           = false,
+    this.limitError = false,
   });
 
   final List<InterestEntry> received;
@@ -104,22 +105,24 @@ class InterestsState extends Equatable {
   final List<InterestEntry> matches;
 
   // Item 17: daily limit tracking
-  final int       interestsSentToday;
-  final int       dailyLimit;
+  final int interestsSentToday;
+  final int dailyLimit;
   final DateTime? lastResetDate;
-  final bool      limitError;   // true after hitting the daily cap
+  final bool limitError; // true after hitting the daily cap
 
   // ── Computed getters ─────────────────────────────────────
 
   /// Pending received interests (shown with action buttons)
-  List<InterestEntry> get pendingReceived =>
-      received.where((e) => e.effectiveStatus == InterestStatus.pending).toList();
+  List<InterestEntry> get pendingReceived => received
+      .where((e) => e.effectiveStatus == InterestStatus.pending)
+      .toList();
 
   /// Responded-to received interests (accepted or declined)
-  List<InterestEntry> get respondedReceived =>
-      received.where((e) =>
+  List<InterestEntry> get respondedReceived => received
+      .where((e) =>
           e.effectiveStatus == InterestStatus.accepted ||
-          e.effectiveStatus == InterestStatus.declined).toList();
+          e.effectiveStatus == InterestStatus.declined)
+      .toList();
 
   /// Combined received for display: pending first, then responded
   List<InterestEntry> get displayReceived =>
@@ -132,32 +135,38 @@ class InterestsState extends Equatable {
   bool get isDailyLimitReached => interestsSentToday >= dailyLimit;
 
   /// Item 17: Interests remaining today
-  int get remainingToday => (dailyLimit - interestsSentToday).clamp(0, dailyLimit);
+  int get remainingToday =>
+      (dailyLimit - interestsSentToday).clamp(0, dailyLimit);
 
   InterestsState copyWith({
     List<InterestEntry>? received,
     List<InterestEntry>? sent,
     List<InterestEntry>? matches,
-    int?                 interestsSentToday,
-    int?                 dailyLimit,
-    DateTime?            lastResetDate,
-    bool?                limitError,
-    bool                 clearLimitError = false,
+    int? interestsSentToday,
+    int? dailyLimit,
+    DateTime? lastResetDate,
+    bool? limitError,
+    bool clearLimitError = false,
   }) {
     return InterestsState(
-      received:           received           ?? this.received,
-      sent:               sent               ?? this.sent,
-      matches:            matches            ?? this.matches,
+      received: received ?? this.received,
+      sent: sent ?? this.sent,
+      matches: matches ?? this.matches,
       interestsSentToday: interestsSentToday ?? this.interestsSentToday,
-      dailyLimit:         dailyLimit         ?? this.dailyLimit,
-      lastResetDate:      lastResetDate      ?? this.lastResetDate,
-      limitError:         clearLimitError ? false : (limitError ?? this.limitError),
+      dailyLimit: dailyLimit ?? this.dailyLimit,
+      lastResetDate: lastResetDate ?? this.lastResetDate,
+      limitError: clearLimitError ? false : (limitError ?? this.limitError),
     );
   }
 
   @override
   List<Object?> get props => [
-        received, sent, matches,
-        interestsSentToday, dailyLimit, lastResetDate, limitError,
+        received,
+        sent,
+        matches,
+        interestsSentToday,
+        dailyLimit,
+        lastResetDate,
+        limitError,
       ];
 }

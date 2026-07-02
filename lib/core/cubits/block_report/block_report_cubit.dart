@@ -1,6 +1,6 @@
 // lib/core/cubits/block_report/block_report_cubit.dart
 // ============================================================
-// MITHAQ — Block / Report Cubit (Real Supabase + Mock Fallback)
+// MITHAQ — Block / Report Cubit (Supabase production flow)
 //
 // Blueprint (Part 9):
 //   "Blocking is silent. The blocked person is not notified.
@@ -34,9 +34,9 @@ class BlockReportCubit extends Cubit<BlockReportState> {
     _loadInitial();
   }
 
-  static const _kBlockedUsers    = 'blocked_users_json';
-  static const _kReportHistory   = 'report_history_json';
-  static const _kHiddenProfiles  = 'hidden_profile_ids';
+  static const _kBlockedUsers = 'blocked_users_json';
+  static const _kReportHistory = 'report_history_json';
+  static const _kHiddenProfiles = 'hidden_profile_ids';
 
   bool get _isRealMode => SupabaseService.isInitialized;
 
@@ -89,10 +89,11 @@ class BlockReportCubit extends Cubit<BlockReportState> {
         } catch (_) {}
 
         blockedUsers.add(BlockedUser(
-          userId:      blockedId,
-          name:        name,
+          userId: blockedId,
+          name: name,
           lastInitial: lastInitial,
-          blockedAt:   DateTime.tryParse(row['created_at'] as String) ?? DateTime.now(),
+          blockedAt:
+              DateTime.tryParse(row['created_at'] as String) ?? DateTime.now(),
         ));
       }
 
@@ -122,22 +123,23 @@ class BlockReportCubit extends Cubit<BlockReportState> {
         } catch (_) {}
 
         reportHistory.add(ReportEntry(
-          reportId:       row['id'] as String,
+          reportId: row['id'] as String,
           reportedUserId: reportedUserId,
-          reportedName:   reportedName,
-          reason:         ReportReason.values.firstWhere(
+          reportedName: reportedName,
+          reason: ReportReason.values.firstWhere(
             (r) => r.key == (row['reason'] as String),
             orElse: () => ReportReason.other,
           ),
-          description:    row['description'] as String?,
-          submittedAt:    DateTime.tryParse(row['created_at'] as String) ?? DateTime.now(),
+          description: row['description'] as String?,
+          submittedAt:
+              DateTime.tryParse(row['created_at'] as String) ?? DateTime.now(),
         ));
       }
 
       if (!isClosed) {
         emit(state.copyWith(
-          blockedUsers:     blockedUsers,
-          reportHistory:    reportHistory,
+          blockedUsers: blockedUsers,
+          reportHistory: reportHistory,
           hiddenProfileIds: hiddenIds,
         ));
       }
@@ -159,49 +161,55 @@ class BlockReportCubit extends Cubit<BlockReportState> {
 
       // Load blocked users
       final blockedJson = prefs.getStringList(_kBlockedUsers) ?? [];
-      final blockedUsers = blockedJson.map((s) {
-        try {
-          final j = jsonDecode(s) as Map<String, dynamic>;
-          return BlockedUser(
-            userId:      j['userId'] as String,
-            name:        j['name'] as String,
-            lastInitial: j['lastInitial'] as String,
-            blockedAt:   DateTime.parse(j['blockedAt'] as String),
-          );
-        } catch (_) {
-          return null;
-        }
-      }).whereType<BlockedUser>().toList();
+      final blockedUsers = blockedJson
+          .map((s) {
+            try {
+              final j = jsonDecode(s) as Map<String, dynamic>;
+              return BlockedUser(
+                userId: j['userId'] as String,
+                name: j['name'] as String,
+                lastInitial: j['lastInitial'] as String,
+                blockedAt: DateTime.parse(j['blockedAt'] as String),
+              );
+            } catch (_) {
+              return null;
+            }
+          })
+          .whereType<BlockedUser>()
+          .toList();
 
       // Load report history
       final reportJson = prefs.getStringList(_kReportHistory) ?? [];
-      final reportHistory = reportJson.map((s) {
-        try {
-          final j = jsonDecode(s) as Map<String, dynamic>;
-          return ReportEntry(
-            reportId:       j['reportId'] as String,
-            reportedUserId: j['reportedUserId'] as String,
-            reportedName:   j['reportedName'] as String,
-            reason:         ReportReason.values.firstWhere(
-              (r) => r.key == j['reasonKey'],
-              orElse: () => ReportReason.other,
-            ),
-            description:    j['description'] as String?,
-            submittedAt:    DateTime.parse(j['submittedAt'] as String),
-          );
-        } catch (_) {
-          return null;
-        }
-      }).whereType<ReportEntry>().toList();
+      final reportHistory = reportJson
+          .map((s) {
+            try {
+              final j = jsonDecode(s) as Map<String, dynamic>;
+              return ReportEntry(
+                reportId: j['reportId'] as String,
+                reportedUserId: j['reportedUserId'] as String,
+                reportedName: j['reportedName'] as String,
+                reason: ReportReason.values.firstWhere(
+                  (r) => r.key == j['reasonKey'],
+                  orElse: () => ReportReason.other,
+                ),
+                description: j['description'] as String?,
+                submittedAt: DateTime.parse(j['submittedAt'] as String),
+              );
+            } catch (_) {
+              return null;
+            }
+          })
+          .whereType<ReportEntry>()
+          .toList();
 
       // Load hidden profile IDs
       final hiddenList = prefs.getStringList(_kHiddenProfiles) ?? [];
-      final hiddenIds  = hiddenList.toSet();
+      final hiddenIds = hiddenList.toSet();
 
       if (!isClosed) {
         emit(state.copyWith(
-          blockedUsers:     blockedUsers,
-          reportHistory:    reportHistory,
+          blockedUsers: blockedUsers,
+          reportHistory: reportHistory,
           hiddenProfileIds: hiddenIds,
         ));
       }
@@ -217,23 +225,27 @@ class BlockReportCubit extends Cubit<BlockReportState> {
       final prefs = await SharedPreferences.getInstance();
 
       // Save blocked users
-      final blockedJson = state.blockedUsers.map((b) => jsonEncode({
-        'userId':      b.userId,
-        'name':        b.name,
-        'lastInitial': b.lastInitial,
-        'blockedAt':   b.blockedAt.toIso8601String(),
-      })).toList();
+      final blockedJson = state.blockedUsers
+          .map((b) => jsonEncode({
+                'userId': b.userId,
+                'name': b.name,
+                'lastInitial': b.lastInitial,
+                'blockedAt': b.blockedAt.toIso8601String(),
+              }))
+          .toList();
       await prefs.setStringList(_kBlockedUsers, blockedJson);
 
       // Save report history
-      final reportJson = state.reportHistory.map((r) => jsonEncode({
-        'reportId':       r.reportId,
-        'reportedUserId': r.reportedUserId,
-        'reportedName':   r.reportedName,
-        'reasonKey':      r.reason.key,
-        'description':    r.description,
-        'submittedAt':    r.submittedAt.toIso8601String(),
-      })).toList();
+      final reportJson = state.reportHistory
+          .map((r) => jsonEncode({
+                'reportId': r.reportId,
+                'reportedUserId': r.reportedUserId,
+                'reportedName': r.reportedName,
+                'reasonKey': r.reason.key,
+                'description': r.description,
+                'submittedAt': r.submittedAt.toIso8601String(),
+              }))
+          .toList();
       await prefs.setStringList(_kReportHistory, reportJson);
 
       // Save hidden profile IDs
@@ -256,49 +268,50 @@ class BlockReportCubit extends Cubit<BlockReportState> {
     required String lastInitial,
   }) async {
     if (state.isBlocked(userId)) return;
+    if (!_isRealMode) return;
 
     emit(state.copyWith(isSubmitting: true));
+    final activeUserId = SupabaseService.currentUserId;
+    if (activeUserId == null) {
+      emit(state.copyWith(isSubmitting: false));
+      return;
+    }
 
     if (_isRealMode) {
       // Real mode: INSERT INTO blocks
-      final myId = SupabaseService.currentUserId;
-      if (myId != null) {
-        try {
-          await SupabaseService.client
-              .from('blocks')
-              .insert({
-                'blocker_id': myId,
-                'blocked_id': userId,
-              });
-          // DB trigger sever_ties_on_block() automatically:
-          //   - Deletes matches between blocker and blocked
-          //   - Deletes interests between the pair
-        } catch (e) {
-          debugPrint('[BlockReportCubit] Error blocking user: $e');
-        }
+      final myId = activeUserId;
+      try {
+        await SupabaseService.client.from('blocks').insert({
+          'blocker_id': myId,
+          'blocked_id': userId,
+        });
+        // DB trigger sever_ties_on_block() automatically:
+        //   - Deletes matches between blocker and blocked
+        //   - Deletes interests between the pair
+      } catch (e) {
+        debugPrint('[BlockReportCubit] Error blocking user: $e');
+        emit(state.copyWith(isSubmitting: false));
+        return;
       }
-    } else {
-      // Mock: simulate network
-      await Future.delayed(const Duration(milliseconds: 600));
     }
 
     if (isClosed) return;
 
     final blocked = BlockedUser(
-      userId:    userId,
-      name:      name,
+      userId: userId,
+      name: name,
       lastInitial: lastInitial,
       blockedAt: DateTime.now(),
     );
 
-    final updatedBlocks  = [blocked, ...state.blockedUsers];
-    final updatedHidden  = {...state.hiddenProfileIds, userId};
+    final updatedBlocks = [blocked, ...state.blockedUsers];
+    final updatedHidden = {...state.hiddenProfileIds, userId};
 
     emit(state.copyWith(
-      isSubmitting:     false,
-      blockedUsers:     updatedBlocks,
+      isSubmitting: false,
+      blockedUsers: updatedBlocks,
       hiddenProfileIds: updatedHidden,
-      successMessage:   'User blocked. They can no longer contact you.',
+      successMessage: 'User blocked. They can no longer contact you.',
     ));
 
     await _saveToPrefs();
@@ -306,35 +319,39 @@ class BlockReportCubit extends Cubit<BlockReportState> {
 
   /// Unblock a previously blocked user.
   Future<void> unblockUser(String userId) async {
+    if (!_isRealMode) return;
+
     emit(state.copyWith(isSubmitting: true));
+    final activeUserId = SupabaseService.currentUserId;
+    if (activeUserId == null) {
+      emit(state.copyWith(isSubmitting: false));
+      return;
+    }
 
     if (_isRealMode) {
-      final myId = SupabaseService.currentUserId;
-      if (myId != null) {
-        try {
-          await SupabaseService.client
-              .from('blocks')
-              .delete()
-              .eq('blocker_id', myId)
-              .eq('blocked_id', userId);
-        } catch (e) {
-          debugPrint('[BlockReportCubit] Error unblocking user: $e');
-        }
+      final myId = activeUserId;
+      try {
+        await SupabaseService.client
+            .from('blocks')
+            .delete()
+            .eq('blocker_id', myId)
+            .eq('blocked_id', userId);
+      } catch (e) {
+        debugPrint('[BlockReportCubit] Error unblocking user: $e');
+        emit(state.copyWith(isSubmitting: false));
+        return;
       }
-    } else {
-      await Future.delayed(const Duration(milliseconds: 500));
     }
 
     if (isClosed) return;
 
-    final updatedBlocks = state.blockedUsers
-        .where((b) => b.userId != userId)
-        .toList();
+    final updatedBlocks =
+        state.blockedUsers.where((b) => b.userId != userId).toList();
     final updatedHidden = {...state.hiddenProfileIds}..remove(userId);
 
     emit(state.copyWith(
-      isSubmitting:     false,
-      blockedUsers:     updatedBlocks,
+      isSubmitting: false,
+      blockedUsers: updatedBlocks,
       hiddenProfileIds: updatedHidden,
     ));
 
@@ -346,58 +363,64 @@ class BlockReportCubit extends Cubit<BlockReportState> {
   /// Report a user with a predefined reason.
   /// Blueprint: "Reporting immediately hides that profile from the reporter."
   Future<void> reportUser({
-    required String       reportedUserId,
-    required String       reportedName,
+    required String reportedUserId,
+    required String reportedName,
     required ReportReason reason,
-    String?               description,
+    String? description,
   }) async {
+    if (!_isRealMode) return;
+
     emit(state.copyWith(isSubmitting: true, clearError: true));
+    final activeUserId = SupabaseService.currentUserId;
+    if (activeUserId == null) {
+      emit(state.copyWith(isSubmitting: false));
+      return;
+    }
 
     String? reportId;
 
     if (_isRealMode) {
-      final myId = SupabaseService.currentUserId;
-      if (myId != null) {
-        try {
-          final result = await SupabaseService.client
-              .from('reports')
-              .insert({
-                'reporter_id':      myId,
-                'reported_user_id': reportedUserId,
-                'reason':           reason.key,
-                'description':      description,
-              })
-              .select('id')
-              .single();
-          reportId = result['id'] as String;
-          // DB trigger check_report_threshold() auto-suspends after 3 unique reports
-        } catch (e) {
-          debugPrint('[BlockReportCubit] Error reporting user: $e');
-        }
+      final myId = activeUserId;
+      try {
+        final result = await SupabaseService.client
+            .from('reports')
+            .insert({
+              'reporter_id': myId,
+              'reported_user_id': reportedUserId,
+              'reason': reason.key,
+              'description': description,
+            })
+            .select('id')
+            .single();
+        reportId = result['id'] as String;
+        // DB trigger check_report_threshold() auto-suspends after 3 unique reports
+      } catch (e) {
+        debugPrint('[BlockReportCubit] Error reporting user: $e');
+        emit(state.copyWith(isSubmitting: false));
+        return;
       }
-    } else {
-      await Future.delayed(const Duration(milliseconds: 800));
     }
 
     if (isClosed) return;
 
     final entry = ReportEntry(
-      reportId:       reportId ?? 'r_${DateTime.now().millisecondsSinceEpoch}',
+      reportId: reportId!,
       reportedUserId: reportedUserId,
-      reportedName:   reportedName,
-      reason:         reason,
-      description:    description,
-      submittedAt:    DateTime.now(),
+      reportedName: reportedName,
+      reason: reason,
+      description: description,
+      submittedAt: DateTime.now(),
     );
 
     // Blueprint: "immediately hides that profile from the reporter"
     final updatedHidden = {...state.hiddenProfileIds, reportedUserId};
 
     emit(state.copyWith(
-      isSubmitting:     false,
-      reportHistory:    [entry, ...state.reportHistory],
+      isSubmitting: false,
+      reportHistory: [entry, ...state.reportHistory],
       hiddenProfileIds: updatedHidden,
-      successMessage:   'Report submitted. JazakAllah for keeping the community safe.',
+      successMessage:
+          'Report submitted. JazakAllah for keeping the community safe.',
     ));
 
     await _saveToPrefs();

@@ -1046,8 +1046,6 @@ class _SecondaryLinks extends StatelessWidget {
     );
   }
 
-  // TODO (legal): Replace with url_launcher or in-app WebView
-  // once Privacy Policy and Terms of Service URLs are hosted.
   static void _openLegalPage(BuildContext context, String title) {
     final type = title.toLowerCase().contains('privacy') ? 'privacy' : 'tos';
     Navigator.of(context).push(

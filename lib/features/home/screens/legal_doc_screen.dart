@@ -4,8 +4,6 @@
 // Displays Terms of Service or Privacy Policy content.
 // Uses the MITHAQ Quiet Luxury design language.
 //
-// Step 12: Replace placeholder content with real legal text
-// loaded from CMS or bundled assets.
 // ============================================================
 
 import 'package:flutter/material.dart';
@@ -60,7 +58,9 @@ class LegalDocScreen extends StatelessWidget {
                   Row(
                     children: [
                       Icon(
-                        _isTos ? Icons.description_outlined : Icons.privacy_tip_outlined,
+                        _isTos
+                            ? Icons.description_outlined
+                            : Icons.privacy_tip_outlined,
                         color: AppColors.champagneGold,
                         size: 20,
                       ),
@@ -93,20 +93,22 @@ class LegalDocScreen extends StatelessWidget {
 
   List<Widget> _buildSections() {
     final sections = _isTos ? _tosSections : _privacySections;
-    return sections.expand((section) => [
-      Text(
-        section.title.toUpperCase(),
-        style: AppTypography.sectionLabel,
-      ),
-      const SizedBox(height: AppDimensions.space8),
-      const Divider(color: AppColors.divider, height: 1),
-      const SizedBox(height: AppDimensions.space12),
-      Text(
-        section.body,
-        style: AppTypography.body.copyWith(height: 1.7),
-      ),
-      const SizedBox(height: AppDimensions.space28),
-    ]).toList();
+    return sections
+        .expand((section) => [
+              Text(
+                section.title.toUpperCase(),
+                style: AppTypography.sectionLabel,
+              ),
+              const SizedBox(height: AppDimensions.space8),
+              const Divider(color: AppColors.divider, height: 1),
+              const SizedBox(height: AppDimensions.space12),
+              Text(
+                section.body,
+                style: AppTypography.body.copyWith(height: 1.7),
+              ),
+              const SizedBox(height: AppDimensions.space28),
+            ])
+        .toList();
   }
 }
 

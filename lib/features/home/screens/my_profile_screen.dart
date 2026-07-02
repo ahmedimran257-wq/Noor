@@ -19,24 +19,28 @@ import '../../../core/cubits/onboarding/onboarding_state.dart';
 import '../../../core/cubits/subscription/subscription_cubit.dart';
 import '../../../core/cubits/subscription/subscription_state.dart';
 import '../../../core/cubits/notifications/notifications_cubit.dart';
+import '../../../core/models/discovery_profile.dart';
 import '../../../core/models/onboarding_data.dart';
-import '../../../core/mock/mock_profiles.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/services/bookmark_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/mithaq_empty_state.dart';
+import '../../../core/widgets/loaders/mithaq_blur_image.dart';
 import 'edit_profile_screen.dart';
 import 'delete_account_screen.dart';
 import 'legal_doc_screen.dart';
 import 'settings_screen.dart';
 import 'subscription_screen.dart';
 import 'profile_views_screen.dart';
+import 'profile_detail_screen.dart';
 import 'notifications_screen.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/services/selfie_verification_service.dart';
 import '../../../core/services/profile_photo_service.dart';
+import '../../../core/services/wali_mode_service.dart';
+import '../../../core/utils/mithaq_compute.dart';
 
 // ── Completeness score ────────────────────────────────────────
 
@@ -100,11 +104,11 @@ class MyProfileScreen extends StatefulWidget {
 
 class _MyProfileScreenState extends State<MyProfileScreen>
     with AutomaticKeepAliveClientMixin {
-  Set<String> _bookmarked = {};
+  List<DiscoveryProfile> _savedProfiles = [];
   bool _guardianEnabled = false;
   String? _primaryPhotoUrl;
 
-  int _viewCount = 10;
+  int _viewCount = 0;
 
   @override
   bool get wantKeepAlive => true;
@@ -122,10 +126,84 @@ class _MyProfileScreenState extends State<MyProfileScreen>
 
   Future<void> _loadBookmarks() async {
     final ids = await BookmarkService.load();
-    if (mounted) setState(() => _bookmarked = ids);
+    await _loadSavedProfiles(ids);
+  }
+
+  Future<void> _loadSavedProfiles(Set<String> ids) async {
+    if (ids.isEmpty || !SupabaseService.isInitialized) {
+      if (mounted) setState(() => _savedProfiles = []);
+      return;
+    }
+
+    try {
+      final rows = await SupabaseService.client.from('profiles').select('''
+            id, user_id, first_name, last_name, date_of_birth, gender, sect,
+            deen_level, city_id, country_code, is_verified, bio,
+            photo_privacy, education_level, profession, mother_tongue,
+            languages, interests, cities:cities!city_id(name)
+          ''').inFilter('user_id', ids.toList()).limit(20);
+
+      final mappedRows = (rows as List<dynamic>).map((row) {
+        final mapped = Map<String, dynamic>.from(row as Map<String, dynamic>);
+        final city = mapped['cities'];
+        if (city is Map<String, dynamic>) {
+          mapped['city_name'] = city['name'];
+        }
+        return mapped;
+      }).toList();
+
+      final profileIds =
+          mappedRows.map((row) => row['id']?.toString()).whereType<String>();
+      if (profileIds.isNotEmpty) {
+        final photos = await SupabaseService.client
+            .from('photos')
+            .select('profile_id, storage_path, blurhash')
+            .inFilter('profile_id', profileIds.toList())
+            .eq('status', 'active')
+            .eq('admin_approved', true)
+            .eq('nsfw_cleared', true)
+            .order('order_index');
+
+        final photosByProfile = <String, List<Map<String, dynamic>>>{};
+        for (final photo in photos as List<dynamic>) {
+          final mapped = Map<String, dynamic>.from(photo as Map);
+          final profileId = mapped['profile_id']?.toString();
+          if (profileId == null) continue;
+          photosByProfile.putIfAbsent(profileId, () => []).add(mapped);
+        }
+
+        for (final row in mappedRows) {
+          final profileId = row['id']?.toString();
+          final profilePhotos =
+              profileId == null ? null : photosByProfile[profileId];
+          row['photo_count'] = profilePhotos?.length ?? 0;
+          if (profilePhotos?.isNotEmpty == true &&
+              row['photo_privacy'] == 'public') {
+            final path = profilePhotos!.first['storage_path'] as String?;
+            if (path != null && path.isNotEmpty) {
+              row['photo_url'] = await SupabaseService.client.storage
+                  .from('profile-photos')
+                  .createSignedUrl(path, 60 * 60);
+              row['blurhash'] = profilePhotos.first['blurhash'];
+            }
+          }
+        }
+      }
+
+      final profiles = mappedRows.map(mapDbRowToDiscoveryProfile).toList();
+      if (mounted) setState(() => _savedProfiles = profiles);
+    } catch (_) {
+      if (mounted) setState(() => _savedProfiles = []);
+    }
   }
 
   Future<void> _loadGuardian() async {
+    if (SupabaseService.isInitialized) {
+      final info = await WaliModeService.instance.getMyGuardianInfo();
+      if (mounted) setState(() => _guardianEnabled = info != null);
+      return;
+    }
+
     final prefs = await SharedPreferences.getInstance();
     if (mounted) {
       setState(
@@ -459,7 +537,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           // Saved profiles section — always shown (empty state if none)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: _SavedProfilesSection(bookmarked: _bookmarked),
+            child: _SavedProfilesSection(savedProfiles: _savedProfiles),
           ),
           const SizedBox(height: AppDimensions.space20),
 
@@ -597,6 +675,7 @@ class _BoostSection extends StatefulWidget {
 
 class _BoostSectionState extends State<_BoostSection> {
   DateTime? _boostedAt;
+  bool _boosting = false;
   Timer? _timer;
 
   @override
@@ -612,6 +691,39 @@ class _BoostSectionState extends State<_BoostSection> {
   }
 
   Future<void> _loadBoostState() async {
+    if (SupabaseService.isInitialized &&
+        SupabaseService.currentUserId != null) {
+      final row = await SupabaseService.client
+          .from('profiles')
+          .select('is_boosted, boost_expires_at')
+          .eq('user_id', SupabaseService.currentUserId!)
+          .maybeSingle();
+      final expiresAt = row?['boost_expires_at'] == null
+          ? null
+          : DateTime.tryParse(row!['boost_expires_at'] as String)?.toLocal();
+      if ((row?['is_boosted'] as bool? ?? false) &&
+          expiresAt != null &&
+          expiresAt.isAfter(DateTime.now())) {
+        if (mounted) {
+          setState(
+              () => _boostedAt = expiresAt.subtract(const Duration(hours: 2)));
+          _startTimer();
+        }
+        return;
+      }
+
+      if (row?['is_boosted'] == true) {
+        await SupabaseService.client
+            .from('profiles')
+            .update({'is_boosted': false, 'boost_expires_at': null}).eq(
+                'user_id', SupabaseService.currentUserId!);
+      }
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('boost_activated_at');
+      return;
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final ms = prefs.getInt('boost_activated_at');
     if (ms != null) {
@@ -636,18 +748,64 @@ class _BoostSectionState extends State<_BoostSection> {
       if (remaining.isNegative) {
         setState(() => _boostedAt = null);
         _timer?.cancel();
+        unawaited(_expireBoost());
       } else {
         setState(() {});
       }
     });
   }
 
+  Future<void> _expireBoost() async {
+    if (!SupabaseService.isInitialized ||
+        SupabaseService.currentUserId == null) {
+      return;
+    }
+    try {
+      await SupabaseService.client
+          .from('profiles')
+          .update({'is_boosted': false, 'boost_expires_at': null}).eq(
+              'user_id', SupabaseService.currentUserId!);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('boost_activated_at');
+    } catch (_) {}
+  }
+
   Future<void> _activate() async {
-    final prefs = await SharedPreferences.getInstance();
+    if (_boosting || _boostedAt != null) return;
+    if (!SupabaseService.isInitialized ||
+        SupabaseService.currentUserId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Profile boost requires a backend connection.')),
+      );
+      return;
+    }
+
+    setState(() => _boosting = true);
     final now = DateTime.now();
+    final expiresAt = now.add(const Duration(hours: 2));
+    try {
+      await SupabaseService.client.from('profiles').update({
+        'is_boosted': true,
+        'boost_expires_at': expiresAt.toUtc().toIso8601String(),
+      }).eq('user_id', SupabaseService.currentUserId!);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _boosting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Could not activate boost. Please try again.')),
+      );
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('boost_activated_at', now.millisecondsSinceEpoch);
     if (mounted) {
-      setState(() => _boostedAt = now);
+      setState(() {
+        _boosting = false;
+        _boostedAt = now;
+      });
       _startTimer();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1341,20 +1499,17 @@ class _ProfilePreviewCard extends StatelessWidget {
 // ── Saved Profiles ────────────────────────────────────────────
 
 class _SavedProfilesSection extends StatelessWidget {
-  const _SavedProfilesSection({required this.bookmarked});
-  final Set<String> bookmarked;
+  const _SavedProfilesSection({required this.savedProfiles});
+  final List<DiscoveryProfile> savedProfiles;
 
   @override
   Widget build(BuildContext context) {
-    final saved =
-        kMockProfiles.where((p) => bookmarked.contains(p.id)).toList();
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('SAVED PROFILES', style: AppTypography.sectionLabel),
         const SizedBox(height: AppDimensions.space12),
-        if (saved.isEmpty)
+        if (savedProfiles.isEmpty)
           const MithaqEmptyState(
             icon: Icons.bookmark_border_rounded,
             title: 'No saved profiles yet',
@@ -1365,18 +1520,21 @@ class _SavedProfilesSection extends StatelessWidget {
             height: 120,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: saved.length,
+              itemCount: savedProfiles.length,
               separatorBuilder: (_, __) =>
                   const SizedBox(width: AppDimensions.space12),
               itemBuilder: (context, i) {
-                final p = saved[i];
+                final p = savedProfiles[i];
                 return GestureDetector(
                   onTap: () {
-                    // Navigate to profile detail — reuse Navigator push
-                    // (go_router not wired for arbitrary profile IDs)
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(
-                        builder: (_) => const SizedBox.shrink(),
+                        builder: (_) => ProfileDetailScreen(
+                          profile: p,
+                          heroTag: 'saved-profile-${p.id}',
+                          isInterestSent: false,
+                          onInterestSent: () {},
+                        ),
                       ),
                     );
                   },
@@ -1403,10 +1561,19 @@ class _SavedProfilesSection extends StatelessWidget {
                             border: Border.all(
                                 color: AppColors.goldBorder, width: 1.5),
                           ),
-                          child: const Icon(
-                            Icons.person_outline_rounded,
-                            color: AppColors.slateMist,
-                            size: 24,
+                          child: ClipOval(
+                            child: p.photoUrl == null
+                                ? const Icon(
+                                    Icons.person_outline_rounded,
+                                    color: AppColors.slateMist,
+                                    size: 24,
+                                  )
+                                : MithaqBlurImage(
+                                    imageUrl: p.photoUrl!,
+                                    blurhash: p.blurhash,
+                                    width: 52,
+                                    height: 52,
+                                  ),
                           ),
                         ),
                         const SizedBox(height: 6),

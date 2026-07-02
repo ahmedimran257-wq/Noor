@@ -1,18 +1,17 @@
 // lib/core/widgets/inputs/mithaq_text_field.dart
 // ============================================================
 // MITHAQ Input System
-// BG: Surface Glass (rgba(255,255,255,0.05))
-// Border: Bottom border only (1px solid Slate Mist)
-// Focus State: Bottom border → 2px Champagne Gold
+// Single-shell glass fields with animated focus, no nested theme outline.
 // ============================================================
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimensions.dart';
 import '../../theme/app_typography.dart';
 
-class MithaqTextField extends StatelessWidget {
+class MithaqTextField extends StatefulWidget {
   const MithaqTextField({
     super.key,
     this.controller,
@@ -65,87 +64,219 @@ class MithaqTextField extends StatelessWidget {
   final bool showCounter;
 
   @override
+  State<MithaqTextField> createState() => _MithaqTextFieldState();
+}
+
+class _MithaqTextFieldState extends State<MithaqTextField> {
+  FocusNode? _internalFocusNode;
+  bool _isFocused = false;
+
+  FocusNode get _focusNode => widget.focusNode ?? _internalFocusNode!;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.focusNode == null) {
+      _internalFocusNode = FocusNode();
+    }
+    _focusNode.addListener(_handleFocusChange);
+    _isFocused = _focusNode.hasFocus;
+  }
+
+  @override
+  void didUpdateWidget(covariant MithaqTextField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusNode == widget.focusNode) return;
+
+    (oldWidget.focusNode ?? _internalFocusNode)
+        ?.removeListener(_handleFocusChange);
+
+    if (oldWidget.focusNode == null && widget.focusNode != null) {
+      _internalFocusNode?.dispose();
+      _internalFocusNode = null;
+    } else if (oldWidget.focusNode != null && widget.focusNode == null) {
+      _internalFocusNode = FocusNode();
+    }
+
+    _focusNode.addListener(_handleFocusChange);
+    _isFocused = _focusNode.hasFocus;
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_handleFocusChange);
+    _internalFocusNode?.dispose();
+    super.dispose();
+  }
+
+  void _handleFocusChange() {
+    if (!mounted) return;
+    final focused = _focusNode.hasFocus;
+    if (focused && !_isFocused) {
+      HapticFeedback.selectionClick();
+    }
+    setState(() => _isFocused = focused);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
+    final hasError = widget.errorText != null && widget.errorText!.isNotEmpty;
+    final isInteractive = widget.enabled && !widget.readOnly;
+    final isActive = widget.enabled && _isFocused;
+    final fieldRadius = BorderRadius.circular(AppDimensions.radiusButton);
+    final minHeight = widget.maxLines != null && widget.maxLines! > 1
+        ? AppDimensions.inputHeight + AppDimensions.space40
+        : AppDimensions.inputHeight;
+
+    return AnimatedContainer(
+      duration: AppDimensions.durationTransition,
+      curve: Curves.easeOutCubic,
+      constraints: BoxConstraints(minHeight: minHeight),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.surfacePanelTop.withValues(alpha: enabled ? 0.54 : 0.24),
-            AppColors.inputSurface,
+            AppColors.surfacePanelTop.withValues(
+              alpha: widget.enabled ? (isActive ? 0.72 : 0.56) : 0.24,
+            ),
+            AppColors.inputSurface.withValues(
+              alpha: widget.enabled ? (isActive ? 0.16 : 0.1) : 0.05,
+            ),
           ],
         ),
-        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+        borderRadius: fieldRadius,
         border: Border.all(
-          color: errorText != null
-              ? AppColors.softCoral.withValues(alpha: 0.55)
-              : AppColors.cardBorder,
+          color: hasError
+              ? AppColors.softCoral.withValues(alpha: 0.72)
+              : isActive
+                  ? AppColors.champagneGold.withValues(alpha: 0.78)
+                  : AppColors.cardBorder,
+          width: isActive || hasError
+              ? AppDimensions.borderFocus
+              : AppDimensions.borderThin,
         ),
-        boxShadow: enabled
+        boxShadow: widget.enabled
             ? [
                 BoxShadow(
                   color: AppColors.obsidianNight.withValues(alpha: 0.28),
                   blurRadius: 14,
                   offset: const Offset(0, 8),
                 ),
+                if (isActive)
+                  BoxShadow(
+                    color: AppColors.champagneGold.withValues(alpha: 0.14),
+                    blurRadius: 22,
+                    spreadRadius: 1,
+                  ),
               ]
             : null,
       ),
+      clipBehavior: Clip.antiAlias,
       padding: const EdgeInsetsDirectional.fromSTEB(
         AppDimensions.space16,
         0,
         AppDimensions.space16,
         0,
       ),
-      child: TextField(
-        controller: controller,
-        focusNode: focusNode,
-        obscureText: obscureText,
-        keyboardType: keyboardType,
-        textInputAction: textInputAction,
-        onChanged: onChanged,
-        onSubmitted: onSubmitted,
-        onTap: onTap,
-        maxLength: maxLength,
-        maxLines: maxLines,
-        minLines: minLines,
-        enabled: enabled,
-        readOnly: readOnly,
-        autofocus: autofocus,
-        inputFormatters: inputFormatters,
-        textCapitalization: textCapitalization,
-        style: AppTypography.inputText,
-        cursorColor: AppColors.champagneGold,
-        cursorWidth: 1.5,
-        buildCounter: showCounter
-            ? null
-            : (_, {required currentLength, required isFocused, maxLength}) =>
-                null,
-        decoration: InputDecoration(
-          labelText: label,
-          hintText: hint,
-          helperText: helperText,
-          errorText: errorText,
-          helperStyle: AppTypography.caption,
-          errorStyle:
-              AppTypography.caption.copyWith(color: AppColors.softCoral),
-          // Override theme's fill — the Container already provides surfaceGlass
-          filled: false,
-          fillColor: Colors.transparent,
-          prefixIcon: prefixIcon != null
-              ? Icon(prefixIcon,
-                  color: AppColors.slateMist,
-                  size: AppDimensions.iconSizeMedium)
-              : null,
-          suffixIcon: suffixIcon,
-          // Override theme's contentPadding for single-line inputs
-          contentPadding: EdgeInsets.symmetric(
-            vertical: maxLines != null && maxLines! > 1
-                ? AppDimensions.space16
-                : AppDimensions.space20,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            top: 1,
+            child: IgnorePointer(
+              child: AnimatedOpacity(
+                duration: AppDimensions.durationTransition,
+                opacity: isActive ? 1 : 0,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: fieldRadius,
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        AppColors.champagneLight.withValues(alpha: 0.07),
+                        AppColors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
-        ),
+          TextField(
+            controller: widget.controller,
+            focusNode: _focusNode,
+            obscureText: widget.obscureText,
+            keyboardType: widget.keyboardType,
+            textInputAction: widget.textInputAction,
+            onChanged: widget.onChanged,
+            onSubmitted: widget.onSubmitted,
+            onTap: widget.onTap,
+            onTapOutside: (_) => _focusNode.unfocus(),
+            maxLength: widget.maxLength,
+            maxLines: widget.maxLines,
+            minLines: widget.minLines,
+            enabled: widget.enabled,
+            readOnly: widget.readOnly,
+            autofocus: widget.autofocus,
+            inputFormatters: widget.inputFormatters,
+            textCapitalization: widget.textCapitalization,
+            style: AppTypography.inputText.copyWith(
+              color: widget.enabled
+                  ? AppColors.pearlWhite
+                  : AppColors.pearlWhite.withValues(alpha: 0.42),
+            ),
+            cursorColor: AppColors.champagneGold,
+            cursorWidth: 1.5,
+            buildCounter: widget.showCounter
+                ? null
+                : (_,
+                        {required currentLength,
+                        required isFocused,
+                        maxLength}) =>
+                    null,
+            decoration: InputDecoration(
+              hintText: widget.hint ?? widget.label,
+              helperText: widget.helperText,
+              errorText: widget.errorText,
+              hintStyle: AppTypography.inputLabel.copyWith(
+                color: AppColors.slateMist.withValues(
+                  alpha: isInteractive ? 0.78 : 0.42,
+                ),
+              ),
+              helperStyle: AppTypography.caption,
+              errorStyle:
+                  AppTypography.caption.copyWith(color: AppColors.softCoral),
+              filled: false,
+              fillColor: Colors.transparent,
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              disabledBorder: InputBorder.none,
+              errorBorder: InputBorder.none,
+              focusedErrorBorder: InputBorder.none,
+              prefixIcon: widget.prefixIcon != null
+                  ? Icon(
+                      widget.prefixIcon,
+                      color: isActive
+                          ? AppColors.champagneGold
+                          : AppColors.slateMist,
+                      size: AppDimensions.iconSizeMedium,
+                    )
+                  : null,
+              prefixIconConstraints: const BoxConstraints(
+                minWidth: 34,
+                minHeight: AppDimensions.inputHeight,
+              ),
+              suffixIcon: widget.suffixIcon,
+              contentPadding: EdgeInsets.symmetric(
+                vertical: widget.maxLines != null && widget.maxLines! > 1
+                    ? AppDimensions.space16
+                    : 18.0,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -153,7 +284,6 @@ class MithaqTextField extends StatelessWidget {
 
 // ============================================================
 // OTP Input Field
-// Used on the Phone Verification screen.
 // Six individual boxes with auto-advance.
 // ============================================================
 
@@ -176,12 +306,14 @@ class MithaqOtpField extends StatefulWidget {
 class _MithaqOtpFieldState extends State<MithaqOtpField> {
   late final List<TextEditingController> _controllers;
   late final List<FocusNode> _focusNodes;
+  late final List<FocusNode> _keyboardFocusNodes;
 
   @override
   void initState() {
     super.initState();
     _controllers = List.generate(widget.length, (_) => TextEditingController());
     _focusNodes = List.generate(widget.length, (_) => FocusNode());
+    _keyboardFocusNodes = List.generate(widget.length, (_) => FocusNode());
   }
 
   @override
@@ -192,12 +324,14 @@ class _MithaqOtpFieldState extends State<MithaqOtpField> {
     for (final f in _focusNodes) {
       f.dispose();
     }
+    for (final f in _keyboardFocusNodes) {
+      f.dispose();
+    }
     super.dispose();
   }
 
   void _onDigitEntered(int index, String value) {
     if (value.length > 1) {
-      // Handle paste: distribute digits across boxes
       final digits = value.replaceAll(RegExp(r'\D'), '');
       for (int i = 0; i < widget.length && i < digits.length; i++) {
         _controllers[i].text = digits[i];
@@ -212,7 +346,7 @@ class _MithaqOtpFieldState extends State<MithaqOtpField> {
     }
 
     if (value.isNotEmpty) {
-      HapticFeedback.selectionClick(); // "Haptic feedback on each digit entry"
+      HapticFeedback.selectionClick();
       if (index < widget.length - 1) {
         _focusNodes[index + 1].requestFocus();
       } else {
@@ -250,13 +384,14 @@ class _MithaqOtpFieldState extends State<MithaqOtpField> {
         return SizedBox(
           width: 44,
           child: KeyboardListener(
-            focusNode: FocusNode(),
+            focusNode: _keyboardFocusNodes[index],
             onKeyEvent: (event) => _onKeyPressed(index, event),
             child: TextField(
               controller: _controllers[index],
               focusNode: _focusNodes[index],
               textAlign: TextAlign.center,
               keyboardType: TextInputType.number,
+              onTapOutside: (_) => _focusNodes[index].unfocus(),
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
                 LengthLimitingTextInputFormatter(1),

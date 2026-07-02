@@ -7,6 +7,7 @@ void main() {
   testWidgets('clears the selected city when the country changes',
       (tester) async {
     final country = ValueNotifier('IN');
+    var clearedCount = 0;
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -15,6 +16,7 @@ void main() {
             builder: (_, value, __) => CitySearchField(
               countryCode: value,
               initialValue: 'Delhi, Delhi',
+              onCleared: () => clearedCount++,
               onSelected: (_) {},
             ),
           ),
@@ -26,9 +28,11 @@ void main() {
 
     country.value = 'US';
     await tester.pump();
+    await tester.pump();
 
     expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
         isEmpty);
+    expect(clearedCount, 1);
   });
 
   testWidgets('does not enable city search without a selected country',

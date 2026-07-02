@@ -15,7 +15,7 @@ import 'package:go_router/go_router.dart';
 import '../cubits/auth/auth_cubit.dart';
 import '../cubits/auth/auth_state.dart';
 import '../cubits/onboarding/onboarding_cubit.dart';
-import '../models/onboarding_data.dart';
+import '../onboarding/onboarding_flow.dart';
 
 import '../../features/onboarding/screens/splash_brand_screen.dart';
 import '../../features/onboarding/screens/assalam_animation_screen.dart';
@@ -68,6 +68,11 @@ abstract final class AppRoutes {
 
 String onboardingPathForStep(int step) {
   return '${AppRoutes.onboarding}/$step';
+}
+
+int _safeOnboardingStep(AuthAuthenticated state) {
+  final completeAt = OnboardingFlow.completeAt(state.isGuardianPath);
+  return state.onboardingStep.clamp(0, completeAt - 1).toInt();
 }
 
 // ── Router factory ────────────────────────────────────────────
@@ -133,7 +138,9 @@ GoRouter buildAppRouter(
           // Otherwise navigate to the current onboarding step.
           // goBack() already updates authState.onboardingStep to the
           // lower step, so the redirect naturally handles back-nav too.
-          final targetPath = onboardingPathForStep(authState.onboardingStep);
+          final targetPath = onboardingPathForStep(
+            _safeOnboardingStep(authState),
+          );
           if (location == targetPath) return null;
           return targetPath;
         }
@@ -184,14 +191,17 @@ GoRouter buildAppRouter(
         },
       ),
 
-      // ── Onboarding steps 0–11 ───────────────────────────
+      // ── Onboarding steps 0–4 ───────────────────────────
       GoRoute(
         path: '${AppRoutes.onboarding}/:step',
         pageBuilder: (context, state) {
           final step = int.tryParse(state.pathParameters['step'] ?? '0') ?? 0;
           return _slidePage(
             key: state.pageKey,
-            child: _screenForStep(context, step),
+            child: _OnboardingRouteStepBinder(
+              step: step,
+              child: _screenForStep(step),
+            ),
           );
         },
       ),
@@ -304,36 +314,12 @@ GoRouter buildAppRouter(
 
 // ── Route → Screen mapping ────────────────────────────────────
 //
-// Myself path — 11 steps (completes at ≥ 11):
-//   0  ProfileForWhom → 1 BasicIdentity → 2 IslamicIdentity →
-//   3  IslamicMarriageDetails → 4 Background → 5 Family →
-//   6  AboutYourself → 7 PartnerPreferences → 8 PhotoUpload →
-//   9  ProfilePreview → 10 Welcome
-//
-// Guardian paths add +1 step (GuardianDetails at step 1).
+// Fast-start v3 path — 5 steps (completes at ≥ 5):
+//   0 ProfileForWhom → 1 QuickLocation → 2 BasicIdentity →
+//   3 IslamicIdentity → 4 PhotoUpload.
+// Guardian/self share the same required steps; richer details move to profile.
 
-Widget _screenForStep(BuildContext context, int step) {
-  final data = context.read<OnboardingCubit>().currentData;
-  final isGuardian = data.profileFor == ProfileFor.guardian;
-
-  if (isGuardian) {
-    switch (step) {
-      case 0:
-        return const ProfileForWhomScreen();
-      case 1:
-        return const QuickLocationScreen();
-      case 2:
-        return const BasicIdentityScreen();
-      case 3:
-        return const IslamicIdentityScreen();
-      case 4:
-        return const PhotoUploadScreen();
-      default:
-        return const ProfileForWhomScreen();
-    }
-  }
-
-  // Myself path
+Widget _screenForStep(int step) {
   switch (step) {
     case 0:
       return const ProfileForWhomScreen();
@@ -351,6 +337,45 @@ Widget _screenForStep(BuildContext context, int step) {
 }
 
 // ── Custom page transition ("Unfold" — slides from right) ─────
+
+class _OnboardingRouteStepBinder extends StatefulWidget {
+  const _OnboardingRouteStepBinder({
+    required this.step,
+    required this.child,
+  });
+
+  final int step;
+  final Widget child;
+
+  @override
+  State<_OnboardingRouteStepBinder> createState() =>
+      _OnboardingRouteStepBinderState();
+}
+
+class _OnboardingRouteStepBinderState
+    extends State<_OnboardingRouteStepBinder> {
+  @override
+  void initState() {
+    super.initState();
+    _syncAfterFrame();
+  }
+
+  @override
+  void didUpdateWidget(covariant _OnboardingRouteStepBinder oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.step != widget.step) _syncAfterFrame();
+  }
+
+  void _syncAfterFrame() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<OnboardingCubit>().syncRouteStep(widget.step);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
 
 CustomTransitionPage<void> _slidePage({
   required LocalKey key,

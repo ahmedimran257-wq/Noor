@@ -4,61 +4,55 @@
 // Offloads heavy JSON mapping/deserialization to background threads.
 // ============================================================
 
-import '../mock/mock_profiles.dart';
+import '../models/discovery_profile.dart';
 import '../cubits/chat/chat_state.dart';
 
-/// Parse real discovery RPC rows into the legacy profile view model.
-List<MockProfile> parseProfilesInBackground(List<dynamic> list) {
+/// Parse real discovery RPC rows into the profile view model.
+List<DiscoveryProfile> parseProfilesInBackground(List<dynamic> list) {
   return list
-      .map((row) => mapDbRowToMockProfile(row as Map<String, dynamic>))
+      .map((row) => mapDbRowToDiscoveryProfile(row as Map<String, dynamic>))
       .toList();
 }
 
 /// Parse a single database profile row in the background.
-MockProfile parseSingleProfileInBackground(Map<String, dynamic> row) {
-  return mapDbRowToMockProfile(row);
+DiscoveryProfile parseSingleProfileInBackground(Map<String, dynamic> row) {
+  return mapDbRowToDiscoveryProfile(row);
 }
 
 /// Map a raw Supabase discovery row to the profile view model.
-MockProfile mapDbRowToMockProfile(Map<String, dynamic> row) {
+DiscoveryProfile mapDbRowToDiscoveryProfile(Map<String, dynamic> row) {
   final gender = row['gender'] as String?;
   final rawPhotoPath = row['photo_url'] as String?;
   final photoCount = (row['photo_count'] as num?)?.toInt() ?? 0;
   final photoPrivacy = row['photo_privacy'] as String?;
 
-  return MockProfile(
-    id: row['user_id'] as String?,
-    firstName: (row['first_name'] as String?) ?? 'Mithaq User',
+  return DiscoveryProfile(
+    id: _requiredText(row, 'user_id'),
+    firstName: _requiredText(row, 'first_name'),
     lastNameInitial: ((row['last_name_initial'] as String?) ?? '').isNotEmpty
         ? row['last_name_initial'] as String
         : (((row['last_name'] as String?) ?? '').isNotEmpty
             ? (row['last_name'] as String)[0]
             : ''),
-    age: (row['age'] as num?)?.toInt() ??
-        (row['date_of_birth'] != null
-            ? (DateTime.now()
-                    .difference(DateTime.parse(row['date_of_birth'] as String))
-                    .inDays ~/
-                365)
-            : 25),
-    cityName: (row['city_name'] as String?) ?? 'Unknown',
-    sect: (row['sect'] as String?)?.toUpperCase() ?? 'SUNNI',
-    deenLevel: (row['deen_level'] as String?) ?? 'moderate',
+    age: _requiredAge(row),
+    cityName: _requiredText(row, 'city_name'),
+    sect: _optionalText(row, 'sect')?.toUpperCase(),
+    deenLevel: _optionalText(row, 'deen_level'),
     photoUrl: rawPhotoPath,
     photoCount: photoCount,
     isPhotoPrivate:
         photoPrivacy == 'mutual_only' || photoPrivacy == 'request_only',
     isVerified: (row['is_verified'] as bool?) ?? false,
-    occupation: (row['profession'] as String?) ?? 'Professional',
-    education: (row['education_level'] as String?) ?? 'Graduate',
-    bio: (row['bio'] as String?) ?? '',
+    occupation: _optionalText(row, 'profession'),
+    education: _optionalText(row, 'education_level'),
+    bio: _optionalText(row, 'bio'),
     languages: row['languages'] != null
         ? List<String>.from(row['languages'] as Iterable)
         : null,
     maritalStatus: (row['previously_married'] as String?) == 'no'
         ? 'Never Married'
-        : ((row['previously_married'] as String?) ?? 'Never Married'),
-    familyType: (row['family_type'] as String?) ?? 'Nuclear',
+        : _optionalText(row, 'previously_married'),
+    familyType: _optionalText(row, 'family_type'),
     interests: row['interests'] != null
         ? List<String>.from(row['interests'] as Iterable)
         : null,
@@ -85,6 +79,41 @@ MockProfile mapDbRowToMockProfile(Map<String, dynamic> row) {
         : null,
     countryCode: row['country_code'] as String?,
     blurhash: row['blurhash'] as String?,
+  );
+}
+
+String _requiredText(Map<String, dynamic> row, String key) {
+  final value = _optionalText(row, key);
+  if (value == null) {
+    throw StateError('Supabase profile row is missing required field "$key".');
+  }
+  return value;
+}
+
+String? _optionalText(Map<String, dynamic> row, String key) {
+  final raw = row[key];
+  final value = raw?.toString().trim();
+  return value == null || value.isEmpty ? null : value;
+}
+
+int _requiredAge(Map<String, dynamic> row) {
+  final age = (row['age'] as num?)?.toInt();
+  if (age != null && age >= 18) return age;
+
+  final dobText = _optionalText(row, 'date_of_birth');
+  final dob = dobText == null ? null : DateTime.tryParse(dobText);
+  if (dob != null) {
+    final today = DateTime.now();
+    var years = today.year - dob.year;
+    if (today.month < dob.month ||
+        (today.month == dob.month && today.day < dob.day)) {
+      years--;
+    }
+    if (years >= 18) return years;
+  }
+
+  throw StateError(
+    'Supabase profile row is missing a valid adult age/date_of_birth.',
   );
 }
 

@@ -11,6 +11,7 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/country_picker_screen.dart';
 import '../../../core/widgets/inputs/city_search_field.dart';
+import '../../../core/widgets/inputs/region_search_field.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
 
@@ -23,6 +24,8 @@ class QuickLocationScreen extends StatefulWidget {
 
 class _QuickLocationScreenState extends State<QuickLocationScreen> {
   late CountryInfo _country;
+  RegionResult? _region;
+  String? _initialRegion;
   CityResult? _city;
   String? _initialCity;
   bool _saving = false;
@@ -36,21 +39,78 @@ class _QuickLocationScreenState extends State<QuickLocationScreen> {
           country.iso2.toUpperCase() == data.countryCode?.toUpperCase(),
     );
     _country = matches.isEmpty ? deviceCountry() : matches.first;
+    final savedState = data.stateName?.trim().isNotEmpty == true
+        ? data.stateName!.trim()
+        : _stateFromCityName(data.cityName);
+    if (savedState != null && savedState.isNotEmpty) {
+      _initialRegion = savedState;
+      _region = RegionResult(
+        id: '',
+        name: savedState,
+        countryCode: _country.iso2,
+        country: _country.name,
+      );
+    }
     _initialCity = data.cityName;
+    if (data.cityName?.trim().isNotEmpty == true &&
+        data.countryCode?.trim().isNotEmpty == true &&
+        data.lat != null &&
+        data.lng != null) {
+      final cityOnly = data.cityName!.split(',').first.trim();
+      _city = CityResult(
+        city: cityOnly,
+        state: savedState ?? data.stateName ?? '',
+        country: _country.name,
+        countryCode: _country.iso2,
+        postalCode: data.postalCode ?? '',
+        fullAddress: [
+          cityOnly,
+          if ((savedState ?? data.stateName)?.trim().isNotEmpty == true)
+            (savedState ?? data.stateName)!.trim(),
+          _country.name,
+        ].join(', '),
+        placeId: data.cityId ?? '',
+        lat: data.lat!,
+        lng: data.lng!,
+      );
+    }
   }
 
-  bool get _isValid => _city != null;
+  bool get _isValid => _city != null && !_saving;
+
+  void _dismissKeyboard() => FocusManager.instance.primaryFocus?.unfocus();
 
   void _selectCountry(CountryInfo country) {
+    _dismissKeyboard();
     if (country.iso2 == _country.iso2) return;
     setState(() {
       _country = country;
+      _region = null;
+      _initialRegion = null;
       _city = null;
       _initialCity = null;
     });
   }
 
+  void _selectRegion(RegionResult region) {
+    _dismissKeyboard();
+    setState(() {
+      _region = region;
+      _initialRegion = null;
+      _city = null;
+      _initialCity = null;
+    });
+  }
+
+  String? _stateFromCityName(String? cityName) {
+    final parts = cityName?.split(', ') ?? const <String>[];
+    if (parts.length < 2) return null;
+    final state = parts[1].trim();
+    return state.isEmpty ? null : state;
+  }
+
   Future<void> _continue() async {
+    _dismissKeyboard();
     final city = _city;
     if (city == null || _saving) return;
     setState(() => _saving = true);
@@ -65,14 +125,25 @@ class _QuickLocationScreenState extends State<QuickLocationScreen> {
       return;
     }
 
-    final cityName =
-        city.state.isEmpty ? city.city : '${city.city}, ${city.state}';
+    final stateName = city.state.isNotEmpty ? city.state : _region?.name ?? '';
+    final cityName = stateName.isEmpty ? city.city : '${city.city}, $stateName';
     final cubit = context.read<OnboardingCubit>();
-    await context.read<AuthCubit>().setCountryCode(_country.iso2);
+    final countrySaved = await context.read<AuthCubit>().setCountryCode(
+          _country.iso2,
+        );
+    if (!mounted) return;
+    if (!countrySaved) {
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not save. Please try again.')),
+      );
+      return;
+    }
     await cubit.saveAndAdvance(cubit.currentData.copyWith(
       countryCode: _country.iso2,
       cityId: resolution.cityId,
       cityName: cityName,
+      stateName: stateName,
       postalCode: city.postalCode,
       lat: city.lat,
       lng: city.lng,
@@ -95,12 +166,15 @@ class _QuickLocationScreenState extends State<QuickLocationScreen> {
           const SizedBox(height: AppDimensions.space8),
           InkWell(
             borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => CountryPickerScreen(
-                selected: _country,
-                onSelected: _selectCountry,
-              ),
-            )),
+            onTap: () {
+              _dismissKeyboard();
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => CountryPickerScreen(
+                  selected: _country,
+                  onSelected: _selectCountry,
+                ),
+              ));
+            },
             child: Container(
               height: 56,
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -119,15 +193,47 @@ class _QuickLocationScreenState extends State<QuickLocationScreen> {
             ),
           ),
           const SizedBox(height: AppDimensions.space24),
+          const Text('State / Region (optional)',
+              style: AppTypography.sectionLabel),
+          const SizedBox(height: AppDimensions.space8),
+          RegionSearchField(
+            key: ValueKey('region_${_country.iso2}'),
+            countryCode: _country.iso2,
+            initialValue: _initialRegion,
+            hint: 'Search state, province, or region',
+            onSelected: _selectRegion,
+            onCleared: () => setState(() {
+              _region = null;
+              _initialRegion = null;
+              _city = null;
+              _initialCity = null;
+            }),
+          ),
+          const SizedBox(height: AppDimensions.space8),
+          const Text(
+            'Optional, but helps narrow city results in large countries.',
+            style: AppTypography.bodyMuted,
+          ),
+          const SizedBox(height: AppDimensions.space24),
           const Text('City', style: AppTypography.sectionLabel),
           const SizedBox(height: AppDimensions.space8),
           CitySearchField(
-            key: ValueKey(_country.iso2),
+            key: ValueKey('${_country.iso2}_${_region?.name ?? ''}'),
             countryCode: _country.iso2,
+            regionName: _region?.name,
             initialValue: _initialCity,
-            hint: 'Search your city or area',
-            onSelected: (result) => setState(() {
-              _city = result;
+            hint: _region == null
+                ? 'Search your city or area'
+                : 'Search city in ${_region!.name}',
+            onSelected: (result) {
+              _dismissKeyboard();
+              setState(() {
+                _city = result;
+                _initialCity = null;
+              });
+            },
+            onCleared: () => setState(() {
+              _city = null;
               _initialCity = null;
             }),
           ),

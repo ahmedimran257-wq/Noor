@@ -1,6 +1,6 @@
 // lib/features/onboarding/screens/profile_for_whom_screen.dart
 // ============================================================
-// MITHAQ — Profile For Whom Screen (Onboarding Step 0)
+// MITHAQ - Profile For Whom Screen (fast-start step 1)
 // Two primary options: Myself / Guardian.
 // Selecting Guardian expands to show relationship sub-options:
 //   Son, Daughter, Brother, Sister.
@@ -31,8 +31,10 @@ class ProfileForWhomScreen extends StatefulWidget {
 
 class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
     with SingleTickerProviderStateMixin {
-  String? _selectedCategory;   // 'self' or 'guardian'
-  String? _selectedRelation;   // 'son','daughter','brother','sister'
+  String? _selectedCategory; // 'self' or 'guardian'
+  String? _selectedRelation; // 'son','daughter','brother','sister'
+  bool _advancing = false;
+  String? _saveError;
 
   late final AnimationController _expandCtrl;
   late final Animation<double> _expandAnim;
@@ -51,9 +53,11 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
 
     final data = context.read<OnboardingCubit>().currentData;
     if (data.profileFor != null) {
-      _selectedCategory = data.profileFor == ProfileFor.myself ? 'self' : 'guardian';
+      _selectedCategory =
+          data.profileFor == ProfileFor.myself ? 'self' : 'guardian';
     }
-    if (data.profileCreatorRelation != null && data.profileCreatorRelation != 'self') {
+    if (data.profileCreatorRelation != null &&
+        data.profileCreatorRelation != 'self') {
       _selectedRelation = data.profileCreatorRelation;
     }
     if (_selectedCategory == 'guardian') {
@@ -68,51 +72,105 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
   }
 
   void _selectSelf() async {
+    if (_advancing) return;
+    FocusManager.instance.primaryFocus?.unfocus();
     HapticFeedback.lightImpact();
     setState(() {
       _selectedCategory = 'self';
       _selectedRelation = null;
+      _advancing = true;
+      _saveError = null;
     });
     _expandCtrl.reverse();
 
     await Future.delayed(const Duration(milliseconds: 300));
     if (!mounted) return;
-    final cubit   = context.read<OnboardingCubit>();
+    final cubit = context.read<OnboardingCubit>();
     final current = cubit.currentData;
-    cubit.saveAndAdvance(current.copyWith(
+    await cubit.saveAndAdvance(current.copyWith(
       profileFor: ProfileFor.myself,
+      profileOwnerType: ProfileOwnerType.self,
+      wardRelationship: 'self',
       profileCreatorRelation: 'self',
+      isGuardianMode: false,
+      guardianMode: 'none',
     ));
+    if (mounted && context.read<OnboardingCubit>().currentStep == 0) {
+      setState(() => _advancing = false);
+    }
   }
 
   void _selectGuardian() {
+    if (_advancing) return;
+    FocusManager.instance.primaryFocus?.unfocus();
     HapticFeedback.lightImpact();
     setState(() {
       _selectedCategory = 'guardian';
       _selectedRelation = null;
+      _saveError = null;
     });
     _expandCtrl.forward();
   }
 
   void _selectRelation(String relation) async {
+    if (_advancing) return;
+    FocusManager.instance.primaryFocus?.unfocus();
     HapticFeedback.mediumImpact();
-    setState(() => _selectedRelation = relation);
+    setState(() {
+      _selectedRelation = relation;
+      _advancing = true;
+      _saveError = null;
+    });
 
     await Future.delayed(const Duration(milliseconds: 300));
     if (!mounted) return;
-    final cubit   = context.read<OnboardingCubit>();
+    final cubit = context.read<OnboardingCubit>();
     final current = cubit.currentData;
-    cubit.saveAndAdvance(current.copyWith(
+    final wardGender = _wardGenderForRelation(relation);
+    await cubit.saveAndAdvance(current.copyWith(
       profileFor: ProfileFor.guardian,
+      profileOwnerType: ProfileOwnerType.guardian,
+      wardRelationship: relation,
+      wardGender: wardGender,
+      gender: wardGender,
       profileCreatorRelation: relation,
+      isGuardianMode: true,
+      guardianMode: 'passive',
     ));
+    if (mounted && context.read<OnboardingCubit>().currentStep == 0) {
+      setState(() => _advancing = false);
+    }
+  }
+
+  Gender _wardGenderForRelation(String relation) {
+    switch (relation) {
+      case 'daughter':
+      case 'sister':
+        return Gender.female;
+      case 'son':
+      case 'brother':
+      default:
+        return Gender.male;
+    }
   }
 
   Future<void> _exitOnboarding() async {
+    FocusManager.instance.primaryFocus?.unfocus();
     HapticFeedback.lightImpact();
     await context.read<AuthCubit>().signOut();
     if (!mounted) return;
     context.go(AppRoutes.splash);
+  }
+
+  Future<void> _retrySave() async {
+    setState(() {
+      _advancing = true;
+      _saveError = null;
+    });
+    await context.read<OnboardingCubit>().retryFailedSave();
+    if (mounted && context.read<OnboardingCubit>().state is OnboardingError) {
+      setState(() => _advancing = false);
+    }
   }
 
   @override
@@ -120,7 +178,27 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
     final l10n = AppLocalizations.of(context);
     return BlocListener<OnboardingCubit, OnboardingState>(
       listener: (context, state) {
-        // Navigation handled by GoRouter redirect on AuthCubit step update
+        // Navigation is handled by GoRouter after AuthCubit step updates.
+        if (state is OnboardingSaved && state.step > 0) {
+          if (mounted) setState(() => _advancing = false);
+          context.go(onboardingPathForStep(state.step));
+        }
+        if (state is OnboardingError) {
+          setState(() {
+            _advancing = false;
+            _saveError = state.message;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: AppColors.softCoral,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
       },
       child: Scaffold(
         backgroundColor: AppColors.obsidianNight,
@@ -154,28 +232,28 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
                 ),
                 const SizedBox(height: AppDimensions.space24),
                 StepHeader(
-                  title:    l10n.onboarding_profileForWhom_title,
+                  title: l10n.onboarding_profileForWhom_title,
                   subtitle: l10n.onboarding_profileForWhom_subtitle,
                 ),
                 const SizedBox(height: AppDimensions.space32),
 
                 // ── Option 1: Myself ─────────────────────────
                 _SelectionCard(
-                  icon:       Icons.person_outline_rounded,
-                  title:      l10n.onboarding_profileForWhom_myself,
-                  subtitle:   l10n.onboarding_profileForWhom_myselfSub,
+                  icon: Icons.person_outline_rounded,
+                  title: l10n.onboarding_profileForWhom_myself,
+                  subtitle: l10n.onboarding_profileForWhom_myselfSub,
                   isSelected: _selectedCategory == 'self',
-                  onTap:      _selectSelf,
+                  onTap: _advancing ? null : _selectSelf,
                 ),
                 const SizedBox(height: AppDimensions.space16),
 
                 // ── Option 2: Guardian ───────────────────────
                 _SelectionCard(
-                  icon:       Icons.copy_rounded, // or any icon from design
-                  title:      l10n.onboarding_profileForWhom_guardianCardTitle,
-                  subtitle:   l10n.onboarding_profileForWhom_guardianCardSub,
+                  icon: Icons.copy_rounded, // or any icon from design
+                  title: l10n.onboarding_profileForWhom_guardianCardTitle,
+                  subtitle: l10n.onboarding_profileForWhom_guardianCardSub,
                   isSelected: _selectedCategory == 'guardian',
-                  onTap:      _selectGuardian,
+                  onTap: _advancing ? null : _selectGuardian,
                   showChevron: true,
                   isExpanded: _selectedCategory == 'guardian',
                 ),
@@ -210,18 +288,24 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
                             Expanded(
                               child: _RelationChip(
                                 icon: Icons.boy_rounded,
-                                label: l10n.onboarding_profileForWhom_relation_son,
+                                label:
+                                    l10n.onboarding_profileForWhom_relation_son,
                                 isSelected: _selectedRelation == 'son',
-                                onTap: () => _selectRelation('son'),
+                                onTap: _advancing
+                                    ? null
+                                    : () => _selectRelation('son'),
                               ),
                             ),
                             const SizedBox(width: AppDimensions.space10),
                             Expanded(
                               child: _RelationChip(
                                 icon: Icons.girl_rounded,
-                                label: l10n.onboarding_profileForWhom_relation_daughter,
+                                label: l10n
+                                    .onboarding_profileForWhom_relation_daughter,
                                 isSelected: _selectedRelation == 'daughter',
-                                onTap: () => _selectRelation('daughter'),
+                                onTap: _advancing
+                                    ? null
+                                    : () => _selectRelation('daughter'),
                               ),
                             ),
                           ],
@@ -232,18 +316,24 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
                             Expanded(
                               child: _RelationChip(
                                 icon: Icons.person_outline_rounded,
-                                label: l10n.onboarding_profileForWhom_relation_brother,
+                                label: l10n
+                                    .onboarding_profileForWhom_relation_brother,
                                 isSelected: _selectedRelation == 'brother',
-                                onTap: () => _selectRelation('brother'),
+                                onTap: _advancing
+                                    ? null
+                                    : () => _selectRelation('brother'),
                               ),
                             ),
                             const SizedBox(width: AppDimensions.space10),
                             Expanded(
                               child: _RelationChip(
                                 icon: Icons.person_outline_rounded,
-                                label: l10n.onboarding_profileForWhom_relation_sister,
+                                label: l10n
+                                    .onboarding_profileForWhom_relation_sister,
                                 isSelected: _selectedRelation == 'sister',
-                                onTap: () => _selectRelation('sister'),
+                                onTap: _advancing
+                                    ? null
+                                    : () => _selectRelation('sister'),
                               ),
                             ),
                           ],
@@ -253,15 +343,39 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
                   ),
                 ),
 
+                if (_saveError != null) ...[
+                  const SizedBox(height: AppDimensions.space16),
+                  _ProfileForWhomSaveError(
+                    message: _saveError!,
+                    isLoading: _advancing,
+                    onRetry: _retrySave,
+                  ),
+                ],
+
                 const Spacer(),
 
                 // Subtle note
                 Center(
-                  child: Text(
-                    _selectedCategory == 'guardian' && _selectedRelation == null
-                        ? l10n.onboarding_profileForWhom_selectRelation
-                        : l10n.onboarding_profileForWhom_selectOne,
-                    style: AppTypography.caption,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    child: _advancing
+                        ? const SizedBox(
+                            key: ValueKey('profile-for-whom-loading'),
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.champagneGold,
+                            ),
+                          )
+                        : Text(
+                            key: const ValueKey('profile-for-whom-hint'),
+                            _selectedCategory == 'guardian' &&
+                                    _selectedRelation == null
+                                ? l10n.onboarding_profileForWhom_selectRelation
+                                : l10n.onboarding_profileForWhom_selectOne,
+                            style: AppTypography.caption,
+                          ),
                   ),
                 ),
                 const SizedBox(height: AppDimensions.space24),
@@ -269,6 +383,59 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ProfileForWhomSaveError extends StatelessWidget {
+  const _ProfileForWhomSaveError({
+    required this.message,
+    required this.isLoading,
+    required this.onRetry,
+  });
+
+  final String message;
+  final bool isLoading;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppDimensions.space14),
+      decoration: BoxDecoration(
+        color: AppColors.softCoral.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+        border: Border.all(
+          color: AppColors.softCoral.withValues(alpha: 0.55),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.error_outline_rounded,
+            color: AppColors.softCoral,
+            size: AppDimensions.iconSizeMedium,
+          ),
+          const SizedBox(width: AppDimensions.space8),
+          Expanded(
+            child: Text(
+              message,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppColors.pearlWhite,
+              ),
+            ),
+          ),
+          TextButton.icon(
+            onPressed: isLoading ? null : onRetry,
+            icon: const Icon(Icons.refresh_rounded, size: 18),
+            label: const Text('Retry'),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.champagneGold,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -288,30 +455,33 @@ class _SelectionCard extends StatelessWidget {
   });
 
   final IconData icon;
-  final String   title;
-  final String   subtitle;
-  final bool     isSelected;
-  final VoidCallback onTap;
-  final bool     showChevron;
-  final bool     isExpanded;
+  final String title;
+  final String subtitle;
+  final bool isSelected;
+  final VoidCallback? onTap;
+  final bool showChevron;
+  final bool isExpanded;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: onTap == null
+          ? null
+          : () {
+              FocusManager.instance.primaryFocus?.unfocus();
+              onTap!();
+            },
       child: AnimatedContainer(
         duration: AppDimensions.durationTransition,
-        curve:    Curves.easeOutCubic,
-        padding:  const EdgeInsets.all(AppDimensions.space20),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.all(AppDimensions.space20),
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.champagneGold.withValues(alpha: 0.08)
               : AppColors.surfaceGlass,
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
           border: Border.all(
-            color: isSelected
-                ? AppColors.champagneGold
-                : AppColors.cardBorder,
+            color: isSelected ? AppColors.champagneGold : AppColors.cardBorder,
             width: isSelected
                 ? AppDimensions.borderFocus
                 : AppDimensions.borderThin,
@@ -320,7 +490,7 @@ class _SelectionCard extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width:  56,
+              width: 56,
               height: 56,
               decoration: BoxDecoration(
                 color: isSelected
@@ -330,9 +500,8 @@ class _SelectionCard extends StatelessWidget {
               ),
               child: Icon(
                 icon,
-                color: isSelected
-                    ? AppColors.champagneGold
-                    : AppColors.slateMist,
+                color:
+                    isSelected ? AppColors.champagneGold : AppColors.slateMist,
                 size: AppDimensions.iconSizeLarge,
               ),
             ),
@@ -369,19 +538,19 @@ class _SelectionCard extends StatelessWidget {
               )
             else
               AnimatedOpacity(
-                opacity:  isSelected ? 1.0 : 0.0,
+                opacity: isSelected ? 1.0 : 0.0,
                 duration: AppDimensions.durationTransition,
                 child: Container(
-                  width:  24,
+                  width: 24,
                   height: 24,
                   decoration: const BoxDecoration(
-                    color:  AppColors.champagneGold,
-                    shape:  BoxShape.circle,
+                    color: AppColors.champagneGold,
+                    shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.check_rounded,
                     color: AppColors.obsidianNight,
-                    size:  16,
+                    size: 16,
                   ),
                 ),
               ),
@@ -403,14 +572,19 @@ class _RelationChip extends StatelessWidget {
   });
 
   final IconData icon;
-  final String   label;
-  final bool     isSelected;
-  final VoidCallback onTap;
+  final String label;
+  final bool isSelected;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: onTap == null
+          ? null
+          : () {
+              FocusManager.instance.primaryFocus?.unfocus();
+              onTap!();
+            },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOutCubic,
@@ -424,9 +598,7 @@ class _RelationChip extends StatelessWidget {
               : AppColors.surfaceGlass,
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
           border: Border.all(
-            color: isSelected
-                ? AppColors.champagneGold
-                : AppColors.cardBorder,
+            color: isSelected ? AppColors.champagneGold : AppColors.cardBorder,
             width: isSelected
                 ? AppDimensions.borderFocus
                 : AppDimensions.borderThin,
@@ -437,25 +609,22 @@ class _RelationChip extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isSelected
-                  ? AppColors.champagneGold
-                  : AppColors.slateMist,
+              color: isSelected ? AppColors.champagneGold : AppColors.slateMist,
               size: 20,
             ),
             const SizedBox(width: AppDimensions.space8),
             Text(
               label,
               style: AppTypography.bodyMedium.copyWith(
-                color: isSelected
-                    ? AppColors.champagneGold
-                    : AppColors.pearlWhite,
+                color:
+                    isSelected ? AppColors.champagneGold : AppColors.pearlWhite,
                 fontSize: 14,
               ),
             ),
             if (isSelected) ...[
               const SizedBox(width: AppDimensions.space8),
               Container(
-                width:  18,
+                width: 18,
                 height: 18,
                 decoration: const BoxDecoration(
                   color: AppColors.champagneGold,
@@ -464,7 +633,7 @@ class _RelationChip extends StatelessWidget {
                 child: const Icon(
                   Icons.check_rounded,
                   color: AppColors.obsidianNight,
-                  size:  12,
+                  size: 12,
                 ),
               ),
             ],

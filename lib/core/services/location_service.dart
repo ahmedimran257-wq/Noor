@@ -9,27 +9,36 @@ class LocationResolution {
 
   final String? cityId;
   final String? errorMessage;
-  bool get isSuccess => cityId != null || !SupabaseService.isInitialized;
+  bool get isSuccess => cityId != null && cityId!.isNotEmpty;
 }
 
 /// Resolves externally searched cities into reusable rows in the Mithaq city
 /// cache. The server remains authoritative for IDs and location validation.
 abstract final class LocationService {
   static Future<LocationResolution> resolveCity(CityResult city) async {
-    if (!SupabaseService.isInitialized) return const LocationResolution();
+    if (!SupabaseService.isInitialized) {
+      return const LocationResolution(
+        errorMessage: 'Location saving is not configured. Please try again.',
+      );
+    }
 
     try {
+      final regionName = city.state.trim().isNotEmpty
+          ? city.state.trim()
+          : (city.country.trim().isNotEmpty
+              ? city.country.trim()
+              : city.countryCode.trim());
       final response =
           await SupabaseService.client.rpc('get_or_create_city', params: {
         'p_city_name': city.city,
-        'p_region_name': city.state.isEmpty ? 'Unknown' : city.state,
+        'p_region_name': regionName,
         'p_country_name': city.country,
         'p_country_code': city.countryCode,
         'p_latitude': city.lat,
         'p_longitude': city.lng,
       });
       final cityId = response?.toString();
-      if (cityId != null && RegExp(r'^\\d+$').hasMatch(cityId)) {
+      if (cityId != null && cityId.trim().isNotEmpty) {
         return LocationResolution(cityId: cityId);
       }
     } catch (error) {

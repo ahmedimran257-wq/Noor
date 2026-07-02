@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
+import '../../../core/cubits/onboarding/onboarding_state.dart';
 import '../../../core/models/onboarding_data.dart';
 import '../../../core/onboarding/onboarding_flow.dart';
 import '../../../core/theme/app_colors.dart';
@@ -9,6 +10,7 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/buttons/mithaq_pressable.dart';
 import '../../../core/widgets/buttons/mithaq_primary_button.dart';
+import '../../../core/widgets/buttons/mithaq_secondary_button.dart';
 import 'onboarding_progress_bar.dart';
 
 class OnboardingScaffold extends StatelessWidget {
@@ -42,9 +44,12 @@ class OnboardingScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<OnboardingCubit>();
+    final state = context.watch<OnboardingCubit>().state;
     final resolvedStep = step ?? cubit.currentStep;
     final isGuardian = cubit.currentData.profileFor == ProfileFor.guardian;
     final resolvedTotal = totalSteps ?? OnboardingFlow.completeAt(isGuardian);
+    final saveError =
+        state is OnboardingError && state.step == resolvedStep ? state : null;
 
     return Scaffold(
       backgroundColor: AppColors.obsidianNight,
@@ -100,9 +105,16 @@ class OnboardingScaffold extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        if (saveError != null) ...[
+                          _SaveErrorNotice(message: saveError.message),
+                          const SizedBox(height: AppDimensions.space12),
+                        ],
                         if (!isCtaEnabled && onCtaDisabledTap != null)
                           GestureDetector(
-                            onTap: onCtaDisabledTap,
+                            onTap: () {
+                              FocusManager.instance.primaryFocus?.unfocus();
+                              onCtaDisabledTap!();
+                            },
                             behavior: HitTestBehavior.opaque,
                             child: IgnorePointer(
                               child: MithaqPrimaryButton(
@@ -115,13 +127,22 @@ class OnboardingScaffold extends StatelessWidget {
                         else
                           MithaqPrimaryButton(
                             label: ctaLabel,
-                            onTap: isCtaEnabled ? onCta : null,
+                            onTap: isCtaEnabled && onCta != null
+                                ? () {
+                                    FocusManager.instance.primaryFocus
+                                        ?.unfocus();
+                                    onCta!();
+                                  }
+                                : null,
                             isLoading: isCtaLoading,
                           ),
                         if (skipLabel != null && onSkip != null) ...[
                           const SizedBox(height: AppDimensions.space12),
                           MithaqPressable(
-                            onTap: onSkip,
+                            onTap: () {
+                              FocusManager.instance.primaryFocus?.unfocus();
+                              onSkip!();
+                            },
                             haptic: false,
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
@@ -146,6 +167,65 @@ class OnboardingScaffold extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SaveErrorNotice extends StatelessWidget {
+  const _SaveErrorNotice({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final cubit = context.read<OnboardingCubit>();
+    final isLoading =
+        context.watch<OnboardingCubit>().state is OnboardingLoading;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppDimensions.space14),
+      decoration: BoxDecoration(
+        color: AppColors.softCoral.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+        border: Border.all(
+          color: AppColors.softCoral.withValues(alpha: 0.55),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.error_outline_rounded,
+                color: AppColors.softCoral,
+                size: AppDimensions.iconSizeMedium,
+              ),
+              const SizedBox(width: AppDimensions.space8),
+              Expanded(
+                child: Text(
+                  message,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.pearlWhite,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppDimensions.space10),
+          MithaqSecondaryButton(
+            label: 'Retry',
+            icon: Icons.refresh_rounded,
+            isLoading: isLoading,
+            onTap: () {
+              FocusManager.instance.primaryFocus?.unfocus();
+              cubit.retryFailedSave();
+            },
+          ),
+        ],
       ),
     );
   }
@@ -208,7 +288,7 @@ class _RevealOnStep extends StatelessWidget {
       builder: (context, value, child) {
         final progress = delay == Duration.zero
             ? value
-            : ((value - 0.18).clamp(0.0, 1.0) / 0.82);
+            : ((value - 0.18) / 0.82).clamp(0.0, 1.0).toDouble();
         return Opacity(
           opacity: progress,
           child: Transform.translate(
@@ -229,7 +309,12 @@ class _BackButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MithaqPressable(
-      onTap: onBack,
+      onTap: onBack == null
+          ? null
+          : () {
+              FocusManager.instance.primaryFocus?.unfocus();
+              onBack!();
+            },
       haptic: false,
       child: Container(
         width: 40,

@@ -19,7 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/widgets/loaders/mithaq_blur_image.dart';
-import '../../../core/mock/mock_profiles.dart';
+import '../../../core/models/discovery_profile.dart';
 import '../../../core/cubits/block_report/block_report_cubit.dart';
 import '../../../core/cubits/interests/interests_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
@@ -42,7 +42,7 @@ class ProfileDetailScreen extends StatefulWidget {
     this.isMutualMatch = false,
   });
 
-  final MockProfile profile;
+  final DiscoveryProfile profile;
   final String heroTag;
   final bool isInterestSent;
   final VoidCallback onInterestSent;
@@ -57,7 +57,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   bool _bookmarked = false;
   int _photoPage = 0;
 
-  // Mock photo count — real app reads from profile.photoCount
+  // Photo count comes from the discovery profile row
   int get _totalPhotos => widget.profile.photoCount.clamp(1, 4);
 
   @override
@@ -95,18 +95,20 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     await showInterestCeremony(context, firstName: widget.profile.firstName);
   }
 
-  void _handleBookmark() {
+  Future<void> _handleBookmark() async {
     HapticFeedback.selectionClick();
+    final previous = _bookmarked;
     setState(() => _bookmarked = !_bookmarked);
-    // Persist the updated bookmark set
-    BookmarkService.load().then((ids) {
-      if (_bookmarked) {
-        ids.add(widget.profile.id);
-      } else {
-        ids.remove(widget.profile.id);
+
+    try {
+      final ids =
+          await BookmarkService.setSaved(widget.profile.id, _bookmarked);
+      if (mounted) {
+        setState(() => _bookmarked = ids.contains(widget.profile.id));
       }
-      BookmarkService.save(ids);
-    });
+    } catch (_) {
+      if (mounted) setState(() => _bookmarked = previous);
+    }
   }
 
   void _handleShare() {
@@ -500,7 +502,7 @@ class _PhotoCarousel extends StatelessWidget {
     required this.isMutualMatch,
   });
 
-  final MockProfile profile;
+  final DiscoveryProfile profile;
   final int totalPhotos;
   final int currentPage;
   final ValueChanged<int> onPageChanged;
@@ -570,7 +572,7 @@ class _SinglePhotoSlide extends StatelessWidget {
     required this.index,
     required this.isMutualMatch,
   });
-  final MockProfile profile;
+  final DiscoveryProfile profile;
   final int index;
   final bool isMutualMatch;
 
@@ -693,7 +695,7 @@ class _FullScreenPhotoViewer extends StatelessWidget {
     required this.initialIndex,
     required this.isMutualMatch,
   });
-  final MockProfile profile;
+  final DiscoveryProfile profile;
   final int initialIndex;
   final bool isMutualMatch;
 
@@ -799,7 +801,7 @@ class _HeaderButton extends StatelessWidget {
 
 class _NameBlock extends StatelessWidget {
   const _NameBlock({required this.profile, required this.isMutualMatch});
-  final MockProfile profile;
+  final DiscoveryProfile profile;
   final bool isMutualMatch;
 
   @override
@@ -887,7 +889,7 @@ class _VerifiedPill extends StatelessWidget {
 
 class _CompatibilityIndicator extends StatelessWidget {
   const _CompatibilityIndicator({required this.profile});
-  final MockProfile profile;
+  final DiscoveryProfile profile;
 
   @override
   Widget build(BuildContext context) {
@@ -1195,7 +1197,7 @@ class _ReportBlockSheet extends StatelessWidget {
     required this.onReport,
   });
 
-  final MockProfile profile;
+  final DiscoveryProfile profile;
   final VoidCallback onBlock;
   final VoidCallback onReport;
 

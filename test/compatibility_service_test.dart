@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mithaq/core/mock/mock_profiles.dart';
+import 'package:mithaq/core/models/discovery_profile.dart';
 import 'package:mithaq/core/models/onboarding_data.dart';
 import 'package:mithaq/core/services/compatibility_service.dart';
 
 void main() {
-  const candidateBase = MockProfile(
+  const candidateBase = DiscoveryProfile(
     firstName: 'A',
     lastNameInitial: 'B',
     age: 28,
