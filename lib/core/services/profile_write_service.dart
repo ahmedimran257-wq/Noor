@@ -10,6 +10,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 import '../data/country_data.dart';
 import '../models/onboarding_data.dart';
 import 'supabase_service.dart';
@@ -180,9 +181,9 @@ class ProfileWriteService {
           'ProfileWriteService: Step $step saved (${fields.length} fields)');
       return true;
     } catch (e) {
-      debugPrint(
-        'ProfileWriteService: Error saving step $step '
-        '(fields: ${attemptedFields.keys.join(', ')}): $e',
+      _logSupabaseError(
+        'saveStep step $step fields: ${attemptedFields.keys.join(', ')}',
+        e,
       );
       return false;
     }
@@ -204,7 +205,7 @@ class ProfileWriteService {
       );
       return true;
     } catch (e) {
-      debugPrint('ProfileWriteService: Error saving profile type: $e');
+      _logSupabaseError('saveProfileTypeResume', e);
       return false;
     }
   }
@@ -244,7 +245,7 @@ class ProfileWriteService {
       );
       return true;
     } catch (e) {
-      debugPrint('ProfileWriteService: Error saving onboarding location: $e');
+      _logSupabaseError('save_onboarding_location', e);
       return false;
     }
   }
@@ -310,7 +311,7 @@ class ProfileWriteService {
         cityName: cityName,
       );
     } catch (e) {
-      debugPrint('ProfileWriteService: Failed to resolve location rows: $e');
+      _logSupabaseError('get_or_create_city during Basic Identity save', e);
       return null;
     }
   }
@@ -348,7 +349,7 @@ class ProfileWriteService {
       }
       return true;
     } catch (e) {
-      debugPrint('ProfileWriteService: Failed to mirror user gender: $e');
+      _logSupabaseError('mirror users.gender before Basic Identity save', e);
       return false;
     }
   }
@@ -825,6 +826,17 @@ class ProfileWriteService {
     if (response is int) return response;
     if (response is num) return response.toInt();
     return int.tryParse(response?.toString() ?? '');
+  }
+
+  static void _logSupabaseError(String context, Object error) {
+    debugPrint('ProfileWriteService: FULL ERROR [$context]: $error');
+    debugPrint('ProfileWriteService: ERROR TYPE: ${error.runtimeType}');
+    if (error is PostgrestException) {
+      debugPrint('ProfileWriteService: POSTGREST CODE: ${error.code}');
+      debugPrint('ProfileWriteService: POSTGREST MESSAGE: ${error.message}');
+      debugPrint('ProfileWriteService: POSTGREST DETAILS: ${error.details}');
+      debugPrint('ProfileWriteService: POSTGREST HINT: ${error.hint}');
+    }
   }
 
   static bool _isGuardianData(OnboardingData data) {

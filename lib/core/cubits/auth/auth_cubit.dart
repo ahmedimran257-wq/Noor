@@ -164,9 +164,24 @@ class AuthCubit extends Cubit<AuthState> {
         );
         if (requestId != _verifyOtpRequestId) return;
 
-        final user = response.user ?? SupabaseService.client.auth.currentUser;
+        var user = response.user ?? SupabaseService.client.auth.currentUser;
+        if (user == null ||
+            SupabaseService.client.auth.currentSession == null) {
+          // Supabase verifyOTP normally installs the session, but app resume or
+          // network timing can leave auth.currentUser/auth.uid unavailable for
+          // immediate RLS-protected onboarding writes. Refresh once before
+          // allowing the user into onboarding.
+          final refreshed = await SupabaseService.client.auth.refreshSession();
+          user = refreshed.user ?? SupabaseService.client.auth.currentUser;
+        }
         if (user == null) {
           emit(const AuthError(message: 'Authentication failed. No user ID.'));
+          return;
+        }
+        if (SupabaseService.client.auth.currentSession == null) {
+          emit(const AuthError(
+            message: 'Authentication failed. Please sign in again.',
+          ));
           return;
         }
 
