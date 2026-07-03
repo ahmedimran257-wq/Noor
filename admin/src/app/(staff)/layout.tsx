@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Activity, BadgeCheck, Bell, BookOpenCheck, FileClock, FileText, Flag, Heart, LayoutDashboard, LogOut, Megaphone, ShieldAlert, ShieldCheck, ShieldPlus, Users, WalletCards } from "lucide-react";
 import { requireAdmin } from "@/lib/auth";
 import { signOut } from "@/app/(auth)/login/actions";
+import { ActionNotice } from "@/components/action-notice";
 
 export default async function StaffLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const admin = await requireAdmin();
@@ -34,7 +35,10 @@ export default async function StaffLayout({ children }: Readonly<{ children: Rea
           <form action={signOut}><button type="submit" className="sign-out"><LogOut size={16} />Sign out</button></form>
         </div>
       </aside>
-      <main className="admin-main">{children}</main>
+      <main className="admin-main">
+        <ActionNotice />
+        {children}
+      </main>
     </div>
   );
 }

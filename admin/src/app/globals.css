@@ -384,6 +384,41 @@ h2 { margin: 0 0 6px; font-size: 18px; letter-spacing: 0; }
   cursor: pointer;
 }
 .admin-main { padding: 52px clamp(28px, 5vw, 80px); }
+.action-notice {
+  position: sticky;
+  top: 16px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  max-width: 1180px;
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border: 1px solid rgba(131, 210, 160, .32);
+  border-radius: 8px;
+  color: var(--success);
+  background:
+    linear-gradient(180deg, rgba(131, 210, 160, .12), rgba(255, 255, 255, .018)),
+    rgba(18, 17, 22, .96);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, .26);
+  animation: card-rise .24s ease both;
+}
+.action-notice.danger {
+  border-color: rgba(240, 142, 142, .36);
+  color: var(--danger);
+  background:
+    linear-gradient(180deg, rgba(240, 142, 142, .12), rgba(255, 255, 255, .018)),
+    rgba(18, 17, 22, .96);
+}
+.action-notice button {
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
 .dashboard-page { max-width: 940px; }
 .wide-page { max-width: 1180px; }
 .page-hero {

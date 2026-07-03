@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
+import { redirect } from "next/navigation";
+import { z, ZodError } from "zod";
 import { requireAdmin, type AdminRole, type CurrentAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -89,212 +90,297 @@ function formString(formData: FormData, key: string) {
   return String(formData.get(key) ?? "");
 }
 
-async function run(name: string, values: Record<string, unknown>, path: string) {
+async function run(name: string, values: Record<string, unknown>) {
   const supabase = await createClient();
   const { error } = await supabase.rpc(name, values);
   if (error) throw new Error(error.message);
+}
+
+async function claimWorkItem(itemType: "kyc" | "report" | "photo", itemId: string) {
+  await run("admin_claim_work_item", {
+    p_item_type: itemType,
+    p_item_id: itemId,
+  });
+}
+
+function actionMessage(error: unknown) {
+  if (error instanceof ZodError) {
+    return error.issues[0]?.message ?? "Check the form and try again.";
+  }
+  if (error instanceof Error) return error.message;
+  return "The action could not be completed.";
+}
+
+function isNextRedirect(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "digest" in error &&
+    String((error as { digest?: unknown }).digest).startsWith("NEXT_REDIRECT")
+  );
+}
+
+function withNotice(path: string, key: "admin_error" | "admin_success", message: string): never {
+  redirect(`${path}?${key}=${encodeURIComponent(message)}`);
+}
+
+async function guardedAction(
+  path: string,
+  work: () => Promise<void>,
+  successMessage = "Action completed.",
+) {
+  try {
+    await work();
+  } catch (error) {
+    if (isNextRedirect(error)) throw error;
+    withNotice(path, "admin_error", actionMessage(error));
+  }
   revalidatePath(path);
   revalidatePath("/dashboard");
+  withNotice(path, "admin_success", successMessage);
 }
 
 export async function accountAction(formData: FormData) {
-  const admin = await requireAdmin();
-  const parsed = accountActionSchema.parse({
-    userId: formData.get("userId"),
-    action: formData.get("action"),
-    reason: formString(formData, "reason"),
+  await guardedAction("/users", async () => {
+    const admin = await requireAdmin();
+    const parsed = accountActionSchema.parse({
+      userId: formData.get("userId"),
+      action: formData.get("action"),
+      reason: formString(formData, "reason"),
+    });
+    assertAccountActionRole(admin, parsed.action);
+    await run("admin_account_action", { p_user_id: parsed.userId, p_action: parsed.action, p_reason: parsed.reason });
   });
-  assertAccountActionRole(admin, parsed.action);
-  await run("admin_account_action", { p_user_id: parsed.userId, p_action: parsed.action, p_reason: parsed.reason }, "/users");
 }
 export async function bulkAccountAction(formData: FormData) {
-  const admin = await requireAdmin();
-  const parsed = bulkAccountActionSchema.parse({
-    userIds: formData.getAll("userIds"),
-    action: formData.get("action"),
-    reason: formData.get("reason"),
-  });
-  assertAccountActionRole(admin, parsed.action);
-  await run("admin_bulk_account_action", {
-    p_user_ids: parsed.userIds,
-    p_action: parsed.action,
-    p_reason: parsed.reason,
-  }, "/users");
+  await guardedAction("/users", async () => {
+    const admin = await requireAdmin();
+    const parsed = bulkAccountActionSchema.parse({
+      userIds: formData.getAll("userIds"),
+      action: formData.get("action"),
+      reason: formString(formData, "reason"),
+    });
+    assertAccountActionRole(admin, parsed.action);
+    await run("admin_bulk_account_action", {
+      p_user_ids: parsed.userIds,
+      p_action: parsed.action,
+      p_reason: parsed.reason,
+    });
+  }, "Bulk action completed.");
 }
 export async function reviewKyc(formData: FormData) {
-  const admin = await requireAdmin();
-  assertRole(admin, ["super_admin", "moderator"]);
-  const parsed = kycReviewSchema.parse({
-    userId: formData.get("userId"),
-    decision: formData.get("decision"),
-    reason: formString(formData, "reason"),
-  });
-  await run("admin_review_kyc", { p_user_id: parsed.userId, p_decision: parsed.decision, p_reason: parsed.reason }, "/kyc");
+  await guardedAction("/kyc", async () => {
+    const admin = await requireAdmin();
+    assertRole(admin, ["super_admin", "moderator"]);
+    const parsed = kycReviewSchema.parse({
+      userId: formData.get("userId"),
+      decision: formData.get("decision"),
+      reason: formString(formData, "reason"),
+    });
+    await claimWorkItem("kyc", parsed.userId);
+    await run("admin_review_kyc", { p_user_id: parsed.userId, p_decision: parsed.decision, p_reason: parsed.reason });
+  }, "KYC decision saved.");
 }
 export async function resolveReport(formData: FormData) {
-  const admin = await requireAdmin();
-  assertRole(admin, ["super_admin", "moderator"]);
-  const parsed = reportSchema.parse({
-    reportId: formData.get("reportId"),
-    action: formData.get("action"),
-  });
-  await run("admin_resolve_report", { p_report_id: parsed.reportId, p_action: parsed.action }, "/moderation");
+  await guardedAction("/moderation", async () => {
+    const admin = await requireAdmin();
+    assertRole(admin, ["super_admin", "moderator"]);
+    const parsed = reportSchema.parse({
+      reportId: formData.get("reportId"),
+      action: formData.get("action"),
+    });
+    await claimWorkItem("report", parsed.reportId);
+    await run("admin_resolve_report", { p_report_id: parsed.reportId, p_action: parsed.action });
+  }, "Report decision saved.");
 }
 export async function reviewPhoto(formData: FormData) {
-  const admin = await requireAdmin();
-  assertRole(admin, ["super_admin", "moderator"]);
-  const parsed = photoReviewSchema.parse({
-    photoId: formData.get("photoId"),
-    decision: formData.get("decision"),
-    reason: formString(formData, "reason"),
-  });
-  await run("admin_review_photo", { p_photo_id: parsed.photoId, p_decision: parsed.decision, p_reason: parsed.reason }, "/moderation");
+  await guardedAction("/moderation", async () => {
+    const admin = await requireAdmin();
+    assertRole(admin, ["super_admin", "moderator"]);
+    const parsed = photoReviewSchema.parse({
+      photoId: formData.get("photoId"),
+      decision: formData.get("decision"),
+      reason: formString(formData, "reason"),
+    });
+    await claimWorkItem("photo", parsed.photoId);
+    await run("admin_review_photo", { p_photo_id: parsed.photoId, p_decision: parsed.decision, p_reason: parsed.reason });
+  }, "Photo decision saved.");
 }
 export async function createCampaign(formData: FormData) {
-  const admin = await requireAdmin();
-  assertRole(admin, ["super_admin"]);
-  const parsed = campaignSchema.parse({
-    title: formData.get("title"),
-    body: formData.get("body"),
-    deepLink: formData.get("deepLink"),
-    audience: formData.get("audience") || "all",
-    countryCode: formData.get("countryCode"),
-    scheduledAt: formData.get("scheduledAt"),
-  });
-  await run("admin_create_push_campaign", {
-    p_title: parsed.title,
-    p_body: parsed.body,
-    p_deep_link: parsed.deepLink,
-    p_audience: parsed.audience,
-    p_country_code: parsed.countryCode,
-    p_scheduled_at: parsed.scheduledAt || new Date().toISOString(),
-  }, "/campaigns");
+  await guardedAction("/campaigns", async () => {
+    const admin = await requireAdmin();
+    assertRole(admin, ["super_admin"]);
+    const parsed = campaignSchema.parse({
+      title: formData.get("title"),
+      body: formData.get("body"),
+      deepLink: formData.get("deepLink"),
+      audience: formData.get("audience") || "all",
+      countryCode: formData.get("countryCode"),
+      scheduledAt: formData.get("scheduledAt"),
+    });
+    await run("admin_create_push_campaign", {
+      p_title: parsed.title,
+      p_body: parsed.body,
+      p_deep_link: parsed.deepLink,
+      p_audience: parsed.audience,
+      p_country_code: parsed.countryCode,
+      p_scheduled_at: parsed.scheduledAt || new Date().toISOString(),
+    });
+  }, "Campaign created.");
 }
 export async function queueCampaign(formData: FormData) {
-  const admin = await requireAdmin();
-  assertRole(admin, ["super_admin"]);
-  await run("admin_queue_push_campaign", { p_campaign_id: uuidSchema.parse(formData.get("campaignId")) }, "/campaigns");
+  await guardedAction("/campaigns", async () => {
+    const admin = await requireAdmin();
+    assertRole(admin, ["super_admin"]);
+    await run("admin_queue_push_campaign", { p_campaign_id: uuidSchema.parse(formData.get("campaignId")) });
+  }, "Campaign queued.");
 }
 export async function upsertContentPage(formData: FormData) {
-  const admin = await requireAdmin();
-  assertRole(admin, ["super_admin", "moderator"]);
-  const parsed = contentSchema.parse({
-    slug: formData.get("slug"),
-    locale: formData.get("locale") || "en",
-    title: formData.get("title"),
-    body: formData.get("body"),
-  });
-  await run("admin_upsert_content_page", {
-    p_slug: parsed.slug,
-    p_locale: parsed.locale,
-    p_title: parsed.title,
-    p_body: parsed.body,
-  }, "/content");
+  await guardedAction("/content", async () => {
+    const admin = await requireAdmin();
+    assertRole(admin, ["super_admin", "moderator"]);
+    const parsed = contentSchema.parse({
+      slug: formData.get("slug"),
+      locale: formData.get("locale") || "en",
+      title: formData.get("title"),
+      body: formData.get("body"),
+    });
+    await run("admin_upsert_content_page", {
+      p_slug: parsed.slug,
+      p_locale: parsed.locale,
+      p_title: parsed.title,
+      p_body: parsed.body,
+    });
+  }, "Content saved.");
 }
 export async function setContentStatus(formData: FormData) {
-  const admin = await requireAdmin();
-  assertRole(admin, ["super_admin", "moderator"]);
-  const parsed = contentStatusSchema.parse({
-    pageId: formData.get("pageId"),
-    status: formData.get("status"),
-  });
-  await run("admin_set_content_status", { p_page_id: parsed.pageId, p_status: parsed.status }, "/content");
+  await guardedAction("/content", async () => {
+    const admin = await requireAdmin();
+    assertRole(admin, ["super_admin", "moderator"]);
+    const parsed = contentStatusSchema.parse({
+      pageId: formData.get("pageId"),
+      status: formData.get("status"),
+    });
+    await run("admin_set_content_status", { p_page_id: parsed.pageId, p_status: parsed.status });
+  }, "Content status updated.");
 }
 export async function addSuccessStory(formData: FormData) {
-  const admin = await requireAdmin();
-  assertRole(admin, ["super_admin", "moderator"]);
-  const parsed = successStorySchema.parse({
-    coupleName: formData.get("coupleName"),
-    countryCode: formData.get("countryCode"),
-    story: formData.get("story"),
-    photoPath: formData.get("photoPath"),
-  });
-  await run("admin_add_success_story", {
-    p_couple_name: parsed.coupleName,
-    p_country_code: parsed.countryCode,
-    p_story: parsed.story,
-    p_photo_path: parsed.photoPath,
-  }, "/stories");
+  await guardedAction("/stories", async () => {
+    const admin = await requireAdmin();
+    assertRole(admin, ["super_admin", "moderator"]);
+    const parsed = successStorySchema.parse({
+      coupleName: formData.get("coupleName"),
+      countryCode: formData.get("countryCode"),
+      story: formData.get("story"),
+      photoPath: formData.get("photoPath"),
+    });
+    await run("admin_add_success_story", {
+      p_couple_name: parsed.coupleName,
+      p_country_code: parsed.countryCode,
+      p_story: parsed.story,
+      p_photo_path: parsed.photoPath,
+    });
+  }, "Story added.");
 }
 export async function reviewSuccessStory(formData: FormData) {
-  const admin = await requireAdmin();
-  assertRole(admin, ["super_admin", "moderator"]);
-  const parsed = successStoryReviewSchema.parse({
-    storyId: formData.get("storyId"),
-    status: formData.get("status"),
-  });
-  await run("admin_review_success_story", { p_story_id: parsed.storyId, p_status: parsed.status }, "/stories");
+  await guardedAction("/stories", async () => {
+    const admin = await requireAdmin();
+    assertRole(admin, ["super_admin", "moderator"]);
+    const parsed = successStoryReviewSchema.parse({
+      storyId: formData.get("storyId"),
+      status: formData.get("status"),
+    });
+    await run("admin_review_success_story", { p_story_id: parsed.storyId, p_status: parsed.status });
+  }, "Story reviewed.");
 }
 export async function addStaffMember(formData: FormData) {
-  const admin = await requireAdmin();
-  assertRole(admin, ["super_admin"]);
-  const parsed = staffSchema.parse({
-    email: formData.get("email"),
-    role: formData.get("role"),
-  });
-  await run("admin_add_staff_member", {
-    p_email: parsed.email,
-    p_role: parsed.role,
-  }, "/staff");
+  await guardedAction("/staff", async () => {
+    const admin = await requireAdmin();
+    assertRole(admin, ["super_admin"]);
+    const parsed = staffSchema.parse({
+      email: formData.get("email"),
+      role: formData.get("role"),
+    });
+    await run("admin_add_staff_member", {
+      p_email: parsed.email,
+      p_role: parsed.role,
+    });
+  }, "Staff member added.");
 }
 
 export async function inviteStaffMember(formData: FormData) {
-  const admin = await requireAdmin();
-  assertRole(admin, ["super_admin"]);
-  const parsed = staffSchema.safeParse({
-    email: formData.get("email"),
-    role: formData.get("role"),
-  });
-  if (!parsed.success) throw new Error("Enter a valid staff email and role.");
+  await guardedAction("/staff", async () => {
+    const admin = await requireAdmin();
+    assertRole(admin, ["super_admin"]);
+    const parsed = staffSchema.parse({
+      email: formData.get("email"),
+      role: formData.get("role"),
+    });
 
-  const adminClient = createAdminClient();
-  const redirectBase =
-    process.env.NEXT_PUBLIC_ADMIN_SITE_URL ??
-    (process.env.VERCEL_PROJECT_PRODUCTION_URL
-      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-      : "http://localhost:3001");
+    const adminClient = createAdminClient();
+    const redirectBase = adminSiteUrl();
 
-  const { error } = await adminClient.auth.admin.inviteUserByEmail(
-    parsed.data.email,
-    {
-      data: { staff: true, role: parsed.data.role },
-      redirectTo: `${redirectBase}/login`,
-    },
-  );
+    const { error } = await adminClient.auth.admin.inviteUserByEmail(
+      parsed.email,
+      {
+        data: { staff: true, role: parsed.role },
+        redirectTo: `${redirectBase}/login`,
+      },
+    );
 
-  const message = error?.message.toLowerCase() ?? "";
-  if (error && !message.includes("already") && !message.includes("registered")) {
-    throw new Error(error.message);
-  }
+    const message = error?.message.toLowerCase() ?? "";
+    if (error && !message.includes("already") && !message.includes("registered")) {
+      throw new Error(error.message);
+    }
 
-  await run("admin_add_staff_member", {
-    p_email: parsed.data.email,
-    p_role: parsed.data.role,
-  }, "/staff");
+    await run("admin_add_staff_member", {
+      p_email: parsed.email,
+      p_role: parsed.role,
+    });
+  }, "Staff invite sent.");
 }
 export async function updateStaffMember(formData: FormData) {
-  const admin = await requireAdmin();
-  assertRole(admin, ["super_admin"]);
-  const parsed = staffUpdateSchema.parse({
-    userId: formData.get("userId"),
-    role: formData.get("role"),
-    status: formData.get("status"),
-    mfaRequired: formData.get("mfaRequired") === "on",
-  });
-  await run("admin_update_staff_member", {
-    p_user_id: parsed.userId,
-    p_role: parsed.role,
-    p_status: parsed.status,
-    p_mfa_required: parsed.mfaRequired,
-  }, "/staff");
+  await guardedAction("/staff", async () => {
+    const admin = await requireAdmin();
+    assertRole(admin, ["super_admin"]);
+    const parsed = staffUpdateSchema.parse({
+      userId: formData.get("userId"),
+      role: formData.get("role"),
+      status: formData.get("status"),
+      mfaRequired: formData.get("mfaRequired") === "on",
+    });
+    await run("admin_update_staff_member", {
+      p_user_id: parsed.userId,
+      p_role: parsed.role,
+      p_status: parsed.status,
+      p_mfa_required: parsed.mfaRequired,
+    });
+  }, "Staff member updated.");
 }
 export async function markAdminNotificationRead(formData: FormData) {
-  await requireAdmin();
-  await run("admin_mark_notification_read", {
-    p_notification_id: uuidSchema.parse(formString(formData, "notificationId")),
-  }, "/inbox");
+  await guardedAction("/inbox", async () => {
+    await requireAdmin();
+    await run("admin_mark_notification_read", {
+      p_notification_id: uuidSchema.parse(formString(formData, "notificationId")),
+    });
+  }, "Notification marked read.");
 }
 export async function markAllAdminNotificationsRead() {
-  await requireAdmin();
-  await run("admin_mark_all_notifications_read", {}, "/inbox");
+  await guardedAction("/inbox", async () => {
+    await requireAdmin();
+    await run("admin_mark_all_notifications_read", {});
+  }, "All notifications marked read.");
+}
+
+function adminSiteUrl() {
+  if (process.env.NEXT_PUBLIC_ADMIN_SITE_URL) {
+    return process.env.NEXT_PUBLIC_ADMIN_SITE_URL.replace(/\/$/, "");
+  }
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
+  if (process.env.NODE_ENV !== "production") {
+    return "http://localhost:3001";
+  }
+  throw new Error("NEXT_PUBLIC_ADMIN_SITE_URL is required before staff invites can be sent in production.");
 }
