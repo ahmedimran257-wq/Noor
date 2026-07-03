@@ -43,7 +43,7 @@ class ProfilePhotoService {
       if (!moderation.isSafe) {
         throw StateError(
           moderation.decision == PhotoModerationDecision.unsafe
-              ? 'This photo may contain explicit content and was not uploaded.'
+              ? _moderationMessage(moderation)
               : 'Photo safety validation failed. Please choose another photo.',
         );
       }
@@ -138,6 +138,13 @@ class ProfilePhotoService {
     if (action != 'validated') {
       throw StateError('Photo validation did not approve this upload.');
     }
+  }
+
+  String _moderationMessage(PhotoModerationResult moderation) {
+    if (moderation.category == 'no_face') {
+      return "We couldn't detect a face. Please upload a photo clearly showing your face.";
+    }
+    return 'This photo cannot be accepted. Please upload a clear portrait photo.';
   }
 
   String _privacyValue(PhotoPrivacy privacy) {

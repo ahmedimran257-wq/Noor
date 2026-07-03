@@ -1529,7 +1529,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get photo_banner_text =>
-      'يتم مسح كل صورة للتأكد من وجود وجه ظاهر. لا يسمح بالصور الجماعية كصورة أساسية.';
+      'حمّل صورة واضحة يظهر فيها وجهك. لا يُسمح بالصور التي تحتوي على محتوى صريح.';
 
   @override
   String get photo_error_no_face_detected =>

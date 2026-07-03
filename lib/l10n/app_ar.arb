@@ -470,7 +470,7 @@
   "onboarding_work_yes": "نعم، أخطط للعمل",
   "photo_add_main_required": "إضافة الصورة الأساسية\n(مطلوبة)",
   "photo_add_photo": "إضافة صورة",
-  "photo_banner_text": "يتم مسح كل صورة للتأكد من وجود وجه ظاهر. لا يسمح بالصور الجماعية كصورة أساسية.",
+  "photo_banner_text": "حمّل صورة واضحة يظهر فيها وجهك. لا يُسمح بالصور التي تحتوي على محتوى صريح.",
   "photo_error_no_face_detected": "الوجه غير ظاهر — يرجى المحاولة مرة أخرى بصورة وجه واضحة",
   "photo_error_pick_failed": "تعذر اختيار الصورة: {error}",
   "photo_face_detected": "تم اكتشاف الوجه ✓",

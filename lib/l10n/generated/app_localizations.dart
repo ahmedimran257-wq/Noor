@@ -2915,7 +2915,7 @@ abstract class AppLocalizations {
   /// No description provided for @photo_banner_text.
   ///
   /// In en, this message translates to:
-  /// **'Each photo is scanned to ensure a visible face. Group photos are not allowed as your primary photo.'**
+  /// **'Upload a clear photo showing your face. Photos with explicit content are not permitted.'**
   String get photo_banner_text;
 
   /// No description provided for @photo_error_no_face_detected.

@@ -1546,7 +1546,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get photo_banner_text =>
-      'Each photo is scanned to ensure a visible face. Group photos are not allowed as your primary photo.';
+      'Upload a clear photo showing your face. Photos with explicit content are not permitted.';
 
   @override
   String get photo_error_no_face_detected =>

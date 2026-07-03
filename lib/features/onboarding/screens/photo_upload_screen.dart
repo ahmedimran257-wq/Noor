@@ -9,6 +9,7 @@
 // ============================================================
 
 import 'dart:io';
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -109,6 +110,11 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
     super.initState();
     final data = context.read<OnboardingCubit>().currentData;
     _privacy = data.photoPrivacy ?? PhotoPrivacy.publicAll;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(PhotoModerationService.warmUp().catchError((Object error) {
+        debugPrint('[PhotoUploadScreen] Photo safety warm-up skipped: $error');
+      }));
+    });
     if (data.photoLocalPaths != null) {
       for (final path in data.photoLocalPaths!) {
         final file = File(path);
@@ -239,9 +245,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         return;
       }
 
-      _showPhotoSafetyError(
-        'This photo cannot be used because it may contain explicit content.',
-      );
+      _showPhotoSafetyError(_photoModerationMessage(moderation));
       return;
     }
 
@@ -283,6 +287,13 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         ),
       );
     }
+  }
+
+  String _photoModerationMessage(PhotoModerationResult moderation) {
+    if (moderation.category == 'no_face') {
+      return "We couldn't detect a face. Please upload a photo clearly showing your face.";
+    }
+    return 'This photo cannot be accepted. Please upload a clear portrait photo.';
   }
 
   Future<ImageSource?> _showSourceSheet() async {

@@ -1,0 +1,35 @@
+Falconsai NSFW Image Detection model
+
+Purpose in Mithaq:
+On-device profile-photo safety screening. The app does not call a remote
+moderation API for this check.
+
+Bundled asset:
+assets/models/falconsai_nsfw.tflite
+
+Source model:
+Falconsai/nsfw_image_detection
+https://huggingface.co/Falconsai/nsfw_image_detection
+
+License:
+Apache License 2.0
+https://www.apache.org/licenses/LICENSE-2.0
+
+TFLite conversion artifact:
+Downloaded from the nsfw_detect package author's public models-v1 GitHub
+release:
+https://github.com/nexas105/flutter_nsfw_scaner/releases/tag/models-v1
+
+Downloaded ZIP:
+FalconsaiNSFW.tflite.zip
+SHA-256:
+89360581A18B65FD49405B873D034C0C5C478F72F07FF657126C4E78FD0B8944
+
+Extracted TFLite SHA-256:
+396A92C7B0A2B6E79A5631BE550F730F39011F2F51F686ADFB202386BAC11BE6
+
+Notes:
+The Flutter package nsfw_detect is MIT-licensed. The underlying Falconsai
+model card declares Apache-2.0. This local asset is bundled to avoid runtime
+model downloads, broken release links, and photo-upload failures when a user is
+offline or on a restricted network.

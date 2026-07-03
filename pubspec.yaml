@@ -81,7 +81,9 @@ flutter:
   assets:
     - assets/icon/
     - assets/models/mobilefacenet.tflite
+    - assets/models/falconsai_nsfw.tflite
     - assets/licenses/mobilefacenet-Apache-2.0.txt
+    - assets/licenses/falconsai-nsfw-Apache-2.0.txt
 
 flutter_launcher_icons:
   android: "launcher_icon"

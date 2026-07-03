@@ -1208,7 +1208,7 @@
   "onboarding_work_yes": "Yes, I plan to work",
   "photo_add_main_required": "Add main photo\n(required)",
   "photo_add_photo": "Add photo",
-  "photo_banner_text": "Each photo is scanned to ensure a visible face. Group photos are not allowed as your primary photo.",
+  "photo_banner_text": "Upload a clear photo showing your face. Photos with explicit content are not permitted.",
   "photo_error_no_face_detected": "No face visible — please retry with a clear face photo",
   "photo_error_pick_failed": "Could not pick photo: {error}",
   "photo_face_detected": "Face detected ✓",
