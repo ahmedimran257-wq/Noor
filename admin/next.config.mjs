@@ -1,4 +1,19 @@
 const isDev = process.env.NODE_ENV !== "production";
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://*.supabase.co";
+const supabaseImageHost = (() => {
+  try {
+    return new URL(supabaseUrl).origin;
+  } catch {
+    return "https://*.supabase.co";
+  }
+})();
+const supabaseImageHostname = (() => {
+  try {
+    return new URL(supabaseUrl).hostname;
+  } catch {
+    return "**.supabase.co";
+  }
+})();
 
 const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
@@ -13,7 +28,7 @@ const securityHeaders = [
       "default-src 'self'",
       `script-src 'self'${isDev ? " 'unsafe-eval'" : ""}`,
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data:",
+      `img-src 'self' data: ${supabaseImageHost}`,
       "font-src 'self'",
       `connect-src 'self' ${process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://*.supabase.co"}`,
       "frame-ancestors 'none'",
@@ -26,6 +41,14 @@ const securityHeaders = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   poweredByHeader: false,
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: supabaseImageHostname,
+      },
+    ],
+  },
   async headers() {
     return [
       {

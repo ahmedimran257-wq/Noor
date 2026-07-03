@@ -811,6 +811,131 @@ tbody tr:hover { background: rgba(213, 175, 91, .035); }
   font-family: Georgia, serif;
 }
 
+.moderation-signal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 20px 0 10px;
+}
+.moderation-signal {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 64px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .035), rgba(255, 255, 255, .012)), var(--surface);
+  animation: card-rise .42s ease both;
+}
+.moderation-signal svg { color: var(--gold); }
+.moderation-signal span { color: var(--muted); font-size: 13px; }
+.moderation-signal strong { font-size: 22px; }
+.moderation-signal.danger { border-color: rgba(240, 142, 142, .28); }
+.moderation-signal.danger svg,
+.moderation-signal.danger strong { color: var(--danger); }
+.moderation-signal.warning { border-color: rgba(213, 175, 91, .30); }
+.moderation-signal.warning strong { color: var(--gold-2); }
+.moderation-signal.good { border-color: rgba(131, 210, 160, .25); }
+.moderation-signal.good svg,
+.moderation-signal.good strong { color: var(--success); }
+
+.photo-review-grid {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+.photo-review-card {
+  display: grid;
+  grid-template-columns: minmax(220px, 310px) minmax(0, 1fr);
+  gap: 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--surface);
+  animation: card-rise .42s ease both;
+}
+.photo-preview {
+  overflow: hidden;
+  min-height: 290px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(213, 175, 91, .08), transparent),
+    #111015;
+}
+.photo-preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 290px;
+  object-fit: contain;
+  background: #08070a;
+}
+.photo-preview-missing {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  min-height: 290px;
+  padding: 18px;
+  color: var(--muted);
+  text-align: center;
+}
+.photo-preview-missing svg { color: var(--gold); }
+.photo-evidence {
+  display: grid;
+  align-content: space-between;
+  gap: 16px;
+  min-width: 0;
+}
+.photo-evidence h2 { margin-top: 12px; }
+.photo-evidence-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.photo-evidence-strip div {
+  min-height: 58px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, .06);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, .025);
+}
+.photo-evidence-strip span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.photo-evidence-strip strong {
+  display: block;
+  overflow: hidden;
+  margin-top: 6px;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.photo-actions { align-items: center; }
+.photo-reject-form {
+  display: inline-grid;
+  grid-template-columns: minmax(190px, 1fr) auto;
+  gap: 8px;
+  min-width: min(100%, 320px);
+}
+.photo-reject-form input {
+  min-height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0 10px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, .035);
+  outline: none;
+}
+.photo-reject-form input:focus { border-color: var(--gold); }
+
 .admin-form { display: grid; gap: 14px; margin-top: 28px; }
 .panel-form {
   border: 1px solid var(--border);
@@ -857,8 +982,11 @@ tbody tr:hover { background: rgba(213, 175, 91, .035); }
   .staff-summary { display: none; }
   .admin-main { padding: 34px 22px; }
   .page-hero { align-items: flex-start; flex-direction: column; }
-  .metric-grid, .form-grid { grid-template-columns: 1fr; }
+  .metric-grid, .form-grid, .moderation-signal-grid { grid-template-columns: 1fr; }
   .queue-card { align-items: flex-start; flex-direction: column; }
+  .photo-review-card { grid-template-columns: 1fr; }
+  .photo-evidence-strip { grid-template-columns: 1fr; }
+  .photo-reject-form { grid-template-columns: 1fr; width: 100%; }
   .row-form { grid-template-columns: 1fr; }
   .search-form { align-items: stretch; flex-direction: column; }
   .bulk-toolbar { grid-template-columns: 1fr; }

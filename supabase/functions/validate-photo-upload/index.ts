@@ -15,18 +15,22 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import { Image } from "https://deno.land/x/imagescript@1.2.15/mod.ts";
 import { encode } from "https://esm.sh/blurhash@2.0.5";
+import {
+  type ClientPhotoModerationPayload,
+  resolveClientModerationVerdict,
+} from "./photo_moderation_policy.ts";
 
-const SUPABASE_URL         = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const SUPABASE_ANON_KEY    = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
 const BUCKET_NAME = "profile-photos";
-const MAX_PHOTOS  = 4;
+const MAX_PHOTOS = 4;
 
 interface StorageWebhookPayload {
   type: "ObjectCreated" | "ObjectDeleted";
   record: {
-    name: string;        // e.g. "user-uuid/photo-uuid.webp"
+    name: string; // e.g. "user-uuid/photo-uuid.webp"
     bucket_id: string;
     owner: string;
     metadata: Record<string, unknown>;
@@ -35,13 +39,7 @@ interface StorageWebhookPayload {
 
 interface DirectValidationPayload {
   storage_path: string;
-  moderation: {
-    status: "safe" | "unsafe" | "scanFailed";
-    is_nsfw: boolean;
-    confidence: number;
-    category: string;
-    threshold: number;
-  };
+  moderation: ClientPhotoModerationPayload;
 }
 
 Deno.serve(async (req: Request) => {
@@ -50,7 +48,9 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const payload = await req.json() as StorageWebhookPayload | DirectValidationPayload;
+    const payload = await req.json() as
+      | StorageWebhookPayload
+      | DirectValidationPayload;
 
     let storagePath: string;
     let moderation: DirectValidationPayload["moderation"] | null = null;
@@ -68,8 +68,11 @@ Deno.serve(async (req: Request) => {
         global: { headers: { Authorization: authHeader } },
         auth: { autoRefreshToken: false, persistSession: false },
       });
-      const { data: { user }, error: authError } = await userClient.auth.getUser();
-      if (authError || !user || !payload.storage_path.startsWith(`${user.id}/`)) {
+      const { data: { user }, error: authError } = await userClient.auth
+        .getUser();
+      if (
+        authError || !user || !payload.storage_path.startsWith(`${user.id}/`)
+      ) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -95,7 +98,9 @@ Deno.serve(async (req: Request) => {
     // Extract user_id from the storage path (format: {user_id}/{filename}.webp)
     const pathParts = storagePath.split("/");
     if (pathParts.length < 2) {
-      console.warn(`[validate-photo-upload] Invalid storage path: ${storagePath}`);
+      console.warn(
+        `[validate-photo-upload] Invalid storage path: ${storagePath}`,
+      );
       return new Response(JSON.stringify({ action: "invalid_path" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -117,17 +122,9 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const moderationIsValid =
-      moderation.status === "safe" &&
-      moderation.is_nsfw === false &&
-      Number.isFinite(moderation.confidence) &&
-      moderation.confidence >= 0 && moderation.confidence <= 1 &&
-      Number.isFinite(moderation.threshold) &&
-      moderation.threshold >= 0.3 && moderation.threshold <= 1 &&
-      typeof moderation.category === "string" &&
-      moderation.category.length > 0;
+    const moderationAction = resolveClientModerationVerdict(moderation);
 
-    if (!moderationIsValid) {
+    if (moderationAction === "reject") {
       await adminClient.storage.from(BUCKET_NAME).remove([storagePath]);
       await adminClient.from("photos").delete().eq("storage_path", storagePath);
       await adminClient.from("admin_notifications").insert({
@@ -136,7 +133,10 @@ Deno.serve(async (req: Request) => {
         related_user_id: userId,
       });
       return new Response(
-        JSON.stringify({ action: "rejected", reason: "photo_moderation_failed" }),
+        JSON.stringify({
+          action: "rejected",
+          reason: "photo_moderation_failed",
+        }),
         {
           status: 422,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -152,7 +152,9 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (profileError || !profile) {
-      console.error(`[validate-photo-upload] Profile not found for user ${userId}`);
+      console.error(
+        `[validate-photo-upload] Profile not found for user ${userId}`,
+      );
       // Delete the uploaded file — no valid profile
       await adminClient.storage.from(BUCKET_NAME).remove([storagePath]);
       return new Response(JSON.stringify({ action: "deleted_orphan" }), {
@@ -168,7 +170,9 @@ Deno.serve(async (req: Request) => {
       .eq("profile_id", profile.id);
 
     if (countError) {
-      console.error(`[validate-photo-upload] Count error: ${countError.message}`);
+      console.error(
+        `[validate-photo-upload] Count error: ${countError.message}`,
+      );
       return new Response(JSON.stringify({ action: "count_error" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -178,7 +182,7 @@ Deno.serve(async (req: Request) => {
     if ((count ?? 0) > MAX_PHOTOS) {
       console.warn(
         `[validate-photo-upload] ❌ Quota exceeded for user ${userId}: ` +
-        `${count} photos (max ${MAX_PHOTOS}). Rolling back upload.`
+          `${count} photos (max ${MAX_PHOTOS}). Rolling back upload.`,
       );
 
       // Delete the uploaded file from storage
@@ -193,8 +197,9 @@ Deno.serve(async (req: Request) => {
 
       // Flag for admin review
       await adminClient.from("admin_notifications").insert({
-        type:            "quota_violation",
-        message:         `User ${userId} attempted to exceed photo quota (${count}/${MAX_PHOTOS}). Upload rolled back.`,
+        type: "quota_violation",
+        message:
+          `User ${userId} attempted to exceed photo quota (${count}/${MAX_PHOTOS}). Upload rolled back.`,
         related_user_id: userId,
       });
 
@@ -206,7 +211,7 @@ Deno.serve(async (req: Request) => {
         {
           status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
@@ -215,14 +220,13 @@ Deno.serve(async (req: Request) => {
       .from("photos")
       .update({
         status: "active",
-        // Approval is server-controlled. Replace this automated baseline with
-        // a human moderation workflow without changing the client contract.
-        admin_approved: true,
-        nsfw_cleared: true,
+        admin_approved: false,
+        nsfw_cleared: false,
         nsfw_score: moderation.confidence,
         nsfw_category: moderation.category,
         nsfw_scanned_at: new Date().toISOString(),
         moderation_source: "nsfw_detect_on_device",
+        moderation_status: "pending",
       })
       .eq("profile_id", profile.id)
       .eq("storage_path", storagePath)
@@ -230,21 +234,24 @@ Deno.serve(async (req: Request) => {
 
     if (updateError) {
       console.warn(
-        `[validate-photo-upload] Could not activate photo: ${updateError.message}`
+        `[validate-photo-upload] Could not activate photo: ${updateError.message}`,
       );
     } else {
       console.log(
-        `[validate-photo-upload] ✅ Photo activated for user ${userId}: ${storagePath}`
+        `[validate-photo-upload] ✅ Photo activated for user ${userId}: ${storagePath}`,
       );
 
       // Generate BlurHash
       try {
-        const { data: fileData, error: downloadError } = await adminClient.storage
+        const { data: fileData, error: downloadError } = await adminClient
+          .storage
           .from(BUCKET_NAME)
           .download(storagePath);
 
         if (downloadError) {
-          console.error(`[validate-photo-upload] Failed to download image for BlurHash: ${downloadError.message}`);
+          console.error(
+            `[validate-photo-upload] Failed to download image for BlurHash: ${downloadError.message}`,
+          );
         } else if (fileData) {
           const arrayBuffer = await fileData.arrayBuffer();
           const uint8Array = new Uint8Array(arrayBuffer);
@@ -259,7 +266,11 @@ Deno.serve(async (req: Request) => {
           const thumbnail = image.resize(thumbWidth, thumbHeight);
 
           const rgba = thumbnail.bitmap;
-          const clamped = new Uint8ClampedArray(rgba.buffer, rgba.byteOffset, rgba.byteLength);
+          const clamped = new Uint8ClampedArray(
+            rgba.buffer,
+            rgba.byteOffset,
+            rgba.byteLength,
+          );
           const hash = encode(clamped, thumbWidth, thumbHeight, 4, 3);
 
           const { error: dbUpdateError } = await adminClient
@@ -269,31 +280,40 @@ Deno.serve(async (req: Request) => {
             .eq("storage_path", storagePath);
 
           if (dbUpdateError) {
-            console.error(`[validate-photo-upload] Failed to save BlurHash to DB: ${dbUpdateError.message}`);
+            console.error(
+              `[validate-photo-upload] Failed to save BlurHash to DB: ${dbUpdateError.message}`,
+            );
           } else {
-            console.log(`[validate-photo-upload] ✅ BlurHash generated and saved: ${hash}`);
+            console.log(
+              `[validate-photo-upload] ✅ BlurHash generated and saved: ${hash}`,
+            );
           }
         }
       } catch (err) {
-        console.error(`[validate-photo-upload] Error generating BlurHash:`, err);
+        console.error(
+          `[validate-photo-upload] Error generating BlurHash:`,
+          err,
+        );
       }
     }
 
     return new Response(
-      JSON.stringify({ action: "validated", photo_count: count }),
+      JSON.stringify({ action: "pending_review", photo_count: count }),
       {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      },
     );
   } catch (err) {
     console.error("[validate-photo-upload] Error:", err);
     return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }),
+      JSON.stringify({
+        error: err instanceof Error ? err.message : "Unknown error",
+      }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      },
     );
   }
 });

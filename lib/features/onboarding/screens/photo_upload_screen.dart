@@ -234,7 +234,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
     final moderation =
         await PhotoModerationService.instance.scanFile(file.path);
     if (!mounted) return;
-    if (!moderation.isSafe) {
+    if (!moderation.canUpload) {
       await file.delete().catchError((_) => file);
       if (moderation.decision == PhotoModerationDecision.scanFailed) {
         await Future<void>.delayed(const Duration(milliseconds: 500));
@@ -247,6 +247,24 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
 
       _showPhotoSafetyError(_photoModerationMessage(moderation));
       return;
+    }
+    if (moderation.decision == PhotoModerationDecision.pendingReview) {
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          SnackBar(
+            content: const Text(
+              'This photo will be reviewed before it appears publicly.',
+              style: AppTypography.body,
+            ),
+            backgroundColor: AppColors.surfaceGlassHover,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+              side: const BorderSide(color: AppColors.goldBorder),
+            ),
+          ),
+        );
     }
 
     _paths[index] = file.path;
@@ -265,6 +283,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
     });
 
     if (face == _FaceResult.notFound) {
+      _removePhoto(index);
       final l10n = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

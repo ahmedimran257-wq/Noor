@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export type DashboardMetrics = Record<string, number>;
 export type PagedResult<T> = {
@@ -44,7 +45,27 @@ export const getRevealedUserPii = (userId: string, reason: string) =>
   rpc<RevealedUserPii>("admin_reveal_user_pii", { p_user_id: userId, p_reason: reason });
 export const getKycQueue = () => rpc<KycRow[]>("admin_kyc_queue", { p_limit: 100 });
 export const getReports = () => rpc<ReportRow[]>("admin_reports_queue", { p_limit: 100 });
-export const getPhotos = () => rpc<PhotoRow[]>("admin_photo_queue", { p_limit: 100 });
+export async function getPhotos(): Promise<PhotoRow[]> {
+  const rows = await rpc<PhotoRow[]>("admin_photo_queue", { p_limit: 100 });
+  if (rows.length === 0) return rows;
+
+  const adminClient = createAdminClient();
+  const withSignedUrls = await Promise.all(
+    rows.map(async (photo) => {
+      const { data, error } = await adminClient.storage
+        .from("profile-photos")
+        .createSignedUrl(photo.storage_path, 60 * 5);
+
+      return {
+        ...photo,
+        preview_url: error ? null : data?.signedUrl ?? null,
+        preview_error: error?.message ?? null,
+      };
+    }),
+  );
+
+  return withSignedUrls;
+}
 export const getMatchMetrics = () => rpc<DashboardMetrics>("admin_match_metrics");
 export const getMatches = () => rpc<MatchRow[]>("admin_active_matches", { p_limit: 100 });
 export const getSubscribers = () => rpc<SubscriberRow[]>("admin_subscribers", { p_limit: 100 });
@@ -63,7 +84,7 @@ export type UserRow = { user_id:string; profile_id:string; name:string; email:st
 export type RevealedUserPii = { user_id:string; name:string; email:string|null; revealed_at:string };
 export type KycRow = { user_id:string; profile_id:string; name:string; country_code:string; kyc_id_type:string|null; face_similarity:number|null; created_at:string; selfie_path:string|null; id_path:string|null };
 export type ReportRow = { report_id:string; reporter_id:string; reported_user_id:string; reason:string; description:string|null; created_at:string; report_count:number; reported_name:string };
-export type PhotoRow = { photo_id:string; user_id:string; name:string; storage_path:string; nsfw_score:number|null; nsfw_category:string|null; created_at:string; moderation_status:string };
+export type PhotoRow = { photo_id:string; user_id:string; name:string; storage_path:string; nsfw_score:number|null; nsfw_category:string|null; created_at:string; moderation_status:string; preview_url?:string|null; preview_error?:string|null };
 export type MatchRow = { match_id:string; user_a_name:string; user_b_name:string; created_at:string; message_count:number; last_message_at:string|null };
 export type SubscriberRow = { user_id:string; name:string; country_code:string; subscription_status:string; subscription_expires_at:string|null; product_id:string|null; total_paid:number };
 export type CampaignRow = { campaign_id:string; title:string; body:string; deep_link:string|null; audience:string; country_code:string|null; scheduled_at:string; status:string; queued_count:number; created_at:string; queued_at:string|null };

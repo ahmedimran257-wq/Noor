@@ -40,7 +40,7 @@ class ProfilePhotoService {
       // bypass moderation. A failed scan is rejected rather than uploaded.
       final moderation =
           await PhotoModerationService.instance.scanFile(file.path);
-      if (!moderation.isSafe) {
+      if (!moderation.canUpload) {
         throw StateError(
           moderation.decision == PhotoModerationDecision.unsafe
               ? _moderationMessage(moderation)
@@ -135,7 +135,7 @@ class ProfilePhotoService {
       throw StateError('Photo validation could not be completed.');
     }
     final action = (response.data as Map)['action'] as String?;
-    if (action != 'validated') {
+    if (action != 'validated' && action != 'pending_review') {
       throw StateError('Photo validation did not approve this upload.');
     }
   }

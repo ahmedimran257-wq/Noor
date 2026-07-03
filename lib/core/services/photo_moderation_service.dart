@@ -8,7 +8,7 @@ import 'package:image/image.dart' as img;
 import 'package:nsfw_detect/nsfw_detect.dart';
 import 'package:path_provider/path_provider.dart';
 
-enum PhotoModerationDecision { safe, unsafe, scanFailed }
+enum PhotoModerationDecision { safe, pendingReview, unsafe, scanFailed }
 
 class PhotoModerationResult {
   const PhotoModerationResult({
@@ -26,10 +26,14 @@ class PhotoModerationResult {
   final String? error;
 
   bool get isSafe => decision == PhotoModerationDecision.safe;
+  bool get canUpload =>
+      decision == PhotoModerationDecision.safe ||
+      decision == PhotoModerationDecision.pendingReview;
 
   Map<String, dynamic> toValidationPayload() => {
         'status': decision.name,
         'is_nsfw': decision == PhotoModerationDecision.unsafe,
+        'requires_review': decision == PhotoModerationDecision.pendingReview,
         'confidence': confidence,
         'category': category,
         'threshold': threshold,
@@ -52,10 +56,14 @@ class PhotoModerationService {
 
   static Future<void> warmUp() => _ensureClassifierReady();
 
-  // High threshold by design: profile-photo moderation should block explicit
-  // content without rejecting normal cultural or casual dress such as sarees,
-  // sleeveless tops, short sleeves, visible hair, arms, neck, or collarbone.
-  static const double confidenceThreshold = 0.95;
+  // The bundled Falconsai model is binary (safe/nsfw). Keep collection low so
+  // moderate NSFW evidence is visible, then apply product policy separately.
+  static const double scannerCollectionThreshold = 0.01;
+  static const double hardNsfwRejectThreshold = 0.88;
+  static const double softNsfwReviewThreshold = 0.55;
+  static const double neutralPortraitPassThreshold = 0.45;
+  static const double prominentFaceRatioThreshold = 0.12;
+  static const double confidenceThreshold = hardNsfwRejectThreshold;
   static const String _localModelId = 'mithaq_falconsai_nsfw';
   static const String _localModelAssetPath =
       'assets/models/falconsai_nsfw.tflite';
@@ -70,49 +78,61 @@ class PhotoModerationService {
   Future<PhotoModerationResult> scanFile(String path) async {
     try {
       final scan = await _scanner(path);
-      final layerOne = evaluate(scan);
-      if (!layerOne.isSafe) return layerOne;
-
+      if (scan.status != ScanStatus.completed) return evaluate(scan);
       final scores = NsfwScores.fromScan(scan);
-      if (scores.sexy > 0.90 && scores.neutral <= 0.45) {
-        final face = await _faceChecker(path);
-        if (!face.hasFace) {
-          return const PhotoModerationResult(
-            decision: PhotoModerationDecision.unsafe,
-            confidence: 1,
-            category: 'no_face',
-            threshold: 0,
-          );
-        }
-        if (face.faceRatio < 0.08) {
-          return PhotoModerationResult(
-            decision: PhotoModerationDecision.unsafe,
-            confidence: scores.sexy,
-            category: 'explicit_content',
-            threshold: 0.90,
-          );
-        }
 
+      if (scores.nsfw >= hardNsfwRejectThreshold) {
+        return PhotoModerationResult(
+          decision: PhotoModerationDecision.unsafe,
+          confidence: scores.nsfw,
+          category: 'explicit_content',
+          threshold: hardNsfwRejectThreshold,
+        );
+      }
+
+      final face = await _faceChecker(path);
+      if (!face.hasFace) {
+        return const PhotoModerationResult(
+          decision: PhotoModerationDecision.unsafe,
+          confidence: 1,
+          category: 'no_face',
+          threshold: 0,
+        );
+      }
+
+      final needsContextReview = scores.nsfw >= softNsfwReviewThreshold ||
+          face.faceRatio < prominentFaceRatioThreshold ||
+          scores.neutral < neutralPortraitPassThreshold;
+      if (needsContextReview) {
+        // Skin/exposure heuristics are intentionally scoped to suspicious or
+        // body-dominant photos only. Running them on every safe portrait caused
+        // false rejections for sarees, sleeveless tops, and cultural dress.
         final exposureResult = await _evaluateExplicitExposurePolicy(path);
         if (exposureResult != null) return exposureResult;
-        return layerOne;
+
+        return PhotoModerationResult(
+          decision: PhotoModerationDecision.pendingReview,
+          confidence: scores.nsfw,
+          category: face.faceRatio < prominentFaceRatioThreshold
+              ? 'body_dominant'
+              : 'borderline_nsfw',
+          threshold: softNsfwReviewThreshold,
+        );
       }
 
-      final exposureResult = await _evaluateExplicitExposurePolicy(path);
-      if (exposureResult != null) return exposureResult;
-
-      if (scores.neutral > 0.45) {
-        return layerOne;
-      }
-
-      return layerOne;
+      return PhotoModerationResult(
+        decision: PhotoModerationDecision.safe,
+        confidence: scores.neutral,
+        category: 'safe_portrait',
+        threshold: softNsfwReviewThreshold,
+      );
     } catch (error) {
       debugPrint('[PhotoModerationService] scan failed: $error');
       return PhotoModerationResult(
         decision: PhotoModerationDecision.scanFailed,
         confidence: 0,
         category: NsfwCategory.unknown.name,
-        threshold: confidenceThreshold,
+        threshold: scannerCollectionThreshold,
         error: error.toString(),
       );
     }
@@ -143,14 +163,14 @@ class PhotoModerationService {
       return NsfwDetector.instance.scanBytes(
         normalized,
         modelId: _localModelId,
-        confidenceThreshold: confidenceThreshold,
+        confidenceThreshold: scannerCollectionThreshold,
       );
     }
 
     return NsfwDetector.instance.scanFile(
       path,
       modelId: _localModelId,
-      confidenceThreshold: confidenceThreshold,
+      confidenceThreshold: scannerCollectionThreshold,
     );
   }
 
@@ -166,7 +186,7 @@ class PhotoModerationService {
         preloadModels: [],
         tolerateModelErrors: true,
         enableNativeLogging: kDebugMode,
-        defaultThreshold: confidenceThreshold,
+        defaultThreshold: scannerCollectionThreshold,
       ));
 
       final modelPath = await _installBundledClassifier();
@@ -411,20 +431,30 @@ class PhotoModerationService {
 
     final scores = NsfwScores.fromScan(result);
 
-    if (scores.porn > 0.85 || scores.hentai > 0.75) {
+    if (scores.nsfw >= hardNsfwRejectThreshold) {
       return PhotoModerationResult(
         decision: PhotoModerationDecision.unsafe,
-        confidence: math.max(scores.porn, scores.hentai),
+        confidence: scores.nsfw,
         category: 'explicit_content',
-        threshold: confidenceThreshold,
+        threshold: hardNsfwRejectThreshold,
+      );
+    }
+
+    if (scores.nsfw >= softNsfwReviewThreshold ||
+        scores.neutral < neutralPortraitPassThreshold) {
+      return PhotoModerationResult(
+        decision: PhotoModerationDecision.pendingReview,
+        confidence: scores.nsfw,
+        category: 'borderline_nsfw',
+        threshold: softNsfwReviewThreshold,
       );
     }
 
     return PhotoModerationResult(
       decision: PhotoModerationDecision.safe,
-      confidence: result.topConfidence,
-      category: result.topCategory.name,
-      threshold: confidenceThreshold,
+      confidence: scores.neutral,
+      category: 'safe_portrait',
+      threshold: softNsfwReviewThreshold,
     );
   }
 }
@@ -433,28 +463,25 @@ class PhotoModerationService {
 class NsfwScores {
   const NsfwScores({
     required this.neutral,
-    required this.sexy,
-    required this.porn,
-    required this.hentai,
+    required this.nsfw,
   });
 
-  factory NsfwScores.fromScan(ScanResult result) => NsfwScores(
-        neutral: result.confidenceFor(NsfwCategory.safe),
-        sexy: result.confidenceFor(NsfwCategory.suggestive),
-        porn: math.max(
-          result.confidenceFor(NsfwCategory.nudity),
-          result.confidenceFor(NsfwCategory.explicitNudity),
-        ),
-        // The bundled on-device model does not expose a separate animated
-        // explicit class. Animated explicit images are handled by the model's
-        // nudity/explicit signal when present.
-        hentai: 0,
-      );
+  factory NsfwScores.fromScan(ScanResult result) {
+    final explicitSignal = math.max(
+      result.confidenceFor(NsfwCategory.nudity),
+      result.confidenceFor(NsfwCategory.explicitNudity),
+    );
+    return NsfwScores(
+      neutral: result.confidenceFor(NsfwCategory.safe),
+      nsfw: math.max(
+        explicitSignal,
+        result.confidenceFor(NsfwCategory.suggestive),
+      ),
+    );
+  }
 
   final double neutral;
-  final double sexy;
-  final double porn;
-  final double hentai;
+  final double nsfw;
 }
 
 @visibleForTesting
