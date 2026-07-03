@@ -102,7 +102,7 @@ export async function accountAction(formData: FormData) {
   const parsed = accountActionSchema.parse({
     userId: formData.get("userId"),
     action: formData.get("action"),
-    reason: formData.get("reason"),
+    reason: formString(formData, "reason"),
   });
   assertAccountActionRole(admin, parsed.action);
   await run("admin_account_action", { p_user_id: parsed.userId, p_action: parsed.action, p_reason: parsed.reason }, "/users");
@@ -127,7 +127,7 @@ export async function reviewKyc(formData: FormData) {
   const parsed = kycReviewSchema.parse({
     userId: formData.get("userId"),
     decision: formData.get("decision"),
-    reason: formData.get("reason"),
+    reason: formString(formData, "reason"),
   });
   await run("admin_review_kyc", { p_user_id: parsed.userId, p_decision: parsed.decision, p_reason: parsed.reason }, "/kyc");
 }
@@ -146,7 +146,7 @@ export async function reviewPhoto(formData: FormData) {
   const parsed = photoReviewSchema.parse({
     photoId: formData.get("photoId"),
     decision: formData.get("decision"),
-    reason: formData.get("reason"),
+    reason: formString(formData, "reason"),
   });
   await run("admin_review_photo", { p_photo_id: parsed.photoId, p_decision: parsed.decision, p_reason: parsed.reason }, "/moderation");
 }

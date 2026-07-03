@@ -41,8 +41,13 @@ export async function getUsers(query = "", page = 1): Promise<PagedResult<UserRo
     hasPreviousPage: safePage > 1,
   };
 }
-export const getRevealedUserPii = (userId: string, reason: string) =>
-  rpc<RevealedUserPii>("admin_reveal_user_pii", { p_user_id: userId, p_reason: reason });
+export async function getRevealedUserPii(userId: string, reason: string) {
+  const rows = await rpc<RevealedUserPii[]>("admin_reveal_user_pii", {
+    p_user_id: userId,
+    p_reason: reason,
+  });
+  return rows[0] ?? null;
+}
 export const getKycQueue = () => rpc<KycRow[]>("admin_kyc_queue", { p_limit: 100 });
 export const getReports = () => rpc<ReportRow[]>("admin_reports_queue", { p_limit: 100 });
 export async function getPhotos(): Promise<PhotoRow[]> {

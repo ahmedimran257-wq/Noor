@@ -69,6 +69,18 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
         </form>
       ) : null}
 
+      {revealed ? (
+        <div className="pii-reveal-panel elevated-panel">
+          <div>
+            <strong>PII reveal active</strong>
+            <small>
+              Showing unmasked details for {revealed.name || revealed.user_id}. This read was written to the audit log.
+            </small>
+          </div>
+          <a href={buildPageHref(query, page)}>Hide revealed PII</a>
+        </div>
+      ) : null}
+
       <div className="table-wrap elevated-panel">
         <table>
           <thead>
@@ -80,7 +92,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
               const displayName = isRevealed ? revealed.name : user.name;
               const displayEmail = isRevealed ? revealed.email : user.email;
               return (
-              <tr key={user.user_id}>
+              <tr key={user.user_id} className={isRevealed ? "revealed-row" : undefined}>
                 {canModerate ? (
                   <td><input form="bulk-user-action" type="checkbox" name="userIds" value={user.user_id} aria-label={`Select ${displayName || user.user_id}`} /></td>
                 ) : null}
@@ -96,7 +108,11 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                 <td><span className={user.is_banned ? "status-pill danger" : "status-pill"}>{user.is_banned ? "Banned" : user.visibility}</span></td>
                 <td>
                   <div className="action-row">
-                    {canReveal ? <a className="inline-action" href={buildRevealHref(query, userPage.page, user.user_id)}>Reveal PII</a> : null}
+                    {canReveal ? (
+                      <a className="inline-action" href={buildRevealHref(query, userPage.page, user.user_id)}>
+                        {isRevealed ? "PII revealed" : "Reveal PII"}
+                      </a>
+                    ) : null}
                     {canModerate ? (
                       <form action={accountAction}>
                         <input type="hidden" name="userId" value={user.user_id} />
