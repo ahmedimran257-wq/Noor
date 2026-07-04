@@ -12,7 +12,6 @@
 // ============================================================
 
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/onboarding_data.dart';
@@ -43,7 +42,6 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     final dbData = await ProfileWriteService.loadProfile();
     if (dbData != null) {
       data = dbData;
-      debugPrint('OnboardingCubit: Successfully restored data from Supabase.');
     } else {
       // 2. Fallback to this authenticated user's local cache if the database
       // has no row yet. The key is user-scoped to avoid carrying a previous
@@ -54,11 +52,9 @@ class OnboardingCubit extends Cubit<OnboardingState> {
         if (rawJson != null && rawJson.isNotEmpty) {
           final mapped = jsonDecode(rawJson) as Map<String, dynamic>;
           data = OnboardingData.fromJson(mapped);
-          debugPrint(
-              'OnboardingCubit: Successfully restored data from SharedPreferences cache.');
         }
-      } catch (e) {
-        debugPrint('OnboardingCubit: Error loading from SharedPreferences: $e');
+      } catch (_) {
+        data = const OnboardingData();
       }
     }
 
@@ -77,8 +73,6 @@ class OnboardingCubit extends Cubit<OnboardingState> {
         final code = prefs.getString('user_country_code');
         if (code != null && code.isNotEmpty) {
           data = data.copyWith(countryCode: code.toUpperCase());
-          debugPrint(
-              'OnboardingCubit: Prefilled countryCode from user_country_code: $code');
         }
       } catch (_) {}
     }
@@ -132,7 +126,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       // Steps before Basic Identity do not have gender/date-of-birth yet. Their
       // required data is saved on users via RPCs so app restarts and new-device
       // resumes remain server-backed without creating invalid profile rows.
-      if (currentStep == 0) {
+      if (currentStep == OnboardingFlow.profileForWhomStep) {
         final success =
             await ProfileWriteService.saveProfileTypeResume(updatedData);
         if (!success) {
@@ -143,7 +137,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
           ));
           return;
         }
-      } else if (currentStep == 1) {
+      } else if (currentStep == OnboardingFlow.quickLocationStepIndex) {
         final success =
             await ProfileWriteService.saveOnboardingLocation(updatedData);
         if (!success) {
@@ -154,7 +148,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
           ));
           return;
         }
-      } else if (currentStep >= 2) {
+      } else if (currentStep >= OnboardingFlow.basicIdentityStep) {
         final success = await ProfileWriteService.saveStep(
           step: currentStep,
           data: updatedData,
@@ -162,7 +156,6 @@ class OnboardingCubit extends Cubit<OnboardingState> {
         );
 
         if (!success) {
-          debugPrint('OnboardingCubit: Failed to save step $currentStep');
           emit(OnboardingError(
             step: currentStep,
             data: updatedData,
@@ -291,10 +284,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_cacheKey, jsonEncode(data.toJson()));
-    } catch (e) {
-      debugPrint(
-          'OnboardingCubit: Failed to write SharedPreferences cache: $e');
-    }
+    } catch (_) {}
   }
 
   // ── Helpers ───────────────────────────────────────────────
@@ -319,10 +309,14 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     } else if (safeStep > OnboardingFlow.quickLocationStep(isGuardianPath) &&
         !OnboardingFlow.hasValidLocation(data)) {
       safeStep = OnboardingFlow.quickLocationStep(isGuardianPath);
-    } else if (safeStep > 2 && _validateMandatoryStep(2, data) != null) {
-      safeStep = 2;
-    } else if (safeStep > 3 && _validateMandatoryStep(3, data) != null) {
-      safeStep = 3;
+    } else if (safeStep > OnboardingFlow.basicIdentityStep &&
+        _validateMandatoryStep(OnboardingFlow.basicIdentityStep, data) !=
+            null) {
+      safeStep = OnboardingFlow.basicIdentityStep;
+    } else if (safeStep > OnboardingFlow.islamicIdentityStep &&
+        _validateMandatoryStep(OnboardingFlow.islamicIdentityStep, data) !=
+            null) {
+      safeStep = OnboardingFlow.islamicIdentityStep;
     }
 
     return safeStep;
@@ -334,7 +328,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
         data.isGuardianMode;
 
     switch (step) {
-      case 0:
+      case OnboardingFlow.profileForWhomStep:
         if (data.profileFor == null) {
           return 'Please select who this profile is for.';
         }
@@ -342,11 +336,11 @@ class OnboardingCubit extends Cubit<OnboardingState> {
           return 'Please select who you are registering.';
         }
         return null;
-      case 1:
+      case OnboardingFlow.quickLocationStepIndex:
         return OnboardingFlow.hasValidLocation(data)
             ? null
             : 'Please select a verified city from the list.';
-      case 2:
+      case OnboardingFlow.basicIdentityStep:
         if (data.firstName?.trim().isNotEmpty != true ||
             data.lastName?.trim().isNotEmpty != true ||
             data.dateOfBirth == null ||
@@ -367,7 +361,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
           }
         }
         return null;
-      case 3:
+      case OnboardingFlow.islamicIdentityStep:
         if (data.deenLevel == null ||
             data.praysFiveDaily == null ||
             data.dietType?.trim().isNotEmpty != true ||
@@ -377,7 +371,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
           return 'Please complete all required Islamic identity details.';
         }
         return null;
-      case 4:
+      case OnboardingFlow.photoUploadStep:
         if (data.photoLocalPaths == null || data.photoLocalPaths!.isEmpty) {
           return 'Please add a primary profile photo.';
         }

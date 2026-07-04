@@ -87,24 +87,30 @@ class ProfilePhotoService {
       return null;
     }
 
-    final profileId = await _currentProfileId();
-    if (profileId == null) return null;
+    return getAuthorizedPhotoUrl(ownerUserId: SupabaseService.currentUserId!);
+  }
 
-    final rows = await SupabaseService.client
-        .from('photos')
-        .select('storage_path')
-        .eq('profile_id', profileId)
-        .eq('status', 'active')
-        .order('order_index')
-        .limit(1);
+  Future<String?> getAuthorizedPhotoUrl({
+    required String ownerUserId,
+    int orderIndex = 0,
+  }) async {
+    if (!SupabaseService.isInitialized ||
+        SupabaseService.currentUserId == null ||
+        ownerUserId.isEmpty) {
+      return null;
+    }
 
-    if (rows.isEmpty) return null;
-    final storagePath = rows.first['storage_path'] as String?;
-    if (storagePath == null || storagePath.isEmpty) return null;
-
-    return SupabaseService.client.storage
-        .from(_bucket)
-        .createSignedUrl(storagePath, 60 * 60);
+    final response = await SupabaseService.client.functions.invoke(
+      'get-signed-url',
+      body: {
+        'purpose': 'read_profile_photo',
+        'owner_user_id': ownerUserId,
+        'order_index': orderIndex,
+      },
+    );
+    if (response.status != 200 || response.data is! Map) return null;
+    final payload = Map<String, dynamic>.from(response.data as Map);
+    return payload['signed_url'] as String?;
   }
 
   Future<String?> _currentProfileId() async {

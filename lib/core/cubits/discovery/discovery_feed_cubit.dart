@@ -20,17 +20,26 @@ import '../../models/discovery_profile.dart';
 import '../../services/supabase_service.dart';
 import '../../services/profile_write_service.dart';
 import '../../services/location_service.dart';
+import '../../services/profile_photo_service.dart';
 import '../../models/onboarding_data.dart';
 import '../../utils/mithaq_compute.dart';
 import 'discovery_feed_state.dart';
+
+class _ProfileViewQuota {
+  const _ProfileViewQuota({
+    required this.viewsToday,
+    required this.dailyLimit,
+  });
+
+  final int viewsToday;
+  final int dailyLimit;
+}
 
 class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   DiscoveryFeedCubit() : super(const DiscoveryFeedState());
 
   static const _batchSize = 8;
   static const _kFilterKey = 'discovery_active_filter';
-  static const _kViewCountKey = 'discovery_views_today';
-  static const _kViewResetKey = 'discovery_views_reset_date';
 
   double? _backendCursorScore;
   String? _backendCursorId;
@@ -96,8 +105,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       );
     }
 
-    // G5: Restore persisted browse counter (daily reset)
-    final restoredViews = await _restoreBrowseCounter();
+    final quota = await _loadServerViewQuota();
     if (!_isCurrentRequest(requestVersion)) return;
 
     try {
@@ -112,7 +120,8 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
           profiles: batch,
           hasMore: profiles.length == _batchSize,
           activeFilter: filter,
-          profilesViewedToday: restoredViews,
+          profilesViewedToday: quota.viewsToday,
+          dailyLimit: quota.dailyLimit,
         ));
       }
     } catch (e) {
@@ -133,6 +142,8 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       final profiles =
           await _getPool(filter: filter, requestVersion: requestVersion);
       if (!_isCurrentRequest(requestVersion)) return;
+      final quota = await _loadServerViewQuota();
+      if (!_isCurrentRequest(requestVersion)) return;
       final batch = _toFeedProfiles(
         profiles,
         offset: baseProfiles.length,
@@ -142,6 +153,8 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
           status: FeedStatus.loaded,
           profiles: [...baseProfiles, ...batch],
           hasMore: profiles.length == _batchSize,
+          profilesViewedToday: quota.viewsToday,
+          dailyLimit: quota.dailyLimit,
         ));
       }
     } catch (e) {
@@ -165,12 +178,16 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       final profiles =
           await _getPool(filter: filter, requestVersion: requestVersion);
       if (!_isCurrentRequest(requestVersion)) return;
+      final quota = await _loadServerViewQuota();
+      if (!_isCurrentRequest(requestVersion)) return;
       final batch = _toFeedProfiles(profiles, offset: 0);
       if (!isClosed) {
         emit(state.copyWith(
           status: batch.isEmpty ? FeedStatus.empty : FeedStatus.loaded,
           profiles: batch,
           hasMore: profiles.length == _batchSize,
+          profilesViewedToday: quota.viewsToday,
+          dailyLimit: quota.dailyLimit,
         ));
       }
     } catch (e) {
@@ -181,47 +198,57 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   /// Clear all filters and reload.
   Future<void> clearFilters() => applyFilter(DiscoveryFilter.empty);
 
-  void recordProfileView() {
-    if (!isClosed) {
-      final newCount = state.profilesViewedToday + 1;
-      emit(state.copyWith(profilesViewedToday: newCount));
-      _persistBrowseCounter(newCount);
+  Future<bool> recordProfileView(String viewedUserId) async {
+    if (!SupabaseService.isInitialized ||
+        SupabaseService.currentUserId == null ||
+        viewedUserId.isEmpty) {
+      return false;
     }
-  }
 
-  // ── G5: Browse Counter Persistence ──────────────────────────
-
-  Future<int> _restoreBrowseCounter() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final savedDate = prefs.getString(_kViewResetKey);
-      if (savedDate == null) return 0;
-
-      final saved = DateTime.tryParse(savedDate);
-      final today = DateTime.now();
-      // Same calendar day → restore count
-      if (saved != null &&
-          saved.year == today.year &&
-          saved.month == today.month &&
-          saved.day == today.day) {
-        return prefs.getInt(_kViewCountKey) ?? 0;
+      final response = await SupabaseService.client.rpc(
+        'record_profile_view',
+        params: {'p_viewed_user_id': viewedUserId},
+      );
+      final rows = response as List<dynamic>;
+      final row = rows.isNotEmpty
+          ? Map<String, dynamic>.from(rows.first as Map)
+          : <String, dynamic>{};
+      final allowed = row['allowed'] == true;
+      if (!isClosed) {
+        emit(state.copyWith(
+          profilesViewedToday: (row['views_today'] as num?)?.toInt() ??
+              state.profilesViewedToday,
+          dailyLimit: (row['daily_limit'] as num?)?.toInt() ?? state.dailyLimit,
+        ));
       }
-      // New day → reset
-      await prefs.remove(_kViewCountKey);
-      await prefs.remove(_kViewResetKey);
-      return 0;
-    } catch (_) {
-      return 0;
+      return allowed;
+    } catch (e) {
+      debugPrint('DiscoveryFeedCubit: failed to record profile view: $e');
+      return false;
     }
   }
 
-  Future<void> _persistBrowseCounter(int count) async {
+  Future<_ProfileViewQuota> _loadServerViewQuota() async {
+    if (!SupabaseService.isInitialized ||
+        SupabaseService.currentUserId == null) {
+      return const _ProfileViewQuota(viewsToday: 0, dailyLimit: 15);
+    }
+
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(_kViewCountKey, count);
-      await prefs.setString(_kViewResetKey, DateTime.now().toIso8601String());
-    } catch (_) {
-      // Best-effort persistence
+      final response =
+          await SupabaseService.client.rpc('get_profile_view_quota');
+      final rows = response as List<dynamic>;
+      final row = rows.isNotEmpty
+          ? Map<String, dynamic>.from(rows.first as Map)
+          : <String, dynamic>{};
+      return _ProfileViewQuota(
+        viewsToday: (row['views_today'] as num?)?.toInt() ?? 0,
+        dailyLimit: (row['daily_limit'] as num?)?.toInt() ?? 15,
+      );
+    } catch (e) {
+      debugPrint('DiscoveryFeedCubit: failed to load profile view quota: $e');
+      return const _ProfileViewQuota(viewsToday: 0, dailyLimit: 15);
     }
   }
 
@@ -486,17 +513,20 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       List<DiscoveryProfile> profiles) async {
     final signed = <DiscoveryProfile>[];
     for (final profile in profiles) {
-      final path = profile.photoUrl;
-      if (path == null || path.isEmpty || profile.isPhotoPrivate) {
+      if (profile.photoCount <= 0) {
         signed.add(profile);
         continue;
       }
 
       try {
-        final url = await SupabaseService.client.storage
-            .from('profile-photos')
-            .createSignedUrl(path, 60 * 60);
-        signed.add(profile.copyWith(photoUrl: url));
+        final url = await ProfilePhotoService.instance.getAuthorizedPhotoUrl(
+          ownerUserId: profile.id,
+        );
+        signed.add(
+          url == null || url.isEmpty
+              ? profile.copyWith(clearPhotoUrl: true)
+              : profile.copyWith(photoUrl: url),
+        );
       } catch (e) {
         debugPrint('DiscoveryFeedCubit: failed to sign photo URL: $e');
         signed.add(profile.copyWith(clearPhotoUrl: true));

@@ -312,24 +312,17 @@ GoRouter buildAppRouter(
   );
 }
 
-// ── Route → Screen mapping ────────────────────────────────────
-//
-// Fast-start v3 path — 5 steps (completes at ≥ 5):
-//   0 ProfileForWhom → 1 QuickLocation → 2 BasicIdentity →
-//   3 IslamicIdentity → 4 PhotoUpload.
-// Guardian/self share the same required steps; richer details move to profile.
-
 Widget _screenForStep(int step) {
   switch (step) {
-    case 0:
+    case OnboardingFlow.profileForWhomStep:
       return const ProfileForWhomScreen();
-    case 1:
+    case OnboardingFlow.quickLocationStepIndex:
       return const QuickLocationScreen();
-    case 2:
+    case OnboardingFlow.basicIdentityStep:
       return const BasicIdentityScreen();
-    case 3:
+    case OnboardingFlow.islamicIdentityStep:
       return const IslamicIdentityScreen();
-    case 4:
+    case OnboardingFlow.photoUploadStep:
       return const PhotoUploadScreen();
     default:
       return const ProfileForWhomScreen();

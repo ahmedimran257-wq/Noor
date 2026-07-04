@@ -10,11 +10,16 @@ abstract final class OnboardingFlow {
   /// Deeper compatibility fields are completed later from Edit Profile.
   static const int selfCompleteAt = 5;
   static const int guardianCompleteAt = 5;
+  static const int profileForWhomStep = 0;
+  static const int quickLocationStepIndex = 1;
+  static const int basicIdentityStep = 2;
+  static const int islamicIdentityStep = 3;
+  static const int photoUploadStep = 4;
 
   static int completeAt(bool isGuardianPath) =>
       isGuardianPath ? guardianCompleteAt : selfCompleteAt;
 
-  static int quickLocationStep(bool isGuardianPath) => 1;
+  static int quickLocationStep(bool isGuardianPath) => quickLocationStepIndex;
 
   static bool hasValidLocation(OnboardingData data) =>
       data.countryCode?.trim().isNotEmpty == true &&

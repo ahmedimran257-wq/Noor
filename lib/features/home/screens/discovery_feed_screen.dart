@@ -23,7 +23,6 @@ import '../../../core/cubits/discovery/discovery_feed_cubit.dart';
 import '../../../core/cubits/discovery/discovery_feed_state.dart';
 import '../../../core/cubits/interests/interests_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
-import '../../../core/cubits/subscription/subscription_cubit.dart';
 import '../../../core/models/onboarding_data.dart';
 import '../../../core/services/bookmark_service.dart';
 import '../../../core/theme/app_colors.dart';
@@ -93,7 +92,12 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
 
     if (page != _currentPage) {
       _currentPage = page;
-      context.read<DiscoveryFeedCubit>().recordProfileView();
+      final profiles = context.read<DiscoveryFeedCubit>().state.profiles;
+      if (page >= 0 && page < profiles.length) {
+        context
+            .read<DiscoveryFeedCubit>()
+            .recordProfileView(profiles[page].profile.id);
+      }
     }
 
     // Trigger pagination when 2 cards from the end
@@ -166,7 +170,16 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
       );
   }
 
-  void _openProfile(int index, FeedProfile fp) {
+  Future<void> _openProfile(int index, FeedProfile fp) async {
+    final allowed = await context
+        .read<DiscoveryFeedCubit>()
+        .recordProfileView(fp.profile.id);
+    if (!mounted) return;
+    if (!allowed) {
+      PaywallGateSheet.show(context);
+      return;
+    }
+
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => ProfileDetailScreen(
@@ -214,8 +227,9 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
                       const Text('MITHAQ', style: AppTypography.wordmark),
                       const Spacer(),
                       // Free-tier counter badge
-                      if (feedState.status == FeedStatus.loaded ||
-                          feedState.status == FeedStatus.loadingMore)
+                      if ((feedState.status == FeedStatus.loaded ||
+                              feedState.status == FeedStatus.loadingMore) &&
+                          feedState.dailyLimit < 1000000)
                         _FreeTierCounter(remaining: feedState.remainingToday),
                       const SizedBox(width: AppDimensions.space12),
                       _NotificationButton(),
@@ -248,6 +262,15 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
       return _InitialShimmer();
     }
 
+    final isLimited =
+        feedState.isFreeTierLimitReached && feedState.dailyLimit < 1000000;
+
+    if (isLimited) {
+      return _FreeTierLimitReached(
+        onUpgrade: () => PaywallGateSheet.show(context),
+      );
+    }
+
     if (feedState.status == FeedStatus.empty) {
       return const _EmptyFeed();
     }
@@ -272,17 +295,6 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
 
     final profiles = feedState.profiles;
     final isLoadingMore = feedState.status == FeedStatus.loadingMore;
-
-    // M9: Check free-tier browse limit for non-subscribers
-    final subState = context.read<SubscriptionCubit>().state;
-    final isLimited =
-        feedState.isFreeTierLimitReached && !subState.isSubscribed;
-
-    if (isLimited) {
-      return _FreeTierLimitReached(
-        onUpgrade: () => PaywallGateSheet.show(context),
-      );
-    }
 
     final itemCount = profiles.length + (isLoadingMore ? 1 : 0);
 

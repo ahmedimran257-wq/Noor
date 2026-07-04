@@ -15,20 +15,27 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'interests_state.dart';
 import '../../models/discovery_profile.dart';
 import '../../services/supabase_service.dart';
+import '../../services/profile_photo_service.dart';
 import '../../utils/content_filter.dart';
 import '../../utils/mithaq_compute.dart';
+
+class _InterestQuota {
+  const _InterestQuota({
+    required this.sentToday,
+    required this.dailyLimit,
+  });
+
+  final int sentToday;
+  final int dailyLimit;
+}
 
 class InterestsCubit extends Cubit<InterestsState> {
   InterestsCubit() : super(const InterestsState()) {
     _initData();
   }
-
-  static const _keyInterestsSentToday = 'interests_sent_today';
-  static const _keyInterestsResetDate = 'interests_reset_date';
 
   // ── Init ──────────────────────────────────────────────────
 
@@ -134,22 +141,15 @@ class InterestsCubit extends Cubit<InterestsState> {
         ));
       }
 
-      // Count today's sent interests
-      final todayStart = DateTime(now.year, now.month, now.day);
-      final todaySent = sent
-          .where((e) =>
-              e.sentAt.isAfter(todayStart) &&
-              e.status != InterestStatus.withdrawn)
-          .length;
+      final quota = await _loadServerQuota();
 
       if (!isClosed) {
         emit(InterestsState(
           received: received,
           sent: sent,
           matches: matches,
-          interestsSentToday: todaySent,
-          dailyLimit:
-              3, // default: free male — updated by setDailyLimitForGender
+          interestsSentToday: quota.sentToday,
+          dailyLimit: quota.dailyLimit,
           lastResetDate: now,
         ));
       }
@@ -203,13 +203,11 @@ class InterestsCubit extends Cubit<InterestsState> {
               .eq('nsfw_cleared', true)
               .order('order_index');
           mapped['photo_count'] = photos.length;
-          if (photos.isNotEmpty && mapped['photo_privacy'] == 'public') {
-            final path = photos.first['storage_path'] as String?;
-            if (path != null && path.isNotEmpty) {
-              mapped['photo_url'] = await SupabaseService.client.storage
-                  .from('profile-photos')
-                  .createSignedUrl(path, 60 * 60);
-            }
+          if (photos.isNotEmpty) {
+            mapped['photo_url'] =
+                await ProfilePhotoService.instance.getAuthorizedPhotoUrl(
+              ownerUserId: userId,
+            );
           }
         }
 
@@ -227,53 +225,43 @@ class InterestsCubit extends Cubit<InterestsState> {
     required String gender,
     required bool isSubscribed,
   }) {
-    final int limit;
-    if (gender == 'female') {
-      limit = 10;
-    } else if (isSubscribed) {
-      limit = 20;
-    } else {
-      limit = 3;
-    }
-    emit(state.copyWith(dailyLimit: limit));
+    refreshQuota();
   }
 
   void setDailyLimit(int limit) {
-    emit(state.copyWith(dailyLimit: limit));
+    refreshQuota();
   }
 
-  Future<void> loadSavedCounter() async {
-    final prefs = await SharedPreferences.getInstance();
-    final today = _dateOnly(DateTime.now());
-
-    final savedDateStr = prefs.getString(_keyInterestsResetDate);
-    final savedCount = prefs.getInt(_keyInterestsSentToday) ?? 0;
-
-    if (savedDateStr != null) {
-      final savedDate = DateTime.tryParse(savedDateStr);
-      if (savedDate != null && _dateOnly(savedDate) == today) {
-        emit(state.copyWith(
-          interestsSentToday: savedCount,
-          lastResetDate: savedDate,
-        ));
-        return;
-      }
-    }
-
-    await _resetCounter(prefs);
-  }
-
-  Future<void> _resetCounter(SharedPreferences prefs) async {
-    final now = DateTime.now();
-    await prefs.setInt(_keyInterestsSentToday, 0);
-    await prefs.setString(_keyInterestsResetDate, now.toIso8601String());
+  Future<void> refreshQuota() async {
+    final quota = await _loadServerQuota();
+    if (isClosed) return;
     emit(state.copyWith(
-      interestsSentToday: 0,
-      lastResetDate: now,
+      interestsSentToday: quota.sentToday,
+      dailyLimit: quota.dailyLimit,
+      lastResetDate: DateTime.now(),
     ));
   }
 
-  DateTime _dateOnly(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
+  Future<_InterestQuota> _loadServerQuota() async {
+    if (!SupabaseService.isInitialized ||
+        SupabaseService.currentUserId == null) {
+      return const _InterestQuota(sentToday: 0, dailyLimit: 3);
+    }
+    try {
+      final response = await SupabaseService.client.rpc('get_interest_quota');
+      final rows = response as List<dynamic>;
+      final row = rows.isNotEmpty
+          ? Map<String, dynamic>.from(rows.first as Map)
+          : <String, dynamic>{};
+      return _InterestQuota(
+        sentToday: (row['sent_today'] as num?)?.toInt() ?? 0,
+        dailyLimit: (row['daily_limit'] as num?)?.toInt() ?? 3,
+      );
+    } catch (e) {
+      debugPrint('[InterestsCubit] Error loading server quota: $e');
+      return const _InterestQuota(sentToday: 0, dailyLimit: 3);
+    }
+  }
 
   // ── Received actions ──────────────────────────────────────
 
@@ -335,16 +323,8 @@ class InterestsCubit extends Cubit<InterestsState> {
   Future<bool> sendInterest(DiscoveryProfile profile, {String? note}) async {
     if (!SupabaseService.isInitialized) return false;
 
-    // Check reset first
-    final today = _dateOnly(DateTime.now());
-    if (state.lastResetDate == null ||
-        _dateOnly(state.lastResetDate!) != today) {
-      final prefs = await SharedPreferences.getInstance();
-      await _resetCounter(prefs);
-    }
-
-    // Enforce daily limit
-    if (state.isDailyLimitReached) {
+    final quota = await _loadServerQuota();
+    if (quota.sentToday >= quota.dailyLimit) {
       emit(state.copyWith(limitError: true));
       return false;
     }
@@ -401,15 +381,13 @@ class InterestsCubit extends Cubit<InterestsState> {
     );
 
     final updated = [entry, ...state.sent];
-    final newSentToday = state.interestsSentToday + 1;
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_keyInterestsSentToday, newSentToday);
-    await prefs.setString(_keyInterestsResetDate, now.toIso8601String());
+    final updatedQuota = await _loadServerQuota();
 
     emit(state.copyWith(
       sent: updated,
-      interestsSentToday: newSentToday,
+      interestsSentToday: updatedQuota.sentToday,
+      dailyLimit: updatedQuota.dailyLimit,
+      lastResetDate: now,
       clearLimitError: true,
     ));
     return true;

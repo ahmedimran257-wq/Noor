@@ -17,7 +17,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/services/selfie_verification_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
@@ -90,16 +89,8 @@ class _SelfieVerificationScreenState extends State<SelfieVerificationScreen>
       if (!mounted) return;
       if (status.status == 'verified') {
         setState(() => _alreadyVerified = true);
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('selfie_verified', true);
-        if (status.verifiedAt != null) {
-          await prefs.setString('selfie_verified_at', status.verifiedAt!.toIso8601String());
-        }
       } else {
         setState(() => _alreadyVerified = false);
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('selfie_verified', false);
-        await prefs.remove('selfie_verified_at');
       }
       setState(() => _attemptsUsed = status.attempts);
     } catch (e) {
@@ -173,15 +164,6 @@ class _SelfieVerificationScreenState extends State<SelfieVerificationScreen>
           photoBytes: bytes,
         );
         if (!mounted) return;
-
-        // Save status locally to update profile screen immediately
-        try {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setBool('selfie_verified', true);
-          await prefs.setString('selfie_verified_at', DateTime.now().toIso8601String());
-        } catch (e) {
-          debugPrint('SelfieVerificationScreen: Error saving verified status locally: $e');
-        }
 
         setState(() {
           _isSubmitting = false;
@@ -344,9 +326,7 @@ class _IntroStep extends StatelessWidget {
 
           // Title
           Text(
-            isAlreadyVerified
-                ? 'Already Verified'
-                : 'Verify Your Profile',
+            isAlreadyVerified ? 'Already Verified' : 'Verify Your Profile',
             style: AppTypography.screenTitle,
             textAlign: TextAlign.center,
           ),
@@ -511,8 +491,7 @@ class _ChallengeStep extends StatelessWidget {
             padding: const EdgeInsets.all(AppDimensions.space32),
             decoration: BoxDecoration(
               color: AppColors.surfaceGlass,
-              borderRadius:
-                  BorderRadius.circular(AppDimensions.radiusCard),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
               border: Border.all(color: AppColors.goldBorder, width: 1.5),
               boxShadow: [
                 BoxShadow(
@@ -597,8 +576,7 @@ class _ChallengeStep extends StatelessWidget {
             padding: const EdgeInsets.all(AppDimensions.space12),
             decoration: BoxDecoration(
               color: AppColors.goldGlow,
-              borderRadius:
-                  BorderRadius.circular(AppDimensions.radiusButton),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
               border: Border.all(color: AppColors.goldBorder),
             ),
             child: Row(
@@ -808,9 +786,7 @@ class _ResultStep extends StatelessWidget {
           Text(
             isSuccess ? 'Verification Complete!' : 'Verification Failed',
             style: AppTypography.screenTitle.copyWith(
-              color: isSuccess
-                  ? AppColors.verifiedTeal
-                  : AppColors.softCoral,
+              color: isSuccess ? AppColors.verifiedTeal : AppColors.softCoral,
               fontSize: 24,
             ),
             textAlign: TextAlign.center,
@@ -822,7 +798,8 @@ class _ResultStep extends StatelessWidget {
           Text(
             isSuccess
                 ? 'Your profile now has a verified badge. Other members can trust that you are a real person.'
-                : result?.errorMessage ?? 'Verification could not be completed.',
+                : result?.errorMessage ??
+                    'Verification could not be completed.',
             style: AppTypography.body.copyWith(
               color: AppColors.slateMist,
               height: 1.6,
@@ -847,8 +824,7 @@ class _ResultStep extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                borderRadius:
-                    BorderRadius.circular(AppDimensions.radiusButton),
+                borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
                 border: Border.all(
                   color: AppColors.verifiedTeal.withValues(alpha: 0.4),
                   width: 2,
@@ -895,9 +871,7 @@ class _ResultStep extends StatelessWidget {
                 ),
                 onPressed: attemptsUsed >= 5 ? null : onRetry,
                 child: Text(
-                  attemptsUsed >= 5
-                      ? 'Try Again Tomorrow'
-                      : 'Try Again',
+                  attemptsUsed >= 5 ? 'Try Again Tomorrow' : 'Try Again',
                   style: AppTypography.button,
                 ),
               ),

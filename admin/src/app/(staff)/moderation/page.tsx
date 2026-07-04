@@ -9,8 +9,8 @@ import {
 import Image from "next/image";
 import { requireAdmin } from "@/lib/auth";
 import type { PhotoRow } from "@/lib/operations";
-import { getPhotos, getReports } from "@/lib/operations";
-import { resolveReport, reviewPhoto } from "../actions";
+import { getMessageReports, getPhotos, getReports } from "@/lib/operations";
+import { resolveMessageReport, resolveReport, reviewPhoto } from "../actions";
 
 function scoreLabel(photo: PhotoRow) {
   const score = Number(photo.nsfw_score ?? 0);
@@ -22,7 +22,11 @@ function scoreLabel(photo: PhotoRow) {
 
 export default async function ModerationPage() {
   await requireAdmin();
-  const [reports, photos] = await Promise.all([getReports(), getPhotos()]);
+  const [reports, messageReports, photos] = await Promise.all([
+    getReports(),
+    getMessageReports(),
+    getPhotos(),
+  ]);
   const hardSignals = photos.filter((photo) => Number(photo.nsfw_score ?? 0) >= 0.88).length;
   const reviewSignals = photos.filter((photo) => {
     const score = Number(photo.nsfw_score ?? 0);
@@ -40,7 +44,7 @@ export default async function ModerationPage() {
             Review real reports and private profile-photo uploads before they become visible in discovery.
           </p>
         </div>
-        <div className="hero-badge">{reports.length + photos.length} pending</div>
+        <div className="hero-badge">{reports.length + messageReports.length + photos.length} pending</div>
       </div>
 
       <div className="moderation-signal-grid">
@@ -59,6 +63,35 @@ export default async function ModerationPage() {
           <span>Client-screened pending</span>
           <strong>{clientScreened}</strong>
         </div>
+      </div>
+
+      <h2 className="section-title"><ShieldAlert size={18} /> Message reports</h2>
+      <div className="queue-list">
+        {messageReports.map((report) => (
+          <article className="queue-card elevated-panel" key={report.report_id}>
+            <div>
+              <h2>{report.reported_name || "Reported sender"}</h2>
+              <p className="muted">
+                {report.reason} · {new Date(report.created_at).toLocaleString()} · message {report.message_id.slice(0, 8)}
+              </p>
+              <blockquote className="admin-quote">{report.message_content}</blockquote>
+              {report.description ? <p>{report.description}</p> : null}
+            </div>
+            <div className="action-row">
+              <form action={resolveMessageReport}>
+                <input type="hidden" name="reportId" value={report.report_id} />
+                <input type="hidden" name="action" value="actioned" />
+                <button>Actioned</button>
+              </form>
+              <form action={resolveMessageReport}>
+                <input type="hidden" name="reportId" value={report.report_id} />
+                <input type="hidden" name="action" value="dismissed" />
+                <button>Dismiss</button>
+              </form>
+            </div>
+          </article>
+        ))}
+        {messageReports.length === 0 && <p className="muted">No message reports.</p>}
       </div>
 
       <h2 className="section-title"><Flag size={18} /> Open reports</h2>

@@ -1,6 +1,6 @@
-// lib/core/cubits/block_report/block_report_cubit.dart
+﻿// lib/core/cubits/block_report/block_report_cubit.dart
 // ============================================================
-// MITHAQ — Block / Report Cubit (Supabase production flow)
+// MITHAQ - Block / Report Cubit (Supabase production flow)
 //
 // Blueprint (Part 9):
 //   "Blocking is silent. The blocked person is not notified.
@@ -18,14 +18,10 @@
 //   - reportUser:  INSERT INTO reports (reporter_id, reported_user_id, reason, description)
 //                  DB trigger check_report_threshold() auto-suspends after 3 unique reports
 //
-// SharedPreferences is retained as offline cache.
 // ============================================================
 
-import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/supabase_service.dart';
 import 'block_report_state.dart';
 
@@ -34,19 +30,13 @@ class BlockReportCubit extends Cubit<BlockReportState> {
     _loadInitial();
   }
 
-  static const _kBlockedUsers = 'blocked_users_json';
-  static const _kReportHistory = 'report_history_json';
-  static const _kHiddenProfiles = 'hidden_profile_ids';
-
   bool get _isRealMode => SupabaseService.isInitialized;
 
-  // ── Initial load ──────────────────────────────────────────
+  // Initial load
 
   Future<void> _loadInitial() async {
     if (_isRealMode) {
       await _loadFromDb();
-    } else {
-      await _loadFromPrefs();
     }
   }
 
@@ -54,7 +44,6 @@ class BlockReportCubit extends Cubit<BlockReportState> {
   Future<void> _loadFromDb() async {
     final userId = SupabaseService.currentUserId;
     if (userId == null) {
-      await _loadFromPrefs();
       return;
     }
 
@@ -143,122 +132,12 @@ class BlockReportCubit extends Cubit<BlockReportState> {
           hiddenProfileIds: hiddenIds,
         ));
       }
-
-      // Also sync to SharedPreferences for offline access
-      await _saveToPrefs();
     } catch (e) {
       debugPrint('[BlockReportCubit] Error loading from DB: $e');
-      // Fallback to local cache
-      await _loadFromPrefs();
     }
   }
 
-  // ── Persistence — Load from SharedPreferences ─────────────
-
-  Future<void> _loadFromPrefs() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-
-      // Load blocked users
-      final blockedJson = prefs.getStringList(_kBlockedUsers) ?? [];
-      final blockedUsers = blockedJson
-          .map((s) {
-            try {
-              final j = jsonDecode(s) as Map<String, dynamic>;
-              return BlockedUser(
-                userId: j['userId'] as String,
-                name: j['name'] as String,
-                lastInitial: j['lastInitial'] as String,
-                blockedAt: DateTime.parse(j['blockedAt'] as String),
-              );
-            } catch (_) {
-              return null;
-            }
-          })
-          .whereType<BlockedUser>()
-          .toList();
-
-      // Load report history
-      final reportJson = prefs.getStringList(_kReportHistory) ?? [];
-      final reportHistory = reportJson
-          .map((s) {
-            try {
-              final j = jsonDecode(s) as Map<String, dynamic>;
-              return ReportEntry(
-                reportId: j['reportId'] as String,
-                reportedUserId: j['reportedUserId'] as String,
-                reportedName: j['reportedName'] as String,
-                reason: ReportReason.values.firstWhere(
-                  (r) => r.key == j['reasonKey'],
-                  orElse: () => ReportReason.other,
-                ),
-                description: j['description'] as String?,
-                submittedAt: DateTime.parse(j['submittedAt'] as String),
-              );
-            } catch (_) {
-              return null;
-            }
-          })
-          .whereType<ReportEntry>()
-          .toList();
-
-      // Load hidden profile IDs
-      final hiddenList = prefs.getStringList(_kHiddenProfiles) ?? [];
-      final hiddenIds = hiddenList.toSet();
-
-      if (!isClosed) {
-        emit(state.copyWith(
-          blockedUsers: blockedUsers,
-          reportHistory: reportHistory,
-          hiddenProfileIds: hiddenIds,
-        ));
-      }
-    } catch (e) {
-      debugPrint('BlockReportCubit: failed to load from prefs: $e');
-    }
-  }
-
-  // ── Persistence — Save to SharedPreferences ───────────────
-
-  Future<void> _saveToPrefs() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-
-      // Save blocked users
-      final blockedJson = state.blockedUsers
-          .map((b) => jsonEncode({
-                'userId': b.userId,
-                'name': b.name,
-                'lastInitial': b.lastInitial,
-                'blockedAt': b.blockedAt.toIso8601String(),
-              }))
-          .toList();
-      await prefs.setStringList(_kBlockedUsers, blockedJson);
-
-      // Save report history
-      final reportJson = state.reportHistory
-          .map((r) => jsonEncode({
-                'reportId': r.reportId,
-                'reportedUserId': r.reportedUserId,
-                'reportedName': r.reportedName,
-                'reasonKey': r.reason.key,
-                'description': r.description,
-                'submittedAt': r.submittedAt.toIso8601String(),
-              }))
-          .toList();
-      await prefs.setStringList(_kReportHistory, reportJson);
-
-      // Save hidden profile IDs
-      await prefs.setStringList(
-        _kHiddenProfiles,
-        state.hiddenProfileIds.toList(),
-      );
-    } catch (e) {
-      debugPrint('BlockReportCubit: failed to save to prefs: $e');
-    }
-  }
-
-  // ── Block ─────────────────────────────────────────────────
+  // Block
 
   /// Silently block a user.
   /// Blueprint: "The blocked person is not notified."
@@ -313,8 +192,6 @@ class BlockReportCubit extends Cubit<BlockReportState> {
       hiddenProfileIds: updatedHidden,
       successMessage: 'User blocked. They can no longer contact you.',
     ));
-
-    await _saveToPrefs();
   }
 
   /// Unblock a previously blocked user.
@@ -354,11 +231,9 @@ class BlockReportCubit extends Cubit<BlockReportState> {
       blockedUsers: updatedBlocks,
       hiddenProfileIds: updatedHidden,
     ));
-
-    await _saveToPrefs();
   }
 
-  // ── Report ────────────────────────────────────────────────
+  // Report
 
   /// Report a user with a predefined reason.
   /// Blueprint: "Reporting immediately hides that profile from the reporter."
@@ -422,8 +297,6 @@ class BlockReportCubit extends Cubit<BlockReportState> {
       successMessage:
           'Report submitted. JazakAllah for keeping the community safe.',
     ));
-
-    await _saveToPrefs();
   }
 
   void clearMessages() {

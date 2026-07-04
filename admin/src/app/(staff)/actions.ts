@@ -28,6 +28,10 @@ const reportSchema = z.object({
   reportId: uuidSchema,
   action: z.enum(["actioned", "dismissed"]),
 });
+const messageReportSchema = z.object({
+  reportId: uuidSchema,
+  action: z.enum(["reviewed", "actioned", "dismissed"]),
+});
 const photoReviewSchema = z.object({
   photoId: uuidSchema,
   decision: z.enum(["approve", "reject"]),
@@ -96,7 +100,7 @@ async function run(name: string, values: Record<string, unknown>) {
   if (error) throw new Error(error.message);
 }
 
-async function claimWorkItem(itemType: "kyc" | "report" | "photo", itemId: string) {
+async function claimWorkItem(itemType: "kyc" | "report" | "photo" | "message_report", itemId: string) {
   await run("admin_claim_work_item", {
     p_item_type: itemType,
     p_item_id: itemId,
@@ -192,6 +196,21 @@ export async function resolveReport(formData: FormData) {
     await claimWorkItem("report", parsed.reportId);
     await run("admin_resolve_report", { p_report_id: parsed.reportId, p_action: parsed.action });
   }, "Report decision saved.");
+}
+export async function resolveMessageReport(formData: FormData) {
+  await guardedAction("/moderation", async () => {
+    const admin = await requireAdmin();
+    assertRole(admin, ["super_admin", "moderator"]);
+    const parsed = messageReportSchema.parse({
+      reportId: formData.get("reportId"),
+      action: formData.get("action"),
+    });
+    await claimWorkItem("message_report", parsed.reportId);
+    await run("admin_resolve_message_report", {
+      p_report_id: parsed.reportId,
+      p_action: parsed.action,
+    });
+  }, "Message report decision saved.");
 }
 export async function reviewPhoto(formData: FormData) {
   await guardedAction("/moderation", async () => {

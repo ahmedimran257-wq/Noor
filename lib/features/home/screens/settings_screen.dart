@@ -68,7 +68,6 @@ const _kGuardianCanReply = 'guardian_can_reply';
 const _kPhotoVisibility = 'privacy_photo_visibility';
 const _kShowOnlineStatus = 'privacy_show_online';
 const _kProfilePaused = 'privacy_profile_paused';
-const _kProfileVisibility = 'privacy_who_can_see';
 
 // ═══════════════════════════════════════════════════════════════
 // MAIN SCREEN
@@ -101,12 +100,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadVerificationStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    setState(() {
-      _isVerified = prefs.getBool('selfie_verified') ?? false;
-    });
-
     try {
       final status = await SelfieVerificationService.instance.getStatus();
       if (!mounted) return;
@@ -115,7 +108,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         setState(() {
           _isVerified = isVerified;
         });
-        await prefs.setBool('selfie_verified', isVerified);
       }
     } catch (e) {
       debugPrint('SettingsScreen: _loadVerificationStatus error: $e');
@@ -1002,8 +994,6 @@ class _PrivacySectionState extends State<_PrivacySection> {
   String _photoVisibility = 'Everyone';
   bool _showOnlineStatus = true;
   bool _profilePaused = false;
-  String _profileVisibility = 'All registered users';
-
   // Animated save checkmark
   final Map<String, bool> _savedIndicators = {};
 
@@ -1038,12 +1028,27 @@ class _PrivacySectionState extends State<_PrivacySection> {
       _photoVisibility = photoVisibility;
       _showOnlineStatus = prefs.getBool(_kShowOnlineStatus) ?? true;
       _profilePaused = profilePaused;
-      _profileVisibility =
-          prefs.getString(_kProfileVisibility) ?? 'All registered users';
     });
   }
 
-  Future<void> _persist(String key, dynamic value) async {
+  Future<void> _persist(String key, dynamic value,
+      {Object? previousValue}) async {
+    final backendSaved = await _persistBackend(key, value);
+    if (!backendSaved) {
+      if (!mounted) return;
+      setState(() {
+        if (key == _kPhotoVisibility) {
+          _photoVisibility = previousValue as String? ?? _photoVisibility;
+        } else if (key == _kProfilePaused) {
+          _profilePaused = previousValue as bool? ?? _profilePaused;
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not save. Please try again.')),
+      );
+      return;
+    }
+
     final prefs = await SharedPreferences.getInstance();
     if (value is bool) {
       await prefs.setBool(key, value);
@@ -1051,7 +1056,6 @@ class _PrivacySectionState extends State<_PrivacySection> {
     if (value is String) {
       await prefs.setString(key, value);
     }
-    await _persistBackend(key, value);
     if (!mounted) return;
     setState(() => _savedIndicators[key] = true);
     Future.delayed(const Duration(seconds: 2), () {
@@ -1059,10 +1063,10 @@ class _PrivacySectionState extends State<_PrivacySection> {
     });
   }
 
-  Future<void> _persistBackend(String key, dynamic value) async {
+  Future<bool> _persistBackend(String key, dynamic value) async {
     if (!SupabaseService.isInitialized ||
         SupabaseService.currentUserId == null) {
-      return;
+      return key == _kShowOnlineStatus;
     }
     try {
       final updates = <String, dynamic>{};
@@ -1071,13 +1075,14 @@ class _PrivacySectionState extends State<_PrivacySection> {
       } else if (key == _kProfilePaused && value is bool) {
         updates['visibility'] = value ? 'paused' : 'visible';
       }
-      if (updates.isEmpty) return;
+      if (updates.isEmpty) return key == _kShowOnlineStatus;
       await SupabaseService.client
           .from('profiles')
           .update(updates)
           .eq('user_id', SupabaseService.currentUserId!);
-    } catch (e) {
-      debugPrint('SettingsScreen: failed to persist privacy setting: $e');
+      return true;
+    } catch (_) {
+      return false;
     }
   }
 
@@ -1139,24 +1144,35 @@ class _PrivacySectionState extends State<_PrivacySection> {
             label: _photoPrivacyLabel(l10n, 'Everyone'),
             selected: _photoVisibility == 'Everyone',
             onTap: () {
+              final previous = _photoVisibility;
               setState(() => _photoVisibility = 'Everyone');
-              _persist(_kPhotoVisibility, 'Everyone');
+              _persist(_kPhotoVisibility, 'Everyone', previousValue: previous);
             },
           ),
           _RadioRow(
             label: _photoPrivacyLabel(l10n, 'Accepted interests only'),
             selected: _photoVisibility == 'Accepted interests only',
             onTap: () {
+              final previous = _photoVisibility;
               setState(() => _photoVisibility = 'Accepted interests only');
-              _persist(_kPhotoVisibility, 'Accepted interests only');
+              _persist(
+                _kPhotoVisibility,
+                'Accepted interests only',
+                previousValue: previous,
+              );
             },
           ),
           _RadioRow(
             label: _photoPrivacyLabel(l10n, 'Request to view'),
             selected: _photoVisibility == 'Request to view',
             onTap: () {
+              final previous = _photoVisibility;
               setState(() => _photoVisibility = 'Request to view');
-              _persist(_kPhotoVisibility, 'Request to view');
+              _persist(
+                _kPhotoVisibility,
+                'Request to view',
+                previousValue: previous,
+              );
             },
           ),
         ]),
@@ -1189,8 +1205,9 @@ class _PrivacySectionState extends State<_PrivacySection> {
             _PrivacyToggle(
               value: _profilePaused,
               onChanged: (v) {
+                final previous = _profilePaused;
                 setState(() => _profilePaused = v);
-                _persist(_kProfilePaused, v);
+                _persist(_kProfilePaused, v, previousValue: previous);
               },
             ),
             if (_profilePaused) ...[
@@ -1220,33 +1237,6 @@ class _PrivacySectionState extends State<_PrivacySection> {
             ],
           ],
         ),
-      ),
-      const SizedBox(height: AppDimensions.space8),
-
-      // ── Who Can See My Profile ─────────────────────────────
-      _PrivacyCard(
-        label: l10n.settings_privacy_visibility_label,
-        subtitle: l10n.settings_privacy_visibility_sub,
-        saved: _savedIndicators[_kProfileVisibility] ?? false,
-        child: Column(children: [
-          const SizedBox(height: 8),
-          _RadioRow(
-            label: l10n.settings_privacy_visibility_all,
-            selected: _profileVisibility == 'All registered users',
-            onTap: () {
-              setState(() => _profileVisibility = 'All registered users');
-              _persist(_kProfileVisibility, 'All registered users');
-            },
-          ),
-          _RadioRow(
-            label: l10n.settings_privacy_visibility_subscribers,
-            selected: _profileVisibility == 'Subscribers only',
-            onTap: () {
-              setState(() => _profileVisibility = 'Subscribers only');
-              _persist(_kProfileVisibility, 'Subscribers only');
-            },
-          ),
-        ]),
       ),
       const SizedBox(height: AppDimensions.space8),
 

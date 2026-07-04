@@ -869,6 +869,14 @@ tbody tr:hover { background: rgba(213, 175, 91, .035); }
   gap: 8px;
 }
 .queue-card p { margin: 4px 0 0; }
+.admin-quote {
+  margin: 12px 0 0;
+  border-left: 3px solid rgba(213, 175, 91, .55);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: #eee8dd;
+  background: rgba(255, 255, 255, .035);
+}
 .json-chip {
   display: inline-block;
   max-width: 360px;

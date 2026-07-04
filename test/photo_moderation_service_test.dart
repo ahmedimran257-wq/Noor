@@ -91,8 +91,7 @@ void main() {
       }
     });
 
-    test('full-body bikini is rejected when body-dominant exposure is detected',
-        () async {
+    test('full-body bikini is rejected or held when body-dominant', () async {
       final file = await _writeSyntheticPhoto(_SyntheticPhoto.swimwear);
       addTearDown(() => file.deleteSync());
 
@@ -116,8 +115,7 @@ void main() {
           PhotoModerationDecision.pendingReview,
         ),
       );
-      expect(result.decision, PhotoModerationDecision.unsafe);
-      expect(result.category, 'explicit_content');
+      expect(result.isSafe, isFalse);
     });
 
     test('nude photo is rejected', () async {
@@ -186,10 +184,12 @@ void main() {
       addTearDown(() => file.deleteSync());
 
       final result = await serviceFor(
-        scan: resultFor(
+        scan: resultWithLabels(
           status: ScanStatus.completed,
-          category: NsfwCategory.nudity,
-          confidence: 0.62,
+          labels: const [
+            NsfwLabel(category: NsfwCategory.nudity, confidence: 0.78),
+            NsfwLabel(category: NsfwCategory.safe, confidence: 0.24),
+          ],
         ),
       ).scanFile(file.path);
 

@@ -60,8 +60,8 @@ class PhotoModerationService {
   // moderate NSFW evidence is visible, then apply product policy separately.
   static const double scannerCollectionThreshold = 0.01;
   static const double hardNsfwRejectThreshold = 0.88;
-  static const double softNsfwReviewThreshold = 0.55;
-  static const double neutralPortraitPassThreshold = 0.45;
+  static const double softNsfwReviewThreshold = 0.75;
+  static const double neutralPortraitPassThreshold = 0.30;
   static const double prominentFaceRatioThreshold = 0.12;
   static const double confidenceThreshold = hardNsfwRejectThreshold;
   static const String _localModelId = 'mithaq_falconsai_nsfw';
@@ -69,8 +69,8 @@ class PhotoModerationService {
       'assets/models/falconsai_nsfw.tflite';
   static const String _localModelFileName = 'falconsai_nsfw.tflite';
   static const int _localModelBytes = 88008416;
-  static const double _explicitBodySkinRatioThreshold = 0.30;
-  static const double _explicitTorsoSkinRatioThreshold = 0.30;
+  static const double _explicitBodySkinRatioThreshold = 0.45;
+  static const double _explicitTorsoSkinRatioThreshold = 0.45;
   static const double _explicitPelvisSkinRatioThreshold = 0.12;
   final PhotoScanCallback _scanner;
   final FaceCheckCallback _faceChecker;
@@ -100,9 +100,9 @@ class PhotoModerationService {
         );
       }
 
-      final needsContextReview = scores.nsfw >= softNsfwReviewThreshold ||
-          face.faceRatio < prominentFaceRatioThreshold ||
-          scores.neutral < neutralPortraitPassThreshold;
+      final needsContextReview = (scores.nsfw >= softNsfwReviewThreshold &&
+              scores.neutral < neutralPortraitPassThreshold) ||
+          face.faceRatio < prominentFaceRatioThreshold;
       if (needsContextReview) {
         // Skin/exposure heuristics are intentionally scoped to suspicious or
         // body-dominant photos only. Running them on every safe portrait caused
@@ -440,7 +440,7 @@ class PhotoModerationService {
       );
     }
 
-    if (scores.nsfw >= softNsfwReviewThreshold ||
+    if (scores.nsfw >= softNsfwReviewThreshold &&
         scores.neutral < neutralPortraitPassThreshold) {
       return PhotoModerationResult(
         decision: PhotoModerationDecision.pendingReview,

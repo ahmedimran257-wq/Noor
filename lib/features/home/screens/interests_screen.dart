@@ -389,8 +389,6 @@ class _DailyLimitBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Blueprint: Women send interests free — no limit, no banner.
-    // We use 9999 as the "unlimited" sentinel for female users.
     if (state.dailyLimit >= 9999) return const SizedBox.shrink();
 
     final sent = state.interestsSentToday;

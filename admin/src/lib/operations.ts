@@ -50,6 +50,7 @@ export async function getRevealedUserPii(userId: string, reason: string) {
 }
 export const getKycQueue = () => rpc<KycRow[]>("admin_kyc_queue", { p_limit: 100 });
 export const getReports = () => rpc<ReportRow[]>("admin_reports_queue", { p_limit: 100 });
+export const getMessageReports = () => rpc<MessageReportRow[]>("admin_message_reports_queue", { p_limit: 100 });
 export async function getPhotos(): Promise<PhotoRow[]> {
   const rows = await rpc<PhotoRow[]>("admin_photo_queue", { p_limit: 100 });
   if (rows.length === 0) return rows;
@@ -89,6 +90,7 @@ export type UserRow = { user_id:string; profile_id:string; name:string; email:st
 export type RevealedUserPii = { user_id:string; name:string; email:string|null; revealed_at:string };
 export type KycRow = { user_id:string; profile_id:string; name:string; country_code:string; kyc_id_type:string|null; face_similarity:number|null; created_at:string; selfie_path:string|null; id_path:string|null };
 export type ReportRow = { report_id:string; reporter_id:string; reported_user_id:string; reason:string; description:string|null; created_at:string; report_count:number; reported_name:string };
+export type MessageReportRow = { report_id:string; message_id:string; match_id:string; reporter_id:string; reported_user_id:string; reported_name:string; reason:string; description:string|null; message_content:string; created_at:string };
 export type PhotoRow = { photo_id:string; user_id:string; name:string; storage_path:string; nsfw_score:number|null; nsfw_category:string|null; created_at:string; moderation_status:string; preview_url?:string|null; preview_error?:string|null };
 export type MatchRow = { match_id:string; user_a_name:string; user_b_name:string; created_at:string; message_count:number; last_message_at:string|null };
 export type SubscriberRow = { user_id:string; name:string; country_code:string; subscription_status:string; subscription_expires_at:string|null; product_id:string|null; total_paid:number };

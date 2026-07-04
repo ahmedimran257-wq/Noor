@@ -177,14 +177,14 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           final profilePhotos =
               profileId == null ? null : photosByProfile[profileId];
           row['photo_count'] = profilePhotos?.length ?? 0;
-          if (profilePhotos?.isNotEmpty == true &&
-              row['photo_privacy'] == 'public') {
-            final path = profilePhotos!.first['storage_path'] as String?;
-            if (path != null && path.isNotEmpty) {
-              row['photo_url'] = await SupabaseService.client.storage
-                  .from('profile-photos')
-                  .createSignedUrl(path, 60 * 60);
-              row['blurhash'] = profilePhotos.first['blurhash'];
+          if (profilePhotos?.isNotEmpty == true) {
+            final ownerUserId = row['user_id']?.toString();
+            if (ownerUserId != null && ownerUserId.isNotEmpty) {
+              row['photo_url'] =
+                  await ProfilePhotoService.instance.getAuthorizedPhotoUrl(
+                ownerUserId: ownerUserId,
+              );
+              row['blurhash'] = profilePhotos!.first['blurhash'];
             }
           }
         }
@@ -719,23 +719,7 @@ class _BoostSectionState extends State<_BoostSection> {
                 'user_id', SupabaseService.currentUserId!);
       }
 
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('boost_activated_at');
       return;
-    }
-
-    final prefs = await SharedPreferences.getInstance();
-    final ms = prefs.getInt('boost_activated_at');
-    if (ms != null) {
-      final at = DateTime.fromMillisecondsSinceEpoch(ms);
-      if (DateTime.now().difference(at) < const Duration(hours: 2)) {
-        if (mounted) {
-          setState(() => _boostedAt = at);
-          _startTimer();
-        }
-      } else {
-        prefs.remove('boost_activated_at');
-      }
     }
   }
 
@@ -765,8 +749,6 @@ class _BoostSectionState extends State<_BoostSection> {
           .from('profiles')
           .update({'is_boosted': false, 'boost_expires_at': null}).eq(
               'user_id', SupabaseService.currentUserId!);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('boost_activated_at');
     } catch (_) {}
   }
 
@@ -799,8 +781,6 @@ class _BoostSectionState extends State<_BoostSection> {
       return;
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('boost_activated_at', now.millisecondsSinceEpoch);
     if (mounted) {
       setState(() {
         _boosting = false;
@@ -1176,24 +1156,25 @@ class _BadgeCardState extends State<_BadgeCard> {
   }
 
   Future<void> _checkBadge() async {
-    final prefs = await SharedPreferences.getInstance();
-    final local = prefs.getBool('has_verification_badge') ?? false;
-    if (mounted) {
-      setState(() {
-        _hasBadge = local;
-        _loading = false;
-      });
-    }
-
-    // Also check server if available
     if (SupabaseService.isInitialized) {
       try {
         final hasBadge = await SelfieVerificationService.instance.hasBadge();
-        if (mounted && hasBadge != _hasBadge) {
-          setState(() => _hasBadge = hasBadge);
-          await prefs.setBool('has_verification_badge', hasBadge);
+        if (mounted) {
+          setState(() {
+            _hasBadge = hasBadge;
+            _loading = false;
+          });
         }
-      } catch (_) {}
+        return;
+      } catch (_) {
+        // Fall through to the safe default below.
+      }
+    }
+    if (mounted) {
+      setState(() {
+        _hasBadge = false;
+        _loading = false;
+      });
     }
   }
 
@@ -1892,16 +1873,6 @@ class _VerificationCardState extends State<_VerificationCard> {
   }
 
   Future<void> _loadStatus() async {
-    // 1. Read locally cached state from SharedPreferences first for instant display
-    final prefs = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    setState(() {
-      _isVerified = prefs.getBool('selfie_verified') ?? false;
-      final ts = prefs.getString('selfie_verified_at');
-      if (ts != null) _verifiedAt = DateTime.tryParse(ts);
-    });
-
-    // 2. Fetch fresh verification status asynchronously in the background
     try {
       final status = await SelfieVerificationService.instance.getStatus();
       if (!mounted) return;
@@ -1911,14 +1882,6 @@ class _VerificationCardState extends State<_VerificationCard> {
         _isVerified = isVerified;
         _verifiedAt = status.verifiedAt;
       });
-
-      await prefs.setBool('selfie_verified', isVerified);
-      if (status.verifiedAt != null) {
-        await prefs.setString(
-            'selfie_verified_at', status.verifiedAt!.toIso8601String());
-      } else {
-        await prefs.remove('selfie_verified_at');
-      }
     } catch (e) {
       debugPrint(
           'MyProfileScreen: _loadStatus error fetching fresh status: $e');

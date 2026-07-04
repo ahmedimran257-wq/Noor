@@ -4,7 +4,6 @@
 // Two primary options: Myself / Guardian.
 // Selecting Guardian expands to show relationship sub-options:
 //   Son, Daughter, Brother, Sister.
-// Auto-advances 300ms after final selection.
 // ============================================================
 
 import 'package:flutter/material.dart';
@@ -31,8 +30,8 @@ class ProfileForWhomScreen extends StatefulWidget {
 
 class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
     with SingleTickerProviderStateMixin {
-  String? _selectedCategory; // 'self' or 'guardian'
-  String? _selectedRelation; // 'son','daughter','brother','sister'
+  String? _selectedCategory;
+  String? _selectedRelation;
   bool _advancing = false;
   String? _saveError;
 
@@ -83,7 +82,6 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
     });
     _expandCtrl.reverse();
 
-    await Future.delayed(const Duration(milliseconds: 300));
     if (!mounted) return;
     final cubit = context.read<OnboardingCubit>();
     final current = cubit.currentData;
@@ -122,7 +120,6 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
       _saveError = null;
     });
 
-    await Future.delayed(const Duration(milliseconds: 300));
     if (!mounted) return;
     final cubit = context.read<OnboardingCubit>();
     final current = cubit.currentData;

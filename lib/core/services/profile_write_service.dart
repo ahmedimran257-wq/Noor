@@ -8,11 +8,10 @@
 // with no local success fallback.
 // ============================================================
 
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 import '../data/country_data.dart';
 import '../models/onboarding_data.dart';
+import '../onboarding/onboarding_flow.dart';
 import 'supabase_service.dart';
 
 class ProfileWriteService {
@@ -81,12 +80,9 @@ class ProfileWriteService {
         'p_phone': pendingPhone,
       });
 
-      // Success! Clear retry flag
       await prefs.remove(_keyPendingPhoneRetry);
-      debugPrint(
-          'ProfileWriteService: Successfully retried setting guardian phone');
     } catch (e) {
-      debugPrint('ProfileWriteService: Failed retrying guardian phone: $e');
+      return;
     }
   }
 
@@ -105,16 +101,14 @@ class ProfileWriteService {
     await retryPendingGuardianPhone();
 
     OnboardingData dataToWrite = data;
-    Map<String, dynamic> attemptedFields = const {};
 
     try {
-      if (step == 2) {
+      if (step == OnboardingFlow.basicIdentityStep) {
         final preparedData = await _prepareBasicIdentityWrite(data);
         if (preparedData == null) {
           return false;
         }
         dataToWrite = preparedData;
-        attemptedFields = _fieldsForStep(step, dataToWrite, isGuardianPath);
         final saved = await _saveBasicIdentityStep(
           dataToWrite,
           isGuardianPath: isGuardianPath,
@@ -126,14 +120,10 @@ class ProfileWriteService {
           await _saveGuardianPhone(dataToWrite);
         }
 
-        debugPrint(
-          'ProfileWriteService: Step $step saved '
-          '(${attemptedFields.length} fields via RPC)',
-        );
         return true;
       }
 
-      if (step > 2) {
+      if (step > OnboardingFlow.basicIdentityStep) {
         final profileReady = await _ensureProfileRowForPartialStep(
           dataToWrite,
           isGuardianPath: isGuardianPath,
@@ -142,9 +132,7 @@ class ProfileWriteService {
       }
 
       final fields = _fieldsForStep(step, dataToWrite, isGuardianPath);
-      attemptedFields = fields;
       if (fields.isEmpty) {
-        debugPrint('ProfileWriteService: No fields to write for step $step');
         return true;
       }
 
@@ -155,9 +143,6 @@ class ProfileWriteService {
           .select('id')
           .maybeSingle();
       if (updatedProfile == null) {
-        debugPrint(
-          'ProfileWriteService: Missing profile row for partial step $step',
-        );
         return false;
       }
 
@@ -177,16 +162,8 @@ class ProfileWriteService {
         }, onConflict: 'profile_id');
       }
 
-      // Guardian phone: encrypt via set_guardian_phone() SECURITY DEFINER RPC
-      // This must happen AFTER the profiles upsert so the profile row exists.
-      debugPrint(
-          'ProfileWriteService: Step $step saved (${fields.length} fields)');
       return true;
-    } catch (e) {
-      _logSupabaseError(
-        'saveStep step $step fields: ${attemptedFields.keys.join(', ')}',
-        e,
-      );
+    } catch (_) {
       return false;
     }
   }
@@ -206,8 +183,7 @@ class ProfileWriteService {
         },
       );
       return true;
-    } catch (e) {
-      _logSupabaseError('saveProfileTypeResume', e);
+    } catch (_) {
       return false;
     }
   }
@@ -246,8 +222,7 @@ class ProfileWriteService {
         },
       );
       return true;
-    } catch (e) {
-      _logSupabaseError('save_onboarding_location', e);
+    } catch (_) {
       return false;
     }
   }
@@ -261,11 +236,6 @@ class ProfileWriteService {
         cityName == null ||
         data.lat == null ||
         data.lng == null) {
-      debugPrint(
-        'ProfileWriteService: Basic Identity missing location payload '
-        '(country=${data.countryCode}, city=${data.cityName}, '
-        'lat=${data.lat}, lng=${data.lng})',
-      );
       return null;
     }
 
@@ -283,15 +253,10 @@ class ProfileWriteService {
           .eq('user_id', _userId!)
           .maybeSingle();
       if (existing != null) return true;
-    } catch (e) {
-      _logSupabaseError('check profile row before partial onboarding save', e);
+    } catch (_) {
       return false;
     }
 
-    debugPrint(
-      'ProfileWriteService: Recovering missing Basic Identity row before '
-      'partial onboarding save.',
-    );
     final preparedData = await _prepareBasicIdentityWrite(data);
     if (preparedData == null) return false;
     return _saveBasicIdentityStep(
@@ -316,12 +281,6 @@ class ProfileWriteService {
         dateOfBirth == null ||
         _cleanText(data.firstName) == null ||
         data.heightCm == null) {
-      debugPrint(
-        'ProfileWriteService: Basic Identity required payload missing '
-        '(country=$countryCode, city=$cityName, lat=${data.lat}, '
-        'lng=${data.lng}, gender=$gender, dob=$dateOfBirth, '
-        'firstName=${data.firstName}, height=${data.heightCm})',
-      );
       return false;
     }
 
@@ -359,8 +318,7 @@ class ProfileWriteService {
         'p_lng': data.lng,
       });
       return true;
-    } catch (e) {
-      _logSupabaseError('save_basic_identity_step', e);
+    } catch (_) {
       return false;
     }
   }
@@ -378,20 +336,14 @@ class ProfileWriteService {
         'p_phone': data.guardianPhone!.trim(),
       });
     } catch (rpcErr) {
-      debugPrint(
-        'ProfileWriteService: RPC set_guardian_phone failed, '
-        'queueing for retry: $rpcErr',
-      );
       try {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(
           _keyPendingPhoneRetry,
           data.guardianPhone!.trim(),
         );
-      } catch (prefErr) {
-        debugPrint(
-          'ProfileWriteService: Failed to save phone for retry: $prefErr',
-        );
+      } catch (_) {
+        return;
       }
     }
   }
@@ -405,9 +357,6 @@ class ProfileWriteService {
         cityName == null ||
         data.lat == null ||
         data.lng == null) {
-      debugPrint(
-        'ProfileWriteService: Missing resolved location before profile write',
-      );
       return null;
     }
 
@@ -430,9 +379,6 @@ class ProfileWriteService {
 
       final cityId = _intFromRpc(response);
       if (cityId == null) {
-        debugPrint(
-          'ProfileWriteService: get_or_create_city returned invalid id: $response',
-        );
         return null;
       }
 
@@ -441,8 +387,7 @@ class ProfileWriteService {
         cityId: cityId.toString(),
         cityName: cityName,
       );
-    } catch (e) {
-      _logSupabaseError('get_or_create_city during Basic Identity save', e);
+    } catch (_) {
       return null;
     }
   }
@@ -464,8 +409,7 @@ class ProfileWriteService {
       );
       if (!userProgressSaved) return false;
       return true;
-    } catch (e) {
-      debugPrint('ProfileWriteService: Error updating step: $e');
+    } catch (_) {
       return false;
     }
   }
@@ -482,8 +426,7 @@ class ProfileWriteService {
         step,
         writeStepDirectly: true,
       );
-    } catch (e) {
-      debugPrint('ProfileWriteService: Error setting back step: $e');
+    } catch (_) {
       return false;
     }
   }
@@ -493,8 +436,7 @@ class ProfileWriteService {
     try {
       await SupabaseService.client.rpc('complete_onboarding_profile');
       return true;
-    } catch (e) {
-      _logSupabaseError('complete_onboarding_profile', e);
+    } catch (_) {
       return false;
     }
   }
@@ -526,8 +468,7 @@ class ProfileWriteService {
           .update(fields)
           .eq('id', _userId!);
       return true;
-    } catch (e) {
-      debugPrint('ProfileWriteService: Error updating user progress: $e');
+    } catch (_) {
       return false;
     }
   }
@@ -536,8 +477,6 @@ class ProfileWriteService {
   /// onboarding. This keeps "complete later" real, not just locally cached.
   static Future<bool> saveFullProfile(OnboardingData data) async {
     if (!_canWrite || _userId == null) {
-      debugPrint(
-          'ProfileWriteService: Cannot save full profile without backend auth.');
       return false;
     }
 
@@ -565,8 +504,7 @@ class ProfileWriteService {
       }
 
       return true;
-    } catch (e) {
-      debugPrint('ProfileWriteService: Error saving full profile: $e');
+    } catch (_) {
       return false;
     }
   }
@@ -580,11 +518,8 @@ class ProfileWriteService {
     OnboardingData data,
     bool isGuardianPath,
   ) {
-    // Keep this switch aligned exactly with app_router._screenForStep():
-    // 0 ProfileForWhom, 1 QuickLocation, 2 BasicIdentity,
-    // 3 IslamicIdentity, 4 PhotoUpload. Do not offset these numbers.
     switch (step) {
-      case 0:
+      case OnboardingFlow.profileForWhomStep:
         final relation = data.profileCreatorRelation ??
             (data.profileFor == ProfileFor.myself ? 'self' : 'guardian');
         final dbRelation = relation == 'son' || relation == 'daughter'
@@ -601,10 +536,10 @@ class ProfileWriteService {
           'guardian_user_id': _isGuardianData(data) ? _userId : null,
         });
 
-      case 1:
+      case OnboardingFlow.quickLocationStepIndex:
         return _locationFields(data);
 
-      case 2:
+      case OnboardingFlow.basicIdentityStep:
         final isGuardian = _isGuardianData(data);
         return _compactMap({
           ..._locationFields(data),
@@ -634,7 +569,7 @@ class ProfileWriteService {
           'special_needs': _specialNeedsToDb(data.specialNeeds),
         });
 
-      case 3:
+      case OnboardingFlow.islamicIdentityStep:
         return _compactMap({
           'sect': _sectToString(data.sect),
           'sub_sect': data.subSect,
@@ -648,13 +583,11 @@ class ProfileWriteService {
           'hookah_habit': _habitToDb(data.hookahHabit),
         });
 
-      case 4:
+      case OnboardingFlow.photoUploadStep:
         return _compactMap({
           'photo_privacy': _photoPrivacyToString(data.photoPrivacy),
         });
 
-      // Deferred Islamic marriage details. This is not part of the required
-      // fast-start onboarding path, so it must never run for route step 3.
       case 5:
         final fields = <String, dynamic>{
           'quran_memorization': data.quranMemorization,
@@ -665,7 +598,6 @@ class ProfileWriteService {
           'religious_leadership': data.religiousLeadership,
         };
 
-        // Gender-specific fields
         if (data.gender == Gender.female) {
           fields.addAll({
             'niqab_preference': data.niqabPreference,
@@ -685,7 +617,6 @@ class ProfileWriteService {
 
         return _compactMap(fields);
 
-      // Deferred education and work
       case 6:
         return _compactMap({
           'education_level': data.educationLabel,
@@ -697,7 +628,6 @@ class ProfileWriteService {
           'income_visibility': data.incomeVisibility,
         });
 
-      // Deferred family details
       case 7:
         return _compactMap({
           'family_type': _familyTypeToString(data.familyType),
@@ -967,17 +897,6 @@ class ProfileWriteService {
     }
   }
 
-  static void _logSupabaseError(String context, Object error) {
-    debugPrint('ProfileWriteService: FULL ERROR [$context]: $error');
-    debugPrint('ProfileWriteService: ERROR TYPE: ${error.runtimeType}');
-    if (error is PostgrestException) {
-      debugPrint('ProfileWriteService: POSTGREST CODE: ${error.code}');
-      debugPrint('ProfileWriteService: POSTGREST MESSAGE: ${error.message}');
-      debugPrint('ProfileWriteService: POSTGREST DETAILS: ${error.details}');
-      debugPrint('ProfileWriteService: POSTGREST HINT: ${error.hint}');
-    }
-  }
-
   static bool _isGuardianData(OnboardingData data) {
     return data.profileOwnerType == ProfileOwnerType.guardian ||
         data.profileFor == ProfileFor.guardian ||
@@ -1070,9 +989,7 @@ class ProfileWriteService {
             .select(_userRestoreColumns)
             .eq('id', _userId!)
             .maybeSingle();
-      } catch (e) {
-        debugPrint('ProfileWriteService: User row not found or error: $e');
-      }
+      } catch (_) {}
 
       // 2. Fetch profiles table row
       final profileRes = await SupabaseService.client
@@ -1091,15 +1008,11 @@ class ProfileWriteService {
             .select(_preferenceRestoreColumns)
             .eq('profile_id', profileRes['id'])
             .maybeSingle();
-      } catch (e) {
-        debugPrint(
-            'ProfileWriteService: Preferences row not found or error: $e');
-      }
+      } catch (_) {}
 
       // 4. Construct and return OnboardingData
       return _mapDbToOnboardingData(profileRes, prefRes, userRes);
-    } catch (e) {
-      debugPrint('ProfileWriteService: Error loading profile: $e');
+    } catch (_) {
       return null;
     }
   }

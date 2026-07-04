@@ -910,6 +910,8 @@ class _OtpBoxesState extends State<_OtpBoxes> with WidgetsBindingObserver {
   final _focusNode = FocusNode();
   String _otp = '';
   bool _completionSubmitted = false;
+  Timer? _keyboardTimer;
+  Timer? _completionTimer;
 
   @override
   void initState() {
@@ -922,6 +924,8 @@ class _OtpBoxesState extends State<_OtpBoxes> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _keyboardTimer?.cancel();
+    _completionTimer?.cancel();
     _controller.removeListener(_onInput);
     _controller.dispose();
     _focusNode.dispose();
@@ -955,14 +959,12 @@ class _OtpBoxesState extends State<_OtpBoxes> with WidgetsBindingObserver {
       SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
     }
 
-    Future<void>.delayed(
-      Duration(milliseconds: reconnect ? 90 : 0),
-      () {
-        if (!mounted) return;
-        FocusScope.of(context).requestFocus(_focusNode);
-        SystemChannels.textInput.invokeMethod<void>('TextInput.show');
-      },
-    );
+    _keyboardTimer?.cancel();
+    _keyboardTimer = Timer(Duration(milliseconds: reconnect ? 90 : 0), () {
+      if (!mounted) return;
+      FocusScope.of(context).requestFocus(_focusNode);
+      SystemChannels.textInput.invokeMethod<void>('TextInput.show');
+    });
   }
 
   void _onInput() {
@@ -991,7 +993,8 @@ class _OtpBoxesState extends State<_OtpBoxes> with WidgetsBindingObserver {
 
     if (clamped.length == _length && !_completionSubmitted) {
       _completionSubmitted = true;
-      Future.delayed(const Duration(milliseconds: 150), () {
+      _completionTimer?.cancel();
+      _completionTimer = Timer(const Duration(milliseconds: 150), () {
         if (mounted) widget.onCompleted(clamped);
       });
     }
@@ -1084,6 +1087,7 @@ class _OtpBoxState extends State<_OtpBox> with TickerProviderStateMixin {
   AnimationController? _bounceCtrl;
   Animation<double>? _bounceScale;
   Animation<double>? _bounceFade;
+  Timer? _entryTimer;
   String? _prevDigit;
 
   @override
@@ -1100,7 +1104,7 @@ class _OtpBoxState extends State<_OtpBox> with TickerProviderStateMixin {
       parent: _entryCtrl,
       curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
     );
-    Future.delayed(Duration(milliseconds: 50 + widget.delay), () {
+    _entryTimer = Timer(Duration(milliseconds: 50 + widget.delay), () {
       if (mounted) _entryCtrl.forward();
     });
   }
@@ -1132,6 +1136,7 @@ class _OtpBoxState extends State<_OtpBox> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    _entryTimer?.cancel();
     _entryCtrl.dispose();
     _bounceCtrl?.dispose();
     super.dispose();

@@ -15,7 +15,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/services/selfie_verification_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
@@ -42,7 +41,6 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
   bool _isLoading = true;
   final List<bool> _stepResults = [];
   String? _errorMessage;
-  int _attemptsToday = 0;
 
   late AnimationController _pulseController;
   late AnimationController _successController;
@@ -74,16 +72,6 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
 
   Future<void> _checkExistingBadge() async {
     final hasBadge = await _service.hasBadge();
-    // Check daily attempt count
-    final prefs = await SharedPreferences.getInstance();
-    final savedDate = prefs.getString('badge_attempt_date');
-    final today = DateTime.now().toIso8601String().substring(0, 10);
-    if (savedDate == today) {
-      _attemptsToday = prefs.getInt('badge_attempts_today') ?? 0;
-    } else {
-      await prefs.setString('badge_attempt_date', today);
-      await prefs.setInt('badge_attempts_today', 0);
-    }
     if (mounted) {
       setState(() {
         _hasBadge = hasBadge;
@@ -93,22 +81,6 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
   }
 
   void _startVerification() {
-    if (_attemptsToday >= 3) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            'Maximum 3 attempts per day. Please try again tomorrow.',
-            style: AppTypography.body,
-          ),
-          backgroundColor: AppColors.softCoral,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          ),
-        ),
-      );
-      return;
-    }
     setState(() {
       _sequence = _service.generateBadgeSequence();
       _currentStep = 0;
@@ -176,10 +148,6 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
             return;
           }
 
-          // Save locally
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setBool('has_verification_badge', true);
-
           if (mounted) {
             setState(() {
               _isSubmitting = false;
@@ -197,9 +165,7 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
       } else {
         // Step failed — badge attempt failed
         _stepResults.add(false);
-        _attemptsToday++;
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setInt('badge_attempts_today', _attemptsToday);
+        await _service.recordFailedAttempt();
 
         setState(() {
           _isProcessing = false;
@@ -321,12 +287,6 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
                   ],
                 ),
               )),
-          if (_attemptsToday > 0)
-            Text('${3 - _attemptsToday} attempts remaining today',
-                style: AppTypography.caption.copyWith(
-                    color: _attemptsToday >= 2
-                        ? AppColors.softCoral
-                        : AppColors.slateMist)),
           const Spacer(flex: 3),
           SizedBox(
             width: double.infinity,
@@ -504,11 +464,6 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
                 .copyWith(color: AppColors.slateMist, height: 1.6),
             textAlign: TextAlign.center,
           ),
-          if (_attemptsToday < 3) ...[
-            const SizedBox(height: AppDimensions.space12),
-            Text('${3 - _attemptsToday} attempts remaining today',
-                style: AppTypography.caption),
-          ],
           const Spacer(flex: 3),
           SizedBox(
             width: double.infinity,
@@ -520,9 +475,8 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
                     borderRadius:
                         BorderRadius.circular(AppDimensions.radiusButton)),
               ),
-              onPressed: _attemptsToday < 3 ? _startVerification : null,
-              child: Text(_attemptsToday < 3 ? 'Try Again' : 'Try Tomorrow',
-                  style: AppTypography.button),
+              onPressed: _startVerification,
+              child: const Text('Try Again', style: AppTypography.button),
             ),
           ),
           const SizedBox(height: AppDimensions.space16),

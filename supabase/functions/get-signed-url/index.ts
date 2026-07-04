@@ -78,11 +78,21 @@ Deno.serve(async (req: Request) => {
     }
 
     // ── Parse request ──────────────────────────────────────────
-    const { order_index, file_extension, purpose } = await req.json() as {
+    const { order_index, file_extension, purpose, owner_user_id } = await req.json() as {
       order_index?: number;
       file_extension?: string;
-      purpose?: "kyc_selfie" | "kyc_id";
+      purpose?: "kyc_selfie" | "kyc_id" | "read_profile_photo";
+      owner_user_id?: string;
     };
+
+    if (purpose === "read_profile_photo") {
+      return await createAuthorizedProfilePhotoReadUrl(
+        userClient,
+        userId,
+        owner_user_id,
+        order_index ?? 0,
+      );
+    }
 
     const ext = (file_extension ?? "webp").toLowerCase();
     const allowedTypes = ["webp", "jpg", "jpeg", "png"];
@@ -215,22 +225,66 @@ async function createKycSignedUploadUrl(
   );
 }
 
-// ── Generate a read URL for a photo (separate endpoint) ────────
-// Called by Flutter when displaying photos, not included in quota.
-export async function getPhotoReadUrl(storagePath: string): Promise<string> {
+
+async function createAuthorizedProfilePhotoReadUrl(
+  userClient: ReturnType<typeof createClient>,
+  viewerUserId: string,
+  ownerUserId: string | undefined,
+  orderIndex: number,
+): Promise<Response> {
+  if (!ownerUserId || !isUuid(ownerUserId)) {
+    return errorResponse(400, "owner_user_id is required.");
+  }
+  if (!Number.isInteger(orderIndex) || orderIndex < 0 || orderIndex > 3) {
+    return errorResponse(400, "order_index must be 0, 1, 2, or 3.");
+  }
+
+  // This user-scoped query is intentional: photos RLS calls can_view_photo(),
+  // so public, mutual_only, and request_only privacy are enforced before any
+  // service-role signed URL is created. The client never supplies a storage path.
+  const { data: photo, error: photoError } = await userClient
+    .from("photos")
+    .select("storage_path, profiles!inner(user_id)")
+    .eq("profiles.user_id", ownerUserId)
+    .eq("order_index", orderIndex)
+    .eq("status", "active")
+    .eq("admin_approved", true)
+    .eq("nsfw_cleared", true)
+    .maybeSingle();
+
+  if (photoError) {
+    throw new Error(`Photo authorization failed: ${photoError.message}`);
+  }
+  if (!photo?.storage_path) {
+    return errorResponse(403, "You do not have access to this photo.");
+  }
+
   const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
-
   const { data, error } = await adminClient.storage
     .from(BUCKET_NAME)
-    .createSignedUrl(storagePath, 3600); // 1-hour read URL
+    .createSignedUrl(photo.storage_path, 300);
 
   if (error || !data?.signedUrl) {
     throw new Error(`Failed to generate read URL: ${error?.message}`);
   }
 
-  return data.signedUrl;
+  console.log(
+    `[get-signed-url] read URL issued for viewer ${viewerUserId}, owner ${ownerUserId}, slot ${orderIndex}`,
+  );
+
+  return new Response(
+    JSON.stringify({
+      signed_url: data.signedUrl,
+      expires_in: 300,
+    }),
+    { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+  );
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
 async function flagSuspiciousUser(userId: string, reason: string): Promise<void> {

@@ -1,16 +1,16 @@
 // lib/core/cubits/chat/chat_cubit.dart
 // ============================================================
-// MITHAQ — Chat Cubit (Supabase production flow)
+// MITHAQ — Chat Cubit (RPC-backed production flow)
 // ============================================================
 
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../services/supabase_service.dart';
 import '../../services/translation_service.dart';
-import '../../utils/content_filter.dart';
-import '../../utils/mithaq_compute.dart';
 import 'chat_state.dart';
 
 class ChatCubit extends Cubit<ChatState> {
@@ -18,15 +18,19 @@ class ChatCubit extends Cubit<ChatState> {
     unawaited(loadConversations());
   }
 
+  static const int _messagePageSize = 50;
+
   int _msgCounter = 0;
-  RealtimeChannel? _messagesSubscription;
-  RealtimeChannel? _matchesSubscription;
   int _loadVersion = 0;
+  final Set<String> _messageLoadsInFlight = {};
+  final Set<String> _exhaustedMessagePages = {};
+
+  RealtimeChannel? _incomingMessagesSubscription;
+  RealtimeChannel? _sentMessagesSubscription;
+  RealtimeChannel? _matchesSubscription;
   String? _realtimeUserId;
 
   bool get _isRealMode => SupabaseService.isInitialized;
-
-  // ── DB Loading & Realtime ─────────────────────────────────
 
   Future<void> loadConversations() async {
     final loadVersion = ++_loadVersion;
@@ -45,82 +49,26 @@ class ChatCubit extends Cubit<ChatState> {
         return;
       }
 
-      // Fetch user's messaging_suspended_until
-      final userRow = await SupabaseService.client
-          .from('users')
-          .select('messaging_suspended_until')
-          .eq('id', me)
-          .maybeSingle();
-
-      DateTime? suspendedUntil;
-      if (userRow != null && userRow['messaging_suspended_until'] != null) {
-        suspendedUntil =
-            DateTime.tryParse(userRow['messaging_suspended_until'] as String)
-                ?.toLocal();
-      }
-      if (!_isCurrentLoad(loadVersion)) return;
-
-      // Fetch matches where current user is participant
-      final matches = await SupabaseService.client
-          .from('matches')
-          .select('id, user_a, user_b, status, closure_reason')
-          .or('user_a.eq.$me,user_b.eq.$me');
-
-      final List<Conversation> loaded = [];
-
-      for (var m in matches) {
-        final matchId = m['id'] as String;
-        final userA = m['user_a'] as String;
-        final userB = m['user_b'] as String;
-        final status = m['status'] as String;
-        final closureReason = m['closure_reason'] as String?;
-        final otherUserId = (userA == me) ? userB : userA;
-
-        // Fetch other user's profile
-        final profile = await SupabaseService.client
-            .from('profiles')
-            .select('first_name, last_name')
-            .eq('user_id', otherUserId)
-            .maybeSingle();
-
-        final matchName = profile != null
-            ? (profile['first_name'] as String? ?? 'User')
-            : 'User';
-        final lastName =
-            profile != null ? (profile['last_name'] as String? ?? '') : '';
-        final matchLastInitial = lastName.isNotEmpty ? lastName[0] : '';
-
-        // Fetch messages for this match
-        final messagesData = await SupabaseService.client
-            .from('messages')
-            .select('id, sender_id, content, created_at, read_at, translations')
-            .eq('match_id', matchId)
-            .order('created_at', ascending: true);
-
-        final parseResult = await compute(
-          parseMessagesInBackground,
-          MessagesParseInput(messagesData: messagesData, myUserId: me),
-        );
-        final chatMessages = parseResult.chatMessages;
-        final unreadCount = parseResult.unreadCount;
-
-        loaded.add(Conversation(
-          id: matchId,
-          matchName: matchName,
-          matchLastInitial: matchLastInitial,
-          messages: chatMessages,
-          unreadCount: unreadCount,
-          matchId: matchId,
-          otherUserId: otherUserId,
-          isMatchClosed: status == 'closed' ||
-              status == 'expired' ||
-              status == 'blocked' ||
-              status == 'reported',
-          closureMessage: closureReason,
-        ));
-      }
+      final results = await Future.wait<dynamic>([
+        SupabaseService.client
+            .from('users')
+            .select('messaging_suspended_until')
+            .eq('id', me)
+            .maybeSingle(),
+        SupabaseService.client.rpc(
+          'get_chat_inbox',
+          params: {'p_limit': 50},
+        ),
+      ]);
 
       if (!_isCurrentLoad(loadVersion)) return;
+
+      final userRow = results[0] as Map<String, dynamic>?;
+      final inboxRows = _asRows(results[1]);
+      final suspendedUntil = _parseDate(userRow?['messaging_suspended_until']);
+      final loaded =
+          inboxRows.map((row) => _conversationFromInbox(row, me)).toList();
+
       emit(state.copyWith(
         conversations: _mergeLoadedConversations(state.conversations, loaded),
         isLoading: false,
@@ -133,291 +81,205 @@ class ChatCubit extends Cubit<ChatState> {
     }
   }
 
-  void _setupRealtime() {
-    final me = SupabaseService.currentUserId;
-    if (me == null) return;
-    if (_realtimeUserId == me &&
-        _messagesSubscription != null &&
-        _matchesSubscription != null) {
-      return;
+  Future<void> loadMessages(
+    String conversationId, {
+    bool older = false,
+  }) async {
+    if (!_isRealMode) return;
+    if (_messageLoadsInFlight.contains(conversationId)) return;
+    if (older && _exhaustedMessagePages.contains(conversationId)) return;
+
+    final conv = _findConversation(conversationId);
+    if (conv == null) return;
+
+    _messageLoadsInFlight.add(conversationId);
+    try {
+      final before = older && conv.messages.isNotEmpty
+          ? conv.messages.first.sentAt.toUtc().toIso8601String()
+          : null;
+      final rows = _asRows(await SupabaseService.client.rpc(
+        'get_chat_messages',
+        params: {
+          'p_match_id': conversationId,
+          'p_limit': _messagePageSize,
+          if (before != null) 'p_before': before,
+        },
+      ));
+
+      if (rows.length < _messagePageSize) {
+        _exhaustedMessagePages.add(conversationId);
+      }
+
+      final me = SupabaseService.currentUserId;
+      if (me == null || isClosed) return;
+
+      final messages = rows.map((row) => _messageFromRow(row, me)).toList();
+      final updated = state.conversations.map((c) {
+        if (c.id != conversationId) return c;
+        return c.copyWith(messages: _mergeMessagesById(c.messages, messages));
+      }).toList();
+      emit(state.copyWith(conversations: updated));
+    } catch (e) {
+      debugPrint('ChatCubit: Error loading messages: $e');
+    } finally {
+      _messageLoadsInFlight.remove(conversationId);
     }
-
-    _disposeRealtime();
-    _realtimeUserId = me;
-
-    // Subscribe to new incoming messages/updates where I am the receiver
-    _messagesSubscription = SupabaseService.client
-        .channel('chat_messages')
-        .onPostgresChanges(
-          event: PostgresChangeEvent.all,
-          schema: 'public',
-          table: 'messages',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'receiver_id',
-            value: me,
-          ),
-          callback: (payload) {
-            final event = payload.eventType;
-            final newRecord = payload.newRecord;
-            if (event == PostgresChangeEvent.insert) {
-              final matchId = newRecord['match_id'] as String?;
-              final senderId = newRecord['sender_id'] as String?;
-              final content = newRecord['content'] as String? ?? '';
-              final msgId = newRecord['id'] as String?;
-              final createdAtStr = newRecord['created_at'] as String?;
-
-              if (matchId != null &&
-                  senderId != null &&
-                  msgId != null &&
-                  createdAtStr != null) {
-                if (senderId != me) {
-                  final sentAt = DateTime.tryParse(createdAtStr)?.toLocal() ??
-                      DateTime.now();
-                  final chatMessage = ChatMessage(
-                    id: msgId,
-                    text: content,
-                    sentAt: sentAt,
-                    isMe: false,
-                    status: MessageStatus.delivered,
-                  );
-                  _appendIncomingMessage(matchId, chatMessage);
-                }
-              }
-            } else if (event == PostgresChangeEvent.update) {
-              final matchId = newRecord['match_id'] as String?;
-              final msgId = newRecord['id'] as String?;
-              final readAt = newRecord['read_at'];
-              if (matchId != null && msgId != null && readAt != null) {
-                _updateMessageStatus(matchId, msgId, MessageStatus.read);
-              }
-            } else {
-              unawaited(loadConversations());
-            }
-          },
-        )
-        .subscribe();
-
-    // Subscribe to match status changes / new matches (filtered by RLS)
-    _matchesSubscription = SupabaseService.client
-        .channel('chat_matches')
-        .onPostgresChanges(
-          event: PostgresChangeEvent.all,
-          schema: 'public',
-          table: 'matches',
-          callback: (payload) {
-            unawaited(loadConversations());
-          },
-        )
-        .subscribe();
   }
-
-  void _disposeRealtime() {
-    _messagesSubscription?.unsubscribe();
-    _matchesSubscription?.unsubscribe();
-    _messagesSubscription = null;
-    _matchesSubscription = null;
-    _realtimeUserId = null;
-  }
-
-  @override
-  Future<void> close() {
-    _disposeRealtime();
-    return super.close();
-  }
-
-  // ── Public API ────────────────────────────────────────────
 
   Future<String> openOrCreateConversation(
-      String otherUserId, String matchName, String lastInitial) async {
+    String otherUserId,
+    String matchName,
+    String lastInitial,
+  ) async {
     final existing = state.conversations.where((c) {
-      if (c.otherUserId != null && c.otherUserId == otherUserId) {
-        return true;
-      }
-      if (c.otherUserId == null &&
-          c.matchName.toLowerCase() == matchName.toLowerCase()) {
-        return true;
-      }
-      return false;
+      if (c.otherUserId != null && c.otherUserId == otherUserId) return true;
+      return c.otherUserId == null &&
+          c.matchName.toLowerCase() == matchName.toLowerCase();
     });
     if (existing.isNotEmpty) return existing.first.id;
 
-    if (_isRealMode) {
-      // In real mode, matches are created via accepted interests, not manually.
-      // 1. Try reloading conversations first in case the realtime sync didn't complete yet
-      await loadConversations().timeout(const Duration(seconds: 5));
-      final existingAfterLoad = state.conversations.where((c) {
-        if (c.otherUserId != null && c.otherUserId == otherUserId) {
-          return true;
-        }
-        if (c.otherUserId == null &&
-            c.matchName.toLowerCase() == matchName.toLowerCase()) {
-          return true;
-        }
-        return false;
-      });
-      if (existingAfterLoad.isNotEmpty) return existingAfterLoad.first.id;
-
-      // 2. Fetch matches from database directly
-      final me = SupabaseService.currentUserId;
-      if (me != null) {
-        try {
-          final matchRow = await SupabaseService.client
-              .from('matches')
-              .select('id')
-              .or('and(user_a.eq.$me,user_b.eq.$otherUserId),and(user_a.eq.$otherUserId,user_b.eq.$me)')
-              .maybeSingle()
-              .timeout(const Duration(seconds: 5));
-
-          if (matchRow != null) {
-            // Reload conversations so state holds this conversation
-            await loadConversations().timeout(const Duration(seconds: 5));
-            return matchRow['id'] as String;
-          }
-        } catch (e) {
-          debugPrint(
-              'ChatCubit: Error finding match by otherUserId in real mode: $e');
-        }
-      }
-      return '';
-    }
-
-    return '';
+    if (!_isRealMode) return '';
+    await loadConversations().timeout(const Duration(seconds: 5));
+    final afterLoad =
+        state.conversations.where((c) => c.otherUserId == otherUserId);
+    return afterLoad.isNotEmpty ? afterLoad.first.id : '';
   }
 
   Future<void> sendMessage(String conversationId, String text) async {
     final trimmed = text.trim();
-    if (trimmed.isEmpty) return;
+    if (trimmed.isEmpty || state.isSuspended) return;
 
-    if (state.isSuspended) return;
-
-    final conv =
-        state.conversations.where((c) => c.id == conversationId).firstOrNull;
-    if (conv?.isMatchClosed == true) return;
-
-    final validationError = ContentFilter.validate(trimmed);
-    final hasViolation = validationError != null;
-    final isUrl = trimmed.contains(RegExp(r'(https?://|www\.)\S+'));
-
-    if (hasViolation) {
-      final currentViolations =
-          (state.violationCounts[conversationId] ?? 0) + 1;
-      final updatedViolations = Map<String, int>.from(state.violationCounts)
-        ..[conversationId] = currentViolations;
-
-      DateTime? suspendedUntil;
-      if (currentViolations >= 3) {
-        suspendedUntil = DateTime.now().add(const Duration(hours: 24));
-        if (_isRealMode) {
-          try {
-            final me = SupabaseService.currentUserId;
-            if (me != null) {
-              await SupabaseService.client.from('users').update({
-                'messaging_suspended_until':
-                    suspendedUntil.toUtc().toIso8601String()
-              }).eq('id', me);
-            }
-          } catch (e) {
-            debugPrint('ChatCubit: Error suspending user: $e');
-          }
-        }
-      }
-
-      emit(state.copyWith(
-        violationCounts: updatedViolations,
-        messagingSuspendedUntil:
-            suspendedUntil ?? state.messagingSuspendedUntil,
-      ));
-
-      if (isUrl) {
-        _msgCounter++;
-        final tempMsgId = 'msg_$_msgCounter';
-        final failedMsg = ChatMessage(
-          id: tempMsgId,
-          text: '[link blocked - safety violation]',
-          sentAt: DateTime.now(),
-          isMe: true,
-          status: MessageStatus.failed,
-        );
-        _appendMessage(conversationId, failedMsg);
-        return;
-      }
-    }
-
-    final filtered = ContentFilter.redact(trimmed);
-    if (!_isRealMode) return;
+    final conv = _findConversation(conversationId);
+    if (conv == null || conv.isMatchClosed || !_isRealMode) return;
 
     _msgCounter++;
-    final tempMsgId = 'msg_$_msgCounter';
-    final sent = ChatMessage(
+    final tempMsgId = 'local_$_msgCounter';
+    final localMsg = ChatMessage(
       id: tempMsgId,
-      text: filtered,
+      text: trimmed,
       sentAt: DateTime.now(),
       isMe: true,
       status: MessageStatus.queued,
     );
-
-    _appendMessage(conversationId, sent);
-
-    final me = SupabaseService.currentUserId;
-    if (me == null) return;
-
-    final receiverId = conv?.otherUserId;
-    if (receiverId == null) {
-      debugPrint(
-          'ChatCubit: Error sending message: otherUserId not cached on conversation');
-      _updateMessageStatus(conversationId, tempMsgId, MessageStatus.failed);
-      return;
-    }
+    _appendMessage(conversationId, localMsg);
 
     try {
-      final insertedData = await SupabaseService.client
-          .from('messages')
-          .insert({
-            'match_id': conversationId,
-            'sender_id': me,
-            'receiver_id': receiverId,
-            'content': filtered,
-          })
-          .select('id, created_at')
-          .single()
-          .timeout(const Duration(seconds: 10));
+      final rows = _asRows(await SupabaseService.client.rpc(
+        'send_chat_message',
+        params: {
+          'p_match_id': conversationId,
+          'p_content': trimmed,
+        },
+      ));
 
-      final realMsgId = insertedData['id'] as String;
-      final createdAtStr = insertedData['created_at'] as String;
-      final sentAt =
-          DateTime.tryParse(createdAtStr)?.toLocal() ?? DateTime.now();
+      final row = rows.isNotEmpty ? rows.first : const <String, dynamic>{};
+      final realId = row['message_id']?.toString();
+      final createdAt = _parseDate(row['created_at']) ?? DateTime.now();
+      if (realId == null) {
+        _updateMessageStatus(conversationId, tempMsgId, MessageStatus.failed);
+        return;
+      }
 
-      _updateLocalMessageDetails(
-          conversationId, tempMsgId, realMsgId, sentAt, MessageStatus.sent);
+      _replaceQueuedMessage(
+        conversationId,
+        tempMsgId,
+        ChatMessage(
+          id: realId,
+          text: trimmed,
+          sentAt: createdAt,
+          isMe: true,
+          status: MessageStatus.sent,
+        ),
+      );
     } catch (e) {
       debugPrint('ChatCubit: Error sending message: $e');
       _updateMessageStatus(conversationId, tempMsgId, MessageStatus.failed);
+      if (_isSafetyBlock(e)) {
+        unawaited(loadConversations());
+      }
     }
   }
 
   Future<void> markRead(String conversationId) async {
-    final exists = state.conversations.any((c) => c.id == conversationId);
-    if (!exists) return;
-
-    final me = SupabaseService.currentUserId;
-    if (!_isRealMode || me == null) return;
-
+    if (!_isRealMode || !_conversationExists(conversationId)) return;
     try {
-      await SupabaseService.client
-          .from('messages')
-          .update({'read_at': DateTime.now().toIso8601String()})
-          .eq('match_id', conversationId)
-          .eq('receiver_id', me)
-          .isFilter('read_at', null);
-
+      await SupabaseService.client.rpc(
+        'mark_chat_read',
+        params: {'p_match_id': conversationId},
+      );
       final updated = state.conversations.map((c) {
         if (c.id != conversationId) return c;
-        return c.copyWith(unreadCount: 0);
+        final messages = c.messages.map((m) {
+          if (m.isMe) return m;
+          return m.copyWith(status: MessageStatus.read);
+        }).toList();
+        return c.copyWith(messages: messages, unreadCount: 0);
       }).toList();
       emit(state.copyWith(conversations: updated));
     } catch (e) {
       debugPrint('ChatCubit: Error marking read: $e');
+    }
+  }
+
+  Future<void> reportMessage(
+    String conversationId,
+    String messageId,
+    String reason, {
+    String? description,
+  }) async {
+    if (!_isRealMode || !_conversationExists(conversationId)) return;
+    await SupabaseService.client.rpc(
+      'report_chat_message',
+      params: {
+        'p_message_id': messageId,
+        'p_reason': reason,
+        'p_description': description,
+      },
+    );
+  }
+
+  Future<void> blockUser(String conversationId, {String? reason}) async {
+    if (!_isRealMode) return;
+    final conv = _findConversation(conversationId);
+    final otherUserId = conv?.otherUserId;
+    if (conv == null || otherUserId == null) return;
+
+    await SupabaseService.client.rpc(
+      'block_chat_user',
+      params: {
+        'p_user_id': otherUserId,
+        'p_reason': reason,
+      },
+    );
+
+    final updated = state.conversations.map((c) {
+      if (c.id != conversationId) return c;
+      return c.copyWith(
+        isMatchClosed: true,
+        closureMessage: 'This member has been blocked.',
+      );
+    }).toList();
+    emit(state.copyWith(conversations: updated));
+  }
+
+  Future<void> closeMatch(String conversationId, String message) async {
+    if (!_isRealMode) return;
+
+    final me = SupabaseService.currentUserId;
+    final conv = _findConversation(conversationId);
+    if (me == null || conv == null || conv.isMatchClosed) return;
+
+    try {
+      await sendMessage(conversationId, message);
+      await SupabaseService.client.from('matches').update({
+        'status': 'closed',
+        'closed_by': me,
+        'closed_at': DateTime.now().toUtc().toIso8601String(),
+        'closure_reason': message,
+      }).eq('id', conversationId);
+      await loadConversations();
+    } catch (e) {
+      debugPrint('ChatCubit: Error closing match: $e');
     }
   }
 
@@ -433,115 +295,227 @@ class ChatCubit extends Cubit<ChatState> {
     emit(state.copyWith(conversations: updated));
   }
 
-  Future<void> closeMatch(String conversationId, String message) async {
-    if (!_isRealMode) return;
+  Future<void> translateMessage(
+    String conversationId,
+    String messageId,
+    String targetLang,
+  ) async {
+    final conv = _findConversation(conversationId);
+    if (conv == null || !_isRealMode) return;
+    final message = conv.messages.where((m) => m.id == messageId).firstOrNull;
+    if (message == null || message.translations.containsKey(targetLang)) return;
 
-    _msgCounter++;
-    final closureMsg = ChatMessage(
-      id: 'msg_$_msgCounter',
-      text: message,
-      sentAt: DateTime.now(),
-      isMe: true,
-      status: MessageStatus.sent,
+    try {
+      final response = await SupabaseService.client
+          .from('messages')
+          .select('translations')
+          .eq('id', messageId)
+          .single();
+      final dbTranslations =
+          Map<String, dynamic>.from(response['translations'] ?? {});
+
+      if (!dbTranslations.containsKey(targetLang)) {
+        final translated = await TranslationService.instance.translate(
+          text: message.text,
+          targetLang: targetLang,
+        );
+        if (translated == null) return;
+        dbTranslations[targetLang] = translated;
+        await SupabaseService.client
+            .from('messages')
+            .update({'translations': dbTranslations}).eq('id', messageId);
+      }
+      _updateMessageTranslations(conversationId, messageId, dbTranslations);
+    } catch (e) {
+      debugPrint('ChatCubit: Error translating message in DB: $e');
+    }
+  }
+
+  void _setupRealtime() {
+    final me = SupabaseService.currentUserId;
+    if (me == null) return;
+    if (_realtimeUserId == me &&
+        _incomingMessagesSubscription != null &&
+        _sentMessagesSubscription != null &&
+        _matchesSubscription != null) {
+      return;
+    }
+
+    _disposeRealtime();
+    _realtimeUserId = me;
+
+    // Receiver stream handles new messages addressed to this user.
+    _incomingMessagesSubscription = SupabaseService.client
+        .channel('chat_messages_in_$me')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'messages',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'receiver_id',
+            value: me,
+          ),
+          callback: (payload) => _handleMessageRealtime(payload, me),
+        )
+        .subscribe();
+
+    // Sender stream keeps delivered/read receipts current for messages sent by
+    // this device or another session owned by the same account.
+    _sentMessagesSubscription = SupabaseService.client
+        .channel('chat_messages_out_$me')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'messages',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'sender_id',
+            value: me,
+          ),
+          callback: (payload) => _handleMessageRealtime(payload, me),
+        )
+        .subscribe();
+
+    _matchesSubscription = SupabaseService.client
+        .channel('chat_matches_$me')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'matches',
+          callback: (_) => unawaited(loadConversations()),
+        )
+        .subscribe();
+  }
+
+  void _handleMessageRealtime(PostgresChangePayload payload, String me) {
+    final record = payload.newRecord;
+    final matchId = record['match_id'] as String?;
+    if (matchId == null) {
+      unawaited(loadConversations());
+      return;
+    }
+
+    if (payload.eventType == PostgresChangeEvent.insert) {
+      _appendMessage(matchId, _messageFromRow(record, me));
+      return;
+    }
+
+    if (payload.eventType == PostgresChangeEvent.update) {
+      final messageId = record['id'] as String?;
+      if (messageId == null) return;
+      final status = _messageStatusFromRow(record, record['sender_id'] == me);
+      _updateMessageStatus(matchId, messageId, status);
+      return;
+    }
+
+    unawaited(loadConversations());
+  }
+
+  void _disposeRealtime() {
+    _incomingMessagesSubscription?.unsubscribe();
+    _sentMessagesSubscription?.unsubscribe();
+    _matchesSubscription?.unsubscribe();
+    _incomingMessagesSubscription = null;
+    _sentMessagesSubscription = null;
+    _matchesSubscription = null;
+    _realtimeUserId = null;
+  }
+
+  @override
+  Future<void> close() {
+    _disposeRealtime();
+    return super.close();
+  }
+
+  Conversation _conversationFromInbox(Map<String, dynamic> row, String me) {
+    final lastMessageId = row['last_message_id']?.toString();
+    final lastMessage = lastMessageId == null
+        ? null
+        : ChatMessage(
+            id: lastMessageId,
+            text: row['last_message_content'] as String? ?? '',
+            sentAt:
+                _parseDate(row['last_message_created_at']) ?? DateTime.now(),
+            isMe: row['last_message_sender_id'] == me,
+            status: row['last_message_read_at'] != null
+                ? MessageStatus.read
+                : (row['last_message_sender_id'] == me
+                    ? MessageStatus.sent
+                    : MessageStatus.delivered),
+          );
+
+    final status = row['match_status'] as String? ?? 'active';
+    return Conversation(
+      id: row['match_id'].toString(),
+      matchName: row['other_first_name'] as String? ?? 'Member',
+      matchLastInitial: row['other_last_initial'] as String? ?? '',
+      messages: lastMessage == null ? const [] : [lastMessage],
+      unreadCount: (row['unread_count'] as num?)?.toInt() ?? 0,
+      matchId: row['match_id'].toString(),
+      otherUserId: row['other_user_id']?.toString(),
+      isMatchClosed: status == 'closed' ||
+          status == 'expired' ||
+          status == 'blocked' ||
+          status == 'reported',
+      closureMessage: row['closure_reason'] as String?,
     );
+  }
 
+  ChatMessage _messageFromRow(Map<String, dynamic> row, String me) {
+    final isMe = row['sender_id'] == me;
+    final translationsMap = row['translations'] as Map<dynamic, dynamic>? ?? {};
+    return ChatMessage(
+      id: row['id'].toString(),
+      text: row['content'] as String? ?? '',
+      sentAt: _parseDate(row['created_at']) ?? DateTime.now(),
+      isMe: isMe,
+      status: _messageStatusFromRow(row, isMe),
+      sentByGuardian: row['sent_by_guardian'] == true,
+      translations: translationsMap.map(
+        (key, value) => MapEntry(key.toString(), value.toString()),
+      ),
+    );
+  }
+
+  MessageStatus _messageStatusFromRow(Map<String, dynamic> row, bool isMe) {
+    if (row['read_at'] != null) return MessageStatus.read;
+    if (row['delivered_at'] != null) return MessageStatus.delivered;
+    final rawStatus = row['status'] as String?;
+    if (rawStatus == 'failed') return MessageStatus.failed;
+    if (rawStatus == 'queued') return MessageStatus.queued;
+    return isMe ? MessageStatus.sent : MessageStatus.delivered;
+  }
+
+  void _appendMessage(String convId, ChatMessage msg) {
+    if (isClosed) return;
     final updated = state.conversations.map((c) {
-      if (c.id != conversationId) return c;
+      if (c.id != convId) return c;
+      final alreadyPresent = c.messages.any((m) => m.id == msg.id);
       return c.copyWith(
-        messages: [...c.messages, closureMsg],
-        isMatchClosed: true,
-        closureMessage: message,
+        messages: _mergeMessagesById(c.messages, [msg]),
+        unreadCount:
+            !msg.isMe && !alreadyPresent ? c.unreadCount + 1 : c.unreadCount,
       );
     }).toList();
     emit(state.copyWith(conversations: updated));
-
-    final me = SupabaseService.currentUserId;
-    if (me == null) return;
-
-    try {
-      final matchData = await SupabaseService.client
-          .from('matches')
-          .select('user_a, user_b')
-          .eq('id', conversationId)
-          .single();
-
-      final userA = matchData['user_a'] as String;
-      final userB = matchData['user_b'] as String;
-      final receiverId = (userA == me) ? userB : userA;
-
-      // 1. Insert closure message so other participant sees it
-      await SupabaseService.client.from('messages').insert({
-        'match_id': conversationId,
-        'sender_id': me,
-        'receiver_id': receiverId,
-        'content': message,
-      });
-
-      // 2. Set status to closed in matches
-      await SupabaseService.client.from('matches').update({
-        'status': 'closed',
-        'closed_by': me,
-        'closed_at': DateTime.now().toIso8601String(),
-        'closure_reason': message,
-      }).eq('id', conversationId);
-
-      await loadConversations();
-    } catch (e) {
-      debugPrint('ChatCubit: Error closing match: $e');
-    }
   }
 
-  // ── Internal helpers ──────────────────────────────────────
-
-  void _appendMessage(String convId, ChatMessage msg) {
+  void _replaceQueuedMessage(
+    String convId,
+    String tempMsgId,
+    ChatMessage realMessage,
+  ) {
+    if (isClosed) return;
     final updated = state.conversations.map((c) {
       if (c.id != convId) return c;
-      return c.copyWith(messages: _mergeMessagesById(c.messages, [msg]));
+      final withoutTemp = c.messages
+          .where((m) => m.id != tempMsgId && m.id != realMessage.id)
+          .toList();
+      return c.copyWith(
+          messages: _mergeMessagesById(withoutTemp, [realMessage]));
     }).toList();
     emit(state.copyWith(conversations: updated));
-  }
-
-  bool _isCurrentLoad(int loadVersion) =>
-      !isClosed && loadVersion == _loadVersion;
-
-  List<Conversation> _mergeLoadedConversations(
-    List<Conversation> current,
-    List<Conversation> loaded,
-  ) {
-    final currentById = {for (final c in current) c.id: c};
-    final loadedIds = loaded.map((c) => c.id).toSet();
-    final merged = <Conversation>[
-      for (final fresh in loaded)
-        _mergeConversation(currentById[fresh.id], fresh),
-      // Keep optimistic local conversations that the backend load does not yet
-      // know about instead of letting a stale load delete them.
-      for (final existing in current)
-        if (!loadedIds.contains(existing.id)) existing,
-    ];
-    return merged;
-  }
-
-  Conversation _mergeConversation(Conversation? current, Conversation loaded) {
-    if (current == null) return loaded;
-    return loaded.copyWith(
-      messages: _mergeMessagesById(current.messages, loaded.messages),
-      unreadCount: loaded.unreadCount,
-      isMatchClosed: loaded.isMatchClosed,
-      closureMessage: loaded.closureMessage,
-    );
-  }
-
-  List<ChatMessage> _mergeMessagesById(
-    List<ChatMessage> current,
-    List<ChatMessage> incoming,
-  ) {
-    final byId = <String, ChatMessage>{for (final m in current) m.id: m};
-    for (final message in incoming) {
-      byId[message.id] = message;
-    }
-    final merged = byId.values.toList()
-      ..sort((a, b) => a.sentAt.compareTo(b.sentAt));
-    return merged;
   }
 
   void _updateMessageStatus(String convId, String msgId, MessageStatus status) {
@@ -557,100 +531,11 @@ class ChatCubit extends Cubit<ChatState> {
     emit(state.copyWith(conversations: updated));
   }
 
-  void _updateLocalMessageDetails(String convId, String tempMsgId,
-      String realMsgId, DateTime sentAt, MessageStatus status) {
-    if (isClosed) return;
-    final updated = state.conversations.map((c) {
-      if (c.id != convId) return c;
-      final msgs = c.messages.map((m) {
-        if (m.id != tempMsgId) return m;
-        return ChatMessage(
-          id: realMsgId,
-          text: m.text,
-          sentAt: sentAt,
-          isMe: m.isMe,
-          status: status,
-          sentByGuardian: m.sentByGuardian,
-          translations: m.translations,
-          isTimestampVisible: m.isTimestampVisible,
-        );
-      }).toList();
-      return c.copyWith(messages: msgs);
-    }).toList();
-    emit(state.copyWith(conversations: updated));
-  }
-
-  void _appendIncomingMessage(String convId, ChatMessage msg) {
-    if (isClosed) return;
-    final updated = state.conversations.map((c) {
-      if (c.id != convId) return c;
-      final alreadyPresent = c.messages.any((m) => m.id == msg.id);
-      return c.copyWith(
-        messages: _mergeMessagesById(c.messages, [msg]),
-        unreadCount: alreadyPresent ? c.unreadCount : c.unreadCount + 1,
-      );
-    }).toList();
-    emit(state.copyWith(conversations: updated));
-  }
-
-  // ── Translation ────────────────────────────────────────────
-
-  Future<void> translateMessage(
-      String conversationId, String messageId, String targetLang) async {
-    final convIndex =
-        state.conversations.indexWhere((c) => c.id == conversationId);
-    if (convIndex == -1) return;
-
-    final conv = state.conversations[convIndex];
-    final msgIndex = conv.messages.indexWhere((m) => m.id == messageId);
-    if (msgIndex == -1) return;
-
-    final msg = conv.messages[msgIndex];
-
-    // Check if translation is already present locally
-    if (msg.translations.containsKey(targetLang)) {
-      return;
-    }
-
-    if (!_isRealMode) return;
-
-    try {
-      // Fetch message translations from Supabase to check if cached in DB
-      final response = await SupabaseService.client
-          .from('messages')
-          .select('translations')
-          .eq('id', messageId)
-          .single();
-
-      final dbTranslations =
-          Map<String, dynamic>.from(response['translations'] ?? {});
-
-      if (dbTranslations.containsKey(targetLang)) {
-        _updateMessageTranslations(conversationId, messageId, dbTranslations);
-        return;
-      }
-
-      // Call the Translation Service to translate content
-      final translated = await TranslationService.instance.translate(
-        text: msg.text,
-        targetLang: targetLang,
-      );
-
-      if (translated != null) {
-        dbTranslations[targetLang] = translated;
-        await SupabaseService.client
-            .from('messages')
-            .update({'translations': dbTranslations}).eq('id', messageId);
-
-        _updateMessageTranslations(conversationId, messageId, dbTranslations);
-      }
-    } catch (e) {
-      debugPrint('ChatCubit: Error translating message in DB: $e');
-    }
-  }
-
   void _updateMessageTranslations(
-      String convId, String msgId, Map<String, dynamic> translations) {
+    String convId,
+    String msgId,
+    Map<String, dynamic> translations,
+  ) {
     if (isClosed) return;
     final updated = state.conversations.map((c) {
       if (c.id != convId) return c;
@@ -662,4 +547,71 @@ class ChatCubit extends Cubit<ChatState> {
     }).toList();
     emit(state.copyWith(conversations: updated));
   }
+
+  List<ChatMessage> _mergeMessagesById(
+    List<ChatMessage> current,
+    List<ChatMessage> incoming,
+  ) {
+    final byId = <String, ChatMessage>{for (final m in current) m.id: m};
+    for (final message in incoming) {
+      byId[message.id] = message;
+    }
+    final merged = byId.values.toList()
+      ..sort((a, b) => a.sentAt.compareTo(b.sentAt));
+    return merged;
+  }
+
+  List<Conversation> _mergeLoadedConversations(
+    List<Conversation> current,
+    List<Conversation> loaded,
+  ) {
+    final currentById = {for (final c in current) c.id: c};
+    final loadedIds = loaded.map((c) => c.id).toSet();
+    return [
+      for (final fresh in loaded)
+        _mergeConversation(currentById[fresh.id], fresh),
+      for (final existing in current)
+        if (!loadedIds.contains(existing.id)) existing,
+    ];
+  }
+
+  Conversation _mergeConversation(Conversation? current, Conversation loaded) {
+    if (current == null) return loaded;
+    return loaded.copyWith(
+      messages: _mergeMessagesById(current.messages, loaded.messages),
+      unreadCount: loaded.unreadCount,
+      isMatchClosed: loaded.isMatchClosed,
+      closureMessage: loaded.closureMessage,
+    );
+  }
+
+  bool _isCurrentLoad(int version) => !isClosed && version == _loadVersion;
+
+  bool _conversationExists(String id) =>
+      state.conversations.any((c) => c.id == id);
+
+  Conversation? _findConversation(String id) {
+    final matches = state.conversations.where((c) => c.id == id);
+    return matches.isEmpty ? null : matches.first;
+  }
+
+  List<Map<String, dynamic>> _asRows(dynamic value) {
+    if (value is List) {
+      return value
+          .whereType<Map>()
+          .map((row) => Map<String, dynamic>.from(row))
+          .toList();
+    }
+    if (value is Map) return [Map<String, dynamic>.from(value)];
+    return const [];
+  }
+
+  DateTime? _parseDate(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value.toLocal();
+    return DateTime.tryParse(value.toString())?.toLocal();
+  }
+
+  bool _isSafetyBlock(Object error) =>
+      error.toString().contains('Message blocked by safety rules');
 }

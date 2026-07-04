@@ -111,9 +111,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
     final data = context.read<OnboardingCubit>().currentData;
     _privacy = data.photoPrivacy ?? PhotoPrivacy.publicAll;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(PhotoModerationService.warmUp().catchError((Object error) {
-        debugPrint('[PhotoUploadScreen] Photo safety warm-up skipped: $error');
-      }));
+      unawaited(PhotoModerationService.warmUp().catchError((_) {}));
     });
     if (data.photoLocalPaths != null) {
       for (final path in data.photoLocalPaths!) {
