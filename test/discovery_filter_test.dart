@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mithaq/core/cubits/discovery/discovery_filter.dart';
+import 'package:silarah/core/cubits/discovery/discovery_filter.dart';
 
 void main() {
   test('explicit maxDistanceKm is the canonical radius', () {

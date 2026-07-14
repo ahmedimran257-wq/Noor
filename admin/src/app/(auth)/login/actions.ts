@@ -12,7 +12,7 @@ const credentialsSchema = z.object({
   password: z.string().min(8),
 });
 
-const secretSalt = process.env.ADMIN_LOGIN_HASH_SALT ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? "mithaq-admin";
+const secretSalt = process.env.ADMIN_LOGIN_HASH_SALT ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? "silarah-admin";
 
 function hashValue(value: string) {
   return createHash("sha256").update(`${secretSalt}:${value.toLowerCase().trim()}`).digest("hex");

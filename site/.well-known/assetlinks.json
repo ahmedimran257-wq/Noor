@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.silarah.app",
+      "sha256_cert_fingerprints": [
+        "8D:BD:29:17:64:BF:55:9A:AC:7E:75:13:36:43:5B:04:F5:A2:FE:CF:2B:E4:76:6D:C2:B9:19:C1:46:A2:39:9B"
+      ]
+    }
+  }
+]

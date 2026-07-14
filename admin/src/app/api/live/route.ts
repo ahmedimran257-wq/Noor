@@ -33,7 +33,18 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(data, {
+  const { data: onlineUsers, error: onlineError } = await supabase.rpc(
+    "admin_online_users",
+    { p_limit: 25 },
+  );
+  if (onlineError) {
+    return NextResponse.json({ error: onlineError.message }, { status: 500 });
+  }
+
+  return NextResponse.json({
+    snapshot: data,
+    onlineUsers: onlineUsers ?? [],
+  }, {
     headers: {
       "Cache-Control": "no-store",
     },

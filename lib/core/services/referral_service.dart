@@ -1,6 +1,6 @@
 // lib/core/services/referral_service.dart
 // ============================================================
-// MITHAQ — Referral Service
+// SILARAH — Referral Service
 //
 // Fixes Audit Finding 7.1 (High):
 //   No viral or ambassador mechanics. Handles referral code
@@ -73,9 +73,9 @@ class ReferralService {
   /// Gets the referral share text with the user's code.
   Future<String> getShareText() async {
     final code = await getOrCreateCode();
-    return 'Join MITHAQ — the most trusted Muslim matrimony app. '
+    return 'Join SILARAH — the most trusted Muslim matrimony app. '
         'Use my referral code: $code\n\n'
-        'Download: https://mithaq.app/r/$code';
+        'Download: https://silarah.com/r/$code';
   }
 
   /// Gets the user's referral statistics.
@@ -93,11 +93,13 @@ class ReferralService {
 
       return ReferralStats(
         totalReferrals: referrals.length,
-        rewardsEarned: referrals.where((r) =>
-            r['reward_granted'] == true &&
-            r['reward_type'] == '7_days_premium').length,
-        pendingReferrals: referrals.where((r) =>
-            r['reward_granted'] == false).length,
+        rewardsEarned: referrals
+            .where((r) =>
+                r['reward_granted'] == true &&
+                r['reward_type'] == '7_days_premium')
+            .length,
+        pendingReferrals:
+            referrals.where((r) => r['reward_granted'] == false).length,
       );
     } catch (e) {
       debugPrint('[ReferralService] Error fetching stats: $e');

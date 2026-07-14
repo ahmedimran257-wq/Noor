@@ -1,6 +1,6 @@
 // lib/features/home/widgets/discovery_filter_sheet.dart
 // ============================================================
-// MITHAQ — Full Filter Bottom Sheet (Feature 8 + 9)
+// SILARAH — Full Filter Bottom Sheet (Feature 8 + 9)
 //
 // Sections (scrollable):
 //   Gender · Age Range · Sect · Deen Level · Education
@@ -18,17 +18,18 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/cubits/discovery/discovery_feed_cubit.dart';
 import '../../../core/cubits/discovery/discovery_filter.dart';
 import '../../../core/cubits/subscription/subscription_cubit.dart';
+import '../../../core/services/discovery_filter_options_service.dart';
 import '../../../core/services/filter_preset_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/overlays/mithaq_bottom_sheet.dart';
+import '../../../core/widgets/overlays/silarah_bottom_sheet.dart';
+import '../../../core/widgets/buttons/silarah_pressable.dart';
 import '../screens/subscription_screen.dart';
 import '../../../core/data/country_data.dart';
 
@@ -40,7 +41,7 @@ Future<void> showDiscoveryFilterSheet(
   String? scrollToSection,
 }) async {
   await Navigator.of(context).push(
-    MithaqBottomSheetRoute<void>(
+    SilarahBottomSheetRoute<void>(
       builder: (sheetCtx) => BlocProvider.value(
         value: context.read<DiscoveryFeedCubit>(),
         child: DiscoveryFilterSheet(
@@ -77,6 +78,9 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
   List<FilterPreset> _presets = [];
   bool _showSaveField = false;
   final _presetNameCtrl = TextEditingController();
+  DiscoveryFilterOptions _options = DiscoveryFilterOptions.empty;
+  bool _optionsLoading = true;
+  bool _optionsLoadFailed = false;
 
   // Section GlobalKeys for scroll-to
   final _genderKey = GlobalKey();
@@ -100,6 +104,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
     super.initState();
     _draft = widget.initial;
     _loadPresets();
+    _loadLiveOptions();
     if (widget.scrollToSection != null) {
       WidgetsBinding.instance
           .addPostFrameCallback((_) => _scrollTo(widget.scrollToSection!));
@@ -116,6 +121,27 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
   Future<void> _loadPresets() async {
     final p = await FilterPresetService.load();
     if (mounted) setState(() => _presets = p);
+  }
+
+  Future<void> _loadLiveOptions() async {
+    try {
+      final options = await DiscoveryFilterOptionsService.load();
+      if (mounted) {
+        setState(() {
+          _options = options;
+          _optionsLoading = false;
+          _optionsLoadFailed = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _options = DiscoveryFilterOptions.empty;
+          _optionsLoading = false;
+          _optionsLoadFailed = true;
+        });
+      }
+    }
   }
 
   void _scrollTo(String section) {
@@ -215,10 +241,91 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
     setState(() => _draft = DiscoveryFilter.empty);
   }
 
+  List<String> _withAny(List<String> values, {String? selected}) {
+    final normalized = <String, String>{};
+    for (final value in values) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) continue;
+      normalized[trimmed.toLowerCase()] = trimmed;
+    }
+    if (selected != null && selected.trim().isNotEmpty) {
+      normalized[selected.trim().toLowerCase()] = selected.trim();
+    }
+    final live = normalized.values.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return ['Any', ...live];
+  }
+
+  List<String> _educationOptions() {
+    final values = _options.educationRanks
+        .map(_educationLabel)
+        .whereType<String>()
+        .toList();
+    if (_draft.educationMin case final selected?) values.add(selected);
+    return _withAny(values, selected: _draft.educationMin);
+  }
+
+  String? _educationLabel(int rank) {
+    return switch (rank) {
+      1 => 'Matric',
+      2 => 'Intermediate',
+      3 => "Bachelor's",
+      4 => "Master's",
+      5 => 'PhD',
+      6 => 'Professional Degree',
+      7 => 'Other',
+      _ => null,
+    };
+  }
+
+  String _facetLabel(String value) {
+    if (value == 'no') return 'Never Married';
+    if (value == 'prefer_not_to_say') return 'Prefer not to say';
+    final words = value
+        .replaceAll('_', ' ')
+        .split(RegExp(r'\s+'))
+        .where((word) => word.isNotEmpty)
+        .map((word) {
+      if (word.length <= 1) return word.toUpperCase();
+      return '${word[0].toUpperCase()}${word.substring(1)}';
+    });
+    return words.join(' ');
+  }
+
+  List<String> _optionLabels(List<String> options) {
+    return options
+        .map((value) => value == 'Any' ? 'Any' : _facetLabel(value))
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final bottomPad = MediaQuery.of(context).viewInsets.bottom +
         MediaQuery.of(context).padding.bottom;
+    final genderOptions = <String?>[
+      null,
+      ..._withAny(_options.genders, selected: _draft.genderPref).skip(1),
+    ];
+    final genderLabels = [
+      'Any',
+      ...genderOptions.skip(1).whereType<String>().map(_facetLabel),
+    ];
+    final sectOptions = _withAny(_options.sects, selected: _draft.sect);
+    final deenOptions =
+        _withAny(_options.deenLevels, selected: _draft.deenLevel);
+    final educationOptions = _educationOptions();
+    final familyOptions =
+        _withAny(_options.familyTypes, selected: _draft.familyType);
+    final maritalOptions =
+        _withAny(_options.maritalStatuses, selected: _draft.maritalStatus);
+    final tongueOptions =
+        _withAny(_options.motherTongues, selected: _draft.motherTongue);
+    final communityOptions =
+        _withAny(_options.communities, selected: _draft.community);
+    final livingOptions = _withAny(
+      _options.livingExpectations,
+      selected: _draft.livingExpectation,
+    );
     return DraggableScrollableSheet(
       initialChildSize: 0.92,
       minChildSize: 0.5,
@@ -226,23 +333,39 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
       builder: (ctx, scrollCtrl) {
         return Container(
           decoration: const BoxDecoration(
-            color: Color(0x99151522), // Frosted glass surfaceMid
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            color: AppColors.surfaceElevated,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             border: Border(top: BorderSide(color: AppColors.cardBorder)),
           ),
           child: Column(
             children: [
               // Handle
-              const Center(child: MithaqPulseHandle()),
+              const Center(child: SilarahPulseHandle()),
 
               // Header
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 12, 16, 8),
+                padding: const EdgeInsets.fromLTRB(24, 10, 16, 12),
                 child: Row(
                   children: [
-                    Text('Filters',
-                        style:
-                            AppTypography.screenTitle.copyWith(fontSize: 20)),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Refine discovery',
+                            style: AppTypography.screenTitle
+                                .copyWith(fontSize: 20)),
+                        const SizedBox(height: 2),
+                        AnimatedSwitcher(
+                          duration: AppDimensions.durationTransition,
+                          child: Text(
+                            _draft.activeCount == 0
+                                ? 'Showing the broadest pool'
+                                : '${_draft.activeCount} preferences selected',
+                            key: ValueKey(_draft.activeCount),
+                            style: AppTypography.caption,
+                          ),
+                        ),
+                      ],
+                    ),
                     const Spacer(),
                     TextButton(
                       onPressed: () =>
@@ -267,7 +390,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    GestureDetector(
+                    SilarahPressable(
                       onTap: _savePreset,
                       child: Container(
                         width: 44,
@@ -296,7 +419,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                       separatorBuilder: (_, __) => const SizedBox(width: 8),
                       itemBuilder: (_, i) {
                         final p = _presets[i];
-                        return GestureDetector(
+                        return SilarahPressable(
                           onTap: () => _applyPreset(p),
                           onLongPress: () => _deletePreset(i),
                           child: Container(
@@ -328,378 +451,344 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                 ),
 
               const Divider(color: AppColors.divider, height: 1),
+              if (_optionsLoading)
+                const LinearProgressIndicator(
+                  minHeight: 1,
+                  color: AppColors.champagneGold,
+                  backgroundColor: AppColors.surfaceGlass,
+                ),
+              if (_optionsLoadFailed)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
+                  child: Text(
+                    'Live filter options could not be loaded. Broad filters remain available.',
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.softCoral,
+                    ),
+                  ),
+                ),
 
               // Scrollable content
               Expanded(
-                child: ListView(
-                  controller: scrollCtrl,
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-                  children: [
-                    // ── GENDER PREFERENCE ──────────────────────
-                    _SectionLabel(key: _genderKey, label: 'GENDER PREFERENCE'),
-                    const SizedBox(height: 8),
-                    _RadioGroup<String?>(
-                      options: const [null, 'Male', 'Female'],
-                      labels: const ['Any', 'Male', 'Female'],
-                      value: _draft.genderPref,
-                      onChanged: (v) => setState(() => _draft = _draft.copyWith(
-                          genderPref: v, clearGenderPref: v == null)),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // ── AGE RANGE ──────────────────────────────
-                    _SectionLabel(key: _ageKey, label: 'AGE RANGE'),
-                    const SizedBox(height: 8),
-                    _AgeRangeField(
-                      min: (_draft.ageMin ?? 22).toDouble(),
-                      max: (_draft.ageMax ?? 35).toDouble(),
-                      onChanged: (lo, hi) =>
-                          setState(() => _draft = _draft.copyWith(
-                                ageMin: lo.round(),
-                                ageMax: hi.round(),
-                              )),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // ── SECT ───────────────────────────────────
-                    _SectionLabel(key: _sectKey, label: 'SECT'),
-                    const SizedBox(height: 8),
-                    _MultiChipGroup(
-                      options: const [
-                        'Any',
-                        'Sunni',
-                        'Shia',
-                        'Prefer not to say'
-                      ],
-                      selected: _draft.sect,
-                      onChanged: (v) => setState(() => _draft =
-                          _draft.copyWith(sect: v, clearSect: v == null)),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // ── DEEN LEVEL ─────────────────────────────
-                    _SectionLabel(key: _deenKey, label: 'DEEN LEVEL'),
-                    const SizedBox(height: 8),
-                    _MultiChipGroup(
-                      options: const [
-                        'Any',
-                        'practicing',
-                        'moderate',
-                        'cultural'
-                      ],
-                      optionLabels: const [
-                        'Any',
-                        'Practicing',
-                        'Moderate',
-                        'Cultural'
-                      ],
-                      selected: _draft.deenLevel,
-                      onChanged: (v) => setState(() => _draft = _draft.copyWith(
-                          deenLevel: v, clearDeenLevel: v == null)),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // ── EDUCATION MINIMUM ──────────────────────
-                    _SectionLabel(key: _eduKey, label: 'EDUCATION MINIMUM'),
-                    const SizedBox(height: 8),
-                    _DropdownRow(
-                      value: _draft.educationMin ?? 'Any',
-                      options: const [
-                        'Any',
-                        'Matric',
-                        'Intermediate',
-                        "Bachelor's",
-                        "Master's",
-                        'PhD',
-                      ],
-                      onChanged: (v) => setState(() => _draft = _draft.copyWith(
-                            educationMin: v == 'Any' ? null : v,
-                            clearEducationMin: v == 'Any',
-                          )),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // ── FAMILY TYPE ────────────────────────────
-                    _SectionLabel(key: _familyKey, label: 'FAMILY TYPE'),
-                    const SizedBox(height: 8),
-                    _MultiChipGroup(
-                      options: const ['Any', 'Nuclear', 'Joint', 'Extended'],
-                      selected: _draft.familyType,
-                      onChanged: (v) => setState(() => _draft = _draft.copyWith(
-                            familyType: v,
-                            clearFamilyType: v == null,
-                          )),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // ── MARITAL STATUS ─────────────────────────
-                    _SectionLabel(key: _maritalKey, label: 'MARITAL STATUS'),
-                    const SizedBox(height: 8),
-                    _MultiChipGroup(
-                      options: const [
-                        'Never Married',
-                        'Divorced',
-                        'Widowed',
-                        'Any'
-                      ],
-                      selected: _draft.maritalStatus,
-                      onChanged: (v) => setState(() => _draft = _draft.copyWith(
-                            maritalStatus: v,
-                            clearMaritalStatus: v == null,
-                          )),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // ── HAS CHILDREN ───────────────────────────
-                    _SectionLabel(key: _childrenKey, label: 'HAS CHILDREN'),
-                    const SizedBox(height: 8),
-                    _RadioGroup<String?>(
-                      options: const [null, 'No', 'Yes'],
-                      labels: const ["Doesn't matter", 'No', 'Yes'],
-                      value: _draft.hasChildren,
-                      onChanged: (v) => setState(() => _draft = _draft.copyWith(
-                            hasChildren: v,
-                            clearHasChildren: v == null,
-                          )),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // ── VERIFIED ONLY (Premium) ─────────────
-                    _SectionLabel(key: _verifiedKey, label: 'VERIFIED ONLY'),
-                    const SizedBox(height: 8),
-                    _SubscriberGate(
-                      child: _ToggleRow(
-                        label: 'Show verified profiles only',
-                        value: _draft.verifiedOnly,
-                        onChanged: (v) => setState(
-                            () => _draft = _draft.copyWith(verifiedOnly: v)),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // ── DISTANCE (Premium) ──────────────────────
-                    _SectionLabel(key: _distanceKey, label: 'DISTANCE'),
-                    const SizedBox(height: 8),
-                    _SubscriberGate(
-                      child: _MultiChipGroup(
-                        options: const [
-                          'Same City',
-                          '25km',
-                          '50km',
-                          '100km',
-                          '250km',
-                          'Same Country',
-                          'Anywhere',
-                        ],
-                        selected: _draft.distanceLabel,
-                        onChanged: (v) {
-                          final radius = RegExp(r'^(\d+)km$')
-                              .firstMatch(v ?? '')
-                              ?.group(1);
-                          setState(() => _draft = _draft.copyWith(
-                                distanceLabel: v,
-                                maxDistanceKm: int.tryParse(radius ?? ''),
-                                clearDistanceLabel: v == null,
-                                clearMaxDistance: radius == null,
-                              ));
-                        },
-                      ),
-                    ),
-                    if (_draft.effectiveMaxDistanceKm case final km?) ...[
+                child: Builder(
+                  builder: (context) {
+                    final sections = <Widget>[
+                      // ── GENDER PREFERENCE ──────────────────────
+                      _SectionLabel(
+                          key: _genderKey, label: 'GENDER PREFERENCE'),
                       const SizedBox(height: 8),
-                      Text(
-                        'Within $km km',
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.champagneGold,
+                      _RadioGroup<String?>(
+                        options: genderOptions,
+                        labels: genderLabels,
+                        value: _draft.genderPref,
+                        onChanged: (v) => setState(() => _draft =
+                            _draft.copyWith(
+                                genderPref: v, clearGenderPref: v == null)),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // ── AGE RANGE ──────────────────────────────
+                      _SectionLabel(key: _ageKey, label: 'AGE RANGE'),
+                      const SizedBox(height: 8),
+                      _AgeRangeField(
+                        min: (_draft.ageMin ?? 22).toDouble(),
+                        max: (_draft.ageMax ?? 35).toDouble(),
+                        onChanged: (lo, hi) =>
+                            setState(() => _draft = _draft.copyWith(
+                                  ageMin: lo.round(),
+                                  ageMax: hi.round(),
+                                )),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // ── SECT ───────────────────────────────────
+                      _SectionLabel(key: _sectKey, label: 'SECT'),
+                      const SizedBox(height: 8),
+                      _MultiChipGroup(
+                        options: sectOptions,
+                        optionLabels: _optionLabels(sectOptions),
+                        selected: _draft.sect,
+                        onChanged: (v) => setState(() => _draft =
+                            _draft.copyWith(sect: v, clearSect: v == null)),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // ── DEEN LEVEL ─────────────────────────────
+                      _SectionLabel(key: _deenKey, label: 'DEEN LEVEL'),
+                      const SizedBox(height: 8),
+                      _MultiChipGroup(
+                        options: deenOptions,
+                        optionLabels: _optionLabels(deenOptions),
+                        selected: _draft.deenLevel,
+                        onChanged: (v) => setState(() => _draft = _draft
+                            .copyWith(deenLevel: v, clearDeenLevel: v == null)),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // ── EDUCATION MINIMUM ──────────────────────
+                      _SectionLabel(key: _eduKey, label: 'EDUCATION MINIMUM'),
+                      const SizedBox(height: 8),
+                      _DropdownRow(
+                        value: _draft.educationMin ?? 'Any',
+                        options: educationOptions,
+                        onChanged: (v) =>
+                            setState(() => _draft = _draft.copyWith(
+                                  educationMin: v == 'Any' ? null : v,
+                                  clearEducationMin: v == 'Any',
+                                )),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // ── FAMILY TYPE ────────────────────────────
+                      _SectionLabel(key: _familyKey, label: 'FAMILY TYPE'),
+                      const SizedBox(height: 8),
+                      _MultiChipGroup(
+                        options: familyOptions,
+                        optionLabels: _optionLabels(familyOptions),
+                        selected: _draft.familyType,
+                        onChanged: (v) =>
+                            setState(() => _draft = _draft.copyWith(
+                                  familyType: v,
+                                  clearFamilyType: v == null,
+                                )),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // ── MARITAL STATUS ─────────────────────────
+                      _SectionLabel(key: _maritalKey, label: 'MARITAL STATUS'),
+                      const SizedBox(height: 8),
+                      _MultiChipGroup(
+                        options: maritalOptions,
+                        optionLabels: _optionLabels(maritalOptions),
+                        selected: _draft.maritalStatus,
+                        onChanged: (v) =>
+                            setState(() => _draft = _draft.copyWith(
+                                  maritalStatus: v,
+                                  clearMaritalStatus: v == null,
+                                )),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // ── HAS CHILDREN ───────────────────────────
+                      _SectionLabel(key: _childrenKey, label: 'HAS CHILDREN'),
+                      const SizedBox(height: 8),
+                      _RadioGroup<String?>(
+                        options: const [null, 'No', 'Yes'],
+                        labels: const ["Doesn't matter", 'No', 'Yes'],
+                        value: _draft.hasChildren,
+                        onChanged: (v) =>
+                            setState(() => _draft = _draft.copyWith(
+                                  hasChildren: v,
+                                  clearHasChildren: v == null,
+                                )),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // ── VERIFIED ONLY (Premium) ─────────────
+                      _SectionLabel(key: _verifiedKey, label: 'VERIFIED ONLY'),
+                      const SizedBox(height: 8),
+                      _SubscriberGate(
+                        child: _ToggleRow(
+                          label: 'Show verified profiles only',
+                          value: _draft.verifiedOnly,
+                          onChanged: (v) => setState(
+                              () => _draft = _draft.copyWith(verifiedOnly: v)),
                         ),
                       ),
-                      Slider(
-                        value: km.clamp(10, 500).toDouble(),
-                        min: 10,
-                        max: 500,
-                        divisions: 49,
-                        activeColor: AppColors.champagneGold,
-                        inactiveColor: AppColors.surfaceGlassHover,
-                        onChanged: (value) => setState(() {
-                          final radius = value.round();
-                          _draft = _draft.copyWith(
-                            maxDistanceKm: radius,
-                            distanceLabel: '${radius}km',
-                          );
-                        }),
-                      ),
-                    ],
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
-                    // ── DIASPORA MODE (Premium) ──────────────────
-                    _SectionLabel(key: _diasporaKey, label: 'DIASPORA MODE'),
-                    const SizedBox(height: 8),
-                    _SubscriberGate(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _ToggleRow(
-                            label: 'Enable Diaspora Mode',
-                            value: _draft.diasporaMode,
-                            onChanged: (v) {
-                              setState(() {
-                                _draft = _draft.copyWith(
-                                  diasporaMode: v,
-                                  clearDiasporaCountries: !v,
-                                );
-                              });
-                            },
-                          ),
-                          if (_draft.diasporaMode) ...[
-                            const SizedBox(height: 12),
-                            const Text(
-                              'Target Home Countries',
-                              style: AppTypography.caption,
-                            ),
-                            const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                ...(_draft.diasporaCountries ?? []).map((code) {
-                                  final country = kAllCountries.firstWhere(
-                                    (c) => c.iso2 == code,
-                                    orElse: () => CountryInfo(
-                                        iso2: code, dialCode: '', name: code),
-                                  );
-                                  return Chip(
-                                    backgroundColor: AppColors.champagneGold
-                                        .withValues(alpha: 0.12),
-                                    side: const BorderSide(
-                                        color: AppColors.goldBorder),
-                                    label: Text(
-                                      '${country.flag} ${country.name}',
-                                      style: AppTypography.chipLabel.copyWith(
-                                          color: AppColors.champagneGold),
-                                    ),
-                                    onDeleted: () {
-                                      setState(() {
-                                        final current = List<String>.from(
-                                            _draft.diasporaCountries ?? []);
-                                        current.remove(code);
-                                        _draft = _draft.copyWith(
-                                          diasporaCountries: current,
-                                          clearDiasporaCountries:
-                                              current.isEmpty,
-                                        );
-                                      });
-                                    },
-                                    deleteIconColor: AppColors.champagneGold,
-                                  );
-                                }),
-                                ActionChip(
-                                  backgroundColor: AppColors.surfaceGlass,
-                                  side: const BorderSide(
-                                      color: AppColors.cardBorder),
-                                  avatar: const Icon(Icons.add,
-                                      color: AppColors.slateMist, size: 16),
-                                  label: const Text('Add Country',
-                                      style: AppTypography.chipLabel),
-                                  onPressed: _showCountrySelector,
-                                ),
-                              ],
-                            ),
+                      // ── DISTANCE (Premium) ──────────────────────
+                      _SectionLabel(key: _distanceKey, label: 'DISTANCE'),
+                      const SizedBox(height: 8),
+                      _SubscriberGate(
+                        child: _MultiChipGroup(
+                          options: const [
+                            'Same City',
+                            '25km',
+                            '50km',
+                            '100km',
+                            '250km',
+                            'Same Country',
+                            'Anywhere',
                           ],
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // ── MOTHER TONGUE (Premium) ─────────────
-                    _SectionLabel(key: _tongueKey, label: 'MOTHER TONGUE'),
-                    const SizedBox(height: 8),
-                    _SubscriberGate(
-                      child: _DropdownRow(
-                        value: _draft.motherTongue ?? 'Any',
-                        options: const [
-                          'Any',
-                          'Arabic',
-                          'Urdu',
-                          'Bengali',
-                          'Punjabi',
-                          'English',
-                          'Turkish',
-                          'Malay',
-                          'Indonesian',
-                          'Hausa',
-                          'Somali',
-                          'French',
-                          'Other',
-                        ],
-                        onChanged: (v) =>
+                          selected: _draft.distanceLabel,
+                          onChanged: (v) {
+                            final radius = RegExp(r'^(\d+)km$')
+                                .firstMatch(v ?? '')
+                                ?.group(1);
                             setState(() => _draft = _draft.copyWith(
-                                  motherTongue: v == 'Any' ? null : v,
-                                  clearMotherTongue: v == 'Any',
-                                )),
+                                  distanceLabel: v,
+                                  maxDistanceKm: int.tryParse(radius ?? ''),
+                                  clearDistanceLabel: v == null,
+                                  clearMaxDistance: radius == null,
+                                ));
+                          },
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 20),
+                      if (_draft.effectiveMaxDistanceKm case final km?) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          'Within $km km',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.champagneGold,
+                          ),
+                        ),
+                        Slider(
+                          value: km.clamp(10, 500).toDouble(),
+                          min: 10,
+                          max: 500,
+                          divisions: 49,
+                          activeColor: AppColors.champagneGold,
+                          inactiveColor: AppColors.surfaceGlassHover,
+                          onChanged: (value) => setState(() {
+                            final radius = value.round();
+                            _draft = _draft.copyWith(
+                              maxDistanceKm: radius,
+                              distanceLabel: '${radius}km',
+                            );
+                          }),
+                        ),
+                      ],
+                      const SizedBox(height: 20),
 
-                    // ── COMMUNITY / BIRADARI (Premium) ──────
-                    _SectionLabel(
-                        key: _communityKey, label: 'COMMUNITY / BIRADARI'),
-                    const SizedBox(height: 8),
-                    _SubscriberGate(
-                      child: _DropdownRow(
-                        value: _draft.community ?? 'Any',
-                        options: const [
-                          'Any',
-                          'Syed',
-                          'Pathan',
-                          'Qureshi',
-                          'Memon',
-                          'Rajput',
-                          'Ansari',
-                          'Sheikh',
-                          'Arain',
-                          'Arab',
-                          'Malay',
-                          'Turkish',
-                          'Hausa',
-                          'Other',
-                        ],
-                        onChanged: (v) =>
-                            setState(() => _draft = _draft.copyWith(
-                                  community: v == 'Any' ? null : v,
-                                  clearCommunity: v == 'Any',
-                                )),
+                      // ── DIASPORA MODE (Premium) ──────────────────
+                      _SectionLabel(key: _diasporaKey, label: 'DIASPORA MODE'),
+                      const SizedBox(height: 8),
+                      _SubscriberGate(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _ToggleRow(
+                              label: 'Enable Diaspora Mode',
+                              value: _draft.diasporaMode,
+                              onChanged: (v) {
+                                setState(() {
+                                  _draft = _draft.copyWith(
+                                    diasporaMode: v,
+                                    clearDiasporaCountries: !v,
+                                  );
+                                });
+                              },
+                            ),
+                            if (_draft.diasporaMode) ...[
+                              const SizedBox(height: 12),
+                              const Text(
+                                'Target Home Countries',
+                                style: AppTypography.caption,
+                              ),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  ...(_draft.diasporaCountries ?? [])
+                                      .map((code) {
+                                    final country = kAllCountries.firstWhere(
+                                      (c) => c.iso2 == code,
+                                      orElse: () => CountryInfo(
+                                          iso2: code, dialCode: '', name: code),
+                                    );
+                                    return Chip(
+                                      backgroundColor: AppColors.champagneGold
+                                          .withValues(alpha: 0.12),
+                                      side: const BorderSide(
+                                          color: AppColors.goldBorder),
+                                      label: Text(
+                                        '${country.flag} ${country.name}',
+                                        style: AppTypography.chipLabel.copyWith(
+                                            color: AppColors.champagneGold),
+                                      ),
+                                      onDeleted: () {
+                                        setState(() {
+                                          final current = List<String>.from(
+                                              _draft.diasporaCountries ?? []);
+                                          current.remove(code);
+                                          _draft = _draft.copyWith(
+                                            diasporaCountries: current,
+                                            clearDiasporaCountries:
+                                                current.isEmpty,
+                                          );
+                                        });
+                                      },
+                                      deleteIconColor: AppColors.champagneGold,
+                                    );
+                                  }),
+                                  ActionChip(
+                                    backgroundColor: AppColors.surfaceGlass,
+                                    side: const BorderSide(
+                                        color: AppColors.cardBorder),
+                                    avatar: const Icon(Icons.add,
+                                        color: AppColors.slateMist, size: 16),
+                                    label: const Text('Add Country',
+                                        style: AppTypography.chipLabel),
+                                    onPressed: _showCountrySelector,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
-                    // ── LIVING EXPECTATION (Premium) ────────
-                    _SectionLabel(
-                        key: _livingKey, label: 'POST-MARRIAGE LIVING'),
-                    const SizedBox(height: 8),
-                    _SubscriberGate(
-                      child: _MultiChipGroup(
-                        options: const [
-                          'Any',
-                          'with_inlaws',
-                          'separate',
-                          'open_to_discussion',
-                        ],
-                        optionLabels: const [
-                          'Any',
-                          'With In-Laws',
-                          'Separate Home',
-                          'Open to Discussion',
-                        ],
-                        selected: _draft.livingExpectation,
-                        onChanged: (v) =>
-                            setState(() => _draft = _draft.copyWith(
-                                  livingExpectation: v,
-                                  clearLivingExpectation: v == null,
-                                )),
+                      // ── MOTHER TONGUE (Premium) ─────────────
+                      _SectionLabel(key: _tongueKey, label: 'MOTHER TONGUE'),
+                      const SizedBox(height: 8),
+                      _SubscriberGate(
+                        child: _DropdownRow(
+                          value: _draft.motherTongue ?? 'Any',
+                          options: tongueOptions,
+                          onChanged: (v) =>
+                              setState(() => _draft = _draft.copyWith(
+                                    motherTongue: v == 'Any' ? null : v,
+                                    clearMotherTongue: v == 'Any',
+                                  )),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 32),
-                  ],
+                      const SizedBox(height: 20),
+
+                      // ── COMMUNITY / BIRADARI (Premium) ──────
+                      _SectionLabel(
+                          key: _communityKey, label: 'COMMUNITY / BIRADARI'),
+                      const SizedBox(height: 8),
+                      _SubscriberGate(
+                        child: _DropdownRow(
+                          value: _draft.community ?? 'Any',
+                          options: communityOptions,
+                          onChanged: (v) =>
+                              setState(() => _draft = _draft.copyWith(
+                                    community: v == 'Any' ? null : v,
+                                    clearCommunity: v == 'Any',
+                                  )),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // ── LIVING EXPECTATION (Premium) ────────
+                      _SectionLabel(
+                          key: _livingKey, label: 'POST-MARRIAGE LIVING'),
+                      const SizedBox(height: 8),
+                      _SubscriberGate(
+                        child: _MultiChipGroup(
+                          options: livingOptions,
+                          optionLabels: _optionLabels(livingOptions),
+                          selected: _draft.livingExpectation,
+                          onChanged: (v) =>
+                              setState(() => _draft = _draft.copyWith(
+                                    livingExpectation: v,
+                                    clearLivingExpectation: v == null,
+                                  )),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                    ];
+                    return ListView.builder(
+                      controller: scrollCtrl,
+                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                      itemCount: sections.length,
+                      itemBuilder: (context, index) => sections[index],
+                    );
+                  },
                 ),
               ),
 
@@ -709,17 +798,18 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: SizedBox(
-                        height: AppDimensions.buttonHeight,
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: AppColors.cardBorder),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                  AppDimensions.radiusButton),
-                            ),
+                      child: SilarahPressable(
+                        onTap: _clearAll,
+                        haptic: true,
+                        child: Container(
+                          height: AppDimensions.buttonHeight,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceGlass,
+                            borderRadius: BorderRadius.circular(
+                                AppDimensions.radiusButton),
+                            border: Border.all(color: AppColors.cardBorder),
                           ),
-                          onPressed: _clearAll,
                           child: const Text('Clear All',
                               style: AppTypography.body),
                         ),
@@ -728,19 +818,27 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                     const SizedBox(width: 12),
                     Expanded(
                       flex: 2,
-                      child: SizedBox(
-                        height: AppDimensions.buttonHeight,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.champagneGold,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                  AppDimensions.radiusButton),
+                      child: SilarahPressable(
+                        onTap: _apply,
+                        haptic: true,
+                        child: Container(
+                          height: AppDimensions.buttonHeight,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: AppColors.champagneGold,
+                            borderRadius: BorderRadius.circular(
+                                AppDimensions.radiusButton),
+                          ),
+                          child: AnimatedSwitcher(
+                            duration: AppDimensions.durationTransition,
+                            child: Text(
+                              _draft.activeCount == 0
+                                  ? 'Show all profiles'
+                                  : 'Apply ${_draft.activeCount} filters',
+                              key: ValueKey(_draft.activeCount),
+                              style: AppTypography.button,
                             ),
                           ),
-                          onPressed: _apply,
-                          child: const Text('Apply Filters',
-                              style: AppTypography.button),
                         ),
                       ),
                     ),
@@ -911,13 +1009,12 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: AppTypography.sectionLabel),
-        const SizedBox(height: 4),
-        const Divider(color: AppColors.divider, height: 1),
-      ],
+    return Text(
+      label,
+      style: AppTypography.sectionLabel.copyWith(
+        color: AppColors.slateMist,
+        letterSpacing: 1.1,
+      ),
     );
   }
 }
@@ -942,35 +1039,47 @@ class _RadioGroup<T> extends StatelessWidget {
       children: List.generate(options.length, (i) {
         final opt = options[i];
         final isSelected = opt == value;
-        return GestureDetector(
-          onTap: () {
-            HapticFeedback.selectionClick();
-            onChanged(opt);
-          },
+        return SilarahPressable(
+          haptic: true,
+          onTap: () => onChanged(opt),
           child: AnimatedContainer(
-            duration: AppDimensions.durationTransition,
+            duration: const Duration(milliseconds: 140),
+            curve: Curves.easeOutCubic,
             padding: const EdgeInsets.symmetric(
                 horizontal: AppDimensions.space14,
                 vertical: AppDimensions.space8),
             decoration: BoxDecoration(
               color: isSelected
                   ? AppColors.champagneGold.withValues(alpha: 0.15)
-                  : AppColors.surfaceGlass,
-              borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+                  : AppColors.transparent,
+              borderRadius: BorderRadius.circular(999),
               border: Border.all(
-                color:
-                    isSelected ? AppColors.champagneGold : AppColors.cardBorder,
-                width: isSelected
-                    ? AppDimensions.borderFocus
-                    : AppDimensions.borderThin,
+                color: isSelected
+                    ? AppColors.champagneGold
+                    : AppColors.cardBorder.withValues(alpha: 0.72),
+                width: 1.5,
               ),
             ),
-            child: Text(labels[i],
-                style: AppTypography.chipLabel.copyWith(
-                  color: isSelected
-                      ? AppColors.champagneGold
-                      : AppColors.slateMist,
-                )),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              SizedBox(
+                width: 19,
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 100),
+                  opacity: isSelected ? 1 : 0,
+                  child: const Icon(
+                    Icons.check_rounded,
+                    size: 14,
+                    color: AppColors.champagneGold,
+                  ),
+                ),
+              ),
+              Text(labels[i],
+                  style: AppTypography.chipLabel.copyWith(
+                    color: isSelected
+                        ? AppColors.champagneGold
+                        : AppColors.slateMist,
+                  )),
+            ]),
           ),
         );
       }),
@@ -1000,35 +1109,47 @@ class _MultiChipGroup extends StatelessWidget {
         final label = optionLabels?[i] ?? val;
         final isAny = val == 'Any';
         final isSelected = isAny ? selected == null : selected == val;
-        return GestureDetector(
-          onTap: () {
-            HapticFeedback.selectionClick();
-            onChanged(isAny ? null : (selected == val ? null : val));
-          },
+        return SilarahPressable(
+          haptic: true,
+          onTap: () => onChanged(isAny ? null : (selected == val ? null : val)),
           child: AnimatedContainer(
-            duration: AppDimensions.durationTransition,
+            duration: const Duration(milliseconds: 140),
+            curve: Curves.easeOutCubic,
             padding: const EdgeInsets.symmetric(
                 horizontal: AppDimensions.space14,
                 vertical: AppDimensions.space8),
             decoration: BoxDecoration(
               color: isSelected
                   ? AppColors.champagneGold.withValues(alpha: 0.15)
-                  : AppColors.surfaceGlass,
-              borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+                  : AppColors.transparent,
+              borderRadius: BorderRadius.circular(999),
               border: Border.all(
-                color:
-                    isSelected ? AppColors.champagneGold : AppColors.cardBorder,
-                width: isSelected
-                    ? AppDimensions.borderFocus
-                    : AppDimensions.borderThin,
+                color: isSelected
+                    ? AppColors.champagneGold
+                    : AppColors.cardBorder.withValues(alpha: 0.72),
+                width: 1.5,
               ),
             ),
-            child: Text(label,
-                style: AppTypography.chipLabel.copyWith(
-                  color: isSelected
-                      ? AppColors.champagneGold
-                      : AppColors.slateMist,
-                )),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              SizedBox(
+                width: 19,
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 100),
+                  opacity: isSelected ? 1 : 0,
+                  child: const Icon(
+                    Icons.check_rounded,
+                    size: 14,
+                    color: AppColors.champagneGold,
+                  ),
+                ),
+              ),
+              Text(label,
+                  style: AppTypography.chipLabel.copyWith(
+                    color: isSelected
+                        ? AppColors.champagneGold
+                        : AppColors.slateMist,
+                  )),
+            ]),
           ),
         );
       }),
@@ -1036,7 +1157,7 @@ class _MultiChipGroup extends StatelessWidget {
   }
 }
 
-class _AgeRangeField extends StatelessWidget {
+class _AgeRangeField extends StatefulWidget {
   const _AgeRangeField({
     required this.min,
     required this.max,
@@ -1047,14 +1168,35 @@ class _AgeRangeField extends StatelessWidget {
   final void Function(double, double) onChanged;
 
   @override
+  State<_AgeRangeField> createState() => _AgeRangeFieldState();
+}
+
+class _AgeRangeFieldState extends State<_AgeRangeField> {
+  late RangeValues _values;
+
+  @override
+  void initState() {
+    super.initState();
+    _values = RangeValues(widget.min, widget.max);
+  }
+
+  @override
+  void didUpdateWidget(covariant _AgeRangeField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.min != widget.min || oldWidget.max != widget.max) {
+      _values = RangeValues(widget.min, widget.max);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _AgeLabel(age: min.round()),
-            _AgeLabel(age: max.round()),
+            _AgeLabel(age: _values.start.round()),
+            _AgeLabel(age: _values.end.round()),
           ],
         ),
         const SizedBox(height: 8),
@@ -1069,12 +1211,16 @@ class _AgeRangeField extends StatelessWidget {
             trackHeight: 3,
           ),
           child: RangeSlider(
-            values: RangeValues(min, max),
+            values: _values,
             min: 18,
             max: 65,
             divisions: 47,
-            labels: RangeLabels('${min.round()}', '${max.round()}'),
-            onChanged: (v) => onChanged(v.start, v.end),
+            labels: RangeLabels(
+              '${_values.start.round()}',
+              '${_values.end.round()}',
+            ),
+            onChanged: (values) => setState(() => _values = values),
+            onChangeEnd: (values) => widget.onChanged(values.start, values.end),
           ),
         ),
         const Row(
@@ -1135,7 +1281,16 @@ class _DropdownRow extends StatelessWidget {
         initialValue: safe,
         style: AppTypography.inputText,
         dropdownColor: AppColors.surfaceElevated,
-        decoration: const InputDecoration(border: InputBorder.none),
+        decoration: const InputDecoration(
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          errorBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
+          filled: false,
+          fillColor: Colors.transparent,
+          contentPadding: EdgeInsets.zero,
+        ),
         icon: const Icon(Icons.expand_more_rounded, color: AppColors.slateMist),
         items: options
             .map((o) => DropdownMenuItem(
@@ -1161,26 +1316,32 @@ class _ToggleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppDimensions.space16, vertical: AppDimensions.space12),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceGlass,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-        border: Border.all(color: AppColors.cardBorder),
-      ),
-      child: Row(
-        children: [
-          Expanded(child: Text(label, style: AppTypography.body)),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeThumbColor: AppColors.obsidianNight,
-            activeTrackColor: AppColors.champagneGold,
-            inactiveThumbColor: AppColors.slateMist,
-            inactiveTrackColor: AppColors.surfaceGlassHover,
-          ),
-        ],
+    return SilarahPressable(
+      onTap: () => onChanged(!value),
+      haptic: true,
+      child: AnimatedContainer(
+        duration: AppDimensions.durationTransition,
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.space16, vertical: AppDimensions.space10),
+        decoration: BoxDecoration(
+          color: value ? AppColors.goldGlow : AppColors.surfaceGlass,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+          border: Border.all(
+              color: value ? AppColors.goldBorder : AppColors.cardBorder),
+        ),
+        child: Row(
+          children: [
+            Expanded(child: Text(label, style: AppTypography.body)),
+            Switch(
+              value: value,
+              onChanged: onChanged,
+              activeThumbColor: AppColors.obsidianNight,
+              activeTrackColor: AppColors.champagneGold,
+              inactiveThumbColor: AppColors.slateMist,
+              inactiveTrackColor: AppColors.surfaceGlassHover,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1208,6 +1369,12 @@ class _SheetTextField extends StatelessWidget {
           hintText: hint,
           hintStyle: AppTypography.bodyMuted,
           border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          errorBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
+          filled: false,
+          fillColor: Colors.transparent,
           contentPadding: const EdgeInsets.symmetric(
               horizontal: AppDimensions.space12, vertical: 0),
         ),
@@ -1229,52 +1396,56 @@ class _SubscriberGate extends StatelessWidget {
     final subState = context.watch<SubscriptionCubit>().state;
     if (subState.isActive) return child;
 
-    return GestureDetector(
+    return SilarahPressable(
       onTap: () {
-        HapticFeedback.selectionClick();
         Navigator.of(context).push(
           MaterialPageRoute<void>(
             builder: (_) => const SubscriptionScreen(),
           ),
         );
       },
-      child: Stack(
-        children: [
-          // Show the actual content dimmed
-          IgnorePointer(
-            child: Opacity(opacity: 0.3, child: child),
-          ),
-          // Lock overlay
-          Positioned.fill(
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppDimensions.space16,
-                  vertical: AppDimensions.space10,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceGlass,
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
-                  border: Border.all(color: AppColors.goldBorder),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.lock_outline_rounded,
-                        color: AppColors.champagneGold, size: 16),
-                    const SizedBox(width: AppDimensions.space8),
-                    Text(
-                      'Subscribe to unlock',
-                      style: AppTypography.chipLabel.copyWith(
-                        color: AppColors.champagneGold,
-                      ),
-                    ),
-                  ],
-                ),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 64),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.space14,
+          vertical: AppDimensions.space12,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceGlass,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+          border: Border.all(color: AppColors.goldBorder),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.goldGlow,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.lock_outline_rounded,
+                  color: AppColors.champagneGold, size: 18),
+            ),
+            const SizedBox(width: AppDimensions.space12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Premium preference',
+                      style: AppTypography.bodyMedium
+                          .copyWith(color: AppColors.pearlWhite)),
+                  const SizedBox(height: 2),
+                  const Text('Upgrade to refine this criterion',
+                      style: AppTypography.caption),
+                ],
               ),
             ),
-          ),
-        ],
+            const Icon(Icons.chevron_right_rounded,
+                color: AppColors.champagneGold,
+                size: AppDimensions.iconSizeMedium),
+          ],
+        ),
       ),
     );
   }

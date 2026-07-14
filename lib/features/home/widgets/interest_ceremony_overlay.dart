@@ -1,6 +1,6 @@
 // lib/features/home/widgets/interest_ceremony_overlay.dart
 // ============================================================
-// MITHAQ — The Interest Ceremony Overlay
+// SILARAH — The Interest Ceremony Overlay
 // Blueprint-exact animation sequence when "Send Interest" fires.
 //
 // Timeline:
@@ -25,10 +25,10 @@ Future<void> showInterestCeremony(
   required String firstName,
 }) {
   return showGeneralDialog(
-    context:          context,
+    context: context,
     barrierDismissible: false,
-    barrierLabel:     'Interest Ceremony',
-    barrierColor:     Colors.transparent,
+    barrierLabel: 'Interest Ceremony',
+    barrierColor: Colors.transparent,
     transitionDuration: Duration.zero,
     pageBuilder: (context, _, __) {
       return _CeremonyOverlay(firstName: firstName);
@@ -48,23 +48,23 @@ class _CeremonyOverlayState extends State<_CeremonyOverlay>
     with TickerProviderStateMixin {
   // Overlay background fade
   late final AnimationController _bgCtrl;
-  late final Animation<double>   _bgOpacity;
+  late final Animation<double> _bgOpacity;
 
   // Ring expand
   late final AnimationController _ringCtrl;
-  late final Animation<double>   _ringScale;
-  late final Animation<double>   _ringOpacity;
+  late final Animation<double> _ringScale;
+  late final Animation<double> _ringOpacity;
 
   // Particles
   late final AnimationController _particleCtrl;
 
   // Checkmark draw
   late final AnimationController _checkCtrl;
-  late final Animation<double>   _checkProgress;
+  late final Animation<double> _checkProgress;
 
   // Text fade
   late final AnimationController _textCtrl;
-  late final Animation<double>   _textOpacity;
+  late final Animation<double> _textOpacity;
 
   @override
   void initState() {
@@ -72,14 +72,14 @@ class _CeremonyOverlayState extends State<_CeremonyOverlay>
 
     // Background
     _bgCtrl = AnimationController(
-      vsync:    this,
+      vsync: this,
       duration: AppDimensions.ceremonyOverlayFade,
     );
     _bgOpacity = CurvedAnimation(parent: _bgCtrl, curve: Curves.easeIn);
 
     // Ring
     _ringCtrl = AnimationController(
-      vsync:    this,
+      vsync: this,
       duration: AppDimensions.ceremonyRingExpand,
     );
     _ringScale = Tween<double>(begin: 0.3, end: 1.0).animate(
@@ -88,26 +88,26 @@ class _CeremonyOverlayState extends State<_CeremonyOverlay>
     _ringOpacity = Tween<double>(begin: 1.0, end: 0.0).animate(
       CurvedAnimation(
         parent: _ringCtrl,
-        curve:  const Interval(0.6, 1.0, curve: Curves.easeOut),
+        curve: const Interval(0.6, 1.0, curve: Curves.easeOut),
       ),
     );
 
     // Particles
     _particleCtrl = AnimationController(
-      vsync:    this,
+      vsync: this,
       duration: AppDimensions.ceremonyParticles,
     );
 
     // Checkmark
     _checkCtrl = AnimationController(
-      vsync:    this,
+      vsync: this,
       duration: AppDimensions.ceremonyCheckmark,
     );
     _checkProgress = CurvedAnimation(parent: _checkCtrl, curve: Curves.easeOut);
 
     // Text
     _textCtrl = AnimationController(
-      vsync:    this,
+      vsync: this,
       duration: AppDimensions.ceremonyTextFade,
     );
     _textOpacity = CurvedAnimation(parent: _textCtrl, curve: Curves.easeIn);
@@ -160,7 +160,7 @@ class _CeremonyOverlayState extends State<_CeremonyOverlay>
             children: [
               // Ring + Particles + Checkmark stacked
               SizedBox(
-                width:  200,
+                width: 200,
                 height: 200,
                 child: Stack(
                   alignment: Alignment.center,
@@ -173,7 +173,7 @@ class _CeremonyOverlayState extends State<_CeremonyOverlay>
                         child: Transform.scale(
                           scale: _ringScale.value,
                           child: Container(
-                            width:  160,
+                            width: 160,
                             height: 160,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
@@ -192,7 +192,8 @@ class _CeremonyOverlayState extends State<_CeremonyOverlay>
                       animation: _particleCtrl,
                       builder: (_, __) => CustomPaint(
                         size: const Size(200, 200),
-                        painter: _ParticlePainter(progress: _particleCtrl.value),
+                        painter:
+                            _ParticlePainter(progress: _particleCtrl.value),
                       ),
                     ),
 
@@ -201,7 +202,8 @@ class _CeremonyOverlayState extends State<_CeremonyOverlay>
                       animation: _checkCtrl,
                       builder: (_, __) => CustomPaint(
                         size: const Size(80, 80),
-                        painter: _CheckmarkPainter(progress: _checkProgress.value),
+                        painter:
+                            _CheckmarkPainter(progress: _checkProgress.value),
                       ),
                     ),
                   ],
@@ -231,9 +233,9 @@ class _CeremonyOverlayState extends State<_CeremonyOverlay>
                     Text(
                       'May Allah bless this with goodness',
                       style: AppTypography.caption.copyWith(
-                        color:       AppColors.champagneGold.withValues(alpha: 0.7),
-                        fontSize:    13,
-                        fontStyle:   FontStyle.italic,
+                        color: AppColors.champagneGold.withValues(alpha: 0.7),
+                        fontSize: 13,
+                        fontStyle: FontStyle.italic,
                         letterSpacing: 0.2,
                       ),
                       textAlign: TextAlign.center,
@@ -264,15 +266,15 @@ class _ParticlePainter extends CustomPainter {
 
     final center = Offset(size.width / 2, size.height / 2);
     final paint = Paint()
-      ..color   = AppColors.champagneGold.withValues(alpha: (1 - progress) * 0.9)
-      ..style   = PaintingStyle.fill
+      ..color = AppColors.champagneGold.withValues(alpha: (1 - progress) * 0.9)
+      ..style = PaintingStyle.fill
       ..strokeCap = StrokeCap.round;
 
     for (int i = 0; i < _particleCount; i++) {
-      final angle    = (i / _particleCount) * 2 * math.pi;
+      final angle = (i / _particleCount) * 2 * math.pi;
       final distance = 60.0 + _rng.nextDouble() * 40;
-      final spread   = progress * distance;
-      final size2    = 3.0 + _rng.nextDouble() * 3;
+      final spread = progress * distance;
+      final size2 = 3.0 + _rng.nextDouble() * 3;
 
       final pos = Offset(
         center.dx + math.cos(angle) * spread,
@@ -280,7 +282,11 @@ class _ParticlePainter extends CustomPainter {
       );
 
       final opacity = (1 - progress).clamp(0.0, 1.0);
-      canvas.drawCircle(pos, size2 * opacity, paint..color = AppColors.champagneGold.withValues(alpha: opacity * 0.8));
+      canvas.drawCircle(
+          pos,
+          size2 * opacity,
+          paint
+            ..color = AppColors.champagneGold.withValues(alpha: opacity * 0.8));
     }
   }
 
@@ -299,19 +305,19 @@ class _CheckmarkPainter extends CustomPainter {
     if (progress == 0.0) return;
 
     final paint = Paint()
-      ..color       = AppColors.champagneGold
-      ..style       = PaintingStyle.stroke
+      ..color = AppColors.champagneGold
+      ..style = PaintingStyle.stroke
       ..strokeWidth = 3.0
-      ..strokeCap   = StrokeCap.round
-      ..strokeJoin  = StrokeJoin.round;
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
 
     // Path: checkmark from left → bottom → top-right
-    final startX = size.width  * 0.2;
+    final startX = size.width * 0.2;
     final startY = size.height * 0.5;
-    final midX   = size.width  * 0.42;
-    final midY   = size.height * 0.68;
-    final endX   = size.width  * 0.78;
-    final endY   = size.height * 0.32;
+    final midX = size.width * 0.42;
+    final midY = size.height * 0.68;
+    final endX = size.width * 0.78;
+    final endY = size.height * 0.32;
 
     // Total path length (approx)
     final seg1Length = math.sqrt(

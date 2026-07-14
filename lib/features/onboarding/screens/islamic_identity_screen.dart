@@ -1,12 +1,12 @@
 // lib/features/onboarding/screens/islamic_identity_screen.dart
 // ============================================================
-// MITHAQ - Islamic Identity Screen (fast-start step 4)
+// SILARAH - Islamic Identity Screen (fast-start step 4)
 // Saves required Islamic identity and lifestyle signals for matching.
 // ============================================================
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mithaq/l10n/generated/app_localizations.dart';
+import 'package:silarah/l10n/generated/app_localizations.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_state.dart';
 import '../../../core/models/onboarding_data.dart';

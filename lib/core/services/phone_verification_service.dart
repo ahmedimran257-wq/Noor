@@ -1,6 +1,6 @@
 // lib/core/services/phone_verification_service.dart
 // ============================================================
-// MITHAQ - Phone verification for premium purchase trust checks.
+// SILARAH - Phone verification for premium purchase trust checks.
 // Not used during signup. Signup stays email OTP only.
 // ============================================================
 

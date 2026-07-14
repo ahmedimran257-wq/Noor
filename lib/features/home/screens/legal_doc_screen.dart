@@ -1,8 +1,8 @@
 // lib/features/home/screens/legal_doc_screen.dart
 // ============================================================
-// MITHAQ — Legal Document Screen
+// SILARAH — Legal Document Screen
 // Displays Terms of Service or Privacy Policy content.
-// Uses the MITHAQ Quiet Luxury design language.
+// Uses the SILARAH Quiet Luxury design language.
 //
 // ============================================================
 
@@ -125,15 +125,15 @@ class _LegalSection {
 const _tosSections = <_LegalSection>[
   _LegalSection(
     title: '1. Acceptance of Terms',
-    body: 'By creating an account on MITHAQ, you agree to be bound by these '
-        'Terms of Service. MITHAQ is a matrimony platform designed for the '
+    body: 'By creating an account on SILARAH, you agree to be bound by these '
+        'Terms of Service. SILARAH is a matrimony platform designed for the '
         'Muslim community, built on principles of respect, sincerity, and '
         'the pursuit of halal relationships. If you do not agree with any '
         'part of these terms, please do not use the service.',
   ),
   _LegalSection(
     title: '2. Eligibility',
-    body: 'You must be at least 18 years old to use MITHAQ. By using the app, '
+    body: 'You must be at least 18 years old to use SILARAH. By using the app, '
         'you represent that you are of legal age to enter a marriage contract '
         'in your jurisdiction. Guardian accounts may be created by parents or '
         'authorized walis for eligible candidates.',
@@ -148,14 +148,14 @@ const _tosSections = <_LegalSection>[
   ),
   _LegalSection(
     title: '4. Conduct',
-    body: 'MITHAQ is a safe space. Users are expected to interact with adab '
+    body: 'SILARAH is a safe space. Users are expected to interact with adab '
         '(respect) and sincerity. Harassment, solicitation, scamming, hate '
         'speech, and inappropriate content are strictly prohibited. Three '
         'verified reports against a user may trigger automatic suspension.',
   ),
   _LegalSection(
     title: '5. Subscriptions & Payments',
-    body: 'MITHAQ offers free and premium tiers. Women always message free. '
+    body: 'SILARAH offers free and premium tiers. Women always message free. '
         'Men require a subscription to send messages. Subscription fees are '
         'billed according to the selected plan (monthly or annual). Prices '
         'are displayed in your local currency. Subscriptions auto-renew unless '
@@ -164,14 +164,14 @@ const _tosSections = <_LegalSection>[
   _LegalSection(
     title: '6. Termination',
     body: 'You may delete your account at any time from the Settings screen. '
-        'MITHAQ reserves the right to suspend or terminate accounts that violate '
+        'SILARAH reserves the right to suspend or terminate accounts that violate '
         'these terms. Upon deletion, your personal data will be removed in '
         'accordance with our Privacy Policy.',
   ),
   _LegalSection(
     title: '7. Disclaimer',
-    body: 'MITHAQ does not conduct background checks on users. We are not '
-        'responsible for the conduct of users on or off the platform. MITHAQ '
+    body: 'SILARAH does not conduct background checks on users. We are not '
+        'responsible for the conduct of users on or off the platform. SILARAH '
         'is provided "as is" without warranties of any kind. We encourage '
         'all users to exercise caution and involve family in the process.',
   ),
@@ -206,7 +206,7 @@ const _privacySections = <_LegalSection>[
   ),
   _LegalSection(
     title: '4. Photo Privacy',
-    body: 'MITHAQ respects your photo privacy preferences. You may choose to '
+    body: 'SILARAH respects your photo privacy preferences. You may choose to '
         'make your photos visible to everyone, or restrict them to users '
         'whose interest you have accepted. This setting can be changed at '
         'any time from your profile settings.',
@@ -229,7 +229,7 @@ const _privacySections = <_LegalSection>[
     title: '7. Contact',
     body: 'For any privacy-related questions or concerns, please contact '
         'our support team through the app settings or email us at '
-        'privacy@mithaq.app. We aim to respond to all inquiries within '
+        'privacy@silarah.com. We aim to respond to all inquiries within '
         '48 hours.',
   ),
 ];

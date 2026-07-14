@@ -1,6 +1,6 @@
 // lib/features/home/widgets/report_bottom_sheet.dart
 // ============================================================
-// MITHAQ — Report Bottom Sheet (Item 28 — 3-Step Multi-Flow)
+// SILARAH — Report Bottom Sheet (Item 28 — 3-Step Multi-Flow)
 //
 // Blueprint (Part 9 — Report Reasons):
 //   fake_profile, inappropriate_photos, harassment, scam,
@@ -22,6 +22,7 @@ import '../../../core/cubits/block_report/block_report_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/loaders/silarah_shimmer.dart';
 
 class ReportBottomSheet {
   static Future<void> show(
@@ -30,14 +31,14 @@ class ReportBottomSheet {
     required String reportedName,
   }) {
     return showModalBottomSheet<void>(
-      context:            context,
+      context: context,
       isScrollControlled: true,
-      backgroundColor:    Colors.transparent,
+      backgroundColor: Colors.transparent,
       builder: (_) => BlocProvider.value(
         value: context.read<BlockReportCubit>(),
         child: _ReportContent(
           reportedUserId: reportedUserId,
-          reportedName:   reportedName,
+          reportedName: reportedName,
         ),
       ),
     );
@@ -59,10 +60,9 @@ class _ReportContent extends StatefulWidget {
 
 class _ReportContentState extends State<_ReportContent> {
   // Step 1 | 2 | 3
-  int           _step          = 1;
+  int _step = 1;
   ReportReason? _selected;
-  final _descController        = TextEditingController();
-
+  final _descController = TextEditingController();
 
   @override
   void dispose() {
@@ -72,16 +72,15 @@ class _ReportContentState extends State<_ReportContent> {
 
   void _onSubmit(BuildContext context) {
     context.read<BlockReportCubit>().reportUser(
-      reportedUserId: widget.reportedUserId,
-      reportedName:   widget.reportedName,
-      reason:         _selected!,
-      description:    _selected == ReportReason.other
-          ? _descController.text.trim()
-          : null,
-    );
+          reportedUserId: widget.reportedUserId,
+          reportedName: widget.reportedName,
+          reason: _selected!,
+          description: _selected == ReportReason.other
+              ? _descController.text.trim()
+              : null,
+        );
     setState(() => _step = 3);
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -93,14 +92,14 @@ class _ReportContentState extends State<_ReportContent> {
         return Container(
           decoration: const BoxDecoration(
             color: AppColors.surfaceMid,
-            borderRadius:
-                BorderRadius.vertical(top: Radius.circular(24)),
-            border:
-                Border(top: BorderSide(color: AppColors.goldBorder)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border(top: BorderSide(color: AppColors.goldBorder)),
           ),
           padding: EdgeInsets.fromLTRB(
-              AppDimensions.space24, AppDimensions.space20,
-              AppDimensions.space24, AppDimensions.space24 + bottomPad),
+              AppDimensions.space24,
+              AppDimensions.space20,
+              AppDimensions.space24,
+              AppDimensions.space24 + bottomPad),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -123,9 +122,9 @@ class _ReportContentState extends State<_ReportContent> {
                 duration: AppDimensions.durationTransition,
                 child: _step == 1
                     ? _Step1(
-                        key:          const ValueKey(1),
+                        key: const ValueKey(1),
                         reportedName: widget.reportedName,
-                        selected:     _selected,
+                        selected: _selected,
                         onSelect: (r) => setState(() => _selected = r),
                         onNext: () {
                           if (_selected == ReportReason.other) {
@@ -137,11 +136,11 @@ class _ReportContentState extends State<_ReportContent> {
                       )
                     : _step == 2
                         ? _Step2(
-                            key:          const ValueKey(2),
-                            controller:   _descController,
-                            isLoading:    state.isSubmitting,
-                            onBack:       () => setState(() => _step = 1),
-                            onSubmit:     () => _onSubmit(context),
+                            key: const ValueKey(2),
+                            controller: _descController,
+                            isLoading: state.isSubmitting,
+                            onBack: () => setState(() => _step = 1),
+                            onSubmit: () => _onSubmit(context),
                           )
                         : _Step3(
                             key: const ValueKey(3),
@@ -160,10 +159,10 @@ class _ReportContentState extends State<_ReportContent> {
 // ── Step 1: Select Reason ─────────────────────────────────────
 
 class _Step1 extends StatelessWidget {
-  final String        reportedName;
+  final String reportedName;
   final ReportReason? selected;
   final ValueChanged<ReportReason> onSelect;
-  final VoidCallback  onNext;
+  final VoidCallback onNext;
 
   const _Step1({
     super.key,
@@ -195,13 +194,15 @@ class _Step1 extends StatelessWidget {
           constraints: const BoxConstraints(maxHeight: 360),
           child: SingleChildScrollView(
             child: Column(
-              children: ReportReason.values.map(
-                (reason) => _ReasonTile(
-                  reason:     reason,
-                  isSelected: selected == reason,
-                  onTap: () => onSelect(reason),
-                ),
-              ).toList(),
+              children: ReportReason.values
+                  .map(
+                    (reason) => _ReasonTile(
+                      reason: reason,
+                      isSelected: selected == reason,
+                      onTap: () => onSelect(reason),
+                    ),
+                  )
+                  .toList(),
             ),
           ),
         ),
@@ -249,7 +250,7 @@ class _Step1 extends StatelessWidget {
 
 class _Step2 extends StatelessWidget {
   final TextEditingController controller;
-  final bool        isLoading;
+  final bool isLoading;
   final VoidCallback onBack;
   final VoidCallback onSubmit;
 
@@ -276,8 +277,9 @@ class _Step2 extends StatelessWidget {
               const Icon(Icons.arrow_back_rounded,
                   color: AppColors.slateMist, size: 16),
               const SizedBox(width: AppDimensions.space4),
-              Text('Back', style: AppTypography.caption.copyWith(
-                  color: AppColors.slateMist)),
+              Text('Back',
+                  style: AppTypography.caption
+                      .copyWith(color: AppColors.slateMist)),
             ],
           ),
         ),
@@ -291,24 +293,23 @@ class _Step2 extends StatelessWidget {
         const SizedBox(height: AppDimensions.space16),
 
         TextField(
-          controller:  controller,
-          maxLines:    4,
-          maxLength:   300,
-          style:       AppTypography.body,
+          controller: controller,
+          maxLines: 4,
+          maxLength: 300,
+          style: AppTypography.body,
           decoration: InputDecoration(
-            hintText:  'Describe the issue…',
+            hintText: 'Describe the issue…',
             hintStyle: AppTypography.bodyMuted,
             fillColor: AppColors.surfaceGlass,
-            filled:    true,
+            filled: true,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  const BorderSide(color: AppColors.cardBorder),
+              borderSide: const BorderSide(color: AppColors.cardBorder),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                  color: AppColors.champagneGold, width: 1.5),
+              borderSide:
+                  const BorderSide(color: AppColors.champagneGold, width: 1.5),
             ),
             counterStyle: AppTypography.caption,
           ),
@@ -329,17 +330,19 @@ class _Step2 extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      color: AppColors.pearlWhite,
-                      strokeWidth: 2,
-                    ),
+                ? const SilarahPulseLoader(
+                    size: 24,
+                    accentColor: AppColors.pearlWhite,
+                    highlightColor: AppColors.pearlWhite,
+                    markColor: AppColors.softCoral,
+                    coreGradientColors: [
+                      AppColors.pearlWhite,
+                      AppColors.pearlWhite,
+                    ],
                   )
                 : Text('Submit Report',
-                    style: AppTypography.button.copyWith(
-                        color: AppColors.pearlWhite)),
+                    style: AppTypography.button
+                        .copyWith(color: AppColors.pearlWhite)),
           ),
         ),
       ],
@@ -350,7 +353,7 @@ class _Step2 extends StatelessWidget {
 // ── Step 3: Confirmation ──────────────────────────────────────
 
 class _Step3 extends StatelessWidget {
-  final String       reportedName;
+  final String reportedName;
   final VoidCallback onDone;
 
   const _Step3({
@@ -369,11 +372,11 @@ class _Step3 extends StatelessWidget {
 
         // Success icon
         Container(
-          width:  64,
+          width: 64,
           height: 64,
           decoration: BoxDecoration(
-            shape:  BoxShape.circle,
-            color:  AppColors.verifiedTeal.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+            color: AppColors.verifiedTeal.withValues(alpha: 0.12),
             border: Border.all(color: AppColors.verifiedTeal, width: 1.5),
           ),
           child: const Icon(Icons.check_rounded,
@@ -382,8 +385,8 @@ class _Step3 extends StatelessWidget {
         const SizedBox(height: AppDimensions.space20),
 
         Text('Thank you for reporting.',
-            style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.pearlWhite, fontSize: 18),
+            style: AppTypography.bodyMedium
+                .copyWith(color: AppColors.pearlWhite, fontSize: 18),
             textAlign: TextAlign.center),
         const SizedBox(height: AppDimensions.space12),
 
@@ -420,7 +423,7 @@ class _Step3 extends StatelessWidget {
 
 class _ReasonTile extends StatelessWidget {
   final ReportReason reason;
-  final bool         isSelected;
+  final bool isSelected;
   final VoidCallback onTap;
 
   const _ReasonTile({
@@ -437,8 +440,7 @@ class _ReasonTile extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         margin: const EdgeInsets.only(bottom: AppDimensions.space8),
         padding: const EdgeInsets.symmetric(
-            horizontal: AppDimensions.space14,
-            vertical:   AppDimensions.space12),
+            horizontal: AppDimensions.space14, vertical: AppDimensions.space12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
           color: isSelected
@@ -457,7 +459,7 @@ class _ReasonTile extends StatelessWidget {
                 children: [
                   Text(reason.label, style: AppTypography.body),
                   Text(reason.detail,
-                      style:    AppTypography.caption,
+                      style: AppTypography.caption,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis),
                 ],
@@ -465,17 +467,14 @@ class _ReasonTile extends StatelessWidget {
             ),
             AnimatedContainer(
               duration: const Duration(milliseconds: 180),
-              width:  20,
+              width: 20,
               height: 20,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isSelected
-                    ? AppColors.softCoral
-                    : Colors.transparent,
+                color: isSelected ? AppColors.softCoral : Colors.transparent,
                 border: Border.all(
-                  color: isSelected
-                      ? AppColors.softCoral
-                      : AppColors.cardBorder,
+                  color:
+                      isSelected ? AppColors.softCoral : AppColors.cardBorder,
                 ),
               ),
               child: isSelected

@@ -16,7 +16,7 @@ export default async function CampaignsPage() {
       <form action={createCampaign} className="admin-form panel-form">
         <h2><Megaphone size={18} /> New campaign</h2>
         <div className="form-grid">
-          <label>Title<input name="title" required minLength={3} maxLength={80} placeholder="Mithaq reminder" /></label>
+          <label>Title<input name="title" required minLength={3} maxLength={80} placeholder="Silarah reminder" /></label>
           <label>Audience
             <select name="audience" defaultValue="all">
               <option value="all">All visible users</option>
@@ -29,7 +29,7 @@ export default async function CampaignsPage() {
           <label>Schedule<input name="scheduledAt" type="datetime-local" defaultValue={nowLocalValue()} /></label>
         </div>
         <label>Body<textarea name="body" required minLength={3} maxLength={220} rows={3} placeholder="Write a respectful, short notification." /></label>
-        <label>Deep link<input name="deepLink" placeholder="mithaq://profile or mithaq://subscription" /></label>
+        <label>Deep link<input name="deepLink" placeholder="silarah://profile or silarah://subscription" /></label>
         <button type="submit" className="primary-button">Create draft</button>
       </form>
 

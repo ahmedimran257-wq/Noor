@@ -1,6 +1,6 @@
 // lib/features/home/screens/subscription_screen.dart
 // ============================================================
-// MITHAQ — Subscription Screen (RevenueCat Dynamic Pricing)
+// SILARAH — Subscription Screen (RevenueCat Dynamic Pricing)
 //
 // Blueprint (Part 8):
 //   "The price in local currency."
@@ -23,6 +23,7 @@ import '../../../core/cubits/subscription/subscription_cubit.dart';
 import '../../../core/cubits/subscription/subscription_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/loaders/silarah_shimmer.dart';
 import 'legal_doc_screen.dart';
 
 class SubscriptionScreen extends StatefulWidget {
@@ -42,7 +43,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   late final Animation<Offset> _headerSlide;
 
   // Pricing (loaded from RevenueCat via SubscriptionService)
-  DisplayPricing _pricing = DisplayPricing.unavailable();
+  DisplayPricing _pricing = DisplayPricing.loading();
   StreamSubscription<DisplayPricing>? _pricingSub;
 
   @override
@@ -74,6 +75,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     _pricingSub = service.pricingStream.listen((updated) {
       if (mounted) setState(() => _pricing = updated);
     });
+  }
+
+  Future<void> _retryPricing() async {
+    setState(() => _pricing = DisplayPricing.loading());
+    await SubscriptionService.instance.retryPricing();
   }
 
   @override
@@ -140,12 +146,25 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                 SizedBox(height: spaceLarge),
 
                 // ── Plan Cards ──────────────────────────────
-                _PlanCards(
-                  pricing: _pricing,
-                  selectedPlan: _selectedPlan,
-                  onSelect: (plan) => setState(() => _selectedPlan = plan),
-                  isSmallScreen: isSmallScreen,
-                ),
+                if (_pricing.source == PricingSource.loading)
+                  _PricingStatusCard(
+                    isLoading: true,
+                    isSmallScreen: isSmallScreen,
+                    onRetry: _retryPricing,
+                  )
+                else if (!_pricing.isAvailable)
+                  _PricingStatusCard(
+                    isLoading: false,
+                    isSmallScreen: isSmallScreen,
+                    onRetry: _retryPricing,
+                  )
+                else
+                  _PlanCards(
+                    pricing: _pricing,
+                    selectedPlan: _selectedPlan,
+                    onSelect: (plan) => setState(() => _selectedPlan = plan),
+                    isSmallScreen: isSmallScreen,
+                  ),
 
                 SizedBox(height: spaceMedium),
 
@@ -156,13 +175,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                 SizedBox(height: spaceLarge),
 
                 // ── CTA Button ──────────────────────────────
-                _CtaButton(
-                  selectedPlan: _selectedPlan,
-                  pricing: _pricing,
-                  isLoading: state.isLoading,
-                  isSmallScreen: isSmallScreen,
-                  onTap: _startPurchase,
-                ),
+                if (_pricing.isAvailable)
+                  _CtaButton(
+                    selectedPlan: _selectedPlan,
+                    pricing: _pricing,
+                    isLoading: state.isLoading,
+                    isSmallScreen: isSmallScreen,
+                    onTap: _startPurchase,
+                  ),
 
                 SizedBox(height: spaceSmall),
 
@@ -599,13 +619,15 @@ class _SheetPrimaryButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
         ),
         child: loading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppColors.obsidianNight,
-                ),
+            ? const SilarahPulseLoader(
+                size: 24,
+                accentColor: AppColors.obsidianNight,
+                highlightColor: AppColors.obsidianDeep,
+                markColor: AppColors.champagneLight,
+                coreGradientColors: [
+                  AppColors.obsidianNight,
+                  AppColors.obsidianDeep,
+                ],
               )
             : Text(label, style: AppTypography.button),
       ),
@@ -637,7 +659,7 @@ class _Header extends StatelessWidget {
         ),
         SizedBox(height: isSmallScreen ? 12 : 20),
         Text(
-          isFemale ? 'Unlock Premium' : 'Unlock MITHAQ',
+          isFemale ? 'Unlock Premium' : 'Unlock SILARAH',
           style: AppTypography.screenTitle.copyWith(
             fontSize: isSmallScreen ? 22 : 28,
           ),
@@ -658,6 +680,90 @@ class _Header extends StatelessWidget {
 }
 
 // ── Plan Cards ────────────────────────────────────────────────
+
+class _PricingStatusCard extends StatelessWidget {
+  const _PricingStatusCard({
+    required this.isLoading,
+    required this.isSmallScreen,
+    required this.onRetry,
+  });
+
+  final bool isLoading;
+  final bool isSmallScreen;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      liveRegion: true,
+      label: isLoading ? 'Loading subscription plans' : 'Plans unavailable',
+      child: Container(
+        padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceGlass,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.cardBorder),
+        ),
+        child: Row(
+          children: [
+            SizedBox.square(
+              dimension: isSmallScreen ? 36 : 42,
+              child: isLoading
+                  ? const SilarahPulseLoader(
+                      size: 30,
+                      accentColor: AppColors.champagneGold,
+                      highlightColor: AppColors.champagneLight,
+                      markColor: AppColors.obsidianNight,
+                      coreGradientColors: [
+                        AppColors.champagneGold,
+                        AppColors.champagneLight,
+                      ],
+                    )
+                  : const DecoratedBox(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.goldGlow,
+                      ),
+                      child: Icon(
+                        Icons.cloud_off_rounded,
+                        color: AppColors.champagneGold,
+                        size: 20,
+                      ),
+                    ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isLoading ? 'Loading plans' : 'Plans couldn’t load',
+                    style: AppTypography.body.copyWith(
+                      color: AppColors.pearlWhite,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    isLoading
+                        ? 'Getting secure pricing from the store…'
+                        : 'Check your connection, then try again.',
+                    style: AppTypography.caption.copyWith(height: 1.4),
+                  ),
+                ],
+              ),
+            ),
+            if (!isLoading)
+              TextButton(
+                onPressed: onRetry,
+                child: const Text('Try again'),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _PlanCards extends StatelessWidget {
   final DisplayPricing pricing;
@@ -763,7 +869,9 @@ class _PlanCard extends StatelessWidget {
                   color: AppColors.champagneGold,
                 ),
                 child: Text(
-                  savings != null ? 'SAVE $savings%' : 'BEST VALUE',
+                  savings != null && savings! > 0
+                      ? 'SAVE $savings%'
+                      : 'BEST VALUE',
                   style: AppTypography.sectionLabel.copyWith(
                     color: AppColors.obsidianNight,
                     fontWeight: FontWeight.w700,
@@ -957,13 +1065,15 @@ class _CtaButton extends StatelessWidget {
         ),
         alignment: Alignment.center,
         child: isLoading
-            ? const SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(
-                  color: AppColors.obsidianNight,
-                  strokeWidth: 2.5,
-                ),
+            ? const SilarahPulseLoader(
+                size: 26,
+                accentColor: AppColors.obsidianNight,
+                highlightColor: AppColors.obsidianDeep,
+                markColor: AppColors.champagneLight,
+                coreGradientColors: [
+                  AppColors.obsidianNight,
+                  AppColors.obsidianDeep,
+                ],
               )
             : Text(label,
                 style: AppTypography.button
@@ -1037,7 +1147,7 @@ class _SecondaryLinks extends StatelessWidget {
         ),
         SizedBox(height: isSmallScreen ? 4 : 8),
         Text(
-          'Subscription auto-renews unless cancelled 24h before renewal.\nWomen always message free on MITHAQ.',
+          'Subscription auto-renews unless cancelled 24h before renewal.\nWomen always message free on SILARAH.',
           style: AppTypography.caption
               .copyWith(fontSize: isSmallScreen ? 10 : 11, height: 1.5),
           textAlign: TextAlign.center,

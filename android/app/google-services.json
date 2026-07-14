@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:163379661830:android:d784f1e0b6774796edc787",
+        "mobilesdk_app_id": "1:163379661830:android:062cb833b274c89dedc787",
         "android_client_info": {
-          "package_name": "com.mithaq.app.mithaq"
+          "package_name": "com.silarah.app"
         }
       },
       "oauth_client": [],

@@ -1,18 +1,19 @@
 // test/widget_test.dart
 // ============================================================
-// Mithaq — Widget Tests (Step 4 stub)
+// Silarah — Widget Tests (Step 4 stub)
 // Full test coverage added in Step 6 (QA Sprint).
 // ============================================================
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mithaq/core/services/connectivity_service.dart';
-import 'package:mithaq/main.dart';
+import 'package:silarah/core/services/connectivity_service.dart';
+import 'package:silarah/main.dart';
 
 void main() {
-  testWidgets('MithaqApp smoke test — renders splash screen', (WidgetTester tester) async {
-    await tester.pumpWidget(const MithaqApp(initialLocation: '/'));
-    
+  testWidgets('SilarahApp smoke test — renders splash screen',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const SilarahApp(initialLocation: '/'));
+
     // Let one-shot timers (auth check, splash animation, subscription) complete
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();

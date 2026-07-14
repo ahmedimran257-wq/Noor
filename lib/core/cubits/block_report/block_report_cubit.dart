@@ -1,6 +1,6 @@
-﻿// lib/core/cubits/block_report/block_report_cubit.dart
+// lib/core/cubits/block_report/block_report_cubit.dart
 // ============================================================
-// MITHAQ - Block / Report Cubit (Supabase production flow)
+// SILARAH - Block / Report Cubit (Supabase production flow)
 //
 // Blueprint (Part 9):
 //   "Blocking is silent. The blocked person is not notified.
@@ -26,17 +26,30 @@ import '../../services/supabase_service.dart';
 import 'block_report_state.dart';
 
 class BlockReportCubit extends Cubit<BlockReportState> {
-  BlockReportCubit() : super(const BlockReportState()) {
-    _loadInitial();
-  }
+  BlockReportCubit() : super(const BlockReportState());
+
+  bool _loadInFlight = false;
+  DateTime? _lastLoadedAt;
+  static const _freshness = Duration(minutes: 5);
 
   bool get _isRealMode => SupabaseService.isInitialized;
 
   // Initial load
 
-  Future<void> _loadInitial() async {
-    if (_isRealMode) {
+  Future<void> loadData({bool force = false}) async {
+    if (!_isRealMode || _loadInFlight) return;
+    final lastLoadedAt = _lastLoadedAt;
+    if (!force &&
+        lastLoadedAt != null &&
+        DateTime.now().difference(lastLoadedAt) < _freshness) {
+      return;
+    }
+    _loadInFlight = true;
+    try {
       await _loadFromDb();
+      _lastLoadedAt = DateTime.now();
+    } finally {
+      _loadInFlight = false;
     }
   }
 
@@ -48,34 +61,48 @@ class BlockReportCubit extends Cubit<BlockReportState> {
     }
 
     try {
-      // Load blocked users
-      final blockedRows = await SupabaseService.client
-          .from('blocks')
-          .select('blocked_id, created_at')
-          .eq('blocker_id', userId);
+      final results = await Future.wait<dynamic>([
+        SupabaseService.client
+            .from('blocks')
+            .select('blocked_id, created_at')
+            .eq('blocker_id', userId)
+            .limit(200),
+        SupabaseService.client
+            .from('reports')
+            .select('id, reported_user_id, reason, description, created_at')
+            .eq('reporter_id', userId)
+            .order('created_at', ascending: false)
+            .limit(100),
+      ]);
+      final blockedRows = results[0] as List<dynamic>;
+      final reportRows = results[1] as List<dynamic>;
+      final relatedUserIds = <String>{
+        for (final row in blockedRows) row['blocked_id'] as String,
+        for (final row in reportRows) row['reported_user_id'] as String,
+      };
+      final profileRows = relatedUserIds.isEmpty
+          ? const <dynamic>[]
+          : await SupabaseService.client
+              .from('profiles')
+              .select('user_id, first_name, last_name')
+              .inFilter('user_id', relatedUserIds.toList(growable: false));
+      final profilesByUser = <String, Map<String, dynamic>>{
+        for (final raw in profileRows)
+          if ((raw as Map)['user_id'] != null)
+            raw['user_id'].toString(): Map<String, dynamic>.from(raw),
+      };
 
       final blockedUsers = <BlockedUser>[];
       final hiddenIds = <String>{};
 
-      for (final row in (blockedRows as List<dynamic>)) {
+      for (final row in blockedRows) {
         final blockedId = row['blocked_id'] as String;
         hiddenIds.add(blockedId);
 
-        // Try to get the blocked user's name from profiles
-        String name = 'User';
-        String lastInitial = '';
-        try {
-          final profile = await SupabaseService.client
-              .from('profiles')
-              .select('first_name, last_name')
-              .eq('user_id', blockedId)
-              .maybeSingle();
-          if (profile != null) {
-            name = (profile['first_name'] as String?) ?? 'User';
-            final lastName = (profile['last_name'] as String?) ?? '';
-            lastInitial = lastName.isNotEmpty ? lastName[0] : '';
-          }
-        } catch (_) {}
+        final profile = profilesByUser[blockedId];
+        final name = (profile?['first_name'] as String?) ?? 'User';
+        final lastName = (profile?['last_name'] as String?) ?? '';
+        final lastInitial = lastName.isNotEmpty ? lastName[0] : '';
 
         blockedUsers.add(BlockedUser(
           userId: blockedId,
@@ -86,30 +113,14 @@ class BlockReportCubit extends Cubit<BlockReportState> {
         ));
       }
 
-      // Load report history
-      final reportRows = await SupabaseService.client
-          .from('reports')
-          .select('id, reported_user_id, reason, description, created_at')
-          .eq('reporter_id', userId)
-          .order('created_at', ascending: false);
-
       final reportHistory = <ReportEntry>[];
-      for (final row in (reportRows as List<dynamic>)) {
+      for (final row in reportRows) {
         final reportedUserId = row['reported_user_id'] as String;
         hiddenIds.add(reportedUserId);
 
-        // Get reported user name
-        String reportedName = 'User';
-        try {
-          final profile = await SupabaseService.client
-              .from('profiles')
-              .select('first_name')
-              .eq('user_id', reportedUserId)
-              .maybeSingle();
-          if (profile != null) {
-            reportedName = (profile['first_name'] as String?) ?? 'User';
-          }
-        } catch (_) {}
+        final reportedName =
+            (profilesByUser[reportedUserId]?['first_name'] as String?) ??
+                'User';
 
         reportHistory.add(ReportEntry(
           reportId: row['id'] as String,
@@ -301,5 +312,9 @@ class BlockReportCubit extends Cubit<BlockReportState> {
 
   void clearMessages() {
     emit(state.copyWith(clearSuccess: true, clearError: true));
+  }
+
+  void clear() {
+    if (!isClosed) emit(const BlockReportState());
   }
 }

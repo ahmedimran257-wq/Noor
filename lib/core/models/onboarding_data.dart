@@ -1,6 +1,6 @@
 // lib/core/models/onboarding_data.dart
 // ============================================================
-// MITHAQ — Onboarding Data Accumulator
+// SILARAH — Onboarding Data Accumulator
 // An immutable value object that accumulates all onboarding
 // field values across all steps using copyWith().
 // ============================================================

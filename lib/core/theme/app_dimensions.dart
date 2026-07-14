@@ -1,6 +1,6 @@
 // lib/core/theme/app_dimensions.dart
 // ============================================================
-// MITHAQ Design DNA — Spacing, Radius & Layout Constants
+// SILARAH Design DNA — Spacing, Radius & Layout Constants
 // "Premium apps use whitespace as a feature."
 // ============================================================
 
@@ -44,9 +44,9 @@ abstract final class AppDimensions {
 
   // ── Icon Sizes ────────────────────────────────────────────
 
-  static const double iconSizeSmall  = 16.0;
+  static const double iconSizeSmall = 16.0;
   static const double iconSizeMedium = 20.0;
-  static const double iconSizeLarge  = 24.0;
+  static const double iconSizeLarge = 24.0;
   static const double iconSizeXLarge = 32.0;
 
   // ── Border Widths ─────────────────────────────────────────
@@ -59,10 +59,10 @@ abstract final class AppDimensions {
 
   // ── Spacing Scale (8pt grid) ──────────────────────────────
 
-  static const double space2  = 2.0;
-  static const double space4  = 4.0;
-  static const double space6  = 6.0;
-  static const double space8  = 8.0;
+  static const double space2 = 2.0;
+  static const double space4 = 4.0;
+  static const double space6 = 6.0;
+  static const double space8 = 8.0;
   static const double space10 = 10.0;
   static const double space12 = 12.0;
   static const double space14 = 14.0;
@@ -104,11 +104,11 @@ abstract final class AppDimensions {
 
   // ── Interest Ceremony Timeline ────────────────────────────
 
-  static const Duration ceremonyCooldown     = Duration(milliseconds: 2100);
-  static const Duration ceremonyRingExpand   = Duration(milliseconds: 400);
-  static const Duration ceremonyRingFade     = Duration(milliseconds: 300);
-  static const Duration ceremonyParticles    = Duration(milliseconds: 400);
-  static const Duration ceremonyCheckmark    = Duration(milliseconds: 300);
-  static const Duration ceremonyTextFade     = Duration(milliseconds: 300);
-  static const Duration ceremonyOverlayFade  = Duration(milliseconds: 300);
+  static const Duration ceremonyCooldown = Duration(milliseconds: 2100);
+  static const Duration ceremonyRingExpand = Duration(milliseconds: 400);
+  static const Duration ceremonyRingFade = Duration(milliseconds: 300);
+  static const Duration ceremonyParticles = Duration(milliseconds: 400);
+  static const Duration ceremonyCheckmark = Duration(milliseconds: 300);
+  static const Duration ceremonyTextFade = Duration(milliseconds: 300);
+  static const Duration ceremonyOverlayFade = Duration(milliseconds: 300);
 }

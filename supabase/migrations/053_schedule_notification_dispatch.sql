@@ -8,7 +8,7 @@ SELECT cron.schedule(
   '* * * * *',
   $$
     SELECT net.http_post(
-      url := 'https://jukpscfxzwttgtxvrbmj.supabase.co/functions/v1/dispatch-notifications',
+      url := current_setting('app.supabase_url', true) || '/functions/v1/dispatch-notifications',
       body := '{}'::jsonb,
       headers := jsonb_build_object(
         'Authorization', 'Bearer ' || current_setting('app.service_role_key', true),

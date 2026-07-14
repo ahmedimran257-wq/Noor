@@ -8,9 +8,9 @@ import '../../../core/onboarding/onboarding_flow.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/buttons/mithaq_pressable.dart';
-import '../../../core/widgets/buttons/mithaq_primary_button.dart';
-import '../../../core/widgets/buttons/mithaq_secondary_button.dart';
+import '../../../core/widgets/buttons/silarah_pressable.dart';
+import '../../../core/widgets/buttons/silarah_primary_button.dart';
+import '../../../core/widgets/buttons/silarah_secondary_button.dart';
 import 'onboarding_progress_bar.dart';
 
 class OnboardingScaffold extends StatelessWidget {
@@ -27,6 +27,8 @@ class OnboardingScaffold extends StatelessWidget {
     this.totalSteps,
     this.onBack,
     this.onCtaDisabledTap,
+    this.showProgressHeader = true,
+    this.headerTitle,
   });
 
   final int? step;
@@ -40,6 +42,8 @@ class OnboardingScaffold extends StatelessWidget {
   final int? totalSteps;
   final VoidCallback? onBack;
   final VoidCallback? onCtaDisabledTap;
+  final bool showProgressHeader;
+  final String? headerTitle;
 
   @override
   Widget build(BuildContext context) {
@@ -71,12 +75,23 @@ class OnboardingScaffold extends StatelessWidget {
                             () => context.read<OnboardingCubit>().goBack(),
                       ),
                       const SizedBox(width: AppDimensions.space16),
-                      Expanded(
-                        child: OnboardingProgressBar(
-                          currentStep: resolvedStep,
-                          totalSteps: resolvedTotal,
+                      if (showProgressHeader)
+                        Expanded(
+                          child: OnboardingProgressBar(
+                            currentStep: resolvedStep,
+                            totalSteps: resolvedTotal,
+                          ),
+                        )
+                      else
+                        Expanded(
+                          child: Text(
+                            headerTitle ?? '',
+                            textAlign: TextAlign.center,
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: AppColors.pearlWhite,
+                            ),
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -117,7 +132,7 @@ class OnboardingScaffold extends StatelessWidget {
                             },
                             behavior: HitTestBehavior.opaque,
                             child: IgnorePointer(
-                              child: MithaqPrimaryButton(
+                              child: SilarahPrimaryButton(
                                 label: ctaLabel,
                                 onTap: null,
                                 isLoading: isCtaLoading,
@@ -125,7 +140,7 @@ class OnboardingScaffold extends StatelessWidget {
                             ),
                           )
                         else
-                          MithaqPrimaryButton(
+                          SilarahPrimaryButton(
                             label: ctaLabel,
                             onTap: isCtaEnabled && onCta != null
                                 ? () {
@@ -138,7 +153,7 @@ class OnboardingScaffold extends StatelessWidget {
                           ),
                         if (skipLabel != null && onSkip != null) ...[
                           const SizedBox(height: AppDimensions.space12),
-                          MithaqPressable(
+                          SilarahPressable(
                             onTap: () {
                               FocusManager.instance.primaryFocus?.unfocus();
                               onSkip!();
@@ -216,7 +231,7 @@ class _SaveErrorNotice extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppDimensions.space10),
-          MithaqSecondaryButton(
+          SilarahSecondaryButton(
             label: 'Retry',
             icon: Icons.refresh_rounded,
             isLoading: isLoading,
@@ -308,7 +323,7 @@ class _BackButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MithaqPressable(
+    return SilarahPressable(
       onTap: onBack == null
           ? null
           : () {

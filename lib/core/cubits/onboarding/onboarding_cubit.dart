@@ -1,6 +1,6 @@
 // lib/core/cubits/onboarding/onboarding_cubit.dart
 // ============================================================
-// MITHAQ — Onboarding Cubit
+// SILARAH — Onboarding Cubit
 // Manages the five-step fast-start onboarding flow.
 // Each step: locally validates → emits OnboardingLoading →
 //            saves → emits OnboardingSaved.
@@ -30,6 +30,9 @@ class OnboardingCubit extends Cubit<OnboardingState> {
 
   static const String _kCacheKey = 'onboarding_data_cache';
   bool _saveInFlight = false;
+  bool _refreshInFlight = false;
+  DateTime? _lastProfileLoadAt;
+  static const _profileFreshness = Duration(minutes: 5);
 
   // ── Initialization ────────────────────────────────────────
 
@@ -42,6 +45,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     final dbData = await ProfileWriteService.loadProfile();
     if (dbData != null) {
       data = dbData;
+      _lastProfileLoadAt = DateTime.now();
     } else {
       // 2. Fallback to this authenticated user's local cache if the database
       // has no row yet. The key is user-scoped to avoid carrying a previous
@@ -253,10 +257,46 @@ class OnboardingCubit extends Cubit<OnboardingState> {
 
   /// Updates the profile data in-place without advancing the step.
   /// Use this from EditProfileScreen so saving doesn't bump the onboarding flow.
-  void updateProfile(OnboardingData data) async {
-    emit(OnboardingActive(step: _currentStep, data: data));
-    await _persistLocalCache(data);
-    await ProfileWriteService.saveFullProfile(data);
+  Future<bool> updateProfile(
+    OnboardingData data, {
+    bool locationChanged = false,
+  }) async {
+    final previousData = currentData;
+    final savedData = await ProfileWriteService.saveFullProfile(
+      data,
+      locationChanged: locationChanged,
+    );
+    if (savedData == null) {
+      emit(OnboardingError(
+        step: _currentStep,
+        data: previousData,
+        message: 'Could not save. Please try again.',
+      ));
+      return false;
+    }
+    await _persistLocalCache(savedData);
+    emit(OnboardingActive(step: _currentStep, data: savedData));
+    return true;
+  }
+
+  Future<void> refreshProfileFromDb({bool force = false}) async {
+    if (_refreshInFlight) return;
+    final lastLoadAt = _lastProfileLoadAt;
+    if (!force &&
+        lastLoadAt != null &&
+        DateTime.now().difference(lastLoadAt) < _profileFreshness) {
+      return;
+    }
+    _refreshInFlight = true;
+    try {
+      final dbData = await ProfileWriteService.loadProfile();
+      if (dbData == null) return;
+      await _persistLocalCache(dbData);
+      _lastProfileLoadAt = DateTime.now();
+      emit(OnboardingActive(step: _currentStep, data: dbData));
+    } finally {
+      _refreshInFlight = false;
+    }
   }
 
   /// Called by screens after router pushes the next page to mark active again.

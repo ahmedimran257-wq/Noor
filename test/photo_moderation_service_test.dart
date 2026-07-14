@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
-import 'package:mithaq/core/services/photo_moderation_service.dart';
+import 'package:silarah/core/services/photo_moderation_service.dart';
 import 'package:nsfw_detect/nsfw_detect.dart';
 
 ScanResult resultFor({
@@ -28,18 +28,8 @@ ScanResult resultWithLabels({
       confidenceThreshold: PhotoModerationService.scannerCollectionThreshold,
     );
 
-PhotoModerationService serviceFor({
-  required ScanResult scan,
-  FaceProminenceResult face = const FaceProminenceResult(
-    hasFace: true,
-    faceCount: 1,
-    faceRatio: 0.12,
-  ),
-}) =>
-    PhotoModerationService(
-      scanner: (_) async => scan,
-      faceChecker: (_) async => face,
-    );
+PhotoModerationService serviceFor({required ScanResult scan}) =>
+    PhotoModerationService(scanner: (_) async => scan);
 
 void main() {
   group('PhotoModerationService', () {
@@ -55,7 +45,7 @@ void main() {
         ),
       ).scanFile(file.path);
 
-      expect(result.decision, PhotoModerationDecision.safe);
+      expect(result.decision, PhotoModerationDecision.approved);
       expect(result.canUpload, isTrue);
     });
 
@@ -71,7 +61,7 @@ void main() {
         ),
       ).scanFile(file.path);
 
-      expect(result.decision, PhotoModerationDecision.safe);
+      expect(result.decision, PhotoModerationDecision.approved);
     });
 
     test('saree and visible arms do not falsely reject', () async {
@@ -87,11 +77,12 @@ void main() {
           ),
         ).scanFile(file.path);
 
-        expect(result.decision, PhotoModerationDecision.safe);
+        expect(result.decision, PhotoModerationDecision.approved);
       }
     });
 
-    test('full-body bikini is rejected or held when body-dominant', () async {
+    test('body prominence never changes an otherwise safe classifier result',
+        () async {
       final file = await _writeSyntheticPhoto(_SyntheticPhoto.swimwear);
       addTearDown(() => file.deleteSync());
 
@@ -101,21 +92,10 @@ void main() {
           category: NsfwCategory.safe,
           confidence: 0.93,
         ),
-        face: const FaceProminenceResult(
-          hasFace: true,
-          faceCount: 1,
-          faceRatio: 0.03,
-        ),
       ).scanFile(file.path);
 
-      expect(
-        result.decision,
-        anyOf(
-          PhotoModerationDecision.unsafe,
-          PhotoModerationDecision.pendingReview,
-        ),
-      );
-      expect(result.isSafe, isFalse);
+      expect(result.decision, PhotoModerationDecision.approved);
+      expect(result.isSafe, isTrue);
     });
 
     test('nude photo is rejected', () async {
@@ -130,28 +110,11 @@ void main() {
         ),
       ).scanFile(file.path);
 
-      expect(result.decision, PhotoModerationDecision.unsafe);
+      expect(result.decision, PhotoModerationDecision.flagged);
       expect(result.category, 'explicit_content');
     });
 
-    test('no-face image is rejected', () async {
-      final file = await _writeSyntheticPhoto(_SyntheticPhoto.casual);
-      addTearDown(() => file.deleteSync());
-
-      final result = await serviceFor(
-        scan: resultFor(
-          status: ScanStatus.completed,
-          category: NsfwCategory.safe,
-          confidence: 0.99,
-        ),
-        face: FaceProminenceResult.noFace(),
-      ).scanFile(file.path);
-
-      expect(result.decision, PhotoModerationDecision.unsafe);
-      expect(result.category, 'no_face');
-    });
-
-    test('small-face body-dominant image is rejected or held for review',
+    test('an image without a detectable face passes when non-explicit',
         () async {
       final file = await _writeSyntheticPhoto(_SyntheticPhoto.casual);
       addTearDown(() => file.deleteSync());
@@ -162,23 +125,29 @@ void main() {
           category: NsfwCategory.safe,
           confidence: 0.99,
         ),
-        face: const FaceProminenceResult(
-          hasFace: true,
-          faceCount: 1,
-          faceRatio: 0.03,
+      ).scanFile(file.path);
+
+      expect(result.decision, PhotoModerationDecision.approved);
+      expect(result.category, 'safe_image');
+    });
+
+    test('small or veiled faces are not evaluated by upload moderation',
+        () async {
+      final file = await _writeSyntheticPhoto(_SyntheticPhoto.casual);
+      addTearDown(() => file.deleteSync());
+
+      final result = await serviceFor(
+        scan: resultFor(
+          status: ScanStatus.completed,
+          category: NsfwCategory.safe,
+          confidence: 0.99,
         ),
       ).scanFile(file.path);
 
-      expect(
-        result.decision,
-        anyOf(
-          PhotoModerationDecision.unsafe,
-          PhotoModerationDecision.pendingReview,
-        ),
-      );
+      expect(result.decision, PhotoModerationDecision.approved);
     });
 
-    test('borderline binary NSFW score is uploadable but pending review',
+    test('low-neutral non-explicit result passes without admin review',
         () async {
       final file = await _writeSyntheticPhoto(_SyntheticPhoto.casual);
       addTearDown(() => file.deleteSync());
@@ -193,9 +162,32 @@ void main() {
         ),
       ).scanFile(file.path);
 
-      expect(result.decision, PhotoModerationDecision.pendingReview);
+      expect(result.decision, PhotoModerationDecision.approved);
+      expect(result.category, 'safe_image');
+      expect(result.confidence, 0.24);
       expect(result.canUpload, isTrue);
-      expect(result.isSafe, isFalse);
+    });
+
+    test('explicit threshold is strict and only values above 0.85 flag', () {
+      final atThreshold = PhotoModerationService.evaluate(resultWithLabels(
+        status: ScanStatus.completed,
+        labels: const [
+          NsfwLabel(category: NsfwCategory.nudity, confidence: 0.85),
+          NsfwLabel(category: NsfwCategory.safe, confidence: 0.15),
+        ],
+      ));
+      final aboveThreshold = PhotoModerationService.evaluate(resultWithLabels(
+        status: ScanStatus.completed,
+        labels: const [
+          NsfwLabel(category: NsfwCategory.nudity, confidence: 0.851),
+          NsfwLabel(category: NsfwCategory.safe, confidence: 0.149),
+        ],
+      ));
+
+      expect(atThreshold.decision, PhotoModerationDecision.approved);
+      expect(atThreshold.category, 'safe_image');
+      expect(aboveThreshold.decision, PhotoModerationDecision.flagged);
+      expect(aboveThreshold.category, 'explicit_content');
     });
 
     test('failed classifier result fails closed', () {
@@ -208,6 +200,35 @@ void main() {
       expect(result.decision, PhotoModerationDecision.scanFailed);
       expect(result.canUpload, isFalse);
     });
+
+    test('corrupted and blank files are rejected before classification',
+        () async {
+      final corrupt = File(
+        '${Directory.systemTemp.path}/silarah_corrupt_${DateTime.now().microsecondsSinceEpoch}.jpg',
+      )..writeAsBytesSync(const [1, 2, 3, 4]);
+      final blankImage = img.Image(width: 128, height: 128);
+      img.fill(blankImage, color: img.ColorRgb8(255, 255, 255));
+      final blank = File(
+        '${Directory.systemTemp.path}/silarah_blank_${DateTime.now().microsecondsSinceEpoch}.jpg',
+      )..writeAsBytesSync(img.encodeJpg(blankImage));
+      addTearDown(() {
+        corrupt.deleteSync();
+        blank.deleteSync();
+      });
+
+      final service = serviceFor(
+        scan: resultFor(
+          status: ScanStatus.completed,
+          category: NsfwCategory.safe,
+          confidence: 0.99,
+        ),
+      );
+      for (final file in [corrupt, blank]) {
+        final result = await service.scanFile(file.path);
+        expect(result.decision, PhotoModerationDecision.rejected);
+        expect(result.category, 'invalid_image');
+      }
+    });
   });
 }
 
@@ -215,7 +236,7 @@ enum _SyntheticPhoto { casual, hijab, saree, sleeveless, swimwear, nude }
 
 Future<File> _writeSyntheticPhoto(_SyntheticPhoto type) async {
   final file = File(
-    '${Directory.systemTemp.path}/mithaq_moderation_${type.name}_${DateTime.now().microsecondsSinceEpoch}.jpg',
+    '${Directory.systemTemp.path}/silarah_moderation_${type.name}_${DateTime.now().microsecondsSinceEpoch}.jpg',
   );
   await file.writeAsBytes(_syntheticPhotoBytes(type));
   return file;

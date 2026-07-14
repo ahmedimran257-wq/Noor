@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mithaq/core/models/discovery_profile.dart';
-import 'package:mithaq/core/models/onboarding_data.dart';
-import 'package:mithaq/core/services/compatibility_service.dart';
+import 'package:silarah/core/models/discovery_profile.dart';
+import 'package:silarah/core/models/onboarding_data.dart';
+import 'package:silarah/core/services/compatibility_service.dart';
 
 void main() {
   const candidateBase = DiscoveryProfile(

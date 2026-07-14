@@ -1,11 +1,11 @@
-# NOOR Design System Specification
+# SILARAH Design System Specification
 
-Welcome to the design specification for **NOOR**. This document serves as the single source of truth for the design language, styling tokens, typography, dimensions, components, and motion guidelines used throughout the codebase. 
+Welcome to the design specification for **SILARAH**. This document serves as the single source of truth for the design language, styling tokens, typography, dimensions, components, and motion guidelines used throughout the codebase.
 
 ---
 
 ## 1. DESIGN DNA & PHILOSOPHY
-NOOR is designed around the concept of **Quiet Luxury**. Premium design is characterized by precision, whitespace, and restraint, rather than flashy patterns.
+SILARAH is designed around the concept of **Quiet Luxury**. Premium design is characterized by precision, whitespace, and restraint, rather than flashy patterns.
 *   **Vibe:** A serene, premium "private gallery" feel rather than a generic template or a crowded social network.
 *   **Identity Tagline:** *"Begin with bismillah"* — anchoring the experience in custom and tradition.
 *   **Whitespace:** Used as a first-class feature to allow layout breathing room.
@@ -44,7 +44,7 @@ We avoid using pure blacks or harsh primary colors. Every color is calibrated to
 ---
 
 ## 3. TYPOGRAPHY SYSTEM
-NOOR utilizes a **Dual Font-Pairing Strategy** to evoke an editorial, high-end magazine feel.
+SILARAH utilizes a **Dual Font-Pairing Strategy** to evoke an editorial, high-end magazine feel.
 
 1.  **Heading Font:** `Playfair Display` (Elegant Serif)
     *   *Usage:* Screen titles, user profiles, tagline, and bios (in italic style to represent authentic voice).
@@ -125,7 +125,7 @@ A strict layout structure ensures visual consistency and touch-friendly interact
     *   *Layout:* 6 distinct input boxes aligned horizontally with spacing.
     *   *Styles:* Full underline border. Muted `slateMist` when inactive, turning to `champagneGold` on focus. Large text (`24px` Playfair Display style) showing entered digit or a bullet placeholder (`·`).
 
-### C. Noor Profile Card (The Discovery Engine)
+### C. SILARAH Profile Card (The Discovery Engine)
 *   *Ratio:* `3:4` Portrait container.
 *   *Edges:* `24px` corner radius with `1px cardBorder`.
 *   *Overlay:* Vertical gradient starting at top (transparent) through middle (`30% obsidian`) to bottom (`100% obsidian`) to guarantee white text readability.

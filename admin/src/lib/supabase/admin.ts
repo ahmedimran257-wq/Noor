@@ -7,7 +7,16 @@ export function createAdminClient() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !serviceRoleKey) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY is required for staff invitations.");
+    const missing = [
+      ["NEXT_PUBLIC_SUPABASE_URL", url],
+      ["SUPABASE_SERVICE_ROLE_KEY", serviceRoleKey],
+    ]
+      .filter(([, value]) => !value)
+      .map(([name]) => name);
+    throw new Error(
+      `Silarah Admin is missing required server env: ${missing.join(", ")}. ` +
+        "Set them in admin/.env.local and restart the admin dev server.",
+    );
   }
 
   return createClient(url, serviceRoleKey, {

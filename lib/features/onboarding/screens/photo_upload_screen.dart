@@ -1,10 +1,10 @@
 // lib/features/onboarding/screens/photo_upload_screen.dart
 // ============================================================
-// MITHAQ - Photo Upload Screen (fast-start step 5)
+// SILARAH - Photo Upload Screen (fast-start step 5)
 // 4-slot grid. Slot 0 = primary photo (required to proceed).
 // Real image picking via image_picker (Camera / Gallery).
 // Compression via flutter_image_compress (webp, 800px, q82).
-// On-device face detection via Google ML Kit (free, no API cost).
+// On-device explicit-content moderation; identity checks live separately.
 // Photo privacy toggle for women.
 // ============================================================
 
@@ -15,68 +15,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:path_provider/path_provider.dart' show getTemporaryDirectory;
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_state.dart';
 import '../../../core/models/onboarding_data.dart';
 import '../../../core/services/profile_photo_service.dart';
 import '../../../core/services/photo_moderation_service.dart';
+import '../../../core/services/supabase_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/loaders/silarah_shimmer.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
 
 // ── Face detection ─────────────────────────────────────────
-
-enum _FaceResult { found, notFound }
-
-/// On-device face detection using Google ML Kit (zero API cost).
-/// Writes bytes to a temp file, runs FaceDetector, cleans up.
-Future<_FaceResult> _detectFace(Uint8List bytes) async {
-  try {
-    final tempDir = await getTemporaryDirectory();
-    final analysisBytes = await FlutterImageCompress.compressWithList(
-      bytes,
-      minWidth: 800,
-      minHeight: 800,
-      quality: 90,
-      format: CompressFormat.jpeg,
-      keepExif: false,
-    );
-    final tempFile = File(
-      '${tempDir.path}/mithaq_face_check_${DateTime.now().millisecondsSinceEpoch}.jpg',
-    );
-    await tempFile.writeAsBytes(analysisBytes);
-
-    final inputImage = InputImage.fromFilePath(tempFile.path);
-    final detector = FaceDetector(
-      options: FaceDetectorOptions(
-        enableClassification: false,
-        enableLandmarks: false,
-        enableContours: false,
-        enableTracking: false,
-        performanceMode: FaceDetectorMode.fast,
-      ),
-    );
-
-    final faces = await detector.processImage(inputImage);
-    await detector.close();
-
-    // Clean up temp file
-    if (await tempFile.exists()) {
-      await tempFile.delete();
-    }
-
-    return faces.isNotEmpty ? _FaceResult.found : _FaceResult.notFound;
-  } catch (_) {
-    // Fail closed: an unavailable detector must not make a photo eligible for
-    // the primary-profile requirement.
-    return _FaceResult.notFound;
-  }
-}
 
 // ── Screen ────────────────────────────────────────────────────
 
@@ -97,12 +52,16 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
 
   // Compressed bytes for each slot (null = empty)
   final List<Uint8List?> _bytes = [null, null, null, null];
-  // Face detection result per slot
-  final List<_FaceResult?> _faces = [null, null, null, null];
   // Temp file paths for each slot
   final List<String?> _paths = [null, null, null, null];
+  final List<PhotoModerationResult?> _moderation = [null, null, null, null];
+  final List<String?> _remoteUrls = [null, null, null, null];
+  final List<String?> _initialRemoteUrls = [null, null, null, null];
+  final Set<int> _removedRemoteSlots = <int>{};
   bool _uploading = false;
   bool _isScanning = false;
+  bool _loadingExisting = false;
+  String? _existingLoadError;
   PhotoPrivacy _privacy = PhotoPrivacy.publicAll;
 
   @override
@@ -113,25 +72,23 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(PhotoModerationService.warmUp().catchError((_) {}));
     });
-    if (data.photoLocalPaths != null) {
+    if (widget.returnToPreviousOnSave) {
+      _loadingExisting = true;
+      unawaited(_loadExistingPhotos());
+    } else if (data.photoLocalPaths != null) {
       for (final path in data.photoLocalPaths!) {
         final file = File(path);
         if (file.existsSync()) {
           final fileName = file.path.split('/').last.split('\\').last;
-          final match = RegExp(r'mithaq_photo_slot_(\d+)').firstMatch(fileName);
+          final match =
+              RegExp(r'silarah_photo_slot_(\d+)').firstMatch(fileName);
           if (match != null) {
             final idx = int.parse(match.group(1)!);
             if (idx >= 0 && idx < 4) {
               final bytes = file.readAsBytesSync();
               _bytes[idx] = bytes;
               _paths[idx] = path;
-              _detectFace(bytes).then((face) {
-                if (mounted) {
-                  setState(() {
-                    _faces[idx] = face;
-                  });
-                }
-              });
+              unawaited(_restoreLocalModeration(idx, path));
             }
           }
         }
@@ -139,11 +96,47 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
     }
   }
 
-  bool get _hasPrimary => _bytes[0] != null;
+  Future<void> _restoreLocalModeration(int index, String path) async {
+    final moderation = await PhotoModerationService.instance.scanFile(path);
+    if (!mounted || _paths[index] != path) return;
+    setState(() => _moderation[index] = moderation);
+    if (!moderation.canUpload) {
+      _removePhoto(index);
+      _showPhotoSafetyError(_photoModerationMessage(moderation));
+    }
+  }
+
+  Future<void> _loadExistingPhotos() async {
+    try {
+      final slots = await ProfilePhotoService.instance.getMyPhotoSlots();
+      if (!mounted) return;
+      setState(() {
+        for (var i = 0; i < 4; i++) {
+          final url = slots[i];
+          _remoteUrls[i] = url;
+          _initialRemoteUrls[i] = url;
+        }
+        _existingLoadError = null;
+        _loadingExisting = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _existingLoadError = error is StateError
+            ? error.message
+            : 'Your photos could not be loaded. Please try again.';
+        _loadingExisting = false;
+      });
+    }
+  }
+
+  bool get _hasPrimary => _bytes[0] != null || _remoteUrls[0] != null;
+  bool get _primaryReady =>
+      _remoteUrls[0] != null ||
+      (_bytes[0] != null && _moderation[0]?.canUpload == true);
   Gender? get _gender => context.read<OnboardingCubit>().currentData.gender;
 
-  /// Shows bottom sheet to pick source, then picks + compresses + scans.
-  /// For slot 3 (verification selfie), forces camera — no gallery access.
+  /// Picks, compresses, validates, and explicit-content scans a photo.
   Future<void> _pickPhoto(int index) async {
     if (_isScanning || _uploading) return;
     setState(() {
@@ -153,12 +146,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
 
     final ImageSource? source;
 
-    // T1: Enforce proof-of-life selfie — slot 3 is camera-only
-    if (index == 3) {
-      source = ImageSource.camera;
-    } else {
-      source = await _showSourceSheet();
-    }
+    source = await _showSourceSheet();
 
     if (source == null) {
       if (mounted) {
@@ -226,7 +214,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
 
   Future<void> _setSlot(int index, Uint8List bytes) async {
     final tempDir = await getTemporaryDirectory();
-    final file = File('${tempDir.path}/mithaq_photo_slot_$index.webp');
+    final file = File('${tempDir.path}/silarah_photo_slot_$index.webp');
     await file.writeAsBytes(bytes);
 
     final moderation =
@@ -246,13 +234,13 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       _showPhotoSafetyError(_photoModerationMessage(moderation));
       return;
     }
-    if (moderation.decision == PhotoModerationDecision.pendingReview) {
+    if (moderation.decision == PhotoModerationDecision.flagged) {
       ScaffoldMessenger.of(context)
         ..clearSnackBars()
         ..showSnackBar(
           SnackBar(
             content: const Text(
-              'This photo will be reviewed before it appears publicly.',
+              'Explicit content was detected. This photo will be reviewed and will not appear publicly.',
               style: AppTypography.body,
             ),
             backgroundColor: AppColors.surfaceGlassHover,
@@ -266,51 +254,20 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
     }
 
     _paths[index] = file.path;
+    _moderation[index] = moderation;
 
-    // Show loading while face detection runs
     setState(() {
       _bytes[index] = bytes;
-      _faces[index] = null; // pending
+      _remoteUrls[index] = null;
+      _removedRemoteSlots.remove(index);
     });
-
-    final face = await _detectFace(bytes);
-    if (!mounted) return;
-
-    setState(() {
-      _faces[index] = face;
-    });
-
-    if (face == _FaceResult.notFound) {
-      _removePhoto(index);
-      final l10n = AppLocalizations.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(children: [
-            const Icon(Icons.warning_amber_rounded,
-                color: Colors.white, size: 18),
-            const SizedBox(width: AppDimensions.space8),
-            Expanded(
-              child: Text(
-                l10n.photo_error_no_face_detected,
-                style: AppTypography.body,
-              ),
-            ),
-          ]),
-          backgroundColor: AppColors.softCoral,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          ),
-        ),
-      );
-    }
   }
 
   String _photoModerationMessage(PhotoModerationResult moderation) {
-    if (moderation.category == 'no_face') {
-      return "We couldn't detect a face. Please upload a photo clearly showing your face.";
+    if (moderation.category == 'invalid_image') {
+      return 'Choose a valid, non-blank image file.';
     }
-    return 'This photo cannot be accepted. Please upload a clear portrait photo.';
+    return 'This photo could not be safety checked. Please choose another image.';
   }
 
   Future<ImageSource?> _showSourceSheet() async {
@@ -358,7 +315,8 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
   }
 
   void _removePhoto(int index) {
-    if (_paths[index] != null) {
+    final hadLocalPhoto = _paths[index] != null;
+    if (hadLocalPhoto) {
       final file = File(_paths[index]!);
       if (file.existsSync()) {
         try {
@@ -368,35 +326,69 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
     }
     setState(() {
       _bytes[index] = null;
-      _faces[index] = null;
       _paths[index] = null;
+      _moderation[index] = null;
+      if (hadLocalPhoto && _initialRemoteUrls[index] != null) {
+        // Removing an unsaved replacement restores the server photo instead
+        // of unexpectedly deleting it.
+        _remoteUrls[index] = _initialRemoteUrls[index];
+        _removedRemoteSlots.remove(index);
+      } else if (_remoteUrls[index] != null) {
+        _remoteUrls[index] = null;
+        _removedRemoteSlots.add(index);
+      }
     });
   }
 
   Future<void> _advance() async {
     FocusManager.instance.primaryFocus?.unfocus();
-    if (_uploading || !_hasPrimary || _faces[0] != _FaceResult.found) {
+    if (_uploading || _loadingExisting) {
       return;
     }
-    final paths = <String>[];
-    for (int i = 0; i < 4; i++) {
-      if (_paths[i] != null) paths.add(_paths[i]!);
+    if (!_hasPrimary) {
+      _showSaveRequirement('Add a main photo before saving.');
+      return;
     }
+    if (!_primaryReady) {
+      _showSaveRequirement('Wait for the main photo safety check to finish.');
+      return;
+    }
+    final localSlots = <int, String>{};
+    for (int i = 0; i < 4; i++) {
+      if (_paths[i] != null) localSlots[i] = _paths[i]!;
+    }
+    final paths = localSlots.values.toList(growable: false);
     final data = context.read<OnboardingCubit>().currentData.copyWith(
           photoLocalPaths: paths,
           photoPrivacy: _privacy,
         );
     setState(() => _uploading = true);
     try {
-      await ProfilePhotoService.instance.syncLocalPhotos(
-        paths,
+      final primaryModeration =
+          await ProfilePhotoService.instance.syncPhotoSlots(
+        localSlots,
         privacy: _privacy,
       );
+      for (final slot in _removedRemoteSlots.toList()..sort()) {
+        await ProfilePhotoService.instance.deleteMyPhotoSlot(slot);
+      }
+      if (primaryModeration?.decision == PhotoModerationDecision.approved) {
+        await _makeProfileLive();
+      }
       if (!mounted) return;
       final cubit = context.read<OnboardingCubit>();
       if (widget.returnToPreviousOnSave) {
-        cubit.updateProfile(data);
-        Navigator.pop(context, true);
+        final saved = await cubit.updateProfile(data);
+        if (!mounted) return;
+        if (saved) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Photos saved.'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          Navigator.pop(context, true);
+        }
       } else {
         await cubit.saveAndAdvance(data);
       }
@@ -420,6 +412,69 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         );
     } finally {
       if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  void _showSaveRequirement(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message, style: AppTypography.body),
+          backgroundColor: AppColors.surfaceGlassHover,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+            side: const BorderSide(color: AppColors.goldBorder),
+          ),
+        ),
+      );
+  }
+
+  void _explainDisabledSave() {
+    if (_loadingExisting) {
+      _showSaveRequirement('Loading your current photos…');
+    } else if (_existingLoadError != null) {
+      _showSaveRequirement(_existingLoadError!);
+    } else if (!_hasPrimary) {
+      _showSaveRequirement('Add a main photo before saving.');
+    } else if (!_primaryReady) {
+      _showSaveRequirement('Wait for the main photo safety check to finish.');
+    }
+  }
+
+  Future<void> _makeProfileLive() async {
+    final currentUserId = SupabaseService.currentUserId;
+    if (currentUserId == null) {
+      throw StateError('Please sign in again to publish your profile.');
+    }
+
+    await SupabaseService.client
+        .from('profiles')
+        .update({'visibility': 'visible'}).eq('user_id', currentUserId);
+
+    try {
+      final response = await SupabaseService.client.functions.invoke(
+        'dispatch-notifications',
+        body: {
+          'user_id': currentUserId,
+          'type': 'profile_live',
+          'title': 'Your profile is now live! 🎉',
+          'body': 'Muslims in your area can now find you on Silarah.',
+        },
+      );
+      if (response.status < 200 || response.status >= 300) {
+        debugPrint(
+          '[PhotoUploadScreen] profile_live notification dispatch failed: ${response.status}',
+        );
+      }
+    } catch (error) {
+      // Publishing succeeded. Notification delivery is retried by the server
+      // queue and must not send the user back through photo onboarding.
+      debugPrint(
+        '[PhotoUploadScreen] profile_live notification dispatch failed: $error',
+      );
     }
   }
 
@@ -465,22 +520,37 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         }
 
         return OnboardingScaffold(
-          ctaLabel: l10n.legal_button_continue,
+          ctaLabel: widget.returnToPreviousOnSave
+              ? 'Save photos'
+              : l10n.legal_button_continue,
           onCta: _advance,
-          isCtaEnabled:
-              _hasPrimary && !_uploading && _faces[0] == _FaceResult.found,
-          isCtaLoading: isLoading,
+          onBack: widget.returnToPreviousOnSave
+              ? () => Navigator.pop(context, false)
+              : null,
+          showProgressHeader: !widget.returnToPreviousOnSave,
+          headerTitle: 'Profile photos',
+          isCtaEnabled: _hasPrimary &&
+              _primaryReady &&
+              !_uploading &&
+              !_loadingExisting &&
+              _existingLoadError == null,
+          isCtaLoading: isLoading || _uploading || _loadingExisting,
+          onCtaDisabledTap: _explainDisabledSave,
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: AppDimensions.space32),
               StepHeader(
-                title: isGuardian
-                    ? l10n.photo_title_guardian
-                    : l10n.photo_title_self,
-                subtitle: isGuardian
-                    ? l10n.photo_subtitle_guardian(getRelationString())
-                    : l10n.photo_subtitle_self,
+                title: widget.returnToPreviousOnSave
+                    ? 'Manage your photos'
+                    : (isGuardian
+                        ? l10n.photo_title_guardian
+                        : l10n.photo_title_self),
+                subtitle: widget.returnToPreviousOnSave
+                    ? 'Update your profile photos and privacy. Every photo is checked before it can appear publicly.'
+                    : (isGuardian
+                        ? l10n.photo_subtitle_guardian(getRelationString())
+                        : l10n.photo_subtitle_self),
               ),
               const SizedBox(height: AppDimensions.space24),
 
@@ -513,6 +583,46 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
               const SizedBox(height: AppDimensions.space24),
 
               // Photo grid (2 × 2)
+              if (_existingLoadError != null) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppDimensions.space12),
+                  decoration: BoxDecoration(
+                    color: AppColors.softCoral.withValues(alpha: 0.09),
+                    borderRadius:
+                        BorderRadius.circular(AppDimensions.radiusButton),
+                    border: Border.all(
+                      color: AppColors.softCoral.withValues(alpha: 0.45),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.cloud_off_rounded,
+                          color: AppColors.softCoral, size: 20),
+                      const SizedBox(width: AppDimensions.space10),
+                      Expanded(
+                        child: Text(
+                          _existingLoadError!,
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.pearlWhite,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _loadingExisting = true;
+                            _existingLoadError = null;
+                          });
+                          unawaited(_loadExistingPhotos());
+                        },
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppDimensions.space16),
+              ],
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -528,8 +638,11 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
                     index: i,
                     isPrimary: i == 0,
                     bytes: _bytes[i],
-                    faceResult: _faces[i],
-                    uploading: _uploading && _bytes[i] == null,
+                    remoteUrl: _remoteUrls[i],
+                    moderation: _moderation[i],
+                    uploading: (_loadingExisting || _uploading) &&
+                        _bytes[i] == null &&
+                        _remoteUrls[i] == null,
                     onAdd: () => _pickPhoto(i),
                     onRemove: () => _removePhoto(i),
                   );
@@ -598,7 +711,8 @@ class _PhotoSlot extends StatelessWidget {
     required this.index,
     required this.isPrimary,
     required this.bytes,
-    required this.faceResult,
+    required this.remoteUrl,
+    required this.moderation,
     required this.uploading,
     required this.onAdd,
     required this.onRemove,
@@ -607,15 +721,16 @@ class _PhotoSlot extends StatelessWidget {
   final int index;
   final bool isPrimary;
   final Uint8List? bytes;
-  final _FaceResult? faceResult;
+  final String? remoteUrl;
+  final PhotoModerationResult? moderation;
   final bool uploading;
   final VoidCallback onAdd;
   final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final isFilled = bytes != null;
+    final isRemote = bytes == null && remoteUrl != null;
+    final isFilled = bytes != null || isRemote;
     return GestureDetector(
       onTap: isFilled
           ? null
@@ -645,23 +760,35 @@ class _PhotoSlot extends StatelessWidget {
             if (isFilled)
               ClipRRect(
                 borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-                child: Image.memory(
-                  bytes!,
-                  fit: BoxFit.cover,
-                ),
+                child: bytes != null
+                    ? Image.memory(bytes!, fit: BoxFit.cover)
+                    : CachedNetworkImage(
+                        imageUrl: remoteUrl!,
+                        fit: BoxFit.cover,
+                        memCacheWidth: 480,
+                        maxWidthDiskCache: 640,
+                        placeholder: (_, __) => const Center(
+                          child: SilarahPulseLoader(size: 34),
+                        ),
+                        errorWidget: (_, __, ___) => Container(
+                          color: AppColors.surfaceGlass,
+                          alignment: Alignment.center,
+                          child: const Icon(
+                            Icons.broken_image_outlined,
+                            color: AppColors.slateMist,
+                            size: 32,
+                          ),
+                        ),
+                      ),
               )
             else if (uploading)
-              const Center(
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppColors.champagneGold,
-                ),
-              )
+              const Center(child: SilarahPulseLoader(size: 34))
             else
               _EmptySlot(isPrimary: isPrimary),
 
-            // Face detection banner (bottom of filled slot)
-            if (isFilled && faceResult != null)
+            // Content-safety status. Face/liveness status is intentionally not
+            // represented here; it belongs to badge verification.
+            if (isFilled && (moderation != null || isRemote))
               Positioned(
                 bottom: 0,
                 left: 0,
@@ -672,9 +799,10 @@ class _PhotoSlot extends StatelessWidget {
                     vertical: AppDimensions.space4,
                   ),
                   decoration: BoxDecoration(
-                    color: faceResult == _FaceResult.found
-                        ? AppColors.verifiedTeal.withValues(alpha: 0.9)
-                        : AppColors.softCoral.withValues(alpha: 0.9),
+                    color:
+                        moderation?.decision == PhotoModerationDecision.flagged
+                            ? AppColors.champagneGold.withValues(alpha: 0.92)
+                            : AppColors.verifiedTeal.withValues(alpha: 0.9),
                     borderRadius: const BorderRadius.only(
                       bottomLeft: Radius.circular(AppDimensions.radiusCard),
                       bottomRight: Radius.circular(AppDimensions.radiusCard),
@@ -684,17 +812,17 @@ class _PhotoSlot extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        faceResult == _FaceResult.found
-                            ? Icons.check_circle_outline_rounded
-                            : Icons.warning_amber_rounded,
+                        moderation?.decision == PhotoModerationDecision.flagged
+                            ? Icons.policy_outlined
+                            : Icons.shield_outlined,
                         color: Colors.white,
                         size: 12,
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        faceResult == _FaceResult.found
-                            ? l10n.photo_face_detected
-                            : l10n.photo_no_face,
+                        moderation?.decision == PhotoModerationDecision.flagged
+                            ? 'Review required'
+                            : 'Content checked',
                         style: AppTypography.caption.copyWith(
                           color: Colors.white,
                           fontSize: 10,

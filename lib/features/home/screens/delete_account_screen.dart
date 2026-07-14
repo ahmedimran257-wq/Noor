@@ -1,6 +1,6 @@
 // lib/features/home/screens/delete_account_screen.dart
 // ============================================================
-// MITHAQ — Delete Account Screen (Feature 15)
+// SILARAH — Delete Account Screen (Feature 15)
 // Multi-step AnimatedSwitcher flow:
 //   Step 1: Warning + 30-day grace info
 //   Step 2: Reason selection
@@ -27,9 +27,9 @@ class DeleteAccountScreen extends StatefulWidget {
 }
 
 class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
-  int     _step   = 1;
+  int _step = 1;
   String? _reason;
-  final   _confirmCtrl = TextEditingController();
+  final _confirmCtrl = TextEditingController();
 
   @override
   void dispose() {
@@ -81,7 +81,8 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to delete account: $e', style: AppTypography.body),
+              content: Text('Failed to delete account: $e',
+                  style: AppTypography.body),
               backgroundColor: AppColors.errorRed,
             ),
           );
@@ -100,47 +101,58 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
     return Scaffold(
       backgroundColor: AppColors.obsidianNight,
       appBar: AppBar(
-        backgroundColor:  AppColors.obsidianNight,
+        backgroundColor: AppColors.obsidianNight,
         surfaceTintColor: Colors.transparent,
-        elevation:        0,
+        elevation: 0,
         leading: GestureDetector(
           onTap: _back,
           child: Container(
             margin: const EdgeInsets.all(AppDimensions.space8),
             decoration: BoxDecoration(
-              color:  AppColors.surfaceGlass,
-              shape:  BoxShape.circle,
+              color: AppColors.surfaceGlass,
+              shape: BoxShape.circle,
               border: Border.all(color: AppColors.cardBorder),
             ),
             child: const Icon(
               Icons.arrow_back_rounded,
               color: AppColors.pearlWhite,
-              size:  AppDimensions.iconSizeMedium,
+              size: AppDimensions.iconSizeMedium,
             ),
           ),
         ),
         title: Text(
           AppLocalizations.of(context).deleteAccount_title,
-          style: AppTypography.screenTitle.copyWith(
-              fontSize: 20, color: AppColors.softCoral),
+          style: AppTypography.screenTitle
+              .copyWith(fontSize: 20, color: AppColors.softCoral),
         ),
       ),
       body: AnimatedSwitcher(
-        duration:        AppDimensions.durationReveal,
+        duration: AppDimensions.durationReveal,
         transitionBuilder: (child, anim) => FadeTransition(
           opacity: anim,
           child: SlideTransition(
             position: Tween<Offset>(
               begin: const Offset(0.1, 0),
-              end:   Offset.zero,
+              end: Offset.zero,
             ).animate(anim),
             child: child,
           ),
         ),
         child: switch (_step) {
-          1 => _Step1(key: const ValueKey(1), onKeepAccount: () => Navigator.pop(context), onContinue: _next),
-          2 => _Step2(key: const ValueKey(2), reason: _reason, onSelect: (r) => setState(() => _reason = r), onContinue: _next),
-          _ => _Step3(key: const ValueKey(3), ctrl: _confirmCtrl, onConfirm: _confirm, onChange: () => setState(() {})),
+          1 => _Step1(
+              key: const ValueKey(1),
+              onKeepAccount: () => Navigator.pop(context),
+              onContinue: _next),
+          2 => _Step2(
+              key: const ValueKey(2),
+              reason: _reason,
+              onSelect: (r) => setState(() => _reason = r),
+              onContinue: _next),
+          _ => _Step3(
+              key: const ValueKey(3),
+              ctrl: _confirmCtrl,
+              onConfirm: _confirm,
+              onChange: () => setState(() {})),
         },
       ),
     );
@@ -150,7 +162,8 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
 // ── Step 1 — Warning ──────────────────────────────────────────
 
 class _Step1 extends StatelessWidget {
-  const _Step1({super.key, required this.onKeepAccount, required this.onContinue});
+  const _Step1(
+      {super.key, required this.onKeepAccount, required this.onContinue});
   final VoidCallback onKeepAccount;
   final VoidCallback onContinue;
 
@@ -190,24 +203,27 @@ class _Step1 extends StatelessWidget {
           ),
           const SizedBox(height: AppDimensions.space24),
           const _InfoCard(
-            icon:  Icons.timer_outlined,
+            icon: Icons.timer_outlined,
             color: AppColors.premiumGold,
             title: '30-day grace period',
-            body:  'Your account will be scheduled for deletion. You can log back in any time within 30 days to cancel.',
+            body:
+                'Your account will be scheduled for deletion. You can log back in any time within 30 days to cancel.',
           ),
           const SizedBox(height: AppDimensions.space12),
           const _InfoCard(
-            icon:  Icons.delete_sweep_outlined,
+            icon: Icons.delete_sweep_outlined,
             color: AppColors.softCoral,
             title: 'Permanent data loss',
-            body:  'All matches, messages, and profile data will be permanently deleted after 30 days. This cannot be undone.',
+            body:
+                'All matches, messages, and profile data will be permanently deleted after 30 days. This cannot be undone.',
           ),
           const SizedBox(height: AppDimensions.space12),
           const _InfoCard(
-            icon:  Icons.credit_card_off_outlined,
+            icon: Icons.credit_card_off_outlined,
             color: AppColors.slateMist,
             title: 'Subscriptions cancelled',
-            body:  'Any active MITHAQ Premium subscription will be cancelled at the end of the current billing period.',
+            body:
+                'Any active SILARAH Premium subscription will be cancelled at the end of the current billing period.',
           ),
           const SizedBox(height: AppDimensions.space40),
           SizedBox(
@@ -217,7 +233,8 @@ class _Step1 extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.champagneGold,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                  borderRadius:
+                      BorderRadius.circular(AppDimensions.radiusButton),
                 ),
               ),
               onPressed: onKeepAccount,
@@ -230,15 +247,16 @@ class _Step1 extends StatelessWidget {
             height: AppDimensions.buttonHeight,
             child: OutlinedButton(
               style: OutlinedButton.styleFrom(
-                side:  const BorderSide(color: AppColors.softCoral),
+                side: const BorderSide(color: AppColors.softCoral),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                  borderRadius:
+                      BorderRadius.circular(AppDimensions.radiusButton),
                 ),
               ),
               onPressed: onContinue,
               child: Text('Continue',
-                  style: AppTypography.body.copyWith(
-                      color: AppColors.softCoral)),
+                  style:
+                      AppTypography.body.copyWith(color: AppColors.softCoral)),
             ),
           ),
           const SizedBox(height: AppDimensions.space40),
@@ -257,12 +275,12 @@ class _Step2 extends StatelessWidget {
     required this.onSelect,
     required this.onContinue,
   });
-  final String?  reason;
+  final String? reason;
   final ValueChanged<String> onSelect;
   final VoidCallback onContinue;
 
   static const _reasons = [
-    'Found my match on MITHAQ',
+    'Found my match on SILARAH',
     'Found match elsewhere',
     'Taking a break',
     'Privacy concerns',
@@ -281,20 +299,20 @@ class _Step2 extends StatelessWidget {
           Text('Why are you leaving?',
               style: AppTypography.screenTitle.copyWith(fontSize: 22)),
           const SizedBox(height: AppDimensions.space8),
-          const Text('This helps us improve MITHAQ for others.',
+          const Text('This helps us improve SILARAH for others.',
               style: AppTypography.bodyMuted),
           const SizedBox(height: AppDimensions.space24),
           Container(
             decoration: BoxDecoration(
-              color:        AppColors.surfaceGlass,
+              color: AppColors.surfaceGlass,
               borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-              border:       Border.all(color: AppColors.cardBorder),
+              border: Border.all(color: AppColors.cardBorder),
             ),
             child: Column(
               children: List.generate(_reasons.length, (i) {
-                final r         = _reasons[i];
+                final r = _reasons[i];
                 final isSelected = reason == r;
-                final isLast    = i == _reasons.length - 1;
+                final isLast = i == _reasons.length - 1;
                 return Column(
                   children: [
                     GestureDetector(
@@ -307,7 +325,8 @@ class _Step2 extends StatelessWidget {
                           children: [
                             AnimatedContainer(
                               duration: AppDimensions.durationTransition,
-                              width:  22, height: 22,
+                              width: 22,
+                              height: 22,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: isSelected
@@ -343,7 +362,7 @@ class _Step2 extends StatelessWidget {
           ),
           const SizedBox(height: AppDimensions.space32),
           SizedBox(
-            width:  double.infinity,
+            width: double.infinity,
             height: AppDimensions.buttonHeight,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -351,15 +370,14 @@ class _Step2 extends StatelessWidget {
                     ? AppColors.softCoral
                     : AppColors.surfaceGlassHover,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                  borderRadius:
+                      BorderRadius.circular(AppDimensions.radiusButton),
                 ),
               ),
               onPressed: reason != null ? onContinue : null,
               child: Text('Continue',
                   style: AppTypography.button.copyWith(
-                    color: reason != null
-                        ? Colors.white
-                        : AppColors.slateMist,
+                    color: reason != null ? Colors.white : AppColors.slateMist,
                   )),
             ),
           ),
@@ -403,15 +421,15 @@ class _Step3 extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(AppDimensions.space16),
             decoration: BoxDecoration(
-              color:        AppColors.softCoral.withValues(alpha: 0.08),
+              color: AppColors.softCoral.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-              border:       Border.all(
-                  color: AppColors.softCoral.withValues(alpha: 0.3)),
+              border:
+                  Border.all(color: AppColors.softCoral.withValues(alpha: 0.3)),
             ),
             child: Text(
               'Your account will be deleted in 30 days. You can log back in anytime before then to cancel.',
-              style: AppTypography.body.copyWith(
-                  color: AppColors.softCoral.withValues(alpha: 0.9)),
+              style: AppTypography.body
+                  .copyWith(color: AppColors.softCoral.withValues(alpha: 0.9)),
             ),
           ),
           const SizedBox(height: AppDimensions.space24),
@@ -419,7 +437,7 @@ class _Step3 extends StatelessWidget {
           // Type DELETE field
           Container(
             decoration: BoxDecoration(
-              color:        AppColors.surfaceGlass,
+              color: AppColors.surfaceGlass,
               borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
               border: Border.all(
                 color: canConfirm ? AppColors.softCoral : AppColors.cardBorder,
@@ -429,28 +447,28 @@ class _Step3 extends StatelessWidget {
               ),
             ),
             child: TextField(
-              controller:  ctrl,
-              onChanged:   (_) => onChange(),
-              style:       AppTypography.inputText.copyWith(
+              controller: ctrl,
+              onChanged: (_) => onChange(),
+              style: AppTypography.inputText.copyWith(
                 letterSpacing: 2,
-                color:         canConfirm ? AppColors.softCoral : AppColors.pearlWhite,
+                color: canConfirm ? AppColors.softCoral : AppColors.pearlWhite,
               ),
               textCapitalization: TextCapitalization.characters,
               decoration: InputDecoration(
-                hintText:       'Type DELETE here',
-                hintStyle:      AppTypography.inputText.copyWith(
-                    color: AppColors.slateMist),
-                border:         InputBorder.none,
+                hintText: 'Type DELETE here',
+                hintStyle: AppTypography.inputText
+                    .copyWith(color: AppColors.slateMist),
+                border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(
                     horizontal: AppDimensions.space16,
-                    vertical:   AppDimensions.space16),
+                    vertical: AppDimensions.space16),
               ),
             ),
           ),
 
           const SizedBox(height: AppDimensions.space32),
           SizedBox(
-            width:  double.infinity,
+            width: double.infinity,
             height: AppDimensions.buttonHeight,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -488,18 +506,18 @@ class _InfoCard extends StatelessWidget {
     required this.body,
   });
   final IconData icon;
-  final Color    color;
-  final String   title;
-  final String   body;
+  final Color color;
+  final String title;
+  final String body;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(AppDimensions.space16),
       decoration: BoxDecoration(
-        color:        color.withValues(alpha: 0.06),
+        color: color.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-        border:       Border.all(color: color.withValues(alpha: 0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

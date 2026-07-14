@@ -1,6 +1,6 @@
-# Mithaq Admin
+# Silarah Admin
 
-Staff-only operations panel for Mithaq Matrimony. Browser sessions use the Supabase publishable/anon key, while staff invitations use the server-only service-role key through Server Actions.
+Staff-only operations panel for Silarah Matrimony. Browser sessions use the Supabase publishable/anon key, while staff invitations use the server-only service-role key through Server Actions.
 
 ## Local setup
 

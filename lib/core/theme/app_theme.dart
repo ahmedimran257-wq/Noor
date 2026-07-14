@@ -1,8 +1,8 @@
 // lib/core/theme/app_theme.dart
 // ============================================================
-// MITHAQ Design DNA — ThemeData
+// SILARAH Design DNA — ThemeData
 // Dark mode by default. Zero Material widgets allowed to
-// show through — every component uses MITHAQ's design language.
+// show through — every component uses SILARAH's design language.
 // ============================================================
 
 import 'package:flutter/material.dart';
@@ -10,10 +10,10 @@ import 'package:flutter/services.dart';
 import 'app_colors.dart';
 import 'app_dimensions.dart';
 import 'app_typography.dart';
-import 'mithaq_spring.dart';
+import 'silarah_spring.dart';
 
 abstract final class AppTheme {
-  // ── Dark Theme (MITHAQ Default) ─────────────────────────────
+  // ── Dark Theme (SILARAH Default) ─────────────────────────────
 
   static ThemeData get darkTheme {
     return ThemeData(
@@ -22,17 +22,17 @@ abstract final class AppTheme {
 
       // ── Color Scheme ────────────────────────────────────
       colorScheme: const ColorScheme.dark(
-        brightness:      Brightness.dark,
-        primary:         AppColors.champagneGold,
-        onPrimary:       AppColors.obsidianNight,
-        secondary:       AppColors.verifiedTeal,
-        onSecondary:     AppColors.obsidianNight,
-        error:           AppColors.softCoral,
-        onError:         AppColors.pearlWhite,
-        surface:         AppColors.surfaceGlass,
-        onSurface:       AppColors.pearlWhite,
+        brightness: Brightness.dark,
+        primary: AppColors.champagneGold,
+        onPrimary: AppColors.obsidianNight,
+        secondary: AppColors.verifiedTeal,
+        onSecondary: AppColors.obsidianNight,
+        error: AppColors.softCoral,
+        onError: AppColors.pearlWhite,
+        surface: AppColors.surfaceGlass,
+        onSurface: AppColors.pearlWhite,
         surfaceContainerHighest: AppColors.surfaceGlassHover,
-        outline:         AppColors.cardBorder,
+        outline: AppColors.cardBorder,
       ),
 
       // ── Scaffold ─────────────────────────────────────────
@@ -44,54 +44,54 @@ abstract final class AppTheme {
 
       // ── App Bar ──────────────────────────────────────────
       appBarTheme: const AppBarTheme(
-        backgroundColor:  AppColors.obsidianNight,
-        foregroundColor:  AppColors.pearlWhite,
-        elevation:        0,
+        backgroundColor: AppColors.obsidianNight,
+        foregroundColor: AppColors.pearlWhite,
+        elevation: 0,
         scrolledUnderElevation: 0,
-        centerTitle:      true,
-        titleTextStyle:   AppTypography.wordmark,
-        iconTheme:        IconThemeData(
+        centerTitle: true,
+        titleTextStyle: AppTypography.wordmark,
+        iconTheme: IconThemeData(
           color: AppColors.pearlWhite,
-          size:  AppDimensions.iconSizeLarge,
+          size: AppDimensions.iconSizeLarge,
         ),
         systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor:           Colors.transparent,
-          statusBarIconBrightness:  Brightness.light,
-          statusBarBrightness:      Brightness.dark,
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
         ),
       ),
 
       // ── Eliminate ALL Material ripple/ink effects ─────────
-      // MITHAQ uses scale-based press animations instead.
-      splashFactory:         NoSplash.splashFactory,
-      highlightColor:        Colors.transparent,
-      splashColor:           Colors.transparent,
-      hoverColor:            Colors.transparent,
-      focusColor:            AppColors.goldGlow,
+      // SILARAH uses scale-based press animations instead.
+      splashFactory: NoSplash.splashFactory,
+      highlightColor: Colors.transparent,
+      splashColor: Colors.transparent,
+      hoverColor: Colors.transparent,
+      focusColor: AppColors.goldGlow,
 
       // ── Icon Theme ───────────────────────────────────────
       iconTheme: const IconThemeData(
         color: AppColors.pearlWhite,
-        size:  AppDimensions.iconSizeLarge,
+        size: AppDimensions.iconSizeLarge,
       ),
 
       // ── Elevated Button Theme (for default button overrides)
-      // NOTE: Use MithaqPrimaryButton widget directly.
+      // NOTE: Use SilarahPrimaryButton widget directly.
       // This theme is a fallback so any accidentally placed
       // ElevatedButton still looks correct.
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor:   AppColors.champagneGold,
-          foregroundColor:   AppColors.obsidianNight,
-          minimumSize:       const Size(double.infinity, AppDimensions.buttonHeight),
-          shape:             RoundedRectangleBorder(
+          backgroundColor: AppColors.champagneGold,
+          foregroundColor: AppColors.obsidianNight,
+          minimumSize: const Size(double.infinity, AppDimensions.buttonHeight),
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
           ),
-          elevation:         0,
-          shadowColor:       Colors.transparent,
-          overlayColor:      Colors.transparent,
-          textStyle:         AppTypography.button,
-          padding:           const EdgeInsets.symmetric(horizontal: 24),
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          overlayColor: Colors.transparent,
+          textStyle: AppTypography.button,
+          padding: const EdgeInsets.symmetric(horizontal: 24),
         ),
       ),
 
@@ -99,8 +99,8 @@ abstract final class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.champagneGold,
-          overlayColor:    Colors.transparent,
-          textStyle:       AppTypography.buttonSecondary,
+          overlayColor: Colors.transparent,
+          textStyle: AppTypography.buttonSecondary,
         ),
       ),
 
@@ -109,10 +109,10 @@ abstract final class AppTheme {
       // The fill is barely there — just enough to define the field
       // against the background. Borders provide the real definition.
       inputDecorationTheme: InputDecorationTheme(
-        filled:      true,
-        fillColor:   AppColors.inputSurface,
-        hintStyle:   AppTypography.inputLabel,
-        labelStyle:  AppTypography.inputLabel,
+        filled: true,
+        fillColor: AppColors.inputSurface,
+        hintStyle: AppTypography.inputLabel,
+        labelStyle: AppTypography.inputLabel,
         floatingLabelStyle: AppTypography.inputLabel.copyWith(
           color: AppColors.champagneGold,
           fontSize: 12,
@@ -162,8 +162,8 @@ abstract final class AppTheme {
 
       // ── Card Theme ───────────────────────────────────────
       cardTheme: CardThemeData(
-        color:        AppColors.surfaceGlass,
-        elevation:    0,
+        color: AppColors.surfaceGlass,
+        elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
           side: const BorderSide(
@@ -176,9 +176,9 @@ abstract final class AppTheme {
 
       // ── Chip Theme ───────────────────────────────────────
       chipTheme: ChipThemeData(
-        backgroundColor:         AppColors.surfaceGlass,
-        selectedColor:           AppColors.goldGlow,
-        labelStyle:              AppTypography.chipLabel,
+        backgroundColor: AppColors.surfaceGlass,
+        selectedColor: AppColors.goldGlow,
+        labelStyle: AppTypography.chipLabel,
         side: const BorderSide(
           color: AppColors.cardBorder,
           width: AppDimensions.borderThin,
@@ -188,7 +188,7 @@ abstract final class AppTheme {
         ),
         padding: const EdgeInsets.symmetric(
           horizontal: AppDimensions.space12,
-          vertical:   AppDimensions.space6,
+          vertical: AppDimensions.space6,
         ),
         showCheckmark: false,
       ),
@@ -196,9 +196,9 @@ abstract final class AppTheme {
       // ── Bottom Sheet Theme ───────────────────────────────
       // "NO Pop-ups: Use Bottom Sheets that slide up with easeOutCubic."
       bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor:   AppColors.obsidianNight,
+        backgroundColor: AppColors.obsidianNight,
         modalBackgroundColor: AppColors.obsidianNight,
-        elevation:         0,
+        elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
             top: Radius.circular(AppDimensions.radiusCard),
@@ -210,10 +210,10 @@ abstract final class AppTheme {
       // ── Navigation Bar Theme (bottom nav) ────────────────
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.obsidianNight,
-        indicatorColor:  AppColors.goldGlow,
+        indicatorColor: AppColors.goldGlow,
         surfaceTintColor: Colors.transparent,
-        elevation:       0,
-        labelTextStyle:  WidgetStateProperty.resolveWith((states) {
+        elevation: 0,
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return AppTypography.caption.copyWith(
             color: selected ? AppColors.champagneGold : AppColors.slateMist,
@@ -231,9 +231,9 @@ abstract final class AppTheme {
 
       // ── Divider Theme ────────────────────────────────────
       dividerTheme: const DividerThemeData(
-        color:     AppColors.divider,
+        color: AppColors.divider,
         thickness: AppDimensions.borderThin,
-        space:     0,
+        space: 0,
       ),
 
       // ── Progress Indicator ───────────────────────────────
@@ -242,7 +242,7 @@ abstract final class AppTheme {
         linearTrackColor: AppColors.progressBarBase,
       ),
 
-      // ── Snack Bar — replaced by bottom sheets in MITHAQ ────
+      // ── Snack Bar — replaced by bottom sheets in SILARAH ────
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.surfaceGlassHover,
         contentTextStyle: AppTypography.body,
@@ -252,13 +252,13 @@ abstract final class AppTheme {
         behavior: SnackBarBehavior.floating,
       ),
 
-      // ── Dialog → use MithaqBottomSheet instead ─────────────
+      // ── Dialog → use SilarahBottomSheet instead ─────────────
       dialogTheme: DialogThemeData(
         backgroundColor: AppColors.obsidianNight,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
         ),
-        titleTextStyle:   AppTypography.userName,
+        titleTextStyle: AppTypography.userName,
         contentTextStyle: AppTypography.body,
       ),
 
@@ -266,8 +266,8 @@ abstract final class AppTheme {
       // Overridden globally via GoRouter — kept here as fallback.
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
-          TargetPlatform.android: MithaqPageTransition(),
-          TargetPlatform.iOS:     MithaqPageTransition(),
+          TargetPlatform.android: SilarahPageTransition(),
+          TargetPlatform.iOS: SilarahPageTransition(),
         },
       ),
     );
@@ -277,8 +277,8 @@ abstract final class AppTheme {
 // ── Custom Page Transition Builder ───────────────────────────
 // "The Unfolding Effect: fade in + shift upward 20px → 0px."
 
-class MithaqPageTransition extends PageTransitionsBuilder {
-  const MithaqPageTransition();
+class SilarahPageTransition extends PageTransitionsBuilder {
+  const SilarahPageTransition();
 
   @override
   Widget buildTransitions<T>(
@@ -290,7 +290,7 @@ class MithaqPageTransition extends PageTransitionsBuilder {
   ) {
     // Gentle spring curve for both animations
     const springCurve = SpringCurve(
-      spring: MithaqSpring.gentle,
+      spring: SilarahSpring.gentle,
       duration: Duration(milliseconds: 500),
     );
 

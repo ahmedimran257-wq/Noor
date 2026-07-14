@@ -1,6 +1,6 @@
 // lib/features/onboarding/screens/legal_gate_screen.dart
 // ============================================================
-// MITHAQ — Legal Gate Screen
+// SILARAH — Legal Gate Screen
 // Two mandatory checkboxes (age + terms).
 // Cannot proceed without both checked.
 // Consent is cached pre-auth and flushed to user_consents after email OTP auth.
@@ -12,8 +12,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/buttons/mithaq_primary_button.dart';
-import '../../../core/widgets/buttons/mithaq_secondary_button.dart';
+import '../../../core/widgets/buttons/silarah_primary_button.dart';
+import '../../../core/widgets/buttons/silarah_secondary_button.dart';
 import '../../../core/router/app_router.dart';
 import '../../home/screens/legal_doc_screen.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -135,14 +135,14 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
                       const SizedBox(height: AppDimensions.space24),
 
                       // ── Checkboxes ─────────────────────────
-                      _MithaqCheckbox(
+                      _SilarahCheckbox(
                         value: _ageConfirmed,
                         onChanged: (v) =>
                             setState(() => _ageConfirmed = v ?? false),
                         label: l10n.legal_checkbox_age,
                       ),
                       const SizedBox(height: AppDimensions.space16),
-                      _MithaqCheckbox(
+                      _SilarahCheckbox(
                         value: _termsConfirmed,
                         onChanged: (v) =>
                             setState(() => _termsConfirmed = v ?? false),
@@ -219,7 +219,7 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
                         ),
                       ),
                       const SizedBox(height: AppDimensions.space16),
-                      _MithaqCheckbox(
+                      _SilarahCheckbox(
                         value: _specialCategoryConsent,
                         onChanged: (v) => setState(
                             () => _specialCategoryConsent = v ?? false),
@@ -228,7 +228,7 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
                           children: l10n.localeName == 'ar'
                               ? [
                                   const TextSpan(
-                                      text: 'أوافق صراحةً على معالجة MITHAQ '),
+                                      text: 'أوافق صراحةً على معالجة SILARAH '),
                                   TextSpan(
                                     text: 'معلوماتي الدينية',
                                     style: AppTypography.body.copyWith(
@@ -244,7 +244,7 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
                               : [
                                   const TextSpan(
                                       text:
-                                          'I explicitly consent to MITHAQ processing my '),
+                                          'I explicitly consent to SILARAH processing my '),
                                   TextSpan(
                                     text: 'religious information',
                                     style: AppTypography.body.copyWith(
@@ -287,7 +287,7 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
                         ),
                         const SizedBox(height: AppDimensions.space12),
                       ],
-                      MithaqPrimaryButton(
+                      SilarahPrimaryButton(
                         label: l10n.legal_button_continue,
                         onTap: _canProceed ? _continue : null,
                         isLoading: _isSaving,
@@ -352,7 +352,7 @@ class _LegalSaveError extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppDimensions.space10),
-          MithaqSecondaryButton(
+          SilarahSecondaryButton(
             label: 'Retry',
             icon: Icons.refresh_rounded,
             isLoading: isLoading,
@@ -436,10 +436,10 @@ class _TermsSummaryCard extends StatelessWidget {
   }
 }
 
-// ── Mithaq Checkbox ─────────────────────────────────────────────
+// ── Silarah Checkbox ─────────────────────────────────────────────
 
-class _MithaqCheckbox extends StatelessWidget {
-  const _MithaqCheckbox({
+class _SilarahCheckbox extends StatelessWidget {
+  const _SilarahCheckbox({
     required this.value,
     required this.onChanged,
     this.label = '',

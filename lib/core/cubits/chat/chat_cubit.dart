@@ -1,6 +1,6 @@
 // lib/core/cubits/chat/chat_cubit.dart
 // ============================================================
-// MITHAQ — Chat Cubit (RPC-backed production flow)
+// SILARAH — Chat Cubit (RPC-backed production flow)
 // ============================================================
 
 import 'dart:async';
@@ -14,37 +14,63 @@ import '../../services/translation_service.dart';
 import 'chat_state.dart';
 
 class ChatCubit extends Cubit<ChatState> {
-  ChatCubit() : super(const ChatState()) {
-    unawaited(loadConversations());
-  }
+  ChatCubit() : super(const ChatState());
 
-  static const int _messagePageSize = 50;
+  static const int _messagePageSize = 30;
 
   int _msgCounter = 0;
   int _loadVersion = 0;
+  bool _inboxLoadInFlight = false;
+  DateTime? _lastInboxLoadedAt;
+  static const _inboxFreshness = Duration(minutes: 2);
   final Set<String> _messageLoadsInFlight = {};
   final Set<String> _exhaustedMessagePages = {};
 
-  RealtimeChannel? _incomingMessagesSubscription;
-  RealtimeChannel? _sentMessagesSubscription;
-  RealtimeChannel? _matchesSubscription;
+  static const Duration _typingRefreshInterval = Duration(milliseconds: 1400);
+  static const Duration _localTypingIdleTimeout = Duration(milliseconds: 2200);
+  static const Duration _remoteTypingExpiry = Duration(milliseconds: 4200);
+
+  RealtimeChannel? _activeChatSubscription;
   String? _realtimeUserId;
+  String? _activeConversationId;
+  String? _loadedUserId;
+  Timer? _localTypingIdleTimer;
+  Timer? _remoteTypingExpiryTimer;
+  DateTime? _lastTypingBroadcastAt;
+  bool _localTypingActive = false;
 
   bool get _isRealMode => SupabaseService.isInitialized;
 
-  Future<void> loadConversations() async {
+  Future<void> loadConversations({
+    bool showLoading = true,
+    bool force = false,
+  }) async {
+    if (_inboxLoadInFlight) return;
+    final me = SupabaseService.currentUserId;
+    final lastLoadedAt = _lastInboxLoadedAt;
+    if (!force &&
+        me != null &&
+        _loadedUserId == me &&
+        lastLoadedAt != null &&
+        DateTime.now().difference(lastLoadedAt) < _inboxFreshness) {
+      return;
+    }
+    _inboxLoadInFlight = true;
     final loadVersion = ++_loadVersion;
     if (!_isRealMode) {
       emit(state.copyWith(conversations: const [], isLoading: false));
+      _inboxLoadInFlight = false;
       return;
     }
 
-    emit(state.copyWith(isLoading: true));
+    if (showLoading) {
+      emit(state.copyWith(isLoading: true));
+    }
     try {
       final me = SupabaseService.currentUserId;
       if (me == null) {
         if (_isCurrentLoad(loadVersion)) {
-          emit(state.copyWith(isLoading: false));
+          clear();
         }
         return;
       }
@@ -61,7 +87,9 @@ class ChatCubit extends Cubit<ChatState> {
         ),
       ]);
 
-      if (!_isCurrentLoad(loadVersion)) return;
+      if (!_isCurrentLoad(loadVersion) || SupabaseService.currentUserId != me) {
+        return;
+      }
 
       final userRow = results[0] as Map<String, dynamic>?;
       final inboxRows = _asRows(results[1]);
@@ -74,10 +102,13 @@ class ChatCubit extends Cubit<ChatState> {
         isLoading: false,
         messagingSuspendedUntil: suspendedUntil,
       ));
-      _setupRealtime();
+      _loadedUserId = me;
+      _lastInboxLoadedAt = DateTime.now();
     } catch (e) {
       debugPrint('ChatCubit: Error loading conversations: $e');
       if (_isCurrentLoad(loadVersion)) emit(state.copyWith(isLoading: false));
+    } finally {
+      _inboxLoadInFlight = false;
     }
   }
 
@@ -89,8 +120,13 @@ class ChatCubit extends Cubit<ChatState> {
     if (_messageLoadsInFlight.contains(conversationId)) return;
     if (older && _exhaustedMessagePages.contains(conversationId)) return;
 
-    final conv = _findConversation(conversationId);
-    if (conv == null) return;
+    var conv = _findConversation(conversationId);
+    if (conv == null) {
+      await loadConversations(force: true);
+      conv = _findConversation(conversationId);
+      if (conv == null) return;
+    }
+    _subscribeToActiveChat(conversationId);
 
     _messageLoadsInFlight.add(conversationId);
     try {
@@ -112,6 +148,7 @@ class ChatCubit extends Cubit<ChatState> {
 
       final me = SupabaseService.currentUserId;
       if (me == null || isClosed) return;
+      if (_loadedUserId != null && _loadedUserId != me) return;
 
       final messages = rows.map((row) => _messageFromRow(row, me)).toList();
       final updated = state.conversations.map((c) {
@@ -139,7 +176,7 @@ class ChatCubit extends Cubit<ChatState> {
     if (existing.isNotEmpty) return existing.first.id;
 
     if (!_isRealMode) return '';
-    await loadConversations().timeout(const Duration(seconds: 5));
+    await loadConversations(force: true).timeout(const Duration(seconds: 5));
     final afterLoad =
         state.conversations.where((c) => c.otherUserId == otherUserId);
     return afterLoad.isNotEmpty ? afterLoad.first.id : '';
@@ -195,7 +232,7 @@ class ChatCubit extends Cubit<ChatState> {
       debugPrint('ChatCubit: Error sending message: $e');
       _updateMessageStatus(conversationId, tempMsgId, MessageStatus.failed);
       if (_isSafetyBlock(e)) {
-        unawaited(loadConversations());
+        unawaited(loadConversations(force: true));
       }
     }
   }
@@ -265,19 +302,19 @@ class ChatCubit extends Cubit<ChatState> {
   Future<void> closeMatch(String conversationId, String message) async {
     if (!_isRealMode) return;
 
-    final me = SupabaseService.currentUserId;
     final conv = _findConversation(conversationId);
-    if (me == null || conv == null || conv.isMatchClosed) return;
+    if (conv == null || conv.isMatchClosed) return;
 
     try {
       await sendMessage(conversationId, message);
-      await SupabaseService.client.from('matches').update({
-        'status': 'closed',
-        'closed_by': me,
-        'closed_at': DateTime.now().toUtc().toIso8601String(),
-        'closure_reason': message,
-      }).eq('id', conversationId);
-      await loadConversations();
+      await SupabaseService.client.rpc(
+        'close_chat_match',
+        params: {
+          'p_match_id': conversationId,
+          'p_closure_reason': message,
+        },
+      );
+      await loadConversations(force: true);
     } catch (e) {
       debugPrint('ChatCubit: Error closing match: $e');
     }
@@ -331,73 +368,159 @@ class ChatCubit extends Cubit<ChatState> {
     }
   }
 
-  void _setupRealtime() {
+  /// Publishes ephemeral typing presence to the currently open private chat.
+  /// Keystrokes and message content are never included in this payload.
+  void updateTyping(String conversationId, {required bool isTyping}) {
+    if (_activeConversationId != conversationId ||
+        _activeChatSubscription == null ||
+        SupabaseService.currentUserId == null) {
+      return;
+    }
+
+    _localTypingIdleTimer?.cancel();
+    if (!isTyping) {
+      if (_localTypingActive) _sendTypingBroadcast(false);
+      return;
+    }
+
+    final now = DateTime.now();
+    final shouldRefresh = !_localTypingActive ||
+        _lastTypingBroadcastAt == null ||
+        now.difference(_lastTypingBroadcastAt!) >= _typingRefreshInterval;
+    if (shouldRefresh) _sendTypingBroadcast(true);
+
+    _localTypingIdleTimer = Timer(
+      _localTypingIdleTimeout,
+      () => _sendTypingBroadcast(false),
+    );
+  }
+
+  void leaveConversation(String conversationId) {
+    if (_activeConversationId != conversationId) return;
+    _disposeRealtime();
+  }
+
+  void clear() {
+    _loadVersion++;
+    _messageLoadsInFlight.clear();
+    _exhaustedMessagePages.clear();
+    _loadedUserId = null;
+    _lastInboxLoadedAt = null;
+    _inboxLoadInFlight = false;
+    _disposeRealtime();
+    if (!isClosed) emit(const ChatState());
+  }
+
+  void _subscribeToActiveChat(String conversationId) {
     final me = SupabaseService.currentUserId;
     if (me == null) return;
     if (_realtimeUserId == me &&
-        _incomingMessagesSubscription != null &&
-        _sentMessagesSubscription != null &&
-        _matchesSubscription != null) {
+        _activeConversationId == conversationId &&
+        _activeChatSubscription != null) {
       return;
     }
 
     _disposeRealtime();
     _realtimeUserId = me;
+    _activeConversationId = conversationId;
 
-    // Receiver stream handles new messages addressed to this user.
-    _incomingMessagesSubscription = SupabaseService.client
-        .channel('chat_messages_in_$me')
+    // Scale guard: realtime is scoped to the currently open chat only.
+    // Inbox state is refreshed through get_chat_inbox RPC and background
+    // notifications, avoiding broad per-user message/match subscriptions.
+    _activeChatSubscription = SupabaseService.client
+        .channel(
+          'chat:$conversationId',
+          opts: const RealtimeChannelConfig(private: true, ack: true),
+        )
+        .onBroadcast(
+          event: 'typing',
+          callback: (payload) =>
+              _handleTypingBroadcast(payload, conversationId, me),
+        )
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
           table: 'messages',
           filter: PostgresChangeFilter(
             type: PostgresChangeFilterType.eq,
-            column: 'receiver_id',
-            value: me,
+            column: 'match_id',
+            value: conversationId,
           ),
           callback: (payload) => _handleMessageRealtime(payload, me),
         )
         .subscribe();
+  }
 
-    // Sender stream keeps delivered/read receipts current for messages sent by
-    // this device or another session owned by the same account.
-    _sentMessagesSubscription = SupabaseService.client
-        .channel('chat_messages_out_$me')
-        .onPostgresChanges(
-          event: PostgresChangeEvent.all,
-          schema: 'public',
-          table: 'messages',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'sender_id',
-            value: me,
-          ),
-          callback: (payload) => _handleMessageRealtime(payload, me),
-        )
-        .subscribe();
+  void _sendTypingBroadcast(bool isTyping) {
+    final channel = _activeChatSubscription;
+    final conversationId = _activeConversationId;
+    final me = SupabaseService.currentUserId;
+    if (channel == null || conversationId == null || me == null) return;
+    if (!isTyping && !_localTypingActive) return;
 
-    _matchesSubscription = SupabaseService.client
-        .channel('chat_matches_$me')
-        .onPostgresChanges(
-          event: PostgresChangeEvent.all,
-          schema: 'public',
-          table: 'matches',
-          callback: (_) => unawaited(loadConversations()),
-        )
-        .subscribe();
+    _localTypingActive = isTyping;
+    _lastTypingBroadcastAt = DateTime.now();
+    unawaited(
+      channel.sendBroadcastMessage(
+        event: 'typing',
+        payload: {
+          'user_id': me,
+          'is_typing': isTyping,
+          'sent_at': _lastTypingBroadcastAt!.toUtc().toIso8601String(),
+        },
+      ).then((response) {
+        if (response != ChannelResponse.ok) {
+          debugPrint('ChatCubit: typing broadcast was not acknowledged');
+        }
+      }).catchError((Object error) {
+        debugPrint('ChatCubit: typing broadcast failed: $error');
+      }),
+    );
+  }
+
+  void _handleTypingBroadcast(
+    Map<String, dynamic> payload,
+    String conversationId,
+    String me,
+  ) {
+    // Realtime client versions may expose the broadcast body directly or
+    // under `payload`; accepting both keeps presence compatible across SDK
+    // upgrades without weakening the participant-only channel policy.
+    final eventPayload = payload['payload'] is Map
+        ? Map<String, dynamic>.from(payload['payload'] as Map)
+        : payload;
+    if (eventPayload['user_id'] == me) return;
+    final isTyping = eventPayload['is_typing'] == true;
+    _remoteTypingExpiryTimer?.cancel();
+    _setRemoteTyping(conversationId, isTyping);
+    if (isTyping) {
+      _remoteTypingExpiryTimer = Timer(
+        _remoteTypingExpiry,
+        () => _setRemoteTyping(conversationId, false),
+      );
+    }
+  }
+
+  void _setRemoteTyping(String conversationId, bool isTyping) {
+    if (isClosed) return;
+    final next = Set<String>.from(state.typingConversationIds);
+    isTyping ? next.add(conversationId) : next.remove(conversationId);
+    if (setEquals(next, state.typingConversationIds)) return;
+    emit(state.copyWith(typingConversationIds: next));
   }
 
   void _handleMessageRealtime(PostgresChangePayload payload, String me) {
     final record = payload.newRecord;
     final matchId = record['match_id'] as String?;
     if (matchId == null) {
-      unawaited(loadConversations());
       return;
     }
 
     if (payload.eventType == PostgresChangeEvent.insert) {
       _appendMessage(matchId, _messageFromRow(record, me));
+      if (record['receiver_id'] == me) {
+        unawaited(markRead(matchId));
+      }
       return;
     }
 
@@ -409,17 +532,24 @@ class ChatCubit extends Cubit<ChatState> {
       return;
     }
 
-    unawaited(loadConversations());
+    unawaited(loadMessages(matchId));
   }
 
   void _disposeRealtime() {
-    _incomingMessagesSubscription?.unsubscribe();
-    _sentMessagesSubscription?.unsubscribe();
-    _matchesSubscription?.unsubscribe();
-    _incomingMessagesSubscription = null;
-    _sentMessagesSubscription = null;
-    _matchesSubscription = null;
+    if (_localTypingActive) _sendTypingBroadcast(false);
+    _localTypingIdleTimer?.cancel();
+    _remoteTypingExpiryTimer?.cancel();
+    _localTypingIdleTimer = null;
+    _remoteTypingExpiryTimer = null;
+    _localTypingActive = false;
+    _lastTypingBroadcastAt = null;
+    if (_activeConversationId != null) {
+      _setRemoteTyping(_activeConversationId!, false);
+    }
+    _activeChatSubscription?.unsubscribe();
+    _activeChatSubscription = null;
     _realtimeUserId = null;
+    _activeConversationId = null;
   }
 
   @override

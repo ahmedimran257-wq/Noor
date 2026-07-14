@@ -1,6 +1,6 @@
 // lib/core/data/country_communities_data.dart
 // ============================================================
-// MITHAQ — Muslim Communities by Country
+// SILARAH — Muslim Communities by Country
 //
 // Covers all 198 supported countries through curated, regional, or
 // country-specific options. Supabase can later supply editorial updates.

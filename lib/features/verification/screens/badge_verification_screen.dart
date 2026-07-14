@@ -1,24 +1,18 @@
-// lib/features/verification/screens/badge_verification_screen.dart
-// ============================================================
-// MITHAQ — Badge Verification Screen (Phase 2.5)
-//
-// 3-pose sequential liveness check for the Verification Badge.
-// Each pose must be completed within a time limit.
-// All 3 must pass to earn the badge.
-//
-// Design: MITHAQ DNA — obsidian background, gold accents,
-//         glassmorphism, animated progress.
-// ============================================================
-
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
+
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
+
 import '../../../core/services/selfie_verification_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/buttons/silarah_pressable.dart';
+
+enum _PassiveScanState { loading, scanning, capturing, failed, complete }
 
 class BadgeVerificationScreen extends StatefulWidget {
   const BadgeVerificationScreen({super.key});
@@ -29,582 +23,498 @@ class BadgeVerificationScreen extends StatefulWidget {
 }
 
 class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
-    with TickerProviderStateMixin {
-  final _picker = ImagePicker();
+    with WidgetsBindingObserver {
   final _service = SelfieVerificationService.instance;
+  final _detector = FaceDetector(
+    options: FaceDetectorOptions(
+      enableClassification: true,
+      enableLandmarks: true,
+      performanceMode: FaceDetectorMode.fast,
+    ),
+  );
 
-  List<VerificationChallenge> _sequence = [];
-  int _currentStep = 0;
-  bool _isProcessing = false;
-  bool _isSubmitting = false;
-  bool _hasBadge = false;
-  bool _isLoading = true;
-  final List<bool> _stepResults = [];
-  String? _errorMessage;
-
-  late AnimationController _pulseController;
-  late AnimationController _successController;
-  late Animation<double> _pulseAnimation;
+  CameraController? _camera;
+  _PassiveScanState _state = _PassiveScanState.loading;
+  bool _processingFrame = false;
+  bool _faceEligible = false;
+  bool _disposed = false;
+  int? _countdown;
+  Timer? _countdownTimer;
+  DateTime _lastFrameAt = DateTime.fromMillisecondsSinceEpoch(0);
+  String _guidance = 'Center your face inside the guide';
+  String? _failureReason;
 
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-    _successController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
-    _checkExistingBadge();
+    WidgetsBinding.instance.addObserver(this);
+    unawaited(_start());
   }
 
   @override
-  void dispose() {
-    _pulseController.dispose();
-    _successController.dispose();
-    super.dispose();
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
+      unawaited(_disposeCamera());
+    } else if (state == AppLifecycleState.resumed &&
+        _state == _PassiveScanState.scanning &&
+        _camera == null) {
+      unawaited(_initializeCamera());
+    }
   }
 
-  Future<void> _checkExistingBadge() async {
-    final hasBadge = await _service.hasBadge();
+  Future<void> _start() async {
+    if (await _service.hasBadge()) {
+      if (mounted) setState(() => _state = _PassiveScanState.complete);
+      return;
+    }
+    await _initializeCamera();
+  }
+
+  Future<void> _initializeCamera() async {
+    _cancelCountdown();
     if (mounted) {
       setState(() {
-        _hasBadge = hasBadge;
-        _isLoading = false;
+        _state = _PassiveScanState.loading;
+        _failureReason = null;
+        _guidance = 'Center your face inside the guide';
+      });
+    }
+
+    try {
+      final cameras = await availableCameras();
+      final front = cameras.where(
+        (camera) => camera.lensDirection == CameraLensDirection.front,
+      );
+      if (front.isEmpty) throw StateError('Front camera unavailable');
+
+      final controller = CameraController(
+        front.first,
+        ResolutionPreset.medium,
+        enableAudio: false,
+        imageFormatGroup: Platform.isAndroid
+            ? ImageFormatGroup.nv21
+            : ImageFormatGroup.bgra8888,
+      );
+      await controller.initialize();
+      if (!mounted || _disposed) {
+        await controller.dispose();
+        return;
+      }
+      _camera = controller;
+      setState(() => _state = _PassiveScanState.scanning);
+      await controller.startImageStream(_processFrame);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _state = _PassiveScanState.failed;
+        _failureReason = 'Camera access is required for verification';
       });
     }
   }
 
-  void _startVerification() {
-    setState(() {
-      _sequence = _service.generateBadgeSequence();
-      _currentStep = 0;
-      _stepResults.clear();
-      _errorMessage = null;
+  Future<void> _processFrame(CameraImage image) async {
+    if (_processingFrame ||
+        _state != _PassiveScanState.scanning ||
+        DateTime.now().difference(_lastFrameAt) <
+            const Duration(milliseconds: 220)) {
+      return;
+    }
+    _processingFrame = true;
+    _lastFrameAt = DateTime.now();
+
+    try {
+      final input = _inputImageFromCamera(image);
+      if (input == null) return;
+      final faces = await _detector.processImage(input);
+      if (!mounted || _state != _PassiveScanState.scanning) return;
+
+      String guidance;
+      var eligible = false;
+      if (faces.isEmpty) {
+        guidance = 'Center your face inside the guide';
+      } else if (faces.length > 1) {
+        guidance = 'Only one face should be visible';
+      } else {
+        final face = faces.single;
+        final frameArea = image.width * image.height;
+        final faceArea = face.boundingBox.width * face.boundingBox.height;
+        final prominence = frameArea <= 0 ? 0.0 : faceArea / frameArea;
+        final leftEye = face.leftEyeOpenProbability ?? 0;
+        final rightEye = face.rightEyeOpenProbability ?? 0;
+
+        if (prominence < 0.30) {
+          guidance = 'Move closer';
+        } else if (leftEye <= 0.7 || rightEye <= 0.7) {
+          guidance = 'Open your eyes and remove sunglasses';
+        } else {
+          guidance = 'Hold still';
+          eligible = true;
+        }
+      }
+
+      if (_guidance != guidance || _faceEligible != eligible) {
+        setState(() {
+          _guidance = guidance;
+          _faceEligible = eligible;
+        });
+      }
+      if (eligible) {
+        _beginCountdown();
+      } else {
+        _cancelCountdown();
+      }
+    } catch (_) {
+      if (mounted && _guidance != 'Move to better lighting') {
+        setState(() => _guidance = 'Move to better lighting');
+      }
+    } finally {
+      _processingFrame = false;
+    }
+  }
+
+  InputImage? _inputImageFromCamera(CameraImage image) {
+    final camera = _camera;
+    if (camera == null || image.planes.isEmpty) return null;
+    final format = InputImageFormatValue.fromRawValue(image.format.raw);
+    if (format == null ||
+        (format != InputImageFormat.nv21 &&
+            format != InputImageFormat.bgra8888)) {
+      return null;
+    }
+
+    final buffer = BytesBuilder(copy: false);
+    for (final plane in image.planes) {
+      buffer.add(plane.bytes);
+    }
+    final bytes = buffer.takeBytes();
+    final rotation = InputImageRotationValue.fromRawValue(
+          camera.description.sensorOrientation,
+        ) ??
+        InputImageRotation.rotation0deg;
+
+    return InputImage.fromBytes(
+      bytes: bytes,
+      metadata: InputImageMetadata(
+        size: Size(image.width.toDouble(), image.height.toDouble()),
+        rotation: rotation,
+        format: format,
+        bytesPerRow: image.planes.first.bytesPerRow,
+      ),
+    );
+  }
+
+  void _beginCountdown() {
+    if (_countdownTimer != null || !_faceEligible) return;
+    setState(() => _countdown = 3);
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted || !_faceEligible || _state != _PassiveScanState.scanning) {
+        _cancelCountdown();
+        return;
+      }
+      final current = _countdown ?? 3;
+      if (current > 1) {
+        setState(() => _countdown = current - 1);
+      } else {
+        timer.cancel();
+        _countdownTimer = null;
+        setState(() => _countdown = null);
+        unawaited(_captureAutomatically());
+      }
     });
   }
 
-  Future<void> _captureForStep() async {
-    if (_isProcessing || _currentStep >= _sequence.length) return;
+  void _cancelCountdown() {
+    _countdownTimer?.cancel();
+    _countdownTimer = null;
+    if (mounted && _countdown != null) setState(() => _countdown = null);
+  }
 
+  Future<void> _captureAutomatically() async {
+    final camera = _camera;
+    if (camera == null || _state != _PassiveScanState.scanning) return;
+    setState(() {
+      _state = _PassiveScanState.capturing;
+      _guidance = 'Running security checks';
+    });
+
+    XFile? capture;
     try {
-      final XFile? xfile = await _picker.pickImage(
-        source: ImageSource.camera,
-        preferredCameraDevice: CameraDevice.front,
-        maxWidth: 1200,
-        maxHeight: 1200,
-        imageQuality: 90,
-      );
-
-      if (xfile == null || !mounted) return;
-
-      setState(() => _isProcessing = true);
-
-      // Compress to webp with EXIF stripped
-      Uint8List bytes;
-      final compressed = await FlutterImageCompress.compressWithFile(
-        xfile.path,
-        minWidth: 800,
-        minHeight: 800,
-        quality: 85,
-        format: CompressFormat.webp,
-        keepExif: false,
-      );
-      bytes = compressed ?? await File(xfile.path).readAsBytes();
-
-      // Validate against current challenge
-      final result =
-          await _service.validateSelfie(bytes, _sequence[_currentStep]);
-
-      if (!mounted) return;
-
-      if (result.isValid) {
-        _stepResults.add(true);
-        if (_currentStep == 2) {
-          // All 3 passed! Submit badge
-          setState(() {
-            _isProcessing = false;
-            _isSubmitting = true;
-          });
-
-          final poseNames = _sequence.map((c) => c.dbValue).toList();
-          final submitted = await _service.submitBadgeVerification(
-            poseSequence: poseNames,
-          );
-          if (!submitted) {
-            if (mounted) {
-              setState(() {
-                _isSubmitting = false;
-                _stepResults[_stepResults.length - 1] = false;
-                _errorMessage =
-                    'Could not save your verification. Please try again.';
-              });
-            }
-            return;
-          }
-
-          if (mounted) {
-            setState(() {
-              _isSubmitting = false;
-              _hasBadge = true;
-            });
-            _successController.forward();
-          }
-        } else {
-          // Advance to next pose
-          setState(() {
-            _isProcessing = false;
-            _currentStep++;
-          });
-        }
-      } else {
-        // Step failed — badge attempt failed
-        _stepResults.add(false);
+      if (camera.value.isStreamingImages) await camera.stopImageStream();
+      capture = await camera.takePicture();
+      final bytes = await capture.readAsBytes();
+      final validation = await _service.validatePassiveSelfie(bytes);
+      if (!validation.isValid) {
         await _service.recordFailedAttempt();
-
-        setState(() {
-          _isProcessing = false;
-          _errorMessage = result.errorMessage;
-        });
+        await _showFailure(validation.errorMessage);
+        return;
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isProcessing = false;
-          _errorMessage = 'Camera error. Please try again.';
-          _stepResults.add(false);
-        });
+
+      final saved = await _service.submitBadgeVerification();
+      if (!saved) {
+        await _showFailure('Could not save your badge. Please retry');
+        return;
+      }
+      await _disposeCamera();
+      if (mounted) setState(() => _state = _PassiveScanState.complete);
+    } catch (_) {
+      await _showFailure('Move to better lighting');
+    } finally {
+      if (capture != null) {
+        await File(capture.path)
+            .delete()
+            .catchError((_) => File(capture!.path));
       }
     }
   }
 
-  bool get _failed => _stepResults.isNotEmpty && _stepResults.last == false;
+  Future<void> _showFailure(String reason) async {
+    await _disposeCamera();
+    if (!mounted) return;
+    setState(() {
+      _failureReason = reason;
+      _state = _PassiveScanState.failed;
+    });
+  }
+
+  Future<void> _disposeCamera() async {
+    _cancelCountdown();
+    final camera = _camera;
+    _camera = null;
+    if (camera == null) return;
+    try {
+      if (camera.value.isStreamingImages) await camera.stopImageStream();
+    } catch (_) {}
+    await camera.dispose();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    WidgetsBinding.instance.removeObserver(this);
+    _countdownTimer?.cancel();
+    _countdownTimer = null;
+    _countdown = null;
+    unawaited(_disposeCamera());
+    unawaited(_detector.close());
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: AppColors.obsidianNight,
-        body: Center(
-          child: CircularProgressIndicator(color: AppColors.champagneGold),
-        ),
-      );
-    }
-
     return Scaffold(
       backgroundColor: AppColors.obsidianNight,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: AppColors.pearlWhite, size: 20),
-        ),
-        title: Text('Verification Badge',
-            style: AppTypography.screenTitle.copyWith(fontSize: 20)),
-      ),
-      body: _hasBadge
-          ? _buildBadgeEarned()
-          : _sequence.isEmpty
-              ? _buildIntro()
-              : _failed
-                  ? _buildFailed()
-                  : _isSubmitting
-                      ? _buildSubmitting()
-                      : _buildChallengeStep(),
+      body: switch (_state) {
+        _PassiveScanState.complete => _buildComplete(),
+        _PassiveScanState.failed => _buildFailed(),
+        _ => _buildCamera(),
+      },
     );
   }
 
-  // ── Intro ────────────────────────────────────────────────────
-  Widget _buildIntro() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppDimensions.horizontalMargin),
-      child: Column(
-        children: [
-          const Spacer(flex: 2),
-          // Shield icon
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.champagneGold.withValues(alpha: 0.2),
-                  AppColors.champagneGold.withValues(alpha: 0.05),
-                ],
-              ),
-              border: Border.all(color: AppColors.goldBorder, width: 2),
-            ),
-            child: const Icon(Icons.verified_outlined,
-                color: AppColors.champagneGold, size: 44),
-          ),
-          const SizedBox(height: AppDimensions.space32),
-          const Text('Earn Your Badge',
-              style: AppTypography.screenTitle, textAlign: TextAlign.center),
-          const SizedBox(height: AppDimensions.space12),
-          Text(
-            'Complete 3 quick poses to prove you\'re real.\n'
-            'Takes about 15 seconds.',
-            style: AppTypography.body
-                .copyWith(color: AppColors.slateMist, height: 1.6),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppDimensions.space40),
-          // Benefits
-          ...[
-            (Icons.verified_rounded, '3× more interest from matches'),
-            (Icons.trending_up_rounded, 'Higher ranking in search results'),
-            (Icons.shield_rounded, 'Gold badge on your profile'),
-          ].map((b) => Padding(
-                padding: const EdgeInsets.only(bottom: AppDimensions.space12),
+  Widget _buildCamera() {
+    final camera = _camera;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        if (camera != null && camera.value.isInitialized)
+          CameraPreview(camera)
+        else
+          const ColoredBox(color: AppColors.obsidianNight),
+        const ColoredBox(color: Color(0x36000000)),
+        SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Row(
                   children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: AppColors.champagneGold.withValues(alpha: 0.1),
-                        borderRadius:
-                            BorderRadius.circular(AppDimensions.radiusChip),
-                        border: Border.all(color: AppColors.goldBorder),
-                      ),
-                      child:
-                          Icon(b.$1, color: AppColors.champagneGold, size: 16),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close_rounded,
+                          color: AppColors.pearlWhite),
                     ),
-                    const SizedBox(width: AppDimensions.space12),
-                    Expanded(child: Text(b.$2, style: AppTypography.body)),
+                    const Expanded(
+                      child: Text('Passive face scan',
+                          textAlign: TextAlign.center,
+                          style: AppTypography.bodyMedium),
+                    ),
+                    const SizedBox(width: 48),
                   ],
                 ),
-              )),
-          const Spacer(flex: 3),
-          SizedBox(
-            width: double.infinity,
-            height: AppDimensions.buttonHeight,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.champagneGold,
-                shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppDimensions.radiusButton)),
               ),
-              onPressed: _startVerification,
-              child:
-                  const Text('Start 3-Pose Check', style: AppTypography.button),
-            ),
-          ),
-          const SizedBox(height: AppDimensions.space40),
-        ],
-      ),
-    );
-  }
-
-  // ── Challenge Step ───────────────────────────────────────────
-  Widget _buildChallengeStep() {
-    final challenge = _sequence[_currentStep];
-    final IconData icon;
-    switch (challenge) {
-      case VerificationChallenge.smile:
-        icon = Icons.sentiment_satisfied_alt_rounded;
-      case VerificationChallenge.turnLeft:
-        icon = Icons.turn_slight_left_rounded;
-      case VerificationChallenge.turnRight:
-        icon = Icons.turn_slight_right_rounded;
-      case VerificationChallenge.lookUp:
-        icon = Icons.arrow_upward_rounded;
-      case VerificationChallenge.lookDown:
-        icon = Icons.arrow_downward_rounded;
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppDimensions.horizontalMargin),
-      child: Column(
-        children: [
-          const Spacer(flex: 1),
-          // Step progress
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(3, (i) {
-              final done = i < _stepResults.length && _stepResults[i];
-              final current = i == _currentStep;
-              return Container(
-                width: 40,
-                height: 6,
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(
-                  color: done
-                      ? AppColors.verifiedTeal
-                      : current
-                          ? AppColors.champagneGold
-                          : AppColors.surfaceGlass,
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              );
-            }),
-          ),
-          const SizedBox(height: AppDimensions.space12),
-          Text('POSE ${_currentStep + 1} OF 3',
-              style: AppTypography.sectionLabel
-                  .copyWith(color: AppColors.champagneGold, letterSpacing: 2)),
-          const SizedBox(height: AppDimensions.space32),
-          // Challenge card
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(AppDimensions.space32),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceGlass,
-              borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-              border: Border.all(color: AppColors.goldBorder, width: 1.5),
-            ),
-            child: Column(
-              children: [
-                AnimatedBuilder(
-                  animation: _pulseAnimation,
-                  builder: (context, child) => Transform.scale(
-                    scale: _pulseAnimation.value,
-                    child: Container(
-                      width: 80,
-                      height: 80,
+              const Spacer(),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final size = MediaQuery.sizeOf(context).width * 0.72;
+                  return SizedBox(
+                    width: size,
+                    height: size,
+                    child: DecoratedBox(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColors.champagneGold.withValues(alpha: 0.12),
                         border: Border.all(
-                            color:
-                                AppColors.champagneGold.withValues(alpha: 0.3),
-                            width: 2),
+                          color: _faceEligible
+                              ? AppColors.verifiedTeal
+                              : AppColors.champagneGold,
+                          width: 3,
+                        ),
                       ),
-                      child:
-                          Icon(icon, color: AppColors.champagneGold, size: 36),
+                      child: Center(
+                        child: AnimatedSwitcher(
+                          duration: AppDimensions.durationTransition,
+                          child: _countdown == null
+                              ? const SizedBox.shrink()
+                              : Text(
+                                  '$_countdown',
+                                  key: ValueKey(_countdown),
+                                  style: AppTypography.screenTitle.copyWith(
+                                    fontSize: 64,
+                                    color: AppColors.pearlWhite,
+                                  ),
+                                ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: AppDimensions.space24),
-                Text(challenge.instruction,
-                    style: AppTypography.screenTitle.copyWith(fontSize: 24),
-                    textAlign: TextAlign.center),
-                const SizedBox(height: AppDimensions.space16),
-                Text('Take a selfie while performing this action.',
-                    style: AppTypography.caption.copyWith(height: 1.5),
-                    textAlign: TextAlign.center),
-              ],
-            ),
-          ),
-          const Spacer(flex: 2),
-          if (_isProcessing)
-            Column(
-              children: [
-                const CircularProgressIndicator(color: AppColors.champagneGold),
-                const SizedBox(height: AppDimensions.space16),
-                Text('Analysing pose...',
-                    style: AppTypography.bodyMedium
-                        .copyWith(color: AppColors.champagneGold)),
-              ],
-            )
-          else
-            SizedBox(
-              width: double.infinity,
-              height: AppDimensions.buttonHeight,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.champagneGold,
-                  shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppDimensions.radiusButton)),
-                ),
-                icon: const Icon(Icons.camera_alt_rounded,
-                    color: AppColors.obsidianNight, size: 20),
-                label: const Text('Capture', style: AppTypography.button),
-                onPressed: _captureForStep,
+                  );
+                },
               ),
-            ),
-          const SizedBox(height: AppDimensions.space40),
-        ],
-      ),
-    );
-  }
-
-  // ── Failed ──────────────────────────────────────────────────
-  Widget _buildFailed() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppDimensions.horizontalMargin),
-      child: Column(
-        children: [
-          const Spacer(flex: 2),
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.softCoral.withValues(alpha: 0.15),
-              border: Border.all(color: AppColors.softCoral, width: 2.5),
-            ),
-            child: const Icon(Icons.close_rounded,
-                color: AppColors.softCoral, size: 50),
-          ),
-          const SizedBox(height: AppDimensions.space32),
-          const Text('Pose Not Detected',
-              style: AppTypography.screenTitle, textAlign: TextAlign.center),
-          const SizedBox(height: AppDimensions.space12),
-          Text(
-            _errorMessage ??
-                'Please try again with good lighting and a clear background.',
-            style: AppTypography.body
-                .copyWith(color: AppColors.slateMist, height: 1.6),
-            textAlign: TextAlign.center,
-          ),
-          const Spacer(flex: 3),
-          SizedBox(
-            width: double.infinity,
-            height: AppDimensions.buttonHeight,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.champagneGold,
-                shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppDimensions.radiusButton)),
-              ),
-              onPressed: _startVerification,
-              child: const Text('Try Again', style: AppTypography.button),
-            ),
-          ),
-          const SizedBox(height: AppDimensions.space16),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child:
-                const Text('Maybe Later', style: AppTypography.buttonSecondary),
-          ),
-          const SizedBox(height: AppDimensions.space40),
-        ],
-      ),
-    );
-  }
-
-  // ── Submitting ──────────────────────────────────────────────
-  Widget _buildSubmitting() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AnimatedBuilder(
-            animation: _pulseAnimation,
-            builder: (context, child) => Transform.scale(
-              scale: _pulseAnimation.value,
-              child: Container(
-                width: 100,
-                height: 100,
+              const Spacer(),
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.all(AppDimensions.space20),
+                padding: const EdgeInsets.all(AppDimensions.space16),
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.champagneGold.withValues(alpha: 0.1),
-                  border: Border.all(
-                      color: AppColors.champagneGold.withValues(alpha: 0.3),
-                      width: 2),
+                  color: AppColors.surfaceElevated.withValues(alpha: 0.94),
+                  borderRadius:
+                      BorderRadius.circular(AppDimensions.radiusButton),
+                  border: Border.all(color: AppColors.cardBorder),
                 ),
-                child: const Icon(Icons.verified_outlined,
-                    color: AppColors.champagneGold, size: 44),
-              ),
-            ),
-          ),
-          const SizedBox(height: AppDimensions.space32),
-          Text('Saving Badge...',
-              style: AppTypography.bodyMedium
-                  .copyWith(color: AppColors.champagneGold)),
-          const SizedBox(height: AppDimensions.space12),
-          const Text('All 3 poses verified!', style: AppTypography.caption),
-          const SizedBox(height: AppDimensions.space32),
-          SizedBox(
-            width: 200,
-            child: LinearProgressIndicator(
-              backgroundColor: AppColors.surfaceGlass,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                  AppColors.champagneGold.withValues(alpha: 0.6)),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── Badge Earned ────────────────────────────────────────────
-  Widget _buildBadgeEarned() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppDimensions.horizontalMargin),
-      child: Column(
-        children: [
-          const Spacer(flex: 2),
-          ScaleTransition(
-            scale: CurvedAnimation(
-              parent: _successController..forward(),
-              curve: Curves.elasticOut,
-            ),
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.champagneGold.withValues(alpha: 0.3),
-                    AppColors.champagneGold.withValues(alpha: 0.08),
+                child: Column(
+                  children: [
+                    AnimatedSwitcher(
+                      duration: AppDimensions.durationTransition,
+                      child: Text(
+                        _guidance,
+                        key: ValueKey(_guidance),
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: _faceEligible
+                              ? AppColors.verifiedTeal
+                              : AppColors.pearlWhite,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _state == _PassiveScanState.capturing
+                          ? 'Keep the app open while we verify this frame'
+                          : 'Capture is automatic when your face is ready',
+                      style: AppTypography.caption,
+                      textAlign: TextAlign.center,
+                    ),
                   ],
                 ),
-                border: Border.all(color: AppColors.champagneGold, width: 3),
-                boxShadow: [
-                  BoxShadow(
-                      color: AppColors.champagneGold.withValues(alpha: 0.15),
-                      blurRadius: 30,
-                      spreadRadius: 5),
-                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFailed() {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(AppDimensions.horizontalMargin),
+        child: Column(
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close_rounded),
+              ),
+            ),
+            const Spacer(),
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: AppColors.softCoral.withValues(alpha: 0.10),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.face_retouching_off_rounded,
+                  color: AppColors.softCoral, size: 28),
+            ),
+            const SizedBox(height: AppDimensions.space24),
+            const Text('Scan not completed',
+                style: AppTypography.screenTitle, textAlign: TextAlign.center),
+            const SizedBox(height: AppDimensions.space10),
+            Text(_failureReason ?? 'Move to better lighting',
+                style: AppTypography.bodyMuted, textAlign: TextAlign.center),
+            const Spacer(),
+            SilarahPressable(
+              onTap: _initializeCamera,
+              child: Container(
+                width: double.infinity,
+                height: AppDimensions.buttonHeight,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.champagneGold,
+                  borderRadius:
+                      BorderRadius.circular(AppDimensions.radiusButton),
+                ),
+                child: const Text('Retry scan', style: AppTypography.button),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildComplete() {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(AppDimensions.horizontalMargin),
+        child: Column(
+          children: [
+            const Spacer(),
+            Container(
+              width: 72,
+              height: 72,
+              decoration: const BoxDecoration(
+                color: AppColors.goldGlow,
+                shape: BoxShape.circle,
               ),
               child: const Icon(Icons.verified_rounded,
-                  color: AppColors.champagneGold, size: 56),
+                  color: AppColors.champagneGold, size: 34),
             ),
-          ),
-          const SizedBox(height: AppDimensions.space32),
-          const Text('Badge Earned!',
-              style: AppTypography.screenTitle, textAlign: TextAlign.center),
-          const SizedBox(height: AppDimensions.space12),
-          Text(
-            'Your profile now displays a gold verification badge.\n'
-            'Other members can see you\'ve been verified.',
-            style: AppTypography.body
-                .copyWith(color: AppColors.slateMist, height: 1.6),
-            textAlign: TextAlign.center,
-          ),
-          const Spacer(flex: 3),
-          SizedBox(
-            width: double.infinity,
-            height: AppDimensions.buttonHeight,
-            child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: AppColors.champagneGold),
-                shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppDimensions.radiusButton)),
+            const SizedBox(height: AppDimensions.space24),
+            const Text('Badge active', style: AppTypography.screenTitle),
+            const SizedBox(height: AppDimensions.space10),
+            const Text(
+              'Your passive face scan passed. The verification badge is now visible on your profile.',
+              style: AppTypography.bodyMuted,
+              textAlign: TextAlign.center,
+            ),
+            const Spacer(),
+            SilarahPressable(
+              onTap: () => Navigator.of(context).pop(true),
+              child: Container(
+                width: double.infinity,
+                height: AppDimensions.buttonHeight,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.champagneGold,
+                  borderRadius:
+                      BorderRadius.circular(AppDimensions.radiusButton),
+                ),
+                child: const Text('Done', style: AppTypography.button),
               ),
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Done',
-                  style: AppTypography.buttonSecondary
-                      .copyWith(color: AppColors.champagneGold)),
             ),
-          ),
-          const SizedBox(height: AppDimensions.space40),
-        ],
+          ],
+        ),
       ),
     );
   }

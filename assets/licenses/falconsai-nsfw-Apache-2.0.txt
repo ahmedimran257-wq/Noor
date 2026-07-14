@@ -1,6 +1,6 @@
 Falconsai NSFW Image Detection model
 
-Purpose in Mithaq:
+Purpose in Silarah:
 On-device profile-photo safety screening. The app does not call a remote
 moderation API for this check.
 

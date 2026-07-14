@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mithaq/core/data/country_communities_data.dart';
-import 'package:mithaq/core/data/country_data.dart';
-import 'package:mithaq/core/data/country_languages_data.dart';
+import 'package:silarah/core/data/country_communities_data.dart';
+import 'package:silarah/core/data/country_data.dart';
+import 'package:silarah/core/data/country_languages_data.dart';
 
 void main() {
   test('the supported-country contract remains 198 entries', () {

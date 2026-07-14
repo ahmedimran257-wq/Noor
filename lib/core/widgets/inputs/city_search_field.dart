@@ -1,6 +1,6 @@
 // lib/core/widgets/inputs/city_search_field.dart
 // ============================================================
-// MITHAQ — City Search Field
+// SILARAH — City Search Field
 //
 // Uses the Supabase city cache with Photon as the global fallback.
 // Shows: city name, state, country, postal code (pincode).
@@ -30,6 +30,7 @@ import '../../services/country_context_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimensions.dart';
 import '../../theme/app_typography.dart';
+import '../loaders/silarah_shimmer.dart';
 
 class CitySearchField extends StatefulWidget {
   const CitySearchField({
@@ -131,6 +132,14 @@ class _CitySearchFieldState extends State<CitySearchField> {
     if (!widget.enabled) return;
     // If value matches selected, don't re-search
     if (value == _selectedDisplay) return;
+
+    // Editing a verified value immediately invalidates its coordinates. The
+    // parent must not be allowed to save the previous city while different
+    // free text is visible in the field.
+    if (_selectedDisplay != null) {
+      setState(() => _selectedDisplay = null);
+      widget.onCleared?.call();
+    }
 
     _debounce?.cancel();
     if (value.trim().length < 2) {
@@ -288,14 +297,7 @@ class _CitySearchFieldState extends State<CitySearchField> {
           suffixIcon: _loading
               ? const Padding(
                   padding: EdgeInsets.all(14),
-                  child: SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 1.5,
-                      color: AppColors.champagneGold,
-                    ),
-                  ),
+                  child: SilarahPulseLoader(size: 16),
                 )
               : _selectedDisplay != null
                   ? GestureDetector(

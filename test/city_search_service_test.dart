@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mithaq/core/services/country_context_service.dart';
+import 'package:silarah/core/services/country_context_service.dart';
 
 void main() {
   final service = CountryContextService.instance;

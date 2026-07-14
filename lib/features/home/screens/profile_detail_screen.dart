@@ -1,6 +1,6 @@
 // lib/features/home/screens/profile_detail_screen.dart
 // ============================================================
-// MITHAQ — Profile Detail Screen (Step 5 — Blueprint Complete)
+// SILARAH — Profile Detail Screen (Step 5 — Blueprint Complete)
 //
 // Blueprint requirements (Part 8):
 //   • Full-screen hero photo: 55% of screen height
@@ -15,16 +15,19 @@
 //   • Sticky bottom bar: bookmark + gold "Send Interest"
 // ============================================================
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../core/widgets/loaders/mithaq_blur_image.dart';
+import '../../../core/widgets/loaders/silarah_blur_image.dart';
 import '../../../core/models/discovery_profile.dart';
 import '../../../core/cubits/block_report/block_report_cubit.dart';
 import '../../../core/cubits/interests/interests_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/services/compatibility_service.dart';
 import '../../../core/services/bookmark_service.dart';
+import '../../../core/services/profile_photo_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
@@ -40,6 +43,7 @@ class ProfileDetailScreen extends StatefulWidget {
     required this.isInterestSent,
     required this.onInterestSent,
     this.isMutualMatch = false,
+    this.isOwnProfile = false,
   });
 
   final DiscoveryProfile profile;
@@ -47,6 +51,7 @@ class ProfileDetailScreen extends StatefulWidget {
   final bool isInterestSent;
   final VoidCallback onInterestSent;
   final bool isMutualMatch;
+  final bool isOwnProfile;
 
   @override
   State<ProfileDetailScreen> createState() => _ProfileDetailScreenState();
@@ -56,20 +61,102 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   late bool _interestSent;
   bool _bookmarked = false;
   int _photoPage = 0;
+  late final PageController _photoController;
+  late List<String?> _photoUrls;
+  bool _isGalleryLoading = false;
+  bool _galleryLoadFailed = false;
+  final Set<int> _refreshingPhotoIndexes = <int>{};
+  final Set<int> _refreshedPhotoIndexes = <int>{};
 
-  // Photo count comes from the discovery profile row
-  int get _totalPhotos => widget.profile.photoCount.clamp(1, 4);
+  int get _totalPhotos => _photoUrls.length;
 
   @override
   void initState() {
     super.initState();
     _interestSent = widget.isInterestSent;
+    _photoController = PageController();
+    _photoUrls = _initialPhotoUrls(widget.profile);
+    if (_photoUrls.whereType<String>().length < _photoUrls.length) {
+      _loadAuthorizedGallery();
+    }
     // Load persisted bookmark state
     BookmarkService.load().then((ids) {
       if (mounted) {
         setState(() => _bookmarked = ids.contains(widget.profile.id));
       }
+    }).catchError((_) {});
+  }
+
+  List<String?> _initialPhotoUrls(DiscoveryProfile profile) {
+    final urls = profile.orderedPhotoUrls;
+    final total = math.max(profile.photoCount, urls.length).clamp(1, 4);
+    return List<String?>.generate(
+      total,
+      (index) => index < urls.length ? urls[index] : null,
+      growable: false,
+    );
+  }
+
+  Future<void> _loadAuthorizedGallery() async {
+    if (_isGalleryLoading) return;
+    setState(() {
+      _isGalleryLoading = true;
+      _galleryLoadFailed = false;
     });
+    try {
+      final slots = await ProfilePhotoService.instance.getVisiblePhotoSlots(
+        ownerUserId: widget.profile.id,
+      );
+      final entries = slots.entries.toList()
+        ..sort((a, b) => a.key.compareTo(b.key));
+      final urls = entries.map((entry) => entry.value).toList(growable: false);
+      if (!mounted) return;
+      final total =
+          math.max(widget.profile.photoCount, urls.length).clamp(1, 4);
+      setState(() {
+        _photoUrls = List<String?>.generate(
+          total,
+          (index) => index < urls.length ? urls[index] : null,
+          growable: false,
+        );
+        _isGalleryLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isGalleryLoading = false;
+        _galleryLoadFailed = true;
+      });
+    }
+  }
+
+  Future<void> _refreshExpiredPhoto(int index) async {
+    if (index < 0 ||
+        index >= _photoUrls.length ||
+        _refreshingPhotoIndexes.contains(index) ||
+        _refreshedPhotoIndexes.contains(index)) {
+      return;
+    }
+    _refreshingPhotoIndexes.add(index);
+    _refreshedPhotoIndexes.add(index);
+    try {
+      final refreshed =
+          await ProfilePhotoService.instance.getAuthorizedPhotoUrl(
+        ownerUserId: widget.profile.id,
+        orderIndex: index,
+        forceRefresh: true,
+      );
+      if (!mounted || refreshed == null || refreshed.isEmpty) return;
+      setState(() => _photoUrls[index] = refreshed);
+    } finally {
+      _refreshingPhotoIndexes.remove(index);
+    }
+  }
+
+  @override
+  void dispose() {
+    _photoController.dispose();
+    super.dispose();
   }
 
   // ── Actions ────────────────────────────────────────────────
@@ -114,8 +201,8 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   void _handleShare() {
     HapticFeedback.selectionClick();
     // TD4: Copy a share link to clipboard
-    final shareText = 'Check out ${widget.profile.firstName} on MITHAQ — '
-        'mithaq.app/profile/${widget.profile.id}';
+    final shareText = 'Check out ${widget.profile.firstName} on SILARAH — '
+        'silarah.com/profile/${widget.profile.id}';
     Clipboard.setData(ClipboardData(text: shareText));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -186,11 +273,13 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                     icon: Icons.ios_share_rounded,
                     onTap: _handleShare,
                   ),
-                  const SizedBox(width: AppDimensions.space4),
-                  _HeaderButton(
-                    icon: Icons.more_vert_rounded,
-                    onTap: _showMoreMenu,
-                  ),
+                  if (!widget.isOwnProfile) ...[
+                    const SizedBox(width: AppDimensions.space4),
+                    _HeaderButton(
+                      icon: Icons.more_vert_rounded,
+                      onTap: _showMoreMenu,
+                    ),
+                  ],
                   const SizedBox(width: AppDimensions.space8),
                 ],
                 flexibleSpace: FlexibleSpaceBar(
@@ -199,10 +288,16 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                     tag: widget.heroTag,
                     child: _PhotoCarousel(
                       profile: p,
+                      controller: _photoController,
+                      photoUrls: _photoUrls,
                       totalPhotos: _totalPhotos,
                       currentPage: _photoPage,
                       onPageChanged: (i) => setState(() => _photoPage = i),
                       isMutualMatch: widget.isMutualMatch,
+                      isLoading: _isGalleryLoading,
+                      loadFailed: _galleryLoadFailed,
+                      onRetry: _loadAuthorizedGallery,
+                      onPhotoLoadError: _refreshExpiredPhoto,
                     ),
                   ),
                 ),
@@ -223,7 +318,10 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                     const SizedBox(height: AppDimensions.space20),
 
                     // Compatibility indicator
-                    _CompatibilityIndicator(profile: p),
+                    if (widget.isOwnProfile)
+                      const _OwnProfilePreviewNotice()
+                    else
+                      _CompatibilityIndicator(profile: p),
                     const SizedBox(height: AppDimensions.space28),
 
                     // About — bio in italic Playfair Display
@@ -385,18 +483,19 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
           ),
 
           // ── Sticky bottom bar ─────────────────────────────────
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: _CtaBar(
-              firstName: p.firstName,
-              isInterestSent: _interestSent,
-              isBookmarked: _bookmarked,
-              onSendInterest: _interestSent ? null : _handleSendInterest,
-              onBookmark: _handleBookmark,
+          if (!widget.isOwnProfile)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _CtaBar(
+                firstName: p.firstName,
+                isInterestSent: _interestSent,
+                isBookmarked: _bookmarked,
+                onSendInterest: _interestSent ? null : _handleSendInterest,
+                onBookmark: _handleBookmark,
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -496,17 +595,29 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 class _PhotoCarousel extends StatelessWidget {
   const _PhotoCarousel({
     required this.profile,
+    required this.controller,
+    required this.photoUrls,
     required this.totalPhotos,
     required this.currentPage,
     required this.onPageChanged,
     required this.isMutualMatch,
+    required this.isLoading,
+    required this.loadFailed,
+    required this.onRetry,
+    required this.onPhotoLoadError,
   });
 
   final DiscoveryProfile profile;
+  final PageController controller;
+  final List<String?> photoUrls;
   final int totalPhotos;
   final int currentPage;
   final ValueChanged<int> onPageChanged;
   final bool isMutualMatch;
+  final bool isLoading;
+  final bool loadFailed;
+  final VoidCallback onRetry;
+  final ValueChanged<int> onPhotoLoadError;
 
   @override
   Widget build(BuildContext context) {
@@ -515,26 +626,91 @@ class _PhotoCarousel extends StatelessWidget {
       children: [
         // Page-swipeable photo area
         PageView.builder(
+          controller: controller,
+          physics: const BouncingScrollPhysics(),
           itemCount: totalPhotos,
           onPageChanged: onPageChanged,
           itemBuilder: (_, i) => _SinglePhotoSlide(
             profile: profile,
             index: i,
+            photoUrl: i < photoUrls.length ? photoUrls[i] : null,
+            photoUrls: photoUrls,
             isMutualMatch: isMutualMatch,
+            isLoading: isLoading,
+            loadFailed: loadFailed,
+            onRetry: onRetry,
+            onPhotoLoadError: onPhotoLoadError,
           ),
         ),
 
         // Bottom gradient fade
-        const DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Colors.transparent, AppColors.obsidianNight],
-              stops: [0.5, 1.0],
+        const IgnorePointer(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, AppColors.obsidianNight],
+                stops: [0.5, 1.0],
+              ),
             ),
           ),
         ),
+
+        if (totalPhotos > 1) ...[
+          Positioned(
+            right: AppDimensions.space16,
+            top: MediaQuery.of(context).padding.top + 64,
+            child: IgnorePointer(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.space10,
+                  vertical: AppDimensions.space6,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.overlayBlack55,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.cardBorder),
+                ),
+                child: Text(
+                  '${currentPage + 1} / $totalPhotos',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.pearlWhite,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (currentPage > 0)
+            Positioned(
+              left: AppDimensions.space12,
+              top: 0,
+              bottom: 0,
+              child: _GalleryNavButton(
+                icon: Icons.chevron_left_rounded,
+                semanticLabel: 'Previous photo',
+                onTap: () => controller.previousPage(
+                  duration: AppDimensions.durationTransition,
+                  curve: Curves.easeOutCubic,
+                ),
+              ),
+            ),
+          if (currentPage < totalPhotos - 1)
+            Positioned(
+              right: AppDimensions.space12,
+              top: 0,
+              bottom: 0,
+              child: _GalleryNavButton(
+                icon: Icons.chevron_right_rounded,
+                semanticLabel: 'Next photo',
+                onTap: () => controller.nextPage(
+                  duration: AppDimensions.durationTransition,
+                  curve: Curves.easeOutCubic,
+                ),
+              ),
+            ),
+        ],
 
         // Photo dot indicators — bottom center
         if (totalPhotos > 1)
@@ -570,11 +746,23 @@ class _SinglePhotoSlide extends StatelessWidget {
   const _SinglePhotoSlide({
     required this.profile,
     required this.index,
+    required this.photoUrl,
+    required this.photoUrls,
     required this.isMutualMatch,
+    required this.isLoading,
+    required this.loadFailed,
+    required this.onRetry,
+    required this.onPhotoLoadError,
   });
   final DiscoveryProfile profile;
   final int index;
+  final String? photoUrl;
+  final List<String?> photoUrls;
   final bool isMutualMatch;
+  final bool isLoading;
+  final bool loadFailed;
+  final VoidCallback onRetry;
+  final ValueChanged<int> onPhotoLoadError;
 
   @override
   Widget build(BuildContext context) {
@@ -593,9 +781,13 @@ class _SinglePhotoSlide extends StatelessWidget {
         child: isPrivate
             ? _PrivateSlide(photoCount: profile.photoCount)
             : _PublicSlide(
-                photoUrl: profile.photoUrl,
-                index: index,
-                blurhash: profile.blurhash),
+                photoUrl: photoUrl,
+                blurhash: index == 0 ? profile.blurhash : null,
+                isLoading: isLoading,
+                loadFailed: loadFailed,
+                onRetry: onRetry,
+                onImageError: () => onPhotoLoadError(index),
+              ),
       ),
     );
   }
@@ -612,6 +804,7 @@ class _SinglePhotoSlide extends StatelessWidget {
           child: _FullScreenPhotoViewer(
             profile: profile,
             initialIndex: index,
+            photoUrls: photoUrls,
             isMutualMatch: isMutualMatch,
           ),
         ),
@@ -621,22 +814,88 @@ class _SinglePhotoSlide extends StatelessWidget {
 }
 
 class _PublicSlide extends StatelessWidget {
-  const _PublicSlide(
-      {required this.photoUrl, required this.index, this.blurhash});
+  const _PublicSlide({
+    required this.photoUrl,
+    required this.isLoading,
+    required this.loadFailed,
+    required this.onRetry,
+    required this.onImageError,
+    this.blurhash,
+  });
   final String? photoUrl;
-  final int index;
   final String? blurhash;
+  final bool isLoading;
+  final bool loadFailed;
+  final VoidCallback onRetry;
+  final VoidCallback onImageError;
 
   @override
   Widget build(BuildContext context) {
-    if (photoUrl != null && index == 0) {
-      return MithaqBlurImage(
+    if (photoUrl != null) {
+      return SilarahBlurImage(
         imageUrl: photoUrl!,
         blurhash: blurhash,
         fit: BoxFit.cover,
+        onImageError: onImageError,
+      );
+    }
+    if (isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: AppColors.champagneGold,
+          strokeWidth: 2,
+        ),
+      );
+    }
+    if (loadFailed) {
+      return Center(
+        child: TextButton.icon(
+          onPressed: onRetry,
+          icon: const Icon(Icons.refresh_rounded),
+          label: const Text('Reload photo'),
+        ),
       );
     }
     return const _PersonPlaceholder();
+  }
+}
+
+class _GalleryNavButton extends StatelessWidget {
+  const _GalleryNavButton({
+    required this.icon,
+    required this.semanticLabel,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String semanticLabel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Semantics(
+        button: true,
+        label: semanticLabel,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            onTap();
+          },
+          child: Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: AppColors.overlayBlack55,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.cardBorder),
+            ),
+            child: Icon(icon, color: AppColors.pearlWhite, size: 28),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -689,20 +948,42 @@ class _PersonPlaceholder extends StatelessWidget {
 
 // ── Full-Screen Photo Viewer ──────────────────────────────────
 
-class _FullScreenPhotoViewer extends StatelessWidget {
+class _FullScreenPhotoViewer extends StatefulWidget {
   const _FullScreenPhotoViewer({
     required this.profile,
     required this.initialIndex,
+    required this.photoUrls,
     required this.isMutualMatch,
   });
   final DiscoveryProfile profile;
   final int initialIndex;
+  final List<String?> photoUrls;
   final bool isMutualMatch;
 
   @override
+  State<_FullScreenPhotoViewer> createState() => _FullScreenPhotoViewerState();
+}
+
+class _FullScreenPhotoViewerState extends State<_FullScreenPhotoViewer> {
+  late final PageController _controller;
+  late int _page;
+
+  @override
+  void initState() {
+    super.initState();
+    _page = widget.initialIndex;
+    _controller = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isPrivate =
-        profile.isPhotoPrivate && initialIndex > 0 && !isMutualMatch;
+    final totalPhotos = widget.photoUrls.length;
 
     return Stack(
       children: [
@@ -711,40 +992,54 @@ class _FullScreenPhotoViewer extends StatelessWidget {
           onTap: () => Navigator.pop(context),
           child: Container(color: Colors.transparent),
         ),
-        Center(
-          child: InteractiveViewer(
-            child: Container(
-              width: double.infinity,
-              height: MediaQuery.of(context).size.height * 0.8,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFF1A1A2F), AppColors.obsidianNight],
+        PageView.builder(
+          controller: _controller,
+          physics: const BouncingScrollPhysics(),
+          itemCount: totalPhotos,
+          onPageChanged: (value) => setState(() => _page = value),
+          itemBuilder: (_, index) {
+            final isPrivate = widget.profile.isPhotoPrivate &&
+                index > 0 &&
+                !widget.isMutualMatch;
+            final photoUrl = widget.photoUrls[index];
+            return Center(
+              child: InteractiveViewer(
+                minScale: 1,
+                maxScale: 4,
+                child: Container(
+                  width: double.infinity,
+                  height: MediaQuery.of(context).size.height * 0.8,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0xFF1A1A2F), AppColors.obsidianNight],
+                    ),
+                  ),
+                  child: isPrivate
+                      ? const Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.lock_outline_rounded,
+                                  color: AppColors.slateMist, size: 60),
+                              SizedBox(height: 12),
+                              Text('Locked', style: AppTypography.bodyMuted),
+                            ],
+                          ),
+                        )
+                      : photoUrl != null
+                          ? SilarahBlurImage(
+                              imageUrl: photoUrl,
+                              blurhash:
+                                  index == 0 ? widget.profile.blurhash : null,
+                              fit: BoxFit.contain,
+                            )
+                          : const _PersonPlaceholder(),
                 ),
               ),
-              child: isPrivate
-                  ? const Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.lock_outline_rounded,
-                              color: AppColors.slateMist, size: 60),
-                          SizedBox(height: 12),
-                          Text('Locked', style: AppTypography.bodyMuted),
-                        ],
-                      ),
-                    )
-                  : (profile.photoUrl != null && initialIndex == 0
-                      ? MithaqBlurImage(
-                          imageUrl: profile.photoUrl!,
-                          blurhash: profile.blurhash,
-                          fit: BoxFit.contain,
-                        )
-                      : const Icon(Icons.person_outline_rounded,
-                          color: AppColors.slateMist, size: 120)),
-            ),
-          ),
+            );
+          },
         ),
         SafeArea(
           child: Padding(
@@ -765,6 +1060,30 @@ class _FullScreenPhotoViewer extends StatelessWidget {
             ),
           ),
         ),
+        if (totalPhotos > 1)
+          SafeArea(
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: Container(
+                margin: const EdgeInsets.only(top: AppDimensions.space20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.space12,
+                  vertical: AppDimensions.space6,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.overlayBlack55,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.cardBorder),
+                ),
+                child: Text(
+                  '${_page + 1} / $totalPhotos',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.pearlWhite,
+                  ),
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -886,6 +1205,36 @@ class _VerifiedPill extends StatelessWidget {
 // 'You match 4 of their 5 preferences.'"
 //
 // TD7: Now uses the viewer's own OnboardingData for real comparison.
+
+class _OwnProfilePreviewNotice extends StatelessWidget {
+  const _OwnProfilePreviewNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.space14),
+      decoration: BoxDecoration(
+        color: AppColors.inkTeal.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+        border:
+            Border.all(color: AppColors.verifiedTeal.withValues(alpha: 0.38)),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.visibility_outlined,
+              color: AppColors.verifiedTeal, size: 20),
+          SizedBox(width: AppDimensions.space10),
+          Expanded(
+            child: Text(
+              'Preview mode — this is how your profile appears in discovery.',
+              style: AppTypography.captionMedium,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _CompatibilityIndicator extends StatelessWidget {
   const _CompatibilityIndicator({required this.profile});

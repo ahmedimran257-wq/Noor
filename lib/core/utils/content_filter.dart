@@ -1,6 +1,6 @@
 // lib/core/utils/content_filter.dart
 // ============================================================
-// MITHAQ — Content Filter (Shared)
+// SILARAH — Content Filter (Shared)
 // Detects and redacts contact information, social media handles,
 // external links, and phone numbers from user-generated text.
 //

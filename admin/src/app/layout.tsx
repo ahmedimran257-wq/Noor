@@ -14,8 +14,8 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Mithaq Admin",
-  description: "Mithaq Matrimony staff operations.",
+  title: "Silarah Admin",
+  description: "Silarah Matrimony staff operations.",
 };
 
 export default function RootLayout({

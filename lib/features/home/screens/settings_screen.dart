@@ -1,21 +1,22 @@
 // lib/features/home/screens/settings_screen.dart
 // ============================================================
-// MITHAQ — Settings Screen
+// SILARAH — Settings Screen
 // Sections:
 //   1. ACCOUNT   — phone, photo privacy
 //   2. NOTIFICATIONS — per-category toggles
-//   3. GUARDIAN  — full guardian mode with wali details (Feature 13)
-//   4. PRIVACY   — full privacy settings section (Feature 14)
-//   5. APP       — Language picker with LocaleCubit (Feature 16)
+//   3. GUARDIAN  — wali and guardian details
+//   4. PRIVACY   — profile and photo visibility
+//   5. APP       — language and version
 //   6. SAFETY    — block list, report history
 //   7. LEGAL     — ToS, Privacy Policy
-//   8. DANGER ZONE — Delete Account full screen (Feature 15)
+//   8. DANGER ZONE — account deletion
 // ============================================================
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../l10n/generated/app_localizations.dart';
 
 import '../../../core/cubits/locale/locale_cubit.dart';
@@ -27,46 +28,22 @@ import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/loaders/silarah_shimmer.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/services/wali_mode_service.dart';
 import 'legal_doc_screen.dart';
-import '../../../core/services/selfie_verification_service.dart';
 
-// ── Languages ─────────────────────────────────────────────────
-
-class _LangOption {
-  const _LangOption({
-    required this.locale,
-    required this.nativeName,
-    required this.englishName,
-    this.isRtl = false,
-  });
-  final String locale;
-  final String nativeName;
-  final String englishName;
-  final bool isRtl;
-}
-
-const _kLanguages = [
-  _LangOption(locale: 'en', nativeName: 'English', englishName: 'English'),
-  _LangOption(
-      locale: 'ar', nativeName: 'العربية', englishName: 'Arabic', isRtl: true),
-];
+const _kLanguages = LocaleCubit.supportedLanguages;
 
 // ── Guardian prefs keys ───────────────────────────────────────
 
-const _kGuardianEnabled = 'guardian_enabled';
-const _kGuardianName = 'guardian_name';
-const _kGuardianPhone = 'guardian_phone';
-const _kGuardianRelationship = 'guardian_relationship';
-const _kGuardianMirror = 'mirror_messages';
-const _kGuardianCanReply = 'guardian_can_reply';
+const _kGuardianPhoneUnavailable =
+    'Saved securely. Re-enter only if you need to change it.';
 
 // ── Privacy prefs keys ────────────────────────────────────────
 
 const _kPhotoVisibility = 'privacy_photo_visibility';
-const _kShowOnlineStatus = 'privacy_show_online';
 const _kProfilePaused = 'privacy_profile_paused';
 
 // ═══════════════════════════════════════════════════════════════
@@ -88,29 +65,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _helpKey = GlobalKey();
   final _accountKey = GlobalKey();
   final _notificationsKey = GlobalKey();
-  bool _isVerified = false;
+  String _appVersion = '—';
 
   @override
   void initState() {
     super.initState();
-    _loadVerificationStatus();
+    _loadAppVersion();
     if (widget.initialSection != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToSection());
     }
   }
 
-  Future<void> _loadVerificationStatus() async {
-    try {
-      final status = await SelfieVerificationService.instance.getStatus();
-      if (!mounted) return;
-      final isVerified = status.status == 'verified';
-      if (isVerified != _isVerified) {
-        setState(() {
-          _isVerified = isVerified;
-        });
-      }
-    } catch (e) {
-      debugPrint('SettingsScreen: _loadVerificationStatus error: $e');
+  Future<void> _loadAppVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() => _appVersion = '${info.version} (${info.buildNumber})');
     }
   }
 
@@ -176,35 +145,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     (SupabaseService.isInitialized
                         ? SupabaseService.client.auth.currentUser?.email
                         : null);
-                return _NavTile(
+                return _InfoTile(
                   icon: Icons.alternate_email_rounded,
                   label: 'Email',
                   value: _maskEmail(email),
-                  onTap: () => _showInfoSnackbar(
-                      context, 'Email is your sign-in method.'),
                 );
-              },
-            ),
-            _Divider(),
-            _NavTile(
-              icon: Icons.photo_library_outlined,
-              label: l10n.settings_label_photoPrivacy,
-              value: 'Manage',
-              onTap: () => _scrollToKey(_privacyKey),
-            ),
-            _Divider(),
-            _NavTile(
-              icon: Icons.verified_outlined,
-              label: l10n.settings_label_verifyProfile,
-              value: _isVerified
-                  ? 'Verified'
-                  : l10n.settings_label_selfieChallenge,
-              iconColor: _isVerified
-                  ? AppColors.verifiedTeal
-                  : AppColors.champagneGold,
-              onTap: () async {
-                await context.push(AppRoutes.verify);
-                _loadVerificationStatus();
               },
             ),
           ]),
@@ -240,12 +185,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               _Divider(),
               _ToggleTile(
-                icon: Icons.verified_outlined,
-                label: l10n.settings_notify_profileApproved,
-                value: prefs.profileApproved,
-                onChanged: (v) => context
-                    .read<NotificationPrefsCubit>()
-                    .toggleProfileApproved(v),
+                icon: Icons.public_rounded,
+                label: 'Profile goes live',
+                caption: 'Confirmation when your profile becomes visible',
+                value: prefs.profileLive,
+                onChanged: (v) =>
+                    context.read<NotificationPrefsCubit>().toggleProfileLive(v),
               ),
               _Divider(),
               _ToggleTile(
@@ -277,30 +222,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     .toggleBoostAvailable(v),
               ),
               _Divider(),
-              _InfoTile(
+              _NavTile(
                 icon: Icons.bedtime_outlined,
                 label: l10n.settings_notify_quietHours,
                 value:
                     '${_fmtHour(prefs.quietStartHour)} – ${_fmtHour(prefs.quietEndHour)}',
+                onTap: () => _changeQuietHours(context, prefs),
               ),
             ]),
           ),
 
-          // ── 3. GUARDIAN (Feature 13) ──────────────────────
+          // ── 3. GUARDIAN ───────────────────────────────────
           _SectionHeader(l10n.settings_section_guardian),
           const _GuardianSection(),
 
-          // ── 4. PRIVACY (Feature 14) ───────────────────────
+          // ── 4. PRIVACY ────────────────────────────────────
           _SectionHeader(l10n.settings_section_privacy, key: _privacyKey),
           const _PrivacySection(),
 
-          // ── 5. APP (Feature 16) ───────────────────────────
+          // ── 5. APP ────────────────────────────────────────
           _SectionHeader(l10n.settings_section_app),
           _SettingsCard(children: [
             BlocBuilder<LocaleCubit, Locale>(
               builder: (context, locale) {
                 final lang = _kLanguages.firstWhere(
-                    (l) => l.locale == locale.languageCode,
+                    (l) => l.code == locale.languageCode,
                     orElse: () => _kLanguages.first);
                 return _NavTile(
                   icon: Icons.language_rounded,
@@ -311,17 +257,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
             ),
             _Divider(),
-            _NavTile(
-              icon: Icons.star_outline_rounded,
-              label: l10n.settings_label_rate,
-              onTap: () =>
-                  _showInfoSnackbar(context, l10n.settings_label_rate_snackbar),
-            ),
-            _Divider(),
             _InfoTile(
               icon: Icons.info_outline_rounded,
               label: l10n.settings_label_version,
-              value: '1.0.0 (build 1)',
+              value: _appVersion,
             ),
           ]),
 
@@ -361,12 +300,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             _Divider(),
             _NavTile(
-              icon: Icons.support_agent_rounded,
-              label: l10n.settings_support_contact,
-              onTap: () => _showSupportDialog(context),
-            ),
-            _Divider(),
-            _NavTile(
               icon: Icons.gavel_outlined,
               label: l10n.localeName == 'ar'
                   ? 'Ù…Ø³Ø¤ÙˆÙ„ Ø§Ù„Ø´ÙƒØ§ÙˆÙ‰'
@@ -398,7 +331,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ]),
 
-          // ── 8. DANGER ZONE (Feature 15) ──────────────────
+          // ── 8. DANGER ZONE ────────────────────────────────
           _SectionHeader(l10n.settings_section_dangerZone),
           _SettingsCard(
             borderColor: AppColors.softCoral.withValues(alpha: 0.3),
@@ -464,7 +397,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const Icon(Icons.email_outlined,
                           color: AppColors.champagneGold, size: 16),
                       const SizedBox(width: 8),
-                      Text('grievance@mithaq.app',
+                      Text('grievance@silarah.com',
                           style: AppTypography.bodyMedium
                               .copyWith(color: AppColors.champagneGold)),
                     ],
@@ -499,14 +432,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // ── Photo privacy ──────────────────────────────────────────
   // ── Language sheet ─────────────────────────────────────────
-  void _showLanguageSheet(BuildContext context, _LangOption current) {
+  void _showLanguageSheet(BuildContext context, SupportedLanguage current) {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (sheetCtx) => BlocProvider.value(
         value: context.read<LocaleCubit>(),
-        child: _LanguagePickerSheet(currentLocale: current.locale),
+        child: _LanguagePickerSheet(currentLocale: current.code),
       ),
     );
   }
@@ -522,22 +455,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   static String _fmtHour(int h) => '${h.toString().padLeft(2, '0')}:00';
 
-  // ── Helper snackbar ─────────────────────────────────────────
-  static void _showInfoSnackbar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message, style: AppTypography.body),
-        backgroundColor: AppColors.surfaceGlassHover,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppColors.cardBorder),
-        ),
-        duration: const Duration(seconds: 2),
-      ),
+  Future<void> _changeQuietHours(
+    BuildContext context,
+    NotificationPrefsState prefs,
+  ) async {
+    final start = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: prefs.quietStartHour, minute: 0),
+      helpText: 'Quiet hours start',
+      initialEntryMode: TimePickerEntryMode.dialOnly,
     );
+    if (start == null || !context.mounted) return;
+
+    final end = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: prefs.quietEndHour, minute: 0),
+      helpText: 'Quiet hours end',
+      initialEntryMode: TimePickerEntryMode.dialOnly,
+    );
+    if (end == null || !context.mounted) return;
+
+    context.read<NotificationPrefsCubit>().setQuietHours(
+          startHour: start.hour,
+          endHour: end.hour,
+        );
   }
 
+  // ── Helper snackbar ─────────────────────────────────────────
   // ── Phone masking helper ───────────────────────────────────
   static String _maskEmail(String? email) {
     if (email == null || email.isEmpty) return 'Add email';
@@ -561,80 +505,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   // ── Support dialog ──────────────────────────────────────────
-  static void _showSupportDialog(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceMid,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-          side: const BorderSide(color: AppColors.cardBorder),
-        ),
-        title: Row(
-          children: [
-            const Icon(Icons.support_agent_rounded,
-                color: AppColors.champagneGold, size: 20),
-            const SizedBox(width: 10),
-            Text(l10n.settings_support_contact,
-                style: AppTypography.bodyMedium),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l10n.settings_support_body,
-              style: AppTypography.body.copyWith(height: 1.5),
-            ),
-            const SizedBox(height: AppDimensions.space16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppDimensions.space16),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceGlass,
-                borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                border: Border.all(color: AppColors.cardBorder),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.email_outlined,
-                          color: AppColors.champagneGold, size: 16),
-                      const SizedBox(width: 8),
-                      Text('support@mithaq.app',
-                          style: AppTypography.bodyMedium
-                              .copyWith(color: AppColors.champagneGold)),
-                    ],
-                  ),
-                  const SizedBox(height: AppDimensions.space8),
-                  Text(
-                    l10n.settings_support_note,
-                    style: AppTypography.caption,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.settings_support_btn_close,
-                style: AppTypography.caption
-                    .copyWith(color: AppColors.champagneGold)),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 // ═══════════════════════════════════════════════════════════════
-// GUARDIAN SECTION (Feature 13)
+// GUARDIAN SECTION
 // ═══════════════════════════════════════════════════════════════
 
 class _GuardianSection extends StatefulWidget {
@@ -653,6 +527,7 @@ class _GuardianSectionState extends State<_GuardianSection> {
   final _phoneCtrl = TextEditingController();
   bool _saved = false;
   bool _saving = false;
+  bool _hasGuardianPhoneOnServer = false;
 
   static const _relationships = [
     'Father',
@@ -676,40 +551,26 @@ class _GuardianSectionState extends State<_GuardianSection> {
   }
 
   Future<void> _load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final cachedPhone = prefs.getString(_kGuardianPhone) ?? '';
-
-    if (SupabaseService.isInitialized) {
-      final info = await WaliModeService.instance.getMyGuardianInfo();
-      if (!mounted) return;
-      if (info != null) {
-        setState(() {
-          _enabled = true;
-          _mirror = true;
-          _canReply = info.mode == 'active';
-          _relationship = _relationLabelFromDb(info.relationship);
-          _nameCtrl.text = info.name;
-          _phoneCtrl.text = cachedPhone;
-        });
-        return;
-      }
-    }
-
+    if (!SupabaseService.isInitialized) return;
+    final info = await WaliModeService.instance.getMyGuardianInfo();
     if (!mounted) return;
+    if (info == null) return;
     setState(() {
-      _enabled = prefs.getBool(_kGuardianEnabled) ?? false;
-      _mirror = prefs.getBool(_kGuardianMirror) ?? false;
-      _canReply = prefs.getBool(_kGuardianCanReply) ?? false;
-      _relationship = prefs.getString(_kGuardianRelationship) ?? 'Father';
-      _nameCtrl.text = prefs.getString(_kGuardianName) ?? '';
-      _phoneCtrl.text = prefs.getString(_kGuardianPhone) ?? '';
+      _enabled = true;
+      _mirror = true;
+      _canReply = info.mode == 'active';
+      _relationship = _relationLabelFromDb(info.relationship);
+      _nameCtrl.text = info.name;
+      _phoneCtrl.clear();
+      _hasGuardianPhoneOnServer = true;
     });
   }
 
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context);
     if (_enabled &&
-        (_nameCtrl.text.trim().isEmpty || _phoneCtrl.text.trim().isEmpty)) {
+        (_nameCtrl.text.trim().isEmpty ||
+            (!_hasGuardianPhoneOnServer && _phoneCtrl.text.trim().isEmpty))) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -749,20 +610,10 @@ class _GuardianSectionState extends State<_GuardianSection> {
       return;
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_kGuardianEnabled, _enabled);
-    await prefs.setString(_kGuardianName, _nameCtrl.text.trim());
-    await prefs.setString(_kGuardianPhone, _phoneCtrl.text.trim());
-    await prefs.setString(_kGuardianRelationship, _relationship);
-    await prefs.setBool(_kGuardianMirror, _mirror);
-    await prefs.setBool(_kGuardianCanReply, _canReply);
     if (mounted) {
       setState(() {
         _saving = false;
         _saved = true;
-      });
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) setState(() => _saved = false);
       });
     }
   }
@@ -849,6 +700,16 @@ class _GuardianSectionState extends State<_GuardianSection> {
                   controller: _phoneCtrl,
                   keyboardType: TextInputType.phone,
                 ),
+                if (_hasGuardianPhoneOnServer && _phoneCtrl.text.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(56, 0, 16, 8),
+                    child: Text(
+                      _kGuardianPhoneUnavailable,
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.slateMist,
+                      ),
+                    ),
+                  ),
                 const _DividerFull(),
                 // Relationship dropdown
                 ListTile(
@@ -943,14 +804,16 @@ class _GuardianSectionState extends State<_GuardianSection> {
                       child: AnimatedSwitcher(
                         duration: AppDimensions.durationTransition,
                         child: _saving
-                            ? const SizedBox(
+                            ? const SilarahPulseLoader(
                                 key: ValueKey('saving'),
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppColors.obsidianNight,
-                                ),
+                                size: 24,
+                                accentColor: AppColors.obsidianNight,
+                                highlightColor: AppColors.obsidianDeep,
+                                markColor: AppColors.champagneLight,
+                                coreGradientColors: [
+                                  AppColors.obsidianNight,
+                                  AppColors.obsidianDeep,
+                                ],
                               )
                             : _saved
                                 ? Row(
@@ -980,7 +843,7 @@ class _GuardianSectionState extends State<_GuardianSection> {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// PRIVACY SECTION (Feature 14)
+// PRIVACY SECTION
 // ═══════════════════════════════════════════════════════════════
 
 class _PrivacySection extends StatefulWidget {
@@ -992,8 +855,10 @@ class _PrivacySection extends StatefulWidget {
 class _PrivacySectionState extends State<_PrivacySection> {
   // Defaults
   String _photoVisibility = 'Everyone';
-  bool _showOnlineStatus = true;
   bool _profilePaused = false;
+  bool _profilePauseSaving = false;
+  String _profileVisibility = 'visible';
+  String? _visibilityBlockReason;
   // Animated save checkmark
   final Map<String, bool> _savedIndicators = {};
 
@@ -1004,37 +869,37 @@ class _PrivacySectionState extends State<_PrivacySection> {
   }
 
   Future<void> _load() async {
-    final prefs = await SharedPreferences.getInstance();
-    var photoVisibility = prefs.getString(_kPhotoVisibility) ?? 'Everyone';
-    var profilePaused = prefs.getBool(_kProfilePaused) ?? false;
+    var photoVisibility = 'Everyone';
+    var profilePaused = false;
 
-    if (SupabaseService.isInitialized &&
-        SupabaseService.currentUserId != null) {
+    final userId = await SupabaseService.currentUserIdOrRefresh();
+    if (SupabaseService.isInitialized && userId != null) {
       try {
         final row = await SupabaseService.client
             .from('profiles')
-            .select('photo_privacy, visibility')
-            .eq('user_id', SupabaseService.currentUserId!)
+            .select('id, photo_privacy, visibility, onboarding_completed')
+            .eq('user_id', userId)
             .maybeSingle();
         final dbPhotoPrivacy = row?['photo_privacy'] as String?;
         final dbVisibility = row?['visibility'] as String?;
         photoVisibility = _photoVisibilityFromDb(dbPhotoPrivacy);
-        profilePaused = dbVisibility == 'paused';
+        _profileVisibility = dbVisibility ?? 'visible';
+        profilePaused = _profileVisibility != 'visible';
+        _visibilityBlockReason = await _visibilityBlockReasonFor(row);
       } catch (_) {}
     }
 
     if (!mounted) return;
     setState(() {
       _photoVisibility = photoVisibility;
-      _showOnlineStatus = prefs.getBool(_kShowOnlineStatus) ?? true;
       _profilePaused = profilePaused;
     });
   }
 
   Future<void> _persist(String key, dynamic value,
       {Object? previousValue}) async {
-    final backendSaved = await _persistBackend(key, value);
-    if (!backendSaved) {
+    final backendError = await _persistBackend(key, value);
+    if (backendError != null) {
       if (!mounted) return;
       setState(() {
         if (key == _kPhotoVisibility) {
@@ -1044,46 +909,95 @@ class _PrivacySectionState extends State<_PrivacySection> {
         }
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not save. Please try again.')),
+        SnackBar(content: Text(backendError)),
       );
       return;
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    if (value is bool) {
-      await prefs.setBool(key, value);
-    }
-    if (value is String) {
-      await prefs.setString(key, value);
-    }
     if (!mounted) return;
     setState(() => _savedIndicators[key] = true);
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) setState(() => _savedIndicators[key] = false);
-    });
   }
 
-  Future<bool> _persistBackend(String key, dynamic value) async {
-    if (!SupabaseService.isInitialized ||
-        SupabaseService.currentUserId == null) {
-      return key == _kShowOnlineStatus;
+  Future<String?> _persistBackend(String key, dynamic value) async {
+    if (!SupabaseService.isInitialized) {
+      return 'Could not connect to Silarah. Please try again.';
+    }
+    final userId = await SupabaseService.currentUserIdOrRefresh();
+    if (userId == null) {
+      return 'Please sign in again to update this setting.';
     }
     try {
       final updates = <String, dynamic>{};
       if (key == _kPhotoVisibility && value is String) {
         updates['photo_privacy'] = _photoVisibilityToDb(value);
       } else if (key == _kProfilePaused && value is bool) {
-        updates['visibility'] = value ? 'paused' : 'visible';
+        final response = await SupabaseService.client.rpc(
+          'set_profile_pause',
+          params: {'p_paused': value},
+        );
+        final rows = response as List<dynamic>;
+        if (rows.isNotEmpty && mounted) {
+          final row = Map<String, dynamic>.from(rows.first as Map);
+          setState(() => _profilePaused = row['is_paused'] == true);
+          _profileVisibility = row['visibility']?.toString() ?? 'visible';
+          _visibilityBlockReason = null;
+        }
+        return null;
       }
-      if (updates.isEmpty) return key == _kShowOnlineStatus;
+      if (updates.isEmpty) return null;
       await SupabaseService.client
           .from('profiles')
           .update(updates)
-          .eq('user_id', SupabaseService.currentUserId!);
-      return true;
-    } catch (_) {
-      return false;
+          .eq('user_id', userId);
+      return null;
+    } on PostgrestException catch (error) {
+      return _settingsErrorMessage(error.message);
+    } catch (error) {
+      return _settingsErrorMessage(error.toString());
     }
+  }
+
+  Future<String?> _visibilityBlockReasonFor(Map<String, dynamic>? row) async {
+    if (row == null) return 'Complete your profile before changing visibility.';
+    final visibility = row['visibility'] as String? ?? 'visible';
+    if (visibility == 'suspended') {
+      return 'This profile is suspended and cannot be made visible from settings.';
+    }
+    if (visibility == 'deactivated') {
+      return 'This profile is deactivated and cannot be made visible from settings.';
+    }
+    if (row['onboarding_completed'] != true) {
+      return 'Complete onboarding before making your profile visible.';
+    }
+    final profileId = row['id'] as String?;
+    if (profileId == null || profileId.isEmpty) {
+      return 'Complete your profile before changing visibility.';
+    }
+    final photos = await SupabaseService.client
+        .from('photos')
+        .select('id')
+        .eq('profile_id', profileId)
+        .eq('order_index', 0)
+        .eq('status', 'active')
+        .eq('moderation_status', 'approved')
+        .eq('admin_approved', true)
+        .eq('nsfw_cleared', true)
+        .limit(1);
+    if ((photos as List<dynamic>).isEmpty) {
+      return 'Add a profile photo that passes the safety scan before making your profile visible.';
+    }
+    return null;
+  }
+
+  String _settingsErrorMessage(String message) {
+    final cleaned = message
+        .replaceAll('Exception:', '')
+        .replaceAll('PostgrestException(message:', '')
+        .trim();
+    if (cleaned.isEmpty || cleaned == 'null') {
+      return 'Could not save. Please try again.';
+    }
+    return cleaned;
   }
 
   String _photoVisibilityFromDb(String? value) {
@@ -1132,6 +1046,9 @@ class _PrivacySectionState extends State<_PrivacySection> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final unpauseBlocked = _profilePaused && _visibilityBlockReason != null;
+    final pauseWarning =
+        _visibilityBlockReason ?? l10n.settings_privacy_pause_warning;
     return Column(children: [
       // ── Photo Visibility ───────────────────────────────────
       _PrivacyCard(
@@ -1179,21 +1096,6 @@ class _PrivacySectionState extends State<_PrivacySection> {
       ),
       const SizedBox(height: AppDimensions.space8),
 
-      // ── Online Status ──────────────────────────────────────
-      _PrivacyCard(
-        label: l10n.settings_privacy_online_label,
-        subtitle: l10n.settings_privacy_online_sub,
-        saved: _savedIndicators[_kShowOnlineStatus] ?? false,
-        child: _PrivacyToggle(
-          value: _showOnlineStatus,
-          onChanged: (v) {
-            setState(() => _showOnlineStatus = v);
-            _persist(_kShowOnlineStatus, v);
-          },
-        ),
-      ),
-      const SizedBox(height: AppDimensions.space8),
-
       // ── Profile Pause ──────────────────────────────────────
       _PrivacyCard(
         label: l10n.settings_privacy_pause_label,
@@ -1204,11 +1106,24 @@ class _PrivacySectionState extends State<_PrivacySection> {
           children: [
             _PrivacyToggle(
               value: _profilePaused,
-              onChanged: (v) {
-                final previous = _profilePaused;
-                setState(() => _profilePaused = v);
-                _persist(_kProfilePaused, v, previousValue: previous);
-              },
+              onChanged: _profilePauseSaving || unpauseBlocked
+                  ? null
+                  : (v) {
+                      final previous = _profilePaused;
+                      setState(() {
+                        _profilePaused = v;
+                        _profilePauseSaving = true;
+                      });
+                      _persist(
+                        _kProfilePaused,
+                        v,
+                        previousValue: previous,
+                      ).whenComplete(() {
+                        if (mounted) {
+                          setState(() => _profilePauseSaving = false);
+                        }
+                      });
+                    },
             ),
             if (_profilePaused) ...[
               const SizedBox(height: AppDimensions.space8),
@@ -1227,7 +1142,7 @@ class _PrivacySectionState extends State<_PrivacySection> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      l10n.settings_privacy_pause_warning,
+                      pauseWarning,
                       style: AppTypography.caption
                           .copyWith(color: AppColors.premiumGold),
                     ),
@@ -1241,90 +1156,7 @@ class _PrivacySectionState extends State<_PrivacySection> {
       const SizedBox(height: AppDimensions.space8),
 
       // ── Download My Data (GDPR) ────────────────────────────
-      _PrivacyCard(
-        label: l10n.settings_privacy_download_label,
-        subtitle: l10n.settings_privacy_download_sub,
-        saved: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: AppDimensions.space12),
-            Text(
-              l10n.settings_privacy_download_body,
-              style: AppTypography.caption.copyWith(height: 1.5),
-            ),
-            const SizedBox(height: AppDimensions.space16),
-            SizedBox(
-              width: double.infinity,
-              height: AppDimensions.buttonHeightSmall,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.champagneGold,
-                  shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppDimensions.radiusButton),
-                  ),
-                ),
-                icon: const Icon(Icons.download_rounded,
-                    color: AppColors.obsidianNight, size: 16),
-                label: Text(
-                  l10n.settings_privacy_download_btn,
-                  style: AppTypography.button
-                      .copyWith(color: AppColors.obsidianNight),
-                ),
-                onPressed: () => _triggerDataExport(context),
-              ),
-            ),
-          ],
-        ),
-      ),
     ]);
-  }
-
-  void _triggerDataExport(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceMid,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-          side: const BorderSide(color: AppColors.cardBorder),
-        ),
-        title: Row(
-          children: [
-            const Icon(Icons.download_done_rounded,
-                color: AppColors.verifiedTeal, size: 20),
-            const SizedBox(width: 10),
-            Text(l10n.settings_privacy_export_title,
-                style: AppTypography.bodyMedium),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l10n.settings_privacy_export_body,
-              style: AppTypography.body.copyWith(height: 1.5),
-            ),
-            const SizedBox(height: AppDimensions.space16),
-            Text(
-              l10n.settings_privacy_export_subbody,
-              style: AppTypography.caption.copyWith(height: 1.4),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.settings_privacy_export_btn_close,
-                style: AppTypography.caption
-                    .copyWith(color: AppColors.champagneGold)),
-          ),
-        ],
-      ),
-    );
   }
 }
 
@@ -1388,7 +1220,7 @@ class _PrivacyCard extends StatelessWidget {
 class _PrivacyToggle extends StatelessWidget {
   const _PrivacyToggle({required this.value, required this.onChanged});
   final bool value;
-  final ValueChanged<bool> onChanged;
+  final ValueChanged<bool>? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -1447,7 +1279,7 @@ class _RadioRow extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// LANGUAGE PICKER SHEET (Feature 16)
+// LANGUAGE PICKER SHEET
 // ═══════════════════════════════════════════════════════════════
 
 class _LanguagePickerSheet extends StatelessWidget {
@@ -1464,10 +1296,12 @@ class _LanguagePickerSheet extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         border: Border(top: BorderSide(color: AppColors.cardBorder)),
       ),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+      ),
       padding: EdgeInsets.fromLTRB(24, 20, 24, 24 + bottomPad),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: ListView(
+        shrinkWrap: true,
         children: [
           Center(
             child: Container(
@@ -1483,21 +1317,18 @@ class _LanguagePickerSheet extends StatelessWidget {
               style: AppTypography.screenTitle.copyWith(fontSize: 20)),
           const SizedBox(height: 16),
           ..._kLanguages.map((lang) {
-            final isSelected = lang.locale == currentLocale;
+            final isSelected = lang.code == currentLocale;
             return GestureDetector(
               onTap: () async {
-                await context
-                    .read<LocaleCubit>()
-                    .setLocale(Locale(lang.locale));
+                await context.read<LocaleCubit>().setLocale(Locale(lang.code));
                 if (context.mounted) {
                   Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                          l10n.localeName == 'ar'
-                              ? 'تم تحديث اللغة إلى ${lang.nativeName}'
-                              : 'Language updated to ${lang.englishName}',
-                          style: AppTypography.body),
+                        'Language · ${lang.nativeName}',
+                        style: AppTypography.body,
+                      ),
                       backgroundColor: AppColors.surfaceGlassHover,
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(

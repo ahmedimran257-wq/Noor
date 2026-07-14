@@ -1,6 +1,6 @@
 // lib/core/services/translation_service.dart
 // ============================================================
-// MITHAQ — Translation Service (Muslima Feature)
+// SILARAH — Translation Service (Muslima Feature)
 //
 // Communicates only with the Supabase translate-message Edge Function so
 // private chat text never leaves the server-controlled boundary from Flutter.

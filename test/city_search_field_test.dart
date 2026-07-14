@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mithaq/core/services/country_context_service.dart';
-import 'package:mithaq/core/widgets/inputs/city_search_field.dart';
+import 'package:silarah/core/services/country_context_service.dart';
+import 'package:silarah/core/widgets/inputs/city_search_field.dart';
+import 'package:silarah/core/widgets/inputs/region_search_field.dart';
 
 void main() {
   testWidgets('clears the selected city when the country changes',
@@ -50,5 +51,49 @@ void main() {
     );
 
     expect(tester.widget<TextField>(find.byType(TextField)).enabled, isFalse);
+  });
+
+  testWidgets('typing over a verified city invalidates its coordinates',
+      (tester) async {
+    var clearedCount = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CitySearchField(
+            countryCode: 'IN',
+            initialValue: 'Delhi, Delhi',
+            onCleared: () => clearedCount++,
+            onSelected: (_) {},
+          ),
+        ),
+      ),
+    );
+
+    await tester.enterText(find.byType(TextField), 'X');
+    await tester.pump();
+
+    expect(clearedCount, 1);
+  });
+
+  testWidgets('typing over a verified region invalidates its city scope',
+      (tester) async {
+    var clearedCount = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: RegionSearchField(
+            countryCode: 'IN',
+            initialValue: 'Delhi',
+            onCleared: () => clearedCount++,
+            onSelected: (_) {},
+          ),
+        ),
+      ),
+    );
+
+    await tester.enterText(find.byType(TextField), 'X');
+    await tester.pump();
+
+    expect(clearedCount, 1);
   });
 }

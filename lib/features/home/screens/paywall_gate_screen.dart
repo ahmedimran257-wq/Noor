@@ -1,6 +1,6 @@
 // lib/features/home/screens/paywall_gate_screen.dart
 // ============================================================
-// MITHAQ — Paywall Gate (Step 9)
+// SILARAH — Paywall Gate (Step 9)
 //
 // Shown as a bottom sheet when a male non-subscriber tries
 // to open a chat conversation.
@@ -8,7 +8,7 @@
 // Blueprint (Part 8):
 //   "Non-subscriber men who try to open a chat see:
 //    'Subscribe to unlock messaging. Women always message
-//     free on MITHAQ.' The price shown is in their local currency."
+//     free on SILARAH.' The price shown is in their local currency."
 //
 // Usage:
 //   PaywallGateSheet.show(context);
@@ -22,31 +22,28 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import 'subscription_screen.dart';
 
-
 class PaywallGateSheet {
   /// Shows the paywall as a modal bottom sheet.
   ///
-  /// Blueprint: "Women always message free on MITHAQ."
+  /// Blueprint: "Women always message free on SILARAH."
   /// This method is a no-op if the current user is female —
   /// defence-in-depth on top of the call-site check in
   /// chat_list_screen.dart and chat_screen.dart.
   static Future<void> show(BuildContext context) {
     // Runtime guard: never show paywall to women.
     final authState = context.read<AuthCubit>().state;
-    final gender = authState is AuthAuthenticated
-        ? (authState.gender ?? 'male')
-        : 'male';
+    final gender =
+        authState is AuthAuthenticated ? (authState.gender ?? 'male') : 'male';
     if (gender == 'female') return Future.value();
 
     return showModalBottomSheet<void>(
-      context:           context,
+      context: context,
       isScrollControlled: true,
-      backgroundColor:   Colors.transparent,
-      builder:           (_) => const _PaywallGateContent(),
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _PaywallGateContent(),
     );
   }
 }
-
 
 class _PaywallGateContent extends StatelessWidget {
   const _PaywallGateContent();
@@ -62,7 +59,9 @@ class _PaywallGateContent extends StatelessWidget {
         ),
       ),
       padding: EdgeInsets.fromLTRB(
-        24, 20, 24,
+        24,
+        20,
+        24,
         24 + MediaQuery.of(context).viewPadding.bottom,
       ),
       child: Column(
@@ -104,7 +103,7 @@ class _PaywallGateContent extends StatelessWidget {
           const SizedBox(height: 10),
 
           Text(
-            'Women always message free on MITHAQ.\nMen subscribe to start conversations.',
+            'Women always message free on SILARAH.\nMen subscribe to start conversations.',
             style: AppTypography.bodyMuted.copyWith(height: 1.6),
             textAlign: TextAlign.center,
           ),

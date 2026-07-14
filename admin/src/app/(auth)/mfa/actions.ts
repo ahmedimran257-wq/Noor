@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 const requestTimeoutMs = 10000;
-const pendingMfaCookieName = "mithaq_admin_pending_mfa";
+const pendingMfaCookieName = "silarah_admin_pending_mfa";
 
 export type PendingMfaFactor = {
   factorId: string;
@@ -51,7 +51,7 @@ async function getAuthenticatedClient() {
       .maybeSingle(),
   );
   if (membershipError || !membership) {
-    return { error: "This account is not an active Mithaq staff account." } as const;
+    return { error: "This account is not an active Silarah staff account." } as const;
   }
 
   return { supabase, user } as const;
@@ -110,7 +110,7 @@ async function enrollAuthenticator() {
     const { data, error } = await withTimeout(
       session.supabase.auth.mfa.enroll({
         factorType: "totp",
-        friendlyName: "Mithaq Admin",
+        friendlyName: "Silarah Admin",
       }),
     );
     if (error || !data) {
@@ -175,7 +175,7 @@ async function replaceAuthenticator(input: { factorId: string; password: string 
     const { data, error: enrollError } = await withTimeout(
       session.supabase.auth.mfa.enroll({
         factorType: "totp",
-        friendlyName: "Mithaq Admin",
+        friendlyName: "Silarah Admin",
       }),
     );
     if (enrollError || !data) {

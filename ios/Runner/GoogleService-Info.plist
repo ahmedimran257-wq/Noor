@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.mithaq.app.mithaq</string>
+	<string>com.silarah.app</string>
 	<key>PROJECT_ID</key>
 	<string>mithaq-fcf44</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:163379661830:ios:22715dcc7a13fdadedc787</string>
+	<string>1:163379661830:ios:67c3ea4e7a96b040edc787</string>
 </dict>
 </plist>

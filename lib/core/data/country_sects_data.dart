@@ -1,6 +1,6 @@
 // lib/core/data/country_sects_data.dart
 // ============================================================
-// MITHAQ — Country-Adaptive Sect Configuration
+// SILARAH — Country-Adaptive Sect Configuration
 //
 // What Telegram-calibre apps actually do:
 //   • Show/hide sect based on country sensitivity

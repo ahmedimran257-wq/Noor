@@ -10,8 +10,25 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const FIREBASE_PROJECT_ID = Deno.env.get("FIREBASE_PROJECT_ID")!;
 const ACCOUNT_AGE_THRESHOLD_DAYS = 30;
+const DIAL_COUNTRY_CODES: Array<[string, string]> = [
+  ["+91", "IN"],
+  ["+92", "PK"],
+  ["+880", "BD"],
+  ["+62", "ID"],
+  ["+966", "SA"],
+  ["+971", "AE"],
+  ["+60", "MY"],
+  ["+90", "TR"],
+  ["+20", "EG"],
+  ["+234", "NG"],
+  ["+44", "GB"],
+  ["+1", "US"],
+  ["+49", "DE"],
+  ["+33", "FR"],
+];
 
 type AuthMode = "signup" | "signin";
+type SupabaseAdminClient = ReturnType<typeof createClient>;
 
 Deno.serve(async (req: Request) => {
   const corsResponse = handleCors(req);
@@ -51,107 +68,7 @@ Deno.serve(async (req: Request) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    function normalizePhone(phone: string) {
-      return phone.replace(/\D/g, "");
-    }
-
-    function countryCodeForPhone(phone: string) {
-      const provided = country_code?.trim().toUpperCase();
-      if (provided && /^[A-Z]{2}$/.test(provided)) return provided;
-
-      const dialMap: Array<[string, string]> = [
-        ["+91", "IN"],
-        ["+92", "PK"],
-        ["+880", "BD"],
-        ["+62", "ID"],
-        ["+966", "SA"],
-        ["+971", "AE"],
-        ["+60", "MY"],
-        ["+90", "TR"],
-        ["+20", "EG"],
-        ["+234", "NG"],
-        ["+44", "GB"],
-        ["+1", "US"],
-        ["+49", "DE"],
-        ["+33", "FR"],
-      ];
-      return dialMap.find(([dial]) => phone.startsWith(dial))?.[1] ?? "IN";
-    }
-
-    async function findExistingUser(phone: string) {
-      const normalized = normalizePhone(phone);
-      const variants = [...new Set([phone, normalized, `+${normalized}`])];
-
-      const { data: publicUser } = await supabase
-        .from("users")
-        .select("id, created_at, phone")
-        .in("phone", variants)
-        .maybeSingle();
-
-      if (publicUser) {
-        return { id: publicUser.id, created_at: publicUser.created_at };
-      }
-
-      let page = 1;
-      while (true) {
-        const { data: usersData, error } = await supabase.auth.admin.listUsers({
-          page,
-          perPage: 1000,
-        });
-
-        if (error || !usersData?.users || usersData.users.length === 0) break;
-
-        const found = usersData.users.find((user) => {
-          if (!user.phone) return false;
-          const userPhone = normalizePhone(user.phone);
-          return userPhone === normalized || variants.includes(user.phone);
-        });
-
-        if (found) {
-          return { id: found.id, created_at: found.created_at };
-        }
-
-        if (usersData.users.length < 1000) break;
-        page++;
-      }
-
-      return null;
-    }
-
-    async function ensurePublicUser(userId: string, phone: string) {
-      const normalized = normalizePhone(phone);
-      const variants = [...new Set([phone, normalized, `+${normalized}`])];
-
-      const { data: existingById } = await supabase
-        .from("users")
-        .select("id")
-        .eq("id", userId)
-        .maybeSingle();
-
-      if (existingById) return;
-
-      const { data: existingByPhone } = await supabase
-        .from("users")
-        .select("id")
-        .in("phone", variants)
-        .maybeSingle();
-
-      if (existingByPhone && existingByPhone.id !== userId) {
-        throw new Error("Phone number already registered by another user");
-      }
-
-      const { error } = await supabase.from("users").insert({
-        id: userId,
-        phone,
-        country_code: countryCodeForPhone(phone),
-      });
-
-      if (error) {
-        throw new Error(`Failed to create public user row: ${error.message}`);
-      }
-    }
-
-    const existingUser = await findExistingUser(phoneNumber);
+    const existingUser = await findExistingUser(supabase, phoneNumber);
     let supabaseUserId: string;
     let isNewUser = false;
     let accountAgeHours = 0;
@@ -204,7 +121,7 @@ Deno.serve(async (req: Request) => {
       isNewUser = true;
     }
 
-    await ensurePublicUser(supabaseUserId, phoneNumber);
+    await ensurePublicUser(supabase, supabaseUserId, phoneNumber, country_code);
 
     if (!isNewUser) {
       const accountAgeDays = accountAgeHours / 24;
@@ -242,7 +159,7 @@ Deno.serve(async (req: Request) => {
       app_version: app_version ?? "unknown",
     }, { onConflict: "user_id,device_id" });
 
-    const dummyEmail = `${supabaseUserId}@mithaq.internal`;
+    const dummyEmail = `${supabaseUserId}@silarah.internal`;
     const { error: updateError } = await supabase.auth.admin.updateUserById(
       supabaseUserId,
       {
@@ -318,4 +235,94 @@ function errorResponse(
     JSON.stringify({ status: "error", code, message }),
     { status, headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );
+}
+
+function normalizePhone(phone: string) {
+  return phone.replace(/\D/g, "");
+}
+
+function countryCodeForPhone(phone: string, countryCode?: string) {
+  const provided = countryCode?.trim().toUpperCase();
+  if (provided && /^[A-Z]{2}$/.test(provided)) return provided;
+
+  return DIAL_COUNTRY_CODES.find(([dial]) => phone.startsWith(dial))?.[1] ??
+    "IN";
+}
+
+async function findExistingUser(supabase: SupabaseAdminClient, phone: string) {
+  const normalized = normalizePhone(phone);
+  const variants = [...new Set([phone, normalized, `+${normalized}`])];
+
+  const { data: publicUser } = await supabase
+    .from("users")
+    .select("id, created_at, phone")
+    .in("phone", variants)
+    .maybeSingle();
+
+  if (publicUser) {
+    return { id: publicUser.id, created_at: publicUser.created_at };
+  }
+
+  let page = 1;
+  while (true) {
+    const { data: usersData, error } = await supabase.auth.admin.listUsers({
+      page,
+      perPage: 1000,
+    });
+
+    if (error || !usersData?.users || usersData.users.length === 0) break;
+
+    const found = usersData.users.find((user) => {
+      if (!user.phone) return false;
+      const userPhone = normalizePhone(user.phone);
+      return userPhone === normalized || variants.includes(user.phone);
+    });
+
+    if (found) {
+      return { id: found.id, created_at: found.created_at };
+    }
+
+    if (usersData.users.length < 1000) break;
+    page++;
+  }
+
+  return null;
+}
+
+async function ensurePublicUser(
+  supabase: SupabaseAdminClient,
+  userId: string,
+  phone: string,
+  countryCode?: string,
+) {
+  const normalized = normalizePhone(phone);
+  const variants = [...new Set([phone, normalized, `+${normalized}`])];
+
+  const { data: existingById } = await supabase
+    .from("users")
+    .select("id")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (existingById) return;
+
+  const { data: existingByPhone } = await supabase
+    .from("users")
+    .select("id")
+    .in("phone", variants)
+    .maybeSingle();
+
+  if (existingByPhone && existingByPhone.id !== userId) {
+    throw new Error("Phone number already registered by another user");
+  }
+
+  const { error } = await supabase.from("users").insert({
+    id: userId,
+    phone,
+    country_code: countryCodeForPhone(phone, countryCode),
+  });
+
+  if (error) {
+    throw new Error(`Failed to create public user row: ${error.message}`);
+  }
 }

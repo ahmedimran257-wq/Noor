@@ -1,6 +1,6 @@
 // lib/core/cubits/discovery/discovery_feed_state.dart
 // ============================================================
-// MITHAQ — Discovery Feed State (Step 6 update)
+// SILARAH — Discovery Feed State (Step 6 update)
 // ============================================================
 
 import 'package:equatable/equatable.dart';
@@ -9,7 +9,15 @@ import 'discovery_filter.dart';
 
 export 'discovery_filter.dart';
 
-enum FeedStatus { initial, loading, loaded, loadingMore, empty, error }
+enum FeedStatus {
+  initial,
+  loading,
+  refreshing,
+  loaded,
+  loadingMore,
+  empty,
+  error,
+}
 
 class FeedProfile extends Equatable {
   const FeedProfile({

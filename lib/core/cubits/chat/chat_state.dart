@@ -1,6 +1,6 @@
 // lib/core/cubits/chat/chat_state.dart
 // ============================================================
-// MITHAQ — Chat State
+// SILARAH — Chat State
 //
 // Blueprint (Part 8, Conversations):
 //   • Conversations list sorted by newest message
@@ -31,35 +31,44 @@ class ChatMessage extends Equatable {
     this.translations = const {},
   });
 
-  final String         id;
-  final String         text;
-  final DateTime       sentAt;
-  final bool           isMe;      // true = sent by current user
-  final MessageStatus  status;
-  final bool           isTimestampVisible;
-  final bool           sentByGuardian; // §3.2: true when guardian sent this message
-  final Map<String, String> translations; // key: langCode (e.g. 'ur', 'tr'), value: translated text
+  final String id;
+  final String text;
+  final DateTime sentAt;
+  final bool isMe; // true = sent by current user
+  final MessageStatus status;
+  final bool isTimestampVisible;
+  final bool sentByGuardian; // §3.2: true when guardian sent this message
+  final Map<String, String>
+      translations; // key: langCode (e.g. 'ur', 'tr'), value: translated text
 
   ChatMessage copyWith({
     MessageStatus? status,
-    bool?          isTimestampVisible,
+    bool? isTimestampVisible,
     Map<String, String>? translations,
   }) {
     return ChatMessage(
-      id:                  id,
-      text:                text,
-      sentAt:              sentAt,
-      isMe:                isMe,
-      status:              status ?? this.status,
-      isTimestampVisible:  isTimestampVisible ?? this.isTimestampVisible,
-      sentByGuardian:      sentByGuardian,
-      translations:        translations ?? this.translations,
+      id: id,
+      text: text,
+      sentAt: sentAt,
+      isMe: isMe,
+      status: status ?? this.status,
+      isTimestampVisible: isTimestampVisible ?? this.isTimestampVisible,
+      sentByGuardian: sentByGuardian,
+      translations: translations ?? this.translations,
     );
   }
 
   @override
-  List<Object?> get props =>
-      [id, text, sentAt, isMe, status, isTimestampVisible, sentByGuardian, translations];
+  List<Object?> get props => [
+        id,
+        text,
+        sentAt,
+        isMe,
+        status,
+        isTimestampVisible,
+        sentByGuardian,
+        translations
+      ];
 }
 
 // ── Conversation ──────────────────────────────────────────────
@@ -77,18 +86,17 @@ class Conversation extends Equatable {
     this.closureMessage,
   });
 
-  final String           id;
-  final String           matchName;       // First name only
-  final String           matchLastInitial;
+  final String id;
+  final String matchName; // First name only
+  final String matchLastInitial;
   final List<ChatMessage> messages;
-  final int              unreadCount;
-  final String?          matchId;
-  final String?          otherUserId;
-  final bool             isMatchClosed;   // true when respectful closure sent
-  final String?          closureMessage;  // the pre-written closing message
+  final int unreadCount;
+  final String? matchId;
+  final String? otherUserId;
+  final bool isMatchClosed; // true when respectful closure sent
+  final String? closureMessage; // the pre-written closing message
 
-  ChatMessage? get lastMessage =>
-      messages.isEmpty ? null : messages.last;
+  ChatMessage? get lastMessage => messages.isEmpty ? null : messages.last;
 
   String get lastMessagePreview {
     final m = lastMessage;
@@ -108,26 +116,35 @@ class Conversation extends Equatable {
 
   Conversation copyWith({
     List<ChatMessage>? messages,
-    int?               unreadCount,
-    bool?              isMatchClosed,
-    String?            closureMessage,
+    int? unreadCount,
+    bool? isMatchClosed,
+    String? closureMessage,
   }) {
     return Conversation(
-      id:                id,
-      matchName:         matchName,
-      matchLastInitial:  matchLastInitial,
-      messages:          messages       ?? this.messages,
-      unreadCount:       unreadCount    ?? this.unreadCount,
-      matchId:           matchId,
-      otherUserId:       otherUserId,
-      isMatchClosed:     isMatchClosed  ?? this.isMatchClosed,
-      closureMessage:    closureMessage ?? this.closureMessage,
+      id: id,
+      matchName: matchName,
+      matchLastInitial: matchLastInitial,
+      messages: messages ?? this.messages,
+      unreadCount: unreadCount ?? this.unreadCount,
+      matchId: matchId,
+      otherUserId: otherUserId,
+      isMatchClosed: isMatchClosed ?? this.isMatchClosed,
+      closureMessage: closureMessage ?? this.closureMessage,
     );
   }
 
   @override
-  List<Object?> get props =>
-      [id, matchName, matchLastInitial, messages, unreadCount, matchId, otherUserId, isMatchClosed, closureMessage];
+  List<Object?> get props => [
+        id,
+        matchName,
+        matchLastInitial,
+        messages,
+        unreadCount,
+        matchId,
+        otherUserId,
+        isMatchClosed,
+        closureMessage
+      ];
 }
 
 // ── Chat State ────────────────────────────────────────────────
@@ -135,22 +152,29 @@ class Conversation extends Equatable {
 class ChatState extends Equatable {
   const ChatState({
     this.conversations = const [],
-    this.isLoading     = false,
+    this.isLoading = false,
     this.violationCounts = const {},
+    this.typingConversationIds = const {},
     this.messagingSuspendedUntil,
   });
 
   final List<Conversation> conversations;
-  final bool               isLoading;
-  final Map<String, int>   violationCounts;
-  final DateTime?          messagingSuspendedUntil;
+  final bool isLoading;
+  final Map<String, int> violationCounts;
 
-  int get totalUnread =>
-      conversations.fold(0, (sum, c) => sum + c.unreadCount);
+  /// Conversation ids whose other participant has sent a live typing signal.
+  /// This state is intentionally transient and is never persisted.
+  final Set<String> typingConversationIds;
+  final DateTime? messagingSuspendedUntil;
+
+  int get totalUnread => conversations.fold(0, (sum, c) => sum + c.unreadCount);
 
   bool get isSuspended =>
       messagingSuspendedUntil != null &&
       messagingSuspendedUntil!.isAfter(DateTime.now());
+
+  bool isUserTyping(String conversationId) =>
+      typingConversationIds.contains(conversationId);
 
   /// Sorted: newest message first
   List<Conversation> get sortedConversations {
@@ -165,18 +189,28 @@ class ChatState extends Equatable {
 
   ChatState copyWith({
     List<Conversation>? conversations,
-    bool?              isLoading,
-    Map<String, int>?   violationCounts,
-    DateTime?          messagingSuspendedUntil,
+    bool? isLoading,
+    Map<String, int>? violationCounts,
+    Set<String>? typingConversationIds,
+    DateTime? messagingSuspendedUntil,
   }) {
     return ChatState(
       conversations: conversations ?? this.conversations,
-      isLoading:     isLoading     ?? this.isLoading,
+      isLoading: isLoading ?? this.isLoading,
       violationCounts: violationCounts ?? this.violationCounts,
-      messagingSuspendedUntil: messagingSuspendedUntil ?? this.messagingSuspendedUntil,
+      typingConversationIds:
+          typingConversationIds ?? this.typingConversationIds,
+      messagingSuspendedUntil:
+          messagingSuspendedUntil ?? this.messagingSuspendedUntil,
     );
   }
 
   @override
-  List<Object?> get props => [conversations, isLoading, violationCounts, messagingSuspendedUntil];
+  List<Object?> get props => [
+        conversations,
+        isLoading,
+        violationCounts,
+        typingConversationIds,
+        messagingSuspendedUntil,
+      ];
 }

@@ -3,8 +3,6 @@ import {
   Eye,
   Flag,
   ShieldAlert,
-  ShieldCheck,
-  Timer,
 } from "lucide-react";
 import Image from "next/image";
 import { requireAdmin } from "@/lib/auth";
@@ -15,9 +13,8 @@ import { resolveMessageReport, resolveReport, reviewPhoto } from "../actions";
 function scoreLabel(photo: PhotoRow) {
   const score = Number(photo.nsfw_score ?? 0);
   if (photo.nsfw_score === null) return { label: "No score", tone: "neutral" };
-  if (score >= 0.88) return { label: "Hard NSFW signal", tone: "danger" };
-  if (score >= 0.55) return { label: "Borderline review", tone: "warning" };
-  return { label: "Client-screened pending", tone: "good" };
+  if (score > 0.85) return { label: "Explicit-content flag", tone: "danger" };
+  return { label: "Invalid queue item", tone: "warning" };
 }
 
 export default async function ModerationPage() {
@@ -27,12 +24,7 @@ export default async function ModerationPage() {
     getMessageReports(),
     getPhotos(),
   ]);
-  const hardSignals = photos.filter((photo) => Number(photo.nsfw_score ?? 0) >= 0.88).length;
-  const reviewSignals = photos.filter((photo) => {
-    const score = Number(photo.nsfw_score ?? 0);
-    return score >= 0.55 && score < 0.88;
-  }).length;
-  const clientScreened = photos.filter((photo) => Number(photo.nsfw_score ?? 0) < 0.55).length;
+  const hardSignals = photos.filter((photo) => Number(photo.nsfw_score ?? 0) > 0.85).length;
 
   return (
     <section className="dashboard-page wide-page">
@@ -41,7 +33,7 @@ export default async function ModerationPage() {
           <p className="eyebrow">Safety operations</p>
           <h1>Moderation</h1>
           <p className="muted">
-            Review real reports and private profile-photo uploads before they become visible in discovery.
+            Review reports and only profile photos explicitly flagged above the 0.85 confidence threshold.
           </p>
         </div>
         <div className="hero-badge">{reports.length + messageReports.length + photos.length} pending</div>
@@ -50,18 +42,8 @@ export default async function ModerationPage() {
       <div className="moderation-signal-grid">
         <div className="moderation-signal danger">
           <ShieldAlert size={18} />
-          <span>Hard NSFW signals</span>
+          <span>Explicit-content flags</span>
           <strong>{hardSignals}</strong>
-        </div>
-        <div className="moderation-signal warning">
-          <Timer size={18} />
-          <span>Borderline review</span>
-          <strong>{reviewSignals}</strong>
-        </div>
-        <div className="moderation-signal good">
-          <ShieldCheck size={18} />
-          <span>Client-screened pending</span>
-          <strong>{clientScreened}</strong>
         </div>
       </div>
 
@@ -122,7 +104,7 @@ export default async function ModerationPage() {
         {reports.length === 0 && <p className="muted">No open reports.</p>}
       </div>
 
-      <h2 className="section-title"><Camera size={18} /> Photo review</h2>
+      <h2 className="section-title"><Camera size={18} /> Flagged photo review</h2>
       <div className="photo-review-grid">
         {photos.map((photo) => {
           const risk = scoreLabel(photo);
@@ -186,7 +168,7 @@ export default async function ModerationPage() {
             </article>
           );
         })}
-        {photos.length === 0 && <p className="muted">No photos pending review.</p>}
+        {photos.length === 0 && <p className="muted">No explicitly flagged photos pending review.</p>}
       </div>
     </section>
   );

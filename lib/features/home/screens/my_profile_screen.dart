@@ -1,16 +1,13 @@
 // lib/features/home/screens/my_profile_screen.dart
 // ============================================================
-// MITHAQ — My Profile Screen
+// SILARAH — My Profile Screen
 // Self-view: completeness bar, boost section, profile views
 // row, saved profiles, settings sections, sign out.
 // ============================================================
 
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/cubits/auth/auth_state.dart';
@@ -26,11 +23,10 @@ import '../../../core/services/bookmark_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/mithaq_empty_state.dart';
-import '../../../core/widgets/loaders/mithaq_blur_image.dart';
+import '../../../core/widgets/silarah_empty_state.dart';
+import '../../../core/widgets/loaders/silarah_blur_image.dart';
+import '../../../core/widgets/buttons/silarah_pressable.dart';
 import 'edit_profile_screen.dart';
-import 'delete_account_screen.dart';
-import 'legal_doc_screen.dart';
 import 'settings_screen.dart';
 import 'subscription_screen.dart';
 import 'profile_views_screen.dart';
@@ -40,14 +36,16 @@ import '../../../core/services/supabase_service.dart';
 import '../../../core/services/selfie_verification_service.dart';
 import '../../../core/services/profile_photo_service.dart';
 import '../../../core/services/wali_mode_service.dart';
-import '../../../core/utils/mithaq_compute.dart';
+import '../../../core/utils/silarah_compute.dart';
 
 // ── Completeness score ────────────────────────────────────────
 
-({int score, String? nudge}) _calcCompleteness(OnboardingData d) {
+({int score, String? nudge}) _calcCompleteness(
+  OnboardingData d, {
+  required int approvedPhotoCount,
+}) {
   int score = 0;
-  final hasPrimaryPhoto =
-      d.photoLocalPaths != null && d.photoLocalPaths!.isNotEmpty;
+  final hasPrimaryPhoto = approvedPhotoCount > 0;
   if (hasPrimaryPhoto) score += 25;
   final hasBio = (d.bio?.length ?? 0) >= 50;
   if (hasBio) score += 15;
@@ -61,8 +59,7 @@ import '../../../core/utils/mithaq_compute.dart';
   final hasPartnerPrefs =
       d.preferredAgeMin != null && d.preferredAgeMax != null;
   if (hasPartnerPrefs) score += 10;
-  final hasSecondPhoto =
-      d.photoLocalPaths != null && d.photoLocalPaths!.length >= 2;
+  final hasSecondPhoto = approvedPhotoCount >= 2;
   if (hasSecondPhoto) score += 8;
   final hasIncome = d.incomeBracketId != null;
   if (hasIncome) score += 4;
@@ -96,17 +93,32 @@ import '../../../core/utils/mithaq_compute.dart';
 // ── Screen ────────────────────────────────────────────────────
 
 class MyProfileScreen extends StatefulWidget {
-  const MyProfileScreen({super.key});
+  const MyProfileScreen({super.key, this.refreshToken = 0});
+
+  final int refreshToken;
 
   @override
   State<MyProfileScreen> createState() => _MyProfileScreenState();
 }
 
 class _MyProfileScreenState extends State<MyProfileScreen>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   List<DiscoveryProfile> _savedProfiles = [];
   bool _guardianEnabled = false;
+  bool _hasVerificationBadge = false;
+  bool _verificationLoading = true;
+  bool _trustStateLoading = true;
+  bool _emailVerified = false;
+  String _profileVisibility = 'paused';
+  String _kycStatus = 'unverified';
+  String? _accountEmail;
   String? _primaryPhotoUrl;
+  int _approvedPhotoCount = 0;
+  bool _photoRefreshInFlight = false;
+  bool _profilePreviewOpening = false;
+  bool _profileRefreshInFlight = false;
+  DateTime? _lastProfileRefreshAt;
+  static const _profileFreshness = Duration(minutes: 5);
 
   int _viewCount = 0;
 
@@ -116,17 +128,39 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    unawaited(_refreshProfileFromDb());
     _loadBookmarks();
-    _loadGuardian();
-    _loadPrimaryPhoto();
-    if (SupabaseService.isInitialized) {
-      _loadViewsCount();
+  }
+
+  @override
+  void didUpdateWidget(covariant MyProfileScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.refreshToken != widget.refreshToken) {
+      unawaited(_refreshProfileFromDb());
     }
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_refreshProfileFromDb());
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
   Future<void> _loadBookmarks() async {
-    final ids = await BookmarkService.load();
-    await _loadSavedProfiles(ids);
+    try {
+      final ids = await BookmarkService.load();
+      await _loadSavedProfiles(ids);
+    } catch (_) {
+      if (mounted) setState(() => _savedProfiles = []);
+    }
   }
 
   Future<void> _loadSavedProfiles(Set<String> ids) async {
@@ -157,7 +191,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
       if (profileIds.isNotEmpty) {
         final photos = await SupabaseService.client
             .from('photos')
-            .select('profile_id, storage_path, blurhash')
+            .select('profile_id, blurhash')
             .inFilter('profile_id', profileIds.toList())
             .eq('status', 'active')
             .eq('admin_approved', true)
@@ -172,6 +206,16 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           photosByProfile.putIfAbsent(profileId, () => []).add(mapped);
         }
 
+        final ownersWithPhotos = mappedRows
+            .where((row) =>
+                photosByProfile[row['id']?.toString()]?.isNotEmpty == true)
+            .map((row) => row['user_id']?.toString())
+            .whereType<String>()
+            .toList(growable: false);
+        final signedUrls =
+            await ProfilePhotoService.instance.getAuthorizedPhotoUrls(
+          ownerUserIds: ownersWithPhotos,
+        );
         for (final row in mappedRows) {
           final profileId = row['id']?.toString();
           final profilePhotos =
@@ -180,10 +224,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           if (profilePhotos?.isNotEmpty == true) {
             final ownerUserId = row['user_id']?.toString();
             if (ownerUserId != null && ownerUserId.isNotEmpty) {
-              row['photo_url'] =
-                  await ProfilePhotoService.instance.getAuthorizedPhotoUrl(
-                ownerUserId: ownerUserId,
-              );
+              row['photo_url'] = signedUrls[ownerUserId];
               row['blurhash'] = profilePhotos!.first['blurhash'];
             }
           }
@@ -201,26 +242,229 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     if (SupabaseService.isInitialized) {
       final info = await WaliModeService.instance.getMyGuardianInfo();
       if (mounted) setState(() => _guardianEnabled = info != null);
+    }
+  }
+
+  Future<void> _loadVerificationBadge() async {
+    var hasBadge = false;
+    if (SupabaseService.isInitialized) {
+      try {
+        hasBadge = await SelfieVerificationService.instance.hasBadge();
+      } catch (_) {
+        hasBadge = false;
+      }
+    }
+    if (!mounted) return;
+    setState(() {
+      _hasVerificationBadge = hasBadge;
+      _verificationLoading = false;
+    });
+  }
+
+  Future<void> _openVerification() async {
+    await context.push(AppRoutes.badgeVerification);
+    if (mounted) await _loadVerificationBadge();
+  }
+
+  Future<void> _openIdentityVerification() async {
+    await context.push(AppRoutes.verify);
+    if (mounted) await _loadTrustState();
+  }
+
+  Future<void> _openEditProfile() async {
+    final changed = await Navigator.of(context).push<bool>(
+      PageRouteBuilder<bool>(
+        transitionDuration: AppDimensions.durationReveal,
+        reverseTransitionDuration: AppDimensions.durationTransition,
+        pageBuilder: (context, animation, _) => FadeTransition(
+          opacity:
+              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+          child: const EditProfileScreen(),
+        ),
+      ),
+    );
+    if (changed == true && mounted) await _refreshProfileFromDb(force: true);
+  }
+
+  Future<void> _openOwnProfilePreview() async {
+    if (_profilePreviewOpening) return;
+    setState(() => _profilePreviewOpening = true);
+    try {
+      await _performOpenOwnProfilePreview();
+    } finally {
+      if (mounted) setState(() => _profilePreviewOpening = false);
+    }
+  }
+
+  Future<void> _performOpenOwnProfilePreview() async {
+    final userId = await SupabaseService.currentUserIdOrRefresh();
+    if (!mounted || userId == null) return;
+    Map<int, String> photoSlots;
+    try {
+      photoSlots = await ProfilePhotoService.instance.getMyPhotoSlots();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Your photo gallery could not be opened. Try again.'),
+        ),
+      );
       return;
     }
+    if (!mounted) return;
+    final orderedPhotoUrls = photoSlots.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    final galleryUrls = orderedPhotoUrls
+        .map((entry) => entry.value)
+        .where((url) => url.isNotEmpty)
+        .toList(growable: false);
+    final refreshedPhotoUrl = galleryUrls.isEmpty ? null : galleryUrls.first;
+    if (refreshedPhotoUrl != null && refreshedPhotoUrl.isNotEmpty) {
+      setState(() => _primaryPhotoUrl = refreshedPhotoUrl);
+    }
+    final data = context.read<OnboardingCubit>().currentData;
+    final lastName = data.lastName?.trim() ?? '';
+    final profile = DiscoveryProfile(
+      id: userId,
+      firstName: data.firstName?.trim().isNotEmpty == true
+          ? data.firstName!.trim()
+          : 'Your profile',
+      lastNameInitial: lastName.isEmpty ? '' : lastName.characters.first,
+      lastName: lastName.isEmpty ? null : lastName,
+      age: data.age ?? 18,
+      cityName: data.cityName?.trim().isNotEmpty == true
+          ? data.cityName!.trim()
+          : 'Location not set',
+      countryCode: data.countryCode,
+      sect: data.sect?.name,
+      deenLevel: data.deenLevel?.name,
+      photoUrl: refreshedPhotoUrl ?? _primaryPhotoUrl,
+      photoUrls: galleryUrls,
+      photoCount: galleryUrls.length,
+      isVerified: _hasVerificationBadge,
+      occupation: data.profession,
+      education: data.educationLabel,
+      bio: data.bio,
+      languages: data.languages,
+      maritalStatus: data.maritalStatus?.name,
+      familyType: data.familyType?.name,
+      interests: data.interests,
+      partnerAgeMin: data.preferredAgeMin,
+      partnerAgeMax: data.preferredAgeMax,
+      partnerSect: data.preferredSect,
+      partnerDeenLevel: data.preferredDeenLevel,
+      partnerEducationMinRank: data.minEducationRank,
+      heightCm: data.heightCm,
+      complexion: data.complexion,
+      motherTongue: data.motherTongue,
+      smokingHabit: data.smokingHabit,
+      vapingHabit: data.vapingHabit,
+      hookahHabit: data.hookahHabit,
+      isGuardianProfile: data.isGuardianMode,
+      community: data.community,
+      dietType: data.dietType,
+      livingExpectation: data.livingExpectation,
+      quranMemorization: data.quranMemorization,
+      religiousEducation: data.religiousEducation,
+      marriageTimeline: data.marriageTimeline,
+      willingToRelocate: data.willingToRelocate,
+      gender: data.gender?.name,
+      hasChildren: data.hasChildren ?? false,
+      incomeBracket: data.incomeBracketLabel,
+    );
 
-    final prefs = await SharedPreferences.getInstance();
-    if (mounted) {
-      setState(
-          () => _guardianEnabled = prefs.getBool('guardian_enabled') ?? false);
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => ProfileDetailScreen(
+          profile: profile,
+          heroTag: 'own-profile-preview-$userId',
+          isInterestSent: false,
+          onInterestSent: () {},
+          isOwnProfile: true,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _loadTrustState() async {
+    if (!SupabaseService.isInitialized) return;
+    final userId = await SupabaseService.currentUserIdOrRefresh();
+    if (userId == null) return;
+
+    try {
+      final profile = await SupabaseService.client
+          .from('profiles')
+          .select('visibility, kyc_verified, verification_status')
+          .eq('user_id', userId)
+          .maybeSingle();
+      final authUser = SupabaseService.client.auth.currentUser;
+      if (!mounted) return;
+      setState(() {
+        _profileVisibility = profile?['visibility']?.toString() ?? 'paused';
+        _kycStatus = (profile?['kyc_verified'] as bool? ?? false)
+            ? 'verified'
+            : profile?['verification_status']?.toString() ?? 'unverified';
+        _accountEmail = authUser?.email;
+        _emailVerified = authUser?.emailConfirmedAt != null;
+        _trustStateLoading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _trustStateLoading = false);
+    }
+  }
+
+  Future<void> _refreshProfileFromDb({bool force = false}) async {
+    if (!SupabaseService.isInitialized || _profileRefreshInFlight) return;
+    final lastRefresh = _lastProfileRefreshAt;
+    if (!force &&
+        lastRefresh != null &&
+        DateTime.now().difference(lastRefresh) < _profileFreshness) {
+      return;
+    }
+    _profileRefreshInFlight = true;
+    try {
+      await context.read<OnboardingCubit>().refreshProfileFromDb(force: force);
+      await Future.wait([
+        _loadPrimaryPhoto(),
+        _loadApprovedPhotoCount(),
+        _loadViewsCount(),
+        _loadGuardian(),
+        _loadVerificationBadge(),
+        _loadTrustState(),
+      ]);
+      _lastProfileRefreshAt = DateTime.now();
+    } finally {
+      _profileRefreshInFlight = false;
     }
   }
 
   Future<void> _loadPrimaryPhoto() async {
     try {
       final url = await ProfilePhotoService.instance.getPrimaryPhotoUrl();
-      if (mounted) setState(() => _primaryPhotoUrl = url);
+      if (mounted && url != null && url.isNotEmpty) {
+        setState(() => _primaryPhotoUrl = url);
+      }
     } catch (_) {}
+  }
+
+  Future<void> _recoverPrimaryPhoto(String failedUrl) async {
+    if (_photoRefreshInFlight || failedUrl != _primaryPhotoUrl) return;
+    _photoRefreshInFlight = true;
+    try {
+      final refreshedUrl =
+          await ProfilePhotoService.instance.getPrimaryPhotoUrl(
+        forceRefresh: true,
+      );
+      if (!mounted || refreshedUrl == null || refreshedUrl.isEmpty) return;
+      setState(() => _primaryPhotoUrl = refreshedUrl);
+    } finally {
+      _photoRefreshInFlight = false;
+    }
   }
 
   Future<void> _loadViewsCount() async {
     try {
-      final myUserId = SupabaseService.currentUserId;
+      final myUserId = await SupabaseService.currentUserIdOrRefresh();
       if (myUserId == null) return;
 
       final myProfileRes = await SupabaseService.client
@@ -233,14 +477,43 @@ class _MyProfileScreenState extends State<MyProfileScreen>
       final response = await SupabaseService.client
           .from('profile_views')
           .select('id')
-          .eq('viewed_profile_id', myProfileId);
+          .eq('viewed_profile_id', myProfileId)
+          .gte(
+            'viewed_at',
+            DateTime.now()
+                .subtract(const Duration(days: 7))
+                .toUtc()
+                .toIso8601String(),
+          );
 
       final count = response.length;
       if (mounted) {
         setState(() => _viewCount = count);
       }
-    } catch (e) {
-      debugPrint('Error loading views count: $e');
+    } catch (_) {}
+  }
+
+  Future<void> _loadApprovedPhotoCount() async {
+    try {
+      final myUserId = await SupabaseService.currentUserIdOrRefresh();
+      if (myUserId == null) return;
+      final profile = await SupabaseService.client
+          .from('profiles')
+          .select('id')
+          .eq('user_id', myUserId)
+          .maybeSingle();
+      final profileId = profile?['id']?.toString();
+      if (profileId == null || profileId.isEmpty) return;
+      final rows = await SupabaseService.client
+          .from('photos')
+          .select('id')
+          .eq('profile_id', profileId)
+          .eq('status', 'active')
+          .eq('admin_approved', true)
+          .eq('nsfw_cleared', true);
+      if (mounted) setState(() => _approvedPhotoCount = rows.length);
+    } catch (_) {
+      if (mounted) setState(() => _approvedPhotoCount = 0);
     }
   }
 
@@ -255,12 +528,20 @@ class _MyProfileScreenState extends State<MyProfileScreen>
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
             child: Row(
               children: [
-                const Text('My Profile', style: AppTypography.screenTitle),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Profile', style: AppTypography.screenTitle),
+                    SizedBox(height: 2),
+                    Text('Your presence on Silarah',
+                        style: AppTypography.caption),
+                  ],
+                ),
                 const Spacer(),
-                // Notification bell (from Feature 11)
+                // Notifications
                 BlocBuilder<NotificationsCubit, NotificationsState>(
                   builder: (context, ns) {
-                    return GestureDetector(
+                    return SilarahPressable(
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
                             builder: (_) => const NotificationsScreen()),
@@ -303,7 +584,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                 ),
                 const SizedBox(width: AppDimensions.space8),
                 // Settings
-                GestureDetector(
+                SilarahPressable(
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
                         builder: (_) => const SettingsScreen()),
@@ -336,15 +617,59 @@ class _MyProfileScreenState extends State<MyProfileScreen>
             child: BlocBuilder<OnboardingCubit, OnboardingState>(
               builder: (context, _) {
                 final data = context.read<OnboardingCubit>().currentData;
-                final result = _calcCompleteness(data);
+                final result = _calcCompleteness(
+                  data,
+                  approvedPhotoCount: _approvedPhotoCount,
+                );
                 return _ProfilePreviewCard(
                   score: result.score,
                   nudge: result.nudge,
                   data: data,
                   guardianEnabled: _guardianEnabled,
+                  hasVerificationBadge: _hasVerificationBadge,
+                  verificationLoading: _verificationLoading,
+                  onVerify: _openVerification,
                   primaryPhotoUrl: _primaryPhotoUrl,
+                  onPhotoLoadFailed: _recoverPrimaryPhoto,
                 );
               },
+            ),
+          ),
+
+          const SizedBox(height: AppDimensions.space16),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: _ProfilePrimaryActions(
+              onEdit: _openEditProfile,
+              onPreview: _openOwnProfilePreview,
+              previewOpening: _profilePreviewOpening,
+            ),
+          ),
+
+          const SizedBox(height: AppDimensions.space16),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: _ProfileLifecycleCard(
+              visibility: _profileVisibility,
+              hasPublishedPhoto: _approvedPhotoCount > 0,
+              onOpenNotifications: () => context.push(AppRoutes.notifications),
+            ),
+          ),
+
+          const SizedBox(height: AppDimensions.space16),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: _TrustCenterCard(
+              loading: _trustStateLoading,
+              kycStatus: _kycStatus,
+              hasFaceBadge: _hasVerificationBadge,
+              email: _accountEmail,
+              emailVerified: _emailVerified,
+              onIdentityVerification: _openIdentityVerification,
+              onFaceVerification: _openVerification,
             ),
           ),
 
@@ -353,7 +678,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           // Profile Views row
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: GestureDetector(
+            child: SilarahPressable(
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
                     builder: (_) => const ProfileViewsScreen()),
@@ -417,14 +742,6 @@ class _MyProfileScreenState extends State<MyProfileScreen>
 
           const SizedBox(height: AppDimensions.space16),
 
-          // Verification badge card
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: _BadgeCard(),
-          ),
-
-          const SizedBox(height: AppDimensions.space16),
-
           // Subscription card
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -436,7 +753,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           // Referral Card
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: GestureDetector(
+            child: SilarahPressable(
               onTap: () => context.push(AppRoutes.referral),
               child: Container(
                 padding: const EdgeInsets.all(AppDimensions.space16),
@@ -500,135 +817,16 @@ class _MyProfileScreenState extends State<MyProfileScreen>
 
           const SizedBox(height: AppDimensions.space16),
 
-          // Edit profile button
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: SizedBox(
-              width: double.infinity,
-              height: AppDimensions.buttonHeight,
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.champagneGold),
-                  shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppDimensions.radiusButton),
-                  ),
-                ),
-                icon: const Icon(Icons.edit_outlined,
-                    color: AppColors.champagneGold,
-                    size: AppDimensions.iconSizeMedium),
-                label: const Text('Edit Profile',
-                    style: AppTypography.buttonSecondary),
-                onPressed: () => Navigator.of(context).push(
-                  PageRouteBuilder(
-                    transitionDuration: AppDimensions.durationReveal,
-                    pageBuilder: (context, animation, _) => FadeTransition(
-                      opacity: animation,
-                      child: const EditProfileScreen(),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: AppDimensions.space28),
-
           // Saved profiles section — always shown (empty state if none)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: _SavedProfilesSection(savedProfiles: _savedProfiles),
+            child: _SavedProfilesSection(
+              savedProfiles: _savedProfiles,
+              onChanged: _loadBookmarks,
+            ),
           ),
           const SizedBox(height: AppDimensions.space20),
 
-          // Settings sections
-          _SettingsSection(
-            title: 'Privacy',
-            items: [
-              _SettingsItem(
-                icon: Icons.visibility_outlined,
-                label: 'Profile Visibility',
-                trailing: 'Manage',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) =>
-                        const SettingsScreen(initialSection: 'privacy'),
-                  ),
-                ),
-              ),
-              _SettingsItem(
-                icon: Icons.photo_library_outlined,
-                label: 'Photo Privacy',
-                trailing: 'Manage',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) =>
-                        const SettingsScreen(initialSection: 'privacy'),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppDimensions.space16),
-          _SettingsSection(
-            title: 'Notifications',
-            items: [
-              _SettingsItem(
-                icon: Icons.notifications_outlined,
-                label: 'New Interests',
-                trailing: 'Manage',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) =>
-                        const SettingsScreen(initialSection: 'notifications'),
-                  ),
-                ),
-              ),
-              _SettingsItem(
-                icon: Icons.chat_bubble_outline_rounded,
-                label: 'New Messages',
-                trailing: 'Manage',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) =>
-                        const SettingsScreen(initialSection: 'notifications'),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppDimensions.space16),
-          _SettingsSection(
-            title: 'Account',
-            items: [
-              _SettingsItem(
-                icon: Icons.help_outline_rounded,
-                label: 'Help & Support',
-                onTap: () => context.push(AppRoutes.helpSupport),
-              ),
-              _SettingsItem(
-                icon: Icons.privacy_tip_outlined,
-                label: 'Privacy Policy',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const LegalDocScreen(type: 'privacy'),
-                  ),
-                ),
-              ),
-              _SettingsItem(
-                icon: Icons.delete_outline_rounded,
-                label: 'Delete Account',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const DeleteAccountScreen(),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppDimensions.space16),
-
-          // D4: "I Found My Match" — graceful profile deactivation
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: _IFoundMyMatchButton(),
@@ -666,7 +864,399 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   }
 }
 
-// ── Boost Section (Feature 12) ────────────────────────────────
+// ── Boost Section ─────────────────────────────────────────────
+
+class _ProfilePrimaryActions extends StatelessWidget {
+  const _ProfilePrimaryActions({
+    required this.onEdit,
+    required this.onPreview,
+    required this.previewOpening,
+  });
+
+  final VoidCallback onEdit;
+  final VoidCallback onPreview;
+  final bool previewOpening;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          flex: 6,
+          child: SilarahPressable(
+            semanticLabel: 'Edit your profile',
+            onTap: onEdit,
+            child: Container(
+              height: 54,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppColors.champagneLight, AppColors.champagneGold],
+                ),
+                borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.champagneGold.withValues(alpha: 0.16),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.edit_rounded,
+                      size: 19, color: AppColors.obsidianNight),
+                  SizedBox(width: AppDimensions.space8),
+                  Text('Edit profile', style: AppTypography.button),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: AppDimensions.space10),
+        Expanded(
+          flex: 5,
+          child: SilarahPressable(
+            semanticLabel: 'View your public profile',
+            onTap: previewOpening ? null : onPreview,
+            child: Container(
+              height: 54,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceGlass,
+                borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                border: Border.all(color: AppColors.goldBorder),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (previewOpening)
+                    const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.champagneGold,
+                      ),
+                    )
+                  else
+                    const Icon(
+                      Icons.visibility_outlined,
+                      size: 19,
+                      color: AppColors.champagneGold,
+                    ),
+                  const SizedBox(width: AppDimensions.space8),
+                  const Flexible(
+                    child: Text('View profile',
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.buttonSecondary),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProfileLifecycleCard extends StatelessWidget {
+  const _ProfileLifecycleCard({
+    required this.visibility,
+    required this.hasPublishedPhoto,
+    required this.onOpenNotifications,
+  });
+
+  final String visibility;
+  final bool hasPublishedPhoto;
+  final VoidCallback onOpenNotifications;
+
+  @override
+  Widget build(BuildContext context) {
+    final isLive = visibility == 'visible' && hasPublishedPhoto;
+    final isLimited = visibility == 'suspended';
+    final isDeactivated = visibility == 'deactivated';
+    final color = isLive
+        ? AppColors.verifiedTeal
+        : isLimited || isDeactivated
+            ? AppColors.softCoral
+            : AppColors.champagneGold;
+    final icon = isLive
+        ? Icons.public_rounded
+        : isLimited
+            ? Icons.visibility_off_outlined
+            : isDeactivated
+                ? Icons.person_off_outlined
+                : Icons.pause_circle_outline_rounded;
+    final title = isLive
+        ? 'Live in discovery'
+        : isLimited
+            ? 'Visibility limited'
+            : isDeactivated
+                ? 'Profile deactivated'
+                : hasPublishedPhoto
+                    ? 'Profile paused'
+                    : 'Add your primary photo';
+    final body = isLive
+        ? 'Your primary photo passed automated safety checks and your profile is visible in discovery.'
+        : isLimited
+            ? 'Your profile is not shown in discovery. Open notifications for the latest account update.'
+            : isDeactivated
+                ? 'Your profile is hidden. Contact support if you want help returning to Silarah.'
+                : hasPublishedPhoto
+                    ? 'Your profile is currently hidden from discovery. You can resume it from privacy settings.'
+                    : 'A clear primary photo is required before your profile can appear in discovery.';
+
+    return Semantics(
+      label: '$title. $body',
+      child: Container(
+        padding: const EdgeInsets.all(AppDimensions.space16),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.07),
+          borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+          border: Border.all(color: color.withValues(alpha: 0.35)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+              ),
+              child: Icon(icon, color: color, size: 21),
+            ),
+            const SizedBox(width: AppDimensions.space12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: AppTypography.bodyMedium.copyWith(color: color)),
+                  const SizedBox(height: AppDimensions.space4),
+                  Text(body,
+                      style: AppTypography.caption.copyWith(height: 1.45)),
+                ],
+              ),
+            ),
+            if (isLimited)
+              IconButton(
+                tooltip: 'Open notifications',
+                onPressed: onOpenNotifications,
+                icon: const Icon(Icons.notifications_outlined,
+                    color: AppColors.slateMist, size: 20),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TrustCenterCard extends StatelessWidget {
+  const _TrustCenterCard({
+    required this.loading,
+    required this.kycStatus,
+    required this.hasFaceBadge,
+    required this.email,
+    required this.emailVerified,
+    required this.onIdentityVerification,
+    required this.onFaceVerification,
+  });
+
+  final bool loading;
+  final String kycStatus;
+  final bool hasFaceBadge;
+  final String? email;
+  final bool emailVerified;
+  final VoidCallback onIdentityVerification;
+  final VoidCallback onFaceVerification;
+
+  @override
+  Widget build(BuildContext context) {
+    final identityVerified = kycStatus == 'verified';
+    final identityPending = kycStatus == 'pending_review';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceGlass,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Row(
+              children: [
+                Icon(Icons.shield_outlined,
+                    color: AppColors.champagneGold, size: 20),
+                SizedBox(width: AppDimensions.space8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Trust & identity', style: AppTypography.bodyMedium),
+                      SizedBox(height: 2),
+                      Text('Independent checks that strengthen your profile',
+                          style: AppTypography.caption),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: AppColors.cardBorder),
+          _TrustRow(
+            icon: Icons.badge_outlined,
+            title: 'Government ID check',
+            subtitle: identityVerified
+                ? 'Identity verified securely'
+                : identityPending
+                    ? 'Submitted for a secure review'
+                    : 'Match a government ID with your selfie',
+            status: identityVerified
+                ? 'Verified'
+                : identityPending
+                    ? 'In review'
+                    : 'Verify',
+            statusColor: identityVerified
+                ? AppColors.verifiedTeal
+                : AppColors.champagneGold,
+            onTap: identityPending || loading ? null : onIdentityVerification,
+          ),
+          const Divider(height: 1, indent: 56, color: AppColors.cardBorder),
+          _TrustRow(
+            icon: Icons.face_retouching_natural_outlined,
+            title: 'Profile photo check',
+            subtitle: hasFaceBadge
+                ? 'Liveness and face checks complete'
+                : 'Complete a passive face scan in seconds',
+            status: hasFaceBadge ? 'Verified' : 'Start',
+            statusColor:
+                hasFaceBadge ? AppColors.verifiedTeal : AppColors.champagneGold,
+            onTap: hasFaceBadge ? null : onFaceVerification,
+          ),
+          const Divider(height: 1, indent: 56, color: AppColors.cardBorder),
+          _TrustRow(
+            icon: Icons.alternate_email_rounded,
+            title: 'Account email',
+            subtitle: _maskedAccountEmail(email),
+            status: emailVerified ? 'Verified' : 'Check email',
+            statusColor: emailVerified
+                ? AppColors.verifiedTeal
+                : AppColors.champagneGold,
+          ),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+            decoration: const BoxDecoration(
+              color: Color(0x12000000),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(AppDimensions.radiusCard),
+                bottomRight: Radius.circular(AppDimensions.radiusCard),
+              ),
+            ),
+            child: const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.mark_email_read_outlined,
+                    color: AppColors.slateMist, size: 16),
+                SizedBox(width: AppDimensions.space8),
+                Expanded(
+                  child: Text(
+                    'Official sign-in emails are sent from noreply@mail.silarah.com. Silarah will never ask for your verification code.',
+                    style: AppTypography.caption,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TrustRow extends StatelessWidget {
+  const _TrustRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.status,
+    required this.statusColor,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String status;
+  final Color statusColor;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final content = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.slateMist, size: 21),
+          const SizedBox(width: AppDimensions.space12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: AppTypography.body),
+                const SizedBox(height: 2),
+                Text(subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.caption),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppDimensions.space8),
+          Text(status,
+              style: AppTypography.captionMedium.copyWith(color: statusColor)),
+          if (onTap != null) ...[
+            const SizedBox(width: AppDimensions.space4),
+            Icon(Icons.chevron_right_rounded, color: statusColor, size: 18),
+          ],
+        ],
+      ),
+    );
+
+    if (onTap == null) return content;
+    return SilarahPressable(onTap: onTap, child: content);
+  }
+}
+
+String _maskedAccountEmail(String? email) {
+  if (email == null || !email.contains('@')) return 'Email unavailable';
+  final parts = email.split('@');
+  final local = parts.first;
+  final visible =
+      local.length <= 2 ? local.substring(0, 1) : local.substring(0, 2);
+  final hiddenCount = (local.length - visible.length).clamp(2, 8);
+  final hidden = List.filled(hiddenCount, '•').join();
+  return '$visible$hidden@${parts.last}';
+}
+
+String _profileActionError(Object error) {
+  final raw = error.toString();
+  final messageMatch = RegExp(r'message:\s*([^,\)]+)').firstMatch(raw);
+  final cleaned = (messageMatch?.group(1) ?? raw)
+      .replaceFirst('StateError: ', '')
+      .replaceFirst('Exception: ', '')
+      .trim();
+  return cleaned.isEmpty
+      ? 'Could not complete this action. Try again.'
+      : cleaned;
+}
 
 class _BoostSection extends StatefulWidget {
   @override
@@ -691,12 +1281,12 @@ class _BoostSectionState extends State<_BoostSection> {
   }
 
   Future<void> _loadBoostState() async {
-    if (SupabaseService.isInitialized &&
-        SupabaseService.currentUserId != null) {
+    final userId = await SupabaseService.currentUserIdOrRefresh();
+    if (SupabaseService.isInitialized && userId != null) {
       final row = await SupabaseService.client
           .from('profiles')
           .select('is_boosted, boost_expires_at')
-          .eq('user_id', SupabaseService.currentUserId!)
+          .eq('user_id', userId)
           .maybeSingle();
       final expiresAt = row?['boost_expires_at'] == null
           ? null
@@ -712,13 +1302,6 @@ class _BoostSectionState extends State<_BoostSection> {
         return;
       }
 
-      if (row?['is_boosted'] == true) {
-        await SupabaseService.client
-            .from('profiles')
-            .update({'is_boosted': false, 'boost_expires_at': null}).eq(
-                'user_id', SupabaseService.currentUserId!);
-      }
-
       return;
     }
   }
@@ -732,30 +1315,17 @@ class _BoostSectionState extends State<_BoostSection> {
       if (remaining.isNegative) {
         setState(() => _boostedAt = null);
         _timer?.cancel();
-        unawaited(_expireBoost());
       } else {
         setState(() {});
       }
     });
   }
 
-  Future<void> _expireBoost() async {
-    if (!SupabaseService.isInitialized ||
-        SupabaseService.currentUserId == null) {
-      return;
-    }
-    try {
-      await SupabaseService.client
-          .from('profiles')
-          .update({'is_boosted': false, 'boost_expires_at': null}).eq(
-              'user_id', SupabaseService.currentUserId!);
-    } catch (_) {}
-  }
-
   Future<void> _activate() async {
     if (_boosting || _boostedAt != null) return;
-    if (!SupabaseService.isInitialized ||
-        SupabaseService.currentUserId == null) {
+    final userId = await SupabaseService.currentUserIdOrRefresh();
+    if (!mounted) return;
+    if (!SupabaseService.isInitialized || userId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Profile boost requires a backend connection.')),
@@ -765,27 +1335,34 @@ class _BoostSectionState extends State<_BoostSection> {
 
     setState(() => _boosting = true);
     final now = DateTime.now();
-    final expiresAt = now.add(const Duration(hours: 2));
     try {
-      await SupabaseService.client.from('profiles').update({
-        'is_boosted': true,
-        'boost_expires_at': expiresAt.toUtc().toIso8601String(),
-      }).eq('user_id', SupabaseService.currentUserId!);
-    } catch (_) {
+      final response =
+          await SupabaseService.client.rpc('activate_profile_boost');
+      final rows = response as List<dynamic>;
+      if (rows.isEmpty) {
+        throw StateError('The boost service returned no activation state.');
+      }
+      final expiresAt = DateTime.tryParse(
+        (rows.first as Map)['boost_expires_at']?.toString() ?? '',
+      )?.toLocal();
+      if (expiresAt == null || !expiresAt.isAfter(now)) {
+        throw StateError('The boost activation response was incomplete.');
+      }
+      if (!mounted) return;
+      setState(() {
+        _boosting = false;
+        _boostedAt = expiresAt.subtract(const Duration(hours: 2));
+      });
+    } catch (error) {
       if (!mounted) return;
       setState(() => _boosting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Could not activate boost. Please try again.')),
+        SnackBar(content: Text(_profileActionError(error))),
       );
       return;
     }
 
     if (mounted) {
-      setState(() {
-        _boosting = false;
-        _boostedAt = now;
-      });
       _startTimer();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -821,8 +1398,7 @@ class _BoostSectionState extends State<_BoostSection> {
 
   @override
   Widget build(BuildContext context) {
-    // Blueprint: Women always free. Never show subscription
-    // messaging to female users.
+    // Women can use profile boosts without a paid entitlement.
     final authState = context.watch<AuthCubit>().state;
     final gender =
         authState is AuthAuthenticated ? (authState.gender ?? 'male') : 'male';
@@ -960,7 +1536,7 @@ class _BoostLocked extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return SilarahPressable(
       onTap: onNavigate,
       child: Row(
         children: [
@@ -975,7 +1551,7 @@ class _BoostLocked extends StatelessWidget {
                     style: AppTypography.bodyMedium
                         .copyWith(color: AppColors.slateMist)),
                 const SizedBox(height: AppDimensions.space4),
-                const Text('Subscribe to unlock weekly profile boost.',
+                const Text('Subscribe to unlock profile boosts.',
                     style: AppTypography.caption),
               ],
             ),
@@ -1022,7 +1598,7 @@ class _SubscriptionCard extends StatelessWidget {
             child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('MITHAQ Premium · Active',
+            Text('SILARAH Premium · Active',
                 style: AppTypography.bodyMedium
                     .copyWith(color: AppColors.verifiedTeal)),
             if (expiry != null)
@@ -1056,7 +1632,7 @@ class _SubscriptionCard extends StatelessWidget {
   }
 
   Widget _buildUpgrade(BuildContext context) {
-    return GestureDetector(
+    return SilarahPressable(
       onTap: () => Navigator.of(context).push(
           MaterialPageRoute<void>(builder: (_) => const SubscriptionScreen())),
       child: _CardShell(
@@ -1070,10 +1646,10 @@ class _SubscriptionCard extends StatelessWidget {
               child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Upgrade to MITHAQ Premium',
+              Text('Upgrade to SILARAH Premium',
                   style: AppTypography.bodyMedium
                       .copyWith(color: AppColors.champagneGold)),
-              const Text('Unlock messaging from ₹249/mo',
+              const Text('Unlock messaging and profile boosts',
                   style: AppTypography.caption),
             ],
           )),
@@ -1140,152 +1716,14 @@ class _CardShell extends StatelessWidget {
 
 // ── Badge Card (Phase 2.5) ────────────────────────────────────
 
-class _BadgeCard extends StatefulWidget {
-  @override
-  State<_BadgeCard> createState() => _BadgeCardState();
-}
-
-class _BadgeCardState extends State<_BadgeCard> {
-  bool _hasBadge = false;
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkBadge();
-  }
-
-  Future<void> _checkBadge() async {
-    if (SupabaseService.isInitialized) {
-      try {
-        final hasBadge = await SelfieVerificationService.instance.hasBadge();
-        if (mounted) {
-          setState(() {
-            _hasBadge = hasBadge;
-            _loading = false;
-          });
-        }
-        return;
-      } catch (_) {
-        // Fall through to the safe default below.
-      }
-    }
-    if (mounted) {
-      setState(() {
-        _hasBadge = false;
-        _loading = false;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_loading) return const SizedBox.shrink();
-
-    if (_hasBadge) {
-      return Container(
-        padding: const EdgeInsets.all(AppDimensions.space16),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceGlass,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          border:
-              Border.all(color: AppColors.champagneGold.withValues(alpha: 0.5)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(AppDimensions.space8),
-              decoration: BoxDecoration(
-                color: AppColors.champagneGold.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.goldBorder),
-              ),
-              child: const Icon(Icons.verified_rounded,
-                  color: AppColors.champagneGold,
-                  size: AppDimensions.iconSizeMedium),
-            ),
-            const SizedBox(width: AppDimensions.space12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Verification Badge',
-                      style: AppTypography.bodyMedium
-                          .copyWith(color: AppColors.champagneGold)),
-                  const Text('Earned ✓', style: AppTypography.caption),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return GestureDetector(
-      onTap: () async {
-        await context.push(AppRoutes.badgeVerification);
-        _checkBadge();
-      },
-      child: Container(
-        padding: const EdgeInsets.all(AppDimensions.space16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          gradient: LinearGradient(
-            colors: [
-              AppColors.champagneGold.withValues(alpha: 0.15),
-              AppColors.champagneGold.withValues(alpha: 0.04),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          border: Border.all(color: AppColors.goldBorder),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(AppDimensions.space8),
-              decoration: BoxDecoration(
-                color: AppColors.champagneGold.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.goldBorder),
-              ),
-              child: const Icon(Icons.verified_outlined,
-                  color: AppColors.champagneGold,
-                  size: AppDimensions.iconSizeMedium),
-            ),
-            const SizedBox(width: AppDimensions.space12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Verify Your Profile',
-                      style: AppTypography.bodyMedium
-                          .copyWith(color: AppColors.champagneGold)),
-                  const Text('3-pose check • Get 3× more interest',
-                      style: AppTypography.caption),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right_rounded,
-                color: AppColors.champagneGold,
-                size: AppDimensions.iconSizeMedium),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Profile Preview Card ──────────────────────────────────────
-
 class _ProfileAvatar extends StatelessWidget {
   const _ProfileAvatar({
     required this.primaryPhotoUrl,
-    required this.localPath,
+    required this.onPhotoLoadFailed,
   });
 
   final String? primaryPhotoUrl;
-  final String? localPath;
+  final ValueChanged<String> onPhotoLoadFailed;
 
   @override
   Widget build(BuildContext context) {
@@ -1296,17 +1734,14 @@ class _ProfileAvatar extends StatelessWidget {
     );
 
     if (primaryPhotoUrl != null && primaryPhotoUrl!.isNotEmpty) {
-      child = Image.network(
-        primaryPhotoUrl!,
+      child = SilarahBlurImage(
+        imageUrl: primaryPhotoUrl!,
+        key: ValueKey(primaryPhotoUrl),
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const Icon(
-          Icons.person_outline_rounded,
-          color: AppColors.slateMist,
-          size: 36,
-        ),
+        width: 72,
+        height: 72,
+        onImageError: () => onPhotoLoadFailed(primaryPhotoUrl!),
       );
-    } else if (localPath != null && File(localPath!).existsSync()) {
-      child = Image.file(File(localPath!), fit: BoxFit.cover);
     }
 
     return Container(
@@ -1328,13 +1763,21 @@ class _ProfilePreviewCard extends StatelessWidget {
     required this.nudge,
     required this.data,
     required this.guardianEnabled,
+    required this.hasVerificationBadge,
+    required this.verificationLoading,
+    required this.onVerify,
     required this.primaryPhotoUrl,
+    required this.onPhotoLoadFailed,
   });
   final int score;
   final String? nudge;
   final OnboardingData data;
   final bool guardianEnabled;
+  final bool hasVerificationBadge;
+  final bool verificationLoading;
+  final VoidCallback onVerify;
   final String? primaryPhotoUrl;
+  final ValueChanged<String> onPhotoLoadFailed;
 
   @override
   Widget build(BuildContext context) {
@@ -1357,21 +1800,39 @@ class _ProfilePreviewCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppDimensions.space20),
       decoration: BoxDecoration(
-        color: AppColors.surfaceGlass,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-        border: Border.all(color: AppColors.goldBorder),
-        boxShadow: const [BoxShadow(color: AppColors.goldGlow, blurRadius: 20)],
+        color: AppColors.surfaceElevated,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.cardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
+              Container(
+                width: 7,
+                height: 7,
+                decoration: const BoxDecoration(
+                  color: AppColors.verifiedTeal,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: AppDimensions.space8),
+              Text('Profile quality',
+                  style: AppTypography.captionMedium
+                      .copyWith(color: AppColors.pearlWhite)),
+              const Spacer(),
+              Text('$score%',
+                  style: AppTypography.captionMedium
+                      .copyWith(color: AppColors.champagneGold)),
+            ],
+          ),
+          const SizedBox(height: AppDimensions.space16),
+          Row(
+            children: [
               _ProfileAvatar(
                 primaryPhotoUrl: primaryPhotoUrl,
-                localPath: data.photoLocalPaths?.isNotEmpty == true
-                    ? data.photoLocalPaths!.first
-                    : null,
+                onPhotoLoadFailed: onPhotoLoadFailed,
               ),
               const SizedBox(width: AppDimensions.space16),
               Expanded(
@@ -1379,9 +1840,13 @@ class _ProfilePreviewCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(children: [
-                    Text(
-                      displayName.isEmpty ? 'Your Name' : displayName,
-                      style: AppTypography.userName.copyWith(fontSize: 20),
+                    Flexible(
+                      child: Text(
+                        displayName.isEmpty ? 'Your Name' : displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.userName.copyWith(fontSize: 20),
+                      ),
                     ),
                     if (guardianEnabled) ...[
                       const SizedBox(width: AppDimensions.space8),
@@ -1404,6 +1869,13 @@ class _ProfilePreviewCard extends StatelessWidget {
                   ]),
                   const SizedBox(height: AppDimensions.space4),
                   Text(_buildSubtitle(age), style: AppTypography.caption),
+                  if (!verificationLoading) ...[
+                    const SizedBox(height: AppDimensions.space10),
+                    _VerificationIdentityStatus(
+                      isVerified: hasVerificationBadge,
+                      onVerify: onVerify,
+                    ),
+                  ],
                 ],
               )),
             ],
@@ -1423,29 +1895,19 @@ class _ProfilePreviewCard extends StatelessWidget {
                           .copyWith(color: AppColors.champagneGold)),
                 ]),
                 const SizedBox(height: AppDimensions.space8),
-                Container(
-                  height: 6,
-                  width: constraints.maxWidth,
-                  decoration: BoxDecoration(
-                    color: AppColors.progressBarBase,
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: pct),
+                  duration: AppDimensions.durationReveal,
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, _) => ClipRRect(
                     borderRadius: BorderRadius.circular(3),
-                  ),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 600),
-                    curve: Curves.easeOutCubic,
-                    width: constraints.maxWidth * pct,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [
+                    child: LinearProgressIndicator(
+                      value: value,
+                      minHeight: 6,
+                      backgroundColor: AppColors.progressBarBase,
+                      valueColor: const AlwaysStoppedAnimation<Color>(
                         AppColors.champagneGold,
-                        AppColors.champagneGold.withValues(alpha: 0.7),
-                      ]),
-                      borderRadius: BorderRadius.circular(3),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.champagneGold.withValues(alpha: 0.4),
-                          blurRadius: 6,
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -1479,9 +1941,82 @@ class _ProfilePreviewCard extends StatelessWidget {
 
 // ── Saved Profiles ────────────────────────────────────────────
 
+class _VerificationIdentityStatus extends StatelessWidget {
+  const _VerificationIdentityStatus({
+    required this.isVerified,
+    required this.onVerify,
+  });
+
+  final bool isVerified;
+  final VoidCallback onVerify;
+
+  @override
+  Widget build(BuildContext context) {
+    if (isVerified) {
+      return Semantics(
+        label: 'Profile photo verified',
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.verified_rounded,
+                color: AppColors.verifiedTeal, size: 16),
+            const SizedBox(width: AppDimensions.space4),
+            Text(
+              'Photo verified',
+              style: AppTypography.captionMedium.copyWith(
+                color: AppColors.verifiedTeal,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return SilarahPressable(
+      onTap: onVerify,
+      child: Semantics(
+        button: true,
+        label: 'Verify profile photo with a passive face scan',
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.space10,
+            vertical: AppDimensions.space8,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.champagneGold.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+            border: Border.all(color: AppColors.goldBorder),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.verified_user_outlined,
+                  color: AppColors.champagneGold, size: 16),
+              const SizedBox(width: AppDimensions.space8),
+              Text(
+                'Verify photo',
+                style: AppTypography.captionMedium.copyWith(
+                  color: AppColors.champagneGold,
+                ),
+              ),
+              const SizedBox(width: AppDimensions.space4),
+              const Icon(Icons.arrow_forward_rounded,
+                  color: AppColors.champagneGold, size: 14),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SavedProfilesSection extends StatelessWidget {
-  const _SavedProfilesSection({required this.savedProfiles});
+  const _SavedProfilesSection({
+    required this.savedProfiles,
+    required this.onChanged,
+  });
   final List<DiscoveryProfile> savedProfiles;
+  final VoidCallback onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -1491,8 +2026,8 @@ class _SavedProfilesSection extends StatelessWidget {
         const Text('SAVED PROFILES', style: AppTypography.sectionLabel),
         const SizedBox(height: AppDimensions.space12),
         if (savedProfiles.isEmpty)
-          const MithaqEmptyState(
-            icon: Icons.bookmark_border_rounded,
+          const SilarahEmptyState(
+            visual: SilarahEmptyVisual.savedProfiles,
             title: 'No saved profiles yet',
             subtitle: 'Tap the bookmark icon on any\nprofile to save it here.',
           )
@@ -1506,9 +2041,9 @@ class _SavedProfilesSection extends StatelessWidget {
                   const SizedBox(width: AppDimensions.space12),
               itemBuilder: (context, i) {
                 final p = savedProfiles[i];
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.of(context).push(
+                return SilarahPressable(
+                  onTap: () async {
+                    await Navigator.of(context).push(
                       MaterialPageRoute<void>(
                         builder: (_) => ProfileDetailScreen(
                           profile: p,
@@ -1518,6 +2053,7 @@ class _SavedProfilesSection extends StatelessWidget {
                         ),
                       ),
                     );
+                    onChanged();
                   },
                   child: Container(
                     width: 90,
@@ -1549,7 +2085,7 @@ class _SavedProfilesSection extends StatelessWidget {
                                     color: AppColors.slateMist,
                                     size: 24,
                                   )
-                                : MithaqBlurImage(
+                                : SilarahBlurImage(
                                     imageUrl: p.photoUrl!,
                                     blurhash: p.blurhash,
                                     width: 52,
@@ -1591,100 +2127,12 @@ class _SavedProfilesSection extends StatelessWidget {
   }
 }
 
-// ── Settings sections (recycled from before) ──────────────────
-
-class _SettingsSection extends StatelessWidget {
-  const _SettingsSection({required this.title, required this.items});
-  final String title;
-  final List<_SettingsItem> items;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title.toUpperCase(), style: AppTypography.sectionLabel),
-          const SizedBox(height: AppDimensions.space10),
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.surfaceGlass,
-              borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-              border: Border.all(color: AppColors.cardBorder),
-            ),
-            child: Column(
-                children: items.asMap().entries.map((e) {
-              final isLast = e.key == items.length - 1;
-              return Column(children: [
-                _SettingsTile(item: e.value),
-                if (!isLast)
-                  const Divider(
-                      color: AppColors.divider, height: 1, indent: 16),
-              ]);
-            }).toList()),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SettingsItem {
-  const _SettingsItem({
-    required this.icon,
-    required this.label,
-    this.trailing,
-    this.onTap,
-  });
-  final IconData icon;
-  final String label;
-  final String? trailing;
-  final VoidCallback? onTap;
-}
-
-class _SettingsTile extends StatefulWidget {
-  const _SettingsTile({required this.item});
-  final _SettingsItem item;
-  @override
-  State<_SettingsTile> createState() => _SettingsTileState();
-}
-
-class _SettingsTileState extends State<_SettingsTile> {
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      onTap: widget.item.onTap != null
-          ? () {
-              HapticFeedback.selectionClick();
-              widget.item.onTap!();
-            }
-          : null,
-      splashColor: AppColors.champagneGold.withValues(alpha: 0.08),
-      leading: Icon(widget.item.icon,
-          color: AppColors.slateMist, size: AppDimensions.iconSizeMedium),
-      title: Text(widget.item.label, style: AppTypography.body),
-      trailing: widget.item.trailing != null
-          ? Row(mainAxisSize: MainAxisSize.min, children: [
-              Text(widget.item.trailing!, style: AppTypography.caption),
-              const SizedBox(width: 4),
-              const Icon(Icons.chevron_right_rounded,
-                  color: AppColors.slateMist,
-                  size: AppDimensions.iconSizeMedium),
-            ])
-          : const Icon(Icons.chevron_right_rounded,
-              color: AppColors.slateMist, size: AppDimensions.iconSizeMedium),
-    );
-  }
-}
-
-// ── D4: "I Found My Match" ────────────────────────────────────
+// ── Found a match ─────────────────────────────────────────────
 
 class _IFoundMyMatchButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return SilarahPressable(
       onTap: () => _showConfirmation(context),
       child: Container(
         width: double.infinity,
@@ -1729,7 +2177,7 @@ class _IFoundMyMatchButton extends StatelessWidget {
                   ),
                   const SizedBox(height: AppDimensions.space4),
                   const Text(
-                    'Alhamdulillah! Deactivate your profile.',
+                    'Pause your profile and sign out.',
                     style: AppTypography.caption,
                   ),
                 ],
@@ -1804,27 +2252,25 @@ class _IFoundMyMatchButton extends StatelessWidget {
                   ),
                   elevation: 0,
                 ),
-                onPressed: () {
-                  Navigator.pop(context);
-                  // Deactivate + sign out
-                  context.read<AuthCubit>().signOut();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text(
-                        'Your profile has been deactivated. Mubarak!',
-                        style: AppTypography.body,
-                      ),
-                      backgroundColor: AppColors.surfaceGlassHover,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppDimensions.radiusButton),
-                        side: const BorderSide(color: AppColors.goldBorder),
-                      ),
-                    ),
-                  );
+                onPressed: () async {
+                  try {
+                    await SupabaseService.client.rpc(
+                      'set_profile_pause',
+                      params: {'p_paused': true},
+                    );
+                    if (!context.mounted) return;
+                    Navigator.pop(context);
+                    await context.read<AuthCubit>().signOut();
+                  } catch (error) {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context)
+                      ..clearSnackBars()
+                      ..showSnackBar(
+                        SnackBar(content: Text(_profileActionError(error))),
+                      );
+                  }
                 },
-                child: const Text('Confirm & Deactivate',
+                child: const Text('Confirm & Pause Profile',
                     style: AppTypography.button),
               ),
             ),
@@ -1847,155 +2293,6 @@ class _IFoundMyMatchButton extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppDimensions.space8),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Verification Card ─────────────────────────────────────────
-
-// ignore: unused_element
-class _VerificationCard extends StatefulWidget {
-  @override
-  State<_VerificationCard> createState() => _VerificationCardState();
-}
-
-class _VerificationCardState extends State<_VerificationCard> {
-  bool _isVerified = false;
-  DateTime? _verifiedAt;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadStatus();
-  }
-
-  Future<void> _loadStatus() async {
-    try {
-      final status = await SelfieVerificationService.instance.getStatus();
-      if (!mounted) return;
-      final isVerified = status.status == 'verified';
-
-      setState(() {
-        _isVerified = isVerified;
-        _verifiedAt = status.verifiedAt;
-      });
-    } catch (e) {
-      debugPrint(
-          'MyProfileScreen: _loadStatus error fetching fresh status: $e');
-    }
-  }
-
-  Future<void> _navigateToVerify() async {
-    await context.push(AppRoutes.verify);
-    // Refresh status after returning
-    _loadStatus();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_isVerified) {
-      // Verified state — teal badge
-      return Container(
-        padding: const EdgeInsets.all(AppDimensions.space16),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceGlass,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          border: Border.all(
-            color: AppColors.verifiedTeal.withValues(alpha: 0.4),
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(AppDimensions.space8),
-              decoration: BoxDecoration(
-                color: AppColors.verifiedTeal.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppColors.verifiedTeal.withValues(alpha: 0.3),
-                ),
-              ),
-              child: const Icon(
-                Icons.verified_rounded,
-                color: AppColors.verifiedTeal,
-                size: AppDimensions.iconSizeMedium,
-              ),
-            ),
-            const SizedBox(width: AppDimensions.space12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Verified',
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.verifiedTeal,
-                      )),
-                  Text(
-                    _verifiedAt != null
-                        ? 'Since ${_verifiedAt!.day}/${_verifiedAt!.month}/${_verifiedAt!.year}'
-                        : 'Your profile is verified',
-                    style: AppTypography.caption,
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.check_circle_rounded,
-                color: AppColors.verifiedTeal,
-                size: AppDimensions.iconSizeMedium),
-          ],
-        ),
-      );
-    }
-
-    // Unverified state — gold CTA
-    return GestureDetector(
-      onTap: _navigateToVerify,
-      child: Container(
-        padding: const EdgeInsets.all(AppDimensions.space16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          gradient: LinearGradient(
-            colors: [
-              AppColors.champagneGold.withValues(alpha: 0.12),
-              AppColors.champagneGold.withValues(alpha: 0.04),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          border: Border.all(color: AppColors.goldBorder),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(AppDimensions.space8),
-              decoration: BoxDecoration(
-                color: AppColors.champagneGold.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.goldBorder),
-              ),
-              child: const Icon(
-                Icons.shield_outlined,
-                color: AppColors.champagneGold,
-                size: AppDimensions.iconSizeMedium,
-              ),
-            ),
-            const SizedBox(width: AppDimensions.space12),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Verify Your Profile', style: AppTypography.bodyMedium),
-                  Text('Earn a verified badge • 30 seconds',
-                      style: AppTypography.caption),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right_rounded,
-                color: AppColors.champagneGold,
-                size: AppDimensions.iconSizeMedium),
           ],
         ),
       ),

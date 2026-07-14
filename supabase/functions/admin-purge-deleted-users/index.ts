@@ -26,12 +26,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import { isAuthorizedCronRequest } from "../_shared/cron_auth.ts";
 
-const SUPABASE_URL         = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const GRACE_PERIOD_DAYS = 30;
-const BUCKET_NAME       = "profile-photos";
-const BATCH_SIZE        = 50;             // Process max 50 deletions per run
+const BUCKET_NAME = "profile-photos";
+const BATCH_SIZE = 50; // Process max 50 deletions per run
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -50,7 +50,8 @@ Deno.serve(async (req: Request) => {
   });
 
   // ── Fetch accounts ready for purge ────────────────────────
-  const cutoff = new Date(Date.now() - GRACE_PERIOD_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const cutoff = new Date(Date.now() - GRACE_PERIOD_DAYS * 24 * 60 * 60 * 1000)
+    .toISOString();
 
   const { data: pendingUsers, error: fetchError } = await supabase
     .from("users")
@@ -72,7 +73,9 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  console.log(`[admin-purge] Processing ${pendingUsers.length} account(s) for purge...`);
+  console.log(
+    `[admin-purge] Processing ${pendingUsers.length} account(s) for purge...`,
+  );
 
   let purgedCount = 0;
   let failedCount = 0;
@@ -80,16 +83,20 @@ Deno.serve(async (req: Request) => {
   for (const user of pendingUsers) {
     try {
       // ── Step 1: Delete from Supabase Auth FIRST ─────────────
-      const { error: authDeleteError } = await supabase.auth.admin.deleteUser(user.id);
+      const { error: authDeleteError } = await supabase.auth.admin.deleteUser(
+        user.id,
+      );
 
       if (authDeleteError) {
         // auth.users record may already not exist — log and continue
         console.error(
           `[admin-purge] Auth delete failed for ${user.id}:`,
-          authDeleteError.message
+          authDeleteError.message,
         );
         // Fall through to DB delete only if auth user was already removed
-        const isNotFound = authDeleteError.message.toLowerCase().includes("not found");
+        const isNotFound = authDeleteError.message.toLowerCase().includes(
+          "not found",
+        );
         if (!isNotFound) {
           failedCount++;
           continue;
@@ -108,7 +115,7 @@ Deno.serve(async (req: Request) => {
       if (dbDeleteError) {
         console.error(
           `[admin-purge] DB delete failed for ${user.id}:`,
-          dbDeleteError.message
+          dbDeleteError.message,
         );
         failedCount++;
         continue;
@@ -122,29 +129,33 @@ Deno.serve(async (req: Request) => {
 
       // ── Step 5: Log the purge ─────────────────────────────────
       await supabase.from("admin_audit_log").insert({
-        admin_id:       "00000000-0000-0000-0000-000000000000", // System actor
-        action_type:    "account_purged",
+        admin_id: "00000000-0000-0000-0000-000000000000", // System actor
+        action_type: "account_purged",
         target_user_id: user.id,
-        details:        { phone_hash: await hashPhone(user.phone), deleted_at: user.deleted_at },
+        details: {
+          phone_hash: await hashPhone(user.phone),
+          deleted_at: user.deleted_at,
+        },
       });
 
       purgedCount++;
       console.log(`[admin-purge] ✅ Purged user ${user.id}`);
-
     } catch (err) {
       console.error(`[admin-purge] Unexpected error for ${user.id}:`, err);
       failedCount++;
     }
   }
 
-  console.log(`[admin-purge] Complete. Purged: ${purgedCount}, Failed: ${failedCount}`);
+  console.log(
+    `[admin-purge] Complete. Purged: ${purgedCount}, Failed: ${failedCount}`,
+  );
 
   return new Response(
     JSON.stringify({ purged: purgedCount, failed: failedCount }),
     {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-    }
+    },
   );
 });
 
@@ -152,7 +163,7 @@ Deno.serve(async (req: Request) => {
 
 async function purgeUserStorage(
   supabase: ReturnType<typeof createClient>,
-  userId: string
+  userId: string,
 ): Promise<void> {
   try {
     // List all objects in the user's storage folder
@@ -161,7 +172,10 @@ async function purgeUserStorage(
       .list(userId, { limit: 100 });
 
     if (listError) {
-      console.warn(`[admin-purge] Storage list failed for ${userId}:`, listError.message);
+      console.warn(
+        `[admin-purge] Storage list failed for ${userId}:`,
+        listError.message,
+      );
       return;
     }
 
@@ -175,10 +189,12 @@ async function purgeUserStorage(
     if (removeError) {
       console.warn(
         `[admin-purge] Storage remove failed for ${userId}:`,
-        removeError.message
+        removeError.message,
       );
     } else {
-      console.log(`[admin-purge] 🗑️ Removed ${paths.length} storage object(s) for ${userId}`);
+      console.log(
+        `[admin-purge] 🗑️ Removed ${paths.length} storage object(s) for ${userId}`,
+      );
     }
   } catch (err) {
     console.warn(`[admin-purge] Storage purge exception for ${userId}:`, err);
@@ -189,7 +205,7 @@ async function purgeUserStorage(
 // One-way hash of phone for audit log (never store plaintext in logs)
 async function hashPhone(phone: string): Promise<string> {
   const bytes = new TextEncoder().encode(phone);
-  const hash  = await crypto.subtle.digest("SHA-256", bytes);
+  const hash = await crypto.subtle.digest("SHA-256", bytes);
   return Array.from(new Uint8Array(hash))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("")

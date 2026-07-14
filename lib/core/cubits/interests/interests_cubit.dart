@@ -1,6 +1,6 @@
 // lib/core/cubits/interests/interests_cubit.dart
 // ============================================================
-// MITHAQ — Interests Cubit (Supabase production flow)
+// SILARAH — Interests Cubit (Supabase production flow)
 //
 // Blueprint lifecycle:
 //   send → PENDING  (gated by daily limit — Item 17)
@@ -20,7 +20,7 @@ import '../../models/discovery_profile.dart';
 import '../../services/supabase_service.dart';
 import '../../services/profile_photo_service.dart';
 import '../../utils/content_filter.dart';
-import '../../utils/mithaq_compute.dart';
+import '../../utils/silarah_compute.dart';
 
 class _InterestQuota {
   const _InterestQuota({
@@ -33,17 +33,34 @@ class _InterestQuota {
 }
 
 class InterestsCubit extends Cubit<InterestsState> {
-  InterestsCubit() : super(const InterestsState()) {
-    _initData();
-  }
+  InterestsCubit() : super(const InterestsState());
+
+  bool _loadInFlight = false;
+  DateTime? _lastLoadedAt;
+  String? _loadedUserId;
+  static const _freshness = Duration(minutes: 5);
+  static const _maxRowsPerSection = 100;
 
   // ── Init ──────────────────────────────────────────────────
 
-  Future<void> _initData() async {
-    if (SupabaseService.isInitialized) {
+  Future<void> loadData({bool force = false}) async {
+    if (!SupabaseService.isInitialized) return;
+    final userId = SupabaseService.currentUserId;
+    if (userId == null || _loadInFlight) return;
+    final lastLoadedAt = _lastLoadedAt;
+    if (!force &&
+        _loadedUserId == userId &&
+        lastLoadedAt != null &&
+        DateTime.now().difference(lastLoadedAt) < _freshness) {
+      return;
+    }
+    _loadInFlight = true;
+    try {
       await _loadFromDb();
-    } else {
-      emit(const InterestsState());
+      _loadedUserId = userId;
+      _lastLoadedAt = DateTime.now();
+    } finally {
+      _loadInFlight = false;
     }
   }
 
@@ -58,18 +75,51 @@ class InterestsCubit extends Cubit<InterestsState> {
     try {
       final now = DateTime.now();
 
-      // Load received interests (where I am the receiver, pending only)
-      final receivedRows = await SupabaseService.client
-          .from('interests')
-          .select('id, sender_id, note, status, created_at, expires_at')
-          .eq('receiver_id', userId)
-          .eq('status', 'pending')
-          .order('created_at', ascending: false);
+      // Fetch the three bounded sections and quota concurrently. Profiles and
+      // photos are batch-loaded below, avoiding the former 3-5 queries per row.
+      final results = await Future.wait<dynamic>([
+        SupabaseService.client
+            .from('interests')
+            .select('id, sender_id, note, status, created_at, expires_at')
+            .eq('receiver_id', userId)
+            .eq('status', 'pending')
+            .order('created_at', ascending: false)
+            .limit(_maxRowsPerSection),
+        SupabaseService.client
+            .from('interests')
+            .select('id, receiver_id, note, status, created_at, expires_at')
+            .eq('sender_id', userId)
+            .inFilter(
+                'status', ['pending', 'accepted', 'declined', 'withdrawn'])
+            .order('created_at', ascending: false)
+            .limit(_maxRowsPerSection),
+        SupabaseService.client
+            .from('matches')
+            .select('id, user_a, user_b, created_at')
+            .or('user_a.eq.$userId,user_b.eq.$userId')
+            .order('created_at', ascending: false)
+            .limit(_maxRowsPerSection),
+        _loadServerQuota(),
+      ]);
+
+      final receivedRows = results[0] as List<dynamic>;
+      final sentRows = results[1] as List<dynamic>;
+      final matchRows = results[2] as List<dynamic>;
+      final quota = results[3] as _InterestQuota;
+      final relatedUserIds = <String>{
+        for (final row in receivedRows) row['sender_id'] as String,
+        for (final row in sentRows) row['receiver_id'] as String,
+        for (final row in matchRows)
+          (row['user_a'] as String) == userId
+              ? row['user_b'] as String
+              : row['user_a'] as String,
+      };
+      final profilesByUser = await _loadProfilesForUsers(relatedUserIds);
 
       final received = <InterestEntry>[];
-      for (final row in (receivedRows as List<dynamic>)) {
+      for (final row in receivedRows) {
         final senderId = row['sender_id'] as String;
-        final profile = await _loadProfileForUser(senderId);
+        final profile = profilesByUser[senderId];
         if (profile == null) continue;
         final createdAt = DateTime.tryParse(row['created_at'] as String) ?? now;
 
@@ -84,22 +134,10 @@ class InterestsCubit extends Cubit<InterestsState> {
         ));
       }
 
-      // Load sent interests (where I am the sender)
-      final sentRows = await SupabaseService.client
-          .from('interests')
-          .select('id, receiver_id, note, status, created_at, expires_at')
-          .eq('sender_id', userId)
-          .inFilter('status', [
-        'pending',
-        'accepted',
-        'declined',
-        'withdrawn'
-      ]).order('created_at', ascending: false);
-
       final sent = <InterestEntry>[];
-      for (final row in (sentRows as List<dynamic>)) {
+      for (final row in sentRows) {
         final receiverId = row['receiver_id'] as String;
-        final profile = await _loadProfileForUser(receiverId);
+        final profile = profilesByUser[receiverId];
         if (profile == null) continue;
         final createdAt = DateTime.tryParse(row['created_at'] as String) ?? now;
         final statusStr = row['status'] as String;
@@ -115,19 +153,12 @@ class InterestsCubit extends Cubit<InterestsState> {
         ));
       }
 
-      // Load matches
-      final matchRows = await SupabaseService.client
-          .from('matches')
-          .select('id, user_a, user_b, created_at')
-          .or('user_a.eq.$userId,user_b.eq.$userId')
-          .order('created_at', ascending: false);
-
       final matches = <InterestEntry>[];
-      for (final row in (matchRows as List<dynamic>)) {
+      for (final row in matchRows) {
         final otherUserId = (row['user_a'] as String) == userId
             ? row['user_b'] as String
             : row['user_a'] as String;
-        final profile = await _loadProfileForUser(otherUserId);
+        final profile = profilesByUser[otherUserId];
         if (profile == null) continue;
         final createdAt = DateTime.tryParse(row['created_at'] as String) ?? now;
 
@@ -141,8 +172,6 @@ class InterestsCubit extends Cubit<InterestsState> {
         ));
       }
 
-      final quota = await _loadServerQuota();
-
       if (!isClosed) {
         emit(InterestsState(
           received: received,
@@ -155,69 +184,81 @@ class InterestsCubit extends Cubit<InterestsState> {
       }
     } catch (e) {
       debugPrint('[InterestsCubit] Error loading from DB: $e');
-      if (!isClosed) emit(const InterestsState());
+      if (!isClosed) {
+        emit(const InterestsState(dailyLimit: 0, limitError: true));
+      }
     }
   }
 
-  /// Load a real profile for a given user ID from Supabase.
-  Future<DiscoveryProfile?> _loadProfileForUser(String userId) async {
-    try {
-      final row = await SupabaseService.client
-          .from('profiles')
-          .select(
-            'user_id, first_name, last_name, date_of_birth, gender, city_id, '
-            'country_code, sect, deen_level, photo_privacy, bio, profession, '
-            'education_rank, family_type, previously_married, children_count, '
-            'mother_tongue, community, living_expectation, quran_memorization, '
-            'religious_education, willing_to_relocate, languages, interests, '
-            'last_active_at, is_verified',
-          )
-          .eq('user_id', userId)
-          .maybeSingle();
+  Future<Map<String, DiscoveryProfile>> _loadProfilesForUsers(
+    Set<String> userIds,
+  ) async {
+    if (userIds.isEmpty) return const {};
+    final rows = await SupabaseService.client.from('profiles').select('''
+      id, user_id, first_name, last_name, date_of_birth, gender, country_code,
+      sect, deen_level, photo_privacy, bio, profession, education_level,
+      education_rank, family_type, previously_married, children_count,
+      mother_tongue, community, living_expectation, quran_memorization,
+      religious_education, willing_to_relocate, languages, interests,
+      last_active_at, is_verified, cities:cities!city_id(name)
+    ''').inFilter('user_id', userIds.toList(growable: false));
 
-      if (row != null) {
-        final mapped = Map<String, dynamic>.from(row);
-        final cityId = mapped['city_id'];
-        if (cityId != null) {
-          final city = await SupabaseService.client
-              .from('cities')
-              .select('name')
-              .eq('id', cityId)
-              .maybeSingle();
-          mapped['city_name'] = city?['name'];
-        }
-
-        final profile = await SupabaseService.client
-            .from('profiles')
-            .select('id')
-            .eq('user_id', userId)
-            .maybeSingle();
-        final profileId = profile?['id'];
-        if (profileId != null) {
-          final photos = await SupabaseService.client
-              .from('photos')
-              .select('storage_path')
-              .eq('profile_id', profileId)
-              .eq('status', 'active')
-              .eq('admin_approved', true)
-              .eq('nsfw_cleared', true)
-              .order('order_index');
-          mapped['photo_count'] = photos.length;
-          if (photos.isNotEmpty) {
-            mapped['photo_url'] =
-                await ProfilePhotoService.instance.getAuthorizedPhotoUrl(
-              ownerUserId: userId,
-            );
-          }
-        }
-
-        return compute(parseSingleProfileInBackground, mapped);
+    final mappedRows = (rows as List<dynamic>).map((raw) {
+      final row = Map<String, dynamic>.from(raw as Map);
+      final city = row['cities'];
+      if (city is Map) row['city_name'] = city['name'];
+      return row;
+    }).toList(growable: false);
+    final profileIds = mappedRows
+        .map((row) => row['id']?.toString())
+        .whereType<String>()
+        .toList(growable: false);
+    final photos = profileIds.isEmpty
+        ? const <dynamic>[]
+        : await SupabaseService.client
+            .from('photos')
+            .select('profile_id, blurhash')
+            .inFilter('profile_id', profileIds)
+            .eq('status', 'active')
+            .eq('admin_approved', true)
+            .eq('nsfw_cleared', true)
+            .order('order_index');
+    final photosByProfile = <String, List<Map<String, dynamic>>>{};
+    for (final raw in photos) {
+      final photo = Map<String, dynamic>.from(raw as Map);
+      final profileId = photo['profile_id']?.toString();
+      if (profileId != null) {
+        photosByProfile.putIfAbsent(profileId, () => []).add(photo);
       }
-    } catch (e) {
-      debugPrint('[InterestsCubit] Error loading profile for $userId: $e');
     }
+    final photoOwners = mappedRows
+        .where(
+            (row) => photosByProfile[row['id']?.toString()]?.isNotEmpty == true)
+        .map((row) => row['user_id']?.toString())
+        .whereType<String>()
+        .toList(growable: false);
+    final signedUrls =
+        await ProfilePhotoService.instance.getAuthorizedPhotoUrls(
+      ownerUserIds: photoOwners,
+    );
 
-    return null;
+    final result = <String, DiscoveryProfile>{};
+    for (final row in mappedRows) {
+      final userId = row['user_id']?.toString();
+      if (userId == null) continue;
+      final profilePhotos = photosByProfile[row['id']?.toString()] ?? const [];
+      row['photo_count'] = profilePhotos.length;
+      row['photo_url'] = signedUrls[userId];
+      if (profilePhotos.isNotEmpty) {
+        row['blurhash'] = profilePhotos.first['blurhash'];
+      }
+      try {
+        result[userId] = mapDbRowToDiscoveryProfile(row);
+      } catch (error) {
+        debugPrint('[InterestsCubit] Invalid profile $userId: $error');
+      }
+    }
+    return result;
   }
   // ── Daily Limit (Item 17) ─────────────────────────────────
 
@@ -233,7 +274,18 @@ class InterestsCubit extends Cubit<InterestsState> {
   }
 
   Future<void> refreshQuota() async {
-    final quota = await _loadServerQuota();
+    _InterestQuota quota;
+    try {
+      quota = await _loadServerQuota();
+    } catch (_) {
+      if (isClosed) return;
+      emit(state.copyWith(
+        interestsSentToday: 0,
+        dailyLimit: 0,
+        limitError: true,
+      ));
+      return;
+    }
     if (isClosed) return;
     emit(state.copyWith(
       interestsSentToday: quota.sentToday,
@@ -245,21 +297,27 @@ class InterestsCubit extends Cubit<InterestsState> {
   Future<_InterestQuota> _loadServerQuota() async {
     if (!SupabaseService.isInitialized ||
         SupabaseService.currentUserId == null) {
-      return const _InterestQuota(sentToday: 0, dailyLimit: 3);
+      throw StateError('Interest quota requires an authenticated session.');
     }
     try {
       final response = await SupabaseService.client.rpc('get_interest_quota');
       final rows = response as List<dynamic>;
-      final row = rows.isNotEmpty
-          ? Map<String, dynamic>.from(rows.first as Map)
-          : <String, dynamic>{};
+      if (rows.isEmpty) {
+        throw StateError('Interest quota response was empty.');
+      }
+      final row = Map<String, dynamic>.from(rows.first as Map);
+      final sentToday = (row['sent_today'] as num?)?.toInt();
+      final dailyLimit = (row['daily_limit'] as num?)?.toInt();
+      if (sentToday == null || dailyLimit == null) {
+        throw StateError('Interest quota response was incomplete.');
+      }
       return _InterestQuota(
-        sentToday: (row['sent_today'] as num?)?.toInt() ?? 0,
-        dailyLimit: (row['daily_limit'] as num?)?.toInt() ?? 3,
+        sentToday: sentToday,
+        dailyLimit: dailyLimit,
       );
     } catch (e) {
       debugPrint('[InterestsCubit] Error loading server quota: $e');
-      return const _InterestQuota(sentToday: 0, dailyLimit: 3);
+      throw StateError('Unable to verify your daily interest limit.');
     }
   }
 
@@ -323,7 +381,13 @@ class InterestsCubit extends Cubit<InterestsState> {
   Future<bool> sendInterest(DiscoveryProfile profile, {String? note}) async {
     if (!SupabaseService.isInitialized) return false;
 
-    final quota = await _loadServerQuota();
+    late final _InterestQuota quota;
+    try {
+      quota = await _loadServerQuota();
+    } catch (_) {
+      emit(state.copyWith(limitError: true));
+      return false;
+    }
     if (quota.sentToday >= quota.dailyLimit) {
       emit(state.copyWith(limitError: true));
       return false;
@@ -381,7 +445,13 @@ class InterestsCubit extends Cubit<InterestsState> {
     );
 
     final updated = [entry, ...state.sent];
-    final updatedQuota = await _loadServerQuota();
+    late final _InterestQuota updatedQuota;
+    try {
+      updatedQuota = await _loadServerQuota();
+    } catch (_) {
+      emit(state.copyWith(sent: updated, dailyLimit: 0, limitError: true));
+      return true;
+    }
 
     emit(state.copyWith(
       sent: updated,
@@ -395,6 +465,13 @@ class InterestsCubit extends Cubit<InterestsState> {
 
   void clearLimitError() {
     emit(state.copyWith(clearLimitError: true));
+  }
+
+  void clear() {
+    _loadInFlight = false;
+    _lastLoadedAt = null;
+    _loadedUserId = null;
+    if (!isClosed) emit(const InterestsState());
   }
 
   /// Withdraw a pending sent interest (silent — no notification to recipient).

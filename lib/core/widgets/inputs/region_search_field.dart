@@ -1,6 +1,6 @@
 // lib/core/widgets/inputs/region_search_field.dart
 // ============================================================
-// MITHAQ - Region Search Field
+// SILARAH - Region Search Field
 //
 // Async country-scoped region/state search backed by Supabase `regions`.
 // This is an optional narrowing step before city search; it never fabricates
@@ -16,6 +16,7 @@ import '../../services/country_context_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimensions.dart';
 import '../../theme/app_typography.dart';
+import '../loaders/silarah_shimmer.dart';
 
 class RegionSearchField extends StatefulWidget {
   const RegionSearchField({
@@ -107,6 +108,13 @@ class _RegionSearchFieldState extends State<RegionSearchField> {
   void _onChanged(String value) {
     if (!widget.enabled) return;
     if (value == _selectedDisplay) return;
+
+    // A typed edit is not a verified region selection. Invalidate the parent
+    // selection immediately so its city and coordinates cannot remain stale.
+    if (_selectedDisplay != null) {
+      setState(() => _selectedDisplay = null);
+      widget.onCleared?.call();
+    }
 
     _debounce?.cancel();
     final query = value.trim();
@@ -233,14 +241,7 @@ class _RegionSearchFieldState extends State<RegionSearchField> {
             suffixIcon: _loading
                 ? const Padding(
                     padding: EdgeInsets.all(14),
-                    child: SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 1.5,
-                        color: AppColors.champagneGold,
-                      ),
-                    ),
+                    child: SilarahPulseLoader(size: 16),
                   )
                 : _selectedDisplay != null
                     ? GestureDetector(

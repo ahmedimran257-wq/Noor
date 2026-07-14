@@ -1,22 +1,47 @@
 // lib/core/cubits/auth/auth_cubit.dart
 // ============================================================
-// MITHAQ - Auth Cubit
+// SILARAH - Auth Cubit
 // Production auth uses Supabase email OTP. No local sign-in path.
 // ============================================================
+
+import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
 import '../../services/referral_service.dart';
 import '../../services/email_address_validation.dart';
+import '../../services/fcm_service.dart';
 import '../../services/legal_consent_service.dart';
 import '../../services/supabase_service.dart';
 import 'auth_state.dart';
 
+enum AuthSessionCheckResult { authenticated, signedOut, retryableFailure }
+
+enum _EmailRegistrationStatus {
+  unregistered,
+  pendingVerification,
+  registered,
+}
+
+class AuthProfileHydrationException implements Exception {
+  const AuthProfileHydrationException(this.cause);
+  final Object cause;
+
+  @override
+  String toString() => 'Auth profile hydration failed: $cause';
+}
+
 class AuthCubit extends Cubit<AuthState> {
-  AuthCubit() : super(const AuthInitial());
+  AuthCubit() : super(const AuthInitial()) {
+    if (_isRealMode) {
+      _authSubscription = SupabaseService.client.auth.onAuthStateChange
+          .listen(_handleAuthEvent);
+    }
+  }
 
   bool get _isRealMode => SupabaseService.isInitialized;
 
@@ -29,39 +54,134 @@ class AuthCubit extends Cubit<AuthState> {
   String _pendingAuthMode = 'signin';
   int _sendOtpRequestId = 0;
   int _verifyOtpRequestId = 0;
+  StreamSubscription<supabase.AuthState>? _authSubscription;
+  String? _hydratedSessionUserId;
+  bool _checkingSession = false;
 
-  Future<void> checkSession() async {
+  @override
+  Future<void> close() async {
+    await _authSubscription?.cancel();
+    return super.close();
+  }
+
+  Future<AuthSessionCheckResult> checkSession() async {
+    if (state is AuthAuthenticated) {
+      return AuthSessionCheckResult.authenticated;
+    }
+    if (_checkingSession) return AuthSessionCheckResult.retryableFailure;
+    _checkingSession = true;
     emit(const AuthLoading());
 
     if (_isRealMode) {
-      try {
-        final session = SupabaseService.client.auth.currentSession;
-        if (session != null) {
-          final userId = session.user.id;
-          final prefs = await SharedPreferences.getInstance();
-          final countryCode = prefs.getString('user_country_code');
-          final authData = await _loadUserProfile(userId);
-          final onboardingStep = _returningUserStep(authData);
-
-          emit(AuthAuthenticated(
-            userId: userId,
-            onboardingStep: onboardingStep,
-            gender: authData.gender,
-            email: session.user.email,
-            countryCode: countryCode,
-            isGuardianPath: authData.isGuardianPath,
-            onboardingCompleted: authData.onboardingCompleted,
-          ));
-          return;
+      const retryDelays = [
+        Duration.zero,
+        Duration(milliseconds: 450),
+        Duration(milliseconds: 1200),
+      ];
+      for (final delay in retryDelays) {
+        if (delay != Duration.zero) await Future<void>.delayed(delay);
+        final recovery = await SupabaseService.recoverSession();
+        if (recovery.status == SessionRecoveryStatus.noSession ||
+            recovery.status == SessionRecoveryStatus.invalidSession) {
+          _checkingSession = false;
+          _hydratedSessionUserId = null;
+          emit(const AuthUnauthenticated());
+          return AuthSessionCheckResult.signedOut;
         }
-      } catch (e) {
-        debugPrint('Session check error: $e');
+        if (recovery.status != SessionRecoveryStatus.authenticated ||
+            recovery.session == null) {
+          continue;
+        }
+        try {
+          await _emitAuthenticatedFromSession(recovery.session!);
+          return AuthSessionCheckResult.authenticated;
+        } catch (error) {
+          debugPrint('Session profile hydration attempt failed: $error');
+        }
       }
+      _checkingSession = false;
+      // Keep routing behind the recovery gate. A temporary backend/profile
+      // read failure must never be represented as a logout or onboarding step 0.
+      emit(const AuthLoading());
+      return AuthSessionCheckResult.retryableFailure;
+    }
+
+    _checkingSession = false;
+    emit(const AuthUnauthenticated());
+    return AuthSessionCheckResult.signedOut;
+  }
+
+  Future<void> _handleAuthEvent(supabase.AuthState eventState) async {
+    var session = eventState.session;
+    final event = eventState.event;
+
+    // Startup recovery is coordinated only after the backend health gate.
+    // INITIAL_SESSION can fire while the device is offline; performing a
+    // refresh here used to convert that transient failure into a false logout.
+    if (event == AuthChangeEvent.initialSession) return;
+
+    if (event == AuthChangeEvent.signedOut) {
+      if (_checkingSession) return;
+      _hydratedSessionUserId = null;
       emit(const AuthUnauthenticated());
       return;
     }
 
-    emit(const AuthUnauthenticated());
+    if (session == null) return;
+    if (_checkingSession) return;
+
+    // INITIAL_SESSION may contain a persisted user with an expired access
+    // token. Never hydrate the authenticated UI from that stale identity: it
+    // makes the app look signed in while every private request returns 401.
+    final recovery = await SupabaseService.recoverSession();
+    if (recovery.status == SessionRecoveryStatus.transientFailure) {
+      debugPrint('AuthCubit: auth event deferred until connectivity recovers');
+      return;
+    }
+    if (recovery.status != SessionRecoveryStatus.authenticated ||
+        recovery.session == null) {
+      _hydratedSessionUserId = null;
+      emit(const AuthUnauthenticated());
+      return;
+    }
+    final recoveredSession = recovery.session!;
+
+    final current = state;
+    if (current is AuthAuthenticated &&
+        current.userId == recoveredSession.user.id) {
+      return;
+    }
+    if (_hydratedSessionUserId == recoveredSession.user.id &&
+        current is AuthLoading) {
+      return;
+    }
+
+    try {
+      await _emitAuthenticatedFromSession(recoveredSession);
+    } catch (e) {
+      debugPrint('AuthCubit: auth event session restore failed: $e');
+    }
+  }
+
+  Future<void> _emitAuthenticatedFromSession(Session session) async {
+    final userId = session.user.id;
+
+    final prefs = await SharedPreferences.getInstance();
+    final countryCode = prefs.getString('user_country_code');
+    final authData = await _loadUserProfile(userId);
+    final onboardingStep = _returningUserStep(authData);
+
+    _hydratedSessionUserId = userId;
+    _checkingSession = false;
+    emit(AuthAuthenticated(
+      userId: userId,
+      onboardingStep: onboardingStep,
+      gender: authData.gender,
+      email: session.user.email,
+      countryCode: countryCode,
+      isGuardianPath: authData.isGuardianPath,
+      onboardingCompleted: authData.onboardingCompleted,
+    ));
   }
 
   /// Sends an OTP to the provided email address.
@@ -85,25 +205,36 @@ class AuthCubit extends Cubit<AuthState> {
 
     if (_isRealMode) {
       try {
-        final registered = await _isEmailRegistered(normalizedEmail);
+        final registrationStatus =
+            await _emailRegistrationStatus(normalizedEmail);
         if (requestId != _sendOtpRequestId) return;
 
-        if (!isResend && _pendingAuthMode == 'signup' && registered) {
+        if (!isResend &&
+            _pendingAuthMode == 'signup' &&
+            registrationStatus == _EmailRegistrationStatus.registered) {
           emit(const AuthError(
             message: 'Account already exists. Please log in instead.',
           ));
           return;
         }
-        if (!isResend && _pendingAuthMode == 'signin' && !registered) {
-          emit(const AuthError(
-            message: 'No account found. Please create an account first.',
+        if (!isResend &&
+            _pendingAuthMode == 'signin' &&
+            registrationStatus != _EmailRegistrationStatus.registered) {
+          emit(AuthError(
+            message: registrationStatus ==
+                    _EmailRegistrationStatus.pendingVerification
+                ? 'Your signup is not finished. Choose Create Profile to request a new verification code.'
+                : 'No account found. Please create an account first.',
           ));
           return;
         }
 
         await SupabaseService.client.auth.signInWithOtp(
           email: normalizedEmail,
-          shouldCreateUser: _pendingAuthMode == 'signup',
+          // A pending user already exists in auth.users. Setting this to false
+          // resumes that identity without permitting a second account row.
+          shouldCreateUser: _pendingAuthMode == 'signup' &&
+              registrationStatus == _EmailRegistrationStatus.unregistered,
         );
         if (requestId != _sendOtpRequestId) return;
 
@@ -233,6 +364,7 @@ class AuthCubit extends Cubit<AuthState> {
 
     if (_isRealMode) {
       try {
+        await FcmService.instance.onUserLogout();
         await SupabaseService.client.auth.signOut();
       } catch (e) {
         debugPrint('Sign out error: $e');
@@ -476,12 +608,18 @@ class AuthCubit extends Cubit<AuthState> {
     await prefs.remove(_pendingOtpSentAtKey);
   }
 
-  Future<bool> _isEmailRegistered(String email) async {
-    final registered = await SupabaseService.client.rpc<bool>(
-      'email_is_registered',
+  Future<_EmailRegistrationStatus> _emailRegistrationStatus(
+    String email,
+  ) async {
+    final status = await SupabaseService.client.rpc<String>(
+      'email_registration_status',
       params: {'p_email': email},
     );
-    return registered;
+    return switch (status) {
+      'registered' => _EmailRegistrationStatus.registered,
+      'pending_verification' => _EmailRegistrationStatus.pendingVerification,
+      _ => _EmailRegistrationStatus.unregistered,
+    };
   }
 
   Future<void> _applyPendingReferral() async {
@@ -580,6 +718,7 @@ class AuthCubit extends Cubit<AuthState> {
             .eq('id', userId)
             .maybeSingle();
       } catch (e) {
+        if (!_isMissingResumeColumnError(e)) rethrow;
         // Older databases may not have the resume-marker columns yet. Fall back
         // to the original minimal user read so authentication still works.
         debugPrint('AuthCubit: user resume columns unavailable: $e');
@@ -621,6 +760,7 @@ class AuthCubit extends Cubit<AuthState> {
       }
     } catch (e) {
       debugPrint('AuthCubit: Error loading user profile: $e');
+      throw AuthProfileHydrationException(e);
     }
 
     return _UserProfileData(
@@ -635,6 +775,15 @@ class AuthCubit extends Cubit<AuthState> {
 
   int _returningUserStep(_UserProfileData authData) {
     return authData.onboardingStep;
+  }
+
+  bool _isMissingResumeColumnError(Object error) {
+    final message = error.toString().toLowerCase();
+    return message.contains('column') &&
+        (message.contains('onboarding_step') ||
+            message.contains('onboarding_completed') ||
+            message.contains('profile_owner_type') ||
+            message.contains('is_guardian_path'));
   }
 }
 

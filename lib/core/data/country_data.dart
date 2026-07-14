@@ -1,6 +1,6 @@
 // lib/core/data/country_data.dart
 // ============================================================
-// MITHAQ — Complete Country Database
+// SILARAH — Complete Country Database
 //
 // • All 198 supported countries
 // • Emoji flags derived from ISO2 — no hardcoded emojis

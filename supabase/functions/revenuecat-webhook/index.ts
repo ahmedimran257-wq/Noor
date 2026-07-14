@@ -96,7 +96,9 @@ Deno.serve(async (req: Request) => {
 
   if (!applyResult?.applied) {
     console.log(
-      `[revenuecat-webhook] Ignored event for ${supabaseUserId}: ${applyResult?.reason ?? "not_applied"}`,
+      `[revenuecat-webhook] Ignored event for ${supabaseUserId}: ${
+        applyResult?.reason ?? "not_applied"
+      }`,
     );
     return new Response("OK", { status: 200 });
   }
@@ -105,9 +107,9 @@ Deno.serve(async (req: Request) => {
     await supabase.rpc("queue_notification", {
       p_user_id: supabaseUserId,
       p_type: "subscription_expired",
-      p_title: "Your Mithaq subscription has ended",
+      p_title: "Your Silarah subscription has ended",
       p_body: "Renew today to keep messaging your connections.",
-      p_deep_link: "mithaq://subscription",
+      p_deep_link: "silarah://subscription",
     });
   }
 
@@ -117,7 +119,7 @@ Deno.serve(async (req: Request) => {
       p_type: "billing_issue",
       p_title: "Payment issue - action required",
       p_body: "Please update your payment method to continue messaging.",
-      p_deep_link: "mithaq://subscription",
+      p_deep_link: "silarah://subscription",
     });
   }
 

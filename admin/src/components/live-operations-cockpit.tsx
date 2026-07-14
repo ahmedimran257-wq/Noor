@@ -13,12 +13,36 @@ type LiveSnapshot = {
   pipeline: Bucket;
 };
 
-type LiveState =
-  | { status: "loading"; data: LiveSnapshot | null; error: null }
-  | { status: "ready"; data: LiveSnapshot; error: null }
-  | { status: "error"; data: LiveSnapshot | null; error: string };
+type OnlineUser = {
+  user_id: string;
+  profile_id: string | null;
+  name: string;
+  email: string | null;
+  country_code: string | null;
+  gender: string | null;
+  last_seen_at: string;
+  app_state: string;
+  platform: string | null;
+  visibility: string;
+  verification_status: string;
+  subscription_status: string;
+};
 
-const refreshMs = 15000;
+type LivePayload =
+  | LiveSnapshot
+  | {
+      snapshot: LiveSnapshot;
+      onlineUsers: OnlineUser[];
+    };
+
+type LiveState =
+  | { status: "loading"; data: LiveSnapshot | null; onlineUsers: OnlineUser[]; error: null }
+  | { status: "ready"; data: LiveSnapshot; onlineUsers: OnlineUser[]; error: null }
+  | { status: "error"; data: LiveSnapshot | null; onlineUsers: OnlineUser[]; error: string };
+
+// A one-minute visible-only refresh is operationally current without running
+// four aggregate database snapshots per minute for every open admin tab.
+const refreshMs = 60000;
 
 function number(value: number | undefined) {
   return Number(value ?? 0).toLocaleString();
@@ -28,8 +52,19 @@ function percent(value: number | undefined) {
   return Math.max(0, Math.min(100, Number(value ?? 0)));
 }
 
-export function LiveOperationsCockpit({ initial }: { initial: LiveSnapshot }) {
-  const [state, setState] = useState<LiveState>({ status: "ready", data: initial, error: null });
+export function LiveOperationsCockpit({
+  initial,
+  initialOnlineUsers,
+}: {
+  initial: LiveSnapshot;
+  initialOnlineUsers: OnlineUser[];
+}) {
+  const [state, setState] = useState<LiveState>({
+    status: "ready",
+    data: initial,
+    onlineUsers: initialOnlineUsers,
+    error: null,
+  });
   const [isPending, startTransition] = useTransition();
   const [pulse, setPulse] = useState(0);
 
@@ -39,10 +74,12 @@ export function LiveOperationsCockpit({ initial }: { initial: LiveSnapshot }) {
       try {
         const response = await fetch("/api/live", { cache: "no-store" });
         if (!response.ok) throw new Error(`Live feed unavailable (${response.status})`);
-        const data = await response.json() as LiveSnapshot;
+        const payload = await response.json() as LivePayload;
+        const data = "snapshot" in payload ? payload.snapshot : payload;
+        const onlineUsers = "snapshot" in payload ? payload.onlineUsers : [];
         if (!cancelled) {
           startTransition(() => {
-            setState({ status: "ready", data, error: null });
+            setState({ status: "ready", data, onlineUsers, error: null });
             setPulse((value) => value + 1);
           });
         }
@@ -51,20 +88,30 @@ export function LiveOperationsCockpit({ initial }: { initial: LiveSnapshot }) {
           setState((current) => ({
             status: "error",
             data: current.data,
+            onlineUsers: current.onlineUsers,
             error: error instanceof Error ? error.message : "Live feed unavailable",
           }));
         }
       }
     }
 
-    const timer = window.setInterval(refresh, refreshMs);
+    const refreshVisible = () => {
+      if (!document.hidden) void refresh();
+    };
+    const timer = window.setInterval(refreshVisible, refreshMs);
+    const onVisibility = () => {
+      if (!document.hidden) void refresh();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
     return () => {
       cancelled = true;
       window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, []);
 
   const snapshot = state.data ?? initial;
+  const onlineUsers = state.onlineUsers;
   const lastUpdated = useMemo(() => {
     if (!snapshot.generatedAt) return "Waiting for live feed";
     return new Date(snapshot.generatedAt * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
@@ -99,7 +146,7 @@ export function LiveOperationsCockpit({ initial }: { initial: LiveSnapshot }) {
         <div>
           <p className="eyebrow">Live traffic</p>
           <h2>Operations cockpit</h2>
-          <p className="muted">Auto-refreshing from Supabase every {refreshMs / 1000}s. No sample traffic, no hardcoded counters.</p>
+          <p className="muted">Direct RPC snapshot from the production Supabase project, refreshed every {refreshMs / 1000}s.</p>
         </div>
         <div className={`live-chip ${state.status}`} key={pulse}>
           <span className="live-dot" />
@@ -154,6 +201,29 @@ export function LiveOperationsCockpit({ initial }: { initial: LiveSnapshot }) {
             </div>
           </div>
           <p className="muted">{number(snapshot.progress.completedProfiles)} completed of {number(snapshot.progress.totalProfiles)} total profiles. {number(snapshot.progress.activeSubscribers)} active subscribers.</p>
+        </div>
+
+        <div className="glass-panel online-panel">
+          <div className="panel-title"><Radio size={18} /> Online users</div>
+          {onlineUsers.length === 0 ? (
+            <p className="muted">No authenticated app heartbeats in the last 15 minutes.</p>
+          ) : (
+            <div className="online-user-list">
+              {onlineUsers.map((user) => (
+                <div className="online-user-row" key={user.user_id}>
+                  <span className="online-user-pulse" />
+                  <div>
+                    <strong>{user.name}</strong>
+                    <small>{user.email ?? user.user_id}</small>
+                  </div>
+                  <div className="online-user-meta">
+                    <span>{user.country_code ?? "??"}</span>
+                    <span>{user.platform ?? "app"}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>

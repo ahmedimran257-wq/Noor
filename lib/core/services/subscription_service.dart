@@ -1,6 +1,6 @@
 // lib/core/services/subscription_service.dart
 // ============================================================
-// MITHAQ - RevenueCat Subscription Service
+// SILARAH - RevenueCat Subscription Service
 // Pricing comes from RevenueCat, with country/tier offering selection.
 // No hardcoded prices.
 // ============================================================
@@ -64,18 +64,27 @@ class DisplayPricing {
   }
 
   factory DisplayPricing.unavailable() => const DisplayPricing(
-        monthlyPrice: '--',
-        annualPrice: '--',
-        monthlyCta: 'Premium features currently unavailable',
-        annualCta: 'Please check your connection and try again',
+        monthlyPrice: '',
+        annualPrice: '',
+        monthlyCta: '',
+        annualCta: '',
         savingsPercent: 0,
         source: PricingSource.unavailable,
+      );
+
+  factory DisplayPricing.loading() => const DisplayPricing(
+        monthlyPrice: '',
+        annualPrice: '',
+        monthlyCta: '',
+        annualCta: '',
+        savingsPercent: 0,
+        source: PricingSource.loading,
       );
 
   bool get isAvailable => source == PricingSource.revenueCat;
 }
 
-enum PricingSource { revenueCat, unavailable }
+enum PricingSource { loading, revenueCat, unavailable }
 
 class SubscriptionService {
   SubscriptionService._();
@@ -240,10 +249,10 @@ class SubscriptionService {
     final tier = _pricingTier?.toLowerCase();
     final candidates = <String>[
       if (country != null) 'country_$country',
-      if (country != null) 'mithaq_$country',
+      if (country != null) 'silarah_$country',
       if (country != null) country,
       if (tier != null) 'tier_$tier',
-      if (tier != null) 'mithaq_$tier',
+      if (tier != null) 'silarah_$tier',
       if (tier != null) tier,
     ];
 

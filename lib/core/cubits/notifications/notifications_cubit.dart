@@ -1,17 +1,17 @@
 // lib/core/cubits/notifications/notifications_cubit.dart
 // ============================================================
-// MITHAQ - Notifications Cubit
+// SILARAH - Notifications Cubit
 // Production Supabase realtime only.
 // ============================================================
 
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../services/supabase_service.dart';
+import '../../utils/notification_deep_link.dart';
 
 class NotificationItem extends Equatable {
   const NotificationItem({
@@ -22,6 +22,7 @@ class NotificationItem extends Equatable {
     required this.time,
     this.isRead = false,
     this.profileId,
+    this.deepLink,
   });
 
   final String id;
@@ -31,6 +32,7 @@ class NotificationItem extends Equatable {
   final DateTime time;
   final bool isRead;
   final String? profileId;
+  final String? deepLink;
 
   NotificationItem copyWith({bool? isRead}) => NotificationItem(
         id: id,
@@ -40,10 +42,12 @@ class NotificationItem extends Equatable {
         time: time,
         isRead: isRead ?? this.isRead,
         profileId: profileId,
+        deepLink: deepLink,
       );
 
   @override
-  List<Object?> get props => [id, type, title, body, time, isRead, profileId];
+  List<Object?> get props =>
+      [id, type, title, body, time, isRead, profileId, deepLink];
 }
 
 class NotificationsState extends Equatable {
@@ -62,22 +66,39 @@ class NotificationsState extends Equatable {
 }
 
 class NotificationsCubit extends Cubit<NotificationsState> {
-  NotificationsCubit() : super(const NotificationsState()) {
-    unawaited(loadNotifications());
-  }
+  NotificationsCubit() : super(const NotificationsState());
 
   RealtimeChannel? _realtimeSubscription;
   String? _realtimeUserId;
+  int _loadVersion = 0;
+  bool _loadInFlight = false;
+  DateTime? _lastLoadedAt;
+  static const _freshness = Duration(minutes: 5);
+  static const _maxRetainedNotifications = 100;
+  final StreamController<NotificationItem> _inAppNotifications =
+      StreamController<NotificationItem>.broadcast();
 
-  Future<void> loadNotifications() async {
+  Stream<NotificationItem> get inAppNotifications => _inAppNotifications.stream;
+
+  Future<void> loadNotifications({bool force = false}) async {
+    if (_loadInFlight) return;
+    final lastLoadedAt = _lastLoadedAt;
+    if (!force &&
+        lastLoadedAt != null &&
+        DateTime.now().difference(lastLoadedAt) < _freshness) {
+      _setupRealtime();
+      return;
+    }
+    _loadInFlight = true;
+    final loadVersion = ++_loadVersion;
     if (!SupabaseService.isInitialized) {
-      emit(const NotificationsState());
+      clear();
       return;
     }
 
     final me = SupabaseService.currentUserId;
     if (me == null) {
-      emit(const NotificationsState());
+      clear();
       return;
     }
 
@@ -86,38 +107,23 @@ class NotificationsCubit extends Cubit<NotificationsState> {
           .from('notifications')
           .select('id, type, title, body, read_at, created_at, deep_link')
           .eq('user_id', me)
-          .order('created_at', ascending: false);
+          .order('created_at', ascending: false)
+          .limit(_maxRetainedNotifications);
 
-      final items = (data as List).map((row) {
-        final id = row['id'] as String;
-        final type = row['type'] as String? ?? 'general';
-        final title = row['title'] as String? ?? '';
-        final body = row['body'] as String? ?? '';
-        final readAt = row['read_at'];
-        final createdAt = DateTime.parse(row['created_at'] as String).toLocal();
-        final deepLink = row['deep_link'] as String?;
+      final items = (data as List)
+          .map((row) => _itemFromRow(Map<String, dynamic>.from(row as Map)))
+          .toList();
 
-        String? profileId;
-        if (deepLink != null && deepLink.contains('profile/')) {
-          profileId = deepLink.split('profile/').last;
-        }
-
-        return NotificationItem(
-          id: id,
-          type: type,
-          title: title,
-          body: body,
-          time: createdAt,
-          isRead: readAt != null,
-          profileId: profileId,
-        );
-      }).toList();
-
+      if (!_isCurrentLoad(loadVersion) || SupabaseService.currentUserId != me) {
+        return;
+      }
       emit(NotificationsState(items: items));
+      _lastLoadedAt = DateTime.now();
       _setupRealtime();
     } catch (e) {
-      debugPrint('NotificationsCubit: Error loading notifications: $e');
-      emit(const NotificationsState());
+      if (_isCurrentLoad(loadVersion)) emit(const NotificationsState());
+    } finally {
+      _loadInFlight = false;
     }
   }
 
@@ -130,9 +136,9 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     _realtimeUserId = me;
 
     _realtimeSubscription = SupabaseService.client
-        .channel('public:notifications')
+        .channel('user_notifications_$me')
         .onPostgresChanges(
-          event: PostgresChangeEvent.all,
+          event: PostgresChangeEvent.insert,
           schema: 'public',
           table: 'notifications',
           filter: PostgresChangeFilter(
@@ -140,11 +146,128 @@ class NotificationsCubit extends Cubit<NotificationsState> {
             column: 'user_id',
             value: me,
           ),
-          callback: (_) {
-            unawaited(loadNotifications());
+          callback: (payload) {
+            _mergeRealtimeNotification(payload);
           },
         )
         .subscribe();
+  }
+
+  void _mergeRealtimeNotification(PostgresChangePayload payload) {
+    final record = payload.newRecord;
+    if (record.isEmpty) {
+      unawaited(loadNotifications(force: true));
+      return;
+    }
+    if (record['user_id']?.toString() != SupabaseService.currentUserId) return;
+
+    final item = _itemFromRow(Map<String, dynamic>.from(record));
+    if (state.items.any((notification) => notification.id == item.id)) return;
+    if (!isClosed) {
+      emit(NotificationsState(
+        items: [item, ...state.items]
+            .take(_maxRetainedNotifications)
+            .toList(growable: false),
+      ));
+      _inAppNotifications.add(item);
+    }
+  }
+
+  NotificationItem _itemFromRow(Map<String, dynamic> row) {
+    final id = row['id'] as String;
+    final type = row['type'] as String? ?? 'general';
+    final fallback = _copyForType(type);
+    final title = _cleanText(row['title']) ?? fallback.$1;
+    final body = _cleanText(row['body']) ?? fallback.$2;
+    final readAt = row['read_at'];
+    final createdAt = DateTime.parse(row['created_at'] as String).toLocal();
+    final deepLink = row['deep_link'] as String?;
+
+    String? profileId;
+    if (deepLink != null && deepLink.contains('profile/')) {
+      profileId = deepLink.split('profile/').last;
+    }
+
+    return NotificationItem(
+      id: id,
+      type: type,
+      title: title,
+      body: body,
+      time: createdAt,
+      isRead: readAt != null,
+      profileId: profileId,
+      deepLink: deepLink,
+    );
+  }
+
+  String? _cleanText(Object? value) {
+    final text = value?.toString().trim();
+    if (text == null || text.isEmpty) return null;
+    return text;
+  }
+
+  (String, String) _copyForType(String type) {
+    switch (type) {
+      case 'profile_live':
+        return (
+          'Your profile is now live! 🎉',
+          'Muslims in your area can now find you on Silarah.'
+        );
+      case 'profile_returned_to_review':
+        return (
+          'Profile needs review',
+          'Please update the requested details before your profile goes live.'
+        );
+      case 'account_restored':
+        return (
+          'Profile restored',
+          'Your Silarah profile has been restored and is visible again.'
+        );
+      case 'account_suspended':
+        return (
+          'Profile suspended',
+          'Your profile is paused while our team reviews your account.'
+        );
+      case 'account_banned':
+        return (
+          'Account blocked',
+          'This account is no longer allowed to use Silarah.'
+        );
+      case 'account_limited':
+        return (
+          'Account visibility limited',
+          'Your profile visibility has been limited while our team reviews it.'
+        );
+      case 'photo_approved':
+        return ('Photo approved', 'Your profile photo is now visible.');
+      case 'photo_rejected':
+        return (
+          'Photo not approved',
+          'Please upload a clear, respectful profile photo.'
+        );
+      case 'kyc_approved':
+        return ('Identity verified', 'Your identity status is now verified.');
+      case 'kyc_pending':
+        return (
+          'Identity check submitted',
+          'Your documents were received securely and are awaiting review.'
+        );
+      case 'kyc_rejected':
+        return (
+          'Identity check needs attention',
+          'Retake your selfie and document images in clear lighting.'
+        );
+      case 'interest_received':
+        return ('New interest', 'Someone is interested in your profile.');
+      case 'interest_accepted':
+        return ('Interest accepted', 'You can now start a conversation.');
+      case 'new_message':
+        return ('New message', 'You have a new message.');
+      case 'boost_ready':
+        return ('Boost ready', 'Your profile boost is ready to use.');
+      default:
+        return ('Notification', 'Open Silarah to view the latest update.');
+    }
   }
 
   Future<void> markRead(String id) async {
@@ -159,9 +282,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
       await SupabaseService.client
           .from('notifications')
           .update({'read_at': DateTime.now().toIso8601String()}).eq('id', id);
-    } catch (e) {
-      debugPrint('NotificationsCubit: Error marking notification read: $e');
-    }
+    } catch (_) {}
   }
 
   Future<void> markAllRead() async {
@@ -179,16 +300,107 @@ class NotificationsCubit extends Cubit<NotificationsState> {
           .update({'read_at': DateTime.now().toIso8601String()})
           .eq('user_id', me)
           .isFilter('read_at', null);
-    } catch (e) {
-      debugPrint(
-          'NotificationsCubit: Error marking all notifications read: $e');
+    } catch (_) {}
+  }
+
+  Future<bool> deleteNotification(String id) async {
+    final me = SupabaseService.currentUserId;
+    final previous = state.items;
+    emit(state.copyWith(
+        items: previous.where((item) => item.id != id).toList()));
+
+    if (!SupabaseService.isInitialized || me == null) return true;
+    try {
+      await SupabaseService.client
+          .from('notifications')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', me);
+      return true;
+    } catch (_) {
+      if (!isClosed && SupabaseService.currentUserId == me) {
+        emit(state.copyWith(items: previous));
+      }
+      return false;
     }
   }
 
-  @override
-  Future<void> close() {
+  Future<bool> clearAllNotifications() async {
+    final me = SupabaseService.currentUserId;
+    final previous = state.items;
+    if (previous.isEmpty) return true;
+    emit(const NotificationsState());
+
+    if (!SupabaseService.isInitialized || me == null) return true;
+    try {
+      await SupabaseService.client
+          .from('notifications')
+          .delete()
+          .eq('user_id', me);
+      return true;
+    } catch (_) {
+      if (!isClosed && SupabaseService.currentUserId == me) {
+        emit(NotificationsState(items: previous));
+      }
+      return false;
+    }
+  }
+
+  void clear() {
+    _loadVersion++;
     _realtimeSubscription?.unsubscribe();
+    _realtimeSubscription = null;
     _realtimeUserId = null;
-    return super.close();
+    _lastLoadedAt = null;
+    _loadInFlight = false;
+    if (!isClosed) emit(const NotificationsState());
+  }
+
+  @override
+  Future<void> close() async {
+    _loadVersion++;
+    final subscription = _realtimeSubscription;
+    _realtimeSubscription = null;
+    _realtimeUserId = null;
+    if (subscription != null) await subscription.unsubscribe();
+    await _inAppNotifications.close();
+    await super.close();
+  }
+
+  bool _isCurrentLoad(int version) => !isClosed && version == _loadVersion;
+}
+
+String? notificationPathFor(NotificationItem item) {
+  final deepLinkPath = notificationPathFromDeepLink(item.deepLink);
+  if (deepLinkPath != null) return deepLinkPath;
+
+  switch (item.type) {
+    case 'new_message':
+      return '/home?tab=2';
+    case 'match':
+    case 'match_accepted':
+    case 'interest_received':
+    case 'interest_accepted':
+      return '/home?tab=1';
+    case 'admin_announcement':
+      return '/notifications';
+    case 'profile_live':
+      return '/home?tab=3';
+    case 'profile_nudge':
+      return '/edit-profile';
+    case 'profile_returned_to_review':
+    case 'account_restored':
+    case 'photo_approved':
+    case 'photo_rejected':
+    case 'kyc_approved':
+    case 'kyc_pending':
+      return '/home?tab=3';
+    case 'kyc_rejected':
+      return '/verify';
+    case 'account_suspended':
+    case 'account_banned':
+      return '/help-support';
+    default:
+      return null;
   }
 }

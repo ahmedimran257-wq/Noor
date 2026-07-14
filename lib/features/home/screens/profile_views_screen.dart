@@ -80,6 +80,13 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
             )
           ''')
           .eq('viewed_profile_id', myProfileId)
+          .gte(
+            'viewed_at',
+            DateTime.now()
+                .subtract(const Duration(days: 7))
+                .toUtc()
+                .toIso8601String(),
+          )
           .order('viewed_at', ascending: false)
           .limit(50);
 
@@ -226,12 +233,25 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
                             isInterestSent: sent,
                             onSendInterest: sent
                                 ? null
-                                : () {
+                                : () async {
                                     HapticFeedback.mediumImpact();
-                                    setState(() => _interestSent.add(p.id));
-                                    context
+                                    final sent = await context
                                         .read<InterestsCubit>()
                                         .sendInterest(p);
+                                    if (!context.mounted) return;
+                                    if (!sent) {
+                                      ScaffoldMessenger.of(context)
+                                        ..clearSnackBars()
+                                        ..showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Interest could not be sent. Check your limit and try again.',
+                                            ),
+                                          ),
+                                        );
+                                      return;
+                                    }
+                                    setState(() => _interestSent.add(p.id));
                                     ScaffoldMessenger.of(context)
                                       ..clearSnackBars()
                                       ..showSnackBar(

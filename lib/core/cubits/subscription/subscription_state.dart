@@ -1,6 +1,6 @@
 // lib/core/cubits/subscription/subscription_state.dart
 // ============================================================
-// MITHAQ — Subscription State
+// SILARAH — Subscription State
 //
 // Blueprint (Part 2 & Part 14):
 //   • Gender-split: women always free, men must subscribe to message
@@ -14,15 +14,15 @@ enum SubscriptionStatus { none, active, grace }
 
 class SubscriptionState extends Equatable {
   final SubscriptionStatus status;
-  final DateTime?          expiresAt;
-  final bool               isLoading;
-  final String?            error;
-  final String?            successMessage;
+  final DateTime? expiresAt;
+  final bool isLoading;
+  final String? error;
+  final String? successMessage;
 
   const SubscriptionState({
-    this.status         = SubscriptionStatus.none,
+    this.status = SubscriptionStatus.none,
     this.expiresAt,
-    this.isLoading      = false,
+    this.isLoading = false,
     this.error,
     this.successMessage,
   });
@@ -33,12 +33,11 @@ class SubscriptionState extends Equatable {
   bool canMessage(String gender) {
     if (gender == 'female') return true;
     return status == SubscriptionStatus.active ||
-           status == SubscriptionStatus.grace;
+        status == SubscriptionStatus.grace;
   }
 
   bool get isSubscribed =>
-      status == SubscriptionStatus.active ||
-      status == SubscriptionStatus.grace;
+      status == SubscriptionStatus.active || status == SubscriptionStatus.grace;
 
   /// Alias used by filter/boost gates.
   bool get isActive => isSubscribed;
@@ -54,19 +53,20 @@ class SubscriptionState extends Equatable {
 
   SubscriptionState copyWith({
     SubscriptionStatus? status,
-    DateTime?           expiresAt,
-    bool?               isLoading,
-    String?             error,
-    String?             successMessage,
-    bool                clearError   = false,
-    bool                clearSuccess = false,
+    DateTime? expiresAt,
+    bool? isLoading,
+    String? error,
+    String? successMessage,
+    bool clearError = false,
+    bool clearSuccess = false,
   }) {
     return SubscriptionState(
-      status:         status         ?? this.status,
-      expiresAt:      expiresAt      ?? this.expiresAt,
-      isLoading:      isLoading      ?? this.isLoading,
-      error:          clearError     ? null : (error   ?? this.error),
-      successMessage: clearSuccess   ? null : (successMessage ?? this.successMessage),
+      status: status ?? this.status,
+      expiresAt: expiresAt ?? this.expiresAt,
+      isLoading: isLoading ?? this.isLoading,
+      error: clearError ? null : (error ?? this.error),
+      successMessage:
+          clearSuccess ? null : (successMessage ?? this.successMessage),
     );
   }
 

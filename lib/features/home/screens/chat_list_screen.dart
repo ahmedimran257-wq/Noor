@@ -1,6 +1,6 @@
 // lib/features/home/screens/chat_list_screen.dart
 // ============================================================
-// MITHAQ — Chat List (Step 8 — Complete)
+// SILARAH — Chat List (Step 8 — Complete)
 //
 // Blueprint (Part 8, Conversations):
 //   • Sorted by most recent message
@@ -9,19 +9,21 @@
 //   • Empty state with encouraging message
 // ============================================================
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../core/cubits/auth/auth_cubit.dart';
-import '../../../core/cubits/auth/auth_state.dart';
 import '../../../core/cubits/chat/chat_cubit.dart';
 import '../../../core/cubits/chat/chat_state.dart';
-import '../../../core/cubits/subscription/subscription_cubit.dart';
+import '../../../core/services/supabase_service.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_curves.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/buttons/silarah_pressable.dart';
+import '../../../core/widgets/silarah_empty_state.dart';
 import 'chat_screen.dart';
 import 'paywall_gate_screen.dart';
-
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -31,12 +33,54 @@ class ChatListScreen extends StatefulWidget {
 }
 
 class _ChatListScreenState extends State<ChatListScreen>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   bool _isSearching = false;
   String _searchQuery = '';
+  final Set<String> _revealedConversationIds = {};
 
   @override
   bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshInbox());
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshInbox();
+    }
+  }
+
+  void _refreshInbox() {
+    if (!mounted) return;
+    unawaited(context.read<ChatCubit>().loadConversations(showLoading: false));
+  }
+
+  Future<bool> _canOpenChat(String matchId) async {
+    if (!SupabaseService.isInitialized) return false;
+    try {
+      final response = await SupabaseService.client.rpc(
+        'can_open_chat',
+        params: {'p_match_id': matchId},
+      );
+      final rows = response as List<dynamic>;
+      if (rows.isEmpty) return false;
+      final row = Map<String, dynamic>.from(rows.first as Map);
+      return row['allowed'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,48 +100,72 @@ class _ChatListScreenState extends State<ChatListScreen>
             // ── Header ──────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppDimensions.space24, AppDimensions.space16,
-                AppDimensions.space24, AppDimensions.space16,
+                AppDimensions.space24,
+                AppDimensions.space16,
+                AppDimensions.space24,
+                AppDimensions.space16,
               ),
               child: Row(
                 children: [
-                  if (_isSearching)
-                    Expanded(
-                      child: TextField(
-                        autofocus: true,
-                        onChanged: (value) =>
-                            setState(() => _searchQuery = value),
-                        style: AppTypography.body,
-                        cursorColor: AppColors.champagneGold,
-                        decoration: InputDecoration(
-                          hintText: 'Search messages',
-                          hintStyle: AppTypography.body.copyWith(
-                            color: AppColors.slateMist,
-                          ),
-                          isDense: true,
-                          filled: true,
-                          fillColor: AppColors.surfaceGlass,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: AppDimensions.space12,
-                            vertical: AppDimensions.space12,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                                AppDimensions.radiusButton),
-                            borderSide:
-                                const BorderSide(color: AppColors.cardBorder),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                                AppDimensions.radiusButton),
-                            borderSide:
-                                const BorderSide(color: AppColors.goldBorder),
-                          ),
+                  Expanded(
+                    child: AnimatedSwitcher(
+                      duration: AppDimensions.durationTransition,
+                      switchInCurve: AppCurves.reveal,
+                      switchOutCurve: AppCurves.transition,
+                      transitionBuilder: (child, animation) => FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0, 0.16),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: child,
                         ),
                       ),
-                    )
-                  else
-                    const Text('Messages', style: AppTypography.screenTitle),
+                      child: _isSearching
+                          ? TextField(
+                              key: const ValueKey('message_search'),
+                              autofocus: true,
+                              onChanged: (value) =>
+                                  setState(() => _searchQuery = value),
+                              style: AppTypography.body,
+                              cursorColor: AppColors.champagneGold,
+                              decoration: InputDecoration(
+                                hintText: 'Search messages',
+                                hintStyle: AppTypography.body.copyWith(
+                                  color: AppColors.slateMist,
+                                ),
+                                isDense: true,
+                                filled: true,
+                                fillColor: AppColors.surfaceGlass,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: AppDimensions.space12,
+                                  vertical: AppDimensions.space12,
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      AppDimensions.radiusButton),
+                                  borderSide: const BorderSide(
+                                      color: AppColors.cardBorder),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      AppDimensions.radiusButton),
+                                  borderSide: const BorderSide(
+                                      color: AppColors.goldBorder),
+                                ),
+                              ),
+                            )
+                          : const Align(
+                              key: ValueKey('messages_title'),
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'Messages',
+                                style: AppTypography.screenTitle,
+                              ),
+                            ),
+                    ),
+                  ),
                   if (_isSearching)
                     const SizedBox(width: AppDimensions.space8)
                   else
@@ -105,40 +173,50 @@ class _ChatListScreenState extends State<ChatListScreen>
                   // Total unread badge on header
                   if (state.totalUnread > 0)
                     Container(
-                      margin: const EdgeInsets.only(right: AppDimensions.space12),
+                      margin:
+                          const EdgeInsets.only(right: AppDimensions.space12),
                       padding: const EdgeInsets.symmetric(
                           horizontal: AppDimensions.space8, vertical: 3),
                       decoration: BoxDecoration(
-                        color:        AppColors.champagneGold,
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusTiny),
+                        color: AppColors.champagneGold,
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusTiny),
                       ),
                       child: Text(
                         '${state.totalUnread} unread',
                         style: AppTypography.badge.copyWith(fontSize: 11),
                       ),
                     ),
-                  // Search icon — TD3: wrapped in GestureDetector
-                  GestureDetector(
+                  SilarahPressable(
+                    semanticLabel:
+                        _isSearching ? 'Close search' : 'Search messages',
                     onTap: () {
                       setState(() {
                         if (_isSearching) _searchQuery = '';
                         _isSearching = !_isSearching;
                       });
                     },
-                    child: Container(
-                      width:  AppDimensions.minTouchTarget,
+                    child: AnimatedContainer(
+                      duration: AppDimensions.durationTransition,
+                      curve: AppCurves.transition,
+                      width: AppDimensions.minTouchTarget,
                       height: AppDimensions.minTouchTarget,
                       decoration: BoxDecoration(
-                        color:        AppColors.surfaceGlass,
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-                        border:       Border.all(color: AppColors.cardBorder),
+                        color: AppColors.surfaceGlass,
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusButton),
+                        border: Border.all(
+                          color: _isSearching
+                              ? AppColors.goldBorder
+                              : AppColors.cardBorder,
+                        ),
                       ),
                       child: Icon(
                         _isSearching
                             ? Icons.close_rounded
                             : Icons.search_rounded,
                         color: AppColors.slateMist,
-                        size:  AppDimensions.iconSizeLarge,
+                        size: AppDimensions.iconSizeLarge,
                       ),
                     ),
                   ),
@@ -146,62 +224,121 @@ class _ChatListScreenState extends State<ChatListScreen>
               ),
             ),
 
-            // ── Content ──────────────────────────────────────
             Expanded(
               child: conversations.isEmpty
                   ? const _ChatEmptyState()
                   : ListView.separated(
                       padding: const EdgeInsets.symmetric(
                         horizontal: AppDimensions.space24,
-                        vertical:   AppDimensions.space4,
+                        vertical: AppDimensions.space4,
                       ),
                       itemCount: conversations.length,
                       separatorBuilder: (_, __) =>
                           const SizedBox(height: AppDimensions.space8),
                       itemBuilder: (_, i) {
                         final conv = conversations[i];
-                        return _ConversationTile(
-                          conversation: conv,
-                          onTap: () {
-                            // ── Blueprint Part 14 / Part 8 ─────────────────
-                            // "Non-subscriber men who try to open a chat see:
-                            //  'Subscribe to unlock messaging.'"
-                            // Gender read from AuthState (set in Step 12 from
-                            // Supabase users table; default is 'male' when the row is missing gender).
-                            final authState = context.read<AuthCubit>().state;
-                            final gender = authState is AuthAuthenticated
-                                ? (authState.gender ?? 'male')
-                                : 'male';
-                            final subState =
-                                context.read<SubscriptionCubit>().state;
+                        final shouldReveal =
+                            _revealedConversationIds.add(conv.id);
+                        return _ConversationEntrance(
+                          key: ValueKey('conversation_${conv.id}'),
+                          animate: shouldReveal,
+                          delay: Duration(milliseconds: (i.clamp(0, 5)) * 45),
+                          child: _ConversationTile(
+                            conversation: conv,
+                            onTap: () async {
+                              final navigator = Navigator.of(context);
+                              final chatCubit = context.read<ChatCubit>();
+                              final allowed = await _canOpenChat(conv.id);
+                              if (!context.mounted) return;
+                              if (!allowed) {
+                                PaywallGateSheet.show(context);
+                                return;
+                              }
 
-                            if (!subState.canMessage(gender)) {
-                              PaywallGateSheet.show(context);
-                              return;
-                            }
-
-                            context.read<ChatCubit>().markRead(conv.id);
-                            Navigator.of(context).push(
-                              PageRouteBuilder(
-                                transitionDuration:
-                                    AppDimensions.durationReveal,
-                                pageBuilder: (ctx, animation, _) =>
-                                    FadeTransition(
-                                  opacity: animation,
-                                  child:
-                                      ChatScreen(conversationId: conv.id),
+                              chatCubit.markRead(conv.id);
+                              navigator.push(
+                                PageRouteBuilder(
+                                  transitionDuration:
+                                      AppDimensions.durationReveal,
+                                  reverseTransitionDuration:
+                                      AppDimensions.durationTransition,
+                                  pageBuilder: (ctx, animation, _) =>
+                                      FadeTransition(
+                                    opacity: CurvedAnimation(
+                                      parent: animation,
+                                      curve: AppCurves.reveal,
+                                    ),
+                                    child: SlideTransition(
+                                      position: Tween<Offset>(
+                                        begin: const Offset(0.035, 0),
+                                        end: Offset.zero,
+                                      ).animate(CurvedAnimation(
+                                        parent: animation,
+                                        curve: AppCurves.reveal,
+                                      )),
+                                      child:
+                                          ChatScreen(conversationId: conv.id),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
+                              );
+                            },
+                          ),
                         );
                       },
-
                     ),
             ),
           ],
         );
       },
+    );
+  }
+}
+
+class _ConversationEntrance extends StatefulWidget {
+  const _ConversationEntrance({
+    super.key,
+    required this.animate,
+    required this.delay,
+    required this.child,
+  });
+
+  final bool animate;
+  final Duration delay;
+  final Widget child;
+
+  @override
+  State<_ConversationEntrance> createState() => _ConversationEntranceState();
+}
+
+class _ConversationEntranceState extends State<_ConversationEntrance> {
+  bool _visible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _visible = !widget.animate;
+    if (widget.animate) {
+      Future<void>.delayed(widget.delay, () {
+        if (mounted) setState(() => _visible = true);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    return AnimatedSlide(
+      offset: _visible || reduceMotion ? Offset.zero : const Offset(0, 0.08),
+      duration: reduceMotion ? Duration.zero : AppDimensions.durationReveal,
+      curve: AppCurves.reveal,
+      child: AnimatedOpacity(
+        opacity: _visible || reduceMotion ? 1 : 0,
+        duration: reduceMotion ? Duration.zero : AppDimensions.durationReveal,
+        curve: AppCurves.reveal,
+        child: widget.child,
+      ),
     );
   }
 }
@@ -230,7 +367,7 @@ class _ConversationTile extends StatelessWidget {
         child: AnimatedContainer(
           duration: AppDimensions.durationTransition,
           decoration: BoxDecoration(
-            color:  AppColors.surfaceGlass,
+            color: AppColors.surfaceGlass,
             border: Border.all(color: AppColors.cardBorder),
           ),
           child: Stack(
@@ -238,15 +375,14 @@ class _ConversationTile extends StatelessWidget {
               // Gold left accent bar — animates in/out for unread state
               AnimatedPositioned(
                 duration: AppDimensions.durationTransition,
-                top:    0,
+                top: 0,
                 bottom: 0,
-                left:   0,
-                width:  hasUnread ? 3.0 : 0.0,
+                left: 0,
+                width: hasUnread ? 3.0 : 0.0,
                 child: AnimatedContainer(
                   duration: AppDimensions.durationTransition,
-                  color: hasUnread
-                      ? AppColors.champagneGold
-                      : Colors.transparent,
+                  color:
+                      hasUnread ? AppColors.champagneGold : Colors.transparent,
                 ),
               ),
 
@@ -254,9 +390,7 @@ class _ConversationTile extends StatelessWidget {
               Padding(
                 padding: EdgeInsets.fromLTRB(
                   // Shift content right to clear the accent bar
-                  hasUnread
-                      ? AppDimensions.space16 + 3
-                      : AppDimensions.space16,
+                  hasUnread ? AppDimensions.space16 + 3 : AppDimensions.space16,
                   AppDimensions.space16,
                   AppDimensions.space16,
                   AppDimensions.space16,
@@ -266,7 +400,7 @@ class _ConversationTile extends StatelessWidget {
                     // Avatar
                     AnimatedContainer(
                       duration: AppDimensions.durationTransition,
-                      width:  50,
+                      width: 50,
                       height: 50,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
@@ -280,7 +414,7 @@ class _ConversationTile extends StatelessWidget {
                       child: const Icon(
                         Icons.person_outline_rounded,
                         color: AppColors.slateMist,
-                        size:  26,
+                        size: 26,
                       ),
                     ),
                     const SizedBox(width: AppDimensions.space12),
@@ -303,9 +437,8 @@ class _ConversationTile extends StatelessWidget {
                           Text(
                             conversation.lastMessagePreview,
                             style: AppTypography.caption.copyWith(
-                              fontWeight: hasUnread
-                                  ? FontWeight.w500
-                                  : FontWeight.w400,
+                              fontWeight:
+                                  hasUnread ? FontWeight.w500 : FontWeight.w400,
                               color: hasUnread
                                   ? AppColors.pearlWhite.withValues(alpha: 0.7)
                                   : AppColors.slateMist,
@@ -335,7 +468,7 @@ class _ConversationTile extends StatelessWidget {
                         const SizedBox(height: AppDimensions.space6),
                         if (hasUnread)
                           Container(
-                            width:  22,
+                            width: 22,
                             height: 22,
                             decoration: const BoxDecoration(
                               color: AppColors.champagneGold,
@@ -344,8 +477,8 @@ class _ConversationTile extends StatelessWidget {
                             child: Center(
                               child: Text(
                                 '${conversation.unreadCount}',
-                                style: AppTypography.badge.copyWith(
-                                    fontSize: 11),
+                                style:
+                                    AppTypography.badge.copyWith(fontSize: 11),
                               ),
                             ),
                           )
@@ -371,48 +504,11 @@ class _ChatEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppDimensions.space40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width:  100,
-              height: 100,
-              decoration: BoxDecoration(
-                color:  AppColors.surfaceGlass,
-                shape:  BoxShape.circle,
-                border: Border.all(color: AppColors.goldBorder),
-                boxShadow: const [
-                  BoxShadow(
-                    color:       AppColors.goldGlow,
-                    blurRadius:  24,
-                    spreadRadius: 4,
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.chat_bubble_outline_rounded,
-                color: AppColors.champagneGold,
-                size:  44,
-              ),
-            ),
-            const SizedBox(height: AppDimensions.space28),
-            Text(
-              'No conversations yet',
-              style: AppTypography.screenTitle.copyWith(fontSize: 22),
-            ),
-            const SizedBox(height: AppDimensions.space12),
-            const Text(
-              'Accept an interest or have yours\naccepted to begin a conversation.',
-              style: AppTypography.bodyMuted,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
+    return const SilarahEmptyState(
+      visual: SilarahEmptyVisual.conversations,
+      title: 'No conversations yet',
+      subtitle:
+          'Accept an interest or have yours accepted to begin a conversation.',
     );
   }
 }
-

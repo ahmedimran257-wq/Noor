@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mithaq/core/services/id_ocr_service.dart';
+import 'package:silarah/core/services/id_ocr_service.dart';
 
 void main() {
   group('IdOcrService parsing', () {

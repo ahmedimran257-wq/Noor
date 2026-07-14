@@ -1,6 +1,6 @@
 // lib/features/onboarding/screens/profile_for_whom_screen.dart
 // ============================================================
-// MITHAQ - Profile For Whom Screen (fast-start step 1)
+// SILARAH - Profile For Whom Screen (fast-start step 1)
 // Two primary options: Myself / Guardian.
 // Selecting Guardian expands to show relationship sub-options:
 //   Son, Daughter, Brother, Sister.
@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mithaq/l10n/generated/app_localizations.dart';
+import 'package:silarah/l10n/generated/app_localizations.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_state.dart';
@@ -19,6 +19,7 @@ import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/loaders/silarah_shimmer.dart';
 import '../widgets/step_header.dart';
 
 class ProfileForWhomScreen extends StatefulWidget {
@@ -356,14 +357,9 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 180),
                     child: _advancing
-                        ? const SizedBox(
+                        ? const SilarahPulseLoader(
                             key: ValueKey('profile-for-whom-loading'),
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.champagneGold,
-                            ),
+                            size: 24,
                           )
                         : Text(
                             key: const ValueKey('profile-for-whom-hint'),

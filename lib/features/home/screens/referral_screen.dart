@@ -1,6 +1,6 @@
 // lib/features/home/screens/referral_screen.dart
 // ============================================================
-// MITHAQ — Referral & Ambassador Screen
+// SILARAH — Referral & Ambassador Screen
 // Allows users to view their referral code, copy/share it,
 // and track their rewards (7 days of free premium per opposite
 // gender referral).
@@ -13,6 +13,7 @@ import '../../../core/services/referral_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/loaders/silarah_shimmer.dart';
 
 class ReferralScreen extends StatefulWidget {
   const ReferralScreen({super.key});
@@ -24,7 +25,7 @@ class ReferralScreen extends StatefulWidget {
 class _ReferralScreenState extends State<ReferralScreen> {
   final _service = ReferralService.instance;
   bool _isLoading = true;
-  String _code = 'NOORXX';
+  String _code = 'SILARAH';
   ReferralStats _stats = const ReferralStats(
     totalReferrals: 0,
     rewardsEarned: 0,
@@ -106,8 +107,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
             style: AppTypography.screenTitle.copyWith(fontSize: 20)),
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.champagneGold))
+          ? const Center(child: SilarahPulseLoader(label: 'Loading rewards'))
           : SingleChildScrollView(
               padding: const EdgeInsets.all(AppDimensions.space24),
               child: Column(
@@ -137,7 +137,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                   ),
                   const SizedBox(height: AppDimensions.space12),
                   const Text(
-                    'Invite your friends to MITHAQ. When someone of the opposite gender completes onboarding using your code, you both get 7 days of FREE Premium!',
+                    'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 7 days of FREE Premium!',
                     style: AppTypography.bodyMuted,
                     textAlign: TextAlign.center,
                   ),

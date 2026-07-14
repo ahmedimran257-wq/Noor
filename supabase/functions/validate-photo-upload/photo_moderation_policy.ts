@@ -1,5 +1,5 @@
 export interface ClientPhotoModerationPayload {
-  status: "safe" | "pendingReview" | "unsafe" | "scanFailed";
+  status: "approved" | "flagged" | "rejected" | "scanFailed";
   is_nsfw: boolean;
   requires_review?: boolean;
   confidence: number;
@@ -7,7 +7,7 @@ export interface ClientPhotoModerationPayload {
   threshold: number;
 }
 
-export type PhotoValidationAction = "reject" | "pending_review";
+export type PhotoValidationAction = "reject" | "approved" | "flagged";
 
 export function resolveClientModerationVerdict(
   moderation: ClientPhotoModerationPayload,
@@ -24,13 +24,17 @@ export function resolveClientModerationVerdict(
     moderation.category.length > 0;
 
   if (!shapeIsValid) return "reject";
-  if (moderation.status === "unsafe" || moderation.status === "scanFailed") {
+  if (moderation.status === "rejected" || moderation.status === "scanFailed") {
     return "reject";
   }
-  if (moderation.is_nsfw === true) return "reject";
-
-  // Client-side moderation is evidence, not approval authority. Without a
-  // server-side scanner or a staff decision, photos must remain out of public
-  // discovery even when the client reports "safe".
-  return "pending_review";
+  if (
+    moderation.status === "flagged" &&
+    moderation.is_nsfw === true &&
+    moderation.category === "explicit_content" &&
+    moderation.confidence > 0.85
+  ) return "flagged";
+  if (moderation.status !== "approved" || moderation.is_nsfw === true) {
+    return "reject";
+  }
+  return "approved";
 }

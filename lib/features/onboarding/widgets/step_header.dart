@@ -1,6 +1,6 @@
 // lib/features/onboarding/widgets/step_header.dart
 // ============================================================
-// MITHAQ — Step Header
+// SILARAH — Step Header
 // Decorative gold ornament + screen title (Playfair) + subtitle (Inter muted).
 // ============================================================
 

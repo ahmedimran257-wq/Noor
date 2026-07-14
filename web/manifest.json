@@ -1,11 +1,11 @@
 {
-    "name": "Mithaq",
-    "short_name": "Mithaq",
+    "name": "Silarah",
+    "short_name": "Silarah",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "Mithaq — Premium Muslim Matrimony App",
+    "description": "Silarah — Premium Muslim Matrimony App",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

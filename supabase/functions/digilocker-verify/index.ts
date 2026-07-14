@@ -12,18 +12,25 @@ Deno.serve(async (request) => {
   const corsResponse = handleCors(request);
   if (corsResponse) return corsResponse;
   if (!clientId || !clientSecret || !tokenUrl) {
-    return response(503, { status: "unavailable", message: "DigiLocker is not configured." });
+    return response(503, {
+      status: "unavailable",
+      message: "DigiLocker is not configured.",
+    });
   }
 
   try {
     const authorization = request.headers.get("Authorization");
-    if (!authorization?.startsWith("Bearer ")) return response(401, { message: "Authentication required." });
+    if (!authorization?.startsWith("Bearer ")) {
+      return response(401, { message: "Authentication required." });
+    }
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authorization } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
     const { data: { user }, error } = await userClient.auth.getUser();
-    if (error || !user) return response(401, { message: "Authentication required." });
+    if (error || !user) {
+      return response(401, { message: "Authentication required." });
+    }
 
     const { code, redirect_uri } = await request.json();
     if (typeof code !== "string" || typeof redirect_uri !== "string") {
@@ -41,7 +48,11 @@ Deno.serve(async (request) => {
         redirect_uri,
       }),
     });
-    if (!tokenResponse.ok) return response(422, { message: "DigiLocker verification was not completed." });
+    if (!tokenResponse.ok) {
+      return response(422, {
+        message: "DigiLocker verification was not completed.",
+      });
+    }
 
     const admin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
@@ -57,7 +68,9 @@ Deno.serve(async (request) => {
     return response(200, { status: "verified" });
   } catch (error) {
     console.error("[digilocker-verify]", error);
-    return response(500, { message: "Unable to complete DigiLocker verification." });
+    return response(500, {
+      message: "Unable to complete DigiLocker verification.",
+    });
   }
 });
 

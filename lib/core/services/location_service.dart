@@ -12,7 +12,7 @@ class LocationResolution {
   bool get isSuccess => cityId != null && cityId!.isNotEmpty;
 }
 
-/// Resolves externally searched cities into reusable rows in the Mithaq city
+/// Resolves externally searched cities into reusable rows in the Silarah city
 /// cache. The server remains authoritative for IDs and location validation.
 abstract final class LocationService {
   static Future<LocationResolution> resolveCity(CityResult city) async {

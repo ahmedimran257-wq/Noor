@@ -1,6 +1,6 @@
 // lib/features/home/screens/notifications_screen.dart
 // ============================================================
-// MITHAQ — Notifications Screen (Feature 11)
+// SILARAH — Notifications Screen (Feature 11)
 // Shows all notifications with read/unread state.
 // AppBar: "Mark all read" text button.
 // Each row: type icon in colored circle + title + body + time.
@@ -9,6 +9,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/cubits/notifications/notifications_cubit.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
@@ -23,22 +24,22 @@ class NotificationsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.obsidianNight,
       appBar: AppBar(
-        backgroundColor:  AppColors.obsidianNight,
+        backgroundColor: AppColors.obsidianNight,
         surfaceTintColor: Colors.transparent,
-        elevation:        0,
+        elevation: 0,
         leading: GestureDetector(
           onTap: () => Navigator.pop(context),
           child: Container(
             margin: const EdgeInsets.all(AppDimensions.space8),
             decoration: BoxDecoration(
-              color:  AppColors.surfaceGlass,
-              shape:  BoxShape.circle,
+              color: AppColors.surfaceGlass,
+              shape: BoxShape.circle,
               border: Border.all(color: AppColors.cardBorder),
             ),
             child: const Icon(
               Icons.arrow_back_rounded,
               color: AppColors.pearlWhite,
-              size:  AppDimensions.iconSizeMedium,
+              size: AppDimensions.iconSizeMedium,
             ),
           ),
         ),
@@ -47,23 +48,61 @@ class NotificationsScreen extends StatelessWidget {
         actions: [
           BlocBuilder<NotificationsCubit, NotificationsState>(
             builder: (context, state) {
-              if (state.unreadCount == 0) return const SizedBox.shrink();
-              return TextButton(
-                onPressed: () =>
-                    context.read<NotificationsCubit>().markAllRead(),
-                child: Text(
-                  AppLocalizations.of(context).notifications_markAllRead,
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.champagneGold,
+              if (state.items.isEmpty) return const SizedBox.shrink();
+              return PopupMenuButton<_NotificationMenuAction>(
+                tooltip: 'Notification options',
+                color: AppColors.surfaceElevated,
+                icon: const Icon(Icons.more_horiz_rounded,
+                    color: AppColors.slateMist),
+                onSelected: (action) async {
+                  final cubit = context.read<NotificationsCubit>();
+                  if (action == _NotificationMenuAction.markAllRead) {
+                    await cubit.markAllRead();
+                    return;
+                  }
+                  final confirmed = await _confirmClearAll(context);
+                  if (!confirmed || !context.mounted) return;
+                  final deleted = await cubit.clearAllNotifications();
+                  if (!deleted && context.mounted) {
+                    _showDeleteError(context);
+                  }
+                },
+                itemBuilder: (_) => [
+                  if (state.unreadCount > 0)
+                    PopupMenuItem(
+                      value: _NotificationMenuAction.markAllRead,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.done_all_rounded,
+                              color: AppColors.verifiedTeal, size: 19),
+                          const SizedBox(width: AppDimensions.space10),
+                          Text(
+                            AppLocalizations.of(context)
+                                .notifications_markAllRead,
+                            style: AppTypography.body,
+                          ),
+                        ],
+                      ),
+                    ),
+                  const PopupMenuItem(
+                    value: _NotificationMenuAction.clearAll,
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_sweep_outlined,
+                            color: AppColors.softCoral, size: 19),
+                        SizedBox(width: AppDimensions.space10),
+                        Text('Clear all notifications',
+                            style: AppTypography.body),
+                      ],
+                    ),
                   ),
-                ),
+                ],
               );
             },
           ),
           const SizedBox(width: AppDimensions.space8),
         ],
       ),
-
       body: BlocBuilder<NotificationsCubit, NotificationsState>(
         builder: (context, state) {
           if (state.items.isEmpty) {
@@ -71,14 +110,41 @@ class NotificationsScreen extends StatelessWidget {
           }
           return ListView.separated(
             padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
-            itemCount:        state.items.length,
+            itemCount: state.items.length,
             separatorBuilder: (_, __) => const SizedBox(height: 8),
             itemBuilder: (context, i) {
               final item = state.items[i];
-              return _NotificationTile(
-                item: item,
-                onTap: () =>
-                    context.read<NotificationsCubit>().markRead(item.id),
+              return Dismissible(
+                key: ValueKey(item.id),
+                direction: DismissDirection.endToStart,
+                confirmDismiss: (_) => _confirmDeleteOne(context),
+                onDismissed: (_) async {
+                  final deleted = await context
+                      .read<NotificationsCubit>()
+                      .deleteNotification(item.id);
+                  if (!deleted && context.mounted) _showDeleteError(context);
+                },
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: AppDimensions.space20),
+                  decoration: BoxDecoration(
+                    color: AppColors.softCoral.withValues(alpha: 0.14),
+                    borderRadius:
+                        BorderRadius.circular(AppDimensions.radiusButton),
+                    border: Border.all(
+                        color: AppColors.softCoral.withValues(alpha: 0.35)),
+                  ),
+                  child: const Icon(Icons.delete_outline_rounded,
+                      color: AppColors.softCoral),
+                ),
+                child: _NotificationTile(
+                  item: item,
+                  onTap: () async {
+                    await context.read<NotificationsCubit>().markRead(item.id);
+                    final path = notificationPathFor(item);
+                    if (path != null && context.mounted) context.push(path);
+                  },
+                ),
               );
             },
           );
@@ -90,96 +156,165 @@ class NotificationsScreen extends StatelessWidget {
 
 // ── Notification tile ─────────────────────────────────────────
 
+enum _NotificationMenuAction { markAllRead, clearAll }
+
+Future<bool> _confirmDeleteOne(BuildContext context) async {
+  return await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          backgroundColor: AppColors.surfaceElevated,
+          title: const Text('Remove notification?',
+              style: AppTypography.bodyMedium),
+          content: const Text(
+            'This notification will be permanently removed from your account.',
+            style: AppTypography.bodyMuted,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Keep'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Remove',
+                  style: TextStyle(color: AppColors.softCoral)),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+}
+
+Future<bool> _confirmClearAll(BuildContext context) async {
+  return await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          backgroundColor: AppColors.surfaceElevated,
+          title: const Text('Clear notification history?',
+              style: AppTypography.bodyMedium),
+          content: const Text(
+            'Every notification will be permanently removed. New notifications will continue to arrive normally.',
+            style: AppTypography.bodyMuted,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Clear all',
+                  style: TextStyle(color: AppColors.softCoral)),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+}
+
+void _showDeleteError(BuildContext context) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Could not remove notifications. Please try again.'),
+      behavior: SnackBarBehavior.floating,
+    ),
+  );
+}
+
 class _NotificationTile extends StatelessWidget {
-  const _NotificationTile({required this.item, required this.onTap});
+  const _NotificationTile({
+    required this.item,
+    required this.onTap,
+  });
   final NotificationItem item;
-  final VoidCallback     onTap;
+  final Future<void> Function() onTap;
 
   @override
   Widget build(BuildContext context) {
-    final iconData  = _iconFor(item.type);
+    final iconData = _iconFor(item.type);
     final iconColor = _colorFor(item.type);
+    final title =
+        item.title.trim().isEmpty ? 'Notification' : item.title.trim();
+    final body = item.body.trim().isEmpty
+        ? 'Open Silarah to view the latest update.'
+        : item.body.trim();
 
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: AppDimensions.durationTransition,
-        decoration: BoxDecoration(
-          color:        AppColors.surfaceGlass,
+    return RepaintBoundary(
+      child: Material(
+        color: AppColors.surfaceGlass,
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          border: item.isRead
-              ? Border.all(color: AppColors.cardBorder)
-              : const Border(
-                  left:   BorderSide(
-                      color: AppColors.champagneGold, width: 3),
-                  top:    BorderSide(color: AppColors.cardBorder),
-                  right:  BorderSide(color: AppColors.cardBorder),
-                  bottom: BorderSide(color: AppColors.cardBorder),
-                ),
+          side: BorderSide(
+            color: item.isRead ? AppColors.cardBorder : AppColors.champagneGold,
+            width: item.isRead ? 1 : 1.5,
+          ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(AppDimensions.space16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Icon circle
-              Container(
-                width:  44,
-                height: 44,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: iconColor.withValues(alpha: 0.15),
-                  border: Border.all(
-                      color: iconColor.withValues(alpha: 0.3)),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(AppDimensions.space16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Icon circle
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: iconColor.withValues(alpha: 0.15),
+                    border: Border.all(color: iconColor.withValues(alpha: 0.3)),
+                  ),
+                  child: Icon(iconData, color: iconColor, size: 20),
                 ),
-                child: Icon(iconData, color: iconColor, size: 20),
-              ),
-              const SizedBox(width: AppDimensions.space12),
+                const SizedBox(width: AppDimensions.space12),
 
-              // Content
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            item.title,
-                            style: item.isRead
-                                ? AppTypography.body
-                                : AppTypography.bodyMedium,
-                          ),
-                        ),
-                        const SizedBox(width: AppDimensions.space8),
-                        Text(
-                          _timeLabel(item.time),
-                          style: AppTypography.caption,
-                        ),
-                        if (!item.isRead) ...[
-                          const SizedBox(width: AppDimensions.space6),
-                          Container(
-                            width:  7,
-                            height: 7,
-                            decoration: const BoxDecoration(
-                              color: AppColors.champagneGold,
-                              shape: BoxShape.circle,
+                // Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: item.isRead
+                                  ? AppTypography.body
+                                  : AppTypography.bodyMedium,
                             ),
                           ),
+                          const SizedBox(width: AppDimensions.space8),
+                          Text(
+                            _timeLabel(item.time),
+                            style: AppTypography.caption,
+                          ),
+                          if (!item.isRead) ...[
+                            const SizedBox(width: AppDimensions.space6),
+                            Container(
+                              width: 7,
+                              height: 7,
+                              decoration: const BoxDecoration(
+                                color: AppColors.champagneGold,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
-                    ),
-                    const SizedBox(height: AppDimensions.space4),
-                    Text(
-                      item.body,
-                      style: AppTypography.caption,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                      ),
+                      const SizedBox(height: AppDimensions.space4),
+                      Text(
+                        body,
+                        style: AppTypography.caption,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -188,31 +323,67 @@ class _NotificationTile extends StatelessWidget {
 
   IconData _iconFor(String type) {
     switch (type) {
-      case 'interest_received':  return Icons.favorite_rounded;
-      case 'interest_accepted':  return Icons.check_circle_rounded;
-      case 'new_message':        return Icons.chat_bubble_rounded;
-      case 'boost_ready':        return Icons.rocket_launch_rounded;
-      case 'profile_approved':   return Icons.verified_rounded;
-      default:                   return Icons.lightbulb_outline_rounded;
+      case 'interest_received':
+        return Icons.favorite_rounded;
+      case 'interest_accepted':
+        return Icons.check_circle_rounded;
+      case 'new_message':
+        return Icons.chat_bubble_rounded;
+      case 'boost_ready':
+        return Icons.rocket_launch_rounded;
+      case 'profile_live':
+        return Icons.verified_rounded;
+      case 'profile_returned_to_review':
+      case 'photo_rejected':
+      case 'kyc_rejected':
+      case 'kyc_pending':
+        return Icons.info_rounded;
+      case 'photo_approved':
+      case 'kyc_approved':
+      case 'account_restored':
+        return Icons.check_circle_rounded;
+      case 'account_suspended':
+      case 'account_banned':
+        return Icons.block_rounded;
+      default:
+        return Icons.lightbulb_outline_rounded;
     }
   }
 
   Color _colorFor(String type) {
     switch (type) {
-      case 'interest_received':  return AppColors.champagneGold;
-      case 'interest_accepted':  return AppColors.verifiedTeal;
-      case 'new_message':        return AppColors.messageBlue;
-      case 'boost_ready':        return AppColors.champagneGold;
-      case 'profile_approved':   return AppColors.verifiedTeal;
-      default:                   return AppColors.slateMist;
+      case 'interest_received':
+        return AppColors.champagneGold;
+      case 'interest_accepted':
+        return AppColors.verifiedTeal;
+      case 'new_message':
+        return AppColors.messageBlue;
+      case 'boost_ready':
+        return AppColors.champagneGold;
+      case 'profile_live':
+        return AppColors.verifiedTeal;
+      case 'profile_returned_to_review':
+      case 'photo_rejected':
+      case 'kyc_rejected':
+      case 'kyc_pending':
+        return AppColors.champagneGold;
+      case 'photo_approved':
+      case 'kyc_approved':
+      case 'account_restored':
+        return AppColors.verifiedTeal;
+      case 'account_suspended':
+      case 'account_banned':
+        return AppColors.errorRed;
+      default:
+        return AppColors.slateMist;
     }
   }
 
   String _timeLabel(DateTime dt) {
     final diff = DateTime.now().difference(dt);
     if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24)   return '${diff.inHours}h ago';
-    if (diff.inDays == 1)    return 'Yesterday';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays == 1) return 'Yesterday';
     return '${diff.inDays}d ago';
   }
 }
@@ -235,7 +406,7 @@ class _EmptyState extends StatelessWidget {
             child: const Icon(
               Icons.notifications_none_rounded,
               color: AppColors.slateMist,
-              size:  48,
+              size: 48,
             ),
           ),
           const SizedBox(height: AppDimensions.space24),

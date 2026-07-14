@@ -14,11 +14,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     <main className="auth-page">
       <div className="auth-gridline" />
       <div className="auth-shell">
-        <section className="auth-command" aria-label="Mithaq operations security posture">
+        <section className="auth-command" aria-label="Silarah operations security posture">
           <div className="auth-lockup">
             <div className="brand-mark enterprise"><ShieldCheck size={28} /></div>
             <div>
-              <p className="eyebrow">Mithaq Command</p>
+              <p className="eyebrow">Silarah Command</p>
               <h1>Operations access gateway</h1>
             </div>
           </div>

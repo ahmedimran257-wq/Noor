@@ -61,7 +61,7 @@ export interface FirebaseClaims {
 
 export async function verifyFirebaseToken(
   idToken: string,
-  expectedProjectId: string
+  expectedProjectId: string,
 ): Promise<FirebaseClaims> {
   const keys = await getFirebasePublicKeys();
 
@@ -71,20 +71,28 @@ export async function verifyFirebaseToken(
     throw new Error("Malformed Firebase ID token.");
   }
 
-  const header = JSON.parse(atob(headerB64.replace(/-/g, "+").replace(/_/g, "/")));
-  const payload = JSON.parse(atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/")));
+  const header = JSON.parse(
+    atob(headerB64.replace(/-/g, "+").replace(/_/g, "/")),
+  );
+  const payload = JSON.parse(
+    atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/")),
+  );
 
   // Validate standard JWT claims
   const now = Math.floor(Date.now() / 1000);
   if (payload.exp < now) throw new Error("Firebase ID token has expired.");
-  if (payload.iat > now + 300) throw new Error("Firebase ID token issued in the future.");
+  if (payload.iat > now + 300) {
+    throw new Error("Firebase ID token issued in the future.");
+  }
   if (payload.aud !== expectedProjectId) {
     throw new Error(
-      `Token audience '${payload.aud}' does not match expected project '${expectedProjectId}'.`
+      `Token audience '${payload.aud}' does not match expected project '${expectedProjectId}'.`,
     );
   }
   if (payload.iss !== `https://securetoken.google.com/${expectedProjectId}`) {
-    throw new Error("Token issuer mismatch — possible cross-project token injection.");
+    throw new Error(
+      "Token issuer mismatch — possible cross-project token injection.",
+    );
   }
   if (!payload.phone_number) {
     throw new Error("Firebase token does not contain a phone_number claim.");
@@ -101,12 +109,17 @@ export async function verifyFirebaseToken(
     jwk,
     { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
     false,
-    ["verify"]
+    ["verify"],
   );
 
   const signingInput = new TextEncoder().encode(`${headerB64}.${payloadB64}`);
   const signature = base64UrlToArrayBuffer(signatureB64);
-  const valid = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", pubKey, signature, signingInput);
+  const valid = await crypto.subtle.verify(
+    "RSASSA-PKCS1-v1_5",
+    pubKey,
+    signature,
+    signingInput,
+  );
 
   if (!valid) {
     throw new Error("Firebase ID token signature verification failed.");

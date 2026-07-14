@@ -1,6 +1,6 @@
 // lib/core/cubits/subscription/subscription_cubit.dart
 // ============================================================
-// MITHAQ - Subscription Cubit
+// SILARAH - Subscription Cubit
 // Production RevenueCat flow only.
 // ============================================================
 
@@ -17,8 +17,8 @@ import 'subscription_state.dart';
 class SubscriptionCubit extends Cubit<SubscriptionState> {
   SubscriptionCubit() : super(const SubscriptionState());
 
-  static const monthlyProductId = 'mithaq_monthly';
-  static const annualProductId = 'mithaq_annual';
+  static const monthlyProductId = 'silarah_monthly';
+  static const annualProductId = 'silarah_annual';
 
   StreamSubscription<DisplayPricing>? _pricingSub;
 
@@ -126,7 +126,7 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
           isLoading: false,
           status: SubscriptionStatus.active,
           expiresAt: expiry,
-          successMessage: 'JazakAllah khair - MITHAQ Premium is now active!',
+          successMessage: 'JazakAllah khair - SILARAH Premium is now active!',
         ));
       } else {
         emit(state.copyWith(

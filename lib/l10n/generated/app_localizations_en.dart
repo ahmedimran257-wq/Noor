@@ -49,7 +49,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get about_title_self => 'About you';
 
   @override
-  String get appName => 'Mithaq';
+  String get appName => 'Silarah';
 
   @override
   String get appTagline => 'Begin with bismillah';
@@ -230,7 +230,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chat_label_subscribeToMessage =>
-      'Subscribe to unlock messaging. Women always message free on Mithaq.';
+      'Subscribe to unlock messaging. Women always message free on Silarah.';
 
   @override
   String get chat_matchClosed_banner =>
@@ -346,7 +346,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get discovery_empty_title => 'You\'ve seen everyone nearby';
 
   @override
-  String get discovery_header_title => 'Mithaq';
+  String get discovery_header_title => 'Silarah';
 
   @override
   String get discovery_label_interestSent => 'Interest Sent ✓';
@@ -1046,16 +1046,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboarding_error_under18 =>
-      'Mithaq is for those 18 and older. We\'ve made this requirement to protect everyone in our community.';
+      'Silarah is for those 18 and older. We\'ve made this requirement to protect everyone in our community.';
 
   @override
   String onboarding_error_under18_guardian(String relation) {
-    return 'Your $relation must be 18 or older to use Mithaq.';
+    return 'Your $relation must be 18 or older to use Silarah.';
   }
 
   @override
   String get onboarding_error_under18_self =>
-      'You must be 18 or older to use Mithaq. We look forward to welcoming you then.';
+      'You must be 18 or older to use Silarah. We look forward to welcoming you then.';
 
   @override
   String get onboarding_habit_frequently => 'Frequently';
@@ -1546,7 +1546,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get photo_banner_text =>
-      'Upload a clear photo showing your face. Photos with explicit content are not permitted.';
+      'Photos with explicit content are not permitted';
 
   @override
   String get photo_error_no_face_detected =>
@@ -1570,7 +1570,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get photo_label_primary => 'Primary photo';
 
   @override
-  String get photo_label_selfie => 'Verification selfie';
+  String get photo_label_selfie => 'Photo 4';
 
   @override
   String get photo_no_face => 'No face visible';
@@ -1870,7 +1870,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Profiles with 80%+ completeness receive 3× more interests.';
 
   @override
-  String get settings_brand_credit => 'Mithaq (ميثاق) · For the sake of Allah';
+  String get settings_brand_credit =>
+      'Silarah (سيلارا) · For the sake of Allah';
 
   @override
   String get settings_button_deleteAccount => 'Delete Account';
@@ -1942,11 +1943,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings_label_photoPrivacy => 'Photo Privacy';
 
   @override
-  String get settings_label_rate => 'Rate Mithaq';
+  String get settings_label_rate => 'Rate Silarah';
 
   @override
   String get settings_label_rate_snackbar =>
-      'Rating will be available once Mithaq launches on the app store.';
+      'Rating will be available once Silarah launches on the app store.';
 
   @override
   String get settings_label_reports => 'Report History';
@@ -1993,9 +1994,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settings_notify_newMessage => 'New Messages';
-
-  @override
-  String get settings_notify_profileApproved => 'Profile Approved';
 
   @override
   String get settings_notify_quietHours => 'Quiet Hours';
@@ -2147,7 +2145,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get splash_referral_button => 'Apply Code';
 
   @override
-  String get splash_referral_hint => 'e.g. MITHAQXX';
+  String get splash_referral_hint => 'e.g. SILARAHXX';
 
   @override
   String get splash_referral_invalid =>
@@ -2162,7 +2160,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get splash_referral_subtitle =>
-      'If a friend invited you to Mithaq, enter their 6-character referral code below.';
+      'If a friend invited you to Silarah, enter their 6-character referral code below.';
 
   @override
   String get splash_referral_title => 'Enter Referral Code';
@@ -2180,5 +2178,41 @@ class AppLocalizationsEn extends AppLocalizations {
       'Women message free. Men subscribe to connect.';
 
   @override
-  String get subscription_title => 'Unlock Mithaq';
+  String get subscription_title => 'Unlock Silarah';
+
+  @override
+  String get startup_connectivity_preparing_title =>
+      'Preparing your private space';
+
+  @override
+  String get startup_connectivity_preparing_body =>
+      'Establishing a secure connection to Silarah.';
+
+  @override
+  String get startup_connectivity_offline_title => 'Connection unavailable';
+
+  @override
+  String get startup_connectivity_offline_body =>
+      'Your place in Silarah is secure. We will continue the moment the network returns.';
+
+  @override
+  String get startup_connectivity_verifying => 'VERIFYING CONNECTION';
+
+  @override
+  String get startup_connectivity_waiting => 'SECURE CONNECTION · WAITING';
+
+  @override
+  String get startup_connectivity_still_waiting => 'STILL WAITING';
+
+  @override
+  String get startup_connectivity_check => 'Check connection';
+
+  @override
+  String get startup_connectivity_checking => 'Checking securely';
+
+  @override
+  String get startup_connectivity_auto => 'Reconnection is automatic';
+
+  @override
+  String get startup_connectivity_protected => 'Protected connection';
 }

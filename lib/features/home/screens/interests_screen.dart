@@ -1,6 +1,6 @@
 // lib/features/home/screens/interests_screen.dart
 // ============================================================
-// MITHAQ — Interests Inbox (Items 17, 18, 19, 21, 22, 26)
+// SILARAH — Interests Inbox (Items 17, 18, 19, 21, 22, 26)
 //
 // Items implemented here:
 //   17 — Daily limit counter banner in Sent tab header (male only)
@@ -8,10 +8,9 @@
 //   19 — Withdraw confirm dialog on Sent tab
 //   21 — Match modal: remove 48h note, show "Bismillah" CTA
 //   22 — All cooling period text removed
-//   26 — MithaqEmptyState on both tabs
+//   26 — SilarahEmptyState on both tabs
 // ============================================================
 
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -22,7 +21,7 @@ import '../../../core/models/discovery_profile.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/mithaq_empty_state.dart';
+import '../../../core/widgets/silarah_empty_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import 'chat_screen.dart';
 
@@ -59,112 +58,107 @@ class _InterestsScreenState extends State<InterestsScreen>
     showDialog(
       context: context,
       barrierColor: AppColors.obsidianNight.withValues(alpha: 0.85),
-      builder: (context) => BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Center(
-          child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: AppDimensions.space24),
-            child: Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-              child: Container(
-                padding: const EdgeInsets.all(AppDimensions.space32),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceElevated,
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-                  border: Border.all(color: AppColors.goldBorder, width: 1.5),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: AppColors.goldGlow,
-                      blurRadius: 40,
-                      spreadRadius: 8,
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Overlapping avatars + heart centre badge
-                    _MatchAvatarPair(),
-                    const SizedBox(height: AppDimensions.space24),
+      builder: (context) => Center(
+        child: Padding(
+          padding:
+              const EdgeInsets.symmetric(horizontal: AppDimensions.space24),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+            child: Container(
+              padding: const EdgeInsets.all(AppDimensions.space32),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceElevated,
+                borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+                border: Border.all(color: AppColors.goldBorder, width: 1.5),
+                boxShadow: const [
+                  BoxShadow(
+                    color: AppColors.goldGlow,
+                    blurRadius: 40,
+                    spreadRadius: 8,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Overlapping avatars + heart centre badge
+                  _MatchAvatarPair(),
+                  const SizedBox(height: AppDimensions.space24),
 
-                    // Gold title
-                    Text(
-                      'Mabrook!',
-                      style: AppTypography.screenTitle.copyWith(
-                          color: AppColors.champagneGold, fontSize: 28),
-                    ),
-                    const SizedBox(height: AppDimensions.space4),
-                    Text(
-                      'You have a mutual interest.',
-                      style: AppTypography.screenTitle
-                          .copyWith(color: AppColors.pearlWhite, fontSize: 18),
-                    ),
-                    const SizedBox(height: AppDimensions.space12),
+                  // Gold title
+                  Text(
+                    'Mabrook!',
+                    style: AppTypography.screenTitle
+                        .copyWith(color: AppColors.champagneGold, fontSize: 28),
+                  ),
+                  const SizedBox(height: AppDimensions.space4),
+                  Text(
+                    'You have a mutual interest.',
+                    style: AppTypography.screenTitle
+                        .copyWith(color: AppColors.pearlWhite, fontSize: 18),
+                  ),
+                  const SizedBox(height: AppDimensions.space12),
 
-                    // Bismillah subtitle (Item 21 — replaces 48h note)
-                    Text(
-                      'Say bismillah and begin a conversation.',
-                      style: AppTypography.bodyMuted.copyWith(height: 1.6),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: AppDimensions.space28),
+                  // Bismillah subtitle (Item 21 — replaces 48h note)
+                  Text(
+                    'Say bismillah and begin a conversation.',
+                    style: AppTypography.bodyMuted.copyWith(height: 1.6),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppDimensions.space28),
 
-                    // Message Now CTA — gold, full width
-                    SizedBox(
-                      width: double.infinity,
-                      height: AppDimensions.buttonHeight,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.champagneGold,
-                          foregroundColor: AppColors.obsidianNight,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                                AppDimensions.radiusButton),
-                          ),
-                          elevation: 0,
+                  // Message Now CTA — gold, full width
+                  SizedBox(
+                    width: double.infinity,
+                    height: AppDimensions.buttonHeight,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.champagneGold,
+                        foregroundColor: AppColors.obsidianNight,
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(AppDimensions.radiusButton),
                         ),
-                        onPressed: () async {
-                          HapticFeedback.mediumImpact();
-                          final chatCubit = context.read<ChatCubit>();
-                          final navigator = Navigator.of(context);
-                          navigator.pop();
-                          final convId =
-                              await chatCubit.openOrCreateConversation(
-                                  profile.id,
-                                  profile.firstName,
-                                  profile.lastNameInitial);
-                          if (convId.isNotEmpty) {
-                            navigator.push(
-                              PageRouteBuilder(
-                                transitionDuration:
-                                    AppDimensions.durationReveal,
-                                pageBuilder: (ctx, anim, _) => FadeTransition(
-                                  opacity: anim,
-                                  child: ChatScreen(conversationId: convId),
-                                ),
+                        elevation: 0,
+                      ),
+                      onPressed: () async {
+                        HapticFeedback.mediumImpact();
+                        final chatCubit = context.read<ChatCubit>();
+                        final navigator = Navigator.of(context);
+                        navigator.pop();
+                        final convId = await chatCubit.openOrCreateConversation(
+                            profile.id,
+                            profile.firstName,
+                            profile.lastNameInitial);
+                        if (convId.isNotEmpty) {
+                          navigator.push(
+                            PageRouteBuilder(
+                              transitionDuration: AppDimensions.durationReveal,
+                              pageBuilder: (ctx, anim, _) => FadeTransition(
+                                opacity: anim,
+                                child: ChatScreen(conversationId: convId),
                               ),
-                            );
-                          }
-                        },
-                        child: const Text('Message Now',
-                            style: AppTypography.button),
-                      ),
+                            ),
+                          );
+                        }
+                      },
+                      child: const Text('Message Now',
+                          style: AppTypography.button),
                     ),
-                    const SizedBox(height: AppDimensions.space12),
+                  ),
+                  const SizedBox(height: AppDimensions.space12),
 
-                    // Maybe later
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Text(
-                        'Maybe later',
-                        style: AppTypography.caption
-                            .copyWith(color: AppColors.slateMist),
-                      ),
+                  // Maybe later
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(
+                      'Maybe later',
+                      style: AppTypography.caption
+                          .copyWith(color: AppColors.slateMist),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -327,8 +321,8 @@ class _InterestsScreenState extends State<InterestsScreen>
                 children: [
                   // ── Received tab ──────────────────────────
                   state.displayReceived.isEmpty
-                      ? const MithaqEmptyState(
-                          icon: Icons.favorite_border_rounded,
+                      ? const SilarahEmptyState(
+                          visual: SilarahEmptyVisual.interests,
                           title: 'No interests yet',
                           subtitle:
                               'When someone sends you an interest it appears here.',
@@ -357,8 +351,8 @@ class _InterestsScreenState extends State<InterestsScreen>
 
                       Expanded(
                         child: state.sent.isEmpty
-                            ? const MithaqEmptyState(
-                                icon: Icons.send_outlined,
+                            ? const SilarahEmptyState(
+                                visual: SilarahEmptyVisual.sentInterests,
                                 title: "You haven't sent any interests",
                                 subtitle:
                                     'Browse profiles and send your first interest.',

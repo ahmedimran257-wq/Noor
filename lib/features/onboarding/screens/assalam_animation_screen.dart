@@ -164,7 +164,7 @@ class _AssalamAnimationScreenState extends State<AssalamAnimationScreen>
     if (_navigated || !mounted) return;
     _navigated = true;
     final prefs = await SharedPreferences.getInstance();
-    final introCompleted = prefs.getBool('mithaq_intro_completed') ?? false;
+    final introCompleted = prefs.getBool('silarah_intro_completed') ?? false;
     if (!mounted) return;
     context.go(introCompleted ? AppRoutes.splash : AppRoutes.languageSelect);
   }
@@ -293,7 +293,7 @@ class _AssalamAnimationScreenState extends State<AssalamAnimationScreen>
             Opacity(
               opacity: textOpacity,
               child: const Text(
-                'MITHAQ',
+                'SILARAH',
                 style: TextStyle(
                   fontFamily: 'PlayfairDisplay',
                   fontSize: 48,
@@ -433,7 +433,7 @@ class _AssalamAnimationScreenState extends State<AssalamAnimationScreen>
                           Opacity(
                             opacity: _subtitleOpacity(),
                             child: Text(
-                              'Welcome to Mithaq',
+                              'Welcome to Silarah',
                               style: AppTypography.tagline.copyWith(
                                 color: AppColors.pearlWhite
                                     .withValues(alpha: 0.75),

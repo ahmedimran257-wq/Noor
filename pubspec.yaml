@@ -1,5 +1,5 @@
-name: mithaq
-description: "Mithaq (ميثاق) — Premium Muslim Matrimony App"
+name: silarah
+description: "Silarah - Premium Muslim Matrimony App"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -54,6 +54,9 @@ dependencies:
   image: ^4.3.0                  # Required by blurhash_dart for pixel buffer
   geolocator: ^14.0.3
   nsfw_detect: ^2.6.4
+  camera: ^0.12.0+1
+  # Pinned: Android release integration is validated by CI before upgrades.
+  package_info_plus: 10.2.0
 
 dev_dependencies:
   flutter_test:
@@ -89,4 +92,5 @@ flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
   image_path: "assets/icon/app_icon.png"
+  remove_alpha_ios: true
   min_sdk_android: 21

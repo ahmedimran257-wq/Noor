@@ -1,6 +1,6 @@
 // lib/core/cubits/onboarding/onboarding_state.dart
 // ============================================================
-// MITHAQ — Onboarding Cubit States
+// SILARAH — Onboarding Cubit States
 // ============================================================
 
 import 'package:equatable/equatable.dart';

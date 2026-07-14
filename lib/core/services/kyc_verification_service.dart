@@ -54,7 +54,7 @@ class KycVerificationService {
     if (!ocr.isAdult) {
       return const KycVerificationResult(
         status: KycVerificationStatus.rejected,
-        message: 'You must be at least 18 years old to use Mithaq.',
+        message: 'You must be at least 18 years old to use Silarah.',
       );
     }
 

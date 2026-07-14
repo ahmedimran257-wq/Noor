@@ -1,6 +1,6 @@
 // lib/core/cubits/auth/auth_state.dart
 // ============================================================
-// MITHAQ — Auth Cubit States
+// SILARAH — Auth Cubit States
 // Auth state for Supabase email OTP.
 // ============================================================
 

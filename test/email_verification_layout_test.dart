@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mithaq/core/cubits/auth/auth_cubit.dart';
-import 'package:mithaq/core/cubits/auth/auth_state.dart';
-import 'package:mithaq/core/cubits/onboarding/onboarding_cubit.dart';
-import 'package:mithaq/features/onboarding/screens/email_verification_screen.dart';
+import 'package:silarah/core/cubits/auth/auth_cubit.dart';
+import 'package:silarah/core/cubits/auth/auth_state.dart';
+import 'package:silarah/core/cubits/onboarding/onboarding_cubit.dart';
+import 'package:silarah/features/onboarding/screens/email_verification_screen.dart';
 
 class _DuplicateAccountAuthCubit extends AuthCubit {
   @override

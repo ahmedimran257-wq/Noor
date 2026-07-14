@@ -1,8 +1,8 @@
 // lib/core/models/discovery_profile.dart
 // ============================================================
-// MITHAQ — Profile Transport Model
+// SILARAH — Profile Transport Model
 // Legacy profile transport model used for real Supabase rows.
-// Each entry maps to the MithaqProfileCard constructor params.
+// Each entry maps to the SilarahProfileCard constructor params.
 // ============================================================
 
 class DiscoveryProfile {
@@ -15,6 +15,7 @@ class DiscoveryProfile {
     this.sect,
     this.deenLevel,
     this.photoUrl,
+    this.photoUrls = const [],
     this.photoCount = 0,
     this.isPhotoPrivate = false,
     this.isVerified = false,
@@ -68,7 +69,25 @@ class DiscoveryProfile {
   final String? sect;
   final String? deenLevel;
   final String? photoUrl;
+
+  /// Ordered, authorized gallery URLs. [photoUrl] remains as a compatibility
+  /// alias for card surfaces that only render the primary image.
+  final List<String> photoUrls;
   final int photoCount;
+
+  List<String> get orderedPhotoUrls {
+    final urls = <String>[];
+    for (final value in [photoUrl, ...photoUrls]) {
+      final normalized = value?.trim();
+      if (normalized != null &&
+          normalized.isNotEmpty &&
+          !urls.contains(normalized)) {
+        urls.add(normalized);
+      }
+    }
+    return List.unmodifiable(urls);
+  }
+
   final bool isPhotoPrivate;
   final bool isVerified;
   final String? occupation;
@@ -133,6 +152,7 @@ class DiscoveryProfile {
     String? sect,
     String? deenLevel,
     String? photoUrl,
+    List<String>? photoUrls,
     int? photoCount,
     bool? isPhotoPrivate,
     bool? isVerified,
@@ -181,6 +201,7 @@ class DiscoveryProfile {
       sect: sect ?? this.sect,
       deenLevel: deenLevel ?? this.deenLevel,
       photoUrl: clearPhotoUrl ? null : (photoUrl ?? this.photoUrl),
+      photoUrls: photoUrls ?? this.photoUrls,
       photoCount: photoCount ?? this.photoCount,
       isPhotoPrivate: isPhotoPrivate ?? this.isPhotoPrivate,
       isVerified: isVerified ?? this.isVerified,

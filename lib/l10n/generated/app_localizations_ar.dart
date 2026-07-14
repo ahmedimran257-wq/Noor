@@ -9,49 +9,49 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
-  String get about_button_later => 'سأفعل هذا لاحقاً';
+  String get about_button_later => 'سأفعل هذا لاحقا';
 
   @override
   String about_hint_bio_guardian(Object relation) {
-    return 'صف $relation بصدق ووقار.';
+    return 'صف $relation الخاص بك بأمانة وكرامة.';
   }
 
   @override
-  String get about_hint_bio_self => 'صف نفسك بصدق ووقار.';
+  String get about_hint_bio_self => 'صف نفسك بالصدق والكرامة.';
 
   @override
-  String get about_label_bio_guardian => 'النبذة الشخصية';
+  String get about_label_bio_guardian => 'سيرتهم الذاتية';
 
   @override
-  String get about_label_bio_self => 'نبذة عنك';
+  String get about_label_bio_self => 'سيرتك الذاتية';
 
   @override
   String get about_label_interests => 'الاهتمامات';
 
   @override
-  String get about_label_languages => 'اللغات التي تتحدثها';
+  String get about_label_languages => 'اللغات المنطوقة';
 
   @override
   String about_label_selected_count(Object current, Object max) {
-    return 'تم اختيار $current من $max';
+    return 'تم تحديد $current/$max';
   }
 
   @override
-  String get about_subtitle => 'اكتب بصدق ووقار.';
+  String get about_subtitle => 'اكتب بأمانة وكرامة.';
 
   @override
   String about_title_guardian(Object relation) {
-    return 'نبذة عن $relation';
+    return 'حول $relation الخاص بك';
   }
 
   @override
-  String get about_title_self => 'نبذة عنك';
+  String get about_title_self => 'عنك';
 
   @override
-  String get appName => 'ميثاق';
+  String get appName => '?????';
 
   @override
-  String get appTagline => 'ابدأ بسم الله';
+  String get appTagline => 'ابدأ ببسم الله';
 
   @override
   String get auth_button_resendOtp => 'إعادة إرسال رمز التحقق';
@@ -63,27 +63,27 @@ class AppLocalizationsAr extends AppLocalizations {
   String get auth_button_sendOtp => 'إرسال رمز التحقق';
 
   @override
-  String get auth_button_verifyOtp => 'تحقق';
+  String get auth_button_verifyOtp => 'يؤكد';
 
   @override
-  String get auth_hint_phoneNumber => 'رقم الهاتف';
+  String get auth_hint_phoneNumber => 'رقم التليفون';
 
   @override
-  String get auth_label_changeNumber => 'رقم خاطئ؟ قم بتغييره';
+  String get auth_label_changeNumber => 'رقم خاطئ؟ تغييره';
 
   @override
   String get auth_label_enterOtp =>
-      'أدخل رمز التحقق المكوّن من 6 أرقام المرسل إلى';
+      'أدخل رمز التحقق المكون من 6 أرقام المرسل إليه';
 
   @override
-  String get auth_label_phoneNumber => 'رقم الهاتف';
+  String get auth_label_phoneNumber => 'رقم التليفون';
 
   @override
   String get auth_label_resendCode => 'إعادة إرسال رمز التحقق';
 
   @override
   String auth_label_resendCodeIn(Object seconds) {
-    return 'إعادة إرسال رمز التحقق خلال $secondsث';
+    return 'إعادة إرسال رمز التحقق خلال ${seconds}s';
   }
 
   @override
@@ -92,53 +92,53 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get auth_label_sentCodeTo =>
-      'لقد أرسلنا رمز تحقق مكونًا من 6 أرقام إلى\n';
+  String get auth_label_sentCodeTo => 'أرسلنا رمز التحقق المكون من 6 أرقام إلى';
 
   @override
-  String get auth_subtitle_verifyOtp => 'سوف نتحقق منه برمز لمرة واحدة.';
+  String get auth_subtitle_verifyOtp =>
+      'سوف نقوم بالتحقق من ذلك باستخدام رمز لمرة واحدة.';
 
   @override
-  String get auth_title_enterCode => 'أدخل رمز التحقق';
+  String get auth_title_enterCode => 'أدخل رمز التحقق الخاص بك';
 
   @override
-  String get auth_title_yourNumber => 'رقم هاتفك';
+  String get auth_title_yourNumber => 'رقمك';
 
   @override
   String get background_edu_bachelors => 'درجة البكالوريوس';
 
   @override
-  String get background_edu_below_secondary => 'أقل من الثانوي';
+  String get background_edu_below_secondary => 'تحت الثانوي';
 
   @override
   String get background_edu_diploma => 'دبلوم / مشارك';
 
   @override
-  String get background_edu_doctorate => 'الدكتوراه / PhD';
+  String get background_edu_doctorate => 'دكتوراه / دكتوراه';
 
   @override
-  String get background_edu_higher_secondary => 'ثانوي عام / A-Level';
+  String get background_edu_higher_secondary => 'الثانوية العليا / المستوى أ';
 
   @override
   String get background_edu_masters => 'درجة الماجستير';
 
   @override
-  String get background_edu_secondary => 'ثانوي / O-Level';
+  String get background_edu_secondary => 'الثانوية / المستوى O';
 
   @override
   String background_edu_subtitle_guardian(Object relation) {
-    return 'أخبرنا عن تعليم وعمل $relation.';
+    return 'أخبرنا عن تعليم $relation ومسيرته المهنية.';
   }
 
   @override
   String get background_edu_subtitle_self =>
-      'يساعد في العثور على مطابقات متوافقة مهنيًا.';
+      'يساعد في العثور على التطابقات المتوافقة بشكل احترافي.';
 
   @override
   String get background_edu_title_guardian => 'خلفيتهم';
 
   @override
-  String get background_edu_title_self => 'خلفيتك';
+  String get background_edu_title_self => 'الخلفية الخاصة بك';
 
   @override
   String get background_emp_employed => 'موظف';
@@ -147,24 +147,24 @@ class AppLocalizationsAr extends AppLocalizations {
   String get background_emp_not_working => 'لا يعمل';
 
   @override
-  String get background_emp_self_employed => 'أعمال حرة';
+  String get background_emp_self_employed => 'العاملون لحسابهم الخاص';
 
   @override
   String get background_emp_student => 'طالب';
 
   @override
   String get background_income_subtitle =>
-      'يتخطى الكثير من الأشخاص هذا — فهو اختياري تمامًا.';
+      'يتخطّى العديد من الأشخاص هذا الأمر، فهو اختياري تمامًا.';
 
   @override
-  String get background_label_eduLevel => 'مستوى التعليم';
+  String get background_label_eduLevel => 'المستوى التعليمي';
 
   @override
-  String get background_label_employment => 'الحالة الوظيفية';
+  String get background_label_employment => 'حالة التوظيف';
 
   @override
   String background_label_income_bracket(Object currency) {
-    return 'فئة الدخل ($currency)';
+    return 'شريحة الدخل ($currency)';
   }
 
   @override
@@ -177,143 +177,144 @@ class AppLocalizationsAr extends AppLocalizations {
   String get background_label_study => 'مجال الدراسة (اختياري)';
 
   @override
-  String get background_label_who_see => 'من يمكنه رؤية هذا؟';
+  String get background_label_who_see => 'من يستطيع رؤية هذا؟';
 
   @override
-  String get background_vis_everyone => 'عرض الفئة للجميع';
+  String get background_vis_everyone => 'أظهر القوس للجميع';
 
   @override
-  String get background_vis_mutual => 'عرض فقط بعد الاهتمام المتبادل';
+  String get background_vis_mutual => 'تظهر فقط بعد المصلحة المتبادلة';
 
   @override
-  String get background_vis_private => 'إبقاء خاص';
+  String get background_vis_private => 'حافظ على خصوصيتك';
 
   @override
-  String get ceremony_text_blessing => 'اسأل الله أن يبارك هذا بالخير';
+  String get ceremony_text_blessing => 'جزاكم الله هذا الخير';
 
   @override
   String get chat_closure_1 =>
-      'السلام عليكم. بعد تأمل عميق، أشعر أن هذا قد لا يكون التطابق المناسب لنا. أتمنى لك كل التوفيق وأدعو الله أن يبارك لك في شريك رائع. جزاك الله خيرًا.';
+      'السلام عليكم. بعد تفكير عميق، أشعر أن هذا قد لا يكون الخيار المناسب لنا. أتمنى لك من كل قلبي كل التوفيق وأدعو الله أن يرزقك بشريك رائع. جزاك الله خيرا.';
 
   @override
   String get chat_closure_2 =>
-      'السلام عليكم. أردت أن أكون صادقاً ومحترماً معك. لا أعتقد أننا التطابق المناسب، لكنني أدعو أن يفتح الله لك أبواباً أفضل. مع أطيب الأمنيات.';
+      'السلام عليكم. أردت أن أكون صادقًا ومحترمًا معك. لا أعتقد أننا الشخص المناسب، ولكن أدعو الله أن يفتح لك أبوابًا أفضل. أتمنى لكم كل التوفيق.';
 
   @override
   String get chat_closure_3 =>
-      'السلام عليكم. بعد تفكير صادق، أشعر أننا قد لا نكون متوافقين. آمل أن تجد الشخص المناسب لك. جزاك الله خيرًا على وقتك.';
+      'السلام عليكم. بعد دراسة صادقة، أشعر أننا قد لا نكون متوافقين. أتمنى أن تجد الشخص المناسب لك حقًا. الله يسهل عليك. جزاك الله خيرا على وقتك.';
 
   @override
   String get chat_closure_4 =>
-      'السلام عليكم. تأملت في محادثاتنا وأرى أنه من الأفضل إغلاق هذا التطابق. لدي كل الاحترام لك وأدعو الله أن يبارك لك بأفضل ما تستحق.';
+      'السلام عليكم. لقد فكرت في محادثاتنا وأشعر أنه من الأفضل إغلاق هذه المباراة في هذا الوقت. ليس لدي سوى الاحترام لك وأدعو الله أن يجزيك الأفضل.';
 
   @override
   String get chat_closure_5 =>
-      'السلام عليكم. أردت أن أكون شفافاً معك بدلاً من الاختفاء. لا أرى هذا يسير للأمام، لكنني أقدر وقتك وأتمنى لك كل السعادة. بارك الله فيك.';
+      'السلام عليكم. أردت أن أكون شفافًا معك بدلاً من التلاشي. لا أرى أن هذا يتقدم أكثر من ذلك، لكنني أقدر حقًا وقتك وأتمنى لك كل السعادة. بارك الله فيكم.';
 
   @override
-  String get chat_endMatch_button => 'إرسال وإنهاء التطابق';
+  String get chat_endMatch_button => 'إرسال وإنهاء المباراة';
 
   @override
   String get chat_endMatch_subtitle =>
       'اختر رسالة محترمة لإغلاق هذه المحادثة. سيتم إخطار الشخص الآخر.';
 
   @override
-  String get chat_endMatch_title => 'إنهاء هذا التطابق';
+  String get chat_endMatch_title => 'إنهاء هذه المباراة';
 
   @override
   String chat_label_probation(int hours) {
-    return 'تُفتح المراسلة خلال $hours ساعة. يمكنك إرسال إشعارات الاهتمام الآن.';
+    return 'يتم فتح المراسلة خلال $hours ساعة. يمكنك إرسال الاهتمامات الآن.';
   }
 
   @override
   String get chat_label_subscribeToMessage =>
-      'اشترك لفتح المراسلة. تراسل النساء مجانًا دائمًا في ميثاق.';
+      'اشترك لفتح الرسائل. تقوم النساء دائمًا بإرسال رسائل مجانية على ?????.';
 
   @override
-  String get chat_matchClosed_banner => 'تم إغلاق هذا التطابق باحترام.';
+  String get chat_matchClosed_banner => 'لقد تم إغلاق هذه المباراة بكل احترام.';
 
   @override
   String get chat_opener_1 =>
-      'السلام عليكم! لفت انتباهي ملفك الشخصي وأعجبني حقاً. هل تسمح لي بتقديم نفسي؟';
+      'السلام عليكم! لقد صادفت ملفك الشخصي وأعجبت به حقًا. هل لي أن أقدم نفسي؟';
 
   @override
   String get chat_opener_2 =>
-      'بسم الله. لفت ملفك الشخصي انتباهي. أود أن أعرف المزيد عنك.';
+      'بسم الله. الملف الشخصي الخاص بك لفت انتباهي. أحب أن أعرف المزيد عنك.';
 
   @override
   String get chat_opener_3 =>
-      'السلام عليكم. أعتقد أننا نتشارك قيمًا متشابهة. هل تقبل أن نتعرف على بعضنا البعض؟';
+      'السلام عليكم. أعتقد أننا نتقاسم قيمًا مماثلة. هل ستكون منفتحًا للتعرف على بعضكما البعض؟';
 
   @override
-  String get chat_placeholder_typeMessage => 'اكتب رسالة…';
+  String get chat_placeholder_typeMessage => 'اكتب رسالة...';
 
   @override
-  String get common_button_back => 'رجوع';
+  String get common_button_back => 'خلف';
 
   @override
-  String get common_button_cancel => 'إلغاء';
+  String get common_button_cancel => 'يلغي';
 
   @override
-  String get common_button_done => 'تم';
+  String get common_button_done => 'منتهي';
 
   @override
   String get common_button_next => 'التالي';
 
   @override
-  String get common_button_retry => 'حاول مرة أخرى';
+  String get common_button_retry => 'حاول ثانية';
 
   @override
-  String get common_button_save => 'حفظ';
+  String get common_button_save => 'يحفظ';
 
   @override
-  String get common_button_skip => 'تخطي';
+  String get common_button_skip => 'يتخطى';
 
   @override
-  String get common_button_submit => 'إرسال';
+  String get common_button_submit => 'يُقدِّم';
 
   @override
   String get common_error_generic => 'حدث خطأ ما. يرجى المحاولة مرة أخرى.';
 
   @override
-  String get common_error_noInternet => 'لا يوجد اتصال بالإنترنت.';
+  String get common_error_noInternet =>
+      'لا يوجد اتصال بالإنترنت. يرجى التحقق من الاتصال الخاص بك.';
 
   @override
-  String get common_label_optional => 'اختياري';
+  String get common_label_optional => 'خياري';
 
   @override
-  String get copy_beard_parent => 'هل يُطلق ابنك لحيته؟';
+  String get copy_beard_parent => 'هل ابنك له لحية؟';
 
   @override
-  String get copy_beard_self => 'هل تُطلق لحيتك؟';
+  String get copy_beard_self => 'هل لديك لحية؟';
 
   @override
-  String get copy_beard_sibling => 'هل يُطلق أخوك لحيته؟';
+  String get copy_beard_sibling => 'هل لدى أخيك لحية؟';
 
   @override
-  String get copy_hijab_parent => 'هل ترتدي ابنتك الحجاب؟';
+  String get copy_hijab_parent => 'هل تلتزم ابنتك بالحجاب؟';
 
   @override
-  String get copy_hijab_self => 'هل ترتدين الحجاب؟';
+  String get copy_hijab_self => 'هل تلتزمين بالحجاب؟';
 
   @override
-  String get copy_hijab_sibling => 'هل ترتدي أختك الحجاب؟';
+  String get copy_hijab_sibling => 'هل أختك ملتزمة بالحجاب؟';
 
   @override
-  String get copy_prayer_parent => 'هل يصلي طفلك خمس مرات يومياً؟';
+  String get copy_prayer_parent => 'هل يصلي طفلك خمس مرات يوميا؟';
 
   @override
-  String get copy_prayer_self => 'هل تصلي خمس مرات يومياً؟';
+  String get copy_prayer_self => 'هل تصلي خمس مرات يوميا؟';
 
   @override
-  String get copy_prayer_sibling => 'هل يصلي أخوك/أختك خمس مرات يومياً؟';
+  String get copy_prayer_sibling => 'هل يصلي أخوك خمس مرات يوميا؟';
 
   @override
   String get deleteAccount_title => 'حذف الحساب';
 
   @override
   String discovery_bookmark_removed(Object name) {
-    return 'تم إزالة $name';
+    return 'تمت إزالة $name';
   }
 
   @override
@@ -322,56 +323,56 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get discovery_button_sendInterest => 'إرسال إشعار الاهتمام';
+  String get discovery_button_sendInterest => 'أرسل الفائدة';
 
   @override
-  String get discovery_completeness_button => 'أكمل الملف الشخصي';
+  String get discovery_completeness_button => 'الملف الشخصي الكامل';
 
   @override
   String get discovery_completeness_subtitle =>
-      'الملفات الشخصية التي تتجاوز ٤٠٪ تحصل على اهتمام أكثر بـ ٣ مرات.\nأكمل ملفك الشخصي لبدء التصفح.';
+      'الملفات الشخصية التي تزيد عن 40% تحصل على 3 أضعاف الاهتمامات.\nأكمل ملفك الشخصي لبدء التصفح.';
 
   @override
   String get discovery_completeness_title => 'أكمل ملفك الشخصي';
 
   @override
   String get discovery_empty_subtitle =>
-      'حاول توسيع فلاتر البحث\nأو تحقق مجدداً غداً.';
+      'حاول توسيع مرشحات البحث الخاصة بك\nأو التحقق مرة أخرى غدا.';
 
   @override
-  String get discovery_empty_title => 'لقد شاهدت الجميع بالقرب منك';
+  String get discovery_empty_title => 'لقد رأيت الجميع في مكان قريب';
 
   @override
-  String get discovery_header_title => 'ميثاق';
+  String get discovery_header_title => '<العلامة التجارية0/>';
 
   @override
-  String get discovery_label_interestSent => 'تم الإرسال ✓';
+  String get discovery_label_interestSent => 'تم إرسال الفائدة ✓';
 
   @override
   String get discovery_label_outsidePrefs => 'شخص قد تتواصل معه';
 
   @override
   String discovery_label_profilesRemaining(int count) {
-    return '$count ملفات متبقية اليوم';
+    return '$count الملفات الشخصية المتبقية اليوم';
   }
 
   @override
-  String get discovery_limit_button => 'اشترك الآن';
+  String get discovery_limit_button => 'الترقية الآن';
 
   @override
   String get discovery_limit_subtitle =>
-      'لقد تصفحت ١٥ ملفاً شخصياً اليوم.\nاشترك لفتح تصفح غير محدود.';
+      'لقد تصفحت 15 ملفًا شخصيًا اليوم.\nقم بالترقية لفتح تصفح غير محدود.';
 
   @override
-  String get discovery_limit_title => 'تم الوصول للحد اليومي';
+  String get discovery_limit_title => 'تم الوصول إلى الحد اليومي';
 
   @override
   String discovery_remaining_profiles(Object count) {
-    return 'متبقي $count ملفات شخصية';
+    return '$count الملفات الشخصية المتبقية';
   }
 
   @override
-  String get discovery_wildcard_label => 'شخص قد تتوافق معه';
+  String get discovery_wildcard_label => 'شخص قد تتواصل معه';
 
   @override
   String get family_children_no => 'لا';
@@ -386,37 +387,37 @@ class AppLocalizationsAr extends AppLocalizations {
   String get family_label_children_self => 'هل لديك أطفال؟';
 
   @override
-  String get family_label_how_many => 'كم عددهم؟';
+  String get family_label_how_many => 'كم عدد؟';
 
   @override
   String get family_label_parents => 'الحالة الاجتماعية للوالدين';
 
   @override
-  String get family_label_polygamy_female_self => 'قبول التعدد (اختياري)';
+  String get family_label_polygamy_female_self => 'قبول تعدد الزوجات (اختياري)';
 
   @override
-  String get family_label_polygamy_male_self => 'الحالة التعددية (اختياري)';
+  String get family_label_polygamy_male_self => 'حالة تعدد الزوجات (اختياري)';
 
   @override
-  String get family_label_prev_married => 'هل سبق له/لها الزواج؟';
+  String get family_label_prev_married => 'متزوج سابقا؟';
 
   @override
-  String get family_label_relocate => 'الرغبة في الانتقال';
+  String get family_label_relocate => 'على استعداد للانتقال';
 
   @override
-  String get family_label_siblings => 'عدد الإخوة';
+  String get family_label_siblings => 'عدد الأشقاء';
 
   @override
   String get family_label_type => 'نوع العائلة';
 
   @override
-  String get family_living_title => 'توقعات السكن بعد الزواج';
+  String get family_living_title => 'التوقعات المعيشية بعد الزواج';
 
   @override
-  String get family_parents_both_deceased => 'كلا الوالدين متوفيان';
+  String get family_parents_both_deceased => 'كلا المتوفى';
 
   @override
-  String get family_parents_divorced => 'مطلقان';
+  String get family_parents_divorced => 'مُطلّق';
 
   @override
   String get family_parents_father_deceased => 'الأب متوفى';
@@ -425,73 +426,72 @@ class AppLocalizationsAr extends AppLocalizations {
   String get family_parents_mother_deceased => 'الأم متوفاة';
 
   @override
-  String get family_parents_separated => 'منفصلان';
+  String get family_parents_separated => 'منفصل';
 
   @override
   String get family_parents_together => 'معاً';
 
   @override
-  String get family_polygamy_female_discussion => 'قابل للنقاش';
+  String get family_polygamy_female_discussion => 'مفتوحة للمناقشة';
 
   @override
   String get family_polygamy_female_no => 'لا';
 
   @override
-  String get family_polygamy_female_prefer_not => 'أفضل عدم الإجابة';
+  String get family_polygamy_female_prefer_not => 'يفضل عدم القول';
 
   @override
   String family_polygamy_female_sub_guardian(Object relation) {
-    return 'هل تفكر $relation في أن تكون زوجة ثانية؟';
+    return 'هل تفكر $relation في أن تكون زوجة زميلة؟';
   }
 
   @override
   String get family_polygamy_female_sub_self =>
-      'هل تفكرين في أن تكوني زوجة ثانية؟';
+      'هل تفكرين في أن تكوني زوجة مشتركة؟';
 
   @override
   String get family_polygamy_female_yes => 'نعم';
 
   @override
   String family_polygamy_male_sub_guardian(Object relation) {
-    return 'هل $relation متزوج حاليًا ويبحث عن زوجة أخرى؟';
+    return 'هل $relation متزوج حاليًا ويبحث عن زوج إضافي؟';
   }
 
   @override
   String get family_polygamy_male_sub_self =>
-      'هل أنت متزوج حاليًا وتبحث عن زوجة أخرى؟';
+      'هل أنت متزوج حاليًا وتبحث عن زوج إضافي؟';
 
   @override
-  String get family_polygamy_option_first => 'لا، هذا زواجي الأول';
+  String get family_polygamy_option_first => 'لا، هذه هي المرة الأولى لي';
 
   @override
-  String get family_polygamy_option_married => 'نعم، متزوج حالياً';
+  String get family_polygamy_option_married => 'نعم متزوج حاليا';
 
   @override
-  String get family_polygamy_option_prefer_not => 'أفضل عدم الإجابة';
+  String get family_polygamy_option_prefer_not => 'يفضل عدم القول';
 
   @override
-  String get family_prev_divorced => 'مطلق/ة';
+  String get family_prev_divorced => 'مُطلّق';
 
   @override
   String get family_prev_no => 'لا';
 
   @override
-  String get family_prev_widowed => 'أرمل/ة';
+  String get family_prev_widowed => 'أرمل';
 
   @override
-  String get family_relocate_discussion => 'قابل للنقاش';
+  String get family_relocate_discussion => 'مفتوح للمناقشة';
 
   @override
   String get family_relocate_no => 'لا';
 
   @override
   String family_relocate_subtitle_guardian(Object relation) {
-    return 'هل يرغب $relation في الانتقال من أجل الزواج؟';
+    return 'هل سينتقل $relation من أجل الزواج؟';
   }
 
   @override
-  String get family_relocate_subtitle_self =>
-      'هل ترغب في الانتقال من أجل الزواج؟';
+  String get family_relocate_subtitle_self => 'هل ستنتقل للزواج؟';
 
   @override
   String get family_relocate_yes => 'نعم';
@@ -502,8 +502,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get family_subtitle_self =>
-      'التوافق العائلي أمر أساسي للزواج المستمر.';
+  String get family_subtitle_self => 'التوافق العائلي أمر أساسي للزواج الدائم.';
 
   @override
   String get family_title_guardian => 'الخلفية العائلية';
@@ -512,97 +511,94 @@ class AppLocalizationsAr extends AppLocalizations {
   String get family_title_self => 'الخلفية العائلية';
 
   @override
-  String get family_type_extended => 'أسرة ممتدة';
+  String get family_type_extended => 'ممتد';
 
   @override
-  String get family_type_joint => 'أسرة مشتركة';
+  String get family_type_joint => 'مشترك';
 
   @override
-  String get family_type_nuclear => 'أسرة نواة';
+  String get family_type_nuclear => 'النووية';
 
   @override
-  String get filter_label_community => 'المجتمع / البيرادري';
+  String get filter_label_community => 'المجتمع / بيراداري';
 
   @override
-  String get filter_label_livingExpectation => 'السكن بعد الزواج';
+  String get filter_label_livingExpectation => 'حياة ما بعد الزواج';
 
   @override
   String get filter_label_motherTongue => 'اللغة الأم';
 
   @override
-  String get guardian_details_candidate_female =>
-      'مرشحة أنثى • مراسلة النساء مجانية';
+  String get guardian_details_candidate_female => 'مرشحة • رسالة نسائية مجانية';
 
   @override
-  String get guardian_details_candidate_label => 'إنشاء ملف شخصي لـ';
+  String get guardian_details_candidate_label => 'إنشاء ملف تعريف لـ';
 
   @override
   String get guardian_details_candidate_male => 'مرشح ذكر';
 
   @override
   String guardian_details_candidate_relation(Object relation) {
-    return 'لـ $relation';
+    return '$relation';
   }
 
   @override
-  String get guardian_details_involvement => 'مشاركة الولي / الوصي';
+  String get guardian_details_involvement => 'مشاركة الوصي';
 
   @override
   String get guardian_details_involvement_subtitle =>
-      'ما مدى رغبتك في المشاركة في المحادثات؟';
+      'إلى أي مدى تريد أن تكون مشاركًا في المحادثات؟';
 
   @override
   String guardian_details_mode_active_sub(Object relation) {
-    return 'رؤية الدردشات، والموافقة على المطابقات، وإرسال الرسائل نيابة عن $relation.';
+    return 'شاهد الدردشات، ووافق على التطابقات، وأرسل الرسائل نيابةً عن $relation الخاص بك.';
   }
 
   @override
-  String get guardian_details_mode_active_title => 'ولي أمر نشط';
+  String get guardian_details_mode_active_title => 'الوصي النشط';
 
   @override
   String guardian_details_mode_passive_sub(Object relation) {
-    return 'رؤية جميع الدردشات في الوقت الفعلي، ولكن يمكن لـ $relation فقط إرسال الرسائل.';
+    return 'شاهد جميع الدردشات في الوقت الفعلي، لكن $relation فقط هو الذي يمكنه إرسال الرسائل.';
   }
 
   @override
-  String get guardian_details_mode_passive_title => 'مراقبة فقط';
+  String get guardian_details_mode_passive_title => 'لاحظ فقط';
 
   @override
   String get guardian_details_name_hint => 'الاسم الكامل';
 
   @override
-  String get guardian_details_name_subtitle =>
-      'اسمك كولي/وصي. يظهر هذا للمطابقات.';
+  String get guardian_details_name_subtitle => 'اسمك كوصي. يظهر هذا للمباريات.';
 
   @override
   String guardian_details_notice(Object relation) {
-    return 'أنت تقوم بإنشاء ملف شخصي لـ $relation. جميع تفاصيل الملف الشخصي في الشاشات التالية ستصفهم، وليس أنت.';
+    return 'أنت تقوم بإنشاء ملف تعريف لـ $relation الخاص بك. جميع تفاصيل الملف الشخصي على الشاشات التالية ستصفها، وليس أنت.';
   }
 
   @override
-  String get guardian_details_phone_hint => 'رقم الهاتف';
+  String get guardian_details_phone_hint => 'رقم التليفون';
 
   @override
   String get guardian_details_phone_subtitle =>
-      'للتحقق من الحساب. لا يظهر على الملف الشخصي.';
+      'للتحقق من الحساب. لا يظهر في الملف الشخصي.';
 
   @override
   String guardian_details_privacy_note(Object relation) {
-    return 'رقم هاتفك مشفر ولا يظهر علنًا أبدًا. ستظهر عبارة \"ولي أمر $relation\" للمطابقات المحتملة على الملف الشخصي.';
+    return 'رقم هاتفك مشفر ولا يظهر للعامة أبدًا. ستظهر المطابقات المحتملة \"$relation\'s Guardian\" في الملف الشخصي.';
   }
 
   @override
-  String get guardian_details_search_hint => 'بحث';
+  String get guardian_details_search_hint => 'يبحث';
 
   @override
-  String get guardian_details_select_code => 'اختر رمز الدولة';
+  String get guardian_details_select_code => 'اختر رمز البلد';
 
   @override
-  String get guardian_details_subtitle =>
-      'أخبرنا عن نفسك بصفتك الولي أو الوصي.';
+  String get guardian_details_subtitle => 'أخبرنا عن نفسك كوصي.';
 
   @override
-  String get guardian_details_title => 'تفاصيل الولي / الوصي';
+  String get guardian_details_title => 'تفاصيل الوصي الخاص بك';
 
   @override
   String get guardian_details_your_name => 'اسمك';
@@ -611,40 +607,40 @@ class AppLocalizationsAr extends AppLocalizations {
   String get guardian_details_your_phone => 'رقم هاتفك';
 
   @override
-  String get interest_cat_creative => 'الإبداع والفنون';
+  String get interest_cat_creative => 'مبدع';
 
   @override
-  String get interest_cat_faith => 'الإيمان والعبادات';
+  String get interest_cat_faith => 'إيمان';
 
   @override
-  String get interest_cat_learning => 'التعليم والمعرفة';
+  String get interest_cat_learning => 'تعلُّم';
 
   @override
   String get interest_cat_lifestyle => 'نمط الحياة';
 
   @override
-  String get interest_cat_social => 'الحياة الاجتماعية';
+  String get interest_cat_social => 'اجتماعي';
 
   @override
   String get interest_cat_sports => 'الرياضة';
 
   @override
-  String get interest_tag_art => 'الفن';
+  String get interest_tag_art => 'فن';
 
   @override
-  String get interest_tag_calligraphy => 'الخط العربي';
+  String get interest_tag_calligraphy => 'الخط';
 
   @override
   String get interest_tag_community_work => 'العمل المجتمعي';
 
   @override
-  String get interest_tag_cooking => 'الطبخ';
+  String get interest_tag_cooking => 'طبخ';
 
   @override
-  String get interest_tag_crafts => 'الأعمال اليدوية';
+  String get interest_tag_crafts => 'الحرف اليدوية';
 
   @override
-  String get interest_tag_cricket => 'الكريكت';
+  String get interest_tag_cricket => 'لعبة الكريكيت';
 
   @override
   String get interest_tag_cycling => 'ركوب الدراجات';
@@ -656,7 +652,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get interest_tag_family_gatherings => 'التجمعات العائلية';
 
   @override
-  String get interest_tag_fitness => 'اللياقة البدنية';
+  String get interest_tag_fitness => 'لياقة بدنية';
 
   @override
   String get interest_tag_football => 'كرة القدم';
@@ -665,55 +661,55 @@ class AppLocalizationsAr extends AppLocalizations {
   String get interest_tag_gardening => 'البستنة';
 
   @override
-  String get interest_tag_graphic_design => 'تصميم الجرافيك';
+  String get interest_tag_graphic_design => 'التصميم الجرافيكي';
 
   @override
-  String get interest_tag_hiking => 'المشي الجبلي';
+  String get interest_tag_hiking => 'جولة على الأقدام';
 
   @override
-  String get interest_tag_history => 'التاريخ';
+  String get interest_tag_history => 'تاريخ';
 
   @override
-  String get interest_tag_islamic_lectures => 'المحاضرات الإسلامية';
+  String get interest_tag_islamic_lectures => 'محاضرات اسلامية';
 
   @override
   String get interest_tag_languages => 'اللغات';
 
   @override
-  String get interest_tag_martial_arts => 'الفنون القتالية';
+  String get interest_tag_martial_arts => 'فنون الدفاع عن النفس';
 
   @override
-  String get interest_tag_mentoring => 'التوجيه والإرشاد';
+  String get interest_tag_mentoring => 'التوجيه';
 
   @override
-  String get interest_tag_photography => 'التصوير';
+  String get interest_tag_photography => 'التصوير الفوتوغرافي';
 
   @override
-  String get interest_tag_poetry => 'الشعر';
+  String get interest_tag_poetry => 'شِعر';
 
   @override
   String get interest_tag_quran_recitation => 'تلاوة القرآن';
 
   @override
-  String get interest_tag_reading => 'القراءة';
+  String get interest_tag_reading => 'قراءة';
 
   @override
-  String get interest_tag_science => 'العلوم';
+  String get interest_tag_science => 'علوم';
 
   @override
-  String get interest_tag_swimming => 'السباحة';
+  String get interest_tag_swimming => 'سباحة';
 
   @override
-  String get interest_tag_tahajjud => 'قيام الليل / التهجد';
+  String get interest_tag_tahajjud => 'التهجد';
 
   @override
-  String get interest_tag_teaching => 'التعليم';
+  String get interest_tag_teaching => 'تدريس';
 
   @override
-  String get interest_tag_technology => 'التكنولوجيا';
+  String get interest_tag_technology => 'تكنولوجيا';
 
   @override
-  String get interest_tag_travel => 'السفر';
+  String get interest_tag_travel => 'يسافر';
 
   @override
   String get interest_tag_umrah_hajj => 'العمرة / الحج';
@@ -722,22 +718,22 @@ class AppLocalizationsAr extends AppLocalizations {
   String get interest_tag_voluntary_fasting => 'صيام التطوع';
 
   @override
-  String get interest_tag_volunteering => 'العمل التطوعي';
+  String get interest_tag_volunteering => 'التطوع';
 
   @override
-  String get interest_tag_writing => 'الكتابة';
+  String get interest_tag_writing => 'كتابة';
 
   @override
-  String get interests_button_accept => 'قبول';
+  String get interests_button_accept => 'يقبل';
 
   @override
-  String get interests_button_decline => 'رفض';
+  String get interests_button_decline => 'انخفاض';
 
   @override
-  String get interests_tab_received => 'المُستلَمة';
+  String get interests_tab_received => 'تلقى';
 
   @override
-  String get interests_tab_sent => 'المُرسَلة';
+  String get interests_tab_sent => 'مرسل';
 
   @override
   String get interests_title => 'الاهتمامات';
@@ -746,16 +742,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get lang_albanian => 'الألبانية';
 
   @override
-  String get lang_amazigh => 'الأمازيغية';
+  String get lang_amazigh => 'الأمازيغية (البربرية)';
 
   @override
   String get lang_amharic => 'الأمهرية';
 
   @override
-  String get lang_arabic => 'العربية';
+  String get lang_arabic => 'عربي';
 
   @override
-  String get lang_assamese => 'الآسامية';
+  String get lang_assamese => 'الأسامية';
 
   @override
   String get lang_balochi => 'البلوشية';
@@ -776,19 +772,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String get lang_chinese => 'الصينية (الماندرين)';
 
   @override
-  String get lang_dari => 'الدرية';
+  String get lang_dari => 'داري';
 
   @override
-  String get lang_dutch => 'الهولندية';
+  String get lang_dutch => 'هولندي';
 
   @override
-  String get lang_english => 'الإنجليزية';
+  String get lang_english => 'إنجليزي';
 
   @override
-  String get lang_french => 'الفرنسية';
+  String get lang_french => 'فرنسي';
 
   @override
-  String get lang_fulani => 'الفولانية';
+  String get lang_fulani => 'الفولاني';
 
   @override
   String get lang_german => 'الألمانية';
@@ -803,13 +799,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get lang_hindi => 'الهندية';
 
   @override
-  String get lang_igbo => 'الإيجبوية';
+  String get lang_igbo => 'الإيغبو';
 
   @override
-  String get lang_indonesian => 'الإندونيسية';
+  String get lang_indonesian => 'الاندونيسية';
 
   @override
-  String get lang_italian => 'الإيطالية';
+  String get lang_italian => 'ايطالي';
 
   @override
   String get lang_japanese => 'اليابانية';
@@ -818,43 +814,43 @@ class AppLocalizationsAr extends AppLocalizations {
   String get lang_javanese => 'الجاوية';
 
   @override
-  String get lang_kannada => 'الكانادية';
+  String get lang_kannada => 'الكانادا';
 
   @override
-  String get lang_kazakh => 'الكازاخية';
+  String get lang_kazakh => 'الكازاخستانية';
 
   @override
-  String get lang_korean => 'الكورية';
+  String get lang_korean => 'كوري';
 
   @override
-  String get lang_kurdish => 'الكردية';
+  String get lang_kurdish => 'كردي';
 
   @override
-  String get lang_kyrgyz => 'القيرغيزية';
+  String get lang_kyrgyz => 'قيرغيزستان';
 
   @override
-  String get lang_malay => 'الملايوية';
+  String get lang_malay => 'لغة الملايو';
 
   @override
-  String get lang_malayalam => 'المليالمية';
+  String get lang_malayalam => 'المالايالامية';
 
   @override
-  String get lang_mandinka => 'الماندينكوية';
+  String get lang_mandinka => 'ماندينكا';
 
   @override
-  String get lang_marathi => 'الماراثية';
+  String get lang_marathi => 'المهاراتية';
 
   @override
   String get lang_norwegian => 'النرويجية';
 
   @override
-  String get lang_odia => 'الأودية';
+  String get lang_odia => 'أوديا';
 
   @override
-  String get lang_other => 'أخرى';
+  String get lang_other => 'آخر';
 
   @override
-  String get lang_pashto => 'البشتوية';
+  String get lang_pashto => 'الباشتو';
 
   @override
   String get lang_persian => 'الفارسية';
@@ -866,13 +862,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get lang_punjabi => 'البنجابية';
 
   @override
-  String get lang_rohingya => 'الروهينغية';
+  String get lang_rohingya => 'الروهينجا';
 
   @override
   String get lang_russian => 'الروسية';
 
   @override
-  String get lang_saraiki => 'السرائيكية';
+  String get lang_saraiki => 'ساريكي';
 
   @override
   String get lang_sindhi => 'السندية';
@@ -881,13 +877,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get lang_somali => 'الصومالية';
 
   @override
-  String get lang_spanish => 'الإسبانية';
+  String get lang_spanish => 'الأسبانية';
 
   @override
-  String get lang_sundanese => 'السوندية';
+  String get lang_sundanese => 'السودانية';
 
   @override
-  String get lang_swahili => 'السواحيلية';
+  String get lang_swahili => 'السواحلية';
 
   @override
   String get lang_swedish => 'السويدية';
@@ -899,13 +895,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get lang_tajik => 'الطاجيكية';
 
   @override
-  String get lang_tamil => 'التاميلية';
+  String get lang_tamil => 'التاميل';
 
   @override
-  String get lang_tatar => 'التتارية';
+  String get lang_tatar => 'التتار';
 
   @override
-  String get lang_telugu => 'التيلوغوية';
+  String get lang_telugu => 'التيلجو';
 
   @override
   String get lang_thai => 'التايلاندية';
@@ -914,7 +910,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get lang_tigrinya => 'التغرينية';
 
   @override
-  String get lang_turkish => 'التركية';
+  String get lang_turkish => 'تركي';
 
   @override
   String get lang_urdu => 'الأردية';
@@ -923,71 +919,71 @@ class AppLocalizationsAr extends AppLocalizations {
   String get lang_uzbek => 'الأوزبكية';
 
   @override
-  String get lang_wolof => 'الولوفية';
+  String get lang_wolof => 'الولوف';
 
   @override
-  String get lang_yoruba => 'اليوروبية';
+  String get lang_yoruba => 'اليوروبا';
 
   @override
-  String get legal_button_continue => 'متابعة';
+  String get legal_button_continue => 'يكمل';
 
   @override
-  String get legal_checkbox_age => 'أؤكد أنني بلغت 18 عامًا أو أكثر';
+  String get legal_checkbox_age => 'أؤكد أن عمري 18 عامًا أو أكبر';
 
   @override
   String get legal_checkbox_terms => 'أوافق على شروط الخدمة وسياسة الخصوصية';
 
   @override
-  String get legal_subtitle => 'يرجى القراءة والموافقة للمتابعة.';
+  String get legal_subtitle => 'يرجى القراءة والموافقة على الاستمرار.';
 
   @override
   String get legal_summary_1 =>
-      'بياناتك مشفرة ولا يتم مشاركتها أو بيعها لأطراف ثالثة.';
+      'يتم تشفير بياناتك ولا يتم بيعها أبدًا لأطراف ثالثة.';
 
   @override
-  String get legal_summary_2 => 'تتم مراجعة صورك يدويًا لضمان سلامة مجتمعنا.';
+  String get legal_summary_2 => 'تتم مراجعة صورك قبل نشر ملفك الشخصي.';
 
   @override
   String get legal_summary_3 =>
-      'المضايقات، الحسابات المزيفة، أو السلوكيات غير اللائقة تؤدي للحظر الدائم.';
+      'تؤدي المضايقات والملفات الشخصية المزيفة وعمليات الاحتيال إلى الحظر الدائم.';
 
   @override
   String get legal_summary_4 =>
-      'هذه المنصة مخصصة لنية الزواج فقط. الوقار هو معيارنا.';
+      'هذه المنصة مخصصة لنوايا الزواج فقط. الكرامة هي المعيار.';
 
   @override
-  String get legal_summary_5 =>
-      'يمكنك حذف حسابك وجميع بياناتك نهائيًا في أي وقت.';
+  String get legal_summary_5 => 'يمكنك حذف حسابك وجميع البيانات في أي وقت.';
 
   @override
   String get legal_title => 'قبل أن تبدأ';
 
   @override
-  String get notifications_empty_subtitle => 'لا توجد إشعارات جديدة الآن.';
+  String get notifications_empty_subtitle =>
+      'لا توجد إشعارات جديدة في الوقت الحالي.';
 
   @override
-  String get notifications_empty_title => 'لا جديد لديك';
+  String get notifications_empty_title => 'أنتم جميعًا محاصرون';
 
   @override
-  String get notifications_markAllRead => 'تعليم الكل كمقروء';
+  String get notifications_markAllRead => 'وضع علامة على كل قراءة';
 
   @override
-  String get notifications_title => 'الإشعارات';
+  String get notifications_title => 'إشعارات';
 
   @override
   String get onboarding_about_title => 'عن نفسك';
 
   @override
-  String get onboarding_background_title => 'التعليم والمهنة';
+  String get onboarding_background_title => 'التعليم والوظيفي';
 
   @override
   String onboarding_basicIdentity_guardianBanner(String relation) {
-    return 'أنت تملأ هذه البيانات كولي أمر. هذه التفاصيل تخص $relation.';
+    return 'أنت تقوم بملء هذا كوصي. هذه التفاصيل تتعلق بـ $relation الخاص بك.';
   }
 
   @override
   String get onboarding_basicIdentity_subtitle_guardian =>
-      'هذا ما سيراه الآخرون في ملفه/ملفها الشخصي.';
+      'هذا ما سيراه الآخرون في ملفهم الشخصي.';
 
   @override
   String get onboarding_basicIdentity_subtitle_self =>
@@ -998,14 +994,14 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String onboarding_basicIdentity_title_guardian(String relation) {
-    return 'أخبرنا عن $relation';
+    return 'أخبرنا عن $relation الخاص بك';
   }
 
   @override
-  String get onboarding_debt_manageable => 'ديون يمكن إدارتها';
+  String get onboarding_debt_manageable => 'الديون التي يمكن التحكم فيها';
 
   @override
-  String get onboarding_debt_none => 'لا توجد ديون';
+  String get onboarding_debt_none => 'لا الديون';
 
   @override
   String get onboarding_debt_significant => 'ديون كبيرة';
@@ -1017,21 +1013,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_diet_halalOnly => 'حلال فقط';
 
   @override
-  String get onboarding_diet_vegan => 'نباتي صارم';
+  String get onboarding_diet_vegan => 'نباتي';
 
   @override
   String get onboarding_diet_vegetarian => 'نباتي';
 
   @override
-  String get onboarding_diet_zabihaStrict => 'ذبيحة إسلامية صارمة';
+  String get onboarding_diet_zabihaStrict => 'ذبيحة صارمة';
 
   @override
   String get onboarding_error_bioContactInfo =>
-      'يرجى إزالة معلومات الاتصال من نبذتك. لا يُسمح بمعلومات الاتصال الخارجية لحمايتك.';
+      'يرجى إزالة معلومات الاتصال من سيرتك الذاتية. لا يُسمح بتفاصيل الاتصال الخارجية حفاظًا على سلامتك.';
 
   @override
   String get onboarding_error_multipleFaces =>
-      'لا يمكن أن تكون صورة جماعية هي صورتك الأساسية.';
+      'لا يمكن أن تكون الصور الجماعية هي صورتك الأساسية.';
 
   @override
   String get onboarding_error_noFace =>
@@ -1039,19 +1035,19 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get onboarding_error_under18 =>
-      'ميثاق مخصص لمن هم في سن 18 عامًا أو أكثر.';
+      '????? مخصص لمن يبلغون 18 عامًا أو أكثر. لقد وضعنا هذا المطلب لحماية الجميع في مجتمعنا.';
 
   @override
   String onboarding_error_under18_guardian(String relation) {
-    return 'يجب أن يكون $relation بعمر 18 عامًا أو أكثر لاستخدام ميثاق.';
+    return 'يجب أن يكون عمر $relation 18 عامًا أو أكثر لاستخدام ?????.';
   }
 
   @override
   String get onboarding_error_under18_self =>
-      'يجب أن تكون بعمر 18 عامًا أو أكثر لاستخدام ميثاق. نتطلع إلى الترحيب بك حينها.';
+      'يجب أن يكون عمرك 18 عامًا أو أكثر لاستخدام ?????. ونحن نتطلع إلى الترحيب بكم بعد ذلك.';
 
   @override
-  String get onboarding_habit_frequently => 'كثيراً';
+  String get onboarding_habit_frequently => 'مرارًا';
 
   @override
   String get onboarding_habit_never => 'أبداً';
@@ -1060,7 +1056,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_habit_occasionally => 'أحياناً';
 
   @override
-  String get onboarding_habit_preferNotToSay => 'أفضل عدم الإجابة';
+  String get onboarding_habit_preferNotToSay => 'يفضل عدم القول';
 
   @override
   String get onboarding_hijab_always => 'دائماً';
@@ -1069,16 +1065,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_hijab_no => 'لا';
 
   @override
-  String get onboarding_hijab_sometimes => 'أحياناً';
+  String get onboarding_hijab_sometimes => 'أحيانا';
 
   @override
-  String get onboarding_hint_bio => 'صِف نفسك بصدق وكرامة.';
+  String get onboarding_hint_bio => 'صف نفسك بالصدق والكرامة.';
 
   @override
-  String get onboarding_hint_profession => 'مثال: مهندس برمجيات، معلم، طبيب';
+  String get onboarding_hint_profession =>
+      'على سبيل المثال مهندس برمجيات، مدرس، دكتور';
 
   @override
-  String get onboarding_hint_searchCity => 'ابحث عن مدينتك…';
+  String get onboarding_hint_searchCity => 'ابحث في مدينتك...';
 
   @override
   String get onboarding_hint_selectCommunity => 'اختر المجتمع (اختياري)';
@@ -1094,7 +1091,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get onboarding_islamicIdentity_subtitle =>
-      'هذا يساعد في مطابقتك مع شخص متوافق.';
+      'يساعد هذا في التوفيق بينك وبين شخص متوافق.';
 
   @override
   String get onboarding_islamicIdentity_title => 'هويتك الإسلامية';
@@ -1105,7 +1102,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get onboarding_label_city => 'المدينة';
+  String get onboarding_label_city => 'مدينة';
 
   @override
   String get onboarding_label_city_guardian => 'مدينتهم';
@@ -1114,16 +1111,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_label_city_self => 'مدينتك';
 
   @override
-  String get onboarding_label_community => 'مجتمعك / بيرادري';
+  String get onboarding_label_community => 'مجتمعك / بيراداري';
 
   @override
-  String get onboarding_label_community_parent => 'مجتمعهم / بيرادري';
+  String get onboarding_label_community_parent => 'مجتمعهم / بيراداري';
 
   @override
   String get onboarding_label_complexion => 'البشرة (اختياري)';
 
   @override
-  String get onboarding_label_country_guardian => 'بلدهم';
+  String get onboarding_label_country_guardian => 'بلادهم';
 
   @override
   String get onboarding_label_country_self => 'بلدك';
@@ -1142,13 +1139,13 @@ class AppLocalizationsAr extends AppLocalizations {
       'التزاماتك المالية الحالية.';
 
   @override
-  String get onboarding_label_deenLevel => 'مستوى التديّن';
+  String get onboarding_label_deenLevel => 'مستوى الدين';
 
   @override
-  String get onboarding_label_diet => 'النظام الغذائي';
+  String get onboarding_label_diet => 'نظام عذائي';
 
   @override
-  String get onboarding_label_educationLevel => 'المستوى التعليمي';
+  String get onboarding_label_educationLevel => 'مستوى التعليم';
 
   @override
   String get onboarding_label_female => 'أنثى';
@@ -1163,68 +1160,69 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_label_firstName_self => 'الاسم الأول';
 
   @override
-  String get onboarding_label_gender => 'الجنس';
+  String get onboarding_label_gender => 'جنس';
 
   @override
   String get onboarding_label_gender_guardian => 'جنس المرشح';
 
   @override
-  String get onboarding_label_gender_self => 'الجنس';
+  String get onboarding_label_gender_self => 'جنس';
 
   @override
-  String get onboarding_label_height_guardian => 'طولهم';
+  String get onboarding_label_height_guardian => 'ارتفاعهم';
 
   @override
   String get onboarding_label_height_self => 'طولك';
 
   @override
-  String get onboarding_label_hookah => 'الشيشة';
+  String get onboarding_label_hookah => 'الشيشة / الشيشة';
 
   @override
   String get onboarding_label_housing => 'السكن';
 
   @override
-  String get onboarding_label_housingQuestion => 'هل يمكنك توفير مسكن مستقل؟';
+  String get onboarding_label_housingQuestion =>
+      'هل يمكنك توفير مساحة معيشة منفصلة؟';
 
   @override
   String get onboarding_label_lastName => 'اسم العائلة';
 
   @override
-  String get onboarding_label_leadership => 'الإمامة الدينية';
+  String get onboarding_label_leadership => 'القيادة الدينية';
 
   @override
   String get onboarding_label_leadershipQuestion =>
-      'هل يمكنك إمامة صلاة الجماعة؟';
+      'هل يجوز لك أن تؤم صلاة الجماعة؟';
 
   @override
-  String get onboarding_label_lifestyleDiet => 'نمط الحياة والغذاء';
+  String get onboarding_label_lifestyleDiet => 'نمط الحياة والنظام الغذائي';
 
   @override
   String get onboarding_label_lifestyleDietSub =>
-      'هذه حقول حاسمة للعديد من العائلات. يرجى الإجابة بصدق.';
+      'هذه هي مجالات كسر الصفقات للعديد من العائلات. يرجى الإجابة بصدق.';
 
   @override
-  String get onboarding_label_livingExpectation => 'توقعات السكن بعد الزواج';
+  String get onboarding_label_livingExpectation => 'توقعات الحياة بعد الزواج';
 
   @override
   String get onboarding_label_mahrBudget => 'ميزانية المهر';
 
   @override
   String get onboarding_label_mahrBudgetQuestion =>
-      'ما هو نطاق المهر المستعد لتقديمه؟';
+      'ما هي مجموعة المهر التي أنت على استعداد لتقديمها؟';
 
   @override
   String get onboarding_label_mahrExpectation => 'توقع المهر';
 
   @override
-  String get onboarding_label_mahrExpectationQuestion => 'ما هو توقعك للمهر؟';
+  String get onboarding_label_mahrExpectationQuestion => 'ما هي توقعاتك للمهر؟';
 
   @override
-  String get onboarding_label_maintenance => 'النفقة المالية';
+  String get onboarding_label_maintenance => 'الصيانة المالية';
 
   @override
   String get onboarding_label_maintenanceQuestion =>
-      'هل أنت قادر على إعالة زوجة ماليًا؟';
+      'هل أنت قادر على إعالة الزوج ماليا؟';
 
   @override
   String get onboarding_label_male => 'ذكر';
@@ -1245,49 +1243,50 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_label_niqab => 'النقاب';
 
   @override
-  String get onboarding_label_practicing => 'مُلتزم';
+  String get onboarding_label_practicing => 'ممارسة';
 
   @override
-  String get onboarding_label_praysFiveDaily => 'أصلي الصلوات الخمس يوميًا';
+  String get onboarding_label_praysFiveDaily => 'أصلي خمس مرات يوميا';
 
   @override
-  String get onboarding_label_preferNotToSay => 'أفضل عدم الإجابة';
+  String get onboarding_label_preferNotToSay => 'يفضل عدم القول';
 
   @override
-  String get onboarding_label_preferredLiving => 'تفضيل ترتيب السكن';
+  String get onboarding_label_preferredLiving => 'تفضيل ترتيب المعيشة';
 
   @override
-  String get onboarding_label_profession => 'المهنة';
+  String get onboarding_label_profession => 'مهنة';
 
   @override
-  String get onboarding_label_providerReadiness => 'الاستعداد للقوامة';
+  String get onboarding_label_providerReadiness => 'جاهزية المزود';
 
   @override
   String get onboarding_label_quranMemorization => 'حفظ القرآن';
 
   @override
-  String get onboarding_label_religiousEducation => 'التعليم الديني';
+  String get onboarding_label_religiousEducation => 'التربية الدينية';
 
   @override
   String get onboarding_label_residencyStatus => 'حالة الإقامة (اختياري)';
 
   @override
-  String get onboarding_label_revert => 'حديث عهد بالإسلام (اختياري)';
+  String get onboarding_label_revert => 'العودة / التحويل (اختياري)';
 
   @override
-  String get onboarding_label_revertQuestion => 'هل أنت مسلم جديد (مهتدٍ)؟';
+  String get onboarding_label_revertQuestion =>
+      'هل أنت من العودة (تحويل) إلى الإسلام؟';
 
   @override
-  String get onboarding_label_sect => 'المذهب';
+  String get onboarding_label_sect => 'طائفة';
 
   @override
-  String get onboarding_label_shia => 'شيعي';
+  String get onboarding_label_shia => 'الشيعة';
 
   @override
-  String get onboarding_label_smoking => 'التدخين';
+  String get onboarding_label_smoking => 'تدخين';
 
   @override
-  String get onboarding_label_specialNeeds => 'ذوو الاحتياجات الخاصة (اختياري)';
+  String get onboarding_label_specialNeeds => 'الاحتياجات الخاصة (اختياري)';
 
   @override
   String onboarding_label_step(int current, int total) {
@@ -1295,156 +1294,157 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get onboarding_label_subSect => 'المذهب الفقهي (اختياري)';
+  String get onboarding_label_subSect => 'مدرسة الفكر (اختياري)';
 
   @override
-  String get onboarding_label_substanceUse => 'تعاطي المؤثرات';
+  String get onboarding_label_substanceUse => 'استخدام المادة';
 
   @override
   String get onboarding_label_sunni => 'سني';
 
   @override
-  String get onboarding_label_vaping => 'السجائر الإلكترونية';
+  String get onboarding_label_vaping =>
+      'السجائر الإلكترونية / السجائر الإلكترونية';
 
   @override
   String get onboarding_label_workAfterMarriage => 'العمل بعد الزواج';
 
   @override
   String get onboarding_label_workAfterMarriageQuestion =>
-      'هل تودين العمل بعد الزواج؟';
+      'هل ترغبين في العمل بعد الزواج؟';
 
   @override
-  String get onboarding_leadership_leads => 'يؤم المصلين';
+  String get onboarding_leadership_leads => 'يؤدي الصلاة';
 
   @override
-  String get onboarding_leadership_learning => 'يتعلم';
+  String get onboarding_leadership_learning => 'تعلُّم';
 
   @override
   String get onboarding_leadership_notYet => 'ليس بعد';
 
   @override
-  String get onboarding_living_openToDiscussion => 'قابل للنقاش';
+  String get onboarding_living_openToDiscussion => 'مفتوح للمناقشة';
 
   @override
   String get onboarding_living_openToDiscussionSub =>
-      'أنا مرن وسعيد بمناقشة ما يناسب كلينا.';
+      'أنا مرن وسعيد لمناقشة ما يصلح لكليهما.';
 
   @override
-  String get onboarding_living_separate => 'مسكن مستقل';
+  String get onboarding_living_separate => 'منزل منفصل';
 
   @override
-  String get onboarding_living_separateSub => 'أفضل أن يكون لنا مسكن مستقل.';
+  String get onboarding_living_separateSub =>
+      'أفضّل أن يكون لدينا منزل مستقل خاص بنا.';
 
   @override
-  String get onboarding_living_withInlaws => 'مع الأسرة';
+  String get onboarding_living_withInlaws => 'مع الأصهار';
 
   @override
   String get onboarding_living_withInlawsSub =>
-      'أتوقع العيش مع عائلة الزوج/الزوجة أو مع عائلتي.';
+      'أتوقع أن أعيش مع زوجتي أو عائلتي.';
 
   @override
-  String get onboarding_location_confirmed => 'تم تأكيد الموقع';
+  String get onboarding_location_confirmed => 'الموقع المؤكد';
 
   @override
-  String get onboarding_mahr_generous => 'سخي';
+  String get onboarding_mahr_generous => 'كريم';
 
   @override
   String get onboarding_mahr_moderate => 'معتدل';
 
   @override
-  String get onboarding_mahr_modest => 'يسير';
+  String get onboarding_mahr_modest => 'محتشم';
 
   @override
   String get onboarding_mahr_noPreference => 'لا يوجد تفضيل';
 
   @override
-  String get onboarding_mahr_toDiscuss => 'للنقاش';
+  String get onboarding_mahr_toDiscuss => 'للمناقشة';
 
   @override
   String get onboarding_marriageDeen_privacyNotice =>
-      'هذه التفاصيل لا تظهر في ملفك الشخصي العام. يتم مشاركتها بشكل خاص أثناء مرحلة القبول.';
+      'لا تظهر هذه التفاصيل في ملفك الشخصي العام. تتم مشاركتها بشكل خاص خلال مرحلة القبول.';
 
   @override
   String get onboarding_marriageDeen_subtitle =>
-      'ساعدنا في فهم رحلتك ومدى استعدادك.';
+      'ساعدنا على فهم رحلتك واستعدادك.';
 
   @override
   String get onboarding_marriageDeen_title => 'الزواج والدين';
 
   @override
-  String get onboarding_niqab_dontWear => 'لا أرتدي النقاب';
+  String get onboarding_niqab_dontWear => 'أنا لا أرتدي النقاب';
 
   @override
-  String get onboarding_niqab_open => 'متقبلة لارتدائه';
+  String get onboarding_niqab_open => 'مفتوح للارتداء';
 
   @override
   String get onboarding_niqab_wear => 'أرتدي النقاب';
 
   @override
   String get onboarding_photo_subtitle =>
-      'مطلوبة صورة واحدة على الأقل تظهر فيها وجهك بوضوح.';
+      'مطلوب صورة واحدة على الأقل. يجب أن تتضمن صورتك الأساسية وجهك بوضوح.';
 
   @override
   String get onboarding_photo_title => 'أضف صورك';
 
   @override
-  String get onboarding_photo_verifySelfie => 'صورة التحقق';
+  String get onboarding_photo_verifySelfie => 'التحقق من الصورة الشخصية';
 
   @override
   String get onboarding_photo_verifySelfieHint =>
-      'التقط صورة مباشرة للتحقق من هويتك';
+      'التقط صورة حية للتحقق من أنك حقيقي';
 
   @override
-  String get onboarding_preferredLiving_noPreference => 'لا تفضيل';
+  String get onboarding_preferredLiving_noPreference => 'لا يوجد تفضيل';
 
   @override
-  String get onboarding_profileForWhom_creatingFor =>
-      'أنا أقوم بإنشاء هذا الملف لـ...';
+  String get onboarding_profileForWhom_creatingFor => 'أنا أصنع هذا من أجلي…';
 
   @override
-  String get onboarding_profileForWhom_guardian => 'لابني أو ابنتي';
+  String get onboarding_profileForWhom_guardian => 'ابني أو ابنتي';
 
   @override
   String get onboarding_profileForWhom_guardianCardSub =>
-      'أقوم بإنشاء هذا الملف الشخصي لشخص آخر';
+      'أقوم بإنشاء هذا الملف الشخصي لشخص ما';
 
   @override
-  String get onboarding_profileForWhom_guardianCardTitle => 'ولي الأمر';
+  String get onboarding_profileForWhom_guardianCardTitle => 'الوصي';
 
   @override
-  String get onboarding_profileForWhom_guardianSub => 'أنا ولي أمر';
+  String get onboarding_profileForWhom_guardianSub =>
+      'أنا أحد الوالدين أو الوصي';
 
   @override
-  String get onboarding_profileForWhom_myself => 'لنفسي';
+  String get onboarding_profileForWhom_myself => 'نفسي';
 
   @override
-  String get onboarding_profileForWhom_myselfSub => 'أبحث عن شريك/ة للزواج';
+  String get onboarding_profileForWhom_myselfSub => 'أبحث عن الزوج';
 
   @override
-  String get onboarding_profileForWhom_relation_brother => 'أخي';
+  String get onboarding_profileForWhom_relation_brother => 'أخ';
 
   @override
-  String get onboarding_profileForWhom_relation_daughter => 'ابنتي';
+  String get onboarding_profileForWhom_relation_daughter => 'بنت';
 
   @override
-  String get onboarding_profileForWhom_relation_sister => 'أختي';
+  String get onboarding_profileForWhom_relation_sister => 'أخت';
 
   @override
-  String get onboarding_profileForWhom_relation_son => 'ابني';
+  String get onboarding_profileForWhom_relation_son => 'ابن';
 
   @override
-  String get onboarding_profileForWhom_selectOne => 'اختر خياراً للمتابعة';
+  String get onboarding_profileForWhom_selectOne => 'اختر واحدًا للمتابعة';
 
   @override
-  String get onboarding_profileForWhom_selectRelation =>
-      'اختر صلة القرابة للمتابعة';
+  String get onboarding_profileForWhom_selectRelation => 'حدد علاقة للمتابعة';
 
   @override
-  String get onboarding_profileForWhom_sibling => 'لأخي أو أختي';
+  String get onboarding_profileForWhom_sibling => 'أخي أو أختي';
 
   @override
   String get onboarding_profileForWhom_siblingSub =>
-      'أساعد شقيقي/شقيقتي في إيجاد شريك';
+      'أنا أساعد أخي في العثور على شريك';
 
   @override
   String get onboarding_profileForWhom_subtitle =>
@@ -1454,21 +1454,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_profileForWhom_title => 'لمن هذا الملف الشخصي؟';
 
   @override
-  String get onboarding_profileForWhom_ward => 'لمن أرعاه';
+  String get onboarding_profileForWhom_ward => 'جناحي';
 
   @override
   String get onboarding_profileForWhom_wardSub =>
-      'أنا وصي وأدير هذا الملف الشخصي';
+      'أنا الوصي الذي يدير هذا الملف الشخصي';
 
   @override
   String get onboarding_providerQuote =>
-      '\"خياركم خياركم لنسائهم\" — الرسول محمد صلى الله عليه وسلم\n\nالصدق بشأن استعدادك يساعد في بناء أساس قوي.';
+      '«خيركم خياركم لنسائكم». - النبي محمد صلي الله عليه وسلم\n\nإن الصدق بشأن استعدادك يساعد في بناء أساس قوي.';
 
   @override
-  String get onboarding_quran_hafiz => 'حافظ / حافظة';
+  String get onboarding_quran_hafiz => 'حافظ / حفيظة';
 
   @override
-  String get onboarding_quran_none => 'لا يوجد';
+  String get onboarding_quran_none => 'لا أحد';
 
   @override
   String get onboarding_quran_partial => 'حفظ جزئي';
@@ -1477,63 +1477,62 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_quran_some => 'بعض السور';
 
   @override
-  String get onboarding_religiousEdu_alim => 'دورة عالم';
+  String get onboarding_religiousEdu_alim => 'دورة عليم';
 
   @override
-  String get onboarding_religiousEdu_islamicUni => 'جامعة إسلامية';
+  String get onboarding_religiousEdu_islamicUni => 'الجامعة الإسلامية';
 
   @override
-  String get onboarding_religiousEdu_madrasa => 'مدرسة دينية';
+  String get onboarding_religiousEdu_madrasa => 'مدرسة';
 
   @override
-  String get onboarding_religiousEdu_selfTaught => 'تعلم ذاتي';
+  String get onboarding_religiousEdu_selfTaught => 'العصاميين';
 
   @override
-  String get onboarding_timeline_1year => 'خلال سنة';
+  String get onboarding_timeline_1year => 'في غضون عام';
 
   @override
-  String get onboarding_timeline_2years => 'سنتين أو أكثر';
+  String get onboarding_timeline_2years => '2+ سنة';
 
   @override
-  String get onboarding_timeline_6months => 'خلال 6 أشهر';
+  String get onboarding_timeline_6months => 'في غضون 6 أشهر';
 
   @override
-  String get onboarding_timeline_asap => 'في أقرب وقت ممكن';
+  String get onboarding_timeline_asap => 'في أسرع وقت ممكن';
 
   @override
-  String get onboarding_timeline_notSure => 'غير متأكد بعد';
+  String get onboarding_timeline_notSure => 'لست متأكدا بعد';
 
   @override
   String get onboarding_tooltip_cultural =>
-      'يعرّف نفسه كمسلم، يحتفل بالمناسبات، قد لا يصلي بانتظام';
+      'يُعرف بأنه مسلم، ويحتفل بالمناسبات، وقد لا يصلي بانتظام';
 
   @override
   String get onboarding_tooltip_moderate =>
-      'يقدّر المبادئ الإسلامية، يصلي بانتظام لكن ليس دائمًا، مسلم ثقافيًا';
+      'قيم المبادئ الإسلامية، يصلي بانتظام ولكن ليس دائما، ثقافيا';
 
   @override
   String get onboarding_tooltip_practicing =>
-      'يلتزم بأركان الإسلام الخمسة، يصلي بانتظام، يعيش حياة حلال';
+      'يتبع جميع الركائز الخمس، يصلي بانتظام، وأسلوب الحياة الحلال';
 
   @override
-  String get onboarding_work_no => 'لا، أفضّل عدم العمل';
+  String get onboarding_work_no => 'لا، أفضل ألا أفعل ذلك';
 
   @override
   String get onboarding_work_yes => 'نعم، أخطط للعمل';
 
   @override
-  String get photo_add_main_required => 'إضافة الصورة الأساسية\n(مطلوبة)';
+  String get photo_add_main_required => 'أضف الصورة الرئيسية\n(مطلوب)';
 
   @override
-  String get photo_add_photo => 'إضافة صورة';
+  String get photo_add_photo => 'أضف صورة';
 
   @override
-  String get photo_banner_text =>
-      'حمّل صورة واضحة يظهر فيها وجهك. لا يُسمح بالصور التي تحتوي على محتوى صريح.';
+  String get photo_banner_text => 'لا يُسمح بالصور التي تحتوي على محتوى صريح';
 
   @override
   String get photo_error_no_face_detected =>
-      'الوجه غير ظاهر — يرجى المحاولة مرة أخرى بصورة وجه واضحة';
+      'لا يوجد وجه مرئي - يرجى إعادة المحاولة باستخدام صورة وجه واضحة';
 
   @override
   String photo_error_pick_failed(Object error) {
@@ -1544,72 +1543,73 @@ class AppLocalizationsAr extends AppLocalizations {
   String get photo_face_detected => 'تم اكتشاف الوجه ✓';
 
   @override
-  String get photo_label_photo2 => 'الصورة ٢';
+  String get photo_label_photo2 => 'الصورة 2';
 
   @override
-  String get photo_label_photo3 => 'الصورة ٣';
+  String get photo_label_photo3 => 'الصورة 3';
 
   @override
-  String get photo_label_primary => 'الصورة الأساسية';
+  String get photo_label_primary => 'الصورة الأولية';
 
   @override
-  String get photo_label_selfie => 'سيلفي التحقق';
+  String get photo_label_selfie => 'الصورة 4';
 
   @override
-  String get photo_no_face => 'الوجه غير ظاهر';
+  String get photo_no_face => 'لا يوجد وجه مرئي';
 
   @override
-  String get photo_privacy_everyone => 'ظاهر للجميع';
+  String get photo_privacy_everyone => 'مرئية للجميع';
 
   @override
-  String get photo_privacy_everyone_sub => 'يمكن لجميع الأعضاء رؤية صورك.';
+  String get photo_privacy_everyone_sub =>
+      'يمكن لجميع الأعضاء رؤية الصور الخاصة بك.';
 
   @override
-  String get photo_privacy_label => 'خصوصية الصور';
+  String get photo_privacy_label => 'خصوصية الصورة';
 
   @override
-  String get photo_privacy_mutual => 'ظاهر بعد الاهتمام المتبادل';
+  String get photo_privacy_mutual => 'مرئية بعد الاهتمام المتبادل';
 
   @override
   String get photo_privacy_mutual_sub =>
-      'تظهر الصور فقط عندما يبدي الطرفان اهتمامًا.';
+      'لا تكشف الصور إلا عندما يعبر الطرفان عن اهتمامهما.';
 
   @override
-  String get photo_privacy_request => 'طلب للمشاهدة';
+  String get photo_privacy_request => 'طلب المشاهدة';
 
   @override
   String get photo_privacy_request_sub =>
       'تكون الصور غير واضحة حتى توافق على الطلب.';
 
   @override
-  String get photo_sheet_camera => 'الكاميرا';
+  String get photo_sheet_camera => 'آلة تصوير';
 
   @override
-  String get photo_sheet_gallery => 'المعرض';
+  String get photo_sheet_gallery => 'معرض';
 
   @override
-  String get photo_sheet_title => 'اختر مصدر الصورة';
+  String get photo_sheet_title => 'حدد مصدر الصورة';
 
   @override
-  String get photo_slots_help => 'اضغط على الخانات للتحميل';
+  String get photo_slots_help => 'اضغط على فتحات للتحميل';
 
   @override
   String photo_subtitle_guardian(Object relation) {
-    return 'أضف صور $relation. مطلوب صورة واحدة على الأقل.';
+    return 'أضف صورًا لـ $relation الخاص بك. مطلوب واحد على الأقل.';
   }
 
   @override
   String get photo_subtitle_self =>
-      'مطلوب صورة واحدة على الأقل. الحد الأقصى أربع.';
+      'مطلوب صورة واحدة على الأقل. الحد الأقصى أربعة.';
 
   @override
-  String get photo_title_guardian => 'إضافة صورهم';
+  String get photo_title_guardian => 'أضف صورهم';
 
   @override
-  String get photo_title_self => 'إضافة صورك';
+  String get photo_title_self => 'أضف صورك';
 
   @override
-  String get preferences_deen_any => 'أي مستوى';
+  String get preferences_deen_any => 'أي';
 
   @override
   String get preferences_deen_cultural => 'مسلم ثقافي';
@@ -1618,31 +1618,31 @@ class AppLocalizationsAr extends AppLocalizations {
   String get preferences_deen_moderate => 'معتدل';
 
   @override
-  String get preferences_deen_practicing => 'ملتزم';
+  String get preferences_deen_practicing => 'ممارسة';
 
   @override
-  String get preferences_edu_any => 'أي مستوى';
+  String get preferences_edu_any => 'أي';
 
   @override
-  String get preferences_edu_bachelors => 'بكالوريوس أو أعلى';
+  String get preferences_edu_bachelors => 'بكالوريوس+';
 
   @override
-  String get preferences_edu_diploma => 'دبلوم أو أعلى';
+  String get preferences_edu_diploma => 'دبلوم +';
 
   @override
-  String get preferences_edu_masters => 'ماجستير أو أعلى';
+  String get preferences_edu_masters => 'الماجستير+';
 
   @override
   String get preferences_edu_phd => 'دكتوراه فقط';
 
   @override
-  String get preferences_edu_secondary => 'ثانوي أو أعلى';
+  String get preferences_edu_secondary => 'الثانوية +';
 
   @override
-  String get preferences_label_age => 'نطاق العمر';
+  String get preferences_label_age => 'الفئة العمرية';
 
   @override
-  String get preferences_label_age_bounds => '١٨ – ٦٠';
+  String get preferences_label_age_bounds => '18 - 60';
 
   @override
   String preferences_label_age_range(Object max, Object min) {
@@ -1650,25 +1650,25 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get preferences_label_deen => 'تفضيل مستوى التدين';
+  String get preferences_label_deen => 'تفضيلات مستوى الدين';
 
   @override
-  String get preferences_label_edu => 'الحد الأدنى للتعليم';
+  String get preferences_label_edu => 'الحد الأدنى من التعليم';
 
   @override
-  String get preferences_label_living => 'تفضيل ترتيب السكن';
+  String get preferences_label_living => 'تفضيل ترتيب المعيشة';
 
   @override
-  String get preferences_label_location => 'الموقع';
+  String get preferences_label_location => 'موقع';
 
   @override
-  String get preferences_label_openness => 'التقبل';
+  String get preferences_label_openness => 'الانفتاح';
 
   @override
-  String get preferences_label_sect => 'تفضيل المذهب';
+  String get preferences_label_sect => 'تفضيل الطائفة';
 
   @override
-  String get preferences_living_discussion => 'قابل للنقاش';
+  String get preferences_living_discussion => 'مفتوح للمناقشة';
 
   @override
   String get preferences_living_family => 'مع العائلة';
@@ -1677,13 +1677,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get preferences_living_no_pref => 'لا يوجد تفضيل';
 
   @override
-  String get preferences_living_separate => 'مسكن مستقل';
+  String get preferences_living_separate => 'منزل منفصل';
 
   @override
-  String get preferences_location_abroad => 'مفتوح للخارج';
+  String get preferences_location_abroad => 'مفتوحة للخارج';
 
   @override
-  String get preferences_location_diaspora => 'وضع المغتربين';
+  String get preferences_location_diaspora => 'وضع الشتات';
 
   @override
   String get preferences_location_same_city => 'نفس المدينة';
@@ -1692,78 +1692,78 @@ class AppLocalizationsAr extends AppLocalizations {
   String get preferences_location_same_country => 'نفس البلد';
 
   @override
-  String get preferences_open_children => 'متقبل للارتباط بشخص لديه أطفال';
+  String get preferences_open_children => 'مفتوح لشخص لديه أطفال';
 
   @override
-  String get preferences_open_divorced => 'متقبل للارتباط بشخص مطلق';
+  String get preferences_open_divorced => 'مفتوحة لشخص مطلق سابقا';
 
   @override
-  String get preferences_open_widowed => 'متقبل للارتباط بشخص أرمل';
+  String get preferences_open_widowed => 'مفتوحة لشخص أرمل سابقا';
 
   @override
-  String get preferences_sect_any => 'أي مذهب';
+  String get preferences_sect_any => 'أي';
 
   @override
-  String get preferences_sect_same => 'مثل مذهبي';
+  String get preferences_sect_same => 'نفس لي';
 
   @override
-  String get preferences_sect_shia => 'شيعي';
+  String get preferences_sect_shia => 'الشيعة';
 
   @override
   String get preferences_sect_sunni => 'سني';
 
   @override
   String preferences_subtitle_guardian(Object relation) {
-    return 'عيّن التفضيلات للمطابقة المثالية لـ $relation.';
+    return 'قم بتعيين التفضيلات للمطابقة المثالية لجهاز $relation.';
   }
 
   @override
-  String get preferences_subtitle_self => 'هذه تفضيلات، وليست فلاتر صارمة.';
+  String get preferences_subtitle_self => 'هذه تفضيلات، وليست مرشحات صعبة.';
 
   @override
   String get preferences_title => 'تفضيلات الشريك';
 
   @override
-  String get preview_age_label => 'العمر';
+  String get preview_age_label => 'عمر';
 
   @override
-  String get preview_background => 'الخلفية المهنية';
+  String get preview_background => 'خلفية';
 
   @override
   String get preview_basic_info => 'معلومات أساسية';
 
   @override
-  String get preview_city_label => 'المدينة';
+  String get preview_city_label => 'مدينة';
 
   @override
-  String get preview_community_label => 'المجتمع / بيرادري';
+  String get preview_community_label => 'مجتمع';
 
   @override
-  String get preview_cowife_label => 'قبول أن تكون زوجة ثانية';
+  String get preview_cowife_label => 'قبول الزوجة';
 
   @override
-  String get preview_deen_label => 'مستوى التدين';
+  String get preview_deen_label => 'مستوى الدين';
 
   @override
-  String get preview_diet_label => 'النظام الغذائي';
+  String get preview_diet_label => 'نظام عذائي';
 
   @override
-  String get preview_edit => 'تعديل';
+  String get preview_edit => 'يحرر';
 
   @override
-  String get preview_education_label => 'التعليم';
+  String get preview_education_label => 'تعليم';
 
   @override
-  String get preview_faith => 'الدين والالتزام';
+  String get preview_faith => 'إيمان';
 
   @override
-  String get preview_family => 'العائلة';
+  String get preview_family => 'عائلة';
 
   @override
   String get preview_family_type_label => 'نوع العائلة';
 
   @override
-  String get preview_gender_label => 'الجنس';
+  String get preview_gender_label => 'جنس';
 
   @override
   String get preview_hijab_label => 'الحجاب';
@@ -1772,19 +1772,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String get preview_hookah_label => 'الشيشة';
 
   @override
-  String get preview_leadership_label => 'إمامة الصلاة';
+  String get preview_leadership_label => 'قيادة';
 
   @override
-  String get preview_marital_label => 'الحالة الاجتماعية';
+  String get preview_marital_label => 'الزوجية';
 
   @override
-  String get preview_marriage_timeline_label => 'مخطط الزواج';
+  String get preview_marriage_timeline_label => 'الجدول الزمني للزواج';
 
   @override
   String get preview_mother_tongue_label => 'اللغة الأم';
 
   @override
-  String get preview_name_label => 'الاسم';
+  String get preview_name_label => 'اسم';
 
   @override
   String get preview_notice_guardian =>
@@ -1798,99 +1798,98 @@ class AppLocalizationsAr extends AppLocalizations {
   String get preview_polygamy_label => 'تعدد الزوجات';
 
   @override
-  String get preview_post_marriage_living_label => 'السكن بعد الزواج';
+  String get preview_post_marriage_living_label => 'حياة ما بعد الزواج';
 
   @override
-  String get preview_prays_label => 'يصلي الصلوات الخمس';
+  String get preview_prays_label => 'يصلي 5x';
 
   @override
-  String get preview_profession_label => 'المهنة';
+  String get preview_profession_label => 'مهنة';
 
   @override
-  String get preview_quran_label => 'حفظ القرآن';
+  String get preview_quran_label => 'القرآن';
 
   @override
-  String get preview_religious_edu_label => 'التعليم الديني';
+  String get preview_religious_edu_label => 'التربية الدينية';
 
   @override
   String get preview_residency_label => 'الإقامة';
 
   @override
-  String get preview_revert_label => 'مسلم جديد';
+  String get preview_revert_label => 'يرجع';
 
   @override
-  String get preview_sect_label => 'المذهب';
+  String get preview_sect_label => 'طائفة';
 
   @override
-  String get preview_siblings_label => 'الإخوة';
+  String get preview_siblings_label => 'إخوة';
 
   @override
-  String get preview_smoking_label => 'التدخين';
+  String get preview_smoking_label => 'تدخين';
 
   @override
   String get preview_special_needs_label => 'الاحتياجات الخاصة';
 
   @override
-  String get preview_submit_btn => 'تقديم الملف الشخصي';
+  String get preview_submit_btn => 'إرسال الملف الشخصي';
 
   @override
   String get preview_title => 'معاينة';
 
   @override
-  String get preview_vaping_label => 'السجائر الإلكترونية';
+  String get preview_vaping_label => 'التدخين الإلكتروني';
 
   @override
-  String get preview_willing_relocate_label => 'الرغبة في الانتقال';
+  String get preview_willing_relocate_label => 'على استعداد للانتقال';
 
   @override
   String profile_label_completeness(int percent) {
-    return 'الملف الشخصي مكتمل $percent%';
+    return 'اكتمل الملف الشخصي $percent%';
   }
 
   @override
   String get profile_nudge_completeness =>
-      'الملفات الشخصية المكتملة بنسبة 80%+ تحصل على 3 أضعاف الاهتمامات.';
+      'الملفات الشخصية التي تبلغ نسبة اكتمالها 80%+ تحصل على 3 أضعاف الاهتمامات.';
 
   @override
-  String get settings_brand_credit => 'ميثاق (Mithaq) · لوجه الله';
+  String get settings_brand_credit => '????? (سيلارا) · في سبيل الله';
 
   @override
   String get settings_button_deleteAccount => 'حذف الحساب';
 
   @override
-  String get settings_guardian_mirror => 'نسخ الرسائل';
+  String get settings_guardian_mirror => 'رسائل المرآة';
 
   @override
   String get settings_guardian_mirror_sub =>
       'إرسال نسخ من جميع الرسائل إلى ولي الأمر';
 
   @override
-  String get settings_guardian_name_hint => 'اسم ولي الأمر';
+  String get settings_guardian_name_hint => 'اسم الوصي';
 
   @override
-  String get settings_guardian_phone_hint => 'هاتف ولي الأمر';
+  String get settings_guardian_phone_hint => 'هاتف الجارديان';
 
   @override
-  String get settings_guardian_relationship => 'العلاقة';
+  String get settings_guardian_relationship => 'علاقة';
 
   @override
-  String get settings_guardian_reply => 'السماح لولي الأمر بالرد';
+  String get settings_guardian_reply => 'السماح للوصي بالرد';
 
   @override
-  String get settings_guardian_reply_sub =>
-      'يمكن لولي الأمر المشاركة في المحادثات';
+  String get settings_guardian_reply_sub => 'يجوز للوصي المشاركة في المحادثات';
 
   @override
-  String get settings_guardian_save => 'حفظ إعدادات ولي الأمر';
+  String get settings_guardian_save => 'حفظ إعدادات الجارديان';
 
   @override
-  String get settings_guardian_saved => 'تم الحفظ';
+  String get settings_guardian_saved => 'أنقذ';
 
   @override
-  String get settings_guardian_sub => 'تفعيل إشراف الولي على الرسائل';
+  String get settings_guardian_sub => 'تمكين إشراف الوالي على الرسائل';
 
   @override
-  String get settings_guardian_title => 'وضع ولي الأمر';
+  String get settings_guardian_title => 'وضع الجارديان';
 
   @override
   String get settings_label_blocked => 'الملفات الشخصية المحظورة';
@@ -1901,75 +1900,74 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get settings_label_blocked_none => 'لا يوجد';
+  String get settings_label_blocked_none => 'لا أحد';
 
   @override
   String get settings_label_deleteGrace =>
-      'سيتم إخفاء ملفك الشخصي فورًا. سيتم حذف بياناتك نهائيًا بعد 30 يومًا.';
+      'سيتم إخفاء ملفك الشخصي على الفور. سيتم حذف بياناتك نهائيًا بعد 30 يومًا.';
 
   @override
-  String get settings_label_editProfile => 'تعديل الملف الشخصي';
+  String get settings_label_editProfile => 'تحرير الملف الشخصي';
 
   @override
-  String get settings_label_language => 'اللغة';
+  String get settings_label_language => 'لغة';
 
   @override
   String get settings_label_phoneCannotChange =>
-      'لا يمكن تغيير رقم الهاتف. اتصل بالدعم للمساعدة.';
+      'لا يمكن تغيير رقم الهاتف. اتصل بالدعم للحصول على المساعدة.';
 
   @override
-  String get settings_label_phoneNumber => 'رقم الهاتف';
+  String get settings_label_phoneNumber => 'رقم التليفون';
 
   @override
   String get settings_label_photoPrivacy => 'خصوصية الصور';
 
   @override
-  String get settings_label_rate => 'قيم تطبيق ميثاق';
+  String get settings_label_rate => 'معدل ?????';
 
   @override
   String get settings_label_rate_snackbar =>
-      'التقييم سيكون متاحًا بمجرد إطلاق ميثاق على متجر التطبيقات.';
+      'سيكون التقييم متاحًا بمجرد إطلاق ????? في متجر التطبيقات.';
 
   @override
-  String get settings_label_reports => 'سجل البلاغات';
+  String get settings_label_reports => 'تقرير التاريخ';
 
   @override
   String settings_label_reports_count(Object count) {
-    return '$count بلاغات';
+    return '$count التقارير';
   }
 
   @override
-  String get settings_label_reports_none => 'لم يتم تقديم أي بلاغات';
+  String get settings_label_reports_none => 'لم يتم تقديم أي تقارير';
 
   @override
-  String get settings_label_selfieChallenge => 'تحدي الصورة الشخصية';
+  String get settings_label_selfieChallenge => 'تحدي السيلفي';
 
   @override
-  String get settings_label_verifyProfile => 'توثيق الحساب';
+  String get settings_label_verifyProfile => 'التحقق من الملف الشخصي';
 
   @override
-  String get settings_label_version => 'الإصدار';
+  String get settings_label_version => 'إصدار';
 
   @override
   String get settings_notify_activityNudges => 'تنبيهات النشاط';
 
   @override
   String get settings_notify_activityNudgesSub =>
-      'التذكير عند عدم النشاط لأكثر من ٧ أيام';
+      'تذكير عندما يكون غير نشط لمدة 7+ أيام';
 
   @override
-  String get settings_notify_boostReminders => 'تذكيرات الترويج';
+  String get settings_notify_boostReminders => 'تعزيز التذكيرات';
 
   @override
   String get settings_notify_boostRemindersSub =>
-      'التذكير عندما يكون ترويجك الأسبوعي جاهزًا';
+      'ذكّر عندما يكون التعزيز الأسبوعي الخاص بك جاهزًا';
 
   @override
-  String get settings_notify_interestAccepted => 'قبول الاهتمام';
+  String get settings_notify_interestAccepted => 'الفائدة مقبولة';
 
   @override
-  String get settings_notify_interestExpiring =>
-      'أوشكت صلاحية الاهتمام على الانتهاء';
+  String get settings_notify_interestExpiring => 'تنتهي الفائدة قريبًا';
 
   @override
   String get settings_notify_newInterest => 'اهتمامات جديدة';
@@ -1978,10 +1976,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings_notify_newMessage => 'رسائل جديدة';
 
   @override
-  String get settings_notify_profileApproved => 'تمت الموافقة على الملف الشخصي';
-
-  @override
-  String get settings_notify_quietHours => 'ساعات الهدوء';
+  String get settings_notify_quietHours => 'ساعات هادئة';
 
   @override
   String get settings_photo_privacy_accepted_interests =>
@@ -1991,63 +1986,64 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings_photo_privacy_after_acceptance => 'بعد القبول';
 
   @override
-  String get settings_photo_privacy_everyone => 'للجميع';
+  String get settings_photo_privacy_everyone => 'الجميع';
 
   @override
   String get settings_photo_privacy_public => 'عام';
 
   @override
-  String get settings_photo_privacy_request_only => 'عند الطلب فقط';
+  String get settings_photo_privacy_request_only => 'الطلب فقط';
 
   @override
-  String get settings_photo_privacy_request_to_view => 'طلب للمشاهدة';
+  String get settings_photo_privacy_request_to_view => 'طلب المشاهدة';
 
   @override
   String get settings_privacy_download_body =>
-      'بموجب اللائحة العامة لحماية البيانات (GDPR) ولوائح الخصوصية الأخرى، يمكنك طلب تصدير كامل لملفك الشخصي وبيانات المطابقة والنشاط. سيتم إعداد الملف وإرساله إلى عنوانك المسجل.';
+      'بموجب القانون العام لحماية البيانات (GDPR) ولوائح الخصوصية الأخرى، يمكنك طلب تصدير كامل لبيانات ملفك الشخصي والمطابقة والنشاط. سيتم إعداد الملف وإرساله إلى عنوانك المسجل.';
 
   @override
   String get settings_privacy_download_btn => 'طلب تصدير البيانات';
 
   @override
-  String get settings_privacy_download_label => 'تنزيل بياناتي';
+  String get settings_privacy_download_label => 'قم بتنزيل بياناتي';
 
   @override
   String get settings_privacy_download_sub =>
-      'تصدير نسخة من بياناتك الشخصية بموجب اللائحة العامة لحماية البيانات (GDPR)';
+      'قم بتصدير نسخة من بياناتك الشخصية بموجب اللائحة العامة لحماية البيانات';
 
   @override
   String get settings_privacy_export_body =>
-      'لقد تم استلام طلبك! نحن نعمل على تجميع أرشيف بياناتك الشخصية.';
+      'لقد تم استلام طلبك! نحن نقوم بتجميع أرشيف البيانات الشخصية الخاصة بك.';
 
   @override
   String get settings_privacy_export_btn_close => 'مفهوم';
 
   @override
   String get settings_privacy_export_subbody =>
-      'سيتم إرسال رابط التنزيل إلى هاتفك/بريدك الإلكتروني المسجل في غضون ٤٨ ساعة امتثالاً لتوجيهات GDPR.';
+      'سيتم إرسال رابط التنزيل إلى هاتفك/بريدك الإلكتروني المسجل خلال 48 ساعة بما يتوافق مع إرشادات اللائحة العامة لحماية البيانات.';
 
   @override
-  String get settings_privacy_export_title => 'تم طلب التصدير';
+  String get settings_privacy_export_title => 'طلب التصدير';
 
   @override
-  String get settings_privacy_online_label => 'حالة الاتصال';
+  String get settings_privacy_online_label => 'حالة الاتصال بالإنترنت';
 
   @override
-  String get settings_privacy_online_sub => 'إظهار آخر وقت كنت فيه نشطًا';
+  String get settings_privacy_online_sub => 'إظهار متى كنت نشطًا آخر مرة';
 
   @override
-  String get settings_privacy_pause_label => 'إيقاف الملف الشخصي مؤقتًا';
+  String get settings_privacy_pause_label => 'وقفة الملف الشخصي';
 
   @override
-  String get settings_privacy_pause_sub => 'إخفاء ملفك الشخصي من البحث';
+  String get settings_privacy_pause_sub =>
+      'إخفاء ملف التعريف الخاص بك من البحث';
 
   @override
   String get settings_privacy_pause_warning =>
-      'ملفك الشخصي مخفي. لا يمكن لأحد العثور عليك.';
+      'ملفك الشخصي مخفي. لا أحد يستطيع العثور عليك.';
 
   @override
-  String get settings_privacy_photo_label => 'ظهور الصور';
+  String get settings_privacy_photo_label => 'رؤية الصورة';
 
   @override
   String get settings_privacy_photo_sub => 'من يمكنه رؤية صورك';
@@ -2063,13 +2059,13 @@ class AppLocalizationsAr extends AppLocalizations {
       'التحكم في من يمكنه تصفح ملفك الشخصي';
 
   @override
-  String get settings_privacy_visibility_subscribers => 'المشتركون فقط';
+  String get settings_privacy_visibility_subscribers => 'المشتركين فقط';
 
   @override
-  String get settings_relation_brother => 'الأخ';
+  String get settings_relation_brother => 'أخ';
 
   @override
-  String get settings_relation_father => 'الأب';
+  String get settings_relation_father => 'أب';
 
   @override
   String get settings_relation_mother => 'الأم';
@@ -2078,64 +2074,64 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings_relation_other => 'آخر';
 
   @override
-  String get settings_relation_uncle => 'العم/الخال';
+  String get settings_relation_uncle => 'عم';
 
   @override
-  String get settings_section_account => 'الحساب';
+  String get settings_section_account => 'حساب';
 
   @override
-  String get settings_section_app => 'التطبيق';
+  String get settings_section_app => 'برنامج';
 
   @override
   String get settings_section_dangerZone => 'منطقة الخطر';
 
   @override
-  String get settings_section_guardian => 'الولي';
+  String get settings_section_guardian => 'الوصي';
 
   @override
-  String get settings_section_legal => 'القانونية';
+  String get settings_section_legal => 'قانوني';
 
   @override
-  String get settings_section_notifications => 'الإشعارات';
+  String get settings_section_notifications => 'إشعارات';
 
   @override
-  String get settings_section_privacy => 'الخصوصية';
+  String get settings_section_privacy => 'خصوصية';
 
   @override
-  String get settings_section_safety => 'الأمان';
+  String get settings_section_safety => 'أمان';
 
   @override
-  String get settings_support_body => 'لأي أسئلة أو مخاوف أو ملاحظات:';
+  String get settings_support_body => 'لأية أسئلة أو استفسارات أو تعليقات:';
 
   @override
-  String get settings_support_btn_close => 'إغلاق';
+  String get settings_support_btn_close => 'يغلق';
 
   @override
-  String get settings_support_contact => 'الاتصال بالدعم';
+  String get settings_support_contact => 'اتصل بالدعم';
 
   @override
-  String get settings_support_note => 'نهدف إلى الرد في غضون ٤٨ ساعة.';
+  String get settings_support_note => 'ونحن نهدف إلى الرد في غضون 48 ساعة.';
 
   @override
-  String get settings_title => 'الإعدادات';
+  String get settings_title => 'إعدادات';
 
   @override
-  String get splash_button_createProfile => 'إنشاء ملف شخصي';
+  String get splash_button_createProfile => 'إنشاء الملف الشخصي';
 
   @override
   String get splash_button_signIn => 'تسجيل الدخول';
 
   @override
-  String get splash_referral_button => 'تطبيق الرمز';
+  String get splash_referral_button => 'تطبيق الكود';
 
   @override
-  String get splash_referral_hint => 'مثال: MITHAQXX';
+  String get splash_referral_hint => 'على سبيل المثال سيلاراXX';
 
   @override
-  String get splash_referral_invalid => 'يرجى إدخال رمز صالح مكون من 6 أحرف.';
+  String get splash_referral_invalid => 'الرجاء إدخال رمز صالح مكون من 6 أحرف.';
 
   @override
-  String get splash_referral_question => 'لديك رمز إحالة؟';
+  String get splash_referral_question => 'هل لديك رمز الإحالة؟';
 
   @override
   String get splash_referral_saved =>
@@ -2143,14 +2139,14 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get splash_referral_subtitle =>
-      'إذا دعاك صديق إلى ميثاق، فأدخل رمز الإحالة المكون من 6 أحرف أدناه.';
+      'إذا دعاك أحد الأصدقاء إلى ?????، فأدخل رمز الإحالة المكون من 6 أحرف أدناه.';
 
   @override
   String get splash_referral_title => 'أدخل رمز الإحالة';
 
   @override
   String subscription_button_monthly(String price) {
-    return 'اشترك — $price/شهر';
+    return 'الاشتراك - $price/شهر';
   }
 
   @override
@@ -2158,8 +2154,43 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get subscription_subtitle =>
-      'تراسل النساء مجانًا. يشترك الرجال للتواصل.';
+      'رسائل نسائية مجانية. الرجال الاشتراك للاتصال.';
 
   @override
-  String get subscription_title => 'افتح ميثاق';
+  String get subscription_title => 'فتح سيلارا';
+
+  @override
+  String get startup_connectivity_preparing_title => 'نُهيّئ مساحتك الخاصة';
+
+  @override
+  String get startup_connectivity_preparing_body =>
+      'جارٍ إنشاء اتصال آمن بسيلارا.';
+
+  @override
+  String get startup_connectivity_offline_title => 'الاتصال غير متاح';
+
+  @override
+  String get startup_connectivity_offline_body =>
+      'مكانك في سيلارا محفوظ بأمان. سنواصل فور عودة الشبكة.';
+
+  @override
+  String get startup_connectivity_verifying => 'جارٍ التحقق من الاتصال';
+
+  @override
+  String get startup_connectivity_waiting => 'اتصال آمن · في الانتظار';
+
+  @override
+  String get startup_connectivity_still_waiting => 'ما زلنا ننتظر';
+
+  @override
+  String get startup_connectivity_check => 'تحقق من الاتصال';
+
+  @override
+  String get startup_connectivity_checking => 'جارٍ التحقق بأمان';
+
+  @override
+  String get startup_connectivity_auto => 'ستتم إعادة الاتصال تلقائيًا';
+
+  @override
+  String get startup_connectivity_protected => 'اتصال محمي';
 }

@@ -1,6 +1,6 @@
 // lib/features/home/widgets/discovery_filter_bar.dart
 // ============================================================
-// MITHAQ — Discovery Filter Bar (Step 6 — Functional)
+// SILARAH — Discovery Filter Bar (Step 6 — Functional)
 //
 // Blueprint (Part 8, Search & Filters):
 //   "A full-height bottom sheet with all available filters.
@@ -30,67 +30,68 @@ class DiscoveryFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<DiscoveryFeedCubit, DiscoveryFeedState>(
-      builder: (context, state) {
-        final f = state.activeFilter;
+    return BlocSelector<DiscoveryFeedCubit, DiscoveryFeedState,
+        DiscoveryFilter>(
+      selector: (state) => state.activeFilter,
+      builder: (context, f) {
         return SizedBox(
-          height: 44,
+          height: 52,
           child: ListView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(
-                horizontal: AppDimensions.space24),
+            padding:
+                const EdgeInsets.symmetric(horizontal: AppDimensions.space24),
             children: [
               _Chip(
-                icon:     Icons.tune_rounded,
-                label:    f.activeCount > 0
+                icon: Icons.tune_rounded,
+                label: f.activeCount > 0
                     ? 'Filters (${f.activeCount})'
                     : 'All Filters',
                 isActive: f.isActive,
-                onTap:    () => _showAllFilters(context, state),
+                onTap: () => _showAllFilters(context, f),
               ),
               const SizedBox(width: AppDimensions.space8),
               _Chip(
-                icon:     Icons.cake_outlined,
-                label:    (f.ageMin != null || f.ageMax != null)
+                icon: Icons.cake_outlined,
+                label: (f.ageMin != null || f.ageMax != null)
                     ? '${f.ageMin ?? 18}–${f.ageMax ?? 60}'
                     : 'Age Range',
                 isActive: f.ageMin != null || f.ageMax != null,
-                onTap:    () => _showAgeFilter(context, state),
+                onTap: () => _showAgeFilter(context, f),
               ),
               const SizedBox(width: AppDimensions.space8),
               _Chip(
-                icon:     Icons.mosque_outlined,
-                label:    f.sect ?? 'Sect',
+                icon: Icons.mosque_outlined,
+                label: f.sect ?? 'Sect',
                 isActive: f.sect != null,
-                onTap:    () => _showSectFilter(context, state),
+                onTap: () => _showSectFilter(context, f),
               ),
               const SizedBox(width: AppDimensions.space8),
               _Chip(
-                icon:     Icons.brightness_5_outlined,
-                label:    f.deenLevel != null
+                icon: Icons.brightness_5_outlined,
+                label: f.deenLevel != null
                     ? _formatDeen(f.deenLevel!)
                     : 'Deen Level',
                 isActive: f.deenLevel != null,
-                onTap:    () => _showDeenFilter(context, state),
+                onTap: () => _showDeenFilter(context, f),
               ),
               const SizedBox(width: AppDimensions.space8),
               _Chip(
-                icon:     Icons.verified_outlined,
-                label:    'Verified Only',
+                icon: Icons.verified_outlined,
+                label: 'Verified Only',
                 isActive: f.verifiedOnly,
-                onTap:    () {
+                onTap: () {
                   HapticFeedback.selectionClick();
                   context.read<DiscoveryFeedCubit>().applyFilter(
-                    f.copyWith(verifiedOnly: !f.verifiedOnly),
-                  );
+                        f.copyWith(verifiedOnly: !f.verifiedOnly),
+                      );
                 },
               ),
               const SizedBox(width: AppDimensions.space8),
               _Chip(
-                icon:     Icons.people_outline_rounded,
-                label:    f.familyType ?? 'Family Type',
+                icon: Icons.people_outline_rounded,
+                label: f.familyType ?? 'Family Type',
                 isActive: f.familyType != null,
-                onTap:    () => _showFamilyFilter(context, state),
+                onTap: () => _showFamilyFilter(context, f),
               ),
             ],
           ),
@@ -101,36 +102,37 @@ class DiscoveryFilterBar extends StatelessWidget {
 
   // ── Filter openers ────────────────────────────────────────
 
-  void _showAllFilters(BuildContext context, DiscoveryFeedState state) {
-    showDiscoveryFilterSheet(context, initial: state.activeFilter);
+  void _showAllFilters(BuildContext context, DiscoveryFilter filter) {
+    showDiscoveryFilterSheet(context, initial: filter);
   }
 
-  void _showAgeFilter(BuildContext context, DiscoveryFeedState state) {
-    showDiscoveryFilterSheet(context,
-        initial: state.activeFilter, scrollToSection: 'age');
+  void _showAgeFilter(BuildContext context, DiscoveryFilter filter) {
+    showDiscoveryFilterSheet(context, initial: filter, scrollToSection: 'age');
   }
 
-  void _showSectFilter(BuildContext context, DiscoveryFeedState state) {
-    showDiscoveryFilterSheet(context,
-        initial: state.activeFilter, scrollToSection: 'sect');
+  void _showSectFilter(BuildContext context, DiscoveryFilter filter) {
+    showDiscoveryFilterSheet(context, initial: filter, scrollToSection: 'sect');
   }
 
-  void _showDeenFilter(BuildContext context, DiscoveryFeedState state) {
-    showDiscoveryFilterSheet(context,
-        initial: state.activeFilter, scrollToSection: 'deen');
+  void _showDeenFilter(BuildContext context, DiscoveryFilter filter) {
+    showDiscoveryFilterSheet(context, initial: filter, scrollToSection: 'deen');
   }
 
-  void _showFamilyFilter(BuildContext context, DiscoveryFeedState state) {
+  void _showFamilyFilter(BuildContext context, DiscoveryFilter filter) {
     showDiscoveryFilterSheet(context,
-        initial: state.activeFilter, scrollToSection: 'family');
+        initial: filter, scrollToSection: 'family');
   }
 
   static String _formatDeen(String raw) {
     switch (raw) {
-      case 'practicing': return 'Practicing';
-      case 'moderate':   return 'Moderate';
-      case 'cultural':   return 'Cultural';
-      default:           return raw;
+      case 'practicing':
+        return 'Practicing';
+      case 'moderate':
+        return 'Moderate';
+      case 'cultural':
+        return 'Cultural';
+      default:
+        return raw;
     }
   }
 }
@@ -145,9 +147,9 @@ class _Chip extends StatelessWidget {
     required this.onTap,
   });
 
-  final IconData     icon;
-  final String       label;
-  final bool         isActive;
+  final IconData icon;
+  final String label;
+  final bool isActive;
   final VoidCallback onTap;
 
   @override
@@ -159,9 +161,13 @@ class _Chip extends StatelessWidget {
       },
       child: AnimatedContainer(
         duration: AppDimensions.durationTransition,
+        constraints: const BoxConstraints(
+          minHeight: 44,
+          maxWidth: 176,
+        ),
         padding: const EdgeInsets.symmetric(
           horizontal: AppDimensions.space12,
-          vertical:   AppDimensions.space8,
+          vertical: AppDimensions.space8,
         ),
         decoration: BoxDecoration(
           color: isActive
@@ -170,9 +176,7 @@ class _Chip extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
           border: Border.all(
             color: isActive ? AppColors.champagneGold : AppColors.cardBorder,
-            width: isActive
-                ? AppDimensions.borderFocus
-                : AppDimensions.borderThin,
+            width: 1.5,
           ),
         ),
         child: Row(
@@ -181,15 +185,18 @@ class _Chip extends StatelessWidget {
             Icon(
               icon,
               color: isActive ? AppColors.champagneGold : AppColors.slateMist,
-              size:  AppDimensions.iconSizeSmall,
+              size: AppDimensions.iconSizeSmall,
             ),
             const SizedBox(width: AppDimensions.space6),
-            Text(
-              label,
-              style: AppTypography.chipLabel.copyWith(
-                color: isActive
-                    ? AppColors.champagneGold
-                    : AppColors.slateMist,
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTypography.chipLabel.copyWith(
+                  color:
+                      isActive ? AppColors.champagneGold : AppColors.slateMist,
+                ),
               ),
             ),
           ],
@@ -212,7 +219,7 @@ class _SheetBase extends StatelessWidget {
     this.onApply,
   });
 
-  final String       title;
+  final String title;
   final List<Widget> children;
   final VoidCallback? onReset;
   final VoidCallback? onApply;
@@ -220,14 +227,13 @@ class _SheetBase extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin:  const EdgeInsets.fromLTRB(
-          AppDimensions.space16, 0,
+      margin: const EdgeInsets.fromLTRB(AppDimensions.space16, 0,
           AppDimensions.space16, AppDimensions.space16),
       padding: const EdgeInsets.all(AppDimensions.space24),
       decoration: BoxDecoration(
-        color:        AppColors.surfaceElevated,
+        color: AppColors.surfaceElevated,
         borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-        border:       Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: AppColors.cardBorder),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -236,9 +242,10 @@ class _SheetBase extends StatelessWidget {
           // Handle
           Center(
             child: Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               decoration: BoxDecoration(
-                color:        AppColors.cardBorder,
+                color: AppColors.cardBorder,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -258,8 +265,8 @@ class _SheetBase extends StatelessWidget {
                     Navigator.pop(context);
                   },
                   child: Text('Reset',
-                      style: AppTypography.caption.copyWith(
-                          color: AppColors.champagneGold)),
+                      style: AppTypography.caption
+                          .copyWith(color: AppColors.champagneGold)),
                 ),
             ],
           ),
@@ -270,7 +277,7 @@ class _SheetBase extends StatelessWidget {
           const SizedBox(height: AppDimensions.space20),
           if (onApply != null)
             SizedBox(
-              width:  double.infinity,
+              width: double.infinity,
               height: AppDimensions.buttonHeight,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -341,18 +348,18 @@ class _AgeRangeSheetState extends State<_AgeRangeSheet> {
         const SizedBox(height: AppDimensions.space8),
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
-            activeTrackColor:   AppColors.champagneGold,
+            activeTrackColor: AppColors.champagneGold,
             inactiveTrackColor: AppColors.surfaceGlassHover,
-            thumbColor:         AppColors.champagneGold,
-            overlayColor:       AppColors.champagneGold.withValues(alpha: 0.12),
-            rangeThumbShape:    const RoundRangeSliderThumbShape(
-                enabledThumbRadius: 10),
+            thumbColor: AppColors.champagneGold,
+            overlayColor: AppColors.champagneGold.withValues(alpha: 0.12),
+            rangeThumbShape:
+                const RoundRangeSliderThumbShape(enabledThumbRadius: 10),
             trackHeight: 3,
           ),
           child: RangeSlider(
-            values:   _values,
-            min:      18,
-            max:      60,
+            values: _values,
+            min: 18,
+            max: 60,
             divisions: 42,
             labels: RangeLabels(
               '${_values.start.round()}',
@@ -382,17 +389,16 @@ class _AgeLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppDimensions.space16,
-          vertical:   AppDimensions.space8),
+          horizontal: AppDimensions.space16, vertical: AppDimensions.space8),
       decoration: BoxDecoration(
-        color:        AppColors.champagneGold.withValues(alpha: 0.12),
+        color: AppColors.champagneGold.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-        border:       Border.all(color: AppColors.goldBorder),
+        border: Border.all(color: AppColors.goldBorder),
       ),
       child: Text(
         '$age yrs',
-        style: AppTypography.bodyMedium.copyWith(
-            color: AppColors.champagneGold),
+        style:
+            AppTypography.bodyMedium.copyWith(color: AppColors.champagneGold),
       ),
     );
   }

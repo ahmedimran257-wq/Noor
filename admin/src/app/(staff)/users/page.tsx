@@ -91,6 +91,13 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
               const isRevealed = revealed?.user_id === user.user_id;
               const displayName = isRevealed ? revealed.name : user.name;
               const displayEmail = isRevealed ? revealed.email : user.email;
+              const needsRestore = user.visibility === "suspended" || user.is_shadowbanned || user.is_banned;
+              const canRestore = !user.is_banned || admin.role === "super_admin";
+              const statusLabel = user.is_banned
+                ? "Banned"
+                : user.is_shadowbanned
+                  ? "Shadowbanned"
+                  : user.visibility;
               return (
               <tr key={user.user_id} className={isRevealed ? "revealed-row" : undefined}>
                 {canModerate ? (
@@ -105,7 +112,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                 <td>{new Date(user.joined_at).toLocaleDateString()}</td>
                 <td><span className="status-pill">{user.verification_status}</span></td>
                 <td>{user.subscription_status}</td>
-                <td><span className={user.is_banned ? "status-pill danger" : "status-pill"}>{user.is_banned ? "Banned" : user.visibility}</span></td>
+                <td><span className={user.is_banned ? "status-pill danger" : user.is_shadowbanned ? "status-pill warning" : "status-pill"}>{statusLabel}</span></td>
                 <td>
                   <div className="action-row">
                     {canReveal ? (
@@ -113,20 +120,22 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                         {isRevealed ? "PII revealed" : "Reveal PII"}
                       </a>
                     ) : null}
-                    {canModerate ? (
+                    {canModerate && canRestore ? (
                       <form action={accountAction}>
                         <input type="hidden" name="userId" value={user.user_id} />
-                        <input type="hidden" name="action" value={user.visibility === "suspended" ? "restore" : "suspend"} />
-                        <button>{user.visibility === "suspended" ? "Restore" : "Suspend"}</button>
+                        <input type="hidden" name="action" value={needsRestore ? "restore" : "suspend"} />
+                        <button>{user.is_shadowbanned ? "Remove shadowban" : needsRestore ? "Restore" : "Suspend"}</button>
                       </form>
                     ) : null}
                     {admin.role === "super_admin" && !user.is_banned ? (
                       <>
-                        <form action={accountAction}>
-                          <input type="hidden" name="userId" value={user.user_id} />
-                          <input type="hidden" name="action" value="shadowban" />
-                          <button>Shadowban</button>
-                        </form>
+                        {!user.is_shadowbanned ? (
+                          <form action={accountAction}>
+                            <input type="hidden" name="userId" value={user.user_id} />
+                            <input type="hidden" name="action" value="shadowban" />
+                            <button>Shadowban</button>
+                          </form>
+                        ) : null}
                         <form action={accountAction}>
                           <input type="hidden" name="userId" value={user.user_id} />
                           <input type="hidden" name="action" value="ban" />

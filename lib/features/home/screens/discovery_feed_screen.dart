@@ -1,6 +1,6 @@
 // lib/features/home/screens/discovery_feed_screen.dart
 // ============================================================
-// MITHAQ — Discovery Feed (Step 5 — Blueprint Complete)
+// SILARAH — Discovery Feed (Step 5 — Blueprint Complete)
 //
 // Blueprint requirements (Part 8):
 //   • Horizontal paged carousel — one card at a time
@@ -22,14 +22,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/cubits/discovery/discovery_feed_cubit.dart';
 import '../../../core/cubits/discovery/discovery_feed_state.dart';
 import '../../../core/cubits/interests/interests_cubit.dart';
-import '../../../core/cubits/onboarding/onboarding_cubit.dart';
-import '../../../core/models/onboarding_data.dart';
 import '../../../core/services/bookmark_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/cards/mithaq_profile_card.dart';
-import '../../../core/widgets/loaders/mithaq_shimmer.dart';
+import '../../../core/widgets/cards/silarah_profile_card.dart';
+import '../../../core/widgets/loaders/silarah_shimmer.dart';
+import '../../../core/widgets/silarah_empty_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../widgets/discovery_filter_bar.dart';
 import '../widgets/interest_ceremony_overlay.dart';
@@ -37,7 +36,6 @@ import '../widgets/interest_note_sheet.dart';
 import 'paywall_gate_screen.dart';
 import 'profile_detail_screen.dart';
 import 'notifications_screen.dart';
-import '../../../features/home/home_screen.dart';
 
 class DiscoveryFeedScreen extends StatefulWidget {
   const DiscoveryFeedScreen({super.key});
@@ -50,8 +48,8 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
     with AutomaticKeepAliveClientMixin {
   late final PageController _pageCtrl;
   int _currentPage = 0;
-  double _pageOffset = 0.0; // Continuous scroll offset for smooth scaling
   final Set<String> _sentInterests = {};
+  final Set<String> _recordedViewIds = {};
   // Bookmarks now use profile IDs (String) for persistence
   Set<String> _bookmarked = {};
 
@@ -62,7 +60,6 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
   void initState() {
     super.initState();
     _pageCtrl = PageController(viewportFraction: 0.88);
-    _pageCtrl.addListener(_onScroll);
 
     // Trigger initial load after first frame so cubit is available
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -73,35 +70,27 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
 
   @override
   void dispose() {
-    _pageCtrl.removeListener(_onScroll);
     _pageCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _loadBookmarks() async {
-    final ids = await BookmarkService.load();
-    if (mounted) setState(() => _bookmarked = ids);
+    try {
+      final ids = await BookmarkService.load();
+      if (mounted) setState(() => _bookmarked = ids);
+    } catch (_) {
+      if (mounted) setState(() => _bookmarked = {});
+    }
   }
 
-  void _onScroll() {
-    final rawPage = _pageCtrl.page ?? 0.0;
-    final page = rawPage.round();
-
-    // Update continuous offset for smooth card scaling
-    if (mounted) setState(() => _pageOffset = rawPage);
-
-    if (page != _currentPage) {
-      _currentPage = page;
-      final profiles = context.read<DiscoveryFeedCubit>().state.profiles;
-      if (page >= 0 && page < profiles.length) {
-        context
-            .read<DiscoveryFeedCubit>()
-            .recordProfileView(profiles[page].profile.id);
-      }
-    }
-
+  void _onPageChanged(int page) {
+    _currentPage = page;
     // Trigger pagination when 2 cards from the end
     final feedState = context.read<DiscoveryFeedCubit>().state;
+    final profiles = feedState.profiles;
+    if (page >= 0 && page < profiles.length) {
+      _recordVisibleProfileView(profiles[page].profile.id);
+    }
     final total = feedState.profiles.length;
     if (page >= total - 2 && feedState.status == FeedStatus.loaded) {
       context.read<DiscoveryFeedCubit>().loadMore();
@@ -171,9 +160,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
   }
 
   Future<void> _openProfile(int index, FeedProfile fp) async {
-    final allowed = await context
-        .read<DiscoveryFeedCubit>()
-        .recordProfileView(fp.profile.id);
+    final allowed = await _recordVisibleProfileView(fp.profile.id);
     if (!mounted) return;
     if (!allowed) {
       PaywallGateSheet.show(context);
@@ -193,20 +180,36 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
     );
   }
 
+  Future<bool> _recordVisibleProfileView(String profileUserId) async {
+    if (_recordedViewIds.contains(profileUserId)) return true;
+    final allowed = await context
+        .read<DiscoveryFeedCubit>()
+        .recordProfileView(profileUserId);
+    if (allowed && mounted) {
+      _recordedViewIds.add(profileUserId);
+    }
+    return allowed;
+  }
+
   // ── Build ─────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return BlocBuilder<DiscoveryFeedCubit, DiscoveryFeedState>(
+    return BlocConsumer<DiscoveryFeedCubit, DiscoveryFeedState>(
+      listenWhen: (previous, current) =>
+          previous.activeFilter != current.activeFilter,
+      listener: (context, state) {
+        _currentPage = 0;
+        if (_pageCtrl.hasClients) _pageCtrl.jumpToPage(0);
+      },
       builder: (context, feedState) {
         return RefreshIndicator(
           color: AppColors.champagneGold,
           backgroundColor: AppColors.obsidianNight,
           onRefresh: () async {
-            context.read<DiscoveryFeedCubit>().loadInitial(force: true);
-            // Wait a bit for the cubit to emit new state
-            await Future.delayed(const Duration(milliseconds: 800));
+            _recordedViewIds.clear();
+            await context.read<DiscoveryFeedCubit>().loadInitial(force: true);
           },
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -221,13 +224,14 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
                   ),
                   child: Row(
                     children: [
-                      Text('ميثاق',
+                      Text('سيلارا',
                           style: AppTypography.wordmark.copyWith(fontSize: 26)),
                       const SizedBox(width: AppDimensions.space8),
-                      const Text('MITHAQ', style: AppTypography.wordmark),
+                      const Text('SILARAH', style: AppTypography.wordmark),
                       const Spacer(),
                       // Free-tier counter badge
                       if ((feedState.status == FeedStatus.loaded ||
+                              feedState.status == FeedStatus.refreshing ||
                               feedState.status == FeedStatus.loadingMore) &&
                           feedState.dailyLimit < 1000000)
                         _FreeTierCounter(remaining: feedState.remainingToday),
@@ -284,86 +288,106 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
       );
     }
 
-    // G11 (D5): Profile completeness gate — ≤40% → nudge to complete
-    final onbData = context.read<OnboardingCubit>().currentData;
-    final completeness = _quickCompleteness(onbData);
-    final hasPrimaryPhoto =
-        onbData.photoLocalPaths != null && onbData.photoLocalPaths!.isNotEmpty;
-    if (!hasPrimaryPhoto) {
-      return _IncompleteProfileGate(score: completeness);
-    }
-
     final profiles = feedState.profiles;
     final isLoadingMore = feedState.status == FeedStatus.loadingMore;
 
     final itemCount = profiles.length + (isLoadingMore ? 1 : 0);
 
-    return PageView.builder(
+    final carousel = PageView.builder(
       controller: _pageCtrl,
       itemCount: itemCount,
-      onPageChanged: (page) => setState(() => _currentPage = page),
+      onPageChanged: _onPageChanged,
       itemBuilder: (context, index) {
-        // Continuous scale: 1.0 at center, 0.95 at 1.0 page distance
-        final double offset = (index - _pageOffset).abs();
-        final double scale = (1.0 - (offset * 0.05)).clamp(0.95, 1.0);
-
         // Skeleton card at the end while loading more
         if (index >= profiles.length) {
-          return _cardPadding(
-            child: Transform.scale(
-              scale: scale,
-              child: const MithaqProfileCardShimmer(),
-            ),
+          return _scaledCard(
+            index,
+            _cardPadding(child: const SilarahProfileCardShimmer()),
           );
         }
 
         final fp = profiles[index];
         final p = fp.profile;
 
-        return _cardPadding(
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              // Main card (with Hero for shared-element to detail)
-              Hero(
-                tag: 'profile_card_$index',
-                child: MithaqProfileCard(
-                  firstName: p.firstName,
-                  lastNameInitial: p.lastNameInitial,
-                  age: p.age,
-                  cityName: p.cityName,
-                  sect: p.sect,
-                  deenLevel: p.deenLevel,
-                  profession: p.occupation,
-                  photoUrl: p.photoUrl,
-                  photoCount: p.photoCount,
-                  isPhotoPrivate: p.isPhotoPrivate,
-                  isVerified: p.isVerified,
-                  lastActiveLabel: fp.lastActiveLabel,
-                  isFocused: true, // Scale handled externally now
-                  cardScale: scale,
-                  isInterestSent: _sentInterests.contains(p.id),
-                  onTap: () => _openProfile(index, fp),
-                  onSendInterest: _sentInterests.contains(p.id)
-                      ? null
-                      : () => _handleSendInterest(index, fp),
-                  onBookmark: () => _handleBookmark(index, fp),
-                ),
-              ),
-
-              // Wild-card label — "Someone you might connect with"
-              if (fp.isWildCard)
-                Positioned(
-                  top: -12,
-                  left: AppDimensions.space12,
-                  right: AppDimensions.space12,
-                  child: Center(
-                    child: _WildCardLabel(),
+        return _scaledCard(
+          index,
+          _cardPadding(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // Main card (with Hero for shared-element to detail)
+                Hero(
+                  tag: 'profile_card_$index',
+                  child: SilarahProfileCard(
+                    firstName: p.firstName,
+                    lastNameInitial: p.lastNameInitial,
+                    age: p.age,
+                    cityName: p.cityName,
+                    sect: p.sect,
+                    deenLevel: p.deenLevel,
+                    profession: p.occupation,
+                    photoUrl: p.photoUrl,
+                    photoCount: p.photoCount,
+                    isPhotoPrivate: p.isPhotoPrivate,
+                    isVerified: p.isVerified,
+                    lastActiveLabel: fp.lastActiveLabel,
+                    isFocused: true, // Scale handled externally now
+                    cardScale: 1,
+                    isInterestSent: _sentInterests.contains(p.id),
+                    onTap: () => _openProfile(index, fp),
+                    onSendInterest: _sentInterests.contains(p.id)
+                        ? null
+                        : () => _handleSendInterest(index, fp),
+                    onBookmark: () => _handleBookmark(index, fp),
                   ),
                 ),
-            ],
+
+                // Wild-card label — "Someone you might connect with"
+                if (fp.isWildCard)
+                  Positioned(
+                    top: -12,
+                    left: AppDimensions.space12,
+                    right: AppDimensions.space12,
+                    child: Center(
+                      child: _WildCardLabel(),
+                    ),
+                  ),
+              ],
+            ),
           ),
         );
+      },
+    );
+    if (feedState.status != FeedStatus.refreshing) return carousel;
+
+    return Stack(
+      children: [
+        carousel,
+        const Positioned(
+          top: 0,
+          left: AppDimensions.space40,
+          right: AppDimensions.space40,
+          child: LinearProgressIndicator(
+            minHeight: 1.5,
+            color: AppColors.champagneGold,
+            backgroundColor: AppColors.transparent,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _scaledCard(int index, Widget child) {
+    return AnimatedBuilder(
+      animation: _pageCtrl,
+      child: RepaintBoundary(child: child),
+      builder: (context, child) {
+        final page = _pageCtrl.hasClients
+            ? (_pageCtrl.page ?? _currentPage.toDouble())
+            : _currentPage.toDouble();
+        final offset = (index - page).abs();
+        final scale = (1.0 - (offset * 0.05)).clamp(0.95, 1.0);
+        return Transform.scale(scale: scale, child: child);
       },
     );
   }
@@ -387,33 +411,26 @@ class _DiscoveryError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppDimensions.space32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.cloud_off_rounded,
-              color: AppColors.slateMist,
-              size: 40,
-            ),
-            const SizedBox(height: AppDimensions.space16),
-            Text(
-              message,
-              style: AppTypography.bodyMuted,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppDimensions.space16),
-            TextButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Try again'),
-            ),
-          ],
-        ),
-      ),
+    final title = _titleFor(message);
+    return SilarahEmptyState(
+      visual: SilarahEmptyVisual.connection,
+      title: title,
+      subtitle: message,
+      ctaLabel: 'Try again',
+      onCta: onRetry,
     );
+  }
+
+  String _titleFor(String message) {
+    final lower = message.toLowerCase();
+    if (lower.contains('approved') ||
+        lower.contains('visible') ||
+        lower.contains('complete your profile') ||
+        lower.contains('approved profile photo')) {
+      return 'Profile not live yet';
+    }
+    if (lower.contains('sign in')) return 'Sign in required';
+    return 'Connection paused';
   }
 }
 
@@ -515,32 +532,51 @@ class _NotificationButton extends StatelessWidget {
 
 // ── Initial Shimmer (3-card stack) ────────────────────────────
 
-class _InitialShimmer extends StatelessWidget {
+class _InitialShimmer extends StatefulWidget {
+  @override
+  State<_InitialShimmer> createState() => _InitialShimmerState();
+}
+
+class _InitialShimmerState extends State<_InitialShimmer> {
+  late final PageController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = PageController(viewportFraction: 0.88);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return PageView(
-      controller: PageController(viewportFraction: 0.88),
+      controller: _controller,
       children: const [
         Padding(
           padding: EdgeInsets.symmetric(
             horizontal: AppDimensions.space6,
             vertical: AppDimensions.space4,
           ),
-          child: MithaqProfileCardShimmer(),
+          child: SilarahProfileCardShimmer(),
         ),
         Padding(
           padding: EdgeInsets.symmetric(
             horizontal: AppDimensions.space6,
             vertical: AppDimensions.space4,
           ),
-          child: MithaqProfileCardShimmer(),
+          child: SilarahProfileCardShimmer(),
         ),
         Padding(
           padding: EdgeInsets.symmetric(
             horizontal: AppDimensions.space6,
             vertical: AppDimensions.space4,
           ),
-          child: MithaqProfileCardShimmer(),
+          child: SilarahProfileCardShimmer(),
         ),
       ],
     );
@@ -555,39 +591,10 @@ class _EmptyFeed extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppDimensions.space32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(AppDimensions.space24),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.goldBorder, width: 2),
-              ),
-              child: const Icon(
-                Icons.explore_outlined,
-                color: AppColors.champagneGold,
-                size: 48,
-              ),
-            ),
-            const SizedBox(height: AppDimensions.space24),
-            Text(
-              l10n.discovery_empty_title,
-              style: AppTypography.screenTitle.copyWith(fontSize: 20),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppDimensions.space12),
-            Text(
-              l10n.discovery_empty_subtitle,
-              style: AppTypography.bodyMuted,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
+    return SilarahEmptyState(
+      visual: SilarahEmptyVisual.discovery,
+      title: l10n.discovery_empty_title,
+      subtitle: l10n.discovery_empty_subtitle,
     );
   }
 }
@@ -653,111 +660,6 @@ class _FreeTierLimitReached extends StatelessWidget {
                 ),
                 child: Text(l10n.discovery_limit_button,
                     style: AppTypography.button),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── G11 (D5): Profile Completeness Gate ───────────────────────
-
-/// Lightweight completeness score (mirrors MyProfileScreen logic).
-int _quickCompleteness(OnboardingData d) {
-  int score = 0;
-  if (d.photoLocalPaths != null && d.photoLocalPaths!.isNotEmpty) score += 25;
-  if ((d.bio?.length ?? 0) >= 50) score += 15;
-  if (d.sect != null && d.deenLevel != null) score += 15;
-  if ((d.educationLabel != null || d.educationRank != null) &&
-      (d.profession?.isNotEmpty ?? false)) {
-    score += 10;
-  }
-  if (d.familyType != null) score += 10;
-  if (d.preferredAgeMin != null && d.preferredAgeMax != null) score += 10;
-  if (d.photoLocalPaths != null && d.photoLocalPaths!.length >= 2) score += 8;
-  if (d.incomeBracketId != null) score += 4;
-  if (d.languages != null && d.languages!.isNotEmpty) score += 3;
-  return score.clamp(0, 100);
-}
-
-class _IncompleteProfileGate extends StatelessWidget {
-  const _IncompleteProfileGate({required this.score});
-  final int score;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Circular progress
-            SizedBox(
-              width: 100,
-              height: 100,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    width: 100,
-                    height: 100,
-                    child: CircularProgressIndicator(
-                      value: score / 100,
-                      strokeWidth: 5,
-                      backgroundColor: AppColors.surfaceGlassHover,
-                      valueColor:
-                          const AlwaysStoppedAnimation(AppColors.champagneGold),
-                    ),
-                  ),
-                  Text(
-                    '$score%',
-                    style: AppTypography.screenTitle.copyWith(
-                      color: AppColors.champagneGold,
-                      fontSize: 22,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppDimensions.space24),
-            Text(
-              l10n.discovery_completeness_title,
-              style: AppTypography.screenTitle.copyWith(fontSize: 20),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppDimensions.space8),
-            Text(
-              l10n.discovery_completeness_subtitle,
-              style: AppTypography.bodyMuted,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppDimensions.space24),
-            SizedBox(
-              width: double.infinity,
-              height: AppDimensions.buttonHeight,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.champagneGold,
-                  shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppDimensions.radiusButton),
-                  ),
-                  elevation: 0,
-                ),
-                icon: const Icon(Icons.edit_outlined,
-                    color: AppColors.obsidianNight, size: 18),
-                label: Text(l10n.discovery_completeness_button,
-                    style: AppTypography.button),
-                onPressed: () {
-                  // Switch to Profile tab (index 3) via HomeScreen
-                  final homeState =
-                      context.findAncestorStateOfType<HomeScreenState>();
-                  homeState?.switchToTab(3);
-                },
               ),
             ),
           ],

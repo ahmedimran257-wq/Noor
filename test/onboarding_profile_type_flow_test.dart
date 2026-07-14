@@ -1,11 +1,11 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mithaq/core/cubits/auth/auth_cubit.dart';
-import 'package:mithaq/core/cubits/auth/auth_state.dart';
-import 'package:mithaq/core/cubits/onboarding/onboarding_cubit.dart';
-import 'package:mithaq/core/cubits/onboarding/onboarding_state.dart';
-import 'package:mithaq/core/models/onboarding_data.dart';
+import 'package:silarah/core/cubits/auth/auth_cubit.dart';
+import 'package:silarah/core/cubits/auth/auth_state.dart';
+import 'package:silarah/core/cubits/onboarding/onboarding_cubit.dart';
+import 'package:silarah/core/cubits/onboarding/onboarding_state.dart';
+import 'package:silarah/core/models/onboarding_data.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _SeededAuthCubit extends AuthCubit {

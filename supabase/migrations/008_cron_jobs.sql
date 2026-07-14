@@ -77,7 +77,7 @@ SELECT cron.schedule(
   '15 3 * * *',
   $$
     SELECT net.http_post(
-      url  := 'https://jukpscfxzwttgtxvrbmj.supabase.co/functions/v1/admin-purge-deleted-users',
+      url  := current_setting('app.supabase_url', true) || '/functions/v1/admin-purge-deleted-users',
       body := '{}'::jsonb,
       headers := jsonb_build_object(
         'Authorization', 'Bearer ' || current_setting('app.service_role_key', true),

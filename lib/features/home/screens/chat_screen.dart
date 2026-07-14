@@ -1,11 +1,13 @@
 // lib/features/home/screens/chat_screen.dart
 // ============================================================
-// MITHAQ — Individual Chat Screen
+// SILARAH — Individual Chat Screen
 // Phase 2: Respectful Closure ("End Match") feature added.
 //   • Three-dot menu → "End Match" option
 //   • _EndMatchSheet: 5 pre-written Islamic closure messages
 //   • Closed conversation shows banner + disables input
 // ============================================================
+
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,9 +16,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/cubits/chat/chat_cubit.dart';
 import '../../../core/cubits/chat/chat_state.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_curves.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/animations/spring_keyboard_padding.dart';
+import '../../../core/widgets/buttons/silarah_pressable.dart';
+import '../../../core/widgets/loaders/silarah_shimmer.dart';
 
 /// G12: Profile-aware openers — include the match's name.
 List<String> _buildOpeners(String name) => [
@@ -47,7 +52,11 @@ class _ChatScreenState extends State<ChatScreen>
     with SingleTickerProviderStateMixin {
   final TextEditingController _inputCtrl = TextEditingController();
   final ScrollController _scrollCtrl = ScrollController();
+  late final ChatCubit _chatCubit;
   bool _canSend = false;
+  final Set<String> _freshMessageIds = {};
+  final Set<String> _knownMessageIds = {};
+  bool _messageSnapshotReady = false;
 
   bool _showSuggestedOpeners = true;
   late final AnimationController _openersAnim;
@@ -56,6 +65,7 @@ class _ChatScreenState extends State<ChatScreen>
   @override
   void initState() {
     super.initState();
+    _chatCubit = context.read<ChatCubit>();
     _openersAnim = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
@@ -63,22 +73,38 @@ class _ChatScreenState extends State<ChatScreen>
     );
     _openersSize =
         CurvedAnimation(parent: _openersAnim, curve: Curves.easeInOut);
-    _inputCtrl.addListener(() {
-      final can = _inputCtrl.text.trim().isNotEmpty;
-      if (can != _canSend) setState(() => _canSend = can);
-    });
+    _inputCtrl.addListener(_handleComposerChanged);
     _scrollCtrl.addListener(_handleScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ChatCubit>().loadMessages(widget.conversationId);
-      context.read<ChatCubit>().markRead(widget.conversationId);
+      _chatCubit.loadMessages(widget.conversationId);
+      _chatCubit.markRead(widget.conversationId);
       _scrollToBottom();
       _loadOpenersDismissed();
     });
   }
 
+  @override
+  void didUpdateWidget(covariant ChatScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.conversationId == widget.conversationId) return;
+    _chatCubit.updateTyping(oldWidget.conversationId, isTyping: false);
+    _chatCubit.leaveConversation(oldWidget.conversationId);
+    _messageSnapshotReady = false;
+    _freshMessageIds.clear();
+    _knownMessageIds.clear();
+    _chatCubit.loadMessages(widget.conversationId);
+    _chatCubit.markRead(widget.conversationId);
+  }
+
+  void _handleComposerChanged() {
+    final can = _inputCtrl.text.trim().isNotEmpty;
+    if (can != _canSend && mounted) setState(() => _canSend = can);
+    _chatCubit.updateTyping(widget.conversationId, isTyping: can);
+  }
+
   void _handleScroll() {
     if (!_scrollCtrl.hasClients || _scrollCtrl.position.pixels > 48) return;
-    context.read<ChatCubit>().loadMessages(widget.conversationId, older: true);
+    _chatCubit.loadMessages(widget.conversationId, older: true);
   }
 
   Future<void> _loadOpenersDismissed() async {
@@ -103,6 +129,8 @@ class _ChatScreenState extends State<ChatScreen>
 
   @override
   void dispose() {
+    _chatCubit.updateTyping(widget.conversationId, isTyping: false);
+    _chatCubit.leaveConversation(widget.conversationId);
     _scrollCtrl.removeListener(_handleScroll);
     _inputCtrl.dispose();
     _scrollCtrl.dispose();
@@ -130,7 +158,7 @@ class _ChatScreenState extends State<ChatScreen>
     final text = _inputCtrl.text.trim();
     if (text.isEmpty) return;
     _inputCtrl.clear();
-    setState(() => _canSend = false);
+    _chatCubit.updateTyping(widget.conversationId, isTyping: false);
     HapticFeedback.selectionClick();
     _dismissOpeners();
     await context.read<ChatCubit>().sendMessage(widget.conversationId, text);
@@ -236,10 +264,27 @@ class _ChatScreenState extends State<ChatScreen>
             .firstOrNull;
         return prevConv?.messages.length != currConv?.messages.length;
       },
-      listener: (_, __) {
-        if (!_scrollCtrl.hasClients || _scrollCtrl.position.pixels > 80) {
-          _scrollToBottom(animated: true);
+      listener: (_, state) {
+        final conv = state.conversations
+            .where((c) => c.id == widget.conversationId)
+            .firstOrNull;
+        if (conv == null) return;
+        final currentIds = conv.messages.map((message) => message.id).toSet();
+        if (_messageSnapshotReady) {
+          final incoming = currentIds.difference(_knownMessageIds);
+          if (incoming.length <= 3) _freshMessageIds.addAll(incoming);
+        } else {
+          _messageSnapshotReady = true;
         }
+        _knownMessageIds
+          ..clear()
+          ..addAll(currentIds);
+
+        final nearBottom = !_scrollCtrl.hasClients ||
+            _scrollCtrl.position.maxScrollExtent - _scrollCtrl.position.pixels <
+                180;
+        final newestIsMine = conv.messages.lastOrNull?.isMe == true;
+        if (nearBottom || newestIsMine) _scrollToBottom(animated: true);
       },
       builder: (context, state) {
         final conv = state.conversations
@@ -249,12 +294,17 @@ class _ChatScreenState extends State<ChatScreen>
         if (conv == null) {
           return const Scaffold(
             backgroundColor: AppColors.obsidianNight,
-            body: Center(child: CircularProgressIndicator()),
+            body: Center(child: SilarahPulseLoader(label: 'Opening chat')),
           );
         }
 
         final hasMessages = conv.messages.isNotEmpty;
         final isClosed = conv.isMatchClosed;
+        final isTyping = state.isUserTyping(widget.conversationId) && !isClosed;
+        if (!_messageSnapshotReady && hasMessages) {
+          _messageSnapshotReady = true;
+          _knownMessageIds.addAll(conv.messages.map((message) => message.id));
+        }
 
         return Scaffold(
           resizeToAvoidBottomInset: false,
@@ -263,6 +313,7 @@ class _ChatScreenState extends State<ChatScreen>
             name: conv.matchName,
             initial: conv.matchLastInitial,
             isClosed: isClosed,
+            isTyping: isTyping,
             onEndMatch: () => _showEndMatchSheet(context),
             onBlock: () => _showBlockDialog(context, conv.matchName),
           ),
@@ -279,42 +330,61 @@ class _ChatScreenState extends State<ChatScreen>
 
                 // Messages
                 Expanded(
-                  child: hasMessages
-                      ? ListView.builder(
-                          controller: _scrollCtrl,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppDimensions.space16,
-                            vertical: AppDimensions.space12,
-                          ),
-                          itemCount: conv.messages.length,
-                          itemBuilder: (_, i) {
-                            final msg = conv.messages[i];
-                            final prev = i > 0 ? conv.messages[i - 1] : null;
-                            final sameAsPrev =
-                                prev != null && prev.isMe == msg.isMe;
-                            final locale =
-                                Localizations.localeOf(context).languageCode;
-                            return _MessageBubble(
-                              message: msg,
-                              sameAsPrev: sameAsPrev,
-                              onTap: () => context
-                                  .read<ChatCubit>()
-                                  .toggleTimestamp(
-                                      widget.conversationId, msg.id),
-                              onLongPress: () => _showReportSheet(context, msg),
-                              onTranslate: () => context
-                                  .read<ChatCubit>()
-                                  .translateMessage(
-                                      widget.conversationId, msg.id, locale),
-                            );
-                          },
-                        )
-                      : _SuggestedOpenersArea(
-                          showOpeners: _showSuggestedOpeners,
-                          sizeAnim: _openersSize,
-                          onSelect: _useOpener,
-                          matchName: conv.matchName,
-                        ),
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: hasMessages
+                            ? ListView.builder(
+                                controller: _scrollCtrl,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppDimensions.space16,
+                                  vertical: AppDimensions.space12,
+                                ),
+                                itemCount: conv.messages.length,
+                                itemBuilder: (_, i) {
+                                  final msg = conv.messages[i];
+                                  final prev =
+                                      i > 0 ? conv.messages[i - 1] : null;
+                                  final sameAsPrev =
+                                      prev != null && prev.isMe == msg.isMe;
+                                  final locale = Localizations.localeOf(context)
+                                      .languageCode;
+                                  return _MessageArrival(
+                                    key: ValueKey('message_${msg.id}'),
+                                    animate: _freshMessageIds.remove(msg.id),
+                                    isMine: msg.isMe,
+                                    child: _MessageBubble(
+                                      message: msg,
+                                      sameAsPrev: sameAsPrev,
+                                      onTap: () => context
+                                          .read<ChatCubit>()
+                                          .toggleTimestamp(
+                                              widget.conversationId, msg.id),
+                                      onLongPress: () =>
+                                          _showReportSheet(context, msg),
+                                      onTranslate: () => context
+                                          .read<ChatCubit>()
+                                          .translateMessage(
+                                              widget.conversationId,
+                                              msg.id,
+                                              locale),
+                                    ),
+                                  );
+                                },
+                              )
+                            : _SuggestedOpenersArea(
+                                showOpeners: _showSuggestedOpeners,
+                                sizeAnim: _openersSize,
+                                onSelect: _useOpener,
+                                matchName: conv.matchName,
+                              ),
+                      ),
+                      _TypingPresenceBar(
+                        visible: isTyping,
+                        name: conv.matchName,
+                      ),
+                    ],
+                  ),
                 ),
 
                 // Input bar (hidden when closed or suspended)
@@ -620,7 +690,7 @@ class _ReportMessageSheet extends StatelessWidget {
           const Text('Report message', style: AppTypography.bodyMedium),
           const SizedBox(height: AppDimensions.space6),
           const Text(
-            'Reports are reviewed by Mithaq safety staff.',
+            'Reports are reviewed by Silarah safety staff.',
             style: AppTypography.caption,
           ),
           const SizedBox(height: AppDimensions.space16),
@@ -721,12 +791,14 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.name,
     required this.initial,
     required this.isClosed,
+    required this.isTyping,
     required this.onEndMatch,
     required this.onBlock,
   });
   final String name;
   final String initial;
   final bool isClosed;
+  final bool isTyping;
   final VoidCallback onEndMatch;
   final VoidCallback onBlock;
 
@@ -776,11 +848,35 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
           children: [
             Text('$name $initial.',
                 style: AppTypography.bodyMedium, maxLines: 1),
-            Text(
-              isClosed ? 'Match closed' : 'Matched · Messaging unlocked',
-              style: AppTypography.caption.copyWith(
-                fontSize: 11,
-                color: isClosed ? AppColors.softCoral : null,
+            AnimatedSwitcher(
+              duration: AppDimensions.durationTransition,
+              switchInCurve: AppCurves.reveal,
+              switchOutCurve: AppCurves.transition,
+              transitionBuilder: (child, animation) => FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 0.22),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                ),
+              ),
+              child: Text(
+                isClosed
+                    ? 'Match closed'
+                    : isTyping
+                        ? '$name is typing'
+                        : 'Private conversation',
+                key: ValueKey('${isClosed}_$isTyping'),
+                style: AppTypography.caption.copyWith(
+                  fontSize: 11,
+                  color: isClosed
+                      ? AppColors.softCoral
+                      : isTyping
+                          ? AppColors.champagneGold
+                          : AppColors.slateMist,
+                ),
               ),
             ),
           ],
@@ -866,6 +962,177 @@ class _OpenerCard extends StatelessWidget {
             style: AppTypography.bio.copyWith(fontSize: 13),
             maxLines: 4,
             overflow: TextOverflow.ellipsis),
+      ),
+    );
+  }
+}
+
+// ── Live message motion & typing presence ────────────────────
+
+class _MessageArrival extends StatelessWidget {
+  const _MessageArrival({
+    super.key,
+    required this.animate,
+    required this.isMine,
+    required this.child,
+  });
+
+  final bool animate;
+  final bool isMine;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final shouldAnimate = animate && !reduceMotion;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: shouldAnimate ? 0 : 1, end: 1),
+      duration:
+          shouldAnimate ? const Duration(milliseconds: 360) : Duration.zero,
+      curve: AppCurves.reveal,
+      child: child,
+      builder: (context, value, child) => Transform.translate(
+        offset: Offset(
+          (isMine ? 1 : -1) * (1 - value) * 18,
+          (1 - value) * 10,
+        ),
+        child: Opacity(opacity: value, child: child),
+      ),
+    );
+  }
+}
+
+class _TypingPresenceBar extends StatefulWidget {
+  const _TypingPresenceBar({required this.visible, required this.name});
+
+  final bool visible;
+  final String name;
+
+  @override
+  State<_TypingPresenceBar> createState() => _TypingPresenceBarState();
+}
+
+class _TypingPresenceBarState extends State<_TypingPresenceBar>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  bool _reduceMotion = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    _syncAnimation();
+  }
+
+  @override
+  void didUpdateWidget(covariant _TypingPresenceBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.visible != oldWidget.visible) _syncAnimation();
+  }
+
+  void _syncAnimation() {
+    if (widget.visible && !_reduceMotion) {
+      if (!_controller.isAnimating) _controller.repeat();
+    } else if (_controller.isAnimating) {
+      _controller.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      liveRegion: true,
+      label: widget.visible ? '${widget.name} is typing' : null,
+      child: AnimatedSwitcher(
+        duration:
+            _reduceMotion ? Duration.zero : const Duration(milliseconds: 280),
+        switchInCurve: AppCurves.reveal,
+        switchOutCurve: AppCurves.transition,
+        transitionBuilder: (child, animation) => FadeTransition(
+          opacity: animation,
+          child: SizeTransition(
+            sizeFactor: animation,
+            axisAlignment: -1,
+            child: child,
+          ),
+        ),
+        child: widget.visible
+            ? Padding(
+                key: const ValueKey('typing_presence'),
+                padding: const EdgeInsets.fromLTRB(
+                  AppDimensions.space16,
+                  AppDimensions.space4,
+                  AppDimensions.space16,
+                  AppDimensions.space8,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      height: 30,
+                      padding: const EdgeInsets.symmetric(horizontal: 11),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceGlassHover,
+                        borderRadius: BorderRadius.circular(15),
+                        border: Border.all(color: AppColors.cardBorder),
+                      ),
+                      child: AnimatedBuilder(
+                        animation: _controller,
+                        builder: (_, __) => Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: List.generate(3, (index) {
+                            final wave = _reduceMotion
+                                ? 0.5
+                                : (math.sin(
+                                          (_controller.value * math.pi * 2) -
+                                              (index * 0.8),
+                                        ) +
+                                        1) /
+                                    2;
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 2),
+                              child: Container(
+                                width: 5 + wave * 2,
+                                height: 5 + wave * 2,
+                                decoration: BoxDecoration(
+                                  color: AppColors.champagneGold.withValues(
+                                    alpha: 0.42 + wave * 0.58,
+                                  ),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppDimensions.space8),
+                    Text(
+                      '${widget.name} is typing',
+                      style: AppTypography.chatTimestamp.copyWith(
+                        color: AppColors.champagneGold,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : const SizedBox.shrink(key: ValueKey('typing_presence_hidden')),
       ),
     );
   }
@@ -1095,7 +1362,7 @@ class _StatusIcon extends StatelessWidget {
 // Blueprint: "Minimalist field. No 'Send' button — only a Gold
 // arrow icon that appears when typing starts."
 
-class _InputBar extends StatelessWidget {
+class _InputBar extends StatefulWidget {
   const _InputBar(
       {required this.controller, required this.canSend, required this.onSend});
   final TextEditingController controller;
@@ -1103,7 +1370,35 @@ class _InputBar extends StatelessWidget {
   final VoidCallback onSend;
 
   @override
+  State<_InputBar> createState() => _InputBarState();
+}
+
+class _InputBarState extends State<_InputBar> {
+  late final FocusNode _focusNode;
+  bool _focused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode()..addListener(_handleFocus);
+  }
+
+  void _handleFocus() {
+    if (mounted) setState(() => _focused = _focusNode.hasFocus);
+  }
+
+  @override
+  void dispose() {
+    _focusNode
+      ..removeListener(_handleFocus)
+      ..dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     return Container(
       padding: EdgeInsets.fromLTRB(
         AppDimensions.space16,
@@ -1115,51 +1410,94 @@ class _InputBar extends StatelessWidget {
         color: AppColors.obsidianNight,
         border: Border(top: BorderSide(color: AppColors.cardBorder)),
       ),
-      child: Row(children: [
+      child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
         Expanded(
-          child: Container(
-            constraints: const BoxConstraints(maxHeight: 120),
+          child: AnimatedContainer(
+            duration:
+                reduceMotion ? Duration.zero : AppDimensions.durationTransition,
+            curve: AppCurves.transition,
+            constraints: const BoxConstraints(minHeight: 46, maxHeight: 120),
             decoration: BoxDecoration(
-              color: AppColors.surfaceGlass,
-              borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-              border: Border.all(color: AppColors.cardBorder),
+              color: _focused ? AppColors.inputSurface : AppColors.surfaceGlass,
+              borderRadius: BorderRadius.circular(23),
+              border: Border.all(
+                color: _focused ? AppColors.goldBorder : AppColors.cardBorder,
+              ),
+              boxShadow: _focused
+                  ? const [
+                      BoxShadow(
+                        color: AppColors.goldGlow,
+                        blurRadius: 18,
+                        spreadRadius: -6,
+                      ),
+                    ]
+                  : const [],
             ),
             child: TextField(
-              controller: controller,
+              controller: widget.controller,
+              focusNode: _focusNode,
               maxLines: null,
+              minLines: 1,
+              cursorColor: AppColors.champagneGold,
+              keyboardAppearance: Brightness.dark,
+              textCapitalization: TextCapitalization.sentences,
               style: AppTypography.chatMessage,
               textInputAction: TextInputAction.newline,
+              onTapOutside: (_) => _focusNode.unfocus(),
               decoration: const InputDecoration(
                 hintText: 'Type a message…',
                 hintStyle: AppTypography.inputLabel,
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(
-                    horizontal: AppDimensions.space14,
-                    vertical: AppDimensions.space10),
-              ),
-            ),
-          ),
-        ),
-        // Gold arrow — fades & scales in only when typing starts
-        AnimatedScale(
-          scale: canSend ? 1.0 : 0.0,
-          duration: AppDimensions.durationTransition,
-          curve: Curves.easeOutCubic,
-          child: AnimatedOpacity(
-            opacity: canSend ? 1.0 : 0.0,
-            duration: AppDimensions.durationTransition,
-            child: Padding(
-              padding: const EdgeInsets.only(left: AppDimensions.space10),
-              child: GestureDetector(
-                onTap: canSend ? onSend : null,
-                child: const Icon(
-                  Icons.arrow_upward_rounded,
-                  color: AppColors.champagneGold,
-                  size: 28,
+                  horizontal: AppDimensions.space16,
+                  vertical: AppDimensions.space12,
                 ),
               ),
             ),
           ),
+        ),
+        AnimatedSize(
+          duration:
+              reduceMotion ? Duration.zero : AppDimensions.durationTransition,
+          curve: AppCurves.transition,
+          child: widget.canSend
+              ? Padding(
+                  padding: const EdgeInsets.only(left: AppDimensions.space10),
+                  child: SilarahPressable(
+                    semanticLabel: 'Send message',
+                    onTap: widget.onSend,
+                    pressedScale: 0.92,
+                    child: Container(
+                      width: 46,
+                      height: 46,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            AppColors.champagneLight,
+                            AppColors.champagneGold,
+                            AppColors.antiqueGold,
+                          ],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.goldGlow,
+                            blurRadius: 18,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.arrow_upward_rounded,
+                        color: AppColors.obsidianNight,
+                        size: 23,
+                      ),
+                    ),
+                  ),
+                )
+              : const SizedBox.shrink(),
         ),
       ]),
     );

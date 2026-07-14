@@ -1,6 +1,6 @@
 // lib/core/router/app_router.dart
 // ============================================================
-// MITHAQ — GoRouter Configuration
+// SILARAH — GoRouter Configuration
 // Auth-gated routing:
 //   • Unauthenticated → /splash
 //   • Authenticated, onboarding incomplete → /onboarding/:step
@@ -40,10 +40,12 @@ import '../../features/home/screens/referral_screen.dart';
 import '../../features/home/screens/help_support_screen.dart';
 import '../../features/verification/screens/badge_verification_screen.dart';
 import '../../features/verification/screens/kyc_verification_screen.dart';
+import '../widgets/loaders/silarah_shimmer.dart';
 
 // ── Route names ───────────────────────────────────────────────
 
 abstract final class AppRoutes {
+  static const boot = '/boot';
   static const splash = '/';
   static const assalam = '/assalam';
   static const languageSelect = '/language';
@@ -88,8 +90,23 @@ GoRouter buildAppRouter(
       final authState = authCubit.state;
       final location = state.matchedLocation;
 
-      // Still checking session — no redirect yet
+      // Loading can be either app boot session hydration or an in-place
+      // pre-auth action such as sending an email OTP. Keep the user on the
+      // current pre-auth screen during that request; only unknown protected
+      // locations should fall back to the boot gate.
       if (authState is AuthInitial || authState is AuthLoading) {
+        if (location == AppRoutes.assalam ||
+            location == AppRoutes.languageSelect ||
+            location == AppRoutes.splash ||
+            location == AppRoutes.legal ||
+            location == AppRoutes.email ||
+            location == AppRoutes.boot) {
+          return null;
+        }
+        return AppRoutes.boot;
+      }
+
+      if (authState is AuthError) {
         return null;
       }
 
@@ -126,6 +143,7 @@ GoRouter buildAppRouter(
               location == AppRoutes.helpSupport) {
             return null;
           }
+          if (location.startsWith('/chat/')) return null;
           return AppRoutes.home;
         } else {
           // Still onboarding — allow the language selection screen so
@@ -150,6 +168,13 @@ GoRouter buildAppRouter(
     },
     routes: [
       // ── Pre-auth screens ────────────────────────────────
+      GoRoute(
+        path: AppRoutes.boot,
+        pageBuilder: (context, state) => _fadePage(
+          key: state.pageKey,
+          child: const _BootGateScreen(),
+        ),
+      ),
       GoRoute(
         path: AppRoutes.assalam,
         pageBuilder: (context, state) => _slidePage(
@@ -408,6 +433,49 @@ CustomTransitionPage<void> _slidePage({
 }
 
 // ── Auth Listenable (triggers router refresh on auth change) ──
+
+Page<void> _fadePage({required LocalKey key, required Widget child}) {
+  return CustomTransitionPage<void>(
+    key: key,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 260),
+    reverseTransitionDuration: const Duration(milliseconds: 170),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      );
+      return FadeTransition(
+        opacity: curved,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 0.018),
+            end: Offset.zero,
+          ).animate(curved),
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.992, end: 1).animate(curved),
+            child: child,
+          ),
+        ),
+      );
+    },
+  );
+}
+
+class _BootGateScreen extends StatelessWidget {
+  const _BootGateScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: Color(0xFF0A0A0F),
+      body: Center(
+        child: SilarahPulseLoader(size: 56),
+      ),
+    );
+  }
+}
 
 class _AuthStateListenable extends ChangeNotifier {
   _AuthStateListenable(AuthCubit cubit) {

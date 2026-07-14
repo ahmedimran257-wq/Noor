@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
@@ -29,13 +30,15 @@ class HelpSupportScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
         children: [
+          const _EmailTrustNotice(),
+          const SizedBox(height: AppDimensions.space16),
           _SupportCard(
             icon: Icons.support_agent_rounded,
             title: 'Contact Support',
             body:
                 'For account, billing, safety, verification, or profile issues.',
-            actionLabel: 'support@mithaq.app',
-            onTap: () => _copyEmail(context, 'support@mithaq.app'),
+            actionLabel: 'support@silarah.com',
+            onTap: () => _contactEmail(context, 'support@silarah.com'),
           ),
           const SizedBox(height: AppDimensions.space12),
           _SupportCard(
@@ -43,8 +46,8 @@ class HelpSupportScreen extends StatelessWidget {
             title: 'Safety & Reports',
             body:
                 'Report abusive behavior from the profile menu. Urgent safety reviews are prioritized.',
-            actionLabel: 'safety@mithaq.app',
-            onTap: () => _copyEmail(context, 'safety@mithaq.app'),
+            actionLabel: 'safety@silarah.com',
+            onTap: () => _contactEmail(context, 'safety@silarah.com'),
           ),
           const SizedBox(height: AppDimensions.space12),
           _SupportCard(
@@ -52,8 +55,8 @@ class HelpSupportScreen extends StatelessWidget {
             title: 'Grievance Officer',
             body:
                 'For formal grievance requests under applicable platform rules.',
-            actionLabel: 'grievance@mithaq.app',
-            onTap: () => _copyEmail(context, 'grievance@mithaq.app'),
+            actionLabel: 'grievance@silarah.com',
+            onTap: () => _contactEmail(context, 'grievance@silarah.com'),
           ),
           const SizedBox(height: AppDimensions.space20),
           const Text('Common Help', style: AppTypography.sectionLabel),
@@ -71,21 +74,28 @@ class HelpSupportScreen extends StatelessWidget {
           const _FaqTile(
             question: 'How does verification work?',
             answer:
-                'Use Verify Your Profile from Profile to complete the selfie/badge flow. Verified profiles are ranked and trusted better.',
+                'Profile photo verification uses a passive face and liveness scan. Identity verification separately matches a government ID with your selfie. Both are available in Profile under Trust & identity.',
           ),
         ],
       ),
     );
   }
 
-  static Future<void> _copyEmail(BuildContext context, String email) async {
+  static Future<void> _contactEmail(BuildContext context, String email) async {
+    final uri = Uri(
+      scheme: 'mailto',
+      path: email,
+      queryParameters: const {'subject': 'Silarah support request'},
+    );
+    if (await launchUrl(uri, mode: LaunchMode.externalApplication)) return;
     await Clipboard.setData(ClipboardData(text: email));
     if (!context.mounted) return;
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
-          content: Text('$email copied', style: AppTypography.body),
+          content: Text('No email app found. $email was copied.',
+              style: AppTypography.body),
           backgroundColor: AppColors.surfaceGlassHover,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -139,7 +149,7 @@ class _SupportCard extends StatelessWidget {
             height: AppDimensions.buttonHeightSmall,
             child: OutlinedButton.icon(
               onPressed: onTap,
-              icon: const Icon(Icons.copy_rounded, size: 16),
+              icon: const Icon(Icons.open_in_new_rounded, size: 16),
               label: Text(actionLabel),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.champagneGold,
@@ -149,6 +159,44 @@ class _SupportCard extends StatelessWidget {
                       BorderRadius.circular(AppDimensions.radiusButton),
                 ),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmailTrustNotice extends StatelessWidget {
+  const _EmailTrustNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.space16),
+      decoration: BoxDecoration(
+        color: AppColors.champagneGold.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+        border: Border.all(color: AppColors.goldBorder),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.mark_email_read_outlined,
+              color: AppColors.champagneGold, size: 21),
+          SizedBox(width: AppDimensions.space12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Recognize official Silarah email',
+                    style: AppTypography.bodyMedium),
+                SizedBox(height: AppDimensions.space4),
+                Text(
+                  'Account and security messages use @mail.silarah.com. Product updates use @news.silarah.com. We never ask for passwords or verification codes.',
+                  style: AppTypography.caption,
+                ),
+              ],
             ),
           ),
         ],

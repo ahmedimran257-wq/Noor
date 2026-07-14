@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mithaq/core/models/onboarding_data.dart';
+import 'package:silarah/core/models/onboarding_data.dart';
 
 void main() {
   test('persists stateName separately from cityName', () {

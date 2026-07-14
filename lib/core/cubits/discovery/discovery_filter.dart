@@ -1,6 +1,6 @@
 // lib/core/cubits/discovery/discovery_filter.dart
 // ============================================================
-// MITHAQ — Discovery Filter Model
+// SILARAH — Discovery Filter Model
 // Active filter selections, serialisation helpers, and
 // label generation for the chip bar.
 //

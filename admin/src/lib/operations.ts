@@ -82,11 +82,12 @@ export const getStaffMembers = () => rpc<StaffMemberRow[]>("admin_staff_members"
 export const getSystemHealth = () => rpc<DashboardMetrics>("admin_system_health");
 export const getLocalizationOverview = () => rpc<LocalizationRow[]>("admin_localization_overview");
 export const getLiveOperationsSnapshot = () => rpc<LiveOperationsSnapshot>("admin_live_operations_snapshot");
+export const getOnlineUsers = () => rpc<OnlineUserRow[]>("admin_online_users", { p_limit: 25 });
 export const getAuditFeed = () => rpc<AuditRow[]>("admin_audit_feed", { p_limit: 200 });
 export const getAdminInbox = () => rpc<AdminNotificationRow[]>("admin_inbox", { p_limit: 200 });
 export const getSecurityMetrics = () => rpc<DashboardMetrics>("admin_security_metrics");
 
-export type UserRow = { user_id:string; profile_id:string; name:string; email:string|null; country_code:string; gender:string; joined_at:string; last_active_at:string|null; onboarding_step:number; completeness_score:number; visibility:string; is_banned:boolean; subscription_status:string; verification_status:string; has_verification_badge:boolean; total_count?:number };
+export type UserRow = { user_id:string; profile_id:string; name:string; email:string|null; country_code:string; gender:string; joined_at:string; last_active_at:string|null; onboarding_step:number; completeness_score:number; visibility:string; is_banned:boolean; is_shadowbanned:boolean; subscription_status:string; verification_status:string; has_verification_badge:boolean; can_approve_profile:boolean; approval_block_reason:string|null; total_count?:number };
 export type RevealedUserPii = { user_id:string; name:string; email:string|null; revealed_at:string };
 export type KycRow = { user_id:string; profile_id:string; name:string; country_code:string; kyc_id_type:string|null; face_similarity:number|null; created_at:string; selfie_path:string|null; id_path:string|null };
 export type ReportRow = { report_id:string; reporter_id:string; reported_user_id:string; reason:string; description:string|null; created_at:string; report_count:number; reported_name:string };
@@ -101,5 +102,6 @@ export type StaffMemberRow = { user_id:string; email:string; role:string; status
 export type LocalizationRow = { locale:string; page_count:number; published_count:number; last_updated:string|null };
 export type LiveBucket = Record<string, number>;
 export type LiveOperationsSnapshot = { generatedAt:number; traffic:LiveBucket; engagement:LiveBucket; progress:LiveBucket; queues:LiveBucket; pipeline:LiveBucket };
+export type OnlineUserRow = { user_id:string; profile_id:string|null; name:string; email:string|null; country_code:string|null; gender:string|null; last_seen_at:string; app_state:string; platform:string|null; visibility:string; verification_status:string; subscription_status:string };
 export type AuditRow = { audit_id:string; admin_id:string; admin_email:string|null; actor_role:string|null; action_type:string; target_user_id:string|null; details:Record<string, unknown>|null; created_at:string };
 export type AdminNotificationRow = { notification_id:string; type:string; message:string; related_user_id:string|null; is_read:boolean; created_at:string };

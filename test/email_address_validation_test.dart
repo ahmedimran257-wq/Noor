@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mithaq/core/services/email_address_validation.dart';
+import 'package:silarah/core/services/email_address_validation.dart';
 
 void main() {
   group('EmailAddressValidation', () {

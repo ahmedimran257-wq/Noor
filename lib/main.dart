@@ -1,6 +1,6 @@
 // lib/main.dart
 // ============================================================
-// Mithaq — Entry Point
+// Silarah — Entry Point
 // "Begin with bismillah"
 // Step 4: GoRouter + MultiBlocProvider wired up.
 //         Auth-gated routing with Supabase email OTP.
@@ -23,11 +23,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/config/app_config.dart';
 
 import 'core/theme/app_theme.dart';
+import 'core/theme/app_dimensions.dart';
 import 'core/services/supabase_service.dart';
 import 'core/services/connectivity_service.dart';
 import 'core/services/subscription_service.dart';
 import 'core/services/wali_mode_service.dart';
 import 'core/services/fcm_service.dart';
+import 'core/services/presence_service.dart';
+import 'core/services/bookmark_service.dart';
 import 'core/cubits/auth/auth_cubit.dart';
 import 'core/cubits/auth/auth_state.dart';
 import 'core/cubits/onboarding/onboarding_cubit.dart';
@@ -40,85 +43,104 @@ import 'core/cubits/block_report/block_report_cubit.dart';
 import 'core/cubits/notifications/notifications_cubit.dart';
 import 'core/cubits/locale/locale_cubit.dart';
 import 'core/router/app_router.dart';
+import 'core/widgets/in_app_notification_banner.dart';
+import 'core/widgets/startup_offline_screen.dart';
 import 'l10n/generated/app_localizations.dart';
 
-/// Supported locales.
-/// Only list locales that have complete .arb translations.
-/// Phase 2+ expansion — add .arb file first, then uncomment here.
-const _supportedLocales = [
-  Locale('en'), // English
-  Locale('ar'), // Arabic  (RTL)
-  // Locale('ur'),   // Urdu    (RTL)
-  // Locale('ms'),   // Malay
-  // Locale('id'),   // Indonesian
-  // Locale('tr'),   // Turkish
-  // Locale('fr'),   // French
-  // Locale('de'),   // German
-];
+const _rtlLocales = {'ar', 'ur'};
 
-/// RTL locales — drives WidgetsApp directionality.
-const _rtlLocales = {'ar'};
+enum _StartupNetworkState { checking, offline, ready }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // ── Firebase Initialization ─────────────────────────────────
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
 
-  // ── Supabase Initialization ─────────────────────────────────
-  // Initialize Supabase client
-  await SupabaseService.initialize();
+    // ── Supabase Initialization ─────────────────────────────────
+    // Initialize Supabase client
+    await SupabaseService.initialize();
+  } catch (error, stack) {
+    debugPrint('[main] Critical startup configuration error: $error\n$stack');
+    runApp(const _StartupFailureApp());
+    return;
+  }
 
   // ── Global Error Handling + Crashlytics ────────────────────
 
   // Catch Flutter framework errors → forward to Crashlytics
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
-    debugPrint('Flutter Error: ${details.exception}');
-    FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+    final exceptionText = details.exceptionAsString();
+    final isLayoutOverflow = exceptionText.contains('RenderFlex overflowed');
+    debugPrint('Flutter Error: $exceptionText');
+    FirebaseCrashlytics.instance.recordFlutterError(
+      details,
+      fatal: !isLayoutOverflow,
+    );
   };
 
   // Replace the ugly red error screen with a styled fallback
   ErrorWidget.builder = (FlutterErrorDetails details) {
-    return Material(
-      color: const Color(0xFF0A0A0F), // AppColors.obsidianNight
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline_rounded,
-                  color: Color(0xFFE67E7E), size: 48),
-              const SizedBox(height: 16),
-              const Text(
-                'Something went wrong',
-                style: TextStyle(
-                  color: Color(0xFFF5F5F7),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-                textAlign: TextAlign.center,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact =
+            constraints.maxHeight < 160 || constraints.maxWidth < 160;
+        if (compact) {
+          return const ColoredBox(
+            color: Color(0xFF0A0A0F),
+            child: Center(
+              child: Icon(
+                Icons.error_outline_rounded,
+                color: Color(0xFFE67E7E),
+                size: 20,
               ),
-              const SizedBox(height: 8),
-              Text(
-                kDebugMode
-                    ? details.exception.toString()
-                    : 'Please restart the app.',
-                style: const TextStyle(
-                  color: Color(0xFF8E8E93),
-                  fontSize: 14,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 4,
-                overflow: TextOverflow.ellipsis,
+            ),
+          );
+        }
+
+        return Material(
+          color: const Color(0xFF0A0A0F), // AppColors.obsidianNight
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline_rounded,
+                      color: Color(0xFFE67E7E), size: 48),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Something went wrong',
+                    style: TextStyle(
+                      color: Color(0xFFF5F5F7),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    kDebugMode
+                        ? details.exception.toString()
+                        : 'Please restart the app.',
+                    style: const TextStyle(
+                      color: Color(0xFF8E8E93),
+                      fontSize: 14,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   };
 
@@ -144,38 +166,97 @@ void main() async {
 
   // ── SharedPreferences check for returning users ──────────────
   final prefs = await SharedPreferences.getInstance();
-  final introCompleted = prefs.getBool('mithaq_intro_completed') ?? false;
-  runApp(MithaqApp(
-    initialLocation: introCompleted ? AppRoutes.splash : AppRoutes.assalam,
+  final introCompleted = prefs.getBool('silarah_intro_completed') ?? false;
+  runApp(SilarahApp(
+    initialLocation: introCompleted ? AppRoutes.boot : AppRoutes.assalam,
   ));
 }
 
+class _StartupFailureApp extends StatelessWidget {
+  const _StartupFailureApp();
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        backgroundColor: Color(0xFF0A0A0F),
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.settings_rounded,
+                    color: Color(0xFFC5A059),
+                    size: 52,
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                    'Silarah could not start',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Color(0xFFF5F5F7),
+                      fontSize: 22,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'This build is missing required service configuration. '
+                    'Please reinstall it using the approved build script.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Color(0xFF8E8E93),
+                      fontSize: 15,
+                      height: 1.45,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 Future<void> _configureRevenueCat() async {
-  final rcKey = Platform.isIOS
+  // Test Store is deliberately restricted to debug builds. Release builds
+  // always use the platform store key and can never grant test entitlements.
+  final platformKey = Platform.isIOS
       ? AppConfig.revenueCatIosKey
       : AppConfig.revenueCatAndroidKey;
+  final rcKey = kDebugMode && AppConfig.revenueCatTestKey.isNotEmpty
+      ? AppConfig.revenueCatTestKey
+      : platformKey;
   if (rcKey.isEmpty) return;
   try {
+    if (kDebugMode) await Purchases.setLogLevel(LogLevel.debug);
     await Purchases.configure(PurchasesConfiguration(rcKey));
   } catch (e) {
     debugPrint('[main] RevenueCat configure skipped: $e');
   }
 }
 
-class MithaqApp extends StatefulWidget {
-  const MithaqApp({super.key, required this.initialLocation});
+class SilarahApp extends StatefulWidget {
+  const SilarahApp({super.key, required this.initialLocation});
 
   final String initialLocation;
 
   @override
-  State<MithaqApp> createState() => _MithaqAppState();
+  State<SilarahApp> createState() => _SilarahAppState();
 }
 
-class _MithaqAppState extends State<MithaqApp> {
+class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
   /// Guard: ensures onboarding cubit is initialized only once per auth session.
   /// Without this, every updateOnboardingStep() call re-triggers the
   /// BlocListener which calls initialize() and wipes all accumulated form data.
   bool _onboardingInitialized = false;
+  String? _activeSessionUserId;
 
   // Create cubits at the top level so they outlive any individual screen.
   late final AuthCubit _authCubit;
@@ -191,10 +272,15 @@ class _MithaqAppState extends State<MithaqApp> {
 
   late final GoRouter _router;
   late final Future<void> _revenueCatReady;
+  StreamSubscription<bool>? _connectivitySubscription;
+  ConnectivityService? _connectivityService;
+  _StartupNetworkState _startupNetworkState = _StartupNetworkState.checking;
+  Future<bool>? _startupRecoveryInFlight;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _authCubit = AuthCubit();
     _onboardingCubit = OnboardingCubit(authCubit: _authCubit);
     _interestsCubit = InterestsCubit();
@@ -213,6 +299,17 @@ class _MithaqAppState extends State<MithaqApp> {
     FcmService.instance.onNotificationTap = (path) {
       _router.push(path);
     };
+    FcmService.instance.onForegroundMessage = (message) {
+      if (message.data['type'] == 'new_message') {
+        unawaited(_chatCubit.loadConversations(force: true));
+      }
+      if (message.data['type'] == 'interest_received' ||
+          message.data['type'] == 'interest_accepted' ||
+          message.data['type'] == 'match' ||
+          message.data['type'] == 'match_accepted') {
+        unawaited(_interestsCubit.loadData(force: true));
+      }
+    };
 
     _revenueCatReady = _configureRevenueCat();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -221,13 +318,94 @@ class _MithaqAppState extends State<MithaqApp> {
   }
 
   void _startPostFirstFrameWork() {
-    _authCubit.checkSession();
-    ConnectivityService.initialize();
+    final connectivity = ConnectivityService.initialize(
+      checkInterval: const Duration(minutes: 5),
+    );
+    _connectivityService = connectivity;
+    _connectivitySubscription = connectivity.connectivityStream.listen(
+      _handleConnectivityChange,
+    );
+    if (Platform.environment.containsKey('FLUTTER_TEST')) {
+      unawaited(_recoverStartupIdentity());
+    } else {
+      unawaited(_resolveStartupConnectivity());
+    }
     unawaited(_revenueCatReady.then((_) => _subscriptionCubit.initialize()));
     // Widget tests run without a native Firebase app. Production still
     // initializes FCM here after Firebase.initializeApp() in main().
     if (!Platform.environment.containsKey('FLUTTER_TEST')) {
       unawaited(FcmService.instance.initialize());
+    }
+  }
+
+  Future<void> _resolveStartupConnectivity() async {
+    final online = await _connectivityService!.checkNow();
+    if (!mounted) return;
+    if (online) {
+      await _recoverStartupIdentity();
+    } else if (_startupNetworkState != _StartupNetworkState.ready) {
+      setState(() => _startupNetworkState = _StartupNetworkState.offline);
+    }
+  }
+
+  void _handleConnectivityChange(bool online) {
+    if (!mounted || _startupNetworkState == _StartupNetworkState.ready) {
+      return;
+    }
+    if (online) {
+      unawaited(_recoverStartupIdentity());
+    } else if (_startupNetworkState != _StartupNetworkState.offline) {
+      setState(() => _startupNetworkState = _StartupNetworkState.offline);
+    }
+  }
+
+  Future<bool> _recoverStartupIdentity() {
+    final activeRecovery = _startupRecoveryInFlight;
+    if (activeRecovery != null) return activeRecovery;
+    final recovery = _performStartupIdentityRecovery();
+    _startupRecoveryInFlight = recovery;
+    return recovery.whenComplete(() {
+      if (identical(_startupRecoveryInFlight, recovery)) {
+        _startupRecoveryInFlight = null;
+      }
+    });
+  }
+
+  Future<bool> _performStartupIdentityRecovery() async {
+    if (!mounted) return false;
+    if (_startupNetworkState != _StartupNetworkState.checking) {
+      setState(() => _startupNetworkState = _StartupNetworkState.checking);
+    }
+
+    final result = await _authCubit.checkSession();
+    if (!mounted) return false;
+    if (result == AuthSessionCheckResult.authenticated ||
+        result == AuthSessionCheckResult.signedOut) {
+      setState(() => _startupNetworkState = _StartupNetworkState.ready);
+      return true;
+    }
+    // The device is online but session/profile hydration is not yet
+    // authoritative. Keep protected routing covered and let retry perform the
+    // complete transaction again instead of exposing sign-up/onboarding.
+    setState(() => _startupNetworkState = _StartupNetworkState.offline);
+    return false;
+  }
+
+  Future<bool> _retryStartupConnectivity() async {
+    final online = await _connectivityService!.checkNow();
+    if (!online || !mounted) return false;
+    return _recoverStartupIdentity();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    PresenceService.instance.handleLifecycle(state);
+    if (state == AppLifecycleState.resumed &&
+        SupabaseService.currentUserId != null) {
+      unawaited(_notificationsCubit.loadNotifications());
+      unawaited(_discoveryFeedCubit.loadInitial());
+      unawaited(_onboardingCubit.refreshProfileFromDb());
+      unawaited(_chatCubit.loadConversations(showLoading: false));
     }
   }
 
@@ -237,8 +415,27 @@ class _MithaqAppState extends State<MithaqApp> {
     await _subscriptionCubit.loginUser(userId);
   }
 
+  void _clearUserScopedState() {
+    BookmarkService.clearCache();
+    _chatCubit.clear();
+    _notificationsCubit.clear();
+    _notificationPrefsCubit.clear();
+    _discoveryFeedCubit.clear();
+    _interestsCubit.clear();
+    _blockReportCubit.clear();
+  }
+
+  void _openInAppNotification(NotificationItem item) {
+    unawaited(_notificationsCubit.markRead(item.id));
+    final path = notificationPathFor(item);
+    if (path != null) _router.push(path);
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(_connectivitySubscription?.cancel());
+    PresenceService.instance.stop();
     // ── Dispose Cubits ─────────────────────────────────────────
     _authCubit.close();
     _onboardingCubit.close();
@@ -252,7 +449,7 @@ class _MithaqAppState extends State<MithaqApp> {
     _localeCubit.close();
 
     // ── Dispose Services ───────────────────────────────────────
-    ConnectivityService.instance.dispose();
+    _connectivityService?.dispose();
     SubscriptionService.instance.dispose();
     WaliModeService.instance.dispose();
     FcmService.instance.dispose();
@@ -284,9 +481,18 @@ class _MithaqAppState extends State<MithaqApp> {
               // a fresh initialization of the onboarding cubit.
               if (state is AuthUnauthenticated) {
                 _onboardingInitialized = false;
-                _chatCubit.loadConversations();
-                _notificationsCubit.loadNotifications();
+                _activeSessionUserId = null;
+                PresenceService.instance.stop();
+                _clearUserScopedState();
               }
+              if (state is AuthAuthenticated &&
+                  _activeSessionUserId != null &&
+                  _activeSessionUserId != state.userId) {
+                _clearUserScopedState();
+                _onboardingInitialized = false;
+              }
+              final isNewAuthenticatedSession = state is AuthAuthenticated &&
+                  _activeSessionUserId != state.userId;
               // Initialize the onboarding cubit ONCE when the user first
               // authenticates. Without the _onboardingInitialized guard,
               // every saveAndAdvance() → updateOnboardingStep() call
@@ -297,19 +503,26 @@ class _MithaqAppState extends State<MithaqApp> {
               }
               // Set the daily interest limit based on gender + subscription status.
               if (state is AuthAuthenticated) {
-                unawaited(_loginSubscriptionUser(state.userId));
+                _activeSessionUserId = state.userId;
+                PresenceService.instance.start(state.userId);
+                if (isNewAuthenticatedSession) {
+                  unawaited(_loginSubscriptionUser(state.userId));
+                  unawaited(FcmService.instance.onUserLogin());
+                  unawaited(_notificationPrefsCubit.loadPrefs());
+                  _chatCubit.loadConversations();
+                  _notificationsCubit.loadNotifications();
+                  _interestsCubit.loadData();
+                }
                 _interestsCubit.setDailyLimitForGender(
                   gender: state.gender ?? 'male',
                   isSubscribed:
                       context.read<SubscriptionCubit>().state.isSubscribed,
                 );
-                _chatCubit.loadConversations();
-                _notificationsCubit.loadNotifications();
               }
             },
             child: BlocBuilder<LocaleCubit, Locale>(
               builder: (context, locale) => MaterialApp.router(
-                title: 'Mithaq',
+                title: 'Silarah',
                 debugShowCheckedModeBanner: false,
                 theme: AppTheme.darkTheme,
                 darkTheme: AppTheme.darkTheme,
@@ -320,7 +533,7 @@ class _MithaqAppState extends State<MithaqApp> {
                 routerConfig: _router,
 
                 // ── Localizations ─────────────────────────────
-                supportedLocales: _supportedLocales,
+                supportedLocales: AppLocalizations.supportedLocales,
                 localizationsDelegates: const [
                   AppLocalizations.delegate,
                   GlobalMaterialLocalizations.delegate,
@@ -342,9 +555,33 @@ class _MithaqAppState extends State<MithaqApp> {
                   final isRtl = _rtlLocales.contains(loc.languageCode);
                   final textDir = isRtl ? TextDirection.rtl : TextDirection.ltr;
 
-                  return Directionality(
+                  final routedApp = Directionality(
                     textDirection: textDir,
-                    child: child!,
+                    child: InAppNotificationBannerHost(
+                      notifications: _notificationsCubit.inAppNotifications,
+                      onTap: _openInAppNotification,
+                      child: child ?? const SizedBox.shrink(),
+                    ),
+                  );
+                  return AnimatedSwitcher(
+                    duration: AppDimensions.durationReveal,
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    child: switch (_startupNetworkState) {
+                      _StartupNetworkState.checking =>
+                        const StartupOfflineScreen(
+                          key: ValueKey('startup-connectivity-checking'),
+                          checking: true,
+                        ),
+                      _StartupNetworkState.offline => StartupOfflineScreen(
+                          key: const ValueKey('startup-connectivity-offline'),
+                          onRetry: _retryStartupConnectivity,
+                        ),
+                      _StartupNetworkState.ready => KeyedSubtree(
+                          key: const ValueKey('startup-connectivity-ready'),
+                          child: routedApp,
+                        ),
+                    },
                   );
                 },
               ),

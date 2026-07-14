@@ -1,6 +1,6 @@
 // lib/core/cubits/notification_prefs/notification_prefs_cubit.dart
 // ============================================================
-// MITHAQ — Notification Preferences Cubit (Supabase production flow)
+// SILARAH — Notification Preferences Cubit (Supabase production flow)
 //
 // Each toggle maps directly to a column in the notification_prefs
 // DB table. In real mode: upserts to Supabase on every toggle.
@@ -38,7 +38,7 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
       final row = await SupabaseService.client
           .from('notification_prefs')
           .select(
-            'new_interest, interest_accepted, new_message, profile_approved, '
+            'new_interest, interest_accepted, new_message, profile_live, '
             'interest_expiring, inactive_nudge, boost_available, '
             'quiet_start, quiet_end',
           )
@@ -50,7 +50,7 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
           newInterest: (row['new_interest'] as bool?) ?? true,
           interestAccepted: (row['interest_accepted'] as bool?) ?? true,
           newMessage: (row['new_message'] as bool?) ?? true,
-          profileApproved: (row['profile_approved'] as bool?) ?? true,
+          profileLive: (row['profile_live'] as bool?) ?? true,
           interestExpiring: (row['interest_expiring'] as bool?) ?? true,
           inactiveNudge: (row['inactive_nudge'] as bool?) ?? true,
           boostAvailable: (row['boost_available'] as bool?) ?? true,
@@ -80,8 +80,8 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
     _schedulePersist();
   }
 
-  void toggleProfileApproved(bool value) {
-    emit(state.copyWith(profileApproved: value));
+  void toggleProfileLive(bool value) {
+    emit(state.copyWith(profileLive: value));
     _schedulePersist();
   }
 
@@ -117,6 +117,12 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
     _schedulePersist();
   }
 
+  void clear() {
+    _persistDebounce?.cancel();
+    _persistVersion++;
+    if (!isClosed) emit(const NotificationPrefsState());
+  }
+
   // ── Persistence helper ────────────────────────────────────
 
   void _schedulePersist() {
@@ -146,7 +152,7 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
         'new_interest': snapshot.newInterest,
         'interest_accepted': snapshot.interestAccepted,
         'new_message': snapshot.newMessage,
-        'profile_approved': snapshot.profileApproved,
+        'profile_live': snapshot.profileLive,
         'interest_expiring': snapshot.interestExpiring,
         'inactive_nudge': snapshot.inactiveNudge,
         'boost_available': snapshot.boostAvailable,
@@ -170,7 +176,7 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
 
   @override
   Future<void> close() {
-    _persistDebounce?.cancel();
+    clear();
     return super.close();
   }
 }

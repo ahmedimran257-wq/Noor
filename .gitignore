@@ -11,6 +11,14 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+node_modules/
+**/node_modules/
+.env
+.env.*
+!.env.example
+config/*.json
+!config/*.example.json
+opencode.json
 
 # IntelliJ related
 *.iml

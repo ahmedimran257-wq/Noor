@@ -3,12 +3,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:image/image.dart' as img;
 import 'package:nsfw_detect/nsfw_detect.dart';
 import 'package:path_provider/path_provider.dart';
 
-enum PhotoModerationDecision { safe, pendingReview, unsafe, scanFailed }
+enum PhotoModerationDecision { approved, flagged, rejected, scanFailed }
 
 class PhotoModerationResult {
   const PhotoModerationResult({
@@ -25,15 +24,15 @@ class PhotoModerationResult {
   final double threshold;
   final String? error;
 
-  bool get isSafe => decision == PhotoModerationDecision.safe;
+  bool get isSafe => decision == PhotoModerationDecision.approved;
   bool get canUpload =>
-      decision == PhotoModerationDecision.safe ||
-      decision == PhotoModerationDecision.pendingReview;
+      decision == PhotoModerationDecision.approved ||
+      decision == PhotoModerationDecision.flagged;
 
   Map<String, dynamic> toValidationPayload() => {
         'status': decision.name,
-        'is_nsfw': decision == PhotoModerationDecision.unsafe,
-        'requires_review': decision == PhotoModerationDecision.pendingReview,
+        'is_nsfw': decision == PhotoModerationDecision.flagged,
+        'requires_review': decision == PhotoModerationDecision.flagged,
         'confidence': confidence,
         'category': category,
         'threshold': threshold,
@@ -41,15 +40,15 @@ class PhotoModerationResult {
 }
 
 typedef PhotoScanCallback = Future<ScanResult> Function(String path);
-typedef FaceCheckCallback = Future<FaceProminenceResult> Function(String path);
 
-/// Runs privacy-preserving NSFW classification entirely on the user's device.
+/// Runs privacy-preserving explicit-content classification on-device.
+///
+/// Profile-photo moderation deliberately performs no face, eye, prominence,
+/// pose, or group-size analysis. Identity and liveness checks belong only to
+/// the separate badge-verification flow.
 class PhotoModerationService {
-  PhotoModerationService({
-    PhotoScanCallback? scanner,
-    FaceCheckCallback? faceChecker,
-  })  : _scanner = scanner ?? _scanNormalizedFile,
-        _faceChecker = faceChecker ?? _checkFaceProminence;
+  PhotoModerationService({PhotoScanCallback? scanner})
+      : _scanner = scanner ?? _scanNormalizedFile;
 
   static final PhotoModerationService instance = PhotoModerationService();
   static Future<void>? _classifierReady;
@@ -59,73 +58,30 @@ class PhotoModerationService {
   // The bundled Falconsai model is binary (safe/nsfw). Keep collection low so
   // moderate NSFW evidence is visible, then apply product policy separately.
   static const double scannerCollectionThreshold = 0.01;
-  static const double hardNsfwRejectThreshold = 0.88;
-  static const double softNsfwReviewThreshold = 0.75;
-  static const double neutralPortraitPassThreshold = 0.30;
-  static const double prominentFaceRatioThreshold = 0.12;
+  static const double explicitContentFlagThreshold = 0.85;
+  static const double hardNsfwRejectThreshold = explicitContentFlagThreshold;
+  static const double neutralContentPassThreshold = 0.30;
   static const double confidenceThreshold = hardNsfwRejectThreshold;
-  static const String _localModelId = 'mithaq_falconsai_nsfw';
+  static const String _localModelId = 'silarah_falconsai_nsfw';
   static const String _localModelAssetPath =
       'assets/models/falconsai_nsfw.tflite';
   static const String _localModelFileName = 'falconsai_nsfw.tflite';
   static const int _localModelBytes = 88008416;
-  static const double _explicitBodySkinRatioThreshold = 0.45;
-  static const double _explicitTorsoSkinRatioThreshold = 0.45;
-  static const double _explicitPelvisSkinRatioThreshold = 0.12;
   final PhotoScanCallback _scanner;
-  final FaceCheckCallback _faceChecker;
 
   Future<PhotoModerationResult> scanFile(String path) async {
     try {
-      final scan = await _scanner(path);
-      if (scan.status != ScanStatus.completed) return evaluate(scan);
-      final scores = NsfwScores.fromScan(scan);
-
-      if (scores.nsfw >= hardNsfwRejectThreshold) {
-        return PhotoModerationResult(
-          decision: PhotoModerationDecision.unsafe,
-          confidence: scores.nsfw,
-          category: 'explicit_content',
-          threshold: hardNsfwRejectThreshold,
-        );
-      }
-
-      final face = await _faceChecker(path);
-      if (!face.hasFace) {
+      if (!await _isRealImage(path)) {
         return const PhotoModerationResult(
-          decision: PhotoModerationDecision.unsafe,
+          decision: PhotoModerationDecision.rejected,
           confidence: 1,
-          category: 'no_face',
+          category: 'invalid_image',
           threshold: 0,
         );
       }
 
-      final needsContextReview = (scores.nsfw >= softNsfwReviewThreshold &&
-              scores.neutral < neutralPortraitPassThreshold) ||
-          face.faceRatio < prominentFaceRatioThreshold;
-      if (needsContextReview) {
-        // Skin/exposure heuristics are intentionally scoped to suspicious or
-        // body-dominant photos only. Running them on every safe portrait caused
-        // false rejections for sarees, sleeveless tops, and cultural dress.
-        final exposureResult = await _evaluateExplicitExposurePolicy(path);
-        if (exposureResult != null) return exposureResult;
-
-        return PhotoModerationResult(
-          decision: PhotoModerationDecision.pendingReview,
-          confidence: scores.nsfw,
-          category: face.faceRatio < prominentFaceRatioThreshold
-              ? 'body_dominant'
-              : 'borderline_nsfw',
-          threshold: softNsfwReviewThreshold,
-        );
-      }
-
-      return PhotoModerationResult(
-        decision: PhotoModerationDecision.safe,
-        confidence: scores.neutral,
-        category: 'safe_portrait',
-        threshold: softNsfwReviewThreshold,
-      );
+      final scan = await _scanner(path);
+      return evaluate(scan);
     } catch (error) {
       debugPrint('[PhotoModerationService] scan failed: $error');
       return PhotoModerationResult(
@@ -138,38 +94,165 @@ class PhotoModerationService {
     }
   }
 
-  static Future<PhotoModerationResult?> _evaluateExplicitExposurePolicy(
-    String path,
-  ) async {
+  static Future<bool> _isRealImage(String path) async {
     final file = File(path);
-    if (!await file.exists()) return null;
+    if (!await file.exists() || await file.length() < 128) return false;
 
-    final exposure = analyzeExplicitExposure(await file.readAsBytes());
-    if (!exposure.reject) return null;
+    try {
+      final decoded = img.decodeImage(await file.readAsBytes());
+      if (decoded == null || decoded.width < 32 || decoded.height < 32) {
+        return false;
+      }
 
-    return PhotoModerationResult(
-      decision: PhotoModerationDecision.unsafe,
-      confidence: exposure.confidence,
-      category: 'explicit_content',
-      threshold: _explicitBodySkinRatioThreshold,
-    );
+      final sample = img.copyResize(
+        img.bakeOrientation(decoded),
+        width: 32,
+        height: 32,
+        interpolation: img.Interpolation.average,
+      );
+      var minLuma = 255.0;
+      var maxLuma = 0.0;
+      final colorBuckets = <int>{};
+      for (final pixel in sample) {
+        final r = pixel.r.toDouble();
+        final g = pixel.g.toDouble();
+        final b = pixel.b.toDouble();
+        final luma = (0.299 * r) + (0.587 * g) + (0.114 * b);
+        minLuma = math.min(minLuma, luma);
+        maxLuma = math.max(maxLuma, luma);
+        colorBuckets.add(
+          ((r ~/ 16) << 8) | ((g ~/ 16) << 4) | (b ~/ 16),
+        );
+      }
+
+      // A decoded but essentially uniform frame is a blank capture, not a
+      // usable photograph. This check is content-agnostic and never examines
+      // faces, clothing, or the number of people present.
+      return maxLuma - minLuma >= 4 && colorBuckets.length >= 4;
+    } catch (_) {
+      return false;
+    }
   }
 
   static Future<ScanResult> _scanNormalizedFile(String path) async {
     await _ensureClassifierReady();
     final bytes = await File(path).readAsBytes();
-    final normalized = _normalizeForClassifier(bytes);
-    if (normalized != null) {
-      return NsfwDetector.instance.scanBytes(
-        normalized,
-        modelId: _localModelId,
-        confidenceThreshold: scannerCollectionThreshold,
-      );
+    final classifierInputs = _classifierInputs(bytes);
+    if (classifierInputs.isNotEmpty) {
+      final scans = <ScanResult>[];
+      for (final input in classifierInputs) {
+        final scan = await NsfwDetector.instance.scanBytes(
+          input,
+          modelId: _localModelId,
+          confidenceThreshold: scannerCollectionThreshold,
+        );
+        if (scan.status != ScanStatus.completed) return scan;
+        scans.add(scan);
+      }
+      return _aggregateCropScans(scans);
     }
 
     return NsfwDetector.instance.scanFile(
       path,
       modelId: _localModelId,
+      confidenceThreshold: scannerCollectionThreshold,
+    );
+  }
+
+  /// Classifies the complete frame plus body-focused crops. Resizing a tall
+  /// full-body image can otherwise make explicit regions too small for the
+  /// NSFW model. This remains classifier-only: it uses no face or skin logic.
+  static List<Uint8List> _classifierInputs(Uint8List bytes) {
+    try {
+      final decoded = img.decodeImage(bytes);
+      if (decoded == null) return const [];
+      final oriented = img.bakeOrientation(decoded);
+      final inputs = <img.Image>[
+        oriented,
+        _fractionalCrop(
+          oriented,
+          left: 0.10,
+          top: 0.08,
+          right: 0.90,
+          bottom: 0.92,
+        ),
+        _fractionalCrop(
+          oriented,
+          left: 0.08,
+          top: 0.02,
+          right: 0.92,
+          bottom: 0.68,
+        ),
+        _fractionalCrop(
+          oriented,
+          left: 0.08,
+          top: 0.32,
+          right: 0.92,
+          bottom: 0.98,
+        ),
+      ];
+
+      return inputs
+          .map(_resizeForClassifier)
+          .map((image) => Uint8List.fromList(img.encodeJpg(image, quality: 90)))
+          .toList(growable: false);
+    } catch (error) {
+      debugPrint('[PhotoModerationService] crop preparation failed: $error');
+      return const [];
+    }
+  }
+
+  static img.Image _fractionalCrop(
+    img.Image source, {
+    required double left,
+    required double top,
+    required double right,
+    required double bottom,
+  }) {
+    final x = (source.width * left).floor().clamp(0, source.width - 1);
+    final y = (source.height * top).floor().clamp(0, source.height - 1);
+    final width =
+        (source.width * (right - left)).round().clamp(1, source.width - x);
+    final height =
+        (source.height * (bottom - top)).round().clamp(1, source.height - y);
+    return img.copyCrop(
+      source,
+      x: x,
+      y: y,
+      width: width,
+      height: height,
+    );
+  }
+
+  static img.Image _resizeForClassifier(img.Image image) {
+    if (image.width <= 1280 && image.height <= 1280) return image;
+    return img.copyResize(
+      image,
+      width: image.width >= image.height ? 1280 : null,
+      height: image.height > image.width ? 1280 : null,
+      interpolation: img.Interpolation.average,
+    );
+  }
+
+  static ScanResult _aggregateCropScans(List<ScanResult> scans) {
+    final first = scans.first;
+    final scores = scans.map(NsfwScores.fromScan).toList(growable: false);
+    final maxExplicit = scores.map((score) => score.nsfw).reduce(math.max);
+    final minNeutral = scores.map((score) => score.neutral).reduce(math.min);
+    return ScanResult(
+      item: first.item,
+      status: ScanStatus.completed,
+      labels: [
+        NsfwLabel(
+          category: NsfwCategory.nudity,
+          confidence: maxExplicit,
+        ),
+        NsfwLabel(
+          category: NsfwCategory.safe,
+          confidence: minNeutral,
+        ),
+      ],
+      scannedAt: DateTime.now(),
       confidenceThreshold: scannerCollectionThreshold,
     );
   }
@@ -192,7 +275,7 @@ class PhotoModerationService {
       final modelPath = await _installBundledClassifier();
       await NsfwDetector.instance.registerModel(ModelRegistration(
         id: _localModelId,
-        displayName: 'Mithaq Falconsai NSFW',
+        displayName: 'Silarah Falconsai NSFW',
         assetPath: modelPath,
         inputSize: 224,
         kind: ModelKind.classifier,
@@ -238,186 +321,6 @@ class PhotoModerationService {
     return target.path;
   }
 
-  static Uint8List? _normalizeForClassifier(Uint8List bytes) {
-    try {
-      final decoded = img.decodeImage(bytes);
-      if (decoded == null) return null;
-
-      final oriented = img.bakeOrientation(decoded);
-      final resized = oriented.width > 1280 || oriented.height > 1280
-          ? img.copyResize(
-              oriented,
-              width: oriented.width >= oriented.height ? 1280 : null,
-              height: oriented.height > oriented.width ? 1280 : null,
-              interpolation: img.Interpolation.average,
-            )
-          : oriented;
-
-      // NSFW and face engines are most reliable with JPEG/PNG byte streams.
-      // Uploaded photos may be WebP, but moderation always uses this JPEG
-      // analysis copy so decoder differences cannot reject valid safe photos.
-      return Uint8List.fromList(img.encodeJpg(resized, quality: 90));
-    } catch (error) {
-      debugPrint('[PhotoModerationService] image normalization failed: $error');
-      return null;
-    }
-  }
-
-  @visibleForTesting
-  static ExplicitExposureAnalysis analyzeExplicitExposure(Uint8List bytes) {
-    try {
-      final decoded = img.decodeImage(bytes);
-      if (decoded == null) return ExplicitExposureAnalysis.empty();
-
-      final oriented = img.bakeOrientation(decoded);
-      final sample = img.copyResize(
-        oriented,
-        width: oriented.width > oriented.height ? 360 : null,
-        height: oriented.height >= oriented.width ? 360 : null,
-        interpolation: img.Interpolation.average,
-      );
-
-      final body = _measureSkinRatio(
-        sample,
-        left: 0.18,
-        top: 0.22,
-        right: 0.82,
-        bottom: 0.95,
-      );
-      final torso = _measureSkinRatio(
-        sample,
-        left: 0.24,
-        top: 0.25,
-        right: 0.76,
-        bottom: 0.62,
-      );
-      final pelvis = _measureSkinRatio(
-        sample,
-        left: 0.25,
-        top: 0.58,
-        right: 0.75,
-        bottom: 0.88,
-      );
-
-      return ExplicitExposureAnalysis(
-        bodyRatio: body,
-        torsoRatio: torso,
-        pelvisRatio: pelvis,
-      );
-    } catch (error) {
-      debugPrint('[PhotoModerationService] exposure analysis failed: $error');
-      return ExplicitExposureAnalysis.empty();
-    }
-  }
-
-  static double _measureSkinRatio(
-    img.Image image, {
-    required double left,
-    required double top,
-    required double right,
-    required double bottom,
-  }) {
-    final startX = (image.width * left).floor().clamp(0, image.width - 1);
-    final endX = (image.width * right).ceil().clamp(startX + 1, image.width);
-    final startY = (image.height * top).floor().clamp(0, image.height - 1);
-    final endY = (image.height * bottom).ceil().clamp(startY + 1, image.height);
-
-    var skinPixels = 0;
-    var sampledPixels = 0;
-    const stride = 2;
-    for (var y = startY; y < endY; y += stride) {
-      for (var x = startX; x < endX; x += stride) {
-        sampledPixels++;
-        if (_isLikelySkin(image.getPixel(x, y))) {
-          skinPixels++;
-        }
-      }
-    }
-
-    if (sampledPixels == 0) return 0;
-    return skinPixels / sampledPixels;
-  }
-
-  static bool _isLikelySkin(img.Pixel pixel) {
-    final r = pixel.r.toDouble();
-    final g = pixel.g.toDouble();
-    final b = pixel.b.toDouble();
-    final maxChannel = math.max(r, math.max(g, b));
-    final minChannel = math.min(r, math.min(g, b));
-    if (maxChannel < 45 || maxChannel - minChannel < 8) return false;
-
-    final y = (0.299 * r) + (0.587 * g) + (0.114 * b);
-    final cb = 128 - (0.168736 * r) - (0.331264 * g) + (0.5 * b);
-    final cr = 128 + (0.5 * r) - (0.418688 * g) - (0.081312 * b);
-    final saturation =
-        maxChannel == 0 ? 0 : (maxChannel - minChannel) / maxChannel;
-    final value = maxChannel / 255;
-
-    final warmChrominance = cr >= 132 && cr <= 188 && cb >= 72 && cb <= 145;
-    final plausibleBrightness = y >= 38 && value >= 0.18;
-    final plausibleSaturation = saturation >= 0.07 && saturation <= 0.82;
-    final notPureRedOrYellow = r > b && g >= b * 0.55;
-
-    return warmChrominance &&
-        plausibleBrightness &&
-        plausibleSaturation &&
-        notPureRedOrYellow;
-  }
-
-  static Future<FaceProminenceResult> _checkFaceProminence(String path) async {
-    File? analysisFile;
-    FaceDetector? detector;
-    try {
-      final bytes = await File(path).readAsBytes();
-      final decoded = img.decodeImage(bytes);
-      if (decoded == null) return FaceProminenceResult.noFace();
-
-      final oriented = img.bakeOrientation(decoded);
-      final jpegBytes =
-          Uint8List.fromList(img.encodeJpg(oriented, quality: 92));
-      final tempDir = await getTemporaryDirectory();
-      analysisFile = File(
-        '${tempDir.path}${Platform.pathSeparator}mithaq_face_prominence_${DateTime.now().microsecondsSinceEpoch}.jpg',
-      );
-      await analysisFile.writeAsBytes(jpegBytes, flush: true);
-
-      detector = FaceDetector(
-        options: FaceDetectorOptions(
-          enableClassification: false,
-          enableContours: false,
-          enableLandmarks: false,
-          enableTracking: false,
-          performanceMode: FaceDetectorMode.fast,
-        ),
-      );
-      final faces = await detector
-          .processImage(InputImage.fromFilePath(analysisFile.path));
-      if (faces.isEmpty) return FaceProminenceResult.noFace();
-
-      final imageArea = math.max(1, oriented.width * oriented.height);
-      var maxRatio = 0.0;
-      for (final face in faces) {
-        final box = face.boundingBox;
-        final ratio = (box.width * box.height) / imageArea;
-        if (ratio > maxRatio) maxRatio = ratio;
-      }
-
-      return FaceProminenceResult(
-        hasFace: true,
-        faceCount: faces.length,
-        faceRatio: maxRatio,
-      );
-    } catch (error) {
-      debugPrint('[PhotoModerationService] face prominence failed: $error');
-      return FaceProminenceResult.noFace();
-    } finally {
-      await detector?.close();
-      if (analysisFile != null && await analysisFile.exists()) {
-        await analysisFile.delete().catchError((_) => analysisFile!);
-      }
-    }
-  }
-
   static PhotoModerationResult evaluate(ScanResult result) {
     if (result.status != ScanStatus.completed) {
       return PhotoModerationResult(
@@ -431,30 +334,32 @@ class PhotoModerationService {
 
     final scores = NsfwScores.fromScan(result);
 
-    if (scores.nsfw >= hardNsfwRejectThreshold) {
+    if (scores.nsfw > explicitContentFlagThreshold) {
       return PhotoModerationResult(
-        decision: PhotoModerationDecision.unsafe,
+        decision: PhotoModerationDecision.flagged,
         confidence: scores.nsfw,
         category: 'explicit_content',
-        threshold: hardNsfwRejectThreshold,
+        threshold: explicitContentFlagThreshold,
       );
     }
 
-    if (scores.nsfw >= softNsfwReviewThreshold &&
-        scores.neutral < neutralPortraitPassThreshold) {
+    if (scores.neutral > neutralContentPassThreshold) {
       return PhotoModerationResult(
-        decision: PhotoModerationDecision.pendingReview,
-        confidence: scores.nsfw,
-        category: 'borderline_nsfw',
-        threshold: softNsfwReviewThreshold,
+        decision: PhotoModerationDecision.approved,
+        confidence: scores.neutral,
+        category: 'safe_image',
+        threshold: neutralContentPassThreshold,
       );
     }
 
+    // Product policy blocks only genuinely explicit content. A low neutral
+    // score is not evidence of nudity and commonly occurs with niqab, dark
+    // backgrounds, text, and traditional dress.
     return PhotoModerationResult(
-      decision: PhotoModerationDecision.safe,
+      decision: PhotoModerationDecision.approved,
       confidence: scores.neutral,
-      category: 'safe_portrait',
-      threshold: softNsfwReviewThreshold,
+      category: 'safe_image',
+      threshold: neutralContentPassThreshold,
     );
   }
 }
@@ -473,67 +378,10 @@ class NsfwScores {
     );
     return NsfwScores(
       neutral: result.confidenceFor(NsfwCategory.safe),
-      nsfw: math.max(
-        explicitSignal,
-        result.confidenceFor(NsfwCategory.suggestive),
-      ),
+      nsfw: explicitSignal,
     );
   }
 
   final double neutral;
   final double nsfw;
-}
-
-@visibleForTesting
-class FaceProminenceResult {
-  const FaceProminenceResult({
-    required this.hasFace,
-    required this.faceCount,
-    required this.faceRatio,
-  });
-
-  factory FaceProminenceResult.noFace() => const FaceProminenceResult(
-        hasFace: false,
-        faceCount: 0,
-        faceRatio: 0,
-      );
-
-  final bool hasFace;
-  final int faceCount;
-  final double faceRatio;
-}
-
-@visibleForTesting
-class ExplicitExposureAnalysis {
-  const ExplicitExposureAnalysis({
-    required this.bodyRatio,
-    required this.torsoRatio,
-    required this.pelvisRatio,
-  });
-
-  factory ExplicitExposureAnalysis.empty() => const ExplicitExposureAnalysis(
-        bodyRatio: 0,
-        torsoRatio: 0,
-        pelvisRatio: 0,
-      );
-
-  final double bodyRatio;
-  final double torsoRatio;
-  final double pelvisRatio;
-
-  bool get reject =>
-      bodyRatio >= PhotoModerationService._explicitBodySkinRatioThreshold &&
-      torsoRatio >= PhotoModerationService._explicitTorsoSkinRatioThreshold &&
-      pelvisRatio >= PhotoModerationService._explicitPelvisSkinRatioThreshold;
-
-  double get confidence => math
-      .min(
-        bodyRatio / PhotoModerationService._explicitBodySkinRatioThreshold,
-        math.min(
-          torsoRatio / PhotoModerationService._explicitTorsoSkinRatioThreshold,
-          pelvisRatio /
-              PhotoModerationService._explicitPelvisSkinRatioThreshold,
-        ),
-      )
-      .clamp(0, 1);
 }

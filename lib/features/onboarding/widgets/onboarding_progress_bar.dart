@@ -1,6 +1,6 @@
 // lib/features/onboarding/widgets/onboarding_progress_bar.dart
 // ============================================================
-// MITHAQ — Onboarding Progress Bar
+// SILARAH — Onboarding Progress Bar
 // Thin segmented bar + "Step X of Y" counter.
 // Filled segments animate in Champagne Gold.
 // ============================================================

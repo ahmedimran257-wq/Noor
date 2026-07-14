@@ -147,7 +147,7 @@ Deno.serve(async (req: Request) => {
     // Get the user's profile
     const { data: profile, error: profileError } = await adminClient
       .from("profiles")
-      .select("id")
+      .select("id, visibility")
       .eq("user_id", userId)
       .single();
 
@@ -216,30 +216,59 @@ Deno.serve(async (req: Request) => {
     }
 
     // Quota OK — activate the photo if it's still in pending_upload
-    const { error: updateError } = await adminClient
+    const isFlagged = moderationAction === "flagged";
+    const { data: validatedPhoto, error: updateError } = await adminClient
       .from("photos")
       .update({
         status: "active",
-        admin_approved: false,
-        nsfw_cleared: false,
+        admin_approved: !isFlagged,
+        nsfw_cleared: !isFlagged,
         nsfw_score: moderation.confidence,
         nsfw_category: moderation.category,
         nsfw_scanned_at: new Date().toISOString(),
         moderation_source: "nsfw_detect_on_device",
-        moderation_status: "pending",
+        moderation_status: isFlagged ? "pending" : "approved",
       })
       .eq("profile_id", profile.id)
       .eq("storage_path", storagePath)
-      .eq("status", "pending_upload");
+      .eq("status", "pending_upload")
+      .select("id, order_index")
+      .single();
 
     if (updateError) {
       console.warn(
         `[validate-photo-upload] Could not activate photo: ${updateError.message}`,
       );
-    } else {
+    } else if (validatedPhoto) {
       console.log(
         `[validate-photo-upload] ✅ Photo activated for user ${userId}: ${storagePath}`,
       );
+
+      if (isFlagged) {
+        const { error: queueError } = await adminClient
+          .from("photo_moderation_queue")
+          .upsert({
+            photo_id: validatedPhoto.id,
+            user_id: userId,
+            confidence: moderation.confidence,
+            category: moderation.category,
+            status: "pending_review",
+          }, { onConflict: "photo_id" });
+        if (queueError) throw queueError;
+      } else if (
+        validatedPhoto.order_index === 0 &&
+        profile.visibility !== "suspended" &&
+        profile.visibility !== "deactivated"
+      ) {
+        const { error: liveError } = await adminClient
+          .from("profiles")
+          .update({
+            visibility: "visible",
+            approved_at: new Date().toISOString(),
+          })
+          .eq("id", profile.id);
+        if (liveError) throw liveError;
+      }
 
       // Generate BlurHash
       try {
@@ -298,7 +327,7 @@ Deno.serve(async (req: Request) => {
     }
 
     return new Response(
-      JSON.stringify({ action: "pending_review", photo_count: count }),
+      JSON.stringify({ action: moderationAction, photo_count: count }),
       {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.mithaq.app" "\0"
-            VALUE "FileDescription", "Mithaq" "\0"
+            VALUE "CompanyName", "com.silarah.com" "\0"
+            VALUE "FileDescription", "Silarah" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "mithaq" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.mithaq.app. All rights reserved." "\0"
-            VALUE "OriginalFilename", "mithaq.exe" "\0"
-            VALUE "ProductName", "Mithaq" "\0"
+            VALUE "InternalName", "silarah" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 com.silarah.com. All rights reserved." "\0"
+            VALUE "OriginalFilename", "silarah.exe" "\0"
+            VALUE "ProductName", "Silarah" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

@@ -1,221 +1,188 @@
-# NOOR — Supabase Setup Guide
+# Silarah Supabase Backend
 
-## Prerequisites
+This directory contains Silarah database migrations, Edge Functions, and Supabase project configuration.
 
-- Supabase CLI installed: `npm install -g supabase`
-- A Supabase project created at [supabase.com](https://supabase.com) in the **Mumbai (ap-south-1)** region
-- Firebase project with Phone Auth enabled
-- RevenueCat account with Android app configured
+Use one Supabase project per environment:
 
----
+- Development
+- Staging
+- Production
 
-## Step 1: Enable Extensions in Supabase Dashboard
+Never share a production project with local development builds.
 
-Before running migrations, enable these extensions in the Supabase Dashboard under **Database → Extensions**:
+## Required Extensions
 
-| Extension       | Purpose                                     |
-|----------------|---------------------------------------------|
-| `postgis`       | Geospatial distance filtering               |
-| `pgcrypto`      | Guardian phone encryption                   |
-| `pg_cron`       | Scheduled jobs                              |
-| `pg_net`        | HTTP calls from cron to Edge Functions      |
-| `supabase_vault`| Secure encryption key storage               |
+Enable these in the Supabase dashboard before applying migrations:
 
----
+- `postgis`
+- `pgcrypto`
+- `pg_cron`
+- `pg_net`
+- `supabase_vault`
+- `pg_trgm`, when search migrations require it
 
-## Step 2: Link Your Project
+## Link Project
 
 ```bash
-supabase login
-supabase link --project-ref YOUR_PROJECT_REF
+npx supabase login
+npx supabase link --project-ref YOUR_PROJECT_REF
 ```
 
----
+## Apply Migrations
 
-## Step 3: Run Migrations in Order
-
-Run each migration file in the Supabase SQL editor or via CLI:
+Migrations are ordered by filename under `supabase/migrations/`.
 
 ```bash
-# Via CLI (recommended)
-supabase db push
-
-# Or run manually in SQL editor in this exact order:
-# 001_extensions.sql
-# 002_reference_tables.sql
-# 003_core_tables.sql
-# 004_activity_tables.sql
-# 005_moderation_tables.sql
-# 006_discovery_engine.sql
-# 007_rls_policies.sql
-# 008_cron_jobs.sql
-# 009_user_devices.sql
+npx supabase db push
 ```
 
----
-
-## Step 4: Seed Reference Data
+For review before applying:
 
 ```bash
-# Run in SQL editor or with psql:
-# seed/001_countries.sql
-# seed/002_income_brackets.sql
+npx supabase db push --dry-run
 ```
 
-After seeding countries, update the search_vector for cities when you add city data:
+Do not manually skip migration numbers. Later migrations depend on earlier tables, functions, indexes, and policies.
+
+## Project Settings
+
+Cron migrations use a database setting for the project URL instead of hardcoded project refs:
 
 ```sql
-UPDATE cities SET search_vector =
-  to_tsvector('simple', coalesce(name,'') || ' ' || coalesce(name_local,''));
+ALTER DATABASE postgres SET app.supabase_url = 'https://YOUR_PROJECT_REF.supabase.co';
 ```
 
----
+## Storage Buckets
 
-## Step 5: Create Storage Bucket
+Create private buckets:
 
-In Supabase Dashboard → Storage → New Bucket:
+- `profile-photos`
+- `kyc-documents`
 
-- Name: `profile-photos`
-- Public: **OFF** (all access via signed URLs only)
-- Allowed MIME types: `image/webp, image/jpeg`
-- Max file size: `1MB`
+All sensitive reads must go through access-controlled RPC or Edge Functions. Do not make these buckets public.
 
-Or via CLI:
-```bash
-supabase storage create profile-photos --public=false
-```
+## Supabase Secrets
 
----
-
-## Step 6: Configure Vault for Guardian Phone Encryption
-
-In Supabase Dashboard → Database → Vault:
-
-1. Click "Add a new secret"
-2. Name: `guardian_key_v1`
-3. Value: A strong 32-character random key (generate with `openssl rand -base64 32`)
-
-This key is used by `set_guardian_phone()` to AES-encrypt guardian contact numbers.
-
----
-
-## Step 7: Set Edge Function Environment Variables
+Set per environment:
 
 ```bash
-# Firebase
-supabase secrets set FIREBASE_PROJECT_ID=your_firebase_project_id
-supabase secrets set FIREBASE_SERVICE_ACCOUNT='{...your service account JSON...}'
-
-# RevenueCat
-supabase secrets set REVENUECAT_WEBHOOK_SECRET=your_webhook_secret
+npx supabase secrets set FIREBASE_PROJECT_ID=your_firebase_project_id
+npx supabase secrets set FIREBASE_SERVICE_ACCOUNT="{...service account json...}"
+npx supabase secrets set REVENUECAT_WEBHOOK_SECRET=your_revenuecat_webhook_secret
 ```
 
-The `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are automatically injected by Supabase.
+Supabase injects these into Edge Functions:
 
----
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
 
-## Step 8: Deploy Edge Functions
+Never place the service-role key in Flutter, browser JavaScript, or any `NEXT_PUBLIC_*` variable.
+
+## Edge Functions
+
+Deploy after migrations:
 
 ```bash
-# Deploy all functions
-supabase functions deploy firebase-auth-exchange
-supabase functions deploy revenuecat-webhook
-supabase functions deploy get-signed-url
-supabase functions deploy dispatch-notifications
-supabase functions deploy admin-purge-deleted-users
+npx supabase functions deploy admin-purge-deleted-users
+npx supabase functions deploy auth-before-user-created
+npx supabase functions deploy dispatch-notifications
+npx supabase functions deploy get-signed-url
+npx supabase functions deploy process-kyc
+npx supabase functions deploy revenuecat-webhook
+npx supabase functions deploy validate-photo-upload
+npx supabase functions deploy translate-message
 ```
 
----
+Verify deployment:
 
-## Step 9: Configure RevenueCat Webhook
+```bash
+npx supabase functions list
+```
 
-In the RevenueCat dashboard:
+## Auth
 
-1. Go to **Project → Integrations → Webhooks**
-2. Add endpoint: `https://YOUR_PROJECT_REF.supabase.co/functions/v1/revenuecat-webhook`
-3. Copy the webhook secret and set it via: `supabase secrets set REVENUECAT_WEBHOOK_SECRET=...`
+Silarah uses Supabase email OTP, not Firebase SMS OTP, for signup/sign-in.
 
----
+Dashboard requirements:
 
-## Step 10: Update pg_cron Service Role Key
+- Email template must show `{{ .Token }}` for the six-digit code.
+- Before User Created hook must call `auth-before-user-created`.
+- Disposable email blocking must exist server-side, not only in Flutter.
 
-In `migration/008_cron_jobs.sql`, the purge job uses a placeholder URL. Update it:
+Firebase remains for Crashlytics and FCM push delivery only.
+
+## Cron Jobs
+
+Cron jobs call internal Edge Functions through `pg_net` and an internal cron secret. Keep cron credentials in Vault/Supabase secrets, not in migrations.
+
+Check jobs:
 
 ```sql
--- In Supabase SQL Editor:
-SELECT cron.unschedule('trigger_purge_deleted_accounts');
-
-SELECT cron.schedule(
-  'trigger_purge_deleted_accounts',
-  '15 3 * * *',
-  $$
-    SELECT net.http_post(
-      url  := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/admin-purge-deleted-users',
-      body := '{}'::jsonb,
-      headers := jsonb_build_object(
-        'Authorization', 'Bearer YOUR_SERVICE_ROLE_KEY',
-        'Content-Type',  'application/json'
-      )
-    );
-  $$
-);
+SELECT jobname, schedule, active FROM cron.job ORDER BY jobname;
 ```
 
-⚠️ **Security Note**: Your service role key is stored in cron.job. Rotate it using Supabase Dashboard → Settings → API → Rotate Key if compromised.
+## Verification Queries
 
----
-
-## Step 11: Initialize the Discovery Pool
-
-After seeding data and running migrations:
+Tables:
 
 ```sql
--- Initial population of the materialized view
-REFRESH MATERIALIZED VIEW discovery_pool;
+SELECT tablename
+FROM pg_tables
+WHERE schemaname = 'public'
+ORDER BY tablename;
 ```
 
----
-
-## Step 12: Verify Everything
+RLS:
 
 ```sql
--- Check all tables exist
-SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename;
-
--- Check all triggers are active
-SELECT trigger_name, event_object_table FROM information_schema.triggers
-WHERE trigger_schema = 'public' ORDER BY event_object_table;
-
--- Check scheduled jobs
-SELECT jobname, schedule, active FROM cron.job;
-
--- Check RLS is enabled on all tables
-SELECT tablename, rowsecurity FROM pg_tables
-WHERE schemaname = 'public' AND rowsecurity = false;
--- ^ This should return 0 rows (all tables RLS-enabled)
+SELECT tablename, rowsecurity
+FROM pg_tables
+WHERE schemaname = 'public'
+  AND rowsecurity = false;
 ```
 
----
+This should return no user-facing tables.
 
-## Environment Variables Summary
+Triggers:
 
-| Variable | Where Set | Description |
-|---|---|---|
-| `FIREBASE_PROJECT_ID` | `supabase secrets` | Firebase project ID for token verification |
-| `FIREBASE_SERVICE_ACCOUNT` | `supabase secrets` | Firebase service account JSON for FCM push dispatch |
-| `REVENUECAT_WEBHOOK_SECRET` | `supabase secrets` | Authorization token for RevenueCat webhook |
-| `SUPABASE_URL` | Auto-injected | Your Supabase project URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | Auto-injected | Full bypass key (keep private) |
-| `SUPABASE_ANON_KEY` | Auto-injected | Public key for client-side auth |
+```sql
+SELECT trigger_name, event_object_table
+FROM information_schema.triggers
+WHERE trigger_schema = 'public'
+ORDER BY event_object_table, trigger_name;
+```
 
----
+Functions:
 
-## Architecture Notes
+```sql
+SELECT proname
+FROM pg_proc
+JOIN pg_namespace n ON n.oid = pg_proc.pronamespace
+WHERE n.nspname = 'public'
+ORDER BY proname;
+```
 
-- **Auth**: Firebase phone OTP → `firebase-auth-exchange` Edge Function → Supabase JWT
-- **Photos**: All uploads via `get-signed-url` Edge Function. No direct client-to-storage uploads.
-- **Subscriptions**: RevenueCat webhook → `revenuecat-webhook` Edge Function → `users` table
-- **Notifications**: Timezone-aware queue in `notifications` table + `dispatch-notifications` cron via FCM
-- **Account Deletion**: 30-day grace → `admin-purge-deleted-users` Edge Function (Zombie Auth proof)
-- **Discovery**: `discovery_pool` materialized view refreshed nightly at 02:30 UTC
-- **Chat**: Supabase Realtime Broadcast (low-latency) + async REST insert (persistence)
+## Release Checklist
+
+- `npx supabase db push --dry-run` reviewed
+- Migrations applied to staging before production
+- Edge Functions deployed and listed as active
+- Auth hook configured
+- OTP email template uses `{{ .Token }}`
+- RevenueCat webhook test passes
+- FCM dispatch function sends a test notification
+- Private photo signed URL function enforces access rules
+- Admin actions write audit logs
+- Backup/restore procedure tested outside production
+
+## Backup And Restore
+
+Before major backend changes:
+
+```bash
+npx supabase db dump --schema public --file backups/schema_YYYYMMDD.sql
+npx supabase db dump --data-only --schema public --file backups/data_YYYYMMDD.sql
+```
+
+Restore drills should use a temporary Supabase project, never production.

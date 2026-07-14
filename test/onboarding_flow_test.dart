@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mithaq/core/onboarding/onboarding_flow.dart';
+import 'package:silarah/core/onboarding/onboarding_flow.dart';
 
 void main() {
   group('OnboardingFlow legacy migration', () {

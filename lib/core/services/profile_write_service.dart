@@ -1,6 +1,6 @@
 // lib/core/services/profile_write_service.dart
 // ============================================================
-// MITHAQ — Profile Write Service
+// SILARAH — Profile Write Service
 // Maps OnboardingData fields → Supabase column names and
 // performs partial upserts per onboarding step.
 //
@@ -475,13 +475,29 @@ class ProfileWriteService {
 
   /// Persists deferred profile sections from Edit Profile after fast-start
   /// onboarding. This keeps "complete later" real, not just locally cached.
-  static Future<bool> saveFullProfile(OnboardingData data) async {
+  static Future<OnboardingData?> saveFullProfile(
+    OnboardingData data, {
+    bool locationChanged = false,
+  }) async {
     if (!_canWrite || _userId == null) {
-      return false;
+      return null;
     }
 
     try {
-      final fields = _fullProfileFields(data);
+      var effectiveData = data;
+      if (locationChanged) {
+        final resolvedLocation = await _ensureLocationRows(data);
+        if (resolvedLocation == null) return null;
+        effectiveData = resolvedLocation;
+      }
+
+      final fields = _fullProfileFields(effectiveData);
+      if (locationChanged) {
+        // Location is committed last through update_profile_location(), which
+        // updates users + profiles and resets the discovery point atomically.
+        fields.remove('city_id');
+        fields.remove('country_code');
+      }
       if (fields.isNotEmpty) {
         await SupabaseService.client.from('profiles').upsert({
           'user_id': _userId,
@@ -489,7 +505,7 @@ class ProfileWriteService {
         }, onConflict: 'user_id');
       }
 
-      final prefFields = _preferenceFields(data);
+      final prefFields = _preferenceFields(effectiveData);
       if (prefFields.isNotEmpty) {
         final profileRes = await SupabaseService.client
             .from('profiles')
@@ -503,9 +519,60 @@ class ProfileWriteService {
         }, onConflict: 'profile_id');
       }
 
-      return true;
+      if (locationChanged) {
+        final committedLocation = await _commitProfileLocation(effectiveData);
+        if (committedLocation == null) return null;
+        effectiveData = committedLocation;
+      }
+
+      return effectiveData;
     } catch (_) {
-      return false;
+      return null;
+    }
+  }
+
+  static Future<OnboardingData?> _commitProfileLocation(
+    OnboardingData data,
+  ) async {
+    final cityId = int.tryParse(data.cityId ?? '');
+    final countryCode = _normalCountryCode(data.countryCode);
+    if (cityId == null || countryCode == null) return null;
+
+    try {
+      final response = await SupabaseService.client.rpc(
+        'update_profile_location',
+        params: {
+          'p_city_id': cityId,
+          'p_country_code': countryCode,
+          'p_postal_code': _cleanText(data.postalCode),
+        },
+      );
+      if (response is! Map) return null;
+      final result = Map<String, dynamic>.from(response);
+      final committedCityId = _intFromRpc(result['city_id']);
+      final committedCountry = result['country_code']?.toString();
+      final committedCity = result['city_name']?.toString();
+      final lat = _toDouble(result['lat']);
+      final lng = _toDouble(result['lng']);
+      if (committedCityId == null ||
+          committedCountry == null ||
+          committedCity == null ||
+          lat == null ||
+          lng == null) {
+        return null;
+      }
+
+      return data.copyWith(
+        cityId: committedCityId.toString(),
+        cityName: committedCity,
+        stateName: result['state_name']?.toString(),
+        countryCode: committedCountry,
+        postalCode: result['postal_code']?.toString() ?? '',
+        lat: lat,
+        lng: lng,
+      );
+    } catch (_) {
+      return null;
     }
   }
 

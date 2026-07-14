@@ -1,11 +1,15 @@
 import { Activity, BadgeCheck, Flag, MessageCircle, TrendingUp, Users } from "lucide-react";
 import { LiveOperationsCockpit } from "@/components/live-operations-cockpit";
 import { requireAdmin } from "@/lib/auth";
-import { getDashboardMetrics, getLiveOperationsSnapshot } from "@/lib/operations";
+import { getDashboardMetrics, getLiveOperationsSnapshot, getOnlineUsers } from "@/lib/operations";
 
 export default async function DashboardPage() {
   const admin = await requireAdmin();
-  const [metrics, live] = await Promise.all([getDashboardMetrics(), getLiveOperationsSnapshot()]);
+  const [metrics, live, onlineUsers] = await Promise.all([
+    getDashboardMetrics(),
+    getLiveOperationsSnapshot(),
+    getOnlineUsers(),
+  ]);
   const cards = [
     ["Total profiles", metrics.totalUsers, Users], ["New today", metrics.signupsToday, Activity],
     ["Pending KYC", metrics.pendingKyc, BadgeCheck], ["Open reports", metrics.openReports, Flag],
@@ -17,11 +21,11 @@ export default async function DashboardPage() {
         <div>
           <p className="eyebrow">Operations dashboard</p>
           <h1>Assalamu alaikum, {admin.email.split("@")[0]}</h1>
-          <p className="muted">Live Mithaq operations overview across trust, safety, growth, and subscriptions.</p>
+          <p className="muted">Live Silarah operations overview across trust, safety, growth, and subscriptions.</p>
         </div>
         <div className="hero-badge"><TrendingUp size={18} /> Live data</div>
       </div>
-      <LiveOperationsCockpit initial={live} />
+      <LiveOperationsCockpit initial={live} initialOnlineUsers={onlineUsers} />
       <div className="metric-grid">
         {cards.map(([label, value, Icon]) => (
           <article key={label} className="metric-card elevated-panel">

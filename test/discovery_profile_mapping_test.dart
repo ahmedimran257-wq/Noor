@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mithaq/core/models/discovery_profile.dart';
-import 'package:mithaq/core/utils/mithaq_compute.dart';
+import 'package:silarah/core/models/discovery_profile.dart';
+import 'package:silarah/core/utils/silarah_compute.dart';
 
 void main() {
   test('maps real Supabase discovery rows without invented defaults', () {

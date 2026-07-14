@@ -1,6 +1,6 @@
 // lib/core/theme/app_colors.dart
 // ============================================================
-// MITHAQ Design DNA — Color Tokens
+// SILARAH Design DNA — Color Tokens
 // Source of truth for every color in the app.
 // NEVER hardcode hex values elsewhere — always reference this.
 // ============================================================

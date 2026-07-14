@@ -1,6 +1,6 @@
 // lib/features/onboarding/screens/email_verification_screen.dart
 // ============================================================
-// MITHAQ - Email Verification Screen
+// SILARAH - Email Verification Screen
 // Supabase email OTP with the existing six-box spring OTP UI.
 // ============================================================
 
@@ -12,13 +12,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/cubits/auth/auth_state.dart';
-import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/services/email_address_validation.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/buttons/mithaq_pressable.dart';
-import '../../../core/widgets/buttons/mithaq_primary_button.dart';
+import '../../../core/widgets/buttons/silarah_pressable.dart';
+import '../../../core/widgets/buttons/silarah_primary_button.dart';
+import '../../../core/widgets/loaders/silarah_shimmer.dart';
 import '../../../l10n/generated/app_localizations.dart';
 
 enum EmailAuthMode { signIn, signUp }
@@ -150,11 +150,6 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
           _emailFocus.unfocus();
           _startResendTimer();
         }
-        if (state is AuthAuthenticated) {
-          context.read<OnboardingCubit>().initialize(
-                startStep: state.onboardingStep,
-              );
-        }
         if (state is AuthError) {
           if (_mode == EmailAuthMode.signUp &&
               _isAccountExistsError(state.message)) {
@@ -214,7 +209,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                       _BackBtn(onTap: () => Navigator.of(context).pop()),
                       const Spacer(),
                       Text(
-                        'Mithaq',
+                        'Silarah',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -372,13 +367,13 @@ class _EmailViewState extends State<_EmailView>
   @override
   Widget build(BuildContext context) {
     final isSignIn = widget.mode == EmailAuthMode.signIn;
-    final title = isSignIn ? 'Welcome back' : 'Create your Mithaq profile';
+    final title = isSignIn ? 'Welcome back' : 'Create your Silarah profile';
     final subtitle = isSignIn
         ? 'Enter your email and we will send a 6-digit verification code.'
         : 'Use your real email. We will send a 6-digit verification code.';
     final ctaLabel = isSignIn ? 'Send sign-in code' : 'Send verification code';
     final switchLabel = isSignIn
-        ? 'New to Mithaq? Create profile'
+        ? 'New to Silarah? Create profile'
         : 'Already registered? Sign in';
     final nextMode = isSignIn ? EmailAuthMode.signUp : EmailAuthMode.signIn;
 
@@ -468,7 +463,7 @@ class _EmailViewState extends State<_EmailView>
                   builder: (context, state) => Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      MithaqPrimaryButton(
+                      SilarahPrimaryButton(
                         label: ctaLabel,
                         isLoading: state is AuthLoading,
                         enabled: widget.isComplete,
@@ -477,7 +472,7 @@ class _EmailViewState extends State<_EmailView>
                             : null,
                       ),
                       const SizedBox(height: 14),
-                      MithaqPressable(
+                      SilarahPressable(
                         onTap: () => widget.onModeChanged(nextMode),
                         enabled: state is! AuthLoading,
                         child: Padding(
@@ -608,7 +603,7 @@ class _AuthPivotNoticeCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(message, style: AppTypography.caption),
                   const SizedBox(height: 10),
-                  MithaqPressable(
+                  SilarahPressable(
                     onTap: onTap,
                     child: Text(
                       actionLabel,
@@ -835,18 +830,11 @@ class _OtpViewState extends State<_OtpView>
           BlocBuilder<AuthCubit, AuthState>(
             builder: (context, state) {
               if (state is! AuthLoading) return const SizedBox.shrink();
-              return const SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppColors.champagneGold,
-                ),
-              );
+              return const SilarahPulseLoader(size: 28);
             },
           ),
           const SizedBox(height: 20),
-          MithaqPressable(
+          SilarahPressable(
             onTap: widget.onResend,
             enabled: widget.onResend != null,
             child: Padding(
@@ -871,7 +859,7 @@ class _OtpViewState extends State<_OtpView>
             ),
           ),
           const SizedBox(height: 12),
-          MithaqPressable(
+          SilarahPressable(
             onTap: widget.onChangeEmail,
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
@@ -1267,7 +1255,7 @@ class _BackBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MithaqPressable(
+    return SilarahPressable(
       onTap: onTap,
       child: Container(
         width: 40,

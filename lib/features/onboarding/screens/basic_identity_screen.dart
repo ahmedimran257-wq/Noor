@@ -1,13 +1,13 @@
 // lib/features/onboarding/screens/basic_identity_screen.dart
 // ============================================================
-// MITHAQ - Basic Identity Screen (fast-start step 3)
+// SILARAH - Basic Identity Screen (fast-start step 3)
 // Saves required profile identity after gender is mirrored to public.users.
 // Location is read from Quick Location and shown as confirmed context.
 // ============================================================
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mithaq/l10n/generated/app_localizations.dart';
+import 'package:silarah/l10n/generated/app_localizations.dart';
 
 import '../../../core/data/country_data.dart';
 import '../../../core/services/country_context_service.dart';
@@ -21,7 +21,7 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/copy_engine.dart';
 import '../../../core/utils/validation_snackbar.dart';
-import '../../../core/widgets/inputs/mithaq_text_field.dart';
+import '../../../core/widgets/inputs/silarah_text_field.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
 
@@ -595,7 +595,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                 const Text('GUARDIAN CONTACT INFO',
                     style: AppTypography.sectionLabel),
                 const SizedBox(height: AppDimensions.space8),
-                MithaqTextField(
+                SilarahTextField(
                   controller: _guardianEmailCtrl,
                   label: 'Guardian email',
                   keyboardType: TextInputType.emailAddress,
@@ -604,7 +604,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                   readOnly: true,
                 ),
                 const SizedBox(height: AppDimensions.space12),
-                MithaqTextField(
+                SilarahTextField(
                   controller: _guardianPhoneCtrl,
                   label: 'Guardian phone (optional)',
                   keyboardType: TextInputType.phone,
@@ -619,7 +619,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: MithaqTextField(
+                    child: SilarahTextField(
                       controller: _firstNameCtrl,
                       label: _isGuardianMode
                           ? l10n.onboarding_label_firstName_guardian
@@ -631,7 +631,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                   ),
                   const SizedBox(width: AppDimensions.space12),
                   Expanded(
-                    child: MithaqTextField(
+                    child: SilarahTextField(
                       controller: _lastNameCtrl,
                       label: l10n.onboarding_label_lastName,
                       textCapitalization: TextCapitalization.words,

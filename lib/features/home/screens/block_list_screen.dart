@@ -1,10 +1,10 @@
 // lib/features/home/screens/block_list_screen.dart
 // ============================================================
-// MITHAQ — Block List Screen (Item 29)
+// SILARAH — Block List Screen (Item 29)
 //
 // Shows all blocked profiles from BlockReportCubit.
 // Each row: avatar, name, age, city, Unblock button.
-// Empty state: MithaqEmptyState with block icon.
+// Empty state: SilarahEmptyState with block icon.
 // Navigate from Settings → Safety → "Blocked Profiles".
 // ============================================================
 
@@ -16,10 +16,23 @@ import '../../../core/cubits/block_report/block_report_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/mithaq_empty_state.dart';
+import '../../../core/widgets/silarah_empty_state.dart';
 
-class BlockListScreen extends StatelessWidget {
+class BlockListScreen extends StatefulWidget {
   const BlockListScreen({super.key});
+
+  @override
+  State<BlockListScreen> createState() => _BlockListScreenState();
+}
+
+class _BlockListScreenState extends State<BlockListScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<BlockReportCubit>().loadData();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +44,7 @@ class BlockListScreen extends StatelessWidget {
           backgroundColor: AppColors.obsidianNight,
           appBar: _BlockListAppBar(count: blocked.length),
           body: blocked.isEmpty
-              ? const MithaqEmptyState(
+              ? const SilarahEmptyState(
                   icon: Icons.block_rounded,
                   title: 'No blocked profiles',
                   subtitle: 'Profiles you block will appear here.',

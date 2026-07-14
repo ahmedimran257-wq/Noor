@@ -1,6 +1,6 @@
 // lib/core/cubits/interests/interests_state.dart
 // ============================================================
-// MITHAQ — Interests State (Items 17 + 18)
+// SILARAH — Interests State (Items 17 + 18)
 //
 // Blueprint (Part 8, Interest Lifecycle State Machine):
 //   PENDING → ACCEPTED → MATCH_CREATED (chat unlocked)
@@ -95,7 +95,7 @@ class InterestsState extends Equatable {
     this.sent = const [],
     this.matches = const [],
     this.interestsSentToday = 0,
-    this.dailyLimit = 3, // Default: free male
+    this.dailyLimit = 0,
     this.lastResetDate,
     this.limitError = false,
   });

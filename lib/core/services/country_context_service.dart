@@ -1,6 +1,6 @@
 // lib/core/services/country_context_service.dart
 // ============================================================
-// MITHAQ — Country Context Service
+// SILARAH — Country Context Service
 //
 // Two optional, free data providers:
 //   1. Wikidata           → location-specific language enrichment
@@ -93,7 +93,7 @@ class CountryContextService {
   final _locationLanguageCache = <String, List<String>>{};
 
   static const _photonUserAgent =
-      'MithaqApp/1.0 (contact@noorapp.com; matchmaking app)';
+      'SilarahApp/1.0 (contact@silarah.com; matchmaking app)';
   static const _photonRegionOsmValues = {
     'state',
     'province',
@@ -241,7 +241,7 @@ LIMIT 12
         headers: {
           'Accept': 'application/sparql-results+json',
           'User-Agent':
-              'MithaqApp/1.0 (contact@mithaq.app; language resolution)',
+              'SilarahApp/1.0 (contact@silarah.com; language resolution)',
         },
       ).timeout(const Duration(seconds: 6));
 

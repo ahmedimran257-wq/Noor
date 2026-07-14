@@ -1,6 +1,6 @@
 // lib/core/cubits/discovery/discovery_feed_cubit.dart
 // ============================================================
-// MITHAQ — Discovery Feed Cubit (Step 6 — Filter-aware)
+// SILARAH — Discovery Feed Cubit (Step 6 — Filter-aware)
 //
 // Blueprint (Part 8):
 //   • Cursor-based pagination — no offset drift, no duplicates
@@ -22,7 +22,7 @@ import '../../services/profile_write_service.dart';
 import '../../services/location_service.dart';
 import '../../services/profile_photo_service.dart';
 import '../../models/onboarding_data.dart';
-import '../../utils/mithaq_compute.dart';
+import '../../utils/silarah_compute.dart';
 import 'discovery_feed_state.dart';
 
 class _ProfileViewQuota {
@@ -45,6 +45,9 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   String? _backendCursorId;
   bool _discoveryLocationPrepared = false;
   int _requestVersion = 0;
+  String? _readyViewerId;
+  DateTime? _viewerReadyAt;
+  static const _viewerReadinessFreshness = Duration(minutes: 10);
 
   // ── Public API ────────────────────────────────────────────
 
@@ -67,7 +70,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   }
 
   /// Initial page load — shows skeleton loaders first.
-  /// Also restores saved filter and browse counter from SharedPreferences.
+  /// Restores saved filters locally; browse quota always comes from Supabase.
   Future<void> loadInitial({bool force = false}) async {
     if (!force && state.status != FeedStatus.initial) return;
     final requestVersion = _nextRequestVersion();
@@ -105,10 +108,9 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       );
     }
 
-    final quota = await _loadServerViewQuota();
-    if (!_isCurrentRequest(requestVersion)) return;
-
     try {
+      final quota = await _loadServerViewQuota();
+      if (!_isCurrentRequest(requestVersion)) return;
       _resetCursors();
       final profiles =
           await _getPool(filter: filter, requestVersion: requestVersion);
@@ -142,8 +144,6 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       final profiles =
           await _getPool(filter: filter, requestVersion: requestVersion);
       if (!_isCurrentRequest(requestVersion)) return;
-      final quota = await _loadServerViewQuota();
-      if (!_isCurrentRequest(requestVersion)) return;
       final batch = _toFeedProfiles(
         profiles,
         offset: baseProfiles.length,
@@ -153,8 +153,6 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
           status: FeedStatus.loaded,
           profiles: [...baseProfiles, ...batch],
           hasMore: profiles.length == _batchSize,
-          profilesViewedToday: quota.viewsToday,
-          dailyLimit: quota.dailyLimit,
         ));
       }
     } catch (e) {
@@ -164,10 +162,23 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     }
   }
 
+  void clear() {
+    _nextRequestVersion();
+    _resetCursors();
+    _discoveryLocationPrepared = false;
+    _readyViewerId = null;
+    _viewerReadyAt = null;
+    if (!isClosed) emit(const DiscoveryFeedState());
+  }
+
   /// Apply new filters — resets the feed and reloads from cursor 0.
   Future<void> applyFilter(DiscoveryFilter filter) async {
     final requestVersion = _nextRequestVersion();
-    emit(state.copyWith(status: FeedStatus.loading, activeFilter: filter));
+    emit(state.copyWith(
+      status:
+          state.profiles.isEmpty ? FeedStatus.loading : FeedStatus.refreshing,
+      activeFilter: filter,
+    ));
 
     // Persist the filter
     await _saveFilterToPrefs(filter);
@@ -178,16 +189,12 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       final profiles =
           await _getPool(filter: filter, requestVersion: requestVersion);
       if (!_isCurrentRequest(requestVersion)) return;
-      final quota = await _loadServerViewQuota();
-      if (!_isCurrentRequest(requestVersion)) return;
       final batch = _toFeedProfiles(profiles, offset: 0);
       if (!isClosed) {
         emit(state.copyWith(
           status: batch.isEmpty ? FeedStatus.empty : FeedStatus.loaded,
           profiles: batch,
           hasMore: profiles.length == _batchSize,
-          profilesViewedToday: quota.viewsToday,
-          dailyLimit: quota.dailyLimit,
         ));
       }
     } catch (e) {
@@ -199,11 +206,11 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   Future<void> clearFilters() => applyFilter(DiscoveryFilter.empty);
 
   Future<bool> recordProfileView(String viewedUserId) async {
-    if (!SupabaseService.isInitialized ||
-        SupabaseService.currentUserId == null ||
-        viewedUserId.isEmpty) {
+    if (!SupabaseService.isInitialized || viewedUserId.isEmpty) {
       return false;
     }
+    final currentUserId = await SupabaseService.currentUserIdOrRefresh();
+    if (currentUserId == null) return false;
 
     try {
       final response = await SupabaseService.client.rpc(
@@ -230,25 +237,34 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   }
 
   Future<_ProfileViewQuota> _loadServerViewQuota() async {
-    if (!SupabaseService.isInitialized ||
-        SupabaseService.currentUserId == null) {
-      return const _ProfileViewQuota(viewsToday: 0, dailyLimit: 15);
+    if (!SupabaseService.isInitialized) {
+      throw StateError('Discovery quota requires an authenticated session.');
+    }
+    final currentUserId = await SupabaseService.currentUserIdOrRefresh();
+    if (currentUserId == null) {
+      throw StateError('Discovery quota requires an authenticated session.');
     }
 
     try {
       final response =
           await SupabaseService.client.rpc('get_profile_view_quota');
       final rows = response as List<dynamic>;
-      final row = rows.isNotEmpty
-          ? Map<String, dynamic>.from(rows.first as Map)
-          : <String, dynamic>{};
+      if (rows.isEmpty) {
+        throw StateError('Profile view quota response was empty.');
+      }
+      final row = Map<String, dynamic>.from(rows.first as Map);
+      final viewsToday = (row['views_today'] as num?)?.toInt();
+      final dailyLimit = (row['daily_limit'] as num?)?.toInt();
+      if (viewsToday == null || dailyLimit == null) {
+        throw StateError('Profile view quota response was incomplete.');
+      }
       return _ProfileViewQuota(
-        viewsToday: (row['views_today'] as num?)?.toInt() ?? 0,
-        dailyLimit: (row['daily_limit'] as num?)?.toInt() ?? 15,
+        viewsToday: viewsToday,
+        dailyLimit: dailyLimit,
       );
     } catch (e) {
       debugPrint('DiscoveryFeedCubit: failed to load profile view quota: $e');
-      return const _ProfileViewQuota(viewsToday: 0, dailyLimit: 15);
+      throw StateError('Unable to verify your daily discovery limit.');
     }
   }
 
@@ -368,6 +384,12 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
 
   Map<String, dynamic> _mapFilterToJson(DiscoveryFilter f) {
     final maxKm = f.effectiveMaxDistanceKm;
+    final genderPref = _enumToken(f.genderPref);
+    final sect = _enumToken(f.sect);
+    final deenLevel = _enumToken(f.deenLevel);
+    final familyType = _enumToken(f.familyType);
+    final maritalStatus = _maritalStatusToken(f.maritalStatus);
+    final hasChildren = _enumToken(f.hasChildren);
 
     return {
       if (maxKm != null) 'max_distance_km': maxKm,
@@ -377,16 +399,12 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       if (f.ageMin != null) 'age_min': f.ageMin,
       if (f.ageMax != null) 'age_max': f.ageMax,
       'active_recently': f.activeRecentlyOnly,
-      if (f.sect != null && f.sect != 'Any') 'sect': f.sect!.toLowerCase(),
-      if (f.deenLevel != null && f.deenLevel != 'Any')
-        'deen_level': f.deenLevel!.toLowerCase(),
+      if (genderPref != null) 'gender_pref': genderPref,
+      if (sect != null) 'sect': sect,
+      if (deenLevel != null) 'deen_level': deenLevel,
       'verified_only': f.verifiedOnly,
-      if (f.familyType != null && f.familyType != 'Any')
-        'family_type': f.familyType!.toLowerCase(),
-      if (f.maritalStatus != null && f.maritalStatus != 'Any')
-        'marital_status': f.maritalStatus == 'Never Married'
-            ? 'no'
-            : f.maritalStatus!.toLowerCase(),
+      if (familyType != null) 'family_type': familyType,
+      if (maritalStatus != null) 'marital_status': maritalStatus,
       'open_to_divorced': f.openToDivorced,
       if (_educationRank(f.educationMin) != null)
         'education_min': _educationRank(f.educationMin),
@@ -401,8 +419,22 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         'marriage_timeline': f.marriageTimeline,
       if (f.willingToRelocate != null && f.willingToRelocate != 'Any')
         'willing_to_relocate': f.willingToRelocate,
-      if (f.hasChildren != null) 'has_children': f.hasChildren!.toLowerCase(),
+      if (hasChildren != null) 'has_children': hasChildren,
     };
+  }
+
+  String? _enumToken(String? value) {
+    final raw = value?.trim();
+    if (raw == null || raw.isEmpty || raw.toLowerCase() == 'any') {
+      return null;
+    }
+    return raw.toLowerCase().replaceAll(RegExp(r'[\s-]+'), '_');
+  }
+
+  String? _maritalStatusToken(String? value) {
+    final token = _enumToken(value);
+    if (token == null) return null;
+    return token == 'never_married' ? 'no' : token;
   }
 
   /// Fetches real candidates and their stated compatibility preferences.
@@ -413,12 +445,15 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     if (!SupabaseService.isInitialized) {
       throw StateError('Discovery requires a Supabase connection.');
     }
-    final currentUserId = SupabaseService.currentUserId;
+    final currentUserId = await SupabaseService.currentUserIdOrRefresh();
     if (currentUserId == null) {
       throw StateError('Please sign in to view discovery profiles.');
     }
 
     try {
+      await _assertViewerDiscoveryReady(currentUserId);
+      if (!_isCurrentRequest(requestVersion)) return const [];
+
       final payload =
           filter != null ? _mapFilterToJson(filter) : <String, dynamic>{};
       if (filter?.effectiveMaxDistanceKm != null &&
@@ -453,6 +488,59 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       debugPrint('DiscoveryFeedCubit: Supabase discovery failed: $e');
       rethrow;
     }
+  }
+
+  Future<void> _assertViewerDiscoveryReady(String currentUserId) async {
+    final readyAt = _viewerReadyAt;
+    if (_readyViewerId == currentUserId &&
+        readyAt != null &&
+        DateTime.now().difference(readyAt) < _viewerReadinessFreshness) {
+      return;
+    }
+    final profile = await SupabaseService.client
+        .from('profiles')
+        .select('id, visibility, onboarding_completed, approved_at')
+        .eq('user_id', currentUserId)
+        .maybeSingle();
+
+    if (profile == null) {
+      throw StateError('Complete your profile before browsing discovery.');
+    }
+
+    if (profile['visibility'] != 'visible') {
+      throw StateError('Your profile must be visible before discovery.');
+    }
+
+    if (profile['onboarding_completed'] != true) {
+      throw StateError('Complete your profile before browsing discovery.');
+    }
+
+    if (profile['approved_at'] == null) {
+      throw StateError(
+        'Your primary photo must pass the safety scan before discovery.',
+      );
+    }
+
+    final profileId = profile['id'] as String?;
+    if (profileId == null || profileId.isEmpty) {
+      throw StateError('Complete your profile before browsing discovery.');
+    }
+
+    final photos = await SupabaseService.client
+        .from('photos')
+        .select('id')
+        .eq('profile_id', profileId)
+        .eq('admin_approved', true)
+        .eq('nsfw_cleared', true)
+        .limit(1);
+
+    if ((photos as List<dynamic>).isEmpty) {
+      throw StateError(
+        'Add an approved profile photo before browsing discovery.',
+      );
+    }
+    _readyViewerId = currentUserId;
+    _viewerReadyAt = DateTime.now();
   }
 
   Future<void> _attachCompatibilityPreferences(
@@ -504,6 +592,10 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         return 4;
       case 'PhD':
         return 5;
+      case 'Professional Degree':
+        return 6;
+      case 'Other':
+        return 7;
       default:
         return null;
     }
@@ -511,27 +603,34 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
 
   Future<List<DiscoveryProfile>> _signPhotoUrls(
       List<DiscoveryProfile> profiles) async {
-    final signed = <DiscoveryProfile>[];
-    for (final profile in profiles) {
-      if (profile.photoCount <= 0) {
-        signed.add(profile);
-        continue;
-      }
+    final publicPhotoOwners = profiles
+        .where((profile) =>
+            profile.photoCount > 0 &&
+            !profile.isPhotoPrivate &&
+            profile.photoUrl != null &&
+            profile.photoUrl!.isNotEmpty)
+        .map((profile) => profile.id)
+        .toList(growable: false);
 
+    Map<String, String> signedUrls = const {};
+    if (publicPhotoOwners.isNotEmpty) {
       try {
-        final url = await ProfilePhotoService.instance.getAuthorizedPhotoUrl(
-          ownerUserId: profile.id,
-        );
-        signed.add(
-          url == null || url.isEmpty
-              ? profile.copyWith(clearPhotoUrl: true)
-              : profile.copyWith(photoUrl: url),
+        signedUrls = await ProfilePhotoService.instance.getAuthorizedPhotoUrls(
+          ownerUserIds: publicPhotoOwners,
         );
       } catch (e) {
-        debugPrint('DiscoveryFeedCubit: failed to sign photo URL: $e');
-        signed.add(profile.copyWith(clearPhotoUrl: true));
+        debugPrint('DiscoveryFeedCubit: failed to batch sign photo URLs: $e');
       }
     }
-    return signed;
+
+    return profiles.map((profile) {
+      if (profile.photoCount <= 0 || profile.isPhotoPrivate) {
+        return profile.copyWith(clearPhotoUrl: true);
+      }
+      final signedUrl = signedUrls[profile.id];
+      return signedUrl == null || signedUrl.isEmpty
+          ? profile.copyWith(clearPhotoUrl: true)
+          : profile.copyWith(photoUrl: signedUrl);
+    }).toList(growable: false);
   }
 }

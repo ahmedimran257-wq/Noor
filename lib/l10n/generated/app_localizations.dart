@@ -6,7 +6,15 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_ar.dart';
+import 'app_localizations_bn.dart';
+import 'app_localizations_de.dart';
 import 'app_localizations_en.dart';
+import 'app_localizations_fr.dart';
+import 'app_localizations_hi.dart';
+import 'app_localizations_id.dart';
+import 'app_localizations_ms.dart';
+import 'app_localizations_tr.dart';
+import 'app_localizations_ur.dart';
 
 // ignore_for_file: type=lint
 
@@ -95,7 +103,15 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('ar'),
-    Locale('en')
+    Locale('bn'),
+    Locale('de'),
+    Locale('en'),
+    Locale('fr'),
+    Locale('hi'),
+    Locale('id'),
+    Locale('ms'),
+    Locale('tr'),
+    Locale('ur')
   ];
 
   /// No description provided for @about_button_later.
@@ -167,7 +183,7 @@ abstract class AppLocalizations {
   /// App name
   ///
   /// In en, this message translates to:
-  /// **'Mithaq'**
+  /// **'Silarah'**
   String get appName;
 
   /// Brand tagline on splash screen
@@ -485,7 +501,7 @@ abstract class AppLocalizations {
   /// No description provided for @chat_label_subscribeToMessage.
   ///
   /// In en, this message translates to:
-  /// **'Subscribe to unlock messaging. Women always message free on Mithaq.'**
+  /// **'Subscribe to unlock messaging. Women always message free on Silarah.'**
   String get chat_label_subscribeToMessage;
 
   /// No description provided for @chat_matchClosed_banner.
@@ -695,7 +711,7 @@ abstract class AppLocalizations {
   /// No description provided for @discovery_header_title.
   ///
   /// In en, this message translates to:
-  /// **'Mithaq'**
+  /// **'Silarah'**
   String get discovery_header_title;
 
   /// No description provided for @discovery_label_interestSent.
@@ -1997,19 +2013,19 @@ abstract class AppLocalizations {
   /// No description provided for @onboarding_error_under18.
   ///
   /// In en, this message translates to:
-  /// **'Mithaq is for those 18 and older. We\'ve made this requirement to protect everyone in our community.'**
+  /// **'Silarah is for those 18 and older. We\'ve made this requirement to protect everyone in our community.'**
   String get onboarding_error_under18;
 
   /// No description provided for @onboarding_error_under18_guardian.
   ///
   /// In en, this message translates to:
-  /// **'Your {relation} must be 18 or older to use Mithaq.'**
+  /// **'Your {relation} must be 18 or older to use Silarah.'**
   String onboarding_error_under18_guardian(String relation);
 
   /// No description provided for @onboarding_error_under18_self.
   ///
   /// In en, this message translates to:
-  /// **'You must be 18 or older to use Mithaq. We look forward to welcoming you then.'**
+  /// **'You must be 18 or older to use Silarah. We look forward to welcoming you then.'**
   String get onboarding_error_under18_self;
 
   /// No description provided for @onboarding_habit_frequently.
@@ -2915,7 +2931,7 @@ abstract class AppLocalizations {
   /// No description provided for @photo_banner_text.
   ///
   /// In en, this message translates to:
-  /// **'Upload a clear photo showing your face. Photos with explicit content are not permitted.'**
+  /// **'Photos with explicit content are not permitted'**
   String get photo_banner_text;
 
   /// No description provided for @photo_error_no_face_detected.
@@ -2957,7 +2973,7 @@ abstract class AppLocalizations {
   /// No description provided for @photo_label_selfie.
   ///
   /// In en, this message translates to:
-  /// **'Verification selfie'**
+  /// **'Photo 4'**
   String get photo_label_selfie;
 
   /// No description provided for @photo_no_face.
@@ -3527,7 +3543,7 @@ abstract class AppLocalizations {
   /// No description provided for @settings_brand_credit.
   ///
   /// In en, this message translates to:
-  /// **'Mithaq (ميثاق) · For the sake of Allah'**
+  /// **'Silarah (سيلارا) · For the sake of Allah'**
   String get settings_brand_credit;
 
   /// No description provided for @settings_button_deleteAccount.
@@ -3659,13 +3675,13 @@ abstract class AppLocalizations {
   /// No description provided for @settings_label_rate.
   ///
   /// In en, this message translates to:
-  /// **'Rate Mithaq'**
+  /// **'Rate Silarah'**
   String get settings_label_rate;
 
   /// No description provided for @settings_label_rate_snackbar.
   ///
   /// In en, this message translates to:
-  /// **'Rating will be available once Mithaq launches on the app store.'**
+  /// **'Rating will be available once Silarah launches on the app store.'**
   String get settings_label_rate_snackbar;
 
   /// No description provided for @settings_label_reports.
@@ -3751,12 +3767,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New Messages'**
   String get settings_notify_newMessage;
-
-  /// No description provided for @settings_notify_profileApproved.
-  ///
-  /// In en, this message translates to:
-  /// **'Profile Approved'**
-  String get settings_notify_profileApproved;
 
   /// No description provided for @settings_notify_quietHours.
   ///
@@ -4043,7 +4053,7 @@ abstract class AppLocalizations {
   /// No description provided for @splash_referral_hint.
   ///
   /// In en, this message translates to:
-  /// **'e.g. MITHAQXX'**
+  /// **'e.g. SILARAHXX'**
   String get splash_referral_hint;
 
   /// No description provided for @splash_referral_invalid.
@@ -4067,7 +4077,7 @@ abstract class AppLocalizations {
   /// No description provided for @splash_referral_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'If a friend invited you to Mithaq, enter their 6-character referral code below.'**
+  /// **'If a friend invited you to Silarah, enter their 6-character referral code below.'**
   String get splash_referral_subtitle;
 
   /// No description provided for @splash_referral_title.
@@ -4097,8 +4107,74 @@ abstract class AppLocalizations {
   /// No description provided for @subscription_title.
   ///
   /// In en, this message translates to:
-  /// **'Unlock Mithaq'**
+  /// **'Unlock Silarah'**
   String get subscription_title;
+
+  /// No description provided for @startup_connectivity_preparing_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing your private space'**
+  String get startup_connectivity_preparing_title;
+
+  /// No description provided for @startup_connectivity_preparing_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Establishing a secure connection to Silarah.'**
+  String get startup_connectivity_preparing_body;
+
+  /// No description provided for @startup_connectivity_offline_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection unavailable'**
+  String get startup_connectivity_offline_title;
+
+  /// No description provided for @startup_connectivity_offline_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Your place in Silarah is secure. We will continue the moment the network returns.'**
+  String get startup_connectivity_offline_body;
+
+  /// No description provided for @startup_connectivity_verifying.
+  ///
+  /// In en, this message translates to:
+  /// **'VERIFYING CONNECTION'**
+  String get startup_connectivity_verifying;
+
+  /// No description provided for @startup_connectivity_waiting.
+  ///
+  /// In en, this message translates to:
+  /// **'SECURE CONNECTION · WAITING'**
+  String get startup_connectivity_waiting;
+
+  /// No description provided for @startup_connectivity_still_waiting.
+  ///
+  /// In en, this message translates to:
+  /// **'STILL WAITING'**
+  String get startup_connectivity_still_waiting;
+
+  /// No description provided for @startup_connectivity_check.
+  ///
+  /// In en, this message translates to:
+  /// **'Check connection'**
+  String get startup_connectivity_check;
+
+  /// No description provided for @startup_connectivity_checking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking securely'**
+  String get startup_connectivity_checking;
+
+  /// No description provided for @startup_connectivity_auto.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnection is automatic'**
+  String get startup_connectivity_auto;
+
+  /// No description provided for @startup_connectivity_protected.
+  ///
+  /// In en, this message translates to:
+  /// **'Protected connection'**
+  String get startup_connectivity_protected;
 }
 
 class _AppLocalizationsDelegate
@@ -4111,8 +4187,18 @@ class _AppLocalizationsDelegate
   }
 
   @override
-  bool isSupported(Locale locale) =>
-      <String>['ar', 'en'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>[
+        'ar',
+        'bn',
+        'de',
+        'en',
+        'fr',
+        'hi',
+        'id',
+        'ms',
+        'tr',
+        'ur'
+      ].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -4123,8 +4209,24 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   switch (locale.languageCode) {
     case 'ar':
       return AppLocalizationsAr();
+    case 'bn':
+      return AppLocalizationsBn();
+    case 'de':
+      return AppLocalizationsDe();
     case 'en':
       return AppLocalizationsEn();
+    case 'fr':
+      return AppLocalizationsFr();
+    case 'hi':
+      return AppLocalizationsHi();
+    case 'id':
+      return AppLocalizationsId();
+    case 'ms':
+      return AppLocalizationsMs();
+    case 'tr':
+      return AppLocalizationsTr();
+    case 'ur':
+      return AppLocalizationsUr();
   }
 
   throw FlutterError(

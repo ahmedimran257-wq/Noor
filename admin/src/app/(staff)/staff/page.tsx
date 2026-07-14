@@ -14,7 +14,7 @@ export default async function StaffPage() {
       <form action={inviteStaffMember} className="admin-form panel-form elevated-panel">
         <h2><ShieldPlus size={18} /> Invite staff member</h2>
         <div className="form-grid">
-          <label>Email<input name="email" type="email" required placeholder="admin@mithaq.app" /></label>
+          <label>Email<input name="email" type="email" required placeholder="admin@silarah.com" /></label>
           <label>Role
             <select name="role" defaultValue="support">
               <option value="support">Support</option>

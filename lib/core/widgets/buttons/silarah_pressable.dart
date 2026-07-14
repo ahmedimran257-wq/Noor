@@ -1,0 +1,102 @@
+// lib/core/widgets/buttons/silarah_pressable.dart
+// ============================================================
+// Internal base widget for tactile press animation.
+// "Button Press: Scale 1.0 → 0.96 → 1.0 with bouncy overshoot.
+//  Feels like a physical button. No ripple effect."
+// All SILARAH buttons wrap this.
+// ============================================================
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../../theme/app_dimensions.dart';
+
+class SilarahPressable extends StatefulWidget {
+  const SilarahPressable({
+    super.key,
+    required this.child,
+    required this.onTap,
+    this.onLongPress,
+    this.enabled = true,
+    this.haptic = true,
+    this.pressedScale = 0.985,
+    this.semanticLabel,
+  });
+
+  final Widget child;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+  final bool enabled;
+  final bool haptic;
+  final double pressedScale;
+  final String? semanticLabel;
+
+  @override
+  State<SilarahPressable> createState() => _SilarahPressableState();
+}
+
+class _SilarahPressableState extends State<SilarahPressable> {
+  bool _pressed = false;
+  bool _hovered = false;
+
+  void _handleTapDown(TapDownDetails _) {
+    if (!widget.enabled) return;
+    setState(() => _pressed = true);
+  }
+
+  void _handleTapUp(TapUpDetails _) {
+    if (!widget.enabled) return;
+    setState(() => _pressed = false);
+  }
+
+  void _handleTapCancel() {
+    if (!widget.enabled) return;
+    setState(() => _pressed = false);
+  }
+
+  void _handleTap() {
+    if (!widget.enabled) return;
+    if (widget.haptic) HapticFeedback.selectionClick();
+    widget.onTap?.call();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      enabled: widget.enabled,
+      label: widget.semanticLabel,
+      child: MouseRegion(
+        cursor: widget.enabled
+            ? SystemMouseCursors.click
+            : SystemMouseCursors.basic,
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: GestureDetector(
+          onTapDown: widget.enabled ? _handleTapDown : null,
+          onTapUp: widget.enabled ? _handleTapUp : null,
+          onTapCancel: widget.enabled ? _handleTapCancel : null,
+          onTap: widget.enabled ? _handleTap : null,
+          onLongPress: widget.enabled ? widget.onLongPress : null,
+          behavior: HitTestBehavior.opaque,
+          child: AnimatedScale(
+            scale: _pressed ? widget.pressedScale : 1,
+            duration: _pressed
+                ? AppDimensions.durationButtonPress
+                : AppDimensions.durationTransition,
+            curve: _pressed ? Curves.easeOutCubic : Curves.easeOutQuart,
+            child: AnimatedSlide(
+              duration: AppDimensions.durationTransition,
+              curve: Curves.easeOutCubic,
+              offset: Offset(0, _hovered && widget.enabled ? -0.015 : 0),
+              child: AnimatedOpacity(
+                duration: AppDimensions.durationButtonPress,
+                opacity: !widget.enabled ? 0.5 : (_pressed ? 0.9 : 1),
+                child: widget.child,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

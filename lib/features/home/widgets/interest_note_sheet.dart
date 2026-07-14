@@ -1,6 +1,6 @@
 // lib/features/home/widgets/interest_note_sheet.dart
 // ============================================================
-// MITHAQ — Interest Note Sheet (D1)
+// SILARAH — Interest Note Sheet (D1)
 //
 // Shows a compact bottom sheet where the user can optionally
 // attach a personal note to their interest before sending.
@@ -22,8 +22,8 @@ Future<String?> showInterestNoteSheet(
   required String firstName,
 }) {
   return showModalBottomSheet<String>(
-    context:            context,
-    backgroundColor:    Colors.transparent,
+    context: context,
+    backgroundColor: Colors.transparent,
     isScrollControlled: true,
     builder: (_) => _InterestNoteSheet(firstName: firstName),
   );
@@ -58,20 +58,22 @@ class _InterestNoteSheetState extends State<_InterestNoteSheet> {
   Widget build(BuildContext context) {
     return SpringKeyboardPadding(
       child: Container(
-        margin:  const EdgeInsets.all(AppDimensions.space16),
+        margin: const EdgeInsets.all(AppDimensions.space16),
         padding: const EdgeInsets.all(AppDimensions.space24),
         decoration: BoxDecoration(
-          color:        AppColors.surfaceElevated,
+          color: AppColors.surfaceElevated,
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-          border:       Border.all(color: AppColors.cardBorder),
+          border: Border.all(color: AppColors.cardBorder),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Handle
-            Center(child: Container(
-              width: 40, height: 4,
+            Center(
+                child: Container(
+              width: 40,
+              height: 4,
               decoration: BoxDecoration(
                 color: AppColors.cardBorder,
                 borderRadius: BorderRadius.circular(2),
@@ -96,7 +98,7 @@ class _InterestNoteSheetState extends State<_InterestNoteSheet> {
             // Text input
             Container(
               decoration: BoxDecoration(
-                color:        AppColors.surfaceGlass,
+                color: AppColors.surfaceGlass,
                 borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
                 border: Border.all(
                   color: _error.isNotEmpty
@@ -105,16 +107,16 @@ class _InterestNoteSheetState extends State<_InterestNoteSheet> {
                 ),
               ),
               child: TextField(
-                controller:    _ctrl,
-                onChanged:     _onChanged,
-                maxLines:      3,
-                maxLength:     _maxLength,
-                style:         AppTypography.body,
+                controller: _ctrl,
+                onChanged: _onChanged,
+                maxLines: 3,
+                maxLength: _maxLength,
+                style: AppTypography.body,
                 textInputAction: TextInputAction.done,
                 decoration: InputDecoration(
-                  hintText:  'Assalamu Alaikum! I was really impressed by…',
+                  hintText: 'Assalamu Alaikum! I was really impressed by…',
                   hintStyle: AppTypography.inputLabel,
-                  border:    InputBorder.none,
+                  border: InputBorder.none,
                   counterStyle: AppTypography.caption.copyWith(fontSize: 10),
                   contentPadding: const EdgeInsets.all(AppDimensions.space14),
                 ),
@@ -122,8 +124,10 @@ class _InterestNoteSheetState extends State<_InterestNoteSheet> {
             ),
             if (_error.isNotEmpty) ...[
               const SizedBox(height: AppDimensions.space6),
-              Text(_error,
-                style: AppTypography.caption.copyWith(color: AppColors.softCoral),
+              Text(
+                _error,
+                style:
+                    AppTypography.caption.copyWith(color: AppColors.softCoral),
               ),
             ],
 
@@ -131,7 +135,7 @@ class _InterestNoteSheetState extends State<_InterestNoteSheet> {
 
             // Send with note
             SizedBox(
-              width:  double.infinity,
+              width: double.infinity,
               height: AppDimensions.buttonHeight,
               child: ElevatedButton(
                 onPressed: _error.isEmpty && _ctrl.text.trim().isNotEmpty
@@ -141,10 +145,11 @@ class _InterestNoteSheetState extends State<_InterestNoteSheet> {
                       }
                     : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor:         AppColors.champagneGold,
-                  disabledBackgroundColor:  AppColors.surfaceGlassHover,
+                  backgroundColor: AppColors.champagneGold,
+                  disabledBackgroundColor: AppColors.surfaceGlassHover,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                    borderRadius:
+                        BorderRadius.circular(AppDimensions.radiusButton),
                   ),
                   elevation: 0,
                 ),
@@ -162,7 +167,7 @@ class _InterestNoteSheetState extends State<_InterestNoteSheet> {
 
             // Send without note
             SizedBox(
-              width:  double.infinity,
+              width: double.infinity,
               height: AppDimensions.buttonHeightSmall,
               child: OutlinedButton(
                 onPressed: () {
@@ -170,14 +175,16 @@ class _InterestNoteSheetState extends State<_InterestNoteSheet> {
                   Navigator.pop(context, ''); // empty = no note
                 },
                 style: OutlinedButton.styleFrom(
-                  side:  const BorderSide(color: AppColors.cardBorder),
+                  side: const BorderSide(color: AppColors.cardBorder),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                    borderRadius:
+                        BorderRadius.circular(AppDimensions.radiusButton),
                   ),
                 ),
                 child: Text(
                   'Send without note',
-                  style: AppTypography.button.copyWith(color: AppColors.slateMist),
+                  style:
+                      AppTypography.button.copyWith(color: AppColors.slateMist),
                 ),
               ),
             ),

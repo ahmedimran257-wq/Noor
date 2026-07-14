@@ -1,6 +1,6 @@
 // lib/core/theme/app_curves.dart
 // ============================================================
-// MITHAQ Design DNA — Motion Manifesto
+// SILARAH Design DNA — Motion Manifesto
 // "No linear animations. Everything must have weight and momentum."
 // ============================================================
 

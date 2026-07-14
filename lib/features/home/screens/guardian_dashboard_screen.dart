@@ -1,6 +1,6 @@
 // lib/features/home/screens/guardian_dashboard_screen.dart
 // ============================================================
-// MITHAQ — Guardian (Wali) Dashboard Screen
+// SILARAH — Guardian (Wali) Dashboard Screen
 //
 // Full in-app chat mirror for guardians. This is the guardian's
 // primary interface when they log in. Shows all active
@@ -10,11 +10,12 @@
 //   • Match approval controls (active mode)
 //   • Read-only or interactive chat access
 //
-// This is MITHAQ's biggest competitive moat against Muzz/Salams.
+// This is SILARAH's biggest competitive moat against Muzz/Salams.
 // ============================================================
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../core/services/supabase_service.dart';
 import '../../../core/services/wali_mode_service.dart';
@@ -26,7 +27,8 @@ class GuardianDashboardScreen extends StatefulWidget {
   const GuardianDashboardScreen({super.key});
 
   @override
-  State<GuardianDashboardScreen> createState() => _GuardianDashboardScreenState();
+  State<GuardianDashboardScreen> createState() =>
+      _GuardianDashboardScreenState();
 }
 
 class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
@@ -115,7 +117,8 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to approve match: $e', style: AppTypography.body),
+            content:
+                Text('Failed to approve match: $e', style: AppTypography.body),
             backgroundColor: AppColors.errorRed,
             behavior: SnackBarBehavior.floating,
           ),
@@ -138,9 +141,11 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
         elevation: 0,
         title: Row(
           children: [
-            Text('ميثاق', style: AppTypography.wordmark.copyWith(fontSize: 22)),
+            Text('سيلارا',
+                style: AppTypography.wordmark.copyWith(fontSize: 22)),
             const SizedBox(width: AppDimensions.space6),
-            Text('GUARDIAN', style: AppTypography.wordmark.copyWith(fontSize: 16)),
+            Text('GUARDIAN',
+                style: AppTypography.wordmark.copyWith(fontSize: 16)),
             const Spacer(),
             // Realtime connection indicator
             _RealtimeIndicator(isConnected: _isRealtimeConnected),
@@ -395,7 +400,8 @@ class _ChatTile extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: AppColors.champagneGold,
-                          borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+                          borderRadius:
+                              BorderRadius.circular(AppDimensions.radiusChip),
                         ),
                         child: Text(
                           'Approve',
@@ -501,11 +507,16 @@ class _Avatar extends StatelessWidget {
       ),
       child: photoUrl != null
           ? ClipOval(
-              child: Image.network(
-                photoUrl!,
+              child: CachedNetworkImage(
+                imageUrl: photoUrl!,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
-                    const Icon(Icons.person, color: AppColors.slateMist, size: 24),
+                memCacheWidth: 144,
+                maxWidthDiskCache: 192,
+                errorWidget: (_, __, ___) => const Icon(
+                  Icons.person,
+                  color: AppColors.slateMist,
+                  size: 24,
+                ),
               ),
             )
           : const Icon(Icons.person, color: AppColors.slateMist, size: 24),
@@ -570,7 +581,8 @@ class _DashboardShimmer extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.all(AppDimensions.space16),
       itemCount: 4,
-      separatorBuilder: (_, __) => const SizedBox(height: AppDimensions.space10),
+      separatorBuilder: (_, __) =>
+          const SizedBox(height: AppDimensions.space10),
       itemBuilder: (_, __) => Container(
         height: 90,
         decoration: BoxDecoration(

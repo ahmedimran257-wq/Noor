@@ -1,17 +1,18 @@
 // lib/features/onboarding/screens/splash_brand_screen.dart
 // ============================================================
-// MITHAQ - Splash Brand Screen
+// SILARAH - Splash Brand Screen
 // Spec from blueprint:
 //   0ms    — Dark background #0A0A0F
-//   300ms  — ميثاق fades in, scales 0.8→1.0 (600ms ease-out-cubic)
+//   300ms  — سيلارا fades in, scales 0.8→1.0 (600ms ease-out-cubic)
 //   600ms  — 6 light rays emanate from center (staggered 50ms)
 //   900ms  — Rays fade out (400ms)
-//   1000ms — "MITHAQ" wordmark fades in (400ms)
+//   1000ms — "SILARAH" wordmark fades in (400ms)
 //   1400ms — Tagline "Begin with bismillah" fades in (300ms)
 //   2000ms — Buttons slide up from bottom (400ms)
 //   2500ms — Everything settled, interactive
 // ============================================================
 
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -19,8 +20,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/buttons/mithaq_primary_button.dart';
-import '../../../core/widgets/buttons/mithaq_secondary_button.dart';
+import '../../../core/widgets/buttons/silarah_primary_button.dart';
+import '../../../core/widgets/buttons/silarah_secondary_button.dart';
 import '../../../core/router/app_router.dart';
 import '../../../l10n/generated/app_localizations.dart';
 
@@ -34,16 +35,18 @@ class SplashBrandScreen extends StatefulWidget {
 class _SplashBrandScreenState extends State<SplashBrandScreen>
     with TickerProviderStateMixin {
   // ── Animation controllers ─────────────────────────────────
-  late final AnimationController _mithaqCtrl;
+  late final AnimationController _silarahCtrl;
   late final AnimationController _raysCtrl;
   late final AnimationController _wordmarkCtrl;
   late final AnimationController _taglineCtrl;
   late final AnimationController _buttonsCtrl;
   bool _sequenceCancelled = false;
+  Timer? _sequenceTimer;
+  Completer<bool>? _sequenceDelayCompleter;
 
   // ── Animations ────────────────────────────────────────────
-  late final Animation<double> _mithaqOpacity;
-  late final Animation<double> _mithaqScale;
+  late final Animation<double> _silarahOpacity;
+  late final Animation<double> _silarahScale;
   late final Animation<double> _raysOpacity;
   late final Animation<double> _raysLength;
   late final Animation<double> _wordmarkOpacity;
@@ -55,15 +58,15 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
   void initState() {
     super.initState();
 
-    // ميثاق letterform — 600ms
-    _mithaqCtrl = AnimationController(
+    // سيلارا letterform — 600ms
+    _silarahCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
-    _mithaqOpacity =
-        CurvedAnimation(parent: _mithaqCtrl, curve: Curves.easeOut);
-    _mithaqScale = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _mithaqCtrl, curve: Curves.easeOutCubic),
+    _silarahOpacity =
+        CurvedAnimation(parent: _silarahCtrl, curve: Curves.easeOut);
+    _silarahScale = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _silarahCtrl, curve: Curves.easeOutCubic),
     );
 
     // Light rays — 800ms total (start fading at 400ms)
@@ -79,7 +82,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
       CurvedAnimation(parent: _raysCtrl, curve: Curves.easeOut),
     );
 
-    // MITHAQ wordmark — 400ms
+    // SILARAH wordmark — 400ms
     _wordmarkCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 400),
@@ -119,12 +122,19 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
 
   Future<void> _runSequence() async {
     Future<bool> wait(Duration delay) async {
-      await Future<void>.delayed(delay);
-      return mounted && !_sequenceCancelled;
+      _sequenceTimer?.cancel();
+      final completer = Completer<bool>();
+      _sequenceDelayCompleter = completer;
+      _sequenceTimer = Timer(delay, () {
+        if (!completer.isCompleted) {
+          completer.complete(mounted && !_sequenceCancelled);
+        }
+      });
+      return completer.future;
     }
 
     if (!await wait(const Duration(milliseconds: 300))) return;
-    _mithaqCtrl.forward();
+    _silarahCtrl.forward();
     if (!await wait(const Duration(milliseconds: 300))) return;
     _raysCtrl.forward();
     if (!await wait(const Duration(milliseconds: 400))) return;
@@ -138,7 +148,12 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
   @override
   void dispose() {
     _sequenceCancelled = true;
-    _mithaqCtrl.dispose();
+    _sequenceTimer?.cancel();
+    final completer = _sequenceDelayCompleter;
+    if (completer != null && !completer.isCompleted) {
+      completer.complete(false);
+    }
+    _silarahCtrl.dispose();
     _raysCtrl.dispose();
     _wordmarkCtrl.dispose();
     _taglineCtrl.dispose();
@@ -280,9 +295,9 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
           // ── Radial glow from center ───────────────────────
           Center(
             child: AnimatedBuilder(
-              animation: _mithaqCtrl,
+              animation: _silarahCtrl,
               builder: (context, _) => Opacity(
-                opacity: _mithaqCtrl.value * 0.4,
+                opacity: _silarahCtrl.value * 0.4,
                 child: Container(
                   width: 280,
                   height: 280,
@@ -320,15 +335,15 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
               children: [
                 const Spacer(flex: 3),
 
-                // ميثاق Arabic letterform
+                // سيلارا Arabic letterform
                 AnimatedBuilder(
-                  animation: _mithaqCtrl,
+                  animation: _silarahCtrl,
                   builder: (context, _) => Opacity(
-                    opacity: _mithaqOpacity.value,
+                    opacity: _silarahOpacity.value,
                     child: Transform.scale(
-                      scale: _mithaqScale.value,
+                      scale: _silarahScale.value,
                       child: Text(
-                        l10n.localeName == 'ar' ? 'ميثاق' : 'ميثاق',
+                        l10n.localeName == 'ar' ? 'سيلارا' : 'سيلارا',
                         style: TextStyle(
                           fontFamily: 'serif',
                           fontSize: 72,
@@ -350,7 +365,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
 
                 const SizedBox(height: AppDimensions.space16),
 
-                // MITHAQ wordmark
+                // SILARAH wordmark
                 FadeTransition(
                   opacity: _wordmarkOpacity,
                   child: Text(l10n.appName, style: AppTypography.wordmark),
@@ -380,12 +395,12 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                       ),
                       child: Column(
                         children: [
-                          MithaqPrimaryButton(
+                          SilarahPrimaryButton(
                             label: l10n.splash_button_createProfile,
                             onTap: () => context.push(AppRoutes.legal),
                           ),
                           const SizedBox(height: AppDimensions.space12),
-                          MithaqSecondaryButton(
+                          SilarahSecondaryButton(
                             label: l10n.splash_button_signIn,
                             onTap: () =>
                                 context.push('${AppRoutes.email}?mode=signin'),

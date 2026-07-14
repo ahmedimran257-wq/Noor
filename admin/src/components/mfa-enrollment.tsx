@@ -29,7 +29,7 @@ export function MfaEnrollment({ initialFactorId, pendingFactor, error }: MfaEnro
       <p className="eyebrow">Security check</p>
       <h1 id="mfa-title">Verify your authenticator</h1>
       <p className="muted">
-        Mithaq staff accounts require a time-based one-time code.
+        Silarah staff accounts require a time-based one-time code.
       </p>
 
       {!factorId ? (

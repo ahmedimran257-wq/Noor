@@ -1,6 +1,6 @@
 // lib/features/home/screens/edit_profile_screen.dart
 // ============================================================
-// MITHAQ — Edit Profile Screen
+// SILARAH — Edit Profile Screen
 //
 // Full editable profile with sections matching OnboardingData:
 //   Photos · Basic Info · Islamic Identity · About
@@ -11,15 +11,28 @@
 // a success SnackBar before popping.
 // ============================================================
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../../core/cubits/auth/auth_cubit.dart';
+import '../../../core/cubits/discovery/discovery_feed_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_state.dart';
+import '../../../core/data/country_data.dart';
 import '../../../core/models/onboarding_data.dart';
+import '../../../core/services/country_context_service.dart';
+import '../../../core/services/profile_photo_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/buttons/silarah_pressable.dart';
+import '../../../core/widgets/country_picker_screen.dart';
+import '../../../core/widgets/inputs/city_search_field.dart';
+import '../../../core/widgets/inputs/region_search_field.dart';
+import '../../../core/widgets/loaders/silarah_shimmer.dart';
 import '../../onboarding/screens/photo_upload_screen.dart';
 
 // ── City data import — reuse same list from basic_identity_screen ──
@@ -37,108 +50,253 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   late TextEditingController _firstNameCtrl;
   late TextEditingController _lastNameCtrl;
-  late TextEditingController _cityCtrl;
   late TextEditingController _professionCtrl;
   late TextEditingController _bioCtrl;
 
+  late CountryInfo _country;
+  RegionResult? _region;
+  CityResult? _selectedCity;
+  String? _initialRegion;
+  String? _initialCity;
+  bool _locationChanged = false;
+
   // Islamic
-  Sect?      _sect;
+  Sect? _sect;
   DeenLevel? _deenLevel;
-  bool       _praysFive      = false;
-  String?    _hijabStyle;
-  String?    _beardStyle;           // 'yes','no','prefer_not_to_say'
+  bool _praysFive = false;
+  String? _hijabStyle;
+  String? _beardStyle; // 'yes','no','prefer_not_to_say'
 
   // Education & career
-  String?    _educationLabel;
+  String? _educationLabel;
 
   // Family
   FamilyType? _familyType;
-  int         _siblingCount  = 0;
-  String?     _parentsStatus;
-  String?     _marriageTimeline;
-  String?     _willingToRelocate;
+  int _siblingCount = 0;
+  String? _parentsStatus;
+  String? _marriageTimeline;
+  String? _willingToRelocate;
 
   // Partner preferences
   double _partnerAgeMin = 22;
   double _partnerAgeMax = 35;
-  bool   _openToDivorced   = false;
-  bool   _openToWidowed    = false;
-  bool   _openToHasChildren = false;
+  bool _openToDivorced = false;
+  bool _openToWidowed = false;
+  bool _openToHasChildren = false;
 
   // About
   List<String> _interests = [];
 
   Gender? _gender;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
     final d = context.read<OnboardingCubit>().currentData;
-    _firstNameCtrl  = TextEditingController(text: d.firstName ?? '');
-    _lastNameCtrl   = TextEditingController(text: d.lastName ?? '');
-    _cityCtrl       = TextEditingController(text: d.cityName ?? '');
+    _firstNameCtrl = TextEditingController(text: d.firstName ?? '');
+    _lastNameCtrl = TextEditingController(text: d.lastName ?? '');
     _professionCtrl = TextEditingController(text: d.profession ?? '');
-    _bioCtrl        = TextEditingController(text: d.bio ?? '');
+    _bioCtrl = TextEditingController(text: d.bio ?? '');
 
-    _sect           = d.sect;
-    _deenLevel      = d.deenLevel;
-    _praysFive      = d.praysFiveDaily ?? false;
-    _hijabStyle     = d.hijabStyle;
-    _beardStyle     = d.beardStyle;
+    final countryMatches = kAllCountries.where(
+      (country) =>
+          country.iso2.toUpperCase() == d.countryCode?.trim().toUpperCase(),
+    );
+    _country = countryMatches.isEmpty ? deviceCountry() : countryMatches.first;
+    final savedRegion = d.stateName?.trim().isNotEmpty == true
+        ? d.stateName!.trim()
+        : _stateFromCityName(d.cityName);
+    _initialRegion = savedRegion;
+    if (savedRegion != null) {
+      _region = RegionResult(
+        id: '',
+        name: savedRegion,
+        countryCode: _country.iso2,
+        country: _country.name,
+      );
+    }
+    _initialCity = d.cityName;
+    if (d.cityName?.trim().isNotEmpty == true &&
+        d.lat != null &&
+        d.lng != null) {
+      final cityName = d.cityName!.split(',').first.trim();
+      _selectedCity = CityResult(
+        city: cityName,
+        state: savedRegion ?? '',
+        country: _country.name,
+        countryCode: _country.iso2,
+        postalCode: d.postalCode ?? '',
+        fullAddress: [
+          cityName,
+          if (savedRegion != null) savedRegion,
+          _country.name,
+        ].join(', '),
+        placeId: d.cityId ?? '',
+        lat: d.lat!,
+        lng: d.lng!,
+      );
+    }
+
+    _sect = d.sect;
+    _deenLevel = d.deenLevel;
+    _praysFive = d.praysFiveDaily ?? false;
+    _hijabStyle = d.hijabStyle;
+    _beardStyle = d.beardStyle;
     _educationLabel = d.educationLabel;
-    _familyType     = d.familyType;
-    _siblingCount   = d.siblingCount ?? 0;
-    _parentsStatus  = d.parentsStatus;
-    _marriageTimeline  = d.marriageTimeline;
+    _familyType = d.familyType;
+    _siblingCount = d.siblingCount ?? 0;
+    _parentsStatus = d.parentsStatus;
+    _marriageTimeline = d.marriageTimeline;
     _willingToRelocate = d.willingToRelocate;
-    _partnerAgeMin  = (d.preferredAgeMin ?? 22).toDouble();
-    _partnerAgeMax  = (d.preferredAgeMax ?? 35).toDouble();
-    _openToDivorced    = d.openToDivorced ?? false;
-    _openToWidowed     = d.openToWidowed ?? false;
+    _partnerAgeMin = (d.preferredAgeMin ?? 22).toDouble();
+    _partnerAgeMax = (d.preferredAgeMax ?? 35).toDouble();
+    _openToDivorced = d.openToDivorced ?? false;
+    _openToWidowed = d.openToWidowed ?? false;
     _openToHasChildren = d.openToWithChildren ?? false;
-    _interests      = List<String>.from(d.interests ?? []);
-    _gender         = d.gender;
+    _interests = List<String>.from(d.interests ?? []);
+    _gender = d.gender;
   }
 
   @override
   void dispose() {
     _firstNameCtrl.dispose();
     _lastNameCtrl.dispose();
-    _cityCtrl.dispose();
     _professionCtrl.dispose();
     _bioCtrl.dispose();
     super.dispose();
   }
 
-  void _saveProfile() {
+  String? _stateFromCityName(String? cityName) {
+    final parts = cityName?.split(',') ?? const <String>[];
+    if (parts.length < 2) return null;
+    final state = parts[1].trim();
+    return state.isEmpty ? null : state;
+  }
+
+  void _selectCountry(CountryInfo country) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    if (country.iso2 == _country.iso2) return;
+    setState(() {
+      _country = country;
+      _region = null;
+      _selectedCity = null;
+      _initialRegion = null;
+      _initialCity = null;
+      _locationChanged = true;
+    });
+  }
+
+  void _selectRegion(RegionResult region) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() {
+      _region = region;
+      _selectedCity = null;
+      _initialRegion = null;
+      _initialCity = null;
+      _locationChanged = true;
+    });
+  }
+
+  void _selectCity(CityResult city) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() {
+      _selectedCity = city;
+      _initialCity = null;
+      _locationChanged = true;
+    });
+  }
+
+  void _clearCity() {
+    setState(() {
+      _selectedCity = null;
+      _initialCity = null;
+      _locationChanged = true;
+    });
+  }
+
+  void _showSaveError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: AppTypography.body),
+        backgroundColor: AppColors.softCoral,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _saveProfile() async {
+    if (_isSaving) return;
+    if (_locationChanged && _selectedCity == null) {
+      _showSaveError('Select a city from the verified search results.');
+      return;
+    }
+    setState(() => _isSaving = true);
     HapticFeedback.mediumImpact();
     final cubit = context.read<OnboardingCubit>();
-    final updated = cubit.currentData.copyWith(
-      firstName:          _firstNameCtrl.text.trim(),
-      lastName:           _lastNameCtrl.text.trim(),
-      cityName:           _cityCtrl.text.trim(),
-      profession:         _professionCtrl.text.trim(),
-      bio:                _bioCtrl.text.trim(),
-      sect:               _sect,
-      deenLevel:          _deenLevel,
-      praysFiveDaily:     _praysFive,
-      hijabStyle:         _hijabStyle,
-      beardStyle:         _beardStyle,
-      educationLabel:     _educationLabel,
-      familyType:         _familyType,
-      siblingCount:       _siblingCount,
-      parentsStatus:      _parentsStatus,
-      marriageTimeline:   _marriageTimeline,
-      willingToRelocate:  _willingToRelocate,
-      preferredAgeMin:    _partnerAgeMin.round(),
-      preferredAgeMax:    _partnerAgeMax.round(),
-      openToDivorced:     _openToDivorced,
-      openToWidowed:      _openToWidowed,
+    var updated = cubit.currentData.copyWith(
+      firstName: _firstNameCtrl.text.trim(),
+      lastName: _lastNameCtrl.text.trim(),
+      profession: _professionCtrl.text.trim(),
+      bio: _bioCtrl.text.trim(),
+      sect: _sect,
+      deenLevel: _deenLevel,
+      praysFiveDaily: _praysFive,
+      hijabStyle: _hijabStyle,
+      beardStyle: _beardStyle,
+      educationLabel: _educationLabel,
+      familyType: _familyType,
+      siblingCount: _siblingCount,
+      parentsStatus: _parentsStatus,
+      marriageTimeline: _marriageTimeline,
+      willingToRelocate: _willingToRelocate,
+      preferredAgeMin: _partnerAgeMin.round(),
+      preferredAgeMax: _partnerAgeMax.round(),
+      openToDivorced: _openToDivorced,
+      openToWidowed: _openToWidowed,
       openToWithChildren: _openToHasChildren,
-      interests:          _interests,
+      interests: _interests,
     );
-    // updateProfile stores data without advancing the step.
-    cubit.updateProfile(updated);
+    if (_locationChanged) {
+      final city = _selectedCity!;
+      final stateName = city.state.trim().isNotEmpty
+          ? city.state.trim()
+          : _region?.name.trim() ?? '';
+      final displayCity = stateName.isEmpty
+          ? city.city.trim()
+          : '${city.city.trim()}, $stateName';
+      updated = updated.copyWith(
+        cityId: '',
+        cityName: displayCity,
+        stateName: stateName,
+        countryCode: _country.iso2,
+        postalCode: city.postalCode,
+        lat: city.lat,
+        lng: city.lng,
+      );
+    }
+
+    final saved = await cubit.updateProfile(
+      updated,
+      locationChanged: _locationChanged,
+    );
+    if (!mounted) return;
+    if (!saved) {
+      setState(() => _isSaving = false);
+      _showSaveError('Could not save profile. Please try again.');
+      return;
+    }
+
+    if (_locationChanged) {
+      await context.read<AuthCubit>().setCountryCode(_country.iso2);
+      if (!mounted) return;
+      final discovery = context.read<DiscoveryFeedCubit>();
+      discovery.clear();
+      unawaited(discovery.loadInitial(force: true));
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -149,7 +307,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           Text('Profile saved', style: AppTypography.body),
         ]),
         backgroundColor: AppColors.surfaceGlassHover,
-        behavior:        SnackBarBehavior.floating,
+        behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
           side: const BorderSide(color: AppColors.goldBorder),
@@ -157,7 +315,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         duration: const Duration(seconds: 2),
       ),
     );
-    Navigator.pop(context);
+    Navigator.pop(context, true);
   }
 
   @override
@@ -167,81 +325,144 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         return Scaffold(
           backgroundColor: AppColors.obsidianNight,
           appBar: AppBar(
-            backgroundColor:  AppColors.obsidianNight,
+            backgroundColor: AppColors.obsidianNight,
             surfaceTintColor: Colors.transparent,
-            elevation:        0,
+            elevation: 0,
             leading: GestureDetector(
               onTap: () => Navigator.pop(context),
               child: Container(
                 margin: const EdgeInsets.all(AppDimensions.space8),
                 decoration: BoxDecoration(
-                  color:  AppColors.surfaceGlass,
-                  shape:  BoxShape.circle,
+                  color: AppColors.surfaceGlass,
+                  shape: BoxShape.circle,
                   border: Border.all(color: AppColors.cardBorder),
                 ),
                 child: const Icon(
                   Icons.arrow_back_rounded,
                   color: AppColors.pearlWhite,
-                  size:  AppDimensions.iconSizeMedium,
+                  size: AppDimensions.iconSizeMedium,
                 ),
               ),
             ),
             title: Text('Edit Profile',
                 style: AppTypography.screenTitle.copyWith(fontSize: 20)),
-            actions: [
-              TextButton(
-                onPressed: _saveProfile,
-                child: Text(
-                  'Save',
-                  style: AppTypography.buttonSecondary.copyWith(fontSize: 15),
+          ),
+          bottomNavigationBar: SafeArea(
+            top: false,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 14),
+              decoration: const BoxDecoration(
+                color: AppColors.navBarSurface,
+                border: Border(top: BorderSide(color: AppColors.cardBorder)),
+              ),
+              child: SilarahPressable(
+                onTap: _isSaving ? null : _saveProfile,
+                semanticLabel: 'Save profile changes',
+                child: AnimatedContainer(
+                  duration: AppDimensions.durationTransition,
+                  height: 54,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    gradient: _isSaving
+                        ? null
+                        : const LinearGradient(colors: [
+                            AppColors.champagneLight,
+                            AppColors.champagneGold,
+                          ]),
+                    color: _isSaving ? AppColors.surfaceGlassHover : null,
+                    borderRadius:
+                        BorderRadius.circular(AppDimensions.radiusButton),
+                  ),
+                  child: _isSaving
+                      ? const SilarahPulseLoader(size: 26)
+                      : const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.check_rounded,
+                                color: AppColors.obsidianNight, size: 20),
+                            SizedBox(width: AppDimensions.space8),
+                            Text('Save changes', style: AppTypography.button),
+                          ],
+                        ),
                 ),
               ),
-              const SizedBox(width: AppDimensions.space8),
-            ],
+            ),
           ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(
-              AppDimensions.space24, AppDimensions.space8,
-              AppDimensions.space24, AppDimensions.space40,
+              AppDimensions.space24,
+              AppDimensions.space8,
+              AppDimensions.space24,
+              AppDimensions.space40,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
+                const _EditorIntro(),
+                const SizedBox(height: AppDimensions.space24),
                 // ── Photos ──────────────────────────────────
                 const _SectionHeader(label: 'Photos'),
                 const SizedBox(height: AppDimensions.space12),
                 _PhotoGrid(
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute<bool>(
-                      builder: (_) => const PhotoUploadScreen(
-                        returnToPreviousOnSave: true,
+                  onTap: () async {
+                    final onboardingCubit = context.read<OnboardingCubit>();
+                    final saved = await Navigator.of(context).push<bool>(
+                      MaterialPageRoute<bool>(
+                        builder: (_) => const PhotoUploadScreen(
+                          returnToPreviousOnSave: true,
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                    if (saved == true && mounted) {
+                      await onboardingCubit.refreshProfileFromDb(force: true);
+                      setState(() {});
+                    }
+                  },
                 ),
                 const SizedBox(height: AppDimensions.space28),
 
                 // ── Basic Info ───────────────────────────────
                 const _SectionHeader(label: 'Basic Info'),
                 const SizedBox(height: AppDimensions.space12),
-                _MithaqTextField(
-                  label:        'First name',
-                  controller:   _firstNameCtrl,
-                  onChanged:    (_) => setState(() {}),
+                _SilarahTextField(
+                  label: 'First name',
+                  controller: _firstNameCtrl,
+                  onChanged: (_) => setState(() {}),
                 ),
                 const SizedBox(height: AppDimensions.space12),
-                _MithaqTextField(
-                  label:        'Last name',
-                  controller:   _lastNameCtrl,
-                  onChanged:    (_) => setState(() {}),
+                _SilarahTextField(
+                  label: 'Last name',
+                  controller: _lastNameCtrl,
+                  onChanged: (_) => setState(() {}),
                 ),
-                const SizedBox(height: AppDimensions.space12),
-                _MithaqTextField(
-                  label:        'City',
-                  hint:         'e.g. Dubai, London, Karachi',
-                  controller:   _cityCtrl,
-                  onChanged:    (_) => setState(() {}),
+                const SizedBox(height: AppDimensions.space24),
+                _LocationEditor(
+                  country: _country,
+                  region: _region,
+                  selectedCity: _selectedCity,
+                  initialRegion: _initialRegion,
+                  initialCity: _initialCity,
+                  onCountryTap: () {
+                    FocusManager.instance.primaryFocus?.unfocus();
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => CountryPickerScreen(
+                          selected: _country,
+                          onSelected: _selectCountry,
+                        ),
+                      ),
+                    );
+                  },
+                  onRegionSelected: _selectRegion,
+                  onRegionCleared: () => setState(() {
+                    _region = null;
+                    _initialRegion = null;
+                    _selectedCity = null;
+                    _initialCity = null;
+                    _locationChanged = true;
+                  }),
+                  onCitySelected: _selectCity,
+                  onCityCleared: _clearCity,
                 ),
                 const SizedBox(height: AppDimensions.space28),
 
@@ -249,33 +470,43 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 const _SectionHeader(label: 'Islamic Identity'),
                 const SizedBox(height: AppDimensions.space12),
                 _DropdownField(
-                  label:    'Sect',
-                  value:    _sectValue(_sect),
-                  options:  const ['sunni', 'shia', 'preferNotToSay', 'other'],
-                  optionLabels: const ['Sunni', 'Shia', 'Prefer not to say', 'Other'],
+                  label: 'Sect',
+                  value: _sectValue(_sect),
+                  options: const ['sunni', 'shia', 'preferNotToSay', 'other'],
+                  optionLabels: const [
+                    'Sunni',
+                    'Shia',
+                    'Prefer not to say',
+                    'Other'
+                  ],
                   onChanged: (v) => setState(() => _sect = _parseSect(v)),
                 ),
                 const SizedBox(height: AppDimensions.space12),
                 _DropdownField(
-                  label:    'Deen Level',
-                  value:    _deenLevelValue(_deenLevel),
-                  options:  const ['practicing', 'moderate', 'cultural'],
-                  optionLabels: const ['Practicing', 'Moderate', 'Cultural Muslim'],
-                  onChanged: (v) => setState(() => _deenLevel = _parseDeenLevel(v)),
+                  label: 'Deen Level',
+                  value: _deenLevelValue(_deenLevel),
+                  options: const ['practicing', 'moderate', 'cultural'],
+                  optionLabels: const [
+                    'Practicing',
+                    'Moderate',
+                    'Cultural Muslim'
+                  ],
+                  onChanged: (v) =>
+                      setState(() => _deenLevel = _parseDeenLevel(v)),
                 ),
                 const SizedBox(height: AppDimensions.space12),
                 _ToggleRow(
-                  label:     'Prays five times daily',
-                  value:     _praysFive,
+                  label: 'Prays five times daily',
+                  value: _praysFive,
                   onChanged: (v) => setState(() => _praysFive = v),
                 ),
                 // Female-only: hijab dropdown
                 if (_gender == Gender.female) ...[
                   const SizedBox(height: AppDimensions.space12),
                   _DropdownField(
-                    label:    'Hijab style',
-                    value:    _hijabStyle ?? 'No hijab',
-                    options:  const [
+                    label: 'Hijab style',
+                    value: _hijabStyle ?? 'No hijab',
+                    options: const [
                       'No hijab',
                       'Occasionally',
                       'Hijab',
@@ -288,9 +519,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 if (_gender == Gender.male) ...[
                   const SizedBox(height: AppDimensions.space12),
                   _DropdownField(
-                    label:    'Beard',
-                    value:    _beardStyle ?? 'prefer_not_to_say',
-                    options:  const ['yes', 'no', 'prefer_not_to_say'],
+                    label: 'Beard',
+                    value: _beardStyle ?? 'prefer_not_to_say',
+                    options: const ['yes', 'no', 'prefer_not_to_say'],
                     optionLabels: const ['Yes', 'No', 'Prefer not to say'],
                     onChanged: (v) => setState(() => _beardStyle = v),
                   ),
@@ -300,17 +531,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 // ── About ────────────────────────────────────
                 const _SectionHeader(label: 'About'),
                 const SizedBox(height: AppDimensions.space12),
-                _MithaqTextField(
-                  label:      'Bio',
-                  hint:       'Describe yourself with honesty and dignity.',
+                _SilarahTextField(
+                  label: 'Bio',
+                  hint: 'Describe yourself with honesty and dignity.',
                   controller: _bioCtrl,
-                  maxLines:   5,
-                  maxLength:  300,
-                  onChanged:  (_) => setState(() {}),
+                  maxLines: 5,
+                  maxLength: 300,
+                  onChanged: (_) => setState(() {}),
                 ),
                 const SizedBox(height: AppDimensions.space12),
                 _InterestChips(
-                  selected:  _interests,
+                  selected: _interests,
                   onChanged: (v) => setState(() => _interests = v),
                 ),
                 const SizedBox(height: AppDimensions.space28),
@@ -319,9 +550,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 const _SectionHeader(label: 'Education & Career'),
                 const SizedBox(height: AppDimensions.space12),
                 _DropdownField(
-                  label:    'Education Level',
-                  value:    _educationLabel ?? 'Bachelor\'s Degree',
-                  options:  const [
+                  label: 'Education Level',
+                  value: _educationLabel ?? 'Bachelor\'s Degree',
+                  options: const [
                     'Below Secondary',
                     'Secondary / O-Level',
                     'Higher Secondary / A-Level',
@@ -333,11 +564,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   onChanged: (v) => setState(() => _educationLabel = v),
                 ),
                 const SizedBox(height: AppDimensions.space12),
-                _MithaqTextField(
-                  label:      'Profession',
-                  hint:       'e.g. Software Engineer',
+                _SilarahTextField(
+                  label: 'Profession',
+                  hint: 'e.g. Software Engineer',
                   controller: _professionCtrl,
-                  onChanged:  (_) => setState(() {}),
+                  onChanged: (_) => setState(() {}),
                 ),
                 const SizedBox(height: AppDimensions.space28),
 
@@ -345,25 +576,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 const _SectionHeader(label: 'Family'),
                 const SizedBox(height: AppDimensions.space12),
                 _DropdownField(
-                  label:    'Family Type',
-                  value:    _familyTypeValue(_familyType),
-                  options:  const ['nuclear', 'joint', 'extended'],
+                  label: 'Family Type',
+                  value: _familyTypeValue(_familyType),
+                  options: const ['nuclear', 'joint', 'extended'],
                   optionLabels: const ['Nuclear', 'Joint', 'Extended'],
-                  onChanged: (v) => setState(() => _familyType = _parseFamilyType(v)),
+                  onChanged: (v) =>
+                      setState(() => _familyType = _parseFamilyType(v)),
                 ),
                 const SizedBox(height: AppDimensions.space12),
                 _StepperRow(
-                  label:     'Siblings',
-                  value:     _siblingCount,
-                  min:       0,
-                  max:       15,
+                  label: 'Siblings',
+                  value: _siblingCount,
+                  min: 0,
+                  max: 15,
                   onChanged: (v) => setState(() => _siblingCount = v),
                 ),
                 const SizedBox(height: AppDimensions.space12),
                 _DropdownField(
-                  label:    'Parents\' Status',
-                  value:    _parentsStatus ?? 'Both alive',
-                  options:  const [
+                  label: 'Parents\' Status',
+                  value: _parentsStatus ?? 'Both alive',
+                  options: const [
                     'Both alive',
                     'Father passed away',
                     'Mother passed away',
@@ -373,17 +605,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
                 const SizedBox(height: AppDimensions.space12),
                 _DropdownField(
-                  label:    'Marriage Timeline',
-                  value:    _marriageTimeline ?? 'not_sure',
-                  options:  const ['asap', '6_months', '1_year', '2_plus_years', 'not_sure'],
-                  optionLabels: const ['ASAP', '6 Months', '1 Year', '2+ Years', 'Not Sure'],
+                  label: 'Marriage Timeline',
+                  value: _marriageTimeline ?? 'not_sure',
+                  options: const [
+                    'asap',
+                    '6_months',
+                    '1_year',
+                    '2_plus_years',
+                    'not_sure'
+                  ],
+                  optionLabels: const [
+                    'ASAP',
+                    '6 Months',
+                    '1 Year',
+                    '2+ Years',
+                    'Not Sure'
+                  ],
                   onChanged: (v) => setState(() => _marriageTimeline = v),
                 ),
                 const SizedBox(height: AppDimensions.space12),
                 _DropdownField(
-                  label:    'Willing to Relocate',
-                  value:    _willingToRelocate ?? 'open_to_discussion',
-                  options:  const ['yes', 'no', 'open_to_discussion'],
+                  label: 'Willing to Relocate',
+                  value: _willingToRelocate ?? 'open_to_discussion',
+                  options: const ['yes', 'no', 'open_to_discussion'],
                   optionLabels: const ['Yes', 'No', 'Open to Discussion'],
                   onChanged: (v) => setState(() => _willingToRelocate = v),
                 ),
@@ -393,8 +637,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 const _SectionHeader(label: 'Partner Preferences'),
                 const SizedBox(height: AppDimensions.space12),
                 _AgeRangeField(
-                  min:       _partnerAgeMin,
-                  max:       _partnerAgeMax,
+                  min: _partnerAgeMin,
+                  max: _partnerAgeMax,
                   onChanged: (lo, hi) => setState(() {
                     _partnerAgeMin = lo;
                     _partnerAgeMax = hi;
@@ -402,20 +646,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
                 const SizedBox(height: AppDimensions.space12),
                 _ToggleRow(
-                  label:     'Open to divorced',
-                  value:     _openToDivorced,
+                  label: 'Open to divorced',
+                  value: _openToDivorced,
                   onChanged: (v) => setState(() => _openToDivorced = v),
                 ),
                 const SizedBox(height: AppDimensions.space12),
                 _ToggleRow(
-                  label:     'Open to widowed',
-                  value:     _openToWidowed,
+                  label: 'Open to widowed',
+                  value: _openToWidowed,
                   onChanged: (v) => setState(() => _openToWidowed = v),
                 ),
                 const SizedBox(height: AppDimensions.space12),
                 _ToggleRow(
-                  label:     'Open to someone with children',
-                  value:     _openToHasChildren,
+                  label: 'Open to someone with children',
+                  value: _openToHasChildren,
                   onChanged: (v) => setState(() => _openToHasChildren = v),
                 ),
 
@@ -432,143 +676,149 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   String _sectValue(Sect? s) {
     switch (s) {
-      case Sect.sunni:          return 'sunni';
-      case Sect.shia:           return 'shia';
-      case Sect.preferNotToSay: return 'preferNotToSay';
-      case Sect.other:          return 'other';
-      case null:                return 'sunni';
+      case Sect.sunni:
+        return 'sunni';
+      case Sect.shia:
+        return 'shia';
+      case Sect.preferNotToSay:
+        return 'preferNotToSay';
+      case Sect.other:
+        return 'other';
+      case null:
+        return 'sunni';
     }
   }
 
   Sect _parseSect(String? v) {
     switch (v) {
-      case 'shia':           return Sect.shia;
-      case 'preferNotToSay': return Sect.preferNotToSay;
-      case 'other':          return Sect.other;
-      default:               return Sect.sunni;
+      case 'shia':
+        return Sect.shia;
+      case 'preferNotToSay':
+        return Sect.preferNotToSay;
+      case 'other':
+        return Sect.other;
+      default:
+        return Sect.sunni;
     }
   }
 
   String _deenLevelValue(DeenLevel? d) {
     switch (d) {
-      case DeenLevel.moderate:  return 'moderate';
-      case DeenLevel.cultural:  return 'cultural';
-      default:                  return 'practicing';
+      case DeenLevel.moderate:
+        return 'moderate';
+      case DeenLevel.cultural:
+        return 'cultural';
+      default:
+        return 'practicing';
     }
   }
 
   DeenLevel _parseDeenLevel(String? v) {
     switch (v) {
-      case 'moderate': return DeenLevel.moderate;
-      case 'cultural': return DeenLevel.cultural;
-      default:         return DeenLevel.practicing;
+      case 'moderate':
+        return DeenLevel.moderate;
+      case 'cultural':
+        return DeenLevel.cultural;
+      default:
+        return DeenLevel.practicing;
     }
   }
 
   String _familyTypeValue(FamilyType? f) {
     switch (f) {
-      case FamilyType.joint:    return 'joint';
-      case FamilyType.extended: return 'extended';
-      default:                  return 'nuclear';
+      case FamilyType.joint:
+        return 'joint';
+      case FamilyType.extended:
+        return 'extended';
+      default:
+        return 'nuclear';
     }
   }
 
   FamilyType _parseFamilyType(String? v) {
     switch (v) {
-      case 'joint':    return FamilyType.joint;
-      case 'extended': return FamilyType.extended;
-      default:         return FamilyType.nuclear;
+      case 'joint':
+        return FamilyType.joint;
+      case 'extended':
+        return FamilyType.extended;
+      default:
+        return FamilyType.nuclear;
     }
   }
 }
 
 // ── Photo Grid (4-slot) ───────────────────────────────────────
 
-class _PhotoGrid extends StatelessWidget {
+class _PhotoGrid extends StatefulWidget {
   const _PhotoGrid({required this.onTap});
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return GridView.count(
-      shrinkWrap:       true,
-      physics:          const NeverScrollableScrollPhysics(),
-      crossAxisCount:   4,
-      crossAxisSpacing: AppDimensions.space8,
-      mainAxisSpacing:  AppDimensions.space8,
-      children: [
-        _PhotoSlot(index: 0, isFilled: true,  isPrimary: true,  onTap: onTap),
-        _PhotoSlot(index: 1, isFilled: false, isPrimary: false, onTap: onTap),
-        _PhotoSlot(index: 2, isFilled: false, isPrimary: false, onTap: onTap),
-        _PhotoSlot(index: 3, isFilled: false, isPrimary: false, onTap: onTap),
-      ],
-    );
-  }
+  State<_PhotoGrid> createState() => _PhotoGridState();
 }
 
-class _PhotoSlot extends StatelessWidget {
-  const _PhotoSlot({
-    required this.index,
-    required this.isFilled,
-    required this.onTap,
-    this.isPrimary = false,
-  });
-  final int          index;
-  final bool         isFilled;
-  final bool         isPrimary;
-  final VoidCallback onTap;
+class _PhotoGridState extends State<_PhotoGrid> {
+  late final Future<String?> _primaryPhoto =
+      ProfilePhotoService.instance.getPrimaryPhotoUrl();
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AspectRatio(
-        aspectRatio: 3 / 4,
-        child: Container(
-          decoration: BoxDecoration(
-            color:        AppColors.surfaceGlass,
-            borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-            border: Border.all(
-              color: isPrimary ? AppColors.champagneGold : AppColors.cardBorder,
+    return SilarahPressable(
+      onTap: widget.onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppDimensions.space12),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceGlass,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+          border: Border.all(color: AppColors.goldBorder),
+        ),
+        child: Row(
+          children: [
+            FutureBuilder<String?>(
+              future: _primaryPhoto,
+              builder: (context, snapshot) => ClipRRect(
+                borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                child: Container(
+                  width: 92,
+                  height: 116,
+                  color: AppColors.surfaceGlassHover,
+                  child: snapshot.data != null
+                      ? CachedNetworkImage(
+                          imageUrl: snapshot.data!,
+                          fit: BoxFit.cover,
+                          memCacheWidth: 276,
+                          maxWidthDiskCache: 384,
+                        )
+                      : const Icon(Icons.add_a_photo_outlined,
+                          color: AppColors.champagneGold, size: 30),
+                ),
+              ),
             ),
-          ),
-          child: isFilled
-              ? Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    const Center(
-                      child: Icon(
-                        Icons.person_outline_rounded,
-                        color: AppColors.slateMist,
-                        size:  36,
-                      ),
-                    ),
-                    if (isPrimary)
-                      Positioned(
-                        bottom: 4, left: 0, right: 0,
-                        child: Center(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color:        AppColors.champagneGold,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              'Main',
-                              style: AppTypography.caption.copyWith(
-                                color:      AppColors.obsidianNight,
-                                fontSize:   10,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                )
-              : const Icon(Icons.add_rounded,
-                  color: AppColors.slateMist, size: 24),
+            const SizedBox(width: AppDimensions.space16),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Manage your photos', style: AppTypography.bodyMedium),
+                  SizedBox(height: AppDimensions.space6),
+                  Text(
+                    'Reorder, replace or add photos. Every new upload runs through the safety scan.',
+                    style: AppTypography.caption,
+                  ),
+                  SizedBox(height: AppDimensions.space12),
+                  Row(
+                    children: [
+                      Text('Open photo manager',
+                          style: AppTypography.buttonSecondary),
+                      SizedBox(width: AppDimensions.space4),
+                      Icon(Icons.arrow_forward_rounded,
+                          color: AppColors.champagneGold, size: 17),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -577,84 +827,341 @@ class _PhotoSlot extends StatelessWidget {
 
 // ── Section Header ────────────────────────────────────────────
 
+class _EditorIntro extends StatelessWidget {
+  const _EditorIntro();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.space16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.inkTeal.withValues(alpha: 0.26),
+            AppColors.champagneGold.withValues(alpha: 0.08),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+        border: Border.all(color: AppColors.goldBorder),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.auto_awesome_outlined,
+              color: AppColors.champagneGold, size: 22),
+          SizedBox(width: AppDimensions.space12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Shape your first impression',
+                    style: AppTypography.bodyMedium),
+                SizedBox(height: AppDimensions.space4),
+                Text(
+                  'Changes are saved securely and reflected in discovery immediately.',
+                  style: AppTypography.caption,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LocationEditor extends StatelessWidget {
+  const _LocationEditor({
+    required this.country,
+    required this.region,
+    required this.selectedCity,
+    required this.initialRegion,
+    required this.initialCity,
+    required this.onCountryTap,
+    required this.onRegionSelected,
+    required this.onRegionCleared,
+    required this.onCitySelected,
+    required this.onCityCleared,
+  });
+
+  final CountryInfo country;
+  final RegionResult? region;
+  final CityResult? selectedCity;
+  final String? initialRegion;
+  final String? initialCity;
+  final VoidCallback onCountryTap;
+  final ValueChanged<RegionResult> onRegionSelected;
+  final VoidCallback onRegionCleared;
+  final ValueChanged<CityResult> onCitySelected;
+  final VoidCallback onCityCleared;
+
+  @override
+  Widget build(BuildContext context) {
+    final city = selectedCity;
+    final locationLabel = city == null
+        ? null
+        : [
+            city.city,
+            if (city.state.trim().isNotEmpty) city.state.trim(),
+            country.name,
+          ].join(', ');
+
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.space16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceGlass,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.goldGlow,
+                ),
+                child: const Icon(
+                  Icons.location_on_outlined,
+                  color: AppColors.champagneGold,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: AppDimensions.space12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Discovery location',
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppColors.pearlWhite,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'Used for nearby matches. Your exact address is never shown.',
+                      style: AppTypography.caption.copyWith(height: 1.4),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppDimensions.space20),
+          const Text('COUNTRY', style: AppTypography.sectionLabel),
+          const SizedBox(height: AppDimensions.space8),
+          Semantics(
+            button: true,
+            label: 'Change country, currently ${country.name}',
+            child: InkWell(
+              onTap: onCountryTap,
+              borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Row(
+                  children: [
+                    Text(country.flag, style: const TextStyle(fontSize: 24)),
+                    const SizedBox(width: AppDimensions.space12),
+                    Expanded(
+                      child: Text(country.name, style: AppTypography.body),
+                    ),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.champagneGold,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const Divider(height: AppDimensions.space24),
+          const Text('STATE / REGION', style: AppTypography.sectionLabel),
+          const SizedBox(height: AppDimensions.space8),
+          RegionSearchField(
+            key: ValueKey('edit_region_${country.iso2}'),
+            countryCode: country.iso2,
+            initialValue: initialRegion,
+            hint: 'Optional — narrow city results',
+            onSelected: onRegionSelected,
+            onCleared: onRegionCleared,
+          ),
+          const SizedBox(height: AppDimensions.space16),
+          const Text('CITY', style: AppTypography.sectionLabel),
+          const SizedBox(height: AppDimensions.space8),
+          CitySearchField(
+            key: ValueKey('edit_city_${country.iso2}_${region?.name ?? ''}'),
+            countryCode: country.iso2,
+            regionName: region?.name,
+            initialValue: initialCity,
+            hint: region == null
+                ? 'Search your city or area'
+                : 'Search city in ${region!.name}',
+            onSelected: onCitySelected,
+            onCleared: onCityCleared,
+          ),
+          AnimatedSwitcher(
+            duration: AppDimensions.durationTransition,
+            child: locationLabel == null
+                ? const Padding(
+                    key: ValueKey('location-guidance'),
+                    padding: EdgeInsets.only(top: AppDimensions.space10),
+                    child: Text(
+                      'Choose a verified result so distance matching stays accurate.',
+                      style: AppTypography.caption,
+                    ),
+                  )
+                : Padding(
+                    key: ValueKey(locationLabel),
+                    padding: const EdgeInsets.only(top: AppDimensions.space12),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.verified_rounded,
+                          color: AppColors.verifiedTeal,
+                          size: 17,
+                        ),
+                        const SizedBox(width: AppDimensions.space8),
+                        Expanded(
+                          child: Text(
+                            'Matching from $locationLabel',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.verifiedTeal,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader({required this.label});
   final String label;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final icon = switch (label) {
+      'Photos' => Icons.photo_library_outlined,
+      'Basic Info' => Icons.person_outline_rounded,
+      'Islamic Identity' => Icons.mosque_outlined,
+      'About' => Icons.format_quote_rounded,
+      'Education & Career' => Icons.school_outlined,
+      'Family' => Icons.family_restroom_rounded,
+      _ => Icons.favorite_border_rounded,
+    };
+    return Row(
       children: [
-        Text(label.toUpperCase(), style: AppTypography.sectionLabel),
-        const SizedBox(height: AppDimensions.space8),
-        const Divider(color: AppColors.divider, height: 1),
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: AppColors.champagneGold.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(11),
+          ),
+          child: Icon(icon, color: AppColors.champagneGold, size: 18),
+        ),
+        const SizedBox(width: AppDimensions.space10),
+        Text(label, style: AppTypography.bodyMedium),
+        const SizedBox(width: AppDimensions.space12),
+        const Expanded(child: Divider(color: AppColors.divider, height: 1)),
       ],
     );
   }
 }
 
-// ── MITHAQ Text Field ───────────────────────────────────────────
+// ── SILARAH Text Field ───────────────────────────────────────────
 
-class _MithaqTextField extends StatefulWidget {
-  const _MithaqTextField({
+class _SilarahTextField extends StatefulWidget {
+  const _SilarahTextField({
     required this.label,
     required this.controller,
     required this.onChanged,
     this.hint,
-    this.maxLines  = 1,
+    this.maxLines = 1,
     this.maxLength,
   });
-  final String   label;
+  final String label;
   final TextEditingController controller;
-  final String?  hint;
-  final int      maxLines;
-  final int?     maxLength;
+  final String? hint;
+  final int maxLines;
+  final int? maxLength;
   final ValueChanged<String> onChanged;
 
   @override
-  State<_MithaqTextField> createState() => _MithaqTextFieldState();
+  State<_SilarahTextField> createState() => _SilarahTextFieldState();
 }
 
-class _MithaqTextFieldState extends State<_MithaqTextField> {
+class _SilarahTextFieldState extends State<_SilarahTextField> {
   bool _focused = false;
 
   @override
   Widget build(BuildContext context) {
-    return Focus(
-      onFocusChange: (f) => setState(() => _focused = f),
-      child: AnimatedContainer(
-        duration: AppDimensions.durationTransition,
-        decoration: BoxDecoration(
-          color:        AppColors.surfaceGlass,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          border: Border.all(
-            color:  _focused ? AppColors.champagneGold : AppColors.cardBorder,
-            width:  _focused
-                ? AppDimensions.borderFocus
-                : AppDimensions.borderThin,
-          ),
-        ),
-        child: TextField(
-          controller:    widget.controller,
-          maxLines:      widget.maxLines,
-          maxLength:     widget.maxLength,
-          style:         AppTypography.inputText,
-          onChanged:     widget.onChanged,
-          decoration: InputDecoration(
-            labelText:     widget.label,
-            hintText:      widget.hint,
-            labelStyle:    AppTypography.inputLabel,
-            hintStyle:     AppTypography.inputLabel,
-            border:        InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppDimensions.space16,
-              vertical:   AppDimensions.space14,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(widget.label, style: AppTypography.inputLabel),
+        const SizedBox(height: AppDimensions.space6),
+        Focus(
+          onFocusChange: (f) => setState(() => _focused = f),
+          child: AnimatedContainer(
+            duration: AppDimensions.durationTransition,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceGlass,
+              borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+              border: Border.all(
+                color:
+                    _focused ? AppColors.champagneGold : AppColors.cardBorder,
+                width: _focused
+                    ? AppDimensions.borderFocus
+                    : AppDimensions.borderThin,
+              ),
+              boxShadow: _focused
+                  ? [
+                      BoxShadow(
+                        color: AppColors.champagneGold.withValues(alpha: 0.08),
+                        blurRadius: 18,
+                        offset: const Offset(0, 8),
+                      ),
+                    ]
+                  : null,
             ),
-            counterStyle: AppTypography.caption,
+            child: TextField(
+              controller: widget.controller,
+              maxLines: widget.maxLines,
+              maxLength: widget.maxLength,
+              style: AppTypography.inputText,
+              onChanged: widget.onChanged,
+              decoration: InputDecoration(
+                hintText: widget.hint,
+                hintStyle: AppTypography.inputLabel,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                filled: false,
+                fillColor: Colors.transparent,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.space16,
+                  vertical: AppDimensions.space16,
+                ),
+                counterStyle: AppTypography.caption,
+              ),
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -669,48 +1176,66 @@ class _DropdownField extends StatelessWidget {
     this.optionLabels,
     required this.onChanged,
   });
-  final String        label;
-  final String        value;
-  final List<String>  options;
+  final String label;
+  final String value;
+  final List<String> options;
   final List<String>? optionLabels;
   final ValueChanged<String?> onChanged;
 
   @override
   Widget build(BuildContext context) {
     final safeValue = options.contains(value) ? value : options.first;
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.space16,
-        vertical:   AppDimensions.space4,
-      ),
-      decoration: BoxDecoration(
-        color:        AppColors.surfaceGlass,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-        border:       Border.all(color: AppColors.cardBorder),
-      ),
-      child: DropdownButtonFormField<String>(
-        initialValue:         safeValue,
-        style:         AppTypography.inputText,
-        dropdownColor: AppColors.surfaceElevated,
-        decoration: InputDecoration(
-          labelText:  label,
-          labelStyle: AppTypography.inputLabel,
-          border:     InputBorder.none,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppTypography.inputLabel),
+        const SizedBox(height: AppDimensions.space6),
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.space16,
+            vertical: AppDimensions.space2,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceGlass,
+            borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+            border: Border.all(color: AppColors.cardBorder),
+          ),
+          child: DropdownButtonFormField<String>(
+            initialValue: safeValue,
+            style: AppTypography.inputText,
+            dropdownColor: AppColors.surfaceElevated,
+            isExpanded: true,
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              errorBorder: InputBorder.none,
+              disabledBorder: InputBorder.none,
+              filled: false,
+              fillColor: Colors.transparent,
+              contentPadding: EdgeInsets.zero,
+            ),
+            icon: const Icon(
+              Icons.expand_more_rounded,
+              color: AppColors.slateMist,
+            ),
+            items: List.generate(options.length, (i) {
+              final val = options[i];
+              final lbl = optionLabels?[i] ?? val;
+              return DropdownMenuItem(
+                value: val,
+                child: Text(
+                  lbl,
+                  style: AppTypography.body,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              );
+            }),
+            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+            onChanged: onChanged,
+          ),
         ),
-        icon: const Icon(
-          Icons.expand_more_rounded,
-          color: AppColors.slateMist,
-        ),
-        items: List.generate(options.length, (i) {
-          final val   = options[i];
-          final lbl   = optionLabels?[i] ?? val;
-          return DropdownMenuItem(
-            value: val,
-            child: Text(lbl, style: AppTypography.body),
-          );
-        }),
-        onChanged: onChanged,
-      ),
+      ],
     );
   }
 }
@@ -723,8 +1248,8 @@ class _ToggleRow extends StatelessWidget {
     required this.value,
     required this.onChanged,
   });
-  final String          label;
-  final bool            value;
+  final String label;
+  final bool value;
   final ValueChanged<bool> onChanged;
 
   @override
@@ -732,21 +1257,21 @@ class _ToggleRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.space16,
-        vertical:   AppDimensions.space12,
+        vertical: AppDimensions.space12,
       ),
       decoration: BoxDecoration(
-        color:        AppColors.surfaceGlass,
+        color: AppColors.surfaceGlass,
         borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-        border:       Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: AppColors.cardBorder),
       ),
       child: Row(
         children: [
           Expanded(child: Text(label, style: AppTypography.body)),
           Switch(
-            value:             value,
-            onChanged:         onChanged,
-            activeThumbColor:       AppColors.champagneGold,
-            activeTrackColor:  AppColors.champagneGold.withValues(alpha: 0.3),
+            value: value,
+            onChanged: onChanged,
+            activeThumbColor: AppColors.champagneGold,
+            activeTrackColor: AppColors.champagneGold.withValues(alpha: 0.3),
             inactiveThumbColor: AppColors.slateMist,
             inactiveTrackColor: AppColors.surfaceGlassHover,
           ),
@@ -767,9 +1292,9 @@ class _StepperRow extends StatelessWidget {
     required this.onChanged,
   });
   final String label;
-  final int    value;
-  final int    min;
-  final int    max;
+  final int value;
+  final int min;
+  final int max;
   final ValueChanged<int> onChanged;
 
   @override
@@ -777,24 +1302,23 @@ class _StepperRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.space16,
-        vertical:   AppDimensions.space12,
+        vertical: AppDimensions.space12,
       ),
       decoration: BoxDecoration(
-        color:        AppColors.surfaceGlass,
+        color: AppColors.surfaceGlass,
         borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-        border:       Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: AppColors.cardBorder),
       ),
       child: Row(
         children: [
           Expanded(child: Text(label, style: AppTypography.body)),
           GestureDetector(
-            onTap: value > min
-                ? () => onChanged(value - 1)
-                : null,
+            onTap: value > min ? () => onChanged(value - 1) : null,
             child: Container(
-              width: 32, height: 32,
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
-                color:  value > min
+                color: value > min
                     ? AppColors.champagneGold.withValues(alpha: 0.15)
                     : AppColors.surfaceGlassHover,
                 shape: BoxShape.circle,
@@ -812,24 +1336,23 @@ class _StepperRow extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(
-                horizontal: AppDimensions.space12),
+            padding:
+                const EdgeInsets.symmetric(horizontal: AppDimensions.space12),
             child: Text(
               '$value',
               style: AppTypography.bodyMedium.copyWith(
-                color:    AppColors.pearlWhite,
+                color: AppColors.pearlWhite,
                 fontSize: 16,
               ),
             ),
           ),
           GestureDetector(
-            onTap: value < max
-                ? () => onChanged(value + 1)
-                : null,
+            onTap: value < max ? () => onChanged(value + 1) : null,
             child: Container(
-              width: 32, height: 32,
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
-                color:  value < max
+                color: value < max
                     ? AppColors.champagneGold.withValues(alpha: 0.15)
                     : AppColors.surfaceGlassHover,
                 shape: BoxShape.circle,
@@ -874,9 +1397,9 @@ class _AgeRangeField extends StatelessWidget {
         AppDimensions.space4,
       ),
       decoration: BoxDecoration(
-        color:        AppColors.surfaceGlass,
+        color: AppColors.surfaceGlass,
         borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-        border:       Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: AppColors.cardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -895,18 +1418,17 @@ class _AgeRangeField extends StatelessWidget {
           ),
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
-              activeTrackColor:   AppColors.champagneGold,
+              activeTrackColor: AppColors.champagneGold,
               inactiveTrackColor: AppColors.progressBarBase,
-              thumbColor:         AppColors.champagneGold,
-              overlayColor:
-                  AppColors.champagneGold.withValues(alpha: 0.15),
+              thumbColor: AppColors.champagneGold,
+              overlayColor: AppColors.champagneGold.withValues(alpha: 0.15),
               rangeThumbShape:
                   const RoundRangeSliderThumbShape(enabledThumbRadius: 8),
             ),
             child: RangeSlider(
               values: RangeValues(min, max),
-              min:    18,
-              max:    60,
+              min: 18,
+              max: 60,
               divisions: 42,
               onChanged: (rv) => onChanged(rv.start, rv.end),
             ),
@@ -920,10 +1442,26 @@ class _AgeRangeField extends StatelessWidget {
 // ── Interest Chips ────────────────────────────────────────────
 
 const _kAllInterests = <String>[
-  'Reading', 'Travel', 'Cooking', 'Fitness', 'Photography',
-  'Technology', 'Art', 'Music', 'Hiking', 'Languages',
-  'Calligraphy', 'Poetry', 'Finance', 'Medicine', 'Education',
-  'Design', 'Architecture', 'Yoga', 'Running', 'Gaming',
+  'Reading',
+  'Travel',
+  'Cooking',
+  'Fitness',
+  'Photography',
+  'Technology',
+  'Art',
+  'Music',
+  'Hiking',
+  'Languages',
+  'Calligraphy',
+  'Poetry',
+  'Finance',
+  'Medicine',
+  'Education',
+  'Design',
+  'Architecture',
+  'Yoga',
+  'Running',
+  'Gaming',
 ];
 
 class _InterestChips extends StatelessWidget {
@@ -961,7 +1499,7 @@ class _InterestChips extends StatelessWidget {
                 duration: AppDimensions.durationTransition,
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppDimensions.space12,
-                  vertical:   AppDimensions.space6,
+                  vertical: AppDimensions.space6,
                 ),
                 decoration: BoxDecoration(
                   color: isOn
@@ -969,14 +1507,18 @@ class _InterestChips extends StatelessWidget {
                       : AppColors.surfaceGlass,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isOn ? AppColors.champagneGold : AppColors.cardBorder,
-                    width: isOn ? AppDimensions.borderFocus : AppDimensions.borderThin,
+                    color:
+                        isOn ? AppColors.champagneGold : AppColors.cardBorder,
+                    width: isOn
+                        ? AppDimensions.borderFocus
+                        : AppDimensions.borderThin,
                   ),
                 ),
                 child: Text(
                   interest,
                   style: AppTypography.caption.copyWith(
-                    color: isOn ? AppColors.champagneGold : AppColors.pearlWhite,
+                    color:
+                        isOn ? AppColors.champagneGold : AppColors.pearlWhite,
                     fontWeight: isOn ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
