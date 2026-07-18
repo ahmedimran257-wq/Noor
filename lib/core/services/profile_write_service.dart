@@ -44,7 +44,8 @@ class ProfileWriteService {
   static const _preferenceRestoreColumns = '''
     preferred_age_min, preferred_age_max, location_preference, diaspora_mode,
     sect_preference, deen_preference, min_education_rank, open_to_divorced,
-    open_to_widowed, open_to_has_children, preferred_living_expectation
+    open_to_widowed, open_to_has_children, open_to_diaspora,
+    preferred_living_expectation
   ''';
 
   static const _userRestoreColumns = '''
@@ -749,6 +750,7 @@ class ProfileWriteService {
       'open_to_divorced': data.openToDivorced,
       'open_to_widowed': data.openToWidowed,
       'open_to_has_children': data.openToWithChildren,
+      'open_to_diaspora': data.openToDiaspora,
       'preferred_living_expectation': data.preferredLivingExpectation,
       'diaspora_mode': data.locationPreference == LocationPreference.diaspora,
       'location_preference': data.locationPreference
@@ -1028,6 +1030,7 @@ class ProfileWriteService {
       'open_to_divorced': data.openToDivorced,
       'open_to_widowed': data.openToWidowed,
       'open_to_has_children': data.openToWithChildren,
+      'open_to_diaspora': data.openToDiaspora,
       'preferred_living_expectation': data.preferredLivingExpectation,
       'diaspora_mode': data.locationPreference == LocationPreference.diaspora,
       'location_preference': data.locationPreference?.name,
@@ -1322,6 +1325,7 @@ class ProfileWriteService {
       openToDivorced: pr?['open_to_divorced'] as bool?,
       openToWidowed: pr?['open_to_widowed'] as bool?,
       openToWithChildren: pr?['open_to_has_children'] as bool?,
+      openToDiaspora: pr?['open_to_diaspora'] as bool?,
       preferredLivingExpectation:
           pr?['preferred_living_expectation'] as String?,
       photoPrivacy: p['photo_privacy'] == 'mutual_only'

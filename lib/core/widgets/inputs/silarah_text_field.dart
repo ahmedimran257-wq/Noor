@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimensions.dart';
 import '../../theme/app_typography.dart';
+import 'silarah_field_frame.dart';
 
 class SilarahTextField extends StatefulWidget {
   const SilarahTextField({
@@ -37,6 +38,8 @@ class SilarahTextField extends StatefulWidget {
     this.inputFormatters,
     this.textCapitalization = TextCapitalization.none,
     this.showCounter = false,
+    this.autocorrect = true,
+    this.enableSuggestions = true,
   });
 
   final TextEditingController? controller;
@@ -62,6 +65,8 @@ class SilarahTextField extends StatefulWidget {
   final List<TextInputFormatter>? inputFormatters;
   final TextCapitalization textCapitalization;
   final bool showCounter;
+  final bool autocorrect;
+  final bool enableSuggestions;
 
   @override
   State<SilarahTextField> createState() => _SilarahTextFieldState();
@@ -123,87 +128,20 @@ class _SilarahTextFieldState extends State<SilarahTextField> {
     final hasError = widget.errorText != null && widget.errorText!.isNotEmpty;
     final isInteractive = widget.enabled && !widget.readOnly;
     final isActive = widget.enabled && _isFocused;
-    final fieldRadius = BorderRadius.circular(AppDimensions.radiusButton);
     final minHeight = widget.maxLines != null && widget.maxLines! > 1
         ? AppDimensions.inputHeight + AppDimensions.space40
         : AppDimensions.inputHeight;
 
-    return AnimatedContainer(
-      duration: AppDimensions.durationTransition,
-      curve: Curves.easeOutCubic,
-      constraints: BoxConstraints(minHeight: minHeight),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.surfacePanelTop.withValues(
-              alpha: widget.enabled ? (isActive ? 0.72 : 0.56) : 0.24,
-            ),
-            AppColors.inputSurface.withValues(
-              alpha: widget.enabled ? (isActive ? 0.16 : 0.1) : 0.05,
-            ),
-          ],
-        ),
-        borderRadius: fieldRadius,
-        border: Border.all(
-          color: hasError
-              ? AppColors.softCoral.withValues(alpha: 0.72)
-              : isActive
-                  ? AppColors.champagneGold.withValues(alpha: 0.78)
-                  : AppColors.cardBorder,
-          width: isActive || hasError
-              ? AppDimensions.borderFocus
-              : AppDimensions.borderThin,
-        ),
-        boxShadow: widget.enabled
-            ? [
-                BoxShadow(
-                  color: AppColors.obsidianNight.withValues(alpha: 0.28),
-                  blurRadius: 14,
-                  offset: const Offset(0, 8),
-                ),
-                if (isActive)
-                  BoxShadow(
-                    color: AppColors.champagneGold.withValues(alpha: 0.14),
-                    blurRadius: 22,
-                    spreadRadius: 1,
-                  ),
-              ]
-            : null,
-      ),
-      clipBehavior: Clip.antiAlias,
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        AppDimensions.space16,
-        0,
-        AppDimensions.space16,
-        0,
-      ),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            top: 1,
-            child: IgnorePointer(
-              child: AnimatedOpacity(
-                duration: AppDimensions.durationTransition,
-                opacity: isActive ? 1 : 0,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: fieldRadius,
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        AppColors.champagneLight.withValues(alpha: 0.07),
-                        AppColors.transparent,
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          TextField(
+    final supportText = hasError ? widget.errorText : widget.helperText;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SilarahFieldFrame(
+          focused: isActive,
+          enabled: widget.enabled,
+          hasError: hasError,
+          minHeight: minHeight,
+          child: TextField(
             controller: widget.controller,
             focusNode: _focusNode,
             obscureText: widget.obscureText,
@@ -221,6 +159,9 @@ class _SilarahTextFieldState extends State<SilarahTextField> {
             autofocus: widget.autofocus,
             inputFormatters: widget.inputFormatters,
             textCapitalization: widget.textCapitalization,
+            autocorrect: widget.autocorrect,
+            enableSuggestions: widget.enableSuggestions,
+            keyboardAppearance: Brightness.dark,
             style: AppTypography.inputText.copyWith(
               color: widget.enabled
                   ? AppColors.pearlWhite
@@ -237,16 +178,11 @@ class _SilarahTextFieldState extends State<SilarahTextField> {
                     null,
             decoration: InputDecoration(
               hintText: widget.hint ?? widget.label,
-              helperText: widget.helperText,
-              errorText: widget.errorText,
               hintStyle: AppTypography.inputLabel.copyWith(
                 color: AppColors.slateMist.withValues(
                   alpha: isInteractive ? 0.78 : 0.42,
                 ),
               ),
-              helperStyle: AppTypography.caption,
-              errorStyle:
-                  AppTypography.caption.copyWith(color: AppColors.softCoral),
               filled: false,
               fillColor: Colors.transparent,
               border: InputBorder.none,
@@ -270,14 +206,39 @@ class _SilarahTextFieldState extends State<SilarahTextField> {
               ),
               suffixIcon: widget.suffixIcon,
               contentPadding: EdgeInsets.symmetric(
+                horizontal: widget.prefixIcon == null
+                    ? AppDimensions.space16
+                    : AppDimensions.space8,
                 vertical: widget.maxLines != null && widget.maxLines! > 1
                     ? AppDimensions.space16
                     : 18.0,
               ),
             ),
           ),
-        ],
-      ),
+        ),
+        AnimatedSwitcher(
+          duration: MediaQuery.maybeOf(context)?.disableAnimations ?? false
+              ? Duration.zero
+              : AppDimensions.durationTransition,
+          child: supportText == null || supportText.isEmpty
+              ? const SizedBox.shrink()
+              : Padding(
+                  key:
+                      ValueKey('${hasError ? 'error' : 'helper'}:$supportText'),
+                  padding: const EdgeInsetsDirectional.only(
+                    start: AppDimensions.space4,
+                    top: AppDimensions.space6,
+                  ),
+                  child: Text(
+                    supportText,
+                    style: AppTypography.caption.copyWith(
+                      color:
+                          hasError ? AppColors.softCoral : AppColors.slateMist,
+                    ),
+                  ),
+                ),
+        ),
+      ],
     );
   }
 }
@@ -419,7 +380,7 @@ class _SilarahOtpFieldState extends State<SilarahOtpField> {
                       BorderRadius.circular(AppDimensions.radiusButton),
                   borderSide: const BorderSide(
                     color: AppColors.champagneGold,
-                    width: AppDimensions.borderFocus,
+                    width: AppDimensions.borderThin,
                   ),
                 ),
               ),

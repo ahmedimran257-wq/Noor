@@ -2,24 +2,31 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:silarah/core/services/country_context_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'support/photon_test_client.dart';
+
 void main() {
   final service = CountryContextService.instance;
 
-  test('Search rural and global cities via live Photon fallback', () async {
+  test('searches rural and global cities through the Photon contract',
+      () async {
     SharedPreferences.setMockInitialValues({});
 
-    final resultsIn = await service.searchCities(
-      'kurnool',
-      countryCode: 'IN',
+    final resultsIn = await withPhotonFixtures(
+      () => service.searchCities(
+        'kurnool',
+        countryCode: 'IN',
+      ),
     );
     expect(resultsIn, isNotEmpty);
     expect(resultsIn.first.city.toLowerCase(), contains('kurnool'));
     expect(resultsIn.every((r) => r.countryCode == 'IN'), isTrue);
     expect(resultsIn.first.placeId, startsWith('photon-'));
 
-    final resultsAnantapur = await service.searchCities(
-      'anantapur',
-      countryCode: 'IN',
+    final resultsAnantapur = await withPhotonFixtures(
+      () => service.searchCities(
+        'anantapur',
+        countryCode: 'IN',
+      ),
     );
     expect(resultsAnantapur, isNotEmpty);
     expect(

@@ -74,15 +74,15 @@ admin_email = "noreply@mail.silarah.com"
 sender_name = "Silarah"
 
 [auth.email.template.magic_link]
-subject = "Your Silarah verification code"
+subject = "Your Silarah sign-in code"
 content_path = "./supabase/auth/email_templates/silarah_verification_code.html"
 
 # First-time passwordless signup can be classified as an account
 # confirmation by GoTrue. Keep it on the exact same numeric OTP contract so a
 # hosted default containing {{ .ConfirmationURL }} can never leak into signup.
 [auth.email.template.confirmation]
-subject = "Your Silarah verification code"
-content_path = "./supabase/auth/email_templates/silarah_verification_code.html"
+subject = "Welcome to Silarah | Verify your email"
+content_path = "./supabase/auth/email_templates/silarah_welcome_verification_code.html"
 
 [auth.hook.before_user_created]
 enabled = true
@@ -119,4 +119,12 @@ verify_jwt = true
 [functions.revenuecat-webhook]
 # RevenueCat signs requests with REVENUECAT_WEBHOOK_SECRET; Supabase JWT
 # verification must stay off so external webhooks can reach our own verifier.
+verify_jwt = false
+
+[functions.brevo-key-keepalive]
+# pg_cron authenticates with the private Vault-backed cron credential.
+verify_jwt = false
+
+[functions.purge-kyc-documents]
+# Private pg_cron request authenticated by the Vault-backed cron credential.
 verify_jwt = false

@@ -38,6 +38,8 @@ import '../../features/home/screens/guardian_dashboard_screen.dart';
 import '../../features/home/screens/chat_screen.dart';
 import '../../features/home/screens/referral_screen.dart';
 import '../../features/home/screens/help_support_screen.dart';
+import '../../features/home/screens/photo_access_requests_screen.dart';
+import '../../features/home/screens/profile_route_screen.dart';
 import '../../features/verification/screens/badge_verification_screen.dart';
 import '../../features/verification/screens/kyc_verification_screen.dart';
 import '../widgets/loaders/silarah_shimmer.dart';
@@ -64,6 +66,7 @@ abstract final class AppRoutes {
   static const verify = '/verify';
   static const badgeVerification = '/badge-verification';
   static const helpSupport = '/help-support';
+  static const photoRequests = '/photo-requests';
 }
 
 // ── Screen index → route path mapping ────────────────────────
@@ -141,6 +144,10 @@ GoRouter buildAppRouter(
               location == AppRoutes.verify ||
               location == AppRoutes.badgeVerification ||
               location == AppRoutes.helpSupport) {
+            return null;
+          }
+          if (location == AppRoutes.photoRequests ||
+              location.startsWith('/profile/')) {
             return null;
           }
           if (location.startsWith('/chat/')) return null;
@@ -317,6 +324,22 @@ GoRouter buildAppRouter(
         ),
       ),
       GoRoute(
+        path: AppRoutes.photoRequests,
+        pageBuilder: (context, state) => _slidePage(
+          key: state.pageKey,
+          child: const PhotoAccessRequestsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/profile/:id',
+        pageBuilder: (context, state) => _slidePage(
+          key: state.pageKey,
+          child: ProfileRouteScreen(
+            profileIdentifier: state.pathParameters['id'] ?? '',
+          ),
+        ),
+      ),
+      GoRoute(
         path: AppRoutes.referral,
         pageBuilder: (context, state) => _slidePage(
           key: state.pageKey,
@@ -402,30 +425,38 @@ CustomTransitionPage<void> _slidePage({
   return CustomTransitionPage<void>(
     key: key,
     child: child,
-    transitionDuration: const Duration(milliseconds: 250),
-    reverseTransitionDuration: const Duration(milliseconds: 200),
+    transitionDuration: const Duration(milliseconds: 320),
+    reverseTransitionDuration: const Duration(milliseconds: 220),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      final slideIn = Tween<Offset>(
-        begin: const Offset(1.0, 0.0),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(
+      if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) {
+        return child;
+      }
+      final direction =
+          Directionality.of(context) == TextDirection.rtl ? -1.0 : 1.0;
+      final incoming = CurvedAnimation(
         parent: animation,
         curve: Curves.easeOutCubic,
-      ));
-
-      final slideOut = Tween<Offset>(
-        begin: Offset.zero,
-        end: const Offset(-0.25, 0.0),
-      ).animate(CurvedAnimation(
+        reverseCurve: Curves.easeInCubic,
+      );
+      final outgoing = CurvedAnimation(
         parent: secondaryAnimation,
-        curve: Curves.easeInCubic,
-      ));
+        curve: Curves.easeOutCubic,
+      );
 
-      return SlideTransition(
-        position: slideOut,
+      return FadeTransition(
+        opacity: incoming,
         child: SlideTransition(
-          position: slideIn,
-          child: child,
+          position: Tween<Offset>(
+            begin: Offset(0.055 * direction, 0),
+            end: Offset.zero,
+          ).animate(incoming),
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: Offset.zero,
+              end: Offset(-0.018 * direction, 0),
+            ).animate(outgoing),
+            child: child,
+          ),
         ),
       );
     },

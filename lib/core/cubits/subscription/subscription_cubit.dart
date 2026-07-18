@@ -53,14 +53,15 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
     try {
       await Purchases.logIn(userId);
       final customerInfo = await Purchases.getCustomerInfo();
-      final isActive = customerInfo.entitlements.active.containsKey('premium');
+      final isActive = SubscriptionEntitlements.isPremiumActive(customerInfo);
 
       await SubscriptionService.instance.initialize(userId: userId);
 
       if (!isClosed) {
         final expiry = isActive
             ? DateTime.tryParse(
-                customerInfo.entitlements.active['premium']?.expirationDate ??
+                SubscriptionEntitlements.activePremium(customerInfo)
+                        ?.expirationDate ??
                     '',
               )
             : null;
@@ -75,10 +76,11 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
 
       Purchases.addCustomerInfoUpdateListener((info) {
         if (isClosed) return;
-        final active = info.entitlements.active.containsKey('premium');
+        final active = SubscriptionEntitlements.isPremiumActive(info);
         final expiry = active
             ? DateTime.tryParse(
-                info.entitlements.active['premium']?.expirationDate ?? '',
+                SubscriptionEntitlements.activePremium(info)?.expirationDate ??
+                    '',
               )
             : null;
 
@@ -119,7 +121,7 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
       if (success) {
         final info = await Purchases.getCustomerInfo();
         final expiry = DateTime.tryParse(
-          info.entitlements.active['premium']?.expirationDate ?? '',
+          SubscriptionEntitlements.activePremium(info)?.expirationDate ?? '',
         );
 
         emit(state.copyWith(
@@ -164,7 +166,7 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
       if (success) {
         final info = await Purchases.getCustomerInfo();
         final expiry = DateTime.tryParse(
-          info.entitlements.active['premium']?.expirationDate ?? '',
+          SubscriptionEntitlements.activePremium(info)?.expirationDate ?? '',
         );
 
         emit(state.copyWith(

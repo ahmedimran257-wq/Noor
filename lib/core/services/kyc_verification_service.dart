@@ -20,14 +20,15 @@ class KycVerificationResult {
   final double? faceSimilarity;
 }
 
-/// Orchestrates the equal on-device KYC baseline for every country.
+/// Submits global KYC evidence for private human review.
+///
+/// On-device extraction and comparison are quality hints only. They are never
+/// authoritative and cannot approve or reject an identity.
 class KycVerificationService {
   KycVerificationService._();
   static final instance = KycVerificationService._();
 
   static const _bucket = 'kyc-documents';
-  static const _manualReviewThreshold = 0.50;
-
   Future<KycVerificationResult> verify({
     required File selfie,
     required File idPhoto,
@@ -42,29 +43,20 @@ class KycVerificationService {
       );
     }
 
-    // OCR and age checks happen before a document ever leaves the device.
-    final ocr = await IdOcrService.instance.extract(idPhoto);
-    final dob = ocr.dateOfBirth;
-    if (dob == null) {
-      return const KycVerificationResult(
-        status: KycVerificationStatus.rejected,
-        message: 'We could not read a date of birth from that document.',
-      );
+    DateTime? extractedDob;
+    double? faceSimilarity;
+    try {
+      extractedDob = (await IdOcrService.instance.extract(idPhoto)).dateOfBirth;
+    } catch (_) {
+      // A human reviewer reads the original document. OCR failure must not
+      // become an identity decision.
     }
-    if (!ocr.isAdult) {
-      return const KycVerificationResult(
-        status: KycVerificationStatus.rejected,
-        message: 'You must be at least 18 years old to use Silarah.',
-      );
-    }
-
-    final match = await FaceMatchService.instance.compareFaces(selfie, idPhoto);
-    if (match.similarity < _manualReviewThreshold) {
-      return KycVerificationResult(
-        status: KycVerificationStatus.rejected,
-        message: 'The selfie does not appear to match the document photo.',
-        faceSimilarity: match.similarity,
-      );
+    try {
+      faceSimilarity =
+          (await FaceMatchService.instance.compareFaces(selfie, idPhoto))
+              .similarity;
+    } catch (_) {
+      // Face comparison is a reviewer hint, not a submission gate.
     }
 
     final selfiePath = await _uploadPrivateDocument(selfie, 'kyc_selfie');
@@ -73,8 +65,8 @@ class KycVerificationService {
       'process-kyc',
       body: {
         'user_id': SupabaseService.currentUserId,
-        'face_similarity': match.similarity,
-        'ocr_dob': _isoDate(dob),
+        'face_similarity': faceSimilarity,
+        'ocr_dob': extractedDob == null ? null : _isoDate(extractedDob),
         'id_type': idType,
         'country_code': countryCode.toUpperCase(),
         'selfie_storage_path': selfiePath,
@@ -90,14 +82,12 @@ class KycVerificationService {
     final payload = Map<String, dynamic>.from(response.data as Map);
     final status = payload['status'] as String?;
     return KycVerificationResult(
-      status: status == 'verified'
-          ? KycVerificationStatus.verified
-          : status == 'pending_review'
-              ? KycVerificationStatus.pendingReview
-              : KycVerificationStatus.rejected,
+      status: status == 'pending_review'
+          ? KycVerificationStatus.pendingReview
+          : KycVerificationStatus.rejected,
       message: payload['message'] as String? ??
           'Verification could not be completed.',
-      faceSimilarity: match.similarity,
+      faceSimilarity: faceSimilarity,
     );
   }
 

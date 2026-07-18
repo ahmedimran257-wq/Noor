@@ -15,7 +15,8 @@ import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_state.dart';
 import '../../../core/cubits/subscription/subscription_cubit.dart';
 import '../../../core/cubits/subscription/subscription_state.dart';
-import '../../../core/cubits/notifications/notifications_cubit.dart';
+import '../../../core/cubits/account_standing/account_standing_cubit.dart';
+import '../../../core/cubits/account_standing/account_standing_state.dart';
 import '../../../core/models/discovery_profile.dart';
 import '../../../core/models/onboarding_data.dart';
 import '../../../core/router/app_router.dart';
@@ -37,6 +38,8 @@ import '../../../core/services/selfie_verification_service.dart';
 import '../../../core/services/profile_photo_service.dart';
 import '../../../core/services/wali_mode_service.dart';
 import '../../../core/utils/silarah_compute.dart';
+import '../../onboarding/screens/photo_upload_screen.dart';
+import '../widgets/notification_bell_button.dart';
 
 // ── Completeness score ────────────────────────────────────────
 
@@ -109,8 +112,8 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   bool _verificationLoading = true;
   bool _trustStateLoading = true;
   bool _emailVerified = false;
-  String _profileVisibility = 'paused';
   String _kycStatus = 'unverified';
+  String _kycAssuranceLevel = 'none';
   String? _accountEmail;
   String? _primaryPhotoUrl;
   int _approvedPhotoCount = 0;
@@ -286,6 +289,25 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     if (changed == true && mounted) await _refreshProfileFromDb(force: true);
   }
 
+  Future<void> _openManagePhotos() async {
+    final saved = await Navigator.of(context).push<bool>(
+      PageRouteBuilder<bool>(
+        transitionDuration: AppDimensions.durationReveal,
+        reverseTransitionDuration: AppDimensions.durationTransition,
+        pageBuilder: (context, animation, _) => FadeTransition(
+          opacity: CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          ),
+          child: const PhotoUploadScreen(returnToPreviousOnSave: true),
+        ),
+      ),
+    );
+    if (saved == true && mounted) {
+      await _refreshProfileFromDb(force: true);
+    }
+  }
+
   Future<void> _openOwnProfilePreview() async {
     if (_profilePreviewOpening) return;
     setState(() => _profilePreviewOpening = true);
@@ -341,6 +363,11 @@ class _MyProfileScreenState extends State<MyProfileScreen>
       photoUrl: refreshedPhotoUrl ?? _primaryPhotoUrl,
       photoUrls: galleryUrls,
       photoCount: galleryUrls.length,
+      photoPrivacy: data.photoPrivacy == PhotoPrivacy.mutualOnly
+          ? 'mutual_only'
+          : data.photoPrivacy == PhotoPrivacy.requestOnly
+              ? 'request_only'
+              : 'public',
       isVerified: _hasVerificationBadge,
       occupation: data.profession,
       education: data.educationLabel,
@@ -381,6 +408,14 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           isInterestSent: false,
           onInterestSent: () {},
           isOwnProfile: true,
+          onEditOwnProfile: () {
+            Navigator.of(context).pop();
+            unawaited(_openEditProfile());
+          },
+          onManageOwnPhotos: () {
+            Navigator.of(context).pop();
+            unawaited(_openManagePhotos());
+          },
         ),
       ),
     );
@@ -394,16 +429,24 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     try {
       final profile = await SupabaseService.client
           .from('profiles')
-          .select('visibility, kyc_verified, verification_status')
+          .select('kyc_verified, verification_status, kyc_assurance_level')
           .eq('user_id', userId)
           .maybeSingle();
       final authUser = SupabaseService.client.auth.currentUser;
       if (!mounted) return;
       setState(() {
-        _profileVisibility = profile?['visibility']?.toString() ?? 'paused';
-        _kycStatus = (profile?['kyc_verified'] as bool? ?? false)
+        final kycVerified = profile?['kyc_verified'] as bool? ?? false;
+        final reviewStatus = profile?['verification_status']?.toString();
+        // verification_status also represents the separate passive
+        // face/liveness badge. It must never be promoted to government-ID
+        // verification. Only kyc_verified can produce the strong state.
+        _kycStatus = kycVerified
             ? 'verified'
-            : profile?['verification_status']?.toString() ?? 'unverified';
+            : reviewStatus == 'pending_review'
+                ? 'pending_review'
+                : 'unverified';
+        _kycAssuranceLevel =
+            profile?['kyc_assurance_level']?.toString() ?? 'none';
         _accountEmail = authUser?.email;
         _emailVerified = authUser?.emailConfirmedAt != null;
         _trustStateLoading = false;
@@ -539,56 +582,26 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                 ),
                 const Spacer(),
                 // Notifications
-                BlocBuilder<NotificationsCubit, NotificationsState>(
-                  builder: (context, ns) {
-                    return SilarahPressable(
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                            builder: (_) => const NotificationsScreen()),
-                      ),
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Container(
-                            width: AppDimensions.minTouchTarget,
-                            height: AppDimensions.minTouchTarget,
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceGlass,
-                              borderRadius: BorderRadius.circular(
-                                  AppDimensions.radiusButton),
-                              border: Border.all(color: AppColors.cardBorder),
-                            ),
-                            child: const Icon(
-                              Icons.notifications_none_rounded,
-                              color: AppColors.slateMist,
-                              size: AppDimensions.iconSizeLarge,
-                            ),
-                          ),
-                          if (ns.unreadCount > 0)
-                            Positioned(
-                              top: 6,
-                              right: 6,
-                              child: Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  color: AppColors.champagneGold,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    );
-                  },
+                NotificationBellButton(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const NotificationsScreen(),
+                    ),
+                  ),
                 ),
                 const SizedBox(width: AppDimensions.space8),
                 // Settings
                 SilarahPressable(
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                        builder: (_) => const SettingsScreen()),
-                  ),
+                  onTap: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const SettingsScreen(),
+                      ),
+                    );
+                    if (!context.mounted) return;
+                    await context.read<AccountStandingCubit>().refresh();
+                    await _loadTrustState();
+                  },
                   child: Container(
                     width: AppDimensions.minTouchTarget,
                     height: AppDimensions.minTouchTarget,
@@ -610,6 +623,21 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           ),
 
           const SizedBox(height: AppDimensions.space28),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: BlocBuilder<AccountStandingCubit, AccountStandingState>(
+              builder: (context, standing) => _ProfileLifecycleCard(
+                standing: standing,
+                onResume: () =>
+                    context.read<AccountStandingCubit>().resumeProfile(),
+                onContactSupport: () => context.push(AppRoutes.helpSupport),
+                onManagePhotos: _openManagePhotos,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: AppDimensions.space16),
 
           // Profile card preview (live completeness)
           Padding(
@@ -651,20 +679,10 @@ class _MyProfileScreenState extends State<MyProfileScreen>
 
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: _ProfileLifecycleCard(
-              visibility: _profileVisibility,
-              hasPublishedPhoto: _approvedPhotoCount > 0,
-              onOpenNotifications: () => context.push(AppRoutes.notifications),
-            ),
-          ),
-
-          const SizedBox(height: AppDimensions.space16),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
             child: _TrustCenterCard(
               loading: _trustStateLoading,
               kycStatus: _kycStatus,
+              kycAssuranceLevel: _kycAssuranceLevel,
               hasFaceBadge: _hasVerificationBadge,
               email: _accountEmail,
               emailVerified: _emailVerified,
@@ -962,92 +980,199 @@ class _ProfilePrimaryActions extends StatelessWidget {
 
 class _ProfileLifecycleCard extends StatelessWidget {
   const _ProfileLifecycleCard({
-    required this.visibility,
-    required this.hasPublishedPhoto,
-    required this.onOpenNotifications,
+    required this.standing,
+    required this.onResume,
+    required this.onContactSupport,
+    required this.onManagePhotos,
   });
 
-  final String visibility;
-  final bool hasPublishedPhoto;
-  final VoidCallback onOpenNotifications;
+  final AccountStandingState standing;
+  final VoidCallback onResume;
+  final VoidCallback onContactSupport;
+  final VoidCallback onManagePhotos;
 
   @override
   Widget build(BuildContext context) {
-    final isLive = visibility == 'visible' && hasPublishedPhoto;
-    final isLimited = visibility == 'suspended';
-    final isDeactivated = visibility == 'deactivated';
-    final color = isLive
-        ? AppColors.verifiedTeal
-        : isLimited || isDeactivated
-            ? AppColors.softCoral
+    final isBanned = standing.kind == AccountStandingKind.banned;
+    final isSuspended = standing.kind == AccountStandingKind.suspended;
+    final isDeactivated = standing.kind == AccountStandingKind.deactivated;
+    final isPaused = standing.kind == AccountStandingKind.paused;
+    final isActive = standing.kind == AccountStandingKind.active;
+    final isRestricted = isBanned || isSuspended || isDeactivated;
+    final needsPhoto = !standing.hasPublishedPhoto && !isRestricted;
+    final color = isRestricted
+        ? AppColors.softCoral
+        : isActive && !needsPhoto
+            ? AppColors.verifiedTeal
             : AppColors.champagneGold;
-    final icon = isLive
-        ? Icons.public_rounded
-        : isLimited
-            ? Icons.visibility_off_outlined
+    final icon = isBanned
+        ? Icons.block_rounded
+        : isSuspended
+            ? Icons.gpp_maybe_outlined
             : isDeactivated
                 ? Icons.person_off_outlined
-                : Icons.pause_circle_outline_rounded;
-    final title = isLive
-        ? 'Live in discovery'
-        : isLimited
-            ? 'Visibility limited'
+                : isPaused
+                    ? Icons.pause_circle_outline_rounded
+                    : needsPhoto
+                        ? Icons.add_photo_alternate_outlined
+                        : Icons.public_rounded;
+    final title = isBanned
+        ? 'Account banned'
+        : isSuspended
+            ? 'Profile suspended'
             : isDeactivated
                 ? 'Profile deactivated'
-                : hasPublishedPhoto
+                : isPaused
                     ? 'Profile paused'
-                    : 'Add your primary photo';
-    final body = isLive
-        ? 'Your primary photo passed automated safety checks and your profile is visible in discovery.'
-        : isLimited
-            ? 'Your profile is not shown in discovery. Open notifications for the latest account update.'
+                    : needsPhoto
+                        ? 'Primary photo required'
+                        : isActive
+                            ? 'Live in discovery'
+                            : 'Checking account status';
+    final body = isBanned
+        ? 'An enforced account restriction is active. Your profile is not shown and protected actions are unavailable. You can contact Support to appeal.'
+        : isSuspended
+            ? 'Your profile is hidden while the account is under review. This status remains here until the restriction is resolved.'
             : isDeactivated
-                ? 'Your profile is hidden. Contact support if you want help returning to Silarah.'
-                : hasPublishedPhoto
-                    ? 'Your profile is currently hidden from discovery. You can resume it from privacy settings.'
-                    : 'A clear primary photo is required before your profile can appear in discovery.';
+                ? 'Your profile is not active. Support can guide you through restoring access.'
+                : isPaused
+                    ? standing.hasPublishedPhoto
+                        ? 'You are hidden from discovery. Resume whenever you are ready—your profile information and matches remain intact.'
+                        : 'Your profile is hidden and needs a safe primary photo before it can return to discovery.'
+                    : needsPhoto
+                        ? 'Add a primary photo that passes the safety scan to publish your profile.'
+                        : isActive
+                            ? 'Your profile is visible and eligible to appear in discovery.'
+                            : 'We are confirming your current visibility with Silarah.';
+    final actionLabel = isRestricted
+        ? 'Contact support'
+        : isPaused && standing.hasPublishedPhoto
+            ? 'Resume profile'
+            : needsPhoto
+                ? 'Manage photos'
+                : null;
+    final action = isRestricted
+        ? onContactSupport
+        : isPaused && standing.hasPublishedPhoto
+            ? onResume
+            : needsPhoto
+                ? onManagePhotos
+                : null;
 
     return Semantics(
+      liveRegion: true,
       label: '$title. $body',
-      child: Container(
+      child: AnimatedContainer(
+        duration: AppDimensions.durationReveal,
         padding: const EdgeInsets.all(AppDimensions.space16),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.07),
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
           border: Border.all(color: color.withValues(alpha: 0.35)),
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-              ),
-              child: Icon(icon, color: color, size: 21),
+            Row(
+              children: [
+                const Text(
+                  'ACCOUNT STANDING',
+                  style: AppTypography.sectionLabel,
+                ),
+                const Spacer(),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    isRestricted
+                        ? 'RESTRICTED'
+                        : isActive && !needsPhoto
+                            ? 'ACTIVE'
+                            : 'ATTENTION',
+                    style: AppTypography.badge.copyWith(color: color),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: AppDimensions.space12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: AppTypography.bodyMedium.copyWith(color: color)),
-                  const SizedBox(height: AppDimensions.space4),
-                  Text(body,
-                      style: AppTypography.caption.copyWith(height: 1.45)),
-                ],
-              ),
+            const SizedBox(height: AppDimensions.space14),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.12),
+                    borderRadius:
+                        BorderRadius.circular(AppDimensions.radiusButton),
+                  ),
+                  child: Icon(icon, color: color, size: 22),
+                ),
+                const SizedBox(width: AppDimensions.space12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: AppTypography.bodyMedium.copyWith(color: color),
+                      ),
+                      const SizedBox(height: AppDimensions.space4),
+                      Text(
+                        standing.errorMessage ?? body,
+                        style: AppTypography.caption.copyWith(height: 1.45),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            if (isLimited)
-              IconButton(
-                tooltip: 'Open notifications',
-                onPressed: onOpenNotifications,
-                icon: const Icon(Icons.notifications_outlined,
-                    color: AppColors.slateMist, size: 20),
+            if (actionLabel != null && action != null) ...[
+              const SizedBox(height: AppDimensions.space14),
+              Align(
+                alignment: Alignment.centerRight,
+                child: SilarahPressable(
+                  semanticLabel: actionLabel,
+                  onTap: standing.updating ? null : action,
+                  enabled: !standing.updating,
+                  child: Container(
+                    height: 42,
+                    constraints: const BoxConstraints(minWidth: 142),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: isRestricted ? Colors.transparent : color,
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusButton),
+                      border: Border.all(color: color),
+                    ),
+                    child: standing.updating
+                        ? SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: isRestricted
+                                  ? color
+                                  : AppColors.obsidianNight,
+                            ),
+                          )
+                        : Text(
+                            actionLabel,
+                            style: AppTypography.captionMedium.copyWith(
+                              color: isRestricted
+                                  ? color
+                                  : AppColors.obsidianNight,
+                            ),
+                          ),
+                  ),
+                ),
               ),
+            ],
           ],
         ),
       ),
@@ -1059,6 +1184,7 @@ class _TrustCenterCard extends StatelessWidget {
   const _TrustCenterCard({
     required this.loading,
     required this.kycStatus,
+    required this.kycAssuranceLevel,
     required this.hasFaceBadge,
     required this.email,
     required this.emailVerified,
@@ -1068,6 +1194,7 @@ class _TrustCenterCard extends StatelessWidget {
 
   final bool loading;
   final String kycStatus;
+  final String kycAssuranceLevel;
   final bool hasFaceBadge;
   final String? email;
   final bool emailVerified;
@@ -1078,6 +1205,8 @@ class _TrustCenterCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final identityVerified = kycStatus == 'verified';
     final identityPending = kycStatus == 'pending_review';
+    final isDigiLocker = kycAssuranceLevel == 'government_document_match';
+    final isManualReview = kycAssuranceLevel == 'manual_document_review';
 
     return Container(
       decoration: BoxDecoration(
@@ -1114,12 +1243,18 @@ class _TrustCenterCard extends StatelessWidget {
             icon: Icons.badge_outlined,
             title: 'Government ID check',
             subtitle: identityVerified
-                ? 'Identity verified securely'
+                ? isDigiLocker
+                    ? 'Government document matched through DigiLocker'
+                    : isManualReview
+                        ? 'Document and selfie reviewed by Silarah'
+                        : 'Identity evidence reviewed'
                 : identityPending
                     ? 'Submitted for a secure review'
                     : 'Match a government ID with your selfie',
             status: identityVerified
-                ? 'Verified'
+                ? isDigiLocker
+                    ? 'DigiLocker verified'
+                    : 'ID reviewed'
                 : identityPending
                     ? 'In review'
                     : 'Verify',

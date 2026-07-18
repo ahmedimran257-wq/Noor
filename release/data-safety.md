@@ -1,0 +1,47 @@
+# Google Play Data safety worksheet
+
+This is a conservative implementation-based worksheet, not legal advice. Recheck
+every answer against the exact production build and the current Play Console
+wording immediately before submission.
+
+## Global declarations
+
+- Data is encrypted in transit: **Yes** (HTTPS/TLS and Supabase secure channels).
+- Users can request deletion: **Yes** (in-app deletion plus
+  `https://silarah.com/data-deletion/`).
+- Account creation is supported: **Yes**.
+- Independent security review: **No**, unless a qualifying audit is completed.
+- Data is sold: **No**.
+- Third-party behavioural advertising: **No**.
+
+## Data collected
+
+| Play category | Examples in Silarah | Collected | Shared | Purpose | Required |
+| --- | --- | --- | --- | --- | --- |
+| Name | First/last name, profile identity | Yes | Service providers | Account, matching, safety | Yes |
+| Email address | Sign-in and service contact | Yes | Supabase, Brevo | Authentication, account, transactional messages | Yes |
+| Phone number | When phone verification is enabled | Conditional | Firebase/Supabase | Authentication, fraud prevention | Optional/conditional |
+| User IDs | Supabase user/profile/device IDs | Yes | Service providers | Account, security, analytics-free operations | Yes |
+| Address/location | City, state, country, coordinates | Yes | Supabase; location lookup provider receives query/location | Matching, app functionality | City/country required; precise device location optional |
+| Photos | Profile, verification selfie, optional ID evidence | Yes | Supabase; on-device ML does not upload model input | Profile, safety, verification | Profile photo required; verification optional |
+| Personal info | DOB/age, gender, marital/family details, faith, education, work, income preferences, languages, bio | Yes | Supabase | Profile and matching | Mix of required and optional |
+| Messages | Chats, interests, reports and guardian data | Yes | Supabase; translation provider only when translation is requested | App functionality and safety | Feature-dependent |
+| Purchase history | Product, entitlement, transaction status, price/currency metadata | Yes | Google Play, RevenueCat, Supabase | Purchases, entitlement, support, fraud prevention | Purchase-dependent |
+| App activity | Interests, matches, profile views, saved profiles, notification state | Yes | Supabase | App functionality, personalization, security | Feature-dependent |
+| App info/performance | Crash traces, device/app diagnostics | Yes | Firebase Crashlytics | Stability and security | Automatically collected in production |
+| Device or other IDs | FCM token, installation/device identifier | Yes | Firebase/Supabase | Notifications, security, abuse prevention | Notification/device dependent |
+
+## Handling notes for Console answers
+
+- Mark data as **ephemeral** only when code truly processes it in memory and does
+  not persist it. Profile photos, chat, IDs, reports and transaction records are
+  not ephemeral.
+- On-device ML Kit/TFLite processing alone is not third-party sharing because
+  the image stays on the device. The later upload to Supabase is collection.
+- A user-initiated translation may send message text to the configured
+  translation provider; declare sharing if that provider is active in production.
+- Identity documents are optional verification data, access-controlled and
+  subject to the documented retention/purge workflow. Do not claim they are
+  never stored.
+- Do not select advertising or marketing purposes for transactional email or
+  FCM unless marketing campaigns are actually enabled in the submitted build.

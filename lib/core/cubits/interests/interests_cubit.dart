@@ -26,10 +26,14 @@ class _InterestQuota {
   const _InterestQuota({
     required this.sentToday,
     required this.dailyLimit,
+    required this.isPremium,
+    required this.resetsAt,
   });
 
   final int sentToday;
   final int dailyLimit;
+  final bool isPremium;
+  final DateTime resetsAt;
 }
 
 class InterestsCubit extends Cubit<InterestsState> {
@@ -180,12 +184,14 @@ class InterestsCubit extends Cubit<InterestsState> {
           interestsSentToday: quota.sentToday,
           dailyLimit: quota.dailyLimit,
           lastResetDate: now,
+          quotaResetsAt: quota.resetsAt,
+          isPremium: quota.isPremium,
         ));
       }
     } catch (e) {
       debugPrint('[InterestsCubit] Error loading from DB: $e');
       if (!isClosed) {
-        emit(const InterestsState(dailyLimit: 0, limitError: true));
+        emit(const InterestsState(dailyLimit: 0, quotaUnavailable: true));
       }
     }
   }
@@ -282,7 +288,7 @@ class InterestsCubit extends Cubit<InterestsState> {
       emit(state.copyWith(
         interestsSentToday: 0,
         dailyLimit: 0,
-        limitError: true,
+        quotaUnavailable: true,
       ));
       return;
     }
@@ -291,6 +297,9 @@ class InterestsCubit extends Cubit<InterestsState> {
       interestsSentToday: quota.sentToday,
       dailyLimit: quota.dailyLimit,
       lastResetDate: DateTime.now(),
+      quotaResetsAt: quota.resetsAt,
+      isPremium: quota.isPremium,
+      clearQuotaUnavailable: true,
     ));
   }
 
@@ -308,16 +317,42 @@ class InterestsCubit extends Cubit<InterestsState> {
       final row = Map<String, dynamic>.from(rows.first as Map);
       final sentToday = (row['sent_today'] as num?)?.toInt();
       final dailyLimit = (row['daily_limit'] as num?)?.toInt();
-      if (sentToday == null || dailyLimit == null) {
+      final resetsAt = DateTime.tryParse(row['resets_at']?.toString() ?? '');
+      final isPremium = row['is_premium'] == true;
+      if (sentToday == null || dailyLimit == null || resetsAt == null) {
         throw StateError('Interest quota response was incomplete.');
       }
       return _InterestQuota(
         sentToday: sentToday,
         dailyLimit: dailyLimit,
+        isPremium: isPremium,
+        resetsAt: resetsAt.toLocal(),
       );
     } catch (e) {
       debugPrint('[InterestsCubit] Error loading server quota: $e');
       throw StateError('Unable to verify your daily interest limit.');
+    }
+  }
+
+  /// Refreshes the authoritative allowance before opening a composer or note
+  /// sheet. [sendInterest] checks again immediately before the insert so this
+  /// is a UX optimization, never the security boundary.
+  Future<bool> canStartInterest() async {
+    try {
+      final quota = await _loadServerQuota();
+      if (isClosed) return false;
+      emit(state.copyWith(
+        interestsSentToday: quota.sentToday,
+        dailyLimit: quota.dailyLimit,
+        quotaResetsAt: quota.resetsAt,
+        isPremium: quota.isPremium,
+        limitError: quota.sentToday >= quota.dailyLimit,
+        clearQuotaUnavailable: true,
+      ));
+      return quota.sentToday < quota.dailyLimit;
+    } catch (_) {
+      if (!isClosed) emit(state.copyWith(quotaUnavailable: true));
+      return false;
     }
   }
 
@@ -385,11 +420,18 @@ class InterestsCubit extends Cubit<InterestsState> {
     try {
       quota = await _loadServerQuota();
     } catch (_) {
-      emit(state.copyWith(limitError: true));
+      emit(state.copyWith(quotaUnavailable: true));
       return false;
     }
     if (quota.sentToday >= quota.dailyLimit) {
-      emit(state.copyWith(limitError: true));
+      emit(state.copyWith(
+        interestsSentToday: quota.sentToday,
+        dailyLimit: quota.dailyLimit,
+        quotaResetsAt: quota.resetsAt,
+        isPremium: quota.isPremium,
+        limitError: true,
+        clearQuotaUnavailable: true,
+      ));
       return false;
     }
 
@@ -423,12 +465,23 @@ class InterestsCubit extends Cubit<InterestsState> {
     } catch (e) {
       debugPrint('[InterestsCubit] Error sending interest: $e');
       // If the DB rejects (e.g., daily limit hit by trigger), surface the error.
-      if (e.toString().contains('Daily interest limit')) {
-        emit(state.copyWith(limitError: true));
+      if (e.toString().contains('interest_quota_exhausted') ||
+          e.toString().contains('Daily interest limit')) {
+        emit(state.copyWith(
+          interestsSentToday: quota.sentToday,
+          dailyLimit: quota.dailyLimit,
+          quotaResetsAt: quota.resetsAt,
+          isPremium: quota.isPremium,
+          limitError: true,
+          clearQuotaUnavailable: true,
+        ));
         return false;
       }
       // For duplicate errors, treat as success because the server already has it.
-      if (e.toString().contains('already sent')) return true;
+      if (e.toString().contains('interest_already_exists') ||
+          e.toString().contains('already sent')) {
+        return true;
+      }
       return false;
     }
 
@@ -449,7 +502,11 @@ class InterestsCubit extends Cubit<InterestsState> {
     try {
       updatedQuota = await _loadServerQuota();
     } catch (_) {
-      emit(state.copyWith(sent: updated, dailyLimit: 0, limitError: true));
+      emit(state.copyWith(
+        sent: updated,
+        dailyLimit: 0,
+        quotaUnavailable: true,
+      ));
       return true;
     }
 
@@ -458,13 +515,20 @@ class InterestsCubit extends Cubit<InterestsState> {
       interestsSentToday: updatedQuota.sentToday,
       dailyLimit: updatedQuota.dailyLimit,
       lastResetDate: now,
+      quotaResetsAt: updatedQuota.resetsAt,
+      isPremium: updatedQuota.isPremium,
       clearLimitError: true,
+      clearQuotaUnavailable: true,
     ));
     return true;
   }
 
   void clearLimitError() {
     emit(state.copyWith(clearLimitError: true));
+  }
+
+  void clearQuotaUnavailable() {
+    emit(state.copyWith(clearQuotaUnavailable: true));
   }
 
   void clear() {

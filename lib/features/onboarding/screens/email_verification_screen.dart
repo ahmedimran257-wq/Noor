@@ -18,6 +18,8 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
 import '../../../core/widgets/buttons/silarah_primary_button.dart';
+import '../../../core/widgets/animations/silarah_motion.dart';
+import '../../../core/widgets/inputs/silarah_text_field.dart';
 import '../../../core/widgets/loaders/silarah_shimmer.dart';
 import '../../../l10n/generated/app_localizations.dart';
 
@@ -228,23 +230,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                   ),
                 ),
                 Expanded(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 250),
-                    switchInCurve: Curves.easeOutCubic,
-                    switchOutCurve: Curves.easeInCubic,
-                    transitionBuilder: (child, animation) {
-                      final isIn = child.key ==
-                          (_otpSent
-                              ? const ValueKey('otp')
-                              : const ValueKey('email'));
-                      return SlideTransition(
-                        position: Tween<Offset>(
-                          begin: Offset(0, isIn ? 0.06 : -0.06),
-                          end: Offset.zero,
-                        ).animate(animation),
-                        child: FadeTransition(opacity: animation, child: child),
-                      );
-                    },
+                  child: SilarahContentSwap(
                     child: _otpSent
                         ? _OtpView(
                             key: const ValueKey('otp'),
@@ -280,7 +266,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   }
 }
 
-class _EmailView extends StatefulWidget {
+class _EmailView extends StatelessWidget {
   const _EmailView({
     super.key,
     required this.controller,
@@ -301,72 +287,8 @@ class _EmailView extends StatefulWidget {
   final bool isComplete;
 
   @override
-  State<_EmailView> createState() => _EmailViewState();
-}
-
-class _EmailViewState extends State<_EmailView>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late final Animation<double> _titleFade;
-  late final Animation<Offset> _titleSlide;
-  late final Animation<double> _subtitleFade;
-  late final Animation<Offset> _subtitleSlide;
-  late final Animation<double> _inputFade;
-  late final Animation<Offset> _inputSlide;
-  late final Animation<double> _ctaFade;
-  late final Animation<Offset> _ctaSlide;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 700),
-    );
-    _titleFade = CurvedAnimation(
-      parent: _ctrl,
-      curve: const Interval(0.0, 0.55, curve: Curves.easeOut),
-    );
-    _titleSlide = Tween<Offset>(
-      begin: const Offset(0, 0.15),
-      end: Offset.zero,
-    ).animate(_titleFade);
-    _subtitleFade = CurvedAnimation(
-      parent: _ctrl,
-      curve: const Interval(0.1, 0.6, curve: Curves.easeOut),
-    );
-    _subtitleSlide = Tween<Offset>(
-      begin: const Offset(0, 0.12),
-      end: Offset.zero,
-    ).animate(_subtitleFade);
-    _inputFade = CurvedAnimation(
-      parent: _ctrl,
-      curve: const Interval(0.22, 0.72, curve: Curves.easeOut),
-    );
-    _inputSlide = Tween<Offset>(
-      begin: const Offset(0, 0.10),
-      end: Offset.zero,
-    ).animate(_inputFade);
-    _ctaFade = CurvedAnimation(
-      parent: _ctrl,
-      curve: const Interval(0.34, 0.9, curve: Curves.easeOut),
-    );
-    _ctaSlide = Tween<Offset>(
-      begin: const Offset(0, 0.2),
-      end: Offset.zero,
-    ).animate(_ctaFade);
-    _ctrl.forward();
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final isSignIn = widget.mode == EmailAuthMode.signIn;
+    final isSignIn = mode == EmailAuthMode.signIn;
     final title = isSignIn ? 'Welcome back' : 'Create your Silarah profile';
     final subtitle = isSignIn
         ? 'Enter your email and we will send a 6-digit verification code.'
@@ -387,36 +309,23 @@ class _EmailViewState extends State<_EmailView>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SlideTransition(
-                  position: _titleSlide,
-                  child: FadeTransition(
-                    opacity: _titleFade,
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 220),
-                      switchInCurve: Curves.easeOutCubic,
-                      switchOutCurve: Curves.easeInCubic,
-                      child: Text(
-                        title,
-                        key: ValueKey('email-title-$title'),
-                        style: AppTypography.screenTitle,
-                      ),
+                SilarahEntrance(
+                  child: SilarahContentSwap(
+                    child: Text(
+                      title,
+                      key: ValueKey('email-title-$title'),
+                      style: AppTypography.screenTitle,
                     ),
                   ),
                 ),
                 const SizedBox(height: 8),
-                SlideTransition(
-                  position: _subtitleSlide,
-                  child: FadeTransition(
-                    opacity: _subtitleFade,
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 220),
-                      switchInCurve: Curves.easeOutCubic,
-                      switchOutCurve: Curves.easeInCubic,
-                      child: Text(
-                        subtitle,
-                        key: ValueKey('email-subtitle-$subtitle'),
-                        style: AppTypography.bodyMuted,
-                      ),
+                SilarahEntrance(
+                  delay: const Duration(milliseconds: 45),
+                  child: SilarahContentSwap(
+                    child: Text(
+                      subtitle,
+                      key: ValueKey('email-subtitle-$subtitle'),
+                      style: AppTypography.bodyMuted,
                     ),
                   ),
                 ),
@@ -426,15 +335,12 @@ class _EmailViewState extends State<_EmailView>
           const SizedBox(height: 40),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: SlideTransition(
-              position: _inputSlide,
-              child: FadeTransition(
-                opacity: _inputFade,
-                child: _EmailInput(
-                  controller: widget.controller,
-                  focusNode: widget.focusNode,
-                  onSubmitted: widget.isComplete ? widget.onSend : null,
-                ),
+            child: SilarahEntrance(
+              delay: const Duration(milliseconds: 90),
+              child: _EmailInput(
+                controller: controller,
+                focusNode: focusNode,
+                onSubmitted: isComplete ? onSend : null,
               ),
             ),
           ),
@@ -442,59 +348,67 @@ class _EmailViewState extends State<_EmailView>
             duration: const Duration(milliseconds: 240),
             curve: Curves.easeOutCubic,
             alignment: Alignment.topCenter,
-            child: widget.pivotReason == null
+            child: pivotReason == null
                 ? const SizedBox.shrink()
                 : Padding(
                     padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
                     child: _AuthPivotNoticeCard(
-                      reason: widget.pivotReason!,
-                      onTap: widget.onSend,
+                      reason: pivotReason!,
+                      onTap: onSend,
                     ),
                   ),
           ),
           const Spacer(),
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-            child: SlideTransition(
-              position: _ctaSlide,
-              child: FadeTransition(
-                opacity: _ctaFade,
-                child: BlocBuilder<AuthCubit, AuthState>(
-                  builder: (context, state) => Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SilarahPrimaryButton(
-                        label: ctaLabel,
-                        isLoading: state is AuthLoading,
-                        enabled: widget.isComplete,
-                        onTap: widget.isComplete && state is! AuthLoading
-                            ? widget.onSend
-                            : null,
-                      ),
-                      const SizedBox(height: 14),
-                      SilarahPressable(
-                        onTap: () => widget.onModeChanged(nextMode),
-                        enabled: state is! AuthLoading,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 8,
-                            horizontal: 12,
-                          ),
-                          child: Text(
-                            switchLabel,
-                            textAlign: TextAlign.center,
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.champagneGold,
-                              fontWeight: FontWeight.w600,
-                              decoration: TextDecoration.underline,
-                              decorationColor: AppColors.champagneGold
-                                  .withValues(alpha: 0.7),
+            child: SilarahEntrance(
+              delay: const Duration(milliseconds: 140),
+              child: BlocBuilder<AuthCubit, AuthState>(
+                builder: (context, state) => Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SilarahPrimaryButton(
+                      label: ctaLabel,
+                      isLoading: state is AuthLoading,
+                      enabled: isComplete,
+                      onTap:
+                          isComplete && state is! AuthLoading ? onSend : null,
+                    ),
+                    const SizedBox(height: 14),
+                    SilarahPressable(
+                      onTap: () => onModeChanged(nextMode),
+                      enabled: state is! AuthLoading,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 12,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                switchLabel,
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.fade,
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.champagneGold,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: AppDimensions.space6),
+                            const Icon(
+                              Icons.arrow_forward_rounded,
+                              size: 16,
+                              color: AppColors.champagneGold,
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -623,7 +537,7 @@ class _AuthPivotNoticeCard extends StatelessWidget {
   }
 }
 
-class _EmailInput extends StatefulWidget {
+class _EmailInput extends StatelessWidget {
   const _EmailInput({
     required this.controller,
     required this.focusNode,
@@ -635,82 +549,19 @@ class _EmailInput extends StatefulWidget {
   final VoidCallback? onSubmitted;
 
   @override
-  State<_EmailInput> createState() => _EmailInputState();
-}
-
-class _EmailInputState extends State<_EmailInput> {
-  bool _focused = false;
-
-  @override
-  void initState() {
-    super.initState();
-    widget.focusNode.addListener(() {
-      if (mounted) setState(() => _focused = widget.focusNode.hasFocus);
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeOutCubic,
-      height: 60,
-      decoration: BoxDecoration(
-        color: AppColors.inputSurface,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-        border: Border.all(
-          color: _focused
-              ? AppColors.champagneGold.withValues(alpha: 0.6)
-              : AppColors.cardBorder,
-          width: _focused ? 1.5 : 1.0,
-        ),
-        boxShadow: _focused
-            ? [
-                BoxShadow(
-                  color: AppColors.champagneGold.withValues(alpha: 0.08),
-                  blurRadius: 16,
-                ),
-              ]
-            : null,
-      ),
-      child: TextField(
-        controller: widget.controller,
-        focusNode: widget.focusNode,
-        keyboardType: TextInputType.emailAddress,
-        textInputAction: TextInputAction.done,
-        autofocus: true,
-        autocorrect: false,
-        enableSuggestions: false,
-        textCapitalization: TextCapitalization.none,
-        onSubmitted: (_) => widget.onSubmitted?.call(),
-        onTapOutside: (_) => widget.focusNode.unfocus(),
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w500,
-          color: AppColors.pearlWhite,
-          letterSpacing: 0,
-        ),
-        decoration: InputDecoration(
-          hintText: 'name@example.com',
-          hintStyle: TextStyle(
-            fontSize: 18,
-            color: AppColors.slateMist.withValues(alpha: 0.5),
-            letterSpacing: 0,
-          ),
-          prefixIcon: const Icon(
-            Icons.alternate_email_rounded,
-            color: AppColors.slateMist,
-            size: 21,
-          ),
-          border: InputBorder.none,
-          filled: false,
-          fillColor: Colors.transparent,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 18,
-          ),
-        ),
-      ),
+    return SilarahTextField(
+      controller: controller,
+      focusNode: focusNode,
+      keyboardType: TextInputType.emailAddress,
+      textInputAction: TextInputAction.done,
+      autofocus: true,
+      autocorrect: false,
+      enableSuggestions: false,
+      textCapitalization: TextCapitalization.none,
+      onSubmitted: (_) => onSubmitted?.call(),
+      hint: 'name@example.com',
+      prefixIcon: Icons.alternate_email_rounded,
     );
   }
 }

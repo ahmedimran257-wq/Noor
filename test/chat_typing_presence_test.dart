@@ -7,6 +7,11 @@ import 'package:silarah/features/home/screens/chat_screen.dart';
 
 class _TestChatCubit extends ChatCubit {
   @override
+  Future<ChatAccessDecision> checkChatAccess(String matchId) async {
+    return const ChatAccessDecision(ChatAccessReason.allowed);
+  }
+
+  @override
   Future<void> loadConversations({
     bool showLoading = true,
     bool force = false,

@@ -32,6 +32,7 @@ import '../../../core/widgets/buttons/silarah_pressable.dart';
 import '../../../core/widgets/country_picker_screen.dart';
 import '../../../core/widgets/inputs/city_search_field.dart';
 import '../../../core/widgets/inputs/region_search_field.dart';
+import '../../../core/widgets/inputs/silarah_field_frame.dart';
 import '../../../core/widgets/loaders/silarah_shimmer.dart';
 import '../../onboarding/screens/photo_upload_screen.dart';
 
@@ -83,6 +84,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _openToDivorced = false;
   bool _openToWidowed = false;
   bool _openToHasChildren = false;
+  bool _openToDiaspora = false;
 
   // About
   List<String> _interests = [];
@@ -154,6 +156,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _openToDivorced = d.openToDivorced ?? false;
     _openToWidowed = d.openToWidowed ?? false;
     _openToHasChildren = d.openToWithChildren ?? false;
+    _openToDiaspora = d.openToDiaspora ?? false;
     _interests = List<String>.from(d.interests ?? []);
     _gender = d.gender;
   }
@@ -258,6 +261,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       openToDivorced: _openToDivorced,
       openToWidowed: _openToWidowed,
       openToWithChildren: _openToHasChildren,
+      openToDiaspora: _openToDiaspora,
       interests: _interests,
     );
     if (_locationChanged) {
@@ -661,6 +665,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   label: 'Open to someone with children',
                   value: _openToHasChildren,
                   onChanged: (v) => setState(() => _openToHasChildren = v),
+                ),
+                const SizedBox(height: AppDimensions.space12),
+                _ToggleRow(
+                  label: 'Open to members living abroad',
+                  value: _openToDiaspora,
+                  onChanged: (v) => setState(() => _openToDiaspora = v),
                 ),
 
                 const SizedBox(height: AppDimensions.space40),
@@ -1114,28 +1124,11 @@ class _SilarahTextFieldState extends State<_SilarahTextField> {
         const SizedBox(height: AppDimensions.space6),
         Focus(
           onFocusChange: (f) => setState(() => _focused = f),
-          child: AnimatedContainer(
-            duration: AppDimensions.durationTransition,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceGlass,
-              borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-              border: Border.all(
-                color:
-                    _focused ? AppColors.champagneGold : AppColors.cardBorder,
-                width: _focused
-                    ? AppDimensions.borderFocus
-                    : AppDimensions.borderThin,
-              ),
-              boxShadow: _focused
-                  ? [
-                      BoxShadow(
-                        color: AppColors.champagneGold.withValues(alpha: 0.08),
-                        blurRadius: 18,
-                        offset: const Offset(0, 8),
-                      ),
-                    ]
-                  : null,
-            ),
+          child: SilarahFieldFrame(
+            focused: _focused,
+            minHeight: widget.maxLines > 1
+                ? AppDimensions.inputHeight + AppDimensions.space40
+                : AppDimensions.inputHeight,
             child: TextField(
               controller: widget.controller,
               maxLines: widget.maxLines,

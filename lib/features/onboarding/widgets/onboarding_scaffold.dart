@@ -11,6 +11,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
 import '../../../core/widgets/buttons/silarah_primary_button.dart';
 import '../../../core/widgets/buttons/silarah_secondary_button.dart';
+import '../../../core/widgets/animations/silarah_motion.dart';
 import 'onboarding_progress_bar.dart';
 
 class OnboardingScaffold extends StatelessWidget {
@@ -101,8 +102,8 @@ class OnboardingScaffold extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppDimensions.space24,
                     ),
-                    child: _RevealOnStep(
-                      step: resolvedStep,
+                    child: SilarahEntrance(
+                      key: ValueKey('onboarding-body-$resolvedStep'),
                       child: body,
                     ),
                   ),
@@ -114,8 +115,8 @@ class OnboardingScaffold extends StatelessWidget {
                     AppDimensions.space24,
                     AppDimensions.space32,
                   ),
-                  child: _RevealOnStep(
-                    step: resolvedStep,
+                  child: SilarahEntrance(
+                    key: ValueKey('onboarding-actions-$resolvedStep'),
                     delay: const Duration(milliseconds: 70),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -278,41 +279,6 @@ class _OnboardingBackdrop extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _RevealOnStep extends StatelessWidget {
-  const _RevealOnStep({
-    required this.step,
-    required this.child,
-    this.delay = Duration.zero,
-  });
-
-  final int step;
-  final Widget child;
-  final Duration delay;
-
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      key: ValueKey('${step}_${delay.inMilliseconds}'),
-      tween: Tween(begin: 0, end: 1),
-      duration: AppDimensions.durationReveal + delay,
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        final progress = delay == Duration.zero
-            ? value
-            : ((value - 0.18) / 0.82).clamp(0.0, 1.0).toDouble();
-        return Opacity(
-          opacity: progress,
-          child: Transform.translate(
-            offset: Offset(0, 14 * (1 - progress)),
-            child: child,
-          ),
-        );
-      },
-      child: child,
     );
   }
 }

@@ -81,7 +81,14 @@ void main() {
       expect(authCubit, contains('Never hydrate the authenticated UI'));
       expect(photoService, contains('currentUserIdOrRefresh()'));
       expect(signedUrlFunction, contains('UPLOAD_URL_EXPIRES_IN = 300'));
-      expect(signedUrlFunction, contains('READ_URL_EXPIRES_IN = 3600'));
+      expect(signedUrlFunction, contains('READ_URL_EXPIRES_IN = 300'));
+      expect(signedUrlFunction, contains('jwtVerify(userToken, AUTH_JWKS'));
+      expect(signedUrlFunction, contains('createRemoteJWKSet'));
+      expect(signedUrlFunction, contains('req.headers.get("apikey")'));
+      expect(
+        signedUrlFunction,
+        isNot(contains('createClient(SUPABASE_URL, SUPABASE_ANON_KEY')),
+      );
     });
   });
 }

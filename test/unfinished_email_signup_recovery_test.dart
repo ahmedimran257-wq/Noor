@@ -37,4 +37,14 @@ void main() {
     );
     expect(authCubit, isNot(contains("'email_is_registered'")));
   });
+
+  test('concurrent submit events are coalesced before registration lookup', () {
+    expect(authCubit, contains('OtpRequestCoalescer _otpRequests'));
+    expect(authCubit, contains('return _otpRequests.run('));
+    expect(authCubit, contains('() => _sendOtpOnce('));
+    expect(
+      RegExp(r'\.auth\.signInWithOtp\(').allMatches(authCubit),
+      hasLength(1),
+    );
+  });
 }

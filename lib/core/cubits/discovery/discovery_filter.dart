@@ -37,6 +37,7 @@ class DiscoveryFilter {
     this.willingToRelocate,
     this.diasporaMode = false,
     this.diasporaCountries,
+    this.browseCountries,
   });
 
   final int? ageMin;
@@ -70,6 +71,29 @@ class DiscoveryFilter {
 
   final bool diasporaMode;
   final List<String>? diasporaCountries;
+  final List<String>? browseCountries;
+
+  /// The single geographic contract sent to Supabase. Keeping this derived
+  /// prevents contradictory combinations such as radius + diaspora from
+  /// reaching the database when an older saved preset is restored.
+  String get locationScope {
+    if (diasporaMode) return 'diaspora';
+    if (browseCountries != null && browseCountries!.isNotEmpty) {
+      return 'countries';
+    }
+    if (effectiveMaxDistanceKm != null) return 'radius';
+    switch (distanceLabel) {
+      case 'Same City':
+        return 'same_city';
+      case 'Same State':
+      case 'Same State / Region':
+        return 'same_region';
+      case 'Same Country':
+        return 'same_country';
+      default:
+        return 'global';
+    }
+  }
 
   /// Canonical radius used by PostGIS. Legacy label-only filters are retained
   /// so existing saved presets continue to work after the numeric migration.
@@ -104,7 +128,8 @@ class DiscoveryFilter {
       marriageTimeline != null ||
       willingToRelocate != null ||
       diasporaMode ||
-      (diasporaCountries != null && diasporaCountries!.isNotEmpty);
+      (diasporaCountries != null && diasporaCountries!.isNotEmpty) ||
+      (browseCountries != null && browseCountries!.isNotEmpty);
 
   int get activeCount {
     int count = 0;
@@ -132,6 +157,11 @@ class DiscoveryFilter {
     if (marriageTimeline != null) count++;
     if (willingToRelocate != null) count++;
     if (diasporaMode) count++;
+    if (!diasporaMode &&
+        browseCountries != null &&
+        browseCountries!.isNotEmpty) {
+      count++;
+    }
     return count;
   }
 
@@ -158,6 +188,7 @@ class DiscoveryFilter {
     String? willingToRelocate,
     bool? diasporaMode,
     List<String>? diasporaCountries,
+    List<String>? browseCountries,
     // Nulling sentinels
     bool clearSect = false,
     bool clearDeenLevel = false,
@@ -176,6 +207,7 @@ class DiscoveryFilter {
     bool clearMarriageTimeline = false,
     bool clearWillingToRelocate = false,
     bool clearDiasporaCountries = false,
+    bool clearBrowseCountries = false,
   }) {
     return DiscoveryFilter(
       ageMin: clearAgeRange ? null : (ageMin ?? this.ageMin),
@@ -215,6 +247,9 @@ class DiscoveryFilter {
       diasporaCountries: clearDiasporaCountries
           ? null
           : (diasporaCountries ?? this.diasporaCountries),
+      browseCountries: clearBrowseCountries
+          ? null
+          : (browseCountries ?? this.browseCountries),
     );
   }
 

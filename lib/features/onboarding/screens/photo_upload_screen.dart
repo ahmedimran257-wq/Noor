@@ -3,7 +3,7 @@
 // SILARAH - Photo Upload Screen (fast-start step 5)
 // 4-slot grid. Slot 0 = primary photo (required to proceed).
 // Real image picking via image_picker (Camera / Gallery).
-// Compression via flutter_image_compress (webp, 800px, q82).
+// Compression via flutter_image_compress (WebP, bounded for mobile delivery).
 // On-device explicit-content moderation; identity checks live separately.
 // Photo privacy toggle for women.
 // ============================================================
@@ -27,9 +27,16 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/loaders/silarah_shimmer.dart';
+import '../../../core/widgets/buttons/silarah_pressable.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
+
+// Photos are displayed below tablet resolution throughout the app. A 720 px
+// WebP materially reduces private Storage egress without visible degradation
+// on phone screens.
+const int profilePhotoUploadMinDimension = 720;
+const int profilePhotoUploadWebpQuality = 74;
 
 // ── Face detection ─────────────────────────────────────────
 
@@ -63,6 +70,11 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
   bool _loadingExisting = false;
   String? _existingLoadError;
   PhotoPrivacy _privacy = PhotoPrivacy.publicAll;
+  int? _activeSlot;
+  String? _operationTitle;
+  String? _operationDetail;
+  double _operationProgress = 0;
+  bool _operationComplete = false;
 
   @override
   void initState() {
@@ -108,9 +120,15 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
 
   Future<void> _loadExistingPhotos() async {
     try {
-      final slots = await ProfilePhotoService.instance.getMyPhotoSlots();
+      final results = await Future.wait<Object>([
+        ProfilePhotoService.instance.getMyPhotoSlots(),
+        ProfilePhotoService.instance.getMyPhotoPrivacy(),
+      ]);
+      final slots = results[0] as Map<int, String>;
+      final privacy = results[1] as PhotoPrivacy;
       if (!mounted) return;
       setState(() {
+        _privacy = privacy;
         for (var i = 0; i < 4; i++) {
           final url = slots[i];
           _remoteUrls[i] = url;
@@ -139,10 +157,6 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
   /// Picks, compresses, validates, and explicit-content scans a photo.
   Future<void> _pickPhoto(int index) async {
     if (_isScanning || _uploading) return;
-    setState(() {
-      _isScanning = true;
-      _uploading = true;
-    });
 
     final ImageSource? source;
 
@@ -152,7 +166,6 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       if (mounted) {
         setState(() {
           _isScanning = false;
-          _uploading = false;
         });
       }
       return;
@@ -167,32 +180,41 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         imageQuality: 90,
       );
       if (xfile == null) {
-        if (mounted) setState(() => _uploading = false);
         return;
       }
       if (!mounted) return;
 
+      _showOperation(
+        slot: index,
+        title: 'Preparing photo',
+        detail: 'Optimising the image securely on your device',
+        progress: 0.12,
+      );
+      setState(() => _isScanning = true);
+
       // Compress to webp
       final result = await FlutterImageCompress.compressWithFile(
         xfile.path,
-        minWidth: 800,
-        minHeight: 800,
-        quality: 82,
+        minWidth: profilePhotoUploadMinDimension,
+        minHeight: profilePhotoUploadMinDimension,
+        quality: profilePhotoUploadWebpQuality,
         format: CompressFormat.webp,
         keepExif: false,
       );
 
       if (!mounted) return;
 
-      if (result == null) {
-        // Fallback: use raw bytes
-        final raw = await File(xfile.path).readAsBytes();
-        await _setSlot(index, raw);
-      } else {
-        await _setSlot(index, result);
+      // Never write JPEG/PNG source bytes into a `.webp` file. That mismatch
+      // used to pass the local preview but fail during server decoding.
+      if (result == null || result.isEmpty) {
+        throw const FormatException(
+          'This photo could not be prepared securely. Choose another image.',
+        );
       }
+      await _setSlot(index, result);
     } catch (e) {
       if (mounted) {
+        _clearOperation();
         final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -217,11 +239,18 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
     final file = File('${tempDir.path}/silarah_photo_slot_$index.webp');
     await file.writeAsBytes(bytes);
 
+    _showOperation(
+      slot: index,
+      title: 'Safety check',
+      detail: 'Checking for content that is not permitted',
+      progress: 0.56,
+    );
     final moderation =
         await PhotoModerationService.instance.scanFile(file.path);
     if (!mounted) return;
     if (!moderation.canUpload) {
       await file.delete().catchError((_) => file);
+      _clearOperation();
       if (moderation.decision == PhotoModerationDecision.scanFailed) {
         await Future<void>.delayed(const Duration(milliseconds: 500));
         if (!mounted) return;
@@ -260,12 +289,87 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       _bytes[index] = bytes;
       _remoteUrls[index] = null;
       _removedRemoteSlots.remove(index);
+      _operationTitle = 'Ready to publish';
+      _operationDetail = 'Photo ${index + 1} passed the safety check';
+      _operationProgress = 1;
+      _operationComplete = true;
     });
+    await Future<void>.delayed(const Duration(milliseconds: 650));
+    if (mounted && !_uploading && _activeSlot == index) _clearOperation();
+  }
+
+  void _showOperation({
+    required int slot,
+    required String title,
+    required String detail,
+    required double progress,
+    bool complete = false,
+  }) {
+    if (!mounted) return;
+    setState(() {
+      _activeSlot = slot;
+      _operationTitle = title;
+      _operationDetail = detail;
+      _operationProgress = progress.clamp(0.0, 1.0);
+      _operationComplete = complete;
+    });
+  }
+
+  void _clearOperation() {
+    if (!mounted) return;
+    setState(() {
+      _activeSlot = null;
+      _operationTitle = null;
+      _operationDetail = null;
+      _operationProgress = 0;
+      _operationComplete = false;
+    });
+  }
+
+  void _handleSyncProgress(PhotoSyncProgress progress) {
+    final copy = switch (progress.stage) {
+      PhotoSyncStage.safetyScan => (
+          'Final safety check',
+          'Verifying photo ${progress.slot + 1} before upload'
+        ),
+      PhotoSyncStage.preparingUpload => (
+          'Securing upload',
+          'Creating a protected upload for photo ${progress.slot + 1}'
+        ),
+      PhotoSyncStage.transferring => (
+          'Uploading photo',
+          'Transferring photo ${progress.slot + 1} securely'
+        ),
+      PhotoSyncStage.publishing => (
+          'Publishing changes',
+          'Confirming photo ${progress.slot + 1} on your profile'
+        ),
+      PhotoSyncStage.complete => (
+          progress.fraction >= 1 ? 'Photos published' : 'Photo published',
+          progress.fraction >= 1
+              ? 'Your gallery is up to date'
+              : 'Continuing with the next photo'
+        ),
+    };
+    _showOperation(
+      slot: progress.slot,
+      title: copy.$1,
+      detail: copy.$2,
+      progress: progress.fraction,
+      complete:
+          progress.stage == PhotoSyncStage.complete && progress.fraction >= 1,
+    );
   }
 
   String _photoModerationMessage(PhotoModerationResult moderation) {
     if (moderation.category == 'invalid_image') {
-      return 'Choose a valid, non-blank image file.';
+      return 'Choose a valid photo file.';
+    }
+    if (moderation.category == 'no_person_detected') {
+      return 'Choose a photo that includes at least one person.';
+    }
+    if (moderation.category == 'explicit_content') {
+      return 'Photos with explicit content are not permitted.';
     }
     return 'This photo could not be safety checked. Please choose another image.';
   }
@@ -368,6 +472,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
           await ProfilePhotoService.instance.syncPhotoSlots(
         localSlots,
         privacy: _privacy,
+        onProgress: _handleSyncProgress,
       );
       for (final slot in _removedRemoteSlots.toList()..sort()) {
         await ProfilePhotoService.instance.deleteMyPhotoSlot(slot);
@@ -378,22 +483,34 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       if (!mounted) return;
       final cubit = context.read<OnboardingCubit>();
       if (widget.returnToPreviousOnSave) {
-        final saved = await cubit.updateProfile(data);
+        // syncPhotoSlots already persisted the gallery and privacy. Running a
+        // full profile update here made Save Photos depend on unrelated profile
+        // fields and could leave the button apparently doing nothing.
+        await cubit.syncPhotoPrivacy(_privacy);
         if (!mounted) return;
-        if (saved) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Photos saved.'),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-          Navigator.pop(context, true);
-        }
+        _showOperation(
+          slot: _activeSlot ?? 0,
+          title: 'Gallery updated',
+          detail:
+              'Your photos are now visible according to your privacy settings',
+          progress: 1,
+          complete: true,
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 700));
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Photos saved.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        Navigator.pop(context, true);
       } else {
         await cubit.saveAndAdvance(data);
       }
     } catch (e) {
       if (!mounted) return;
+      _clearOperation();
       final message = e is StateError
           ? e.message
           : 'Could not upload photos. Please try again.';
@@ -411,7 +528,10 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
           ),
         );
     } finally {
-      if (mounted) setState(() => _uploading = false);
+      if (mounted) {
+        setState(() => _uploading = false);
+        if (!_operationComplete) _clearOperation();
+      }
     }
   }
 
@@ -528,7 +648,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
               ? () => Navigator.pop(context, false)
               : null,
           showProgressHeader: !widget.returnToPreviousOnSave,
-          headerTitle: 'Profile photos',
+          headerTitle: 'Photo library',
           isCtaEnabled: _hasPrimary &&
               _primaryReady &&
               !_uploading &&
@@ -542,42 +662,45 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
               const SizedBox(height: AppDimensions.space32),
               StepHeader(
                 title: widget.returnToPreviousOnSave
-                    ? 'Manage your photos'
+                    ? 'Curate your gallery'
                     : (isGuardian
                         ? l10n.photo_title_guardian
                         : l10n.photo_title_self),
                 subtitle: widget.returnToPreviousOnSave
-                    ? 'Update your profile photos and privacy. Every photo is checked before it can appear publicly.'
+                    ? 'Choose the photographs that represent you. Changes are safety checked and published securely.'
                     : (isGuardian
                         ? l10n.photo_subtitle_guardian(getRelationString())
                         : l10n.photo_subtitle_self),
               ),
               const SizedBox(height: AppDimensions.space24),
 
-              // Face detection info banner
-              Container(
-                padding: const EdgeInsets.all(AppDimensions.space12),
-                decoration: BoxDecoration(
-                  color: AppColors.goldGlow,
-                  borderRadius:
-                      BorderRadius.circular(AppDimensions.radiusButton),
-                  border: Border.all(color: AppColors.goldBorder),
+              _GallerySummary(photoCount: _filledPhotoCount),
+              AnimatedSwitcher(
+                duration: AppDimensions.durationReveal,
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                transitionBuilder: (child, animation) => FadeTransition(
+                  opacity: animation,
+                  child: SizeTransition(
+                    sizeFactor: animation,
+                    axisAlignment: -1,
+                    child: child,
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.face_retouching_natural_outlined,
-                        color: AppColors.champagneGold, size: 18),
-                    const SizedBox(width: AppDimensions.space8),
-                    Expanded(
-                      child: Text(
-                        l10n.photo_banner_text,
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.champagneGold,
+                child: _operationTitle == null
+                    ? const SizedBox.shrink(key: ValueKey('no-operation'))
+                    : Padding(
+                        key: const ValueKey('photo-operation'),
+                        padding: const EdgeInsets.only(
+                          top: AppDimensions.space16,
+                        ),
+                        child: _PhotoOperationPanel(
+                          title: _operationTitle!,
+                          detail: _operationDetail ?? '',
+                          progress: _operationProgress,
+                          complete: _operationComplete,
                         ),
                       ),
-                    ),
-                  ],
-                ),
               ),
 
               const SizedBox(height: AppDimensions.space24),
@@ -623,65 +746,26 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
                 ),
                 const SizedBox(height: AppDimensions.space16),
               ],
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: AppDimensions.space12,
-                  mainAxisSpacing: AppDimensions.space12,
-                  childAspectRatio: 3 / 4,
-                ),
-                itemCount: 4,
-                itemBuilder: (context, i) {
-                  return _PhotoSlot(
-                    index: i,
-                    isPrimary: i == 0,
-                    bytes: _bytes[i],
-                    remoteUrl: _remoteUrls[i],
-                    moderation: _moderation[i],
-                    uploading: (_loadingExisting || _uploading) &&
-                        _bytes[i] == null &&
-                        _remoteUrls[i] == null,
-                    onAdd: () => _pickPhoto(i),
-                    onRemove: () => _removePhoto(i),
-                  );
-                },
+              AspectRatio(
+                aspectRatio: 16 / 11,
+                child: _buildPhotoSlot(0, label: 'Main photo'),
               ),
-
-              // Slot labels
               const SizedBox(height: AppDimensions.space12),
               Row(
                 children: [
-                  Expanded(
-                      child: Center(
-                    child:
-                        _SlotLabel(l10n.photo_label_primary, isRequired: true),
-                  )),
-                  const SizedBox(width: AppDimensions.space12),
-                  Expanded(
-                      child: Center(
-                    child:
-                        _SlotLabel(l10n.photo_label_photo2, isRequired: false),
-                  )),
+                  for (var i = 1; i < 4; i++) ...[
+                    if (i > 1) const SizedBox(width: AppDimensions.space10),
+                    Expanded(
+                      child: AspectRatio(
+                        aspectRatio: 0.78,
+                        child: _buildPhotoSlot(i, label: 'Photo ${i + 1}'),
+                      ),
+                    ),
+                  ],
                 ],
               ),
-              const SizedBox(height: AppDimensions.space4),
-              Row(
-                children: [
-                  Expanded(
-                      child: Center(
-                    child:
-                        _SlotLabel(l10n.photo_label_photo3, isRequired: false),
-                  )),
-                  const SizedBox(width: AppDimensions.space12),
-                  Expanded(
-                      child: Center(
-                    child:
-                        _SlotLabel(l10n.photo_label_selfie, isRequired: false),
-                  )),
-                ],
-              ),
+              const SizedBox(height: AppDimensions.space16),
+              const _SafetyPolicyNote(),
 
               // Privacy toggle for women
               if (_gender == Gender.female) ...[
@@ -702,28 +786,267 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       },
     );
   }
+
+  int get _filledPhotoCount => List<int>.generate(4, (index) => index)
+      .where((index) => _bytes[index] != null || _remoteUrls[index] != null)
+      .length;
+
+  Widget _buildPhotoSlot(int index, {required String label}) {
+    return _PhotoSlot(
+      index: index,
+      isPrimary: index == 0,
+      label: label,
+      bytes: _bytes[index],
+      remoteUrl: _remoteUrls[index],
+      moderation: _moderation[index],
+      loading: _loadingExisting &&
+          _bytes[index] == null &&
+          _remoteUrls[index] == null,
+      active: _activeSlot == index && (_isScanning || _uploading),
+      progress: _activeSlot == index ? _operationProgress : 0,
+      operationComplete: _activeSlot == index && _operationComplete,
+      onAdd: () => _pickPhoto(index),
+      onRemove: () => _removePhoto(index),
+    );
+  }
 }
 
 // ── Photo slot ────────────────────────────────────────────────
+
+class _GallerySummary extends StatelessWidget {
+  const _GallerySummary({required this.photoCount});
+
+  final int photoCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.space16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceGlass,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: AppColors.goldGlow,
+              borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+            ),
+            child: const Icon(Icons.collections_outlined,
+                color: AppColors.champagneGold, size: 20),
+          ),
+          const SizedBox(width: AppDimensions.space12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('$photoCount of 4 photos',
+                    style: AppTypography.bodyMedium),
+                const SizedBox(height: AppDimensions.space2),
+                Text(
+                  photoCount < 3
+                      ? 'Add variety to give members a fuller picture of you'
+                      : 'Your gallery gives members a well-rounded introduction',
+                  style: AppTypography.caption
+                      .copyWith(color: AppColors.slateMist),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PhotoOperationPanel extends StatelessWidget {
+  const _PhotoOperationPanel({
+    required this.title,
+    required this.detail,
+    required this.progress,
+    required this.complete,
+  });
+
+  final String title;
+  final String detail;
+  final double progress;
+  final bool complete;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = complete ? AppColors.verifiedTeal : AppColors.champagneGold;
+    return Semantics(
+      liveRegion: true,
+      label: '$title. $detail',
+      value: '${(progress * 100).round()} percent',
+      child: Container(
+        padding: const EdgeInsets.all(AppDimensions.space14),
+        decoration: BoxDecoration(
+          color: accent.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+          border: Border.all(color: accent.withValues(alpha: 0.42)),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                AnimatedSwitcher(
+                  duration: AppDimensions.durationTransition,
+                  child: Icon(
+                    complete
+                        ? Icons.check_circle_rounded
+                        : Icons.cloud_upload_outlined,
+                    key: ValueKey(complete),
+                    color: accent,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: AppDimensions.space10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AnimatedSwitcher(
+                        duration: AppDimensions.durationTransition,
+                        child: Text(title,
+                            key: ValueKey(title),
+                            style: AppTypography.bodyMedium),
+                      ),
+                      const SizedBox(height: AppDimensions.space2),
+                      Text(detail,
+                          style: AppTypography.caption
+                              .copyWith(color: AppColors.slateMist)),
+                    ],
+                  ),
+                ),
+                Text('${(progress * 100).round()}%',
+                    style: AppTypography.captionMedium.copyWith(color: accent)),
+              ],
+            ),
+            const SizedBox(height: AppDimensions.space12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppDimensions.radiusTiny),
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(end: progress),
+                duration: AppDimensions.durationTactile,
+                curve: Curves.easeOutCubic,
+                builder: (_, value, __) => LinearProgressIndicator(
+                  value: value,
+                  minHeight: 3,
+                  backgroundColor: AppColors.progressBarBase,
+                  valueColor: AlwaysStoppedAnimation(accent),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SafetyPolicyNote extends StatelessWidget {
+  const _SafetyPolicyNote();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(Icons.shield_outlined, color: AppColors.slateMist, size: 18),
+        const SizedBox(width: AppDimensions.space8),
+        Expanded(
+          child: Text(
+            'Photos with explicit content are not permitted. Safety checks run before publishing.',
+            style: AppTypography.caption.copyWith(color: AppColors.slateMist),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SlotProgressOverlay extends StatelessWidget {
+  const _SlotProgressOverlay({
+    required this.progress,
+    required this.complete,
+  });
+
+  final double progress;
+  final bool complete;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.overlayBlack55,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+      ),
+      child: Center(
+        child: AnimatedSwitcher(
+          duration: AppDimensions.durationTransition,
+          transitionBuilder: (child, animation) => ScaleTransition(
+            scale:
+                CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+            child: child,
+          ),
+          child: complete
+              ? const Icon(Icons.check_circle_rounded,
+                  key: ValueKey('complete'),
+                  color: AppColors.verifiedTeal,
+                  size: 42)
+              : SizedBox(
+                  key: const ValueKey('progress'),
+                  width: 42,
+                  height: 42,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(end: progress),
+                    duration: AppDimensions.durationTactile,
+                    curve: Curves.easeOutCubic,
+                    builder: (_, value, __) => CircularProgressIndicator(
+                      value: value,
+                      strokeWidth: 2.5,
+                      backgroundColor: AppColors.progressBarBase,
+                      color: AppColors.champagneGold,
+                    ),
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+}
 
 class _PhotoSlot extends StatelessWidget {
   const _PhotoSlot({
     required this.index,
     required this.isPrimary,
+    required this.label,
     required this.bytes,
     required this.remoteUrl,
     required this.moderation,
-    required this.uploading,
+    required this.loading,
+    required this.active,
+    required this.progress,
+    required this.operationComplete,
     required this.onAdd,
     required this.onRemove,
   });
 
   final int index;
   final bool isPrimary;
+  final String label;
   final Uint8List? bytes;
   final String? remoteUrl;
   final PhotoModerationResult? moderation;
-  final bool uploading;
+  final bool loading;
+  final bool active;
+  final double progress;
+  final bool operationComplete;
   final VoidCallback onAdd;
   final VoidCallback onRemove;
 
@@ -731,7 +1054,9 @@ class _PhotoSlot extends StatelessWidget {
   Widget build(BuildContext context) {
     final isRemote = bytes == null && remoteUrl != null;
     final isFilled = bytes != null || isRemote;
-    return GestureDetector(
+    return SilarahPressable(
+      enabled: !isFilled && !active,
+      semanticLabel: isFilled ? '$label selected' : 'Add $label',
       onTap: isFilled
           ? null
           : () {
@@ -741,17 +1066,19 @@ class _PhotoSlot extends StatelessWidget {
       child: AnimatedContainer(
         duration: AppDimensions.durationTransition,
         decoration: BoxDecoration(
-          color:
-              isFilled ? AppColors.surfaceGlassHover : AppColors.surfaceGlass,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+          color: isFilled ? AppColors.surfaceElevated : AppColors.surfaceGlass,
+          borderRadius: BorderRadius.circular(isPrimary
+              ? AppDimensions.radiusCard
+              : AppDimensions.radiusButton),
           border: Border.all(
-            color: isFilled
-                ? AppColors.champagneGold.withValues(alpha: 0.4)
-                : isPrimary
-                    ? AppColors.champagneGold.withValues(alpha: 0.3)
-                    : AppColors.cardBorder,
-            width:
-                isFilled ? AppDimensions.borderFocus : AppDimensions.borderThin,
+            color: active
+                ? AppColors.champagneGold
+                : isFilled
+                    ? AppColors.champagneGold.withValues(alpha: 0.4)
+                    : isPrimary
+                        ? AppColors.champagneGold.withValues(alpha: 0.3)
+                        : AppColors.cardBorder,
+            width: AppDimensions.borderThin,
           ),
         ),
         child: Stack(
@@ -759,9 +1086,18 @@ class _PhotoSlot extends StatelessWidget {
           children: [
             if (isFilled)
               ClipRRect(
-                borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+                borderRadius: BorderRadius.circular(isPrimary
+                    ? AppDimensions.radiusCard - 2
+                    : AppDimensions.radiusButton - 2),
                 child: bytes != null
-                    ? Image.memory(bytes!, fit: BoxFit.cover)
+                    ? AnimatedSwitcher(
+                        duration: AppDimensions.durationReveal,
+                        child: Image.memory(
+                          bytes!,
+                          key: ValueKey(bytes.hashCode),
+                          fit: BoxFit.cover,
+                        ),
+                      )
                     : CachedNetworkImage(
                         imageUrl: remoteUrl!,
                         fit: BoxFit.cover,
@@ -781,18 +1117,57 @@ class _PhotoSlot extends StatelessWidget {
                         ),
                       ),
               )
-            else if (uploading)
+            else if (loading)
               const Center(child: SilarahPulseLoader(size: 34))
             else
-              _EmptySlot(isPrimary: isPrimary),
+              _EmptySlot(isPrimary: isPrimary, label: label),
+
+            if (isFilled)
+              const IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.transparent, AppColors.overlayBlack55],
+                      stops: [0.55, 1],
+                    ),
+                  ),
+                ),
+              ),
+
+            Positioned(
+              left: AppDimensions.space10,
+              bottom: AppDimensions.space10,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.space8,
+                  vertical: AppDimensions.space4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.overlayBlack55,
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusTiny),
+                  border: Border.all(color: AppColors.cardBorder),
+                ),
+                child: Text(
+                  label,
+                  style: AppTypography.caption.copyWith(
+                    color: isPrimary
+                        ? AppColors.champagneLight
+                        : AppColors.pearlWhite,
+                    fontWeight: FontWeight.w600,
+                    fontSize: isPrimary ? 12 : 10,
+                  ),
+                ),
+              ),
+            ),
 
             // Content-safety status. Face/liveness status is intentionally not
             // represented here; it belongs to badge verification.
-            if (isFilled && (moderation != null || isRemote))
+            if (isFilled && isPrimary && (moderation != null || isRemote))
               Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
+                top: AppDimensions.space10,
+                left: AppDimensions.space10,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppDimensions.space8,
@@ -803,10 +1178,8 @@ class _PhotoSlot extends StatelessWidget {
                         moderation?.decision == PhotoModerationDecision.flagged
                             ? AppColors.champagneGold.withValues(alpha: 0.92)
                             : AppColors.verifiedTeal.withValues(alpha: 0.9),
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(AppDimensions.radiusCard),
-                      bottomRight: Radius.circular(AppDimensions.radiusCard),
-                    ),
+                    borderRadius:
+                        BorderRadius.circular(AppDimensions.radiusChip),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -834,25 +1207,35 @@ class _PhotoSlot extends StatelessWidget {
               ),
 
             // Remove button
-            if (isFilled)
+            if (isFilled && !active)
               Positioned(
                 top: 8,
                 right: 8,
-                child: GestureDetector(
+                child: SilarahPressable(
+                  semanticLabel: 'Remove $label',
                   onTap: () {
                     FocusManager.instance.primaryFocus?.unfocus();
                     onRemove();
                   },
                   child: Container(
-                    width: 28,
-                    height: 28,
+                    width: 34,
+                    height: 34,
                     decoration: BoxDecoration(
-                      color: AppColors.softCoral.withValues(alpha: 0.9),
+                      color: AppColors.overlayBlack55,
                       shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.cardBorder),
                     ),
-                    child: const Icon(Icons.close_rounded,
-                        color: Colors.white, size: 16),
+                    child: const Icon(Icons.delete_outline_rounded,
+                        color: AppColors.pearlWhite, size: 17),
                   ),
+                ),
+              ),
+
+            if (active || operationComplete)
+              Positioned.fill(
+                child: _SlotProgressOverlay(
+                  progress: progress,
+                  complete: operationComplete,
                 ),
               ),
           ],
@@ -863,12 +1246,12 @@ class _PhotoSlot extends StatelessWidget {
 }
 
 class _EmptySlot extends StatelessWidget {
-  const _EmptySlot({required this.isPrimary});
+  const _EmptySlot({required this.isPrimary, required this.label});
   final bool isPrimary;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -884,36 +1267,13 @@ class _EmptySlot extends StatelessWidget {
           padding:
               const EdgeInsets.symmetric(horizontal: AppDimensions.space12),
           child: Text(
-            isPrimary ? l10n.photo_add_main_required : l10n.photo_add_photo,
+            isPrimary ? 'Add your main photo' : 'Add',
             style: AppTypography.caption.copyWith(
               color: isPrimary ? AppColors.champagneGold : AppColors.slateMist,
             ),
             textAlign: TextAlign.center,
           ),
         ),
-      ],
-    );
-  }
-}
-
-class _SlotLabel extends StatelessWidget {
-  const _SlotLabel(this.text, {required this.isRequired});
-  final String text;
-  final bool isRequired;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(text, style: AppTypography.caption),
-        if (isRequired) ...[
-          const SizedBox(width: 4),
-          Text('*',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.softCoral,
-              )),
-        ],
       ],
     );
   }
@@ -990,9 +1350,7 @@ class _PrivacyTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
           border: Border.all(
             color: isSelected ? AppColors.champagneGold : AppColors.cardBorder,
-            width: isSelected
-                ? AppDimensions.borderFocus
-                : AppDimensions.borderThin,
+            width: AppDimensions.borderThin,
           ),
         ),
         child: Row(

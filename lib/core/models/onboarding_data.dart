@@ -108,6 +108,7 @@ class OnboardingData {
     this.openToDivorced,
     this.openToWidowed,
     this.openToWithChildren,
+    this.openToDiaspora,
     this.preferredLivingExpectation,
 
     // Photo and privacy
@@ -235,6 +236,7 @@ class OnboardingData {
   final bool? openToDivorced;
   final bool? openToWidowed;
   final bool? openToWithChildren;
+  final bool? openToDiaspora;
   final String?
       preferredLivingExpectation; // 'with_inlaws','separate','open_to_discussion','no_preference'
 
@@ -342,6 +344,7 @@ class OnboardingData {
     bool? openToDivorced,
     bool? openToWidowed,
     bool? openToWithChildren,
+    bool? openToDiaspora,
     String? preferredLivingExpectation,
     List<String>? photoLocalPaths,
     PhotoPrivacy? photoPrivacy,
@@ -433,6 +436,7 @@ class OnboardingData {
       openToDivorced: openToDivorced ?? this.openToDivorced,
       openToWidowed: openToWidowed ?? this.openToWidowed,
       openToWithChildren: openToWithChildren ?? this.openToWithChildren,
+      openToDiaspora: openToDiaspora ?? this.openToDiaspora,
       preferredLivingExpectation:
           preferredLivingExpectation ?? this.preferredLivingExpectation,
       photoLocalPaths: photoLocalPaths ?? this.photoLocalPaths,
@@ -566,6 +570,7 @@ class OnboardingData {
       'openToDivorced': openToDivorced,
       'openToWidowed': openToWidowed,
       'openToWithChildren': openToWithChildren,
+      'openToDiaspora': openToDiaspora,
       'preferredLivingExpectation': preferredLivingExpectation,
       'photoLocalPaths': photoLocalPaths,
       'photoPrivacy': photoPrivacy?.name,
@@ -687,6 +692,7 @@ class OnboardingData {
       openToDivorced: json['openToDivorced'] as bool?,
       openToWidowed: json['openToWidowed'] as bool?,
       openToWithChildren: json['openToWithChildren'] as bool?,
+      openToDiaspora: json['openToDiaspora'] as bool?,
       preferredLivingExpectation: json['preferredLivingExpectation'] as String?,
       photoLocalPaths: json['photoLocalPaths'] != null
           ? List<String>.from(json['photoLocalPaths'] as Iterable)

@@ -25,4 +25,35 @@ void main() {
     expect(filter.effectiveMaxDistanceKm, isNull);
     expect(filter.activeCount, 1);
   });
+
+  test('location scopes are mutually deterministic', () {
+    expect(
+      const DiscoveryFilter(distanceLabel: 'Same City').locationScope,
+      'same_city',
+    );
+    expect(
+      const DiscoveryFilter(distanceLabel: 'Same State / Region').locationScope,
+      'same_region',
+    );
+    expect(
+      const DiscoveryFilter(distanceLabel: 'Same Country').locationScope,
+      'same_country',
+    );
+    expect(
+      const DiscoveryFilter(maxDistanceKm: 100).locationScope,
+      'radius',
+    );
+    expect(
+      const DiscoveryFilter(browseCountries: ['GB', 'CA']).locationScope,
+      'countries',
+    );
+    expect(
+      const DiscoveryFilter(
+        diasporaMode: true,
+        diasporaCountries: ['PK'],
+        browseCountries: ['GB'],
+      ).locationScope,
+      'diaspora',
+    );
+  });
 }

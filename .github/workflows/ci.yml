@@ -41,8 +41,33 @@ jobs:
         run: flutter analyze
       - name: Run Flutter tests
         run: flutter test --dart-define-from-file=config/dart_defines.example.json
-      - name: Build Android release APK
-        run: flutter build apk --release --dart-define-from-file=config/dart_defines.example.json
+      - name: Create CI-only Android signing identity
+        shell: bash
+        run: |
+          signing_dir="$HOME/.silarah/release-signing"
+          mkdir -p "$signing_dir"
+          keytool -genkeypair -noprompt \
+            -keystore "$signing_dir/ci-upload.jks" \
+            -storetype JKS \
+            -storepass ci-release-build-only \
+            -keypass ci-release-build-only \
+            -alias silarah-ci \
+            -keyalg RSA \
+            -keysize 3072 \
+            -validity 2 \
+            -dname "CN=Silarah CI, O=Silarah, C=IN"
+          {
+            echo "storeFile=$signing_dir/ci-upload.jks"
+            echo "storePassword=ci-release-build-only"
+            echo "keyAlias=silarah-ci"
+            echo "keyPassword=ci-release-build-only"
+          } > "$signing_dir/key.properties"
+          chmod 600 "$signing_dir/key.properties" "$signing_dir/ci-upload.jks"
+      - name: Verify release signing cannot use the debug identity
+        working-directory: android
+        run: ./gradlew verifyReleaseSigning
+      - name: Build Android release bundle
+        run: flutter build appbundle --release --dart-define-from-file=config/dart_defines.example.json
 
   admin:
     name: Admin lint, typecheck, build, audit

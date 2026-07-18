@@ -113,9 +113,14 @@ class _SilarahBlurImageState extends State<SilarahBlurImage> {
 
     return CachedNetworkImage(
       imageUrl: widget.imageUrl,
+      // Supabase rotates signed query tokens. The underlying object path only
+      // changes when a photo is replaced, so it is the stable cache identity.
+      cacheKey: _stableObjectCacheKey(widget.imageUrl),
       fit: widget.fit,
       width: widget.width,
       height: widget.height,
+      maxWidthDiskCache: 720,
+      maxHeightDiskCache: 1280,
       placeholder: (context, url) => placeholder,
       errorWidget: (context, url, error) {
         _reportImageError();
@@ -136,5 +141,12 @@ class _SilarahBlurImageState extends State<SilarahBlurImage> {
         duration: Duration(milliseconds: 300),
       ),
     );
+  }
+
+  String? _stableObjectCacheKey(String value) {
+    final uri = Uri.tryParse(value);
+    if (uri == null || uri.path.isEmpty) return null;
+    if (!uri.path.contains('/storage/v1/object/sign/')) return null;
+    return uri.path;
   }
 }

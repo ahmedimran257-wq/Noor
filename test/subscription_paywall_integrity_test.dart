@@ -26,6 +26,11 @@ void main() {
         installerSource,
         contains('Android release builds must use a RevenueCat Play Store key'),
       );
+      expect(
+        installerSource,
+        contains("Firebase configuration does not contain com.silarah.app"),
+      );
+      expect(installerSource, contains('install -r'));
     });
   });
 
@@ -50,6 +55,23 @@ void main() {
         screenSource,
         isNot(contains('Premium features currently unavailable')),
       );
+    });
+  });
+
+  group('RevenueCat entitlement contract', () {
+    test('uses only the Silarah premium entitlement identifier', () {
+      final serviceSource = File(
+        'lib/core/services/subscription_service.dart',
+      ).readAsStringSync();
+      final cubitSource = File(
+        'lib/core/cubits/subscription/subscription_cubit.dart',
+      ).readAsStringSync();
+
+      expect(serviceSource, contains("premium = 'premium'"));
+      expect(serviceSource, isNot(contains('Noor Pro')));
+      expect(serviceSource, contains('isPremiumActive'));
+      expect(cubitSource, contains('SubscriptionEntitlements.isPremiumActive'));
+      expect(cubitSource, isNot(contains("active['premium']")));
     });
   });
 }

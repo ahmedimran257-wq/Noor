@@ -16,7 +16,7 @@ void main() {
   test('manage photos restores persisted server slots after restart', () {
     expect(screen, contains('getMyPhotoSlots()'));
     expect(screen, contains('_bytes[0] != null || _remoteUrls[0] != null'));
-    expect(screen, contains('remoteUrl: _remoteUrls[i]'));
+    expect(screen, contains('remoteUrl: _remoteUrls[index]'));
     expect(screen, contains('CachedNetworkImage('));
     expect(screen, contains('maxWidthDiskCache: 640'));
     expect(service, contains(".from('photos')"));
@@ -36,6 +36,16 @@ void main() {
     expect(screen, contains("_showSaveRequirement('Add a main photo"));
     expect(screen, contains('isCtaLoading: isLoading || _uploading'));
     expect(screen, contains('_existingLoadError'));
+    expect(screen, contains('_PhotoOperationPanel'));
+    expect(screen, contains('onProgress: _handleSyncProgress'));
+    expect(screen, contains('await cubit.syncPhotoPrivacy(_privacy)'));
+    expect(
+      screen,
+      isNot(contains('final saved = await cubit.updateProfile(data)')),
+    );
+    expect(screen, isNot(contains('Fallback: use raw bytes')));
+    expect(service, contains('PhotoSyncStage.transferring'));
+    expect(service, contains('PhotoSyncStage.publishing'));
   });
 
   test('remote deletion and replacement cleanup are ownership scoped', () {

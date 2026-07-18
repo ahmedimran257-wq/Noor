@@ -13,6 +13,24 @@ import '../../services/supabase_service.dart';
 import '../../services/translation_service.dart';
 import 'chat_state.dart';
 
+enum ChatAccessReason {
+  allowed,
+  subscriptionRequired,
+  suspended,
+  closed,
+  notFound,
+  unavailable,
+}
+
+class ChatAccessDecision {
+  const ChatAccessDecision(this.reason);
+
+  final ChatAccessReason reason;
+  bool get allowed => reason == ChatAccessReason.allowed;
+  bool get requiresSubscription =>
+      reason == ChatAccessReason.subscriptionRequired;
+}
+
 class ChatCubit extends Cubit<ChatState> {
   ChatCubit() : super(const ChatState());
 
@@ -26,9 +44,11 @@ class ChatCubit extends Cubit<ChatState> {
   final Set<String> _messageLoadsInFlight = {};
   final Set<String> _exhaustedMessagePages = {};
 
-  static const Duration _typingRefreshInterval = Duration(milliseconds: 1400);
+  // Responsive enough for a live typing indicator while reducing Realtime
+  // broadcast volume by more than half versus the previous 1.4-second loop.
+  static const Duration _typingRefreshInterval = Duration(milliseconds: 3000);
   static const Duration _localTypingIdleTimeout = Duration(milliseconds: 2200);
-  static const Duration _remoteTypingExpiry = Duration(milliseconds: 4200);
+  static const Duration _remoteTypingExpiry = Duration(milliseconds: 7000);
 
   RealtimeChannel? _activeChatSubscription;
   String? _realtimeUserId;
@@ -40,6 +60,38 @@ class ChatCubit extends Cubit<ChatState> {
   bool _localTypingActive = false;
 
   bool get _isRealMode => SupabaseService.isInitialized;
+
+  /// Asks Supabase for the authoritative access decision. Callers must never
+  /// infer messaging access from cached gender or RevenueCat state.
+  Future<ChatAccessDecision> checkChatAccess(String matchId) async {
+    if (!_isRealMode || matchId.isEmpty) {
+      return const ChatAccessDecision(ChatAccessReason.unavailable);
+    }
+    try {
+      final response = await SupabaseService.client.rpc(
+        'can_open_chat',
+        params: {'p_match_id': matchId},
+      );
+      final rows = response as List<dynamic>;
+      if (rows.isEmpty) {
+        return const ChatAccessDecision(ChatAccessReason.unavailable);
+      }
+      final row = Map<String, dynamic>.from(rows.first as Map);
+      if (row['allowed'] == true) {
+        return const ChatAccessDecision(ChatAccessReason.allowed);
+      }
+      return ChatAccessDecision(switch (row['reason']?.toString()) {
+        'subscription_required' => ChatAccessReason.subscriptionRequired,
+        'suspended' => ChatAccessReason.suspended,
+        'closed' => ChatAccessReason.closed,
+        'not_found' => ChatAccessReason.notFound,
+        _ => ChatAccessReason.unavailable,
+      });
+    } catch (error) {
+      debugPrint('ChatCubit: access check failed: $error');
+      return const ChatAccessDecision(ChatAccessReason.unavailable);
+    }
+  }
 
   Future<void> loadConversations({
     bool showLoading = true,

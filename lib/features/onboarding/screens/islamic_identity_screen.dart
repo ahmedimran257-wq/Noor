@@ -775,9 +775,7 @@ class _SelectChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
           border: Border.all(
             color: isSelected ? AppColors.champagneGold : AppColors.cardBorder,
-            width: isSelected
-                ? AppDimensions.borderFocus
-                : AppDimensions.borderThin,
+            width: AppDimensions.borderThin,
           ),
         ),
         child: Text(label,
@@ -817,9 +815,7 @@ class _DeenCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
           border: Border.all(
             color: isSelected ? AppColors.champagneGold : AppColors.cardBorder,
-            width: isSelected
-                ? AppDimensions.borderFocus
-                : AppDimensions.borderThin,
+            width: AppDimensions.borderThin,
           ),
         ),
         child: Row(children: [
@@ -873,9 +869,7 @@ class _TogglePill extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
           border: Border.all(
             color: isSelected ? AppColors.champagneGold : AppColors.cardBorder,
-            width: isSelected
-                ? AppDimensions.borderFocus
-                : AppDimensions.borderThin,
+            width: AppDimensions.borderThin,
           ),
         ),
         child: Center(

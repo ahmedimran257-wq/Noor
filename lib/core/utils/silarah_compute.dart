@@ -49,6 +49,7 @@ DiscoveryProfile mapDbRowToDiscoveryProfile(Map<String, dynamic> row) {
     photoCount: photoCount,
     isPhotoPrivate:
         photoPrivacy == 'mutual_only' || photoPrivacy == 'request_only',
+    photoPrivacy: photoPrivacy ?? 'public',
     isVerified: (row['is_verified'] as bool?) ?? false,
     occupation: _optionalText(row, 'profession'),
     education: _optionalText(row, 'education_level'),

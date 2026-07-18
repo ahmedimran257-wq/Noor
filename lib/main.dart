@@ -42,6 +42,7 @@ import 'core/cubits/notification_prefs/notification_prefs_cubit.dart';
 import 'core/cubits/block_report/block_report_cubit.dart';
 import 'core/cubits/notifications/notifications_cubit.dart';
 import 'core/cubits/locale/locale_cubit.dart';
+import 'core/cubits/account_standing/account_standing_cubit.dart';
 import 'core/router/app_router.dart';
 import 'core/widgets/in_app_notification_banner.dart';
 import 'core/widgets/startup_offline_screen.dart';
@@ -269,6 +270,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
   late final NotificationPrefsCubit _notificationPrefsCubit;
   late final NotificationsCubit _notificationsCubit;
   late final LocaleCubit _localeCubit;
+  late final AccountStandingCubit _accountStandingCubit;
 
   late final GoRouter _router;
   late final Future<void> _revenueCatReady;
@@ -291,6 +293,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
     _notificationPrefsCubit = NotificationPrefsCubit();
     _notificationsCubit = NotificationsCubit();
     _localeCubit = LocaleCubit();
+    _accountStandingCubit = AccountStandingCubit();
 
     _router =
         buildAppRouter(_authCubit, initialLocation: widget.initialLocation);
@@ -300,6 +303,11 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
       _router.push(path);
     };
     FcmService.instance.onForegroundMessage = (message) {
+      if (message.data['type'] == 'account_suspended' ||
+          message.data['type'] == 'account_banned' ||
+          message.data['type'] == 'account_restored') {
+        unawaited(_accountStandingCubit.refresh());
+      }
       if (message.data['type'] == 'new_message') {
         unawaited(_chatCubit.loadConversations(force: true));
       }
@@ -402,6 +410,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
     PresenceService.instance.handleLifecycle(state);
     if (state == AppLifecycleState.resumed &&
         SupabaseService.currentUserId != null) {
+      unawaited(_accountStandingCubit.refresh());
       unawaited(_notificationsCubit.loadNotifications());
       unawaited(_discoveryFeedCubit.loadInitial());
       unawaited(_onboardingCubit.refreshProfileFromDb());
@@ -423,6 +432,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
     _discoveryFeedCubit.clear();
     _interestsCubit.clear();
     _blockReportCubit.clear();
+    unawaited(_accountStandingCubit.stop());
   }
 
   void _openInAppNotification(NotificationItem item) {
@@ -447,6 +457,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
     _notificationPrefsCubit.close();
     _notificationsCubit.close();
     _localeCubit.close();
+    _accountStandingCubit.close();
 
     // ── Dispose Services ───────────────────────────────────────
     _connectivityService?.dispose();
@@ -472,6 +483,9 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
         BlocProvider<BlockReportCubit>.value(value: _blockReportCubit),
         BlocProvider<NotificationsCubit>.value(value: _notificationsCubit),
         BlocProvider<LocaleCubit>.value(value: _localeCubit),
+        BlocProvider<AccountStandingCubit>.value(
+          value: _accountStandingCubit,
+        ),
       ],
       child: Builder(
         builder: (context) {
@@ -506,6 +520,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
                 _activeSessionUserId = state.userId;
                 PresenceService.instance.start(state.userId);
                 if (isNewAuthenticatedSession) {
+                  unawaited(_accountStandingCubit.start(state.userId));
                   unawaited(_loginSubscriptionUser(state.userId));
                   unawaited(FcmService.instance.onUserLogin());
                   unawaited(_notificationPrefsCubit.loadPrefs());

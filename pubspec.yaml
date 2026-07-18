@@ -1,12 +1,13 @@
 name: silarah
 description: "Silarah - Premium Muslim Matrimony App"
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.0+2002
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
 
 dependencies:
+  crypto: ^3.0.7                 # Verifies bundled moderation model integrity
   flutter:
     sdk: flutter
   flutter_localizations:
@@ -38,8 +39,9 @@ dependencies:
   image_picker: ^1.1.2            # Camera / Gallery photo picking
   flutter_image_compress: ^2.3.0  # Compress before upload
   google_mlkit_face_detection: ^0.11.1  # Compatible with text recognition ^0.13.0
+  google_mlkit_object_detection: ^0.13.0 # On-device human-presence gate for profile photos
   google_mlkit_text_recognition: ^0.13.0 # On-device ID OCR (free)
-  tflite_flutter: ^0.12.1               # Compatible on-device MobileFaceNet inference
+  tflite_flutter: ^0.12.1               # 16 KB-safe LiteRT runtime for MobileFaceNet + file-backed NSFW
   app_links: ^7.0.0                     # DigiLocker OAuth callback handling
   url_launcher: ^6.3.2                  # Opens optional DigiLocker consent
   path_provider: ^2.1.4                 # Temp dir for face detection
@@ -53,7 +55,6 @@ dependencies:
   blurhash_dart: ^1.2.1          # BlurHash decode for photo placeholders
   image: ^4.3.0                  # Required by blurhash_dart for pixel buffer
   geolocator: ^14.0.3
-  nsfw_detect: ^2.6.4
   camera: ^0.12.0+1
   # Pinned: Android release integration is validated by CI before upgrades.
   package_info_plus: 10.2.0
@@ -84,9 +85,9 @@ flutter:
   assets:
     - assets/icon/
     - assets/models/mobilefacenet.tflite
-    - assets/models/falconsai_nsfw.tflite
+    - assets/models/opennsfw2_float16.tflite
     - assets/licenses/mobilefacenet-Apache-2.0.txt
-    - assets/licenses/falconsai-nsfw-Apache-2.0.txt
+    - assets/licenses/opennsfw2-MIT.txt
 
 flutter_launcher_icons:
   android: "launcher_icon"

@@ -54,6 +54,9 @@ void main() {
     expect(detailScreen, isNot(contains('photoUrl != null && index == 0')));
     expect(detailScreen, contains('controller.nextPage'));
     expect(detailScreen, contains("'\${currentPage + 1} / \$totalPhotos'"));
+    expect(detailScreen, contains('Member preview'));
+    expect(detailScreen, contains('_OwnProfileActionBar'));
+    expect(profileScreen, contains('onManageOwnPhotos:'));
     expect(photoService, contains('getVisiblePhotoSlots'));
     expect(photoService, contains(".order('order_index')"));
   });

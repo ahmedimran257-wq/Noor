@@ -117,32 +117,28 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Aadhaar verification is optional and is not configured on this build. Standard on-device verification remains available.',
+            'DigiLocker verification is not configured on this build. Standard verification remains available.',
           ),
         ),
       );
       return;
     }
     setState(() => _submitting = true);
-    final verified = await service.verifyOptionalAadhaar();
+    final digilockerResult = await service.verifyIdentity();
     if (!mounted) return;
-    setState(() => _submitting = false);
-    if (verified) {
-      setState(() {
-        _result = const KycVerificationResult(
-          status: KycVerificationStatus.verified,
-          message: 'Your identity has been verified.',
-        );
-      });
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Aadhaar verification was not completed. You can use standard on-device verification instead.',
-          ),
-        ),
+    setState(() {
+      _submitting = false;
+      _result = KycVerificationResult(
+        status: switch (digilockerResult.status) {
+          DigiLockerVerificationStatus.verified =>
+            KycVerificationStatus.verified,
+          DigiLockerVerificationStatus.insufficientEvidence =>
+            KycVerificationStatus.pendingReview,
+          _ => KycVerificationStatus.rejected,
+        },
+        message: digilockerResult.message,
       );
-    }
+    });
   }
 
   @override
@@ -163,7 +159,7 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
             const Text('Verify your profile', style: AppTypography.screenTitle),
             const SizedBox(height: AppDimensions.space8),
             const Text(
-              'Your face match and document text are checked on this device before anything is uploaded.',
+              'Capture-quality checks run on this device. Your private document and selfie are then reviewed by Silarah. Device scores never approve your identity.',
               style: AppTypography.bodyMuted,
             ),
             const SizedBox(height: AppDimensions.space28),
@@ -205,8 +201,13 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
               const SizedBox(height: AppDimensions.space16),
               OutlinedButton.icon(
                 onPressed: _submitting ? null : _verifyWithDigiLocker,
-                icon: const Icon(Icons.bolt_outlined),
-                label: const Text('Verify instantly with Aadhaar (optional)'),
+                icon: const Icon(Icons.account_balance_outlined),
+                label: const Text('Verify with DigiLocker'),
+              ),
+              const SizedBox(height: AppDimensions.space8),
+              const Text(
+                'A badge is granted only when your DigiLocker account and an authenticated issued identity document match your profile name and date of birth. Authorization alone is not verification.',
+                style: AppTypography.caption,
               ),
             ],
             if (_result != null) ...[
@@ -223,7 +224,7 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
                         width: 22,
                         height: 22,
                         child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Verify securely'),
+                    : const Text('Submit for private review'),
               ),
             ),
           ],

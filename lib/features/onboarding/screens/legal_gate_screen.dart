@@ -180,6 +180,21 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
                                         );
                                       },
                                   ),
+                                  const TextSpan(text: ' و '),
+                                  TextSpan(
+                                    text: 'إرشادات المجتمع',
+                                    style: AppTypography.body.copyWith(
+                                        color: AppColors.champagneGold),
+                                    recognizer: TapGestureRecognizer()
+                                      ..onTap = () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                              builder: (_) => const LegalDocScreen(
+                                                  type:
+                                                      'community-guidelines')),
+                                        );
+                                      },
+                                  ),
                                   const TextSpan(text: '.'),
                                 ]
                               : [
@@ -214,6 +229,21 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
                                         );
                                       },
                                   ),
+                                  const TextSpan(text: ' and the '),
+                                  TextSpan(
+                                    text: 'Community Guidelines',
+                                    style: AppTypography.body.copyWith(
+                                        color: AppColors.champagneGold),
+                                    recognizer: TapGestureRecognizer()
+                                      ..onTap = () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                              builder: (_) => const LegalDocScreen(
+                                                  type:
+                                                      'community-guidelines')),
+                                        );
+                                      },
+                                  ),
                                   const TextSpan(text: '.'),
                                 ],
                         ),
@@ -237,8 +267,8 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
                                   const TextSpan(
                                     text:
                                         ' (المذهب، الممارسة الدينية، الهوية الإسلامية) '
-                                        'لتوفير مطابقة التوافق. لا تتم مشاركة هذه البيانات مع أطراف '
-                                        'ثالثة أو استخدامها للإعلان.',
+                                        'لتوفير مطابقة التوافق. يعالجها مزودو الخدمة المتعاقدون عند '
+                                        'الضرورة لتشغيل سيلارا، ولا تُستخدم للإعلانات السلوكية.',
                                   ),
                                 ]
                               : [
@@ -253,8 +283,9 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
                                   const TextSpan(
                                     text:
                                         ' (sect, prayer practice, Islamic identity) to provide '
-                                        'compatibility matching. This data is never shared with '
-                                        'third parties or used for advertising.',
+                                        'compatibility matching. Contracted processors handle it '
+                                        'only as needed to operate Silarah; it is not used for '
+                                        'behavioural advertising.',
                                   ),
                                 ],
                         ),

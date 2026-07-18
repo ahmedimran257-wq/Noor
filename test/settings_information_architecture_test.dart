@@ -80,6 +80,8 @@ void main() {
       expect(profile, isNot(contains("label: 'Help & support'")));
       expect(profile, isNot(contains("title: 'Account controls'")));
       expect(profile, isNot(contains('class _SettingsSection')));
+      expect(settings, isNot(contains('settings_label_editProfile')));
+      expect(settings, isNot(contains('AppRoutes.editProfile')));
     });
 
     test('uses profile-live notification language instead of approval copy',

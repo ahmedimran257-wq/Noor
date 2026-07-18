@@ -278,8 +278,21 @@ class FcmService {
       path = '/home?tab=1';
     } else if (type == 'profile_live') {
       path = '/home?tab=3';
+    } else if (type == 'photo_access_request') {
+      path = '/photo-requests';
+    } else if (type == 'photo_access_granted') {
+      final ownerId = message.data['owner_user_id'] as String?;
+      path = ownerId == null ? '/home?tab=1' : '/profile/$ownerId';
     } else if (type == 'profile_nudge') {
       path = '/edit-profile';
+    } else if (type == 'subscription_active' ||
+        type == 'subscription_renewed' ||
+        type == 'subscription_updated' ||
+        type == 'subscription_cancelled' ||
+        type == 'subscription_expired' ||
+        type == 'subscription_refunded' ||
+        type == 'billing_issue') {
+      path = '/subscription';
     } else if (type == 'admin_announcement') {
       path = '/notifications';
     } else if (type == 'profile_returned_to_review' ||

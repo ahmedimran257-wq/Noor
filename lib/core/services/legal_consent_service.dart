@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../legal/legal_documents.dart';
 import 'supabase_service.dart';
 
 class LegalConsentService {
@@ -8,7 +9,7 @@ class LegalConsentService {
 
   static final instance = LegalConsentService._();
 
-  static const _pendingConsentKey = 'pending_legal_onboarding_consents_v1';
+  static const _pendingConsentKey = 'pending_legal_onboarding_consents_v2';
 
   Future<bool> recordPendingOnboardingConsents() async {
     try {
@@ -38,7 +39,10 @@ class LegalConsentService {
     if (!await hasPendingOnboardingConsents()) return true;
 
     try {
-      await SupabaseService.client.rpc('record_onboarding_consents');
+      await SupabaseService.client.rpc(
+        'record_onboarding_consents',
+        params: {'p_policy_version': LegalDocuments.version},
+      );
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_pendingConsentKey);
       return true;

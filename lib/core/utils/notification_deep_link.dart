@@ -17,13 +17,18 @@ String? notificationPathFromDeepLink(String? deepLink) {
     return id.isEmpty ? '/home?tab=2' : '/chat/$id';
   }
   if (host == 'profile' || path.startsWith('/profile')) {
-    return '/home?tab=3';
+    final id = path.replaceFirst('/profile/', '').replaceFirst('/', '');
+    return id.isEmpty ? '/home?tab=3' : '/profile/$id';
   }
+  if (host == 'photo-requests') return '/photo-requests';
   if (host == 'notifications') return '/notifications';
   if (host == 'verify') return '/badge-verification';
   if (host == 'verify-identity') return '/verify';
   if (host == 'photos') return '/edit-profile?section=photos';
   if (host == 'complete-profile') return '/edit-profile';
+  if (host == 'subscription' || host == 'membership') {
+    return '/subscription';
+  }
   if (host == 'support' || host == 'help-support') return '/help-support';
   return null;
 }

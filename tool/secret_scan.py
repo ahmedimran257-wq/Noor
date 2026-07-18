@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import pathlib
 import re
+import subprocess
 import sys
 
 
@@ -20,6 +21,17 @@ SKIP_DIRS = {
     ".next",
     ".vercel",
     "coverage",
+}
+
+# Firebase's mobile client configuration is intentionally shipped inside the
+# application. These identifiers are not server credentials; access is
+# controlled with Firebase rules, API restrictions, App Check and SHA-bound
+# Android clients. Keep them out of generic secret findings while continuing to
+# scan every other committed source file.
+PUBLIC_MOBILE_CONFIG = {
+    pathlib.Path("android/app/google-services.json"),
+    pathlib.Path("ios/Runner/GoogleService-Info.plist"),
+    pathlib.Path("lib/firebase_options.dart"),
 }
 
 PATTERNS = {
@@ -54,8 +66,23 @@ def is_binary(path: pathlib.Path) -> bool:
 
 def main() -> int:
     findings: list[str] = []
-    for path in ROOT.rglob("*"):
-        if not path.is_file() or should_skip(path) or is_binary(path):
+    tracked = subprocess.run(
+        ["git", "ls-files", "-z"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+    ).stdout.split(b"\0")
+    for raw_relative in tracked:
+        if not raw_relative:
+            continue
+        relative = pathlib.Path(raw_relative.decode("utf-8"))
+        path = ROOT / relative
+        if (
+            relative in PUBLIC_MOBILE_CONFIG
+            or not path.is_file()
+            or should_skip(path)
+            or is_binary(path)
+        ):
             continue
 
         try:

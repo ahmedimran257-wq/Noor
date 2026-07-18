@@ -22,6 +22,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/animations/spring_keyboard_padding.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
 import '../../../core/widgets/loaders/silarah_shimmer.dart';
+import 'paywall_gate_screen.dart';
 
 /// G12: Profile-aware openers — include the match's name.
 List<String> _buildOpeners(String name) => [
@@ -57,6 +58,7 @@ class _ChatScreenState extends State<ChatScreen>
   final Set<String> _freshMessageIds = {};
   final Set<String> _knownMessageIds = {};
   bool _messageSnapshotReady = false;
+  ChatAccessDecision? _accessDecision;
 
   bool _showSuggestedOpeners = true;
   late final AnimationController _openersAnim;
@@ -76,11 +78,19 @@ class _ChatScreenState extends State<ChatScreen>
     _inputCtrl.addListener(_handleComposerChanged);
     _scrollCtrl.addListener(_handleScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _chatCubit.loadMessages(widget.conversationId);
-      _chatCubit.markRead(widget.conversationId);
-      _scrollToBottom();
-      _loadOpenersDismissed();
+      _authorizeAndOpen();
     });
+  }
+
+  Future<void> _authorizeAndOpen() async {
+    final decision = await _chatCubit.checkChatAccess(widget.conversationId);
+    if (!mounted) return;
+    setState(() => _accessDecision = decision);
+    if (!decision.allowed) return;
+    await _chatCubit.loadMessages(widget.conversationId);
+    await _chatCubit.markRead(widget.conversationId);
+    _scrollToBottom();
+    await _loadOpenersDismissed();
   }
 
   @override
@@ -90,15 +100,16 @@ class _ChatScreenState extends State<ChatScreen>
     _chatCubit.updateTyping(oldWidget.conversationId, isTyping: false);
     _chatCubit.leaveConversation(oldWidget.conversationId);
     _messageSnapshotReady = false;
+    _accessDecision = null;
     _freshMessageIds.clear();
     _knownMessageIds.clear();
-    _chatCubit.loadMessages(widget.conversationId);
-    _chatCubit.markRead(widget.conversationId);
+    _authorizeAndOpen();
   }
 
   void _handleComposerChanged() {
     final can = _inputCtrl.text.trim().isNotEmpty;
     if (can != _canSend && mounted) setState(() => _canSend = can);
+    if (_accessDecision?.allowed != true) return;
     _chatCubit.updateTyping(widget.conversationId, isTyping: can);
   }
 
@@ -254,6 +265,21 @@ class _ChatScreenState extends State<ChatScreen>
 
   @override
   Widget build(BuildContext context) {
+    final access = _accessDecision;
+    if (access == null) {
+      return const Scaffold(
+        backgroundColor: AppColors.obsidianNight,
+        body: Center(child: SilarahPulseLoader(label: 'Securing chat')),
+      );
+    }
+    if (!access.allowed) {
+      return _ChatAccessGate(
+        decision: access,
+        onRetry: _authorizeAndOpen,
+        onViewPlans: () => PaywallGateSheet.show(context),
+      );
+    }
+
     return BlocConsumer<ChatCubit, ChatState>(
       listenWhen: (prev, curr) {
         final prevConv = prev.conversations
@@ -786,6 +812,123 @@ class _SuggestedOpenersArea extends StatelessWidget {
 
 // ── AppBar ────────────────────────────────────────────────────
 
+class _ChatAccessGate extends StatelessWidget {
+  const _ChatAccessGate({
+    required this.decision,
+    required this.onRetry,
+    required this.onViewPlans,
+  });
+
+  final ChatAccessDecision decision;
+  final VoidCallback onRetry;
+  final VoidCallback onViewPlans;
+
+  @override
+  Widget build(BuildContext context) {
+    final needsPremium = decision.requiresSubscription;
+    final (title, body, icon) = switch (decision.reason) {
+      ChatAccessReason.subscriptionRequired => (
+          'Messaging with Premium',
+          'Men unlock conversations with Silarah Premium. Your existing matches stay safely here.',
+          Icons.lock_outline_rounded,
+        ),
+      ChatAccessReason.suspended => (
+          'Messaging temporarily restricted',
+          'This account cannot send messages right now. Review your account status for details.',
+          Icons.shield_outlined,
+        ),
+      ChatAccessReason.closed => (
+          'Conversation ended',
+          'This match is no longer open for messaging.',
+          Icons.forum_outlined,
+        ),
+      _ => (
+          'Unable to open chat',
+          'We could not securely verify access. Check your connection and try again.',
+          Icons.sync_problem_rounded,
+        ),
+    };
+
+    return Scaffold(
+      backgroundColor: AppColors.obsidianNight,
+      appBar: AppBar(
+        backgroundColor: AppColors.obsidianNight,
+        leading: IconButton(
+          onPressed: () => Navigator.maybePop(context),
+          icon: const Icon(Icons.arrow_back_rounded),
+        ),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppDimensions.space24),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 58,
+                    height: 58,
+                    decoration: BoxDecoration(
+                      color: AppColors.champagneGold.withValues(alpha: 0.09),
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusCard),
+                      border: Border.all(color: AppColors.goldBorder),
+                    ),
+                    child: Icon(icon, color: AppColors.champagneGold, size: 26),
+                  ),
+                  const SizedBox(height: AppDimensions.space20),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: AppTypography.screenTitle.copyWith(fontSize: 23),
+                  ),
+                  const SizedBox(height: AppDimensions.space10),
+                  Text(
+                    body,
+                    textAlign: TextAlign.center,
+                    style: AppTypography.bodyMuted.copyWith(height: 1.55),
+                  ),
+                  const SizedBox(height: AppDimensions.space24),
+                  SilarahPressable(
+                    semanticLabel: needsPremium ? 'View Premium' : 'Try again',
+                    onTap: needsPremium ? onViewPlans : onRetry,
+                    child: Container(
+                      width: double.infinity,
+                      height: AppDimensions.buttonHeight,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: AppColors.champagneGold,
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusButton),
+                      ),
+                      child: Text(
+                        needsPremium ? 'View Premium' : 'Try again',
+                        style: AppTypography.button,
+                      ),
+                    ),
+                  ),
+                  if (needsPremium) ...[
+                    const SizedBox(height: AppDimensions.space8),
+                    TextButton(
+                      onPressed: onRetry,
+                      child: const Text(
+                        'Refresh access',
+                        style: AppTypography.bodyMuted,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   const _ChatAppBar({
     required this.name,
@@ -807,6 +950,8 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     return Container(
       height: 64 + MediaQuery.of(context).padding.top,
       padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
@@ -849,7 +994,12 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
             Text('$name $initial.',
                 style: AppTypography.bodyMedium, maxLines: 1),
             AnimatedSwitcher(
-              duration: AppDimensions.durationTransition,
+              duration: reduceMotion
+                  ? Duration.zero
+                  : AppDimensions.durationTransition,
+              reverseDuration: reduceMotion
+                  ? Duration.zero
+                  : AppDimensions.durationTransition,
               switchInCurve: AppCurves.reveal,
               switchOutCurve: AppCurves.transition,
               transitionBuilder: (child, animation) => FadeTransition(

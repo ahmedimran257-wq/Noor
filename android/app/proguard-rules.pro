@@ -9,3 +9,10 @@
 -dontwarn com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions
 -dontwarn com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions$Builder
 -dontwarn com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions
+
+# ML Kit object detection's Flutter wrapper compiles optional support for
+# Firebase-hosted custom models. Silarah only invokes its bundled default
+# detector, and the obsolete firebase-iid module is intentionally excluded in
+# android/build.gradle.kts to avoid a duplicate receiver with Firebase
+# Messaging. This unreachable optional path is the only remaining reference.
+-dontwarn com.google.firebase.iid.FirebaseInstanceId

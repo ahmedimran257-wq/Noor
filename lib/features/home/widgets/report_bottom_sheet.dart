@@ -308,8 +308,10 @@ class _Step2 extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  const BorderSide(color: AppColors.champagneGold, width: 1.5),
+              borderSide: const BorderSide(
+                color: AppColors.champagneGold,
+                width: AppDimensions.borderThin,
+              ),
             ),
             counterStyle: AppTypography.caption,
           ),

@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:silarah/core/services/country_context_service.dart';
 
+import 'support/photon_test_client.dart';
+
 void main() {
   final service = CountryContextService.instance;
 
@@ -15,9 +17,11 @@ void main() {
     );
   });
 
-  test('uses live Photon fallback and keeps only the selected country',
+  test('uses the Photon fallback and keeps only the selected country',
       () async {
-    final results = await service.searchCities('kurnool', countryCode: 'IN');
+    final results = await withPhotonFixtures(
+      () => service.searchCities('kurnool', countryCode: 'IN'),
+    );
 
     expect(results, isNotEmpty);
     expect(results.every((r) => r.countryCode == 'IN'), isTrue);
@@ -25,15 +29,17 @@ void main() {
     expect(results.first.placeId, startsWith('photon-'));
   });
 
-  test('uses live Photon fallback for global capital cities', () async {
-    final results = await service.searchCities('jakarta', countryCode: 'ID');
+  test('uses the Photon fallback for global capital cities', () async {
+    final results = await withPhotonFixtures(
+      () => service.searchCities('jakarta', countryCode: 'ID'),
+    );
 
     expect(results, isNotEmpty);
     expect(results.every((r) => r.countryCode == 'ID'), isTrue);
     expect(results.any((r) => r.city.toLowerCase() == 'jakarta'), isTrue);
   });
 
-  test('uses the same live Photon fallback across global countries', () async {
+  test('uses the same Photon fallback across global countries', () async {
     final samples = <({String query, String countryCode})>[
       (query: 'london', countryCode: 'GB'),
       (query: 'cairo', countryCode: 'EG'),
@@ -44,9 +50,11 @@ void main() {
     ];
 
     for (final sample in samples) {
-      final results = await service.searchCities(
-        sample.query,
-        countryCode: sample.countryCode,
+      final results = await withPhotonFixtures(
+        () => service.searchCities(
+          sample.query,
+          countryCode: sample.countryCode,
+        ),
       );
 
       expect(results, isNotEmpty, reason: sample.query);
@@ -63,8 +71,10 @@ void main() {
     }
   });
 
-  test('uses live Photon fallback for global states and regions', () async {
-    final regions = await service.searchRegions('bali', countryCode: 'ID');
+  test('uses the Photon fallback for global states and regions', () async {
+    final regions = await withPhotonFixtures(
+      () => service.searchRegions('bali', countryCode: 'ID'),
+    );
 
     expect(regions, isNotEmpty);
     expect(regions.every((r) => r.countryCode == 'ID'), isTrue);
@@ -72,7 +82,9 @@ void main() {
   });
 
   test('accepts real areas when users type them into city search', () async {
-    final results = await service.searchCities('bali', countryCode: 'ID');
+    final results = await withPhotonFixtures(
+      () => service.searchCities('bali', countryCode: 'ID'),
+    );
 
     expect(results, isNotEmpty);
     expect(results.every((r) => r.countryCode == 'ID'), isTrue);
@@ -80,10 +92,12 @@ void main() {
   });
 
   test('region filter rejects cities outside the selected state', () async {
-    final results = await service.searchCities(
-      'kurnool',
-      countryCode: 'IN',
-      regionName: 'Kerala',
+    final results = await withPhotonFixtures(
+      () => service.searchCities(
+        'kurnool',
+        countryCode: 'IN',
+        regionName: 'Kerala',
+      ),
     );
 
     expect(results, isEmpty);

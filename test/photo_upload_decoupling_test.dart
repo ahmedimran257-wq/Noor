@@ -17,7 +17,7 @@ void main() {
       expect(source, isNot(contains('proof-of-life')));
     });
 
-    test('moderation service contains only image integrity and NSFW gates', () {
+    test('moderation service contains only human presence and NSFW gates', () {
       final source = File(
         'lib/core/services/photo_moderation_service.dart',
       ).readAsStringSync();
@@ -27,10 +27,20 @@ void main() {
       expect(source, isNot(contains('FaceProminence')));
       expect(source, isNot(contains('faceRatio')));
       expect(source, isNot(contains("category: 'no_face'")));
+      expect(source, contains('google_mlkit_object_detection'));
       expect(source, contains('explicitContentFlagThreshold = 0.85'));
-      expect(source, contains('neutralContentPassThreshold = 0.30'));
+      expect(source, contains("category: 'no_person_detected'"));
       expect(source, contains("category: 'invalid_image'"));
       expect(source, isNot(contains("category: 'safety_uncertain'")));
+      expect(source, isNot(contains('_isRealImage')));
+      expect(source, isNot(contains('_classifierInputs')));
+      expect(source, isNot(contains('_aggregateCropScans')));
+      expect(source, isNot(contains('package:nsfw_detect')));
+      expect(source, contains('opennsfw2_float16.tflite'));
+      expect(source, contains('Interpreter.fromFile'));
+      expect(source, contains('build_compact_nsfw_model.py'));
+      expect(source, isNot(contains('Interpreter.fromAsset(')));
+      expect(source, isNot(contains('ateq_nsfw.tflite')));
     });
 
     test('face and liveness detection remains in badge verification only', () {

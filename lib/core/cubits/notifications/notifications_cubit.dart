@@ -213,6 +213,16 @@ class NotificationsCubit extends Cubit<NotificationsState> {
           'Your profile is now live! 🎉',
           'Muslims in your area can now find you on Silarah.'
         );
+      case 'photo_access_request':
+        return (
+          'Photo access request',
+          'A member would like permission to view your private photos.'
+        );
+      case 'photo_access_granted':
+        return (
+          'Photo access granted',
+          'You can now view the photos that were shared with you.'
+        );
       case 'profile_returned_to_review':
         return (
           'Profile needs review',
@@ -386,8 +396,22 @@ String? notificationPathFor(NotificationItem item) {
       return '/notifications';
     case 'profile_live':
       return '/home?tab=3';
+    case 'photo_access_request':
+      return '/photo-requests';
+    case 'photo_access_granted':
+      return item.profileId == null
+          ? '/home?tab=1'
+          : '/profile/${item.profileId}';
     case 'profile_nudge':
       return '/edit-profile';
+    case 'subscription_active':
+    case 'subscription_renewed':
+    case 'subscription_updated':
+    case 'subscription_cancelled':
+    case 'subscription_expired':
+    case 'subscription_refunded':
+    case 'billing_issue':
+      return '/subscription';
     case 'profile_returned_to_review':
     case 'account_restored':
     case 'photo_approved':

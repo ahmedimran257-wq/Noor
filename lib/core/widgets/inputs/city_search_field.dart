@@ -31,6 +31,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_dimensions.dart';
 import '../../theme/app_typography.dart';
 import '../loaders/silarah_shimmer.dart';
+import 'silarah_field_frame.dart';
 
 class CitySearchField extends StatefulWidget {
   const CitySearchField({
@@ -266,18 +267,9 @@ class _CitySearchFieldState extends State<CitySearchField> {
   }
 
   Widget _buildInput() {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      decoration: BoxDecoration(
-        color: AppColors.inputSurface,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-        border: Border.all(
-          color: _focus.hasFocus
-              ? AppColors.champagneGold.withValues(alpha: 0.6)
-              : AppColors.cardBorder,
-          width: _focus.hasFocus ? 1.5 : 1.0,
-        ),
-      ),
+    return SilarahFieldFrame(
+      focused: _focus.hasFocus,
+      enabled: widget.enabled,
       child: TextField(
         enabled: widget.enabled,
         controller: _ctrl,
@@ -310,6 +302,12 @@ class _CitySearchFieldState extends State<CitySearchField> {
                     )
                   : null,
           border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
+          errorBorder: InputBorder.none,
+          focusedErrorBorder: InputBorder.none,
+          filled: false,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 0,
             vertical: 18,

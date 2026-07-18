@@ -222,7 +222,8 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                       borderRadius:
                           BorderRadius.circular(AppDimensions.radiusButton),
                       borderSide: const BorderSide(
-                          color: AppColors.champagneGold, width: 2),
+                          color: AppColors.champagneGold,
+                          width: AppDimensions.borderThin),
                     ),
                   ),
                 ),

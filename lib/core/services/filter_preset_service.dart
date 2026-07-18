@@ -30,6 +30,16 @@ class FilterPreset {
         'maritalStatus': filter.maritalStatus,
         'hasChildren': filter.hasChildren,
         'educationMin': filter.educationMin,
+        'distanceLabel': filter.distanceLabel,
+        'motherTongue': filter.motherTongue,
+        'community': filter.community,
+        'livingExpectation': filter.livingExpectation,
+        'quranMemorization': filter.quranMemorization,
+        'marriageTimeline': filter.marriageTimeline,
+        'willingToRelocate': filter.willingToRelocate,
+        'diasporaMode': filter.diasporaMode,
+        'diasporaCountries': filter.diasporaCountries,
+        'browseCountries': filter.browseCountries,
       };
 
   factory FilterPreset.fromJson(Map<String, dynamic> j) {
@@ -49,6 +59,20 @@ class FilterPreset {
         maritalStatus: j['maritalStatus'] as String?,
         hasChildren: j['hasChildren'] as String?,
         educationMin: j['educationMin'] as String?,
+        distanceLabel: j['distanceLabel'] as String?,
+        motherTongue: j['motherTongue'] as String?,
+        community: j['community'] as String?,
+        livingExpectation: j['livingExpectation'] as String?,
+        quranMemorization: j['quranMemorization'] as String?,
+        marriageTimeline: j['marriageTimeline'] as String?,
+        willingToRelocate: j['willingToRelocate'] as String?,
+        diasporaMode: (j['diasporaMode'] as bool?) ?? false,
+        diasporaCountries: j['diasporaCountries'] == null
+            ? null
+            : List<String>.from(j['diasporaCountries'] as Iterable),
+        browseCountries: j['browseCountries'] == null
+            ? null
+            : List<String>.from(j['browseCountries'] as Iterable),
       ),
     );
   }

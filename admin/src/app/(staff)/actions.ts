@@ -20,9 +20,27 @@ const bulkAccountActionSchema = z.object({
   reason: z.string().trim().min(6, "Bulk actions require a reason.").max(500),
 });
 const kycReviewSchema = z.object({
-  userId: uuidSchema,
+  submissionId: uuidSchema,
   decision: z.enum(["approve", "reject", "resubmit"]),
   reason: reasonSchema,
+  documentReadable: z.boolean(),
+  nameMatch: z.boolean(),
+  dobMatch: z.boolean(),
+  faceMatch: z.boolean(),
+  documentUnexpired: z.boolean(),
+}).superRefine((value, ctx) => {
+  if (value.decision === "approve" && ![
+    value.documentReadable,
+    value.nameMatch,
+    value.dobMatch,
+    value.faceMatch,
+    value.documentUnexpired,
+  ].every(Boolean)) {
+    ctx.addIssue({ code: "custom", message: "Complete all five evidence checks before approval." });
+  }
+  if (value.decision !== "approve" && value.reason.trim().length < 6) {
+    ctx.addIssue({ code: "custom", message: "Choose a clear resubmission or rejection reason." });
+  }
 });
 const reportSchema = z.object({
   reportId: uuidSchema,
@@ -177,13 +195,26 @@ export async function reviewKyc(formData: FormData) {
     const admin = await requireAdmin();
     assertRole(admin, ["super_admin", "moderator"]);
     const parsed = kycReviewSchema.parse({
-      userId: formData.get("userId"),
+      submissionId: formData.get("submissionId"),
       decision: formData.get("decision"),
       reason: formString(formData, "reason"),
+      documentReadable: formData.get("documentReadable") === "on",
+      nameMatch: formData.get("nameMatch") === "on",
+      dobMatch: formData.get("dobMatch") === "on",
+      faceMatch: formData.get("faceMatch") === "on",
+      documentUnexpired: formData.get("documentUnexpired") === "on",
     });
-    await claimWorkItem("kyc", parsed.userId);
-    await run("admin_review_kyc", { p_user_id: parsed.userId, p_decision: parsed.decision, p_reason: parsed.reason });
-  }, "KYC decision saved.");
+    await run("admin_review_kyc", {
+      p_submission_id: parsed.submissionId,
+      p_decision: parsed.decision,
+      p_reason: parsed.reason,
+      p_document_readable: parsed.documentReadable,
+      p_name_match: parsed.nameMatch,
+      p_dob_match: parsed.dobMatch,
+      p_face_match: parsed.faceMatch,
+      p_document_unexpired: parsed.documentUnexpired,
+    });
+  }, "Identity review saved.");
 }
 export async function resolveReport(formData: FormData) {
   await guardedAction("/moderation", async () => {

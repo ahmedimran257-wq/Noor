@@ -33,6 +33,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../widgets/discovery_filter_bar.dart';
 import '../widgets/interest_ceremony_overlay.dart';
 import '../widgets/interest_note_sheet.dart';
+import '../widgets/notification_bell_button.dart';
 import 'paywall_gate_screen.dart';
 import 'profile_detail_screen.dart';
 import 'notifications_screen.dart';
@@ -98,6 +99,9 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
   }
 
   Future<void> _handleSendInterest(int index, FeedProfile fp) async {
+    if (!await context.read<InterestsCubit>().canStartInterest() || !mounted) {
+      return;
+    }
     // G2: Show note sheet before sending (consistent with profile detail)
     final note = await showInterestNoteSheet(
       context,
@@ -503,29 +507,15 @@ class _FreeTierCounter extends StatelessWidget {
 class _NotificationButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return NotificationBellButton(
       onTap: () {
         HapticFeedback.selectionClick();
         Navigator.of(context).push(
-          MaterialPageRoute(
+          MaterialPageRoute<void>(
             builder: (_) => const NotificationsScreen(),
           ),
         );
       },
-      child: Container(
-        width: AppDimensions.minTouchTarget,
-        height: AppDimensions.minTouchTarget,
-        decoration: BoxDecoration(
-          color: AppColors.surfaceGlass,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          border: Border.all(color: AppColors.cardBorder),
-        ),
-        child: const Icon(
-          Icons.notifications_none_rounded,
-          color: AppColors.slateMist,
-          size: AppDimensions.iconSizeLarge,
-        ),
-      ),
     );
   }
 }

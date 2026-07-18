@@ -30,8 +30,12 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/loaders/silarah_shimmer.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
+import '../../../core/cubits/account_standing/account_standing_cubit.dart';
+import '../../../core/models/onboarding_data.dart';
+import '../../../core/services/profile_photo_service.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/services/wali_mode_service.dart';
+import '../../../core/legal/legal_documents.dart';
 import 'legal_doc_screen.dart';
 
 const _kLanguages = LocaleCubit.supportedLanguages;
@@ -45,6 +49,18 @@ const _kGuardianPhoneUnavailable =
 
 const _kPhotoVisibility = 'privacy_photo_visibility';
 const _kProfilePaused = 'privacy_profile_paused';
+
+IconData _legalIcon(String slug) => switch (slug) {
+      'terms' => Icons.description_outlined,
+      'privacy' => Icons.privacy_tip_outlined,
+      'community-guidelines' => Icons.groups_2_outlined,
+      'refund-policy' => Icons.receipt_long_outlined,
+      'data-deletion' => Icons.delete_sweep_outlined,
+      'verification-policy' => Icons.badge_outlined,
+      'photo-moderation-policy' => Icons.photo_filter_outlined,
+      'guardian-policy' => Icons.family_restroom_outlined,
+      _ => Icons.policy_outlined,
+    };
 
 // ═══════════════════════════════════════════════════════════════
 // MAIN SCREEN
@@ -132,12 +148,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // ── 1. ACCOUNT ────────────────────────────────────
           _SectionHeader(l10n.settings_section_account, key: _accountKey),
           _SettingsCard(children: [
-            _NavTile(
-              icon: Icons.edit_outlined,
-              label: l10n.settings_label_editProfile,
-              onTap: () => context.push(AppRoutes.editProfile),
-            ),
-            _Divider(),
             Builder(
               builder: (ctx) {
                 final data = ctx.read<OnboardingCubit>().currentData;
@@ -309,27 +319,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ]),
 
           _SectionHeader(l10n.settings_section_legal),
-          _SettingsCard(children: [
-            _NavTile(
-              icon: Icons.description_outlined,
-              label:
-                  l10n.localeName == 'ar' ? 'شروط الخدمة' : 'Terms of Service',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                    builder: (_) => const LegalDocScreen(type: 'tos')),
-              ),
-            ),
-            _Divider(),
-            _NavTile(
-              icon: Icons.privacy_tip_outlined,
-              label:
-                  l10n.localeName == 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                    builder: (_) => const LegalDocScreen(type: 'privacy')),
-              ),
-            ),
-          ]),
+          _SettingsCard(
+            children: [
+              for (var index = 0;
+                  index < LegalDocuments.all.length;
+                  index++) ...[
+                _NavTile(
+                  icon: _legalIcon(LegalDocuments.all[index].slug),
+                  label: LegalDocuments.all[index].title,
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => LegalDocScreen(
+                        type: LegalDocuments.all[index].slug,
+                      ),
+                    ),
+                  ),
+                ),
+                if (index != LegalDocuments.all.length - 1) _Divider(),
+              ],
+            ],
+          ),
 
           // ── 8. DANGER ZONE ────────────────────────────────
           _SectionHeader(l10n.settings_section_dangerZone),
@@ -942,6 +951,9 @@ class _PrivacySectionState extends State<_PrivacySection> {
           _profileVisibility = row['visibility']?.toString() ?? 'visible';
           _visibilityBlockReason = null;
         }
+        if (mounted) {
+          await context.read<AccountStandingCubit>().refresh();
+        }
         return null;
       }
       if (updates.isEmpty) return null;
@@ -949,6 +961,15 @@ class _PrivacySectionState extends State<_PrivacySection> {
           .from('profiles')
           .update(updates)
           .eq('user_id', userId);
+      if (key == _kPhotoVisibility && value is String && mounted) {
+        final privacy = switch (_photoVisibilityToDb(value)) {
+          'mutual_only' => PhotoPrivacy.mutualOnly,
+          'request_only' => PhotoPrivacy.requestOnly,
+          _ => PhotoPrivacy.publicAll,
+        };
+        await context.read<OnboardingCubit>().syncPhotoPrivacy(privacy);
+        ProfilePhotoService.instance.invalidateAllPhotoUrls();
+      }
       return null;
     } on PostgrestException catch (error) {
       return _settingsErrorMessage(error.message);
@@ -1091,6 +1112,58 @@ class _PrivacySectionState extends State<_PrivacySection> {
                 previousValue: previous,
               );
             },
+          ),
+          const Divider(color: AppColors.cardBorder, height: 24),
+          Semantics(
+            button: true,
+            label: 'Manage photo access requests',
+            child: InkWell(
+              borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+              onTap: () => context.push(AppRoutes.photoRequests),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: AppColors.champagneGold.withValues(alpha: 0.10),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.admin_panel_settings_outlined,
+                        color: AppColors.champagneGold,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Manage photo requests',
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: AppColors.pearlWhite,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Approve access, decline requests, or revoke sharing',
+                            style: AppTypography.caption,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.slateMist,
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ]),
       ),

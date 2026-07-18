@@ -67,9 +67,28 @@ Set per environment:
 
 ```bash
 npx supabase secrets set FIREBASE_PROJECT_ID=your_firebase_project_id
-npx supabase secrets set FIREBASE_SERVICE_ACCOUNT="{...service account json...}"
+npx supabase secrets set FIREBASE_SERVICE_ACCOUNT_B64=base64_encoded_service_account_json
 npx supabase secrets set REVENUECAT_WEBHOOK_SECRET=your_revenuecat_webhook_secret
+npx supabase secrets set BREVO_API_KEY=your_server_side_brevo_api_key
+npx supabase secrets set DIGILOCKER_CLIENT_ID=your_requester_client_id
+npx supabase secrets set DIGILOCKER_CLIENT_SECRET=your_requester_client_secret
+npx supabase secrets set DIGILOCKER_REDIRECT_URI=silarah://digilocker/callback
+npx supabase secrets set DIGILOCKER_EVIDENCE_HMAC_SECRET=a_separate_random_32_byte_or_longer_secret
 ```
+
+Do not pass Firebase service-account JSON directly on a command line. Shell
+quoting can corrupt both JSON property quotes and PEM newlines. On PowerShell,
+create the value without printing it:
+
+```powershell
+$json = Get-Content -Raw .\firebase-service-account.json |
+  ConvertFrom-Json | ConvertTo-Json -Depth 20 -Compress
+$base64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($json))
+npx supabase secrets set "FIREBASE_SERVICE_ACCOUNT_B64=$base64"
+```
+
+Delete the downloaded credential after the secret is stored, and remove any
+legacy `FIREBASE_SERVICE_ACCOUNT` secret after a successful worker probe.
 
 Supabase injects these into Edge Functions:
 
@@ -79,6 +98,16 @@ Supabase injects these into Edge Functions:
 
 Never place the service-role key in Flutter, browser JavaScript, or any `NEXT_PUBLIC_*` variable.
 
+`BREVO_API_KEY` is used only by the RevenueCat webhook to deliver membership
+transactional mail. Keep it in Supabase Edge Function secrets; never ship it in
+the Flutter application.
+
+The DigiLocker client secret and evidence HMAC secret are server-only. The
+mobile build contains only the requester client id and registered redirect URI.
+The evidence secret must be separate from the DigiLocker client secret. The
+verification function stores only keyed identifiers, match booleans and a
+payload digest; it never stores OAuth tokens, Aadhaar numbers or raw XML.
+
 ## Edge Functions
 
 Deploy after migrations:
@@ -86,9 +115,12 @@ Deploy after migrations:
 ```bash
 npx supabase functions deploy admin-purge-deleted-users
 npx supabase functions deploy auth-before-user-created
+npx supabase functions deploy brevo-key-keepalive
 npx supabase functions deploy dispatch-notifications
+npx supabase functions deploy digilocker-verify
 npx supabase functions deploy get-signed-url
 npx supabase functions deploy process-kyc
+npx supabase functions deploy purge-kyc-documents --no-verify-jwt
 npx supabase functions deploy revenuecat-webhook
 npx supabase functions deploy validate-photo-upload
 npx supabase functions deploy translate-message
@@ -106,11 +138,42 @@ Silarah uses Supabase email OTP, not Firebase SMS OTP, for signup/sign-in.
 
 Dashboard requirements:
 
-- Email template must show `{{ .Token }}` for the six-digit code.
+- **Confirm signup** uses
+  `auth/email_templates/silarah_welcome_verification_code.html`.
+- **Magic Link / email OTP** uses
+  `auth/email_templates/silarah_verification_code.html`.
+- Both templates must show `{{ .Token }}` for the six-digit code.
 - Before User Created hook must call `auth-before-user-created`.
 - Disposable email blocking must exist server-side, not only in Flutter.
 
 Firebase remains for Crashlytics and FCM push delivery only.
+
+## Transactional membership email
+
+RevenueCat is the billing source of truth. Its authenticated webhook atomically
+updates subscription state, records the provider event, writes a durable and
+idempotent email outbox row, queues the corresponding in-app/FCM notification,
+and sends the email through Brevo. The following provider events are wired:
+
+- `INITIAL_PURCHASE`
+- `RENEWAL`
+- `PRODUCT_CHANGE`
+- `CANCELLATION`
+- `EXPIRATION`
+- `REFUND`
+- `BILLING_ISSUE`
+
+The database outbox prevents concurrent webhook deliveries from producing
+duplicate mail. Failed delivery returns a retryable response to RevenueCat and
+remains recoverable from the outbox. Store receipts and tax invoices continue
+to come from Google Play or Apple; Silarah emails describe account entitlement
+state and link to the real subscription-management screen.
+
+Brevo labels the production API key as `No expiration`, but Brevo also expires
+keys after 90 days without activity. The `brevo_api_key_keepalive` cron job calls
+the private `brevo-key-keepalive` function monthly. It performs a read-only
+provider account check, sends no email, and requires the Vault-backed cron
+credential, so no manual expiry reminder is needed.
 
 ## Cron Jobs
 

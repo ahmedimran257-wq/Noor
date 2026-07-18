@@ -30,6 +30,10 @@ void main() {
         notificationPathFromDeepLink('silarah://verify-identity'),
         '/verify',
       );
+      expect(
+        notificationPathFromDeepLink('silarah://subscription'),
+        '/subscription',
+      );
     });
 
     test('enforces activity, completion, and three-day suppression in SQL', () {

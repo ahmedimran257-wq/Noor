@@ -48,7 +48,25 @@ export async function getRevealedUserPii(userId: string, reason: string) {
   });
   return rows[0] ?? null;
 }
-export const getKycQueue = () => rpc<KycRow[]>("admin_kyc_queue", { p_limit: 100 });
+export async function getKycQueue(): Promise<KycRow[]> {
+  const rows = await rpc<KycRow[]>("admin_kyc_queue", { p_limit: 25 });
+  if (rows.length === 0) return rows;
+
+  const adminClient = createAdminClient();
+  return Promise.all(rows.map(async (row) => {
+    const [selfie, document] = await Promise.all([
+      adminClient.storage.from("kyc-documents").createSignedUrl(row.selfie_path, 60 * 5),
+      adminClient.storage.from("kyc-documents").createSignedUrl(row.id_path, 60 * 5),
+    ]);
+    const errors = [selfie.error?.message, document.error?.message].filter(Boolean);
+    return {
+      ...row,
+      selfie_url: selfie.error ? null : selfie.data?.signedUrl ?? null,
+      id_url: document.error ? null : document.data?.signedUrl ?? null,
+      preview_error: errors.length > 0 ? errors.join("; ") : null,
+    };
+  }));
+}
 export const getReports = () => rpc<ReportRow[]>("admin_reports_queue", { p_limit: 100 });
 export const getMessageReports = () => rpc<MessageReportRow[]>("admin_message_reports_queue", { p_limit: 100 });
 export async function getPhotos(): Promise<PhotoRow[]> {
@@ -89,7 +107,13 @@ export const getSecurityMetrics = () => rpc<DashboardMetrics>("admin_security_me
 
 export type UserRow = { user_id:string; profile_id:string; name:string; email:string|null; country_code:string; gender:string; joined_at:string; last_active_at:string|null; onboarding_step:number; completeness_score:number; visibility:string; is_banned:boolean; is_shadowbanned:boolean; subscription_status:string; verification_status:string; has_verification_badge:boolean; can_approve_profile:boolean; approval_block_reason:string|null; total_count?:number };
 export type RevealedUserPii = { user_id:string; name:string; email:string|null; revealed_at:string };
-export type KycRow = { user_id:string; profile_id:string; name:string; country_code:string; kyc_id_type:string|null; face_similarity:number|null; created_at:string; selfie_path:string|null; id_path:string|null };
+export type KycRow = {
+  submission_id:string; user_id:string; profile_id:string; name:string;
+  date_of_birth:string; age:number; country_code:string; kyc_id_type:string;
+  client_ocr_dob:string|null; client_face_similarity:number|null;
+  attempt_number:number; submitted_at:string; selfie_path:string; id_path:string;
+  selfie_url?:string|null; id_url?:string|null; preview_error?:string|null;
+};
 export type ReportRow = { report_id:string; reporter_id:string; reported_user_id:string; reason:string; description:string|null; created_at:string; report_count:number; reported_name:string };
 export type MessageReportRow = { report_id:string; message_id:string; match_id:string; reporter_id:string; reported_user_id:string; reported_name:string; reason:string; description:string|null; message_content:string; created_at:string };
 export type PhotoRow = { photo_id:string; user_id:string; name:string; storage_path:string; nsfw_score:number|null; nsfw_category:string|null; created_at:string; moderation_status:string; preview_url?:string|null; preview_error?:string|null };

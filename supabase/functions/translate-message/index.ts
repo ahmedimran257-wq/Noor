@@ -8,9 +8,14 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, handleCors } from "../_shared/cors.ts";
+import {
+  consumeDistributedRateLimit,
+  rateLimitHeaders,
+} from "../_shared/distributed_rate_limit.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 Deno.serve(async (req: Request) => {
   const corsResponse = handleCors(req);
@@ -34,6 +39,31 @@ Deno.serve(async (req: Request) => {
       return errorResponse(401, "Unauthorized.");
     }
 
+    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const rateLimit = await consumeDistributedRateLimit(admin, {
+      scope: "message_translation",
+      subject: user.id,
+      maxRequests: 60,
+      windowSeconds: 60 * 60,
+    });
+    if (!rateLimit.allowed) {
+      return new Response(
+        JSON.stringify({
+          error: "Translation limit reached. Please try again later.",
+        }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            ...rateLimitHeaders(rateLimit),
+            "Content-Type": "application/json",
+          },
+        },
+      );
+    }
+
     const { text, target_lang, source_lang } = await req.json() as {
       text?: string;
       target_lang?: string;
@@ -41,7 +71,10 @@ Deno.serve(async (req: Request) => {
     };
 
     if (!text || text.trim() === "") {
-      return errorResponse(400, "text parameter is required and cannot be empty.");
+      return errorResponse(
+        400,
+        "text parameter is required and cannot be empty.",
+      );
     }
     if (!target_lang || target_lang.trim() === "") {
       return errorResponse(400, "target_lang parameter is required.");
@@ -64,13 +97,19 @@ Deno.serve(async (req: Request) => {
       console.error(
         `[translate-message] API responded with status ${response.status}`,
       );
-      return errorResponse(502, "Failed to get translation from downstream service.");
+      return errorResponse(
+        502,
+        "Failed to get translation from downstream service.",
+      );
     }
 
     const data = await response.json();
     const translatedText = data.responseData?.translatedText;
     if (!translatedText) {
-      return errorResponse(502, "Downstream service returned invalid response format.");
+      return errorResponse(
+        502,
+        "Downstream service returned invalid response format.",
+      );
     }
 
     return new Response(
@@ -82,7 +121,9 @@ Deno.serve(async (req: Request) => {
     );
   } catch (err) {
     console.error("[translate-message] Error:", err);
-    const message = err instanceof Error ? err.message : "Internal Server Error";
+    const message = err instanceof Error
+      ? err.message
+      : "Internal Server Error";
     return errorResponse(500, message);
   }
 });

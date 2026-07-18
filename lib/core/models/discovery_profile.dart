@@ -18,6 +18,7 @@ class DiscoveryProfile {
     this.photoUrls = const [],
     this.photoCount = 0,
     this.isPhotoPrivate = false,
+    this.photoPrivacy = 'public',
     this.isVerified = false,
     this.occupation,
     this.education,
@@ -89,6 +90,9 @@ class DiscoveryProfile {
   }
 
   final bool isPhotoPrivate;
+  final String photoPrivacy;
+  String get effectivePhotoPrivacy =>
+      photoPrivacy == 'public' && isPhotoPrivate ? 'mutual_only' : photoPrivacy;
   final bool isVerified;
   final String? occupation;
   final String? education;
@@ -155,6 +159,7 @@ class DiscoveryProfile {
     List<String>? photoUrls,
     int? photoCount,
     bool? isPhotoPrivate,
+    String? photoPrivacy,
     bool? isVerified,
     String? occupation,
     String? education,
@@ -204,6 +209,7 @@ class DiscoveryProfile {
       photoUrls: photoUrls ?? this.photoUrls,
       photoCount: photoCount ?? this.photoCount,
       isPhotoPrivate: isPhotoPrivate ?? this.isPhotoPrivate,
+      photoPrivacy: photoPrivacy ?? this.photoPrivacy,
       isVerified: isVerified ?? this.isVerified,
       occupation: occupation ?? this.occupation,
       education: education ?? this.education,

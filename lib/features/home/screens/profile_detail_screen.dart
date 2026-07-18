@@ -27,10 +27,12 @@ import '../../../core/cubits/interests/interests_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/services/compatibility_service.dart';
 import '../../../core/services/bookmark_service.dart';
+import '../../../core/services/photo_access_service.dart';
 import '../../../core/services/profile_photo_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/buttons/silarah_pressable.dart';
 import '../widgets/interest_ceremony_overlay.dart';
 import '../widgets/interest_note_sheet.dart';
 import '../widgets/report_bottom_sheet.dart';
@@ -44,6 +46,8 @@ class ProfileDetailScreen extends StatefulWidget {
     required this.onInterestSent,
     this.isMutualMatch = false,
     this.isOwnProfile = false,
+    this.onEditOwnProfile,
+    this.onManageOwnPhotos,
   });
 
   final DiscoveryProfile profile;
@@ -52,6 +56,8 @@ class ProfileDetailScreen extends StatefulWidget {
   final VoidCallback onInterestSent;
   final bool isMutualMatch;
   final bool isOwnProfile;
+  final VoidCallback? onEditOwnProfile;
+  final VoidCallback? onManageOwnPhotos;
 
   @override
   State<ProfileDetailScreen> createState() => _ProfileDetailScreenState();
@@ -65,10 +71,25 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   late List<String?> _photoUrls;
   bool _isGalleryLoading = false;
   bool _galleryLoadFailed = false;
+  PhotoAccessContext? _photoAccess;
+  bool _photoAccessLoading = false;
+  bool _photoRequestUpdating = false;
+  String? _photoAccessError;
   final Set<int> _refreshingPhotoIndexes = <int>{};
   final Set<int> _refreshedPhotoIndexes = <int>{};
 
   int get _totalPhotos => _photoUrls.length;
+
+  bool get _requiresPhotoAuthorization =>
+      !widget.isOwnProfile && widget.profile.effectivePhotoPrivacy != 'public';
+
+  bool get _canViewPhotos =>
+      widget.isOwnProfile ||
+      !_requiresPhotoAuthorization ||
+      (_photoAccess?.canView ?? false);
+
+  bool get _effectiveMutualMatch =>
+      widget.isMutualMatch || (_photoAccess?.isMutual ?? false);
 
   @override
   void initState() {
@@ -76,7 +97,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     _interestSent = widget.isInterestSent;
     _photoController = PageController();
     _photoUrls = _initialPhotoUrls(widget.profile);
-    if (_photoUrls.whereType<String>().length < _photoUrls.length) {
+    if (_requiresPhotoAuthorization) {
+      _loadPhotoAccessContext();
+    } else if (_photoUrls.whereType<String>().length < _photoUrls.length) {
       _loadAuthorizedGallery();
     }
     // Load persisted bookmark state
@@ -85,6 +108,95 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
         setState(() => _bookmarked = ids.contains(widget.profile.id));
       }
     }).catchError((_) {});
+  }
+
+  Future<void> _loadPhotoAccessContext() async {
+    if (_photoAccessLoading) return;
+    setState(() {
+      _photoAccessLoading = true;
+      _photoAccessError = null;
+    });
+    try {
+      final context = await PhotoAccessService.instance.getContext(
+        widget.profile.id,
+      );
+      if (!mounted) return;
+      setState(() {
+        _photoAccess = context;
+        _photoAccessLoading = false;
+        final total =
+            math.max(context.photoCount, _photoUrls.length).clamp(1, 4);
+        if (total != _photoUrls.length) {
+          _photoUrls = List<String?>.generate(
+            total,
+            (index) => index < _photoUrls.length ? _photoUrls[index] : null,
+            growable: false,
+          );
+        }
+      });
+      if (context.canView) await _loadAuthorizedGallery();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _photoAccessLoading = false;
+        _photoAccessError = 'Photo privacy could not be verified.';
+      });
+    }
+  }
+
+  Future<void> _requestPhotoAccess() async {
+    if (_photoRequestUpdating) return;
+    setState(() => _photoRequestUpdating = true);
+    try {
+      final context = await PhotoAccessService.instance.requestAccess(
+        widget.profile.id,
+      );
+      if (!mounted) return;
+      setState(() {
+        _photoAccess = context;
+        _photoRequestUpdating = false;
+        _photoAccessError = null;
+      });
+      ScaffoldMessenger.of(this.context).showSnackBar(
+        SnackBar(
+          content: Text('Photo request sent to ${widget.profile.firstName}.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _photoRequestUpdating = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Bad state: ', '')),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _cancelPhotoRequest() async {
+    if (_photoRequestUpdating) return;
+    setState(() => _photoRequestUpdating = true);
+    try {
+      final context = await PhotoAccessService.instance.cancelRequest(
+        widget.profile.id,
+      );
+      if (!mounted) return;
+      setState(() {
+        _photoAccess = context;
+        _photoRequestUpdating = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _photoRequestUpdating = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Bad state: ', '')),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   List<String?> _initialPhotoUrls(DiscoveryProfile profile) {
@@ -98,7 +210,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   }
 
   Future<void> _loadAuthorizedGallery() async {
-    if (_isGalleryLoading) return;
+    if (_isGalleryLoading || !_canViewPhotos) return;
     setState(() {
       _isGalleryLoading = true;
       _galleryLoadFailed = false;
@@ -131,7 +243,8 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   }
 
   Future<void> _refreshExpiredPhoto(int index) async {
-    if (index < 0 ||
+    if (!_canViewPhotos ||
+        index < 0 ||
         index >= _photoUrls.length ||
         _refreshingPhotoIndexes.contains(index) ||
         _refreshedPhotoIndexes.contains(index)) {
@@ -162,6 +275,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   // ── Actions ────────────────────────────────────────────────
 
   Future<void> _handleSendInterest() async {
+    if (!await context.read<InterestsCubit>().canStartInterest() || !mounted) {
+      return;
+    }
     // D1: Show note sheet before sending
     final note = await showInterestNoteSheet(
       context,
@@ -264,6 +380,8 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                 pinned: true,
                 stretch: true,
                 backgroundColor: AppColors.obsidianNight,
+                title: widget.isOwnProfile ? const _PreviewModeTitle() : null,
+                centerTitle: true,
                 leading: _HeaderButton(
                   icon: Icons.arrow_back_rounded,
                   onTap: () => Navigator.pop(context),
@@ -293,7 +411,18 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                       totalPhotos: _totalPhotos,
                       currentPage: _photoPage,
                       onPageChanged: (i) => setState(() => _photoPage = i),
-                      isMutualMatch: widget.isMutualMatch,
+                      canViewPhotos: _canViewPhotos,
+                      privacy: _photoAccess?.privacy ??
+                          ProfilePhotoPrivacy.fromDatabase(
+                            p.effectivePhotoPrivacy,
+                          ),
+                      requestStatus: _photoAccess?.requestStatus,
+                      accessLoading: _photoAccessLoading,
+                      requestUpdating: _photoRequestUpdating,
+                      accessError: _photoAccessError,
+                      onRequestAccess: _requestPhotoAccess,
+                      onCancelRequest: _cancelPhotoRequest,
+                      onRetryAccess: _loadPhotoAccessContext,
                       isLoading: _isGalleryLoading,
                       loadFailed: _galleryLoadFailed,
                       onRetry: _loadAuthorizedGallery,
@@ -314,12 +443,13 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     // Name + age + location
-                    _NameBlock(profile: p, isMutualMatch: widget.isMutualMatch),
+                    _NameBlock(
+                        profile: p, isMutualMatch: _effectiveMutualMatch),
                     const SizedBox(height: AppDimensions.space20),
 
                     // Compatibility indicator
                     if (widget.isOwnProfile)
-                      const _OwnProfilePreviewNotice()
+                      _OwnProfilePreviewNotice(photoCount: _totalPhotos)
                     else
                       _CompatibilityIndicator(profile: p),
                     const SizedBox(height: AppDimensions.space28),
@@ -386,7 +516,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                         if (p.incomeBracket != null)
                           _DetailItem(
                             label: 'Income Bracket',
-                            value: widget.isMutualMatch
+                            value: _effectiveMutualMatch
                                 ? p.incomeBracket!
                                 : '🔒 Locked (Mutual match only)',
                           ),
@@ -424,7 +554,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                         if (p.familyOriginCity != null)
                           _DetailItem(
                             label: 'Origin City',
-                            value: widget.isMutualMatch
+                            value: _effectiveMutualMatch
                                 ? p.familyOriginCity!
                                 : '🔒 Locked (Mutual match only)',
                           ),
@@ -494,6 +624,16 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                 isBookmarked: _bookmarked,
                 onSendInterest: _interestSent ? null : _handleSendInterest,
                 onBookmark: _handleBookmark,
+              ),
+            )
+          else
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _OwnProfileActionBar(
+                onEdit: widget.onEditOwnProfile,
+                onManagePhotos: widget.onManageOwnPhotos,
               ),
             ),
         ],
@@ -600,7 +740,15 @@ class _PhotoCarousel extends StatelessWidget {
     required this.totalPhotos,
     required this.currentPage,
     required this.onPageChanged,
-    required this.isMutualMatch,
+    required this.canViewPhotos,
+    required this.privacy,
+    required this.requestStatus,
+    required this.accessLoading,
+    required this.requestUpdating,
+    required this.accessError,
+    required this.onRequestAccess,
+    required this.onCancelRequest,
+    required this.onRetryAccess,
     required this.isLoading,
     required this.loadFailed,
     required this.onRetry,
@@ -613,7 +761,15 @@ class _PhotoCarousel extends StatelessWidget {
   final int totalPhotos;
   final int currentPage;
   final ValueChanged<int> onPageChanged;
-  final bool isMutualMatch;
+  final bool canViewPhotos;
+  final ProfilePhotoPrivacy privacy;
+  final String? requestStatus;
+  final bool accessLoading;
+  final bool requestUpdating;
+  final String? accessError;
+  final VoidCallback onRequestAccess;
+  final VoidCallback onCancelRequest;
+  final VoidCallback onRetryAccess;
   final bool isLoading;
   final bool loadFailed;
   final VoidCallback onRetry;
@@ -635,7 +791,15 @@ class _PhotoCarousel extends StatelessWidget {
             index: i,
             photoUrl: i < photoUrls.length ? photoUrls[i] : null,
             photoUrls: photoUrls,
-            isMutualMatch: isMutualMatch,
+            canViewPhotos: canViewPhotos,
+            privacy: privacy,
+            requestStatus: requestStatus,
+            accessLoading: accessLoading,
+            requestUpdating: requestUpdating,
+            accessError: accessError,
+            onRequestAccess: onRequestAccess,
+            onCancelRequest: onCancelRequest,
+            onRetryAccess: onRetryAccess,
             isLoading: isLoading,
             loadFailed: loadFailed,
             onRetry: onRetry,
@@ -748,7 +912,15 @@ class _SinglePhotoSlide extends StatelessWidget {
     required this.index,
     required this.photoUrl,
     required this.photoUrls,
-    required this.isMutualMatch,
+    required this.canViewPhotos,
+    required this.privacy,
+    required this.requestStatus,
+    required this.accessLoading,
+    required this.requestUpdating,
+    required this.accessError,
+    required this.onRequestAccess,
+    required this.onCancelRequest,
+    required this.onRetryAccess,
     required this.isLoading,
     required this.loadFailed,
     required this.onRetry,
@@ -758,7 +930,15 @@ class _SinglePhotoSlide extends StatelessWidget {
   final int index;
   final String? photoUrl;
   final List<String?> photoUrls;
-  final bool isMutualMatch;
+  final bool canViewPhotos;
+  final ProfilePhotoPrivacy privacy;
+  final String? requestStatus;
+  final bool accessLoading;
+  final bool requestUpdating;
+  final String? accessError;
+  final VoidCallback onRequestAccess;
+  final VoidCallback onCancelRequest;
+  final VoidCallback onRetryAccess;
   final bool isLoading;
   final bool loadFailed;
   final VoidCallback onRetry;
@@ -766,7 +946,7 @@ class _SinglePhotoSlide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isPrivate = profile.isPhotoPrivate && index > 0 && !isMutualMatch;
+    final isPrivate = profile.isPhotoPrivate && !canViewPhotos;
 
     return GestureDetector(
       onTap: () => _openFullScreen(context),
@@ -779,7 +959,17 @@ class _SinglePhotoSlide extends StatelessWidget {
           ),
         ),
         child: isPrivate
-            ? _PrivateSlide(photoCount: profile.photoCount)
+            ? _PrivateSlide(
+                photoCount: profile.photoCount,
+                privacy: privacy,
+                requestStatus: requestStatus,
+                accessLoading: accessLoading,
+                requestUpdating: requestUpdating,
+                accessError: accessError,
+                onRequestAccess: onRequestAccess,
+                onCancelRequest: onCancelRequest,
+                onRetryAccess: onRetryAccess,
+              )
             : _PublicSlide(
                 photoUrl: photoUrl,
                 blurhash: index == 0 ? profile.blurhash : null,
@@ -805,7 +995,7 @@ class _SinglePhotoSlide extends StatelessWidget {
             profile: profile,
             initialIndex: index,
             photoUrls: photoUrls,
-            isMutualMatch: isMutualMatch,
+            canViewPhotos: canViewPhotos,
           ),
         ),
       ),
@@ -900,8 +1090,26 @@ class _GalleryNavButton extends StatelessWidget {
 }
 
 class _PrivateSlide extends StatelessWidget {
-  const _PrivateSlide({required this.photoCount});
+  const _PrivateSlide({
+    required this.photoCount,
+    required this.privacy,
+    required this.requestStatus,
+    required this.accessLoading,
+    required this.requestUpdating,
+    required this.accessError,
+    required this.onRequestAccess,
+    required this.onCancelRequest,
+    required this.onRetryAccess,
+  });
   final int photoCount;
+  final ProfilePhotoPrivacy privacy;
+  final String? requestStatus;
+  final bool accessLoading;
+  final bool requestUpdating;
+  final String? accessError;
+  final VoidCallback onRequestAccess;
+  final VoidCallback onCancelRequest;
+  final VoidCallback onRetryAccess;
 
   @override
   Widget build(BuildContext context) {
@@ -909,26 +1117,155 @@ class _PrivateSlide extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
+          AnimatedContainer(
+            duration: AppDimensions.durationTransition,
             width: 88,
             height: 88,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(color: AppColors.goldBorder, width: 2),
+              color: AppColors.surfaceGlass,
             ),
-            child: const Icon(
-              Icons.lock_outline_rounded,
-              color: AppColors.slateMist,
-              size: 40,
-            ),
+            child: accessLoading
+                ? const Padding(
+                    padding: EdgeInsets.all(30),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.champagneGold,
+                    ),
+                  )
+                : const Icon(
+                    Icons.lock_outline_rounded,
+                    color: AppColors.champagneGold,
+                    size: 38,
+                  ),
           ),
           const SizedBox(height: AppDimensions.space16),
           Text(
-            '$photoCount photo${photoCount != 1 ? 's' : ''}\nvisible after acceptance',
-            style: AppTypography.bodyMuted,
+            _title,
+            style: AppTypography.userName.copyWith(
+              color: AppColors.pearlWhite,
+              fontSize: 24,
+            ),
             textAlign: TextAlign.center,
           ),
+          const SizedBox(height: AppDimensions.space6),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 36),
+            child: Text(
+              accessError ?? _description,
+              style: AppTypography.bodyMuted,
+              textAlign: TextAlign.center,
+            ),
+          ),
+          if (!accessLoading) ...[
+            const SizedBox(height: AppDimensions.space16),
+            _action,
+          ],
         ],
+      ),
+    );
+  }
+
+  String get _title {
+    if (accessError != null) return 'Privacy check interrupted';
+    if (privacy == ProfilePhotoPrivacy.mutualOnly) {
+      return 'Shared after mutual interest';
+    }
+    return switch (requestStatus) {
+      'pending' => 'Request awaiting review',
+      'denied' => 'Photos remain private',
+      'revoked' => 'Access was withdrawn',
+      _ => 'Private photo library',
+    };
+  }
+
+  String get _description {
+    final count = '$photoCount photo${photoCount == 1 ? '' : 's'}';
+    if (privacy == ProfilePhotoPrivacy.mutualOnly) {
+      return '$count will unlock automatically once you both express interest.';
+    }
+    return switch (requestStatus) {
+      'pending' => 'You will be notified as soon as access is approved.',
+      'denied' => 'You can send another respectful request when appropriate.',
+      'revoked' => 'The owner controls who can view their private photos.',
+      _ => 'Ask the owner for permission to view $count.',
+    };
+  }
+
+  Widget get _action {
+    if (accessError != null) {
+      return _PrivacyActionButton(
+        label: 'Check again',
+        icon: Icons.refresh_rounded,
+        onTap: onRetryAccess,
+      );
+    }
+    if (privacy == ProfilePhotoPrivacy.mutualOnly) {
+      return const SizedBox.shrink();
+    }
+    if (requestStatus == 'pending') {
+      return _PrivacyActionButton(
+        label: requestUpdating ? 'Cancelling…' : 'Cancel request',
+        icon: Icons.close_rounded,
+        onTap: requestUpdating ? null : onCancelRequest,
+        outlined: true,
+      );
+    }
+    return _PrivacyActionButton(
+      label: requestUpdating ? 'Sending…' : 'Request access',
+      icon: Icons.lock_open_rounded,
+      onTap: requestUpdating ? null : onRequestAccess,
+    );
+  }
+}
+
+class _PrivacyActionButton extends StatelessWidget {
+  const _PrivacyActionButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    this.outlined = false,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback? onTap;
+  final bool outlined;
+
+  @override
+  Widget build(BuildContext context) {
+    return SilarahPressable(
+      onTap: onTap,
+      enabled: onTap != null,
+      child: AnimatedContainer(
+        duration: AppDimensions.durationTransition,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+        decoration: BoxDecoration(
+          color: outlined ? AppColors.surfaceGlass : AppColors.champagneGold,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+          border: Border.all(color: AppColors.goldBorder),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color:
+                  outlined ? AppColors.champagneGold : AppColors.obsidianNight,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: AppTypography.button.copyWith(
+                color: outlined
+                    ? AppColors.champagneGold
+                    : AppColors.obsidianNight,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -953,12 +1290,12 @@ class _FullScreenPhotoViewer extends StatefulWidget {
     required this.profile,
     required this.initialIndex,
     required this.photoUrls,
-    required this.isMutualMatch,
+    required this.canViewPhotos,
   });
   final DiscoveryProfile profile;
   final int initialIndex;
   final List<String?> photoUrls;
-  final bool isMutualMatch;
+  final bool canViewPhotos;
 
   @override
   State<_FullScreenPhotoViewer> createState() => _FullScreenPhotoViewerState();
@@ -998,9 +1335,8 @@ class _FullScreenPhotoViewerState extends State<_FullScreenPhotoViewer> {
           itemCount: totalPhotos,
           onPageChanged: (value) => setState(() => _page = value),
           itemBuilder: (_, index) {
-            final isPrivate = widget.profile.isPhotoPrivate &&
-                index > 0 &&
-                !widget.isMutualMatch;
+            final isPrivate =
+                widget.profile.isPhotoPrivate && !widget.canViewPhotos;
             final photoUrl = widget.photoUrls[index];
             return Center(
               child: InteractiveViewer(
@@ -1207,30 +1543,191 @@ class _VerifiedPill extends StatelessWidget {
 // TD7: Now uses the viewer's own OnboardingData for real comparison.
 
 class _OwnProfilePreviewNotice extends StatelessWidget {
-  const _OwnProfilePreviewNotice();
+  const _OwnProfilePreviewNotice({required this.photoCount});
+
+  final int photoCount;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(AppDimensions.space14),
+      padding: const EdgeInsets.all(AppDimensions.space16),
       decoration: BoxDecoration(
-        color: AppColors.inkTeal.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-        border:
-            Border.all(color: AppColors.verifiedTeal.withValues(alpha: 0.38)),
+        gradient: LinearGradient(
+          colors: [
+            AppColors.inkTeal.withValues(alpha: 0.38),
+            AppColors.surfaceGlass,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+        border: Border.all(
+          color: AppColors.verifiedTeal.withValues(alpha: 0.32),
+        ),
       ),
-      child: const Row(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.visibility_outlined,
-              color: AppColors.verifiedTeal, size: 20),
-          SizedBox(width: AppDimensions.space10),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.verifiedTeal.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+            ),
+            child: const Icon(Icons.visibility_outlined,
+                color: AppColors.verifiedTeal, size: 20),
+          ),
+          const SizedBox(width: AppDimensions.space12),
           Expanded(
-            child: Text(
-              'Preview mode — this is how your profile appears in discovery.',
-              style: AppTypography.captionMedium,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Member preview', style: AppTypography.bodyMedium),
+                const SizedBox(height: AppDimensions.space4),
+                Text(
+                  'This is the profile members see in discovery. Swipe through all $photoCount ${photoCount == 1 ? 'photo' : 'photos'} to review the full experience.',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.slateMist,
+                    height: 1.45,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _PreviewModeTitle extends StatelessWidget {
+  const _PreviewModeTitle();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.space10,
+        vertical: AppDimensions.space6,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.overlayBlack55,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Text(
+        'YOUR PROFILE',
+        style: AppTypography.sectionLabel.copyWith(
+          color: AppColors.champagneLight,
+          fontSize: 10,
+          letterSpacing: 1.4,
+        ),
+      ),
+    );
+  }
+}
+
+class _OwnProfileActionBar extends StatelessWidget {
+  const _OwnProfileActionBar({
+    required this.onEdit,
+    required this.onManagePhotos,
+  });
+
+  final VoidCallback? onEdit;
+  final VoidCallback? onManagePhotos;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        AppDimensions.space16,
+        AppDimensions.space12,
+        AppDimensions.space16,
+        MediaQuery.of(context).padding.bottom + AppDimensions.space12,
+      ),
+      decoration: const BoxDecoration(
+        color: AppColors.navBarSurface,
+        border: Border(top: BorderSide(color: AppColors.navBarBorder)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _OwnProfileAction(
+              label: 'Manage photos',
+              icon: Icons.photo_library_outlined,
+              onTap: onManagePhotos,
+              primary: false,
+            ),
+          ),
+          const SizedBox(width: AppDimensions.space12),
+          Expanded(
+            child: _OwnProfileAction(
+              label: 'Edit profile',
+              icon: Icons.edit_outlined,
+              onTap: onEdit,
+              primary: true,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OwnProfileAction extends StatelessWidget {
+  const _OwnProfileAction({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    required this.primary,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback? onTap;
+  final bool primary;
+
+  @override
+  Widget build(BuildContext context) {
+    return SilarahPressable(
+      enabled: onTap != null,
+      onTap: onTap,
+      semanticLabel: label,
+      child: Container(
+        height: AppDimensions.buttonHeight,
+        decoration: BoxDecoration(
+          gradient: primary
+              ? const LinearGradient(colors: [
+                  AppColors.champagneLight,
+                  AppColors.champagneGold,
+                ])
+              : null,
+          color: primary ? null : AppColors.surfaceElevated,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+          border: Border.all(
+            color: primary ? AppColors.champagneGold : AppColors.goldBorder,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon,
+                color:
+                    primary ? AppColors.obsidianNight : AppColors.champagneGold,
+                size: 19),
+            const SizedBox(width: AppDimensions.space8),
+            Flexible(
+              child: Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+                style: AppTypography.button.copyWith(
+                  color:
+                      primary ? AppColors.obsidianNight : AppColors.pearlWhite,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

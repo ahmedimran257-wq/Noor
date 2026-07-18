@@ -137,7 +137,7 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
           borderSide: const BorderSide(
             color: AppColors.champagneGold,
-            width: AppDimensions.borderFocus,
+            width: AppDimensions.borderThin,
           ),
         ),
         errorBorder: OutlineInputBorder(
@@ -151,7 +151,7 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
           borderSide: const BorderSide(
             color: AppColors.softCoral,
-            width: AppDimensions.borderFocus,
+            width: AppDimensions.borderThin,
           ),
         ),
         contentPadding: const EdgeInsets.symmetric(

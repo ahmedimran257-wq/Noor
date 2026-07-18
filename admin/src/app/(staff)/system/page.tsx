@@ -3,6 +3,7 @@ import { getLocalizationOverview, getSystemHealth } from "@/lib/operations";
 
 const healthLabels: Record<string, string> = {
   dueNotifications: "Due notifications",
+  staleNotifications: "Stale notifications",
   futureNotifications: "Future notifications",
   fcmTokenUsers: "Users with FCM tokens",
   pendingKyc: "Pending KYC",
@@ -12,6 +13,12 @@ const healthLabels: Record<string, string> = {
   publishedContentPages: "Published CMS pages",
   publishedSuccessStories: "Published stories",
   subscriptionEvents24h: "Subscription events 24h",
+  failedEmails24h: "Failed emails 24h",
+  rateLimitRejections1h: "Blocked requests 1h",
+  databaseUsageMb: "Database usage (MB)",
+  storageUsageMb: "Storage usage (MB)",
+  dispatchConsecutiveFailures: "Dispatch failures",
+  dispatchHealthy: "Dispatch healthy (1/0)",
   activeStaff: "Active staff",
 };
 

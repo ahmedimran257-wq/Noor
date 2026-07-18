@@ -20,6 +20,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/loaders/silarah_shimmer.dart';
+import '../../../core/widgets/animations/silarah_motion.dart';
+import '../../../core/widgets/buttons/silarah_pressable.dart';
 import '../widgets/step_header.dart';
 
 class ProfileForWhomScreen extends StatefulWidget {
@@ -201,178 +203,181 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
       child: Scaffold(
         backgroundColor: AppColors.obsidianNight,
         body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(AppDimensions.space24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: GestureDetector(
-                    onTap: _exitOnboarding,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceGlass,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.cardBorder),
-                      ),
-                      child: Icon(
-                        Directionality.of(context) == TextDirection.rtl
-                            ? Icons.arrow_forward_ios_rounded
-                            : Icons.arrow_back_ios_new_rounded,
-                        color: AppColors.pearlWhite,
-                        size: 16,
+          child: SilarahEntrance(
+            child: Padding(
+              padding: const EdgeInsets.all(AppDimensions.space24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: GestureDetector(
+                      onTap: _exitOnboarding,
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceGlass,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.cardBorder),
+                        ),
+                        child: Icon(
+                          Directionality.of(context) == TextDirection.rtl
+                              ? Icons.arrow_forward_ios_rounded
+                              : Icons.arrow_back_ios_new_rounded,
+                          color: AppColors.pearlWhite,
+                          size: 16,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: AppDimensions.space24),
-                StepHeader(
-                  title: l10n.onboarding_profileForWhom_title,
-                  subtitle: l10n.onboarding_profileForWhom_subtitle,
-                ),
-                const SizedBox(height: AppDimensions.space32),
-
-                // ── Option 1: Myself ─────────────────────────
-                _SelectionCard(
-                  icon: Icons.person_outline_rounded,
-                  title: l10n.onboarding_profileForWhom_myself,
-                  subtitle: l10n.onboarding_profileForWhom_myselfSub,
-                  isSelected: _selectedCategory == 'self',
-                  onTap: _advancing ? null : _selectSelf,
-                ),
-                const SizedBox(height: AppDimensions.space16),
-
-                // ── Option 2: Guardian ───────────────────────
-                _SelectionCard(
-                  icon: Icons.copy_rounded, // or any icon from design
-                  title: l10n.onboarding_profileForWhom_guardianCardTitle,
-                  subtitle: l10n.onboarding_profileForWhom_guardianCardSub,
-                  isSelected: _selectedCategory == 'guardian',
-                  onTap: _advancing ? null : _selectGuardian,
-                  showChevron: true,
-                  isExpanded: _selectedCategory == 'guardian',
-                ),
-
-                // ── Guardian sub-options (animated expand) ───
-                SizeTransition(
-                  sizeFactor: _expandAnim,
-                  axisAlignment: -1.0,
-                  child: Padding(
-                    padding: const EdgeInsets.only(
-                      top: AppDimensions.space12,
-                      left: AppDimensions.space8,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(
-                            left: AppDimensions.space12,
-                            bottom: AppDimensions.space10,
-                          ),
-                          child: Text(
-                            l10n.onboarding_profileForWhom_creatingFor,
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.champagneGold,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _RelationChip(
-                                icon: Icons.boy_rounded,
-                                label:
-                                    l10n.onboarding_profileForWhom_relation_son,
-                                isSelected: _selectedRelation == 'son',
-                                onTap: _advancing
-                                    ? null
-                                    : () => _selectRelation('son'),
-                              ),
-                            ),
-                            const SizedBox(width: AppDimensions.space10),
-                            Expanded(
-                              child: _RelationChip(
-                                icon: Icons.girl_rounded,
-                                label: l10n
-                                    .onboarding_profileForWhom_relation_daughter,
-                                isSelected: _selectedRelation == 'daughter',
-                                onTap: _advancing
-                                    ? null
-                                    : () => _selectRelation('daughter'),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppDimensions.space10),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _RelationChip(
-                                icon: Icons.person_outline_rounded,
-                                label: l10n
-                                    .onboarding_profileForWhom_relation_brother,
-                                isSelected: _selectedRelation == 'brother',
-                                onTap: _advancing
-                                    ? null
-                                    : () => _selectRelation('brother'),
-                              ),
-                            ),
-                            const SizedBox(width: AppDimensions.space10),
-                            Expanded(
-                              child: _RelationChip(
-                                icon: Icons.person_outline_rounded,
-                                label: l10n
-                                    .onboarding_profileForWhom_relation_sister,
-                                isSelected: _selectedRelation == 'sister',
-                                onTap: _advancing
-                                    ? null
-                                    : () => _selectRelation('sister'),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                  const SizedBox(height: AppDimensions.space24),
+                  StepHeader(
+                    title: l10n.onboarding_profileForWhom_title,
+                    subtitle: l10n.onboarding_profileForWhom_subtitle,
                   ),
-                ),
+                  const SizedBox(height: AppDimensions.space32),
 
-                if (_saveError != null) ...[
+                  // ── Option 1: Myself ─────────────────────────
+                  _SelectionCard(
+                    icon: Icons.person_outline_rounded,
+                    title: l10n.onboarding_profileForWhom_myself,
+                    subtitle: l10n.onboarding_profileForWhom_myselfSub,
+                    isSelected: _selectedCategory == 'self',
+                    onTap: _advancing ? null : _selectSelf,
+                  ),
                   const SizedBox(height: AppDimensions.space16),
-                  _ProfileForWhomSaveError(
-                    message: _saveError!,
-                    isLoading: _advancing,
-                    onRetry: _retrySave,
+
+                  // ── Option 2: Guardian ───────────────────────
+                  _SelectionCard(
+                    icon: Icons.copy_rounded, // or any icon from design
+                    title: l10n.onboarding_profileForWhom_guardianCardTitle,
+                    subtitle: l10n.onboarding_profileForWhom_guardianCardSub,
+                    isSelected: _selectedCategory == 'guardian',
+                    onTap: _advancing ? null : _selectGuardian,
+                    showChevron: true,
+                    isExpanded: _selectedCategory == 'guardian',
                   ),
-                ],
 
-                const Spacer(),
-
-                // Subtle note
-                Center(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 180),
-                    child: _advancing
-                        ? const SilarahPulseLoader(
-                            key: ValueKey('profile-for-whom-loading'),
-                            size: 24,
-                          )
-                        : Text(
-                            key: const ValueKey('profile-for-whom-hint'),
-                            _selectedCategory == 'guardian' &&
-                                    _selectedRelation == null
-                                ? l10n.onboarding_profileForWhom_selectRelation
-                                : l10n.onboarding_profileForWhom_selectOne,
-                            style: AppTypography.caption,
+                  // ── Guardian sub-options (animated expand) ───
+                  SizeTransition(
+                    sizeFactor: _expandAnim,
+                    axisAlignment: -1.0,
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        top: AppDimensions.space12,
+                        left: AppDimensions.space8,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              left: AppDimensions.space12,
+                              bottom: AppDimensions.space10,
+                            ),
+                            child: Text(
+                              l10n.onboarding_profileForWhom_creatingFor,
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.champagneGold,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _RelationChip(
+                                  icon: Icons.boy_rounded,
+                                  label: l10n
+                                      .onboarding_profileForWhom_relation_son,
+                                  isSelected: _selectedRelation == 'son',
+                                  onTap: _advancing
+                                      ? null
+                                      : () => _selectRelation('son'),
+                                ),
+                              ),
+                              const SizedBox(width: AppDimensions.space10),
+                              Expanded(
+                                child: _RelationChip(
+                                  icon: Icons.girl_rounded,
+                                  label: l10n
+                                      .onboarding_profileForWhom_relation_daughter,
+                                  isSelected: _selectedRelation == 'daughter',
+                                  onTap: _advancing
+                                      ? null
+                                      : () => _selectRelation('daughter'),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppDimensions.space10),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _RelationChip(
+                                  icon: Icons.person_outline_rounded,
+                                  label: l10n
+                                      .onboarding_profileForWhom_relation_brother,
+                                  isSelected: _selectedRelation == 'brother',
+                                  onTap: _advancing
+                                      ? null
+                                      : () => _selectRelation('brother'),
+                                ),
+                              ),
+                              const SizedBox(width: AppDimensions.space10),
+                              Expanded(
+                                child: _RelationChip(
+                                  icon: Icons.person_outline_rounded,
+                                  label: l10n
+                                      .onboarding_profileForWhom_relation_sister,
+                                  isSelected: _selectedRelation == 'sister',
+                                  onTap: _advancing
+                                      ? null
+                                      : () => _selectRelation('sister'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: AppDimensions.space24),
-              ],
+
+                  if (_saveError != null) ...[
+                    const SizedBox(height: AppDimensions.space16),
+                    _ProfileForWhomSaveError(
+                      message: _saveError!,
+                      isLoading: _advancing,
+                      onRetry: _retrySave,
+                    ),
+                  ],
+
+                  const Spacer(),
+
+                  // Subtle note
+                  Center(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 180),
+                      child: _advancing
+                          ? const SilarahPulseLoader(
+                              key: ValueKey('profile-for-whom-loading'),
+                              size: 24,
+                            )
+                          : Text(
+                              key: const ValueKey('profile-for-whom-hint'),
+                              _selectedCategory == 'guardian' &&
+                                      _selectedRelation == null
+                                  ? l10n
+                                      .onboarding_profileForWhom_selectRelation
+                                  : l10n.onboarding_profileForWhom_selectOne,
+                              style: AppTypography.caption,
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: AppDimensions.space24),
+                ],
+              ),
             ),
           ),
         ),
@@ -457,7 +462,8 @@ class _SelectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return SilarahPressable(
+      haptic: false,
       onTap: onTap == null
           ? null
           : () {
@@ -475,9 +481,7 @@ class _SelectionCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
           border: Border.all(
             color: isSelected ? AppColors.champagneGold : AppColors.cardBorder,
-            width: isSelected
-                ? AppDimensions.borderFocus
-                : AppDimensions.borderThin,
+            width: AppDimensions.borderThin,
           ),
         ),
         child: Row(
@@ -571,7 +575,8 @@ class _RelationChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return SilarahPressable(
+      haptic: false,
       onTap: onTap == null
           ? null
           : () {
@@ -592,9 +597,7 @@ class _RelationChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
           border: Border.all(
             color: isSelected ? AppColors.champagneGold : AppColors.cardBorder,
-            width: isSelected
-                ? AppDimensions.borderFocus
-                : AppDimensions.borderThin,
+            width: AppDimensions.borderThin,
           ),
         ),
         child: Row(

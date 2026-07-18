@@ -103,7 +103,7 @@ class _PaywallGateContent extends StatelessWidget {
           const SizedBox(height: 10),
 
           Text(
-            'Women always message free on SILARAH.\nMen subscribe to start conversations.',
+            'Women can message their matches at no cost.\nMen unlock conversations with Silarah Premium.',
             style: AppTypography.bodyMuted.copyWith(height: 1.6),
             textAlign: TextAlign.center,
           ),
@@ -118,7 +118,7 @@ class _PaywallGateContent extends StatelessWidget {
               border: Border.all(color: AppColors.goldBorder),
             ),
             child: Text(
-              'Starting from ₹249 / month',
+              'Plans are shown in your local currency',
               style: AppTypography.bodyMedium
                   .copyWith(color: AppColors.champagneGold),
             ),

@@ -318,6 +318,18 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     emit(OnboardingActive(step: safeStep, data: data));
   }
 
+  /// Keeps long-lived profile editors synchronized after a setting changes.
+  /// Without this, Manage Photos could overwrite the database with privacy
+  /// data cached when the app first opened.
+  Future<void> syncPhotoPrivacy(PhotoPrivacy privacy) async {
+    final data = _currentData.copyWith(photoPrivacy: privacy);
+    await _persistLocalCache(data);
+    if (!isClosed) {
+      emit(OnboardingActive(
+          step: _clampStepForData(_currentStep, data), data: data));
+    }
+  }
+
   // ── Cache Persistence Helper ──────────────────────────────
 
   Future<void> _persistLocalCache(OnboardingData data) async {

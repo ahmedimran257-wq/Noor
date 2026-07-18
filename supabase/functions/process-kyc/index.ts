@@ -1,171 +1,206 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, handleCors } from "../_shared/cors.ts";
+import {
+  consumeDistributedRateLimit,
+  rateLimitHeaders,
+} from "../_shared/distributed_rate_limit.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-const likelyMatchThreshold = 0.65;
-const manualReviewThreshold = 0.50;
+const bucket = "kyc-documents";
+const maxFileBytes = 10 * 1024 * 1024;
+const maxUploadAgeMs = 30 * 60 * 1000;
+const supportedIdTypes = new Set([
+  "government_id",
+  "national_id",
+  "passport",
+  "driving_license",
+]);
 
 Deno.serve(async (request) => {
   const corsResponse = handleCors(request);
   if (corsResponse) return corsResponse;
+  if (request.method !== "POST") return json(405, "Method not allowed.");
+
+  const admin = createAdminClient();
+  let uploadedPaths: string[] = [];
+  let submissionPersisted = false;
 
   try {
     const authHeader = request.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return error(401, "Authentication required.");
+      return json(401, "Authentication required.");
     }
-
-    const token = authHeader.slice("Bearer ".length);
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const { data: { user }, error: authError } = await userClient.auth.getUser(
-      token,
-    );
-    if (authError || !user) return error(401, "Authentication required.");
+    const { data: { user }, error: authError } = await userClient.auth
+      .getUser();
+    if (authError || !user) return json(401, "Authentication required.");
+
+    const rateLimit = await consumeDistributedRateLimit(admin, {
+      scope: "manual_kyc_submission",
+      subject: user.id,
+      maxRequests: 5,
+      windowSeconds: 24 * 60 * 60,
+    });
+    if (!rateLimit.allowed) {
+      return new Response(
+        JSON.stringify({
+          status: "rejected",
+          message:
+            "Identity verification attempt limit reached. Please try again later.",
+        }),
+        {
+          status: 429,
+          headers: { ...noStoreHeaders(), ...rateLimitHeaders(rateLimit) },
+        },
+      );
+    }
 
     const body = await request.json();
-    const userId = String(body.user_id ?? "");
-    const similarity = Number(body.face_similarity);
-    const dob = parseIsoDate(String(body.ocr_dob ?? ""));
-    const idType = String(body.id_type ?? "").trim();
-    const countryCode = String(body.country_code ?? "").toUpperCase();
-    const selfiePath = String(body.selfie_storage_path ?? "");
-    const idPath = String(body.id_photo_storage_path ?? "");
+    const requestedUserId = stringValue(body?.user_id);
+    const idType = stringValue(body?.id_type);
+    const countryCode = stringValue(body?.country_code).toUpperCase();
+    const selfiePath = stringValue(body?.selfie_storage_path);
+    const idPath = stringValue(body?.id_photo_storage_path);
+    const clientOcrDob = optionalIsoDate(body?.ocr_dob);
+    const clientFaceSimilarity = optionalScore(body?.face_similarity);
+    uploadedPaths = [selfiePath, idPath].filter(Boolean);
 
-    if (userId !== user.id) {
-      return error(403, "You may only verify your own profile.");
+    if (requestedUserId !== user.id) {
+      return json(403, "You may only submit your own identity check.");
     }
-    if (!dob || ageOn(dob) < 18) {
-      return error(422, "You must be at least 18 years old.");
-    }
-    if (!Number.isFinite(similarity) || similarity < 0 || similarity > 1) {
-      return error(400, "Invalid face similarity score.");
-    }
-    if (!idType || !/^[A-Z]{2}$/.test(countryCode)) {
-      return error(400, "Invalid document details.");
+    if (!supportedIdTypes.has(idType) || !/^[A-Z]{2}$/.test(countryCode)) {
+      return json(400, "Invalid identity document details.");
     }
     if (
       !ownsKycPath(selfiePath, user.id, "kyc_selfie") ||
       !ownsKycPath(idPath, user.id, "kyc_id")
     ) {
-      return error(403, "Invalid private document path.");
+      return json(403, "Invalid private document path.");
+    }
+    if (body?.face_similarity != null && clientFaceSimilarity == null) {
+      return json(400, "Invalid optional face-match hint.");
+    }
+    if (body?.ocr_dob != null && stringValue(body.ocr_dob) && !clientOcrDob) {
+      return json(400, "Invalid optional OCR date hint.");
     }
 
-    const admin = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
-    const common = {
-      kyc_method: "on_device",
-      face_similarity: similarity,
-      kyc_id_type: idType,
-      kyc_country_code: countryCode,
-      kyc_selfie_storage_path: selfiePath,
-      kyc_id_photo_storage_path: idPath,
-    };
+    await Promise.all([
+      assertFreshPrivateImage(admin, selfiePath, user.id),
+      assertFreshPrivateImage(admin, idPath, user.id),
+    ]);
 
-    if (similarity >= likelyMatchThreshold) {
-      const { error: updateError } = await admin.from("profiles").update({
-        ...common,
-        kyc_verified: true,
-        verified_at: new Date().toISOString(),
-        verification_status: "verified",
-        is_verified: true,
-      }).eq("user_id", user.id);
-      if (updateError) throw updateError;
-      await queueIdentityNotification(
-        admin,
-        user.id,
-        "kyc_approved",
-        "Identity verified",
-        "Your government ID and selfie check is complete. Your identity status is now verified.",
-      );
-      return json({
-        status: "verified",
-        message: "Your identity has been verified.",
-      });
-    }
+    const { data, error: submitError } = await admin.rpc(
+      "submit_manual_kyc_for_review",
+      {
+        p_user_id: user.id,
+        p_country_code: countryCode,
+        p_id_type: idType,
+        p_selfie_storage_path: selfiePath,
+        p_id_photo_storage_path: idPath,
+        p_client_ocr_dob: clientOcrDob,
+        p_client_face_similarity: clientFaceSimilarity,
+      },
+    );
+    if (submitError) throw submitError;
 
-    if (similarity >= manualReviewThreshold) {
-      const { error: updateError } = await admin.from("profiles").update({
-        ...common,
-        kyc_verified: false,
-        verification_status: "pending_review",
-      }).eq("user_id", user.id);
-      if (updateError) throw updateError;
+    const payload = data && typeof data === "object"
+      ? data as Record<string, unknown>
+      : {};
+    submissionPersisted = payload.accepted === true;
+    if (!submissionPersisted) {
+      // The user already has a pending review. These newly uploaded objects
+      // are redundant and must not become hidden storage cost.
+      await admin.storage.from(bucket).remove(uploadedPaths);
+    } else {
       await queueIdentityNotification(
         admin,
         user.id,
         "kyc_pending",
-        "Identity check submitted",
-        "Your documents were received securely and are awaiting review.",
+        "Identity check received",
+        "Your document and selfie are queued for private review. We will notify you when the review is complete.",
       );
-      return json({
-        status: "pending_review",
-        message: "Your verification is pending review.",
-      });
     }
 
-    const { error: rejectionUpdateError } = await admin.from("profiles").update({
-      ...common,
-      kyc_verified: false,
-      verification_status: "unverified",
-    }).eq("user_id", user.id);
-    if (rejectionUpdateError) throw rejectionUpdateError;
-    await queueIdentityNotification(
-      admin,
-      user.id,
-      "kyc_rejected",
-      "Identity check needs attention",
-      "The selfie did not match the document photo. Retake both images in clear lighting and try again.",
+    return new Response(
+      JSON.stringify({
+        status: "pending_review",
+        submission_id: payload.submission_id,
+        message: stringValue(payload.message) ||
+          "Your identity check is awaiting private review.",
+      }),
+      {
+        status: 200,
+        headers: noStoreHeaders(),
+      },
     );
-    return error(422, "The selfie does not match the document photo.");
   } catch (cause) {
-    console.error("[process-kyc]", cause);
-    return error(500, "Unable to process verification.");
+    console.error("[process-kyc] manual submission failed", safeError(cause));
+    if (!submissionPersisted && uploadedPaths.length > 0) {
+      await admin.storage.from(bucket).remove(uploadedPaths).catch(() => null);
+    }
+    const message =
+      cause instanceof Error && cause.message.includes("Maximum 3")
+        ? cause.message
+        : "Unable to submit identity evidence. Please try again.";
+    return json(422, message);
   }
 });
 
+async function assertFreshPrivateImage(
+  admin: ReturnType<typeof createAdminClient>,
+  path: string,
+  userId: string,
+): Promise<void> {
+  const name = path.slice(userId.length + 1);
+  const { data, error } = await admin.storage.from(bucket).list(userId, {
+    limit: 10,
+    search: name,
+  });
+  if (error) throw new Error("Private identity upload could not be inspected.");
+  const object = data?.find((item) => item.name === name);
+  if (!object) throw new Error("Private identity upload was not found.");
+
+  const metadata = object.metadata as Record<string, unknown> | null;
+  const size = Number(metadata?.size ?? 0);
+  const mime = stringValue(metadata?.mimetype ?? metadata?.contentType)
+    .toLowerCase();
+  const createdAt = Date.parse(object.created_at ?? "");
+  if (!Number.isFinite(size) || size <= 0 || size > maxFileBytes) {
+    throw new Error("Identity images must be between 1 byte and 10 MB.");
+  }
+  if (!new Set(["image/jpeg", "image/png", "image/webp"]).has(mime)) {
+    throw new Error("Identity evidence must be a supported image.");
+  }
+  if (!Number.isFinite(createdAt) || Date.now() - createdAt > maxUploadAgeMs) {
+    throw new Error("Identity upload expired. Please capture new images.");
+  }
+}
+
 async function queueIdentityNotification(
-  admin: ReturnType<typeof createClient>,
+  admin: ReturnType<typeof createAdminClient>,
   userId: string,
   type: string,
   title: string,
   body: string,
 ): Promise<void> {
-  const { error: notificationError } = await admin.from("notifications").insert({
+  const { error } = await admin.from("notifications").insert({
     user_id: userId,
     type,
     title,
     body,
-    deep_link: type === "kyc_rejected" ? "silarah://verify-identity" : "silarah://profile",
+    deep_link: "silarah://profile",
   });
-  if (notificationError) {
-    console.error("[process-kyc] Unable to queue identity notification", {
-      userId,
+  if (error) {
+    console.error("[process-kyc] notification queue failed", {
       type,
-      message: notificationError.message,
+      message: error.message,
     });
   }
-}
-
-function parseIsoDate(value: string): Date | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
-  const date = new Date(`${value}T00:00:00.000Z`);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
-
-function ageOn(dob: Date): number {
-  const today = new Date();
-  let age = today.getUTCFullYear() - dob.getUTCFullYear();
-  const beforeBirthday = today.getUTCMonth() < dob.getUTCMonth() ||
-    (today.getUTCMonth() === dob.getUTCMonth() &&
-      today.getUTCDate() < dob.getUTCDate());
-  if (beforeBirthday) age--;
-  return age;
 }
 
 function ownsKycPath(path: string, userId: string, prefix: string): boolean {
@@ -175,17 +210,58 @@ function ownsKycPath(path: string, userId: string, prefix: string): boolean {
   ).test(path);
 }
 
+function optionalIsoDate(value: unknown): string | null {
+  const input = stringValue(value);
+  if (!input) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input)) return null;
+  const parsed = new Date(`${input}T00:00:00.000Z`);
+  if (
+    Number.isNaN(parsed.getTime()) ||
+    parsed.toISOString().slice(0, 10) !== input
+  ) {
+    return null;
+  }
+  return input;
+}
+
+function optionalScore(value: unknown): number | null {
+  if (value == null || value === "") return null;
+  const score = Number(value);
+  return Number.isFinite(score) && score >= 0 && score <= 1 ? score : null;
+}
+
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function json(payload: Record<string, unknown>, status = 200): Response {
-  return new Response(JSON.stringify(payload), {
+function stringValue(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function safeError(error: unknown): Record<string, string> {
+  if (error instanceof Error) {
+    return { name: error.name, message: error.message };
+  }
+  return { name: "UnknownError", message: "Unknown submission failure" };
+}
+
+function noStoreHeaders(): Record<string, string> {
+  return {
+    ...corsHeaders,
+    "Content-Type": "application/json",
+    "Cache-Control": "no-store",
+  };
+}
+
+function json(status: number, message: string): Response {
+  return new Response(JSON.stringify({ status: "rejected", message }), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: noStoreHeaders(),
   });
 }
 
-function error(status: number, message: string): Response {
-  return json({ status: "rejected", message }, status);
+function createAdminClient() {
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
 }

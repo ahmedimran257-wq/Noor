@@ -86,6 +86,19 @@ class DisplayPricing {
 
 enum PricingSource { loading, revenueCat, unavailable }
 
+/// Canonical RevenueCat entitlement mapping.
+abstract final class SubscriptionEntitlements {
+  static const String premium = 'premium';
+
+  static EntitlementInfo? activePremium(CustomerInfo info) {
+    return info.entitlements.active[premium];
+  }
+
+  static bool isPremiumActive(CustomerInfo info) {
+    return activePremium(info) != null;
+  }
+}
+
 class SubscriptionService {
   SubscriptionService._();
   static final instance = SubscriptionService._();
@@ -120,14 +133,14 @@ class SubscriptionService {
       await _syncSubscriberAttributes(userId);
 
       _customerInfo = await Purchases.getCustomerInfo();
-      _isSubscribed =
-          _customerInfo?.entitlements.active.containsKey('premium') ?? false;
+      _isSubscribed = _customerInfo != null &&
+          SubscriptionEntitlements.isPremiumActive(_customerInfo!);
 
       await _refreshPricing();
 
       Purchases.addCustomerInfoUpdateListener((info) {
         _customerInfo = info;
-        _isSubscribed = info.entitlements.active.containsKey('premium');
+        _isSubscribed = SubscriptionEntitlements.isPremiumActive(info);
       });
     } catch (e) {
       debugPrint('[SubscriptionService] RevenueCat init error: $e');
@@ -154,7 +167,7 @@ class SubscriptionService {
       if (package == null) throw Exception('Package not available');
 
       final result = await Purchases.purchasePackage(package);
-      _isSubscribed = result.entitlements.active.containsKey('premium');
+      _isSubscribed = SubscriptionEntitlements.isPremiumActive(result);
       _customerInfo = result;
       return _isSubscribed;
     } catch (e) {
@@ -167,7 +180,7 @@ class SubscriptionService {
     try {
       final info = await Purchases.restorePurchases();
       _customerInfo = info;
-      _isSubscribed = info.entitlements.active.containsKey('premium');
+      _isSubscribed = SubscriptionEntitlements.isPremiumActive(info);
       return _isSubscribed;
     } catch (e) {
       debugPrint('[SubscriptionService] Restore error: $e');

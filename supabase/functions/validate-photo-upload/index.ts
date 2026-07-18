@@ -16,6 +16,10 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { Image } from "https://deno.land/x/imagescript@1.2.15/mod.ts";
 import { encode } from "https://esm.sh/blurhash@2.0.5";
 import {
+  consumeDistributedRateLimit,
+  rateLimitHeaders,
+} from "../_shared/distributed_rate_limit.ts";
+import {
   type ClientPhotoModerationPayload,
   resolveClientModerationVerdict,
 } from "./photo_moderation_policy.ts";
@@ -54,6 +58,7 @@ Deno.serve(async (req: Request) => {
 
     let storagePath: string;
     let moderation: DirectValidationPayload["moderation"] | null = null;
+    let authenticatedUserId: string | null = null;
     if ("record" in payload && payload.type === "ObjectCreated") {
       storagePath = payload.record.name;
     } else if ("storage_path" in payload) {
@@ -80,6 +85,7 @@ Deno.serve(async (req: Request) => {
       }
       storagePath = payload.storage_path;
       moderation = payload.moderation ?? null;
+      authenticatedUserId = user.id;
     } else {
       return new Response(JSON.stringify({ action: "ignored" }), {
         status: 200,
@@ -112,6 +118,30 @@ Deno.serve(async (req: Request) => {
     const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+
+    if (moderation !== null && authenticatedUserId) {
+      const rateLimit = await consumeDistributedRateLimit(adminClient, {
+        scope: "photo_validation",
+        subject: authenticatedUserId,
+        maxRequests: 24,
+        windowSeconds: 60 * 60,
+      });
+      if (!rateLimit.allowed) {
+        return new Response(
+          JSON.stringify({
+            error: "Photo validation limit reached. Please try again later.",
+          }),
+          {
+            status: 429,
+            headers: {
+              ...corsHeaders,
+              ...rateLimitHeaders(rateLimit),
+              "Content-Type": "application/json",
+            },
+          },
+        );
+      }
+    }
 
     // Storage webhooks cannot prove that the on-device model ran. Keep those
     // rows pending; only the authenticated client validation path can activate.
@@ -223,10 +253,10 @@ Deno.serve(async (req: Request) => {
         status: "active",
         admin_approved: !isFlagged,
         nsfw_cleared: !isFlagged,
-        nsfw_score: moderation.confidence,
+        nsfw_score: moderation.nsfw_confidence,
         nsfw_category: moderation.category,
         nsfw_scanned_at: new Date().toISOString(),
-        moderation_source: "nsfw_detect_on_device",
+        moderation_source: "opennsfw2_litert_mlkit_on_device",
         moderation_status: isFlagged ? "pending" : "approved",
       })
       .eq("profile_id", profile.id)
@@ -250,7 +280,7 @@ Deno.serve(async (req: Request) => {
           .upsert({
             photo_id: validatedPhoto.id,
             user_id: userId,
-            confidence: moderation.confidence,
+            confidence: moderation.nsfw_confidence,
             category: moderation.category,
             status: "pending_review",
           }, { onConflict: "photo_id" });

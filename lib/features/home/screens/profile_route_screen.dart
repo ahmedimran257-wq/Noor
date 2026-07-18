@@ -1,0 +1,139 @@
+import 'package:flutter/material.dart';
+
+import '../../../core/models/discovery_profile.dart';
+import '../../../core/services/photo_access_service.dart';
+import '../../../core/services/profile_photo_service.dart';
+import '../../../core/services/supabase_service.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimensions.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/silarah_compute.dart';
+import '../../../core/widgets/loaders/silarah_shimmer.dart';
+import 'profile_detail_screen.dart';
+
+class ProfileRouteScreen extends StatefulWidget {
+  const ProfileRouteScreen({super.key, required this.profileIdentifier});
+
+  final String profileIdentifier;
+
+  @override
+  State<ProfileRouteScreen> createState() => _ProfileRouteScreenState();
+}
+
+class _ProfileRouteScreenState extends State<ProfileRouteScreen> {
+  DiscoveryProfile? _profile;
+  bool _isMutual = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final id = widget.profileIdentifier.trim();
+    if (!RegExp(
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$',
+    ).hasMatch(id)) {
+      setState(() => _error = 'This profile link is invalid.');
+      return;
+    }
+    try {
+      final context = await PhotoAccessService.instance.getContext(id);
+      final raw = await SupabaseService.client.from('profiles').select('''
+            id, user_id, first_name, last_name, date_of_birth, gender,
+            country_code, sect, deen_level, photo_privacy, bio, profession,
+            education_level, education_rank, family_type, previously_married,
+            children_count, mother_tongue, community, diet_type,
+            living_expectation, quran_memorization, religious_education,
+            marriage_timeline, willing_to_relocate, height_cm, complexion,
+            smoking_habit, vaping_habit, hookah_habit, languages, interests,
+            last_active_at, is_verified, cities:cities!city_id(name)
+          ''').or('user_id.eq.$id,id.eq.$id').maybeSingle();
+      if (raw == null) throw StateError('This profile is unavailable.');
+      final row = Map<String, dynamic>.from(raw);
+      final city = row['cities'];
+      if (city is Map) row['city_name'] = city['name'];
+      row['photo_count'] = context.photoCount;
+      row['photo_privacy'] = switch (context.privacy) {
+        ProfilePhotoPrivacy.mutualOnly => 'mutual_only',
+        ProfilePhotoPrivacy.requestOnly => 'request_only',
+        ProfilePhotoPrivacy.public => 'public',
+      };
+      if (context.canView) {
+        final ownerId = row['user_id'].toString();
+        final slots = await ProfilePhotoService.instance
+            .getVisiblePhotoSlots(ownerUserId: ownerId);
+        final urls = slots.entries.toList()
+          ..sort((a, b) => a.key.compareTo(b.key));
+        row['photo_urls'] =
+            urls.map((entry) => entry.value).toList(growable: false);
+        if (urls.isNotEmpty) row['photo_url'] = urls.first.value;
+      }
+      final profile = mapDbRowToDiscoveryProfile(row);
+      if (!mounted) return;
+      setState(() {
+        _profile = profile;
+        _isMutual = context.isMutual;
+        _error = null;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = error is StateError
+          ? error.message
+          : 'This profile could not be opened.');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final profile = _profile;
+    if (profile != null) {
+      return ProfileDetailScreen(
+        profile: profile,
+        heroTag: 'linked-profile-${profile.id}',
+        isInterestSent: false,
+        onInterestSent: () {},
+        isMutualMatch: _isMutual,
+      );
+    }
+    return Scaffold(
+      backgroundColor: AppColors.obsidianNight,
+      appBar: AppBar(
+        backgroundColor: AppColors.obsidianNight,
+        leading: IconButton(
+          onPressed: () => Navigator.maybePop(context),
+          icon: const Icon(Icons.arrow_back_rounded),
+        ),
+      ),
+      body: Center(
+        child: _error == null
+            ? const SilarahPulseLoader(size: 52)
+            : Padding(
+                padding: const EdgeInsets.all(AppDimensions.space24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.person_off_outlined,
+                        color: AppColors.slateMist, size: 46),
+                    const SizedBox(height: AppDimensions.space16),
+                    Text(_error!,
+                        style: AppTypography.bodyMuted,
+                        textAlign: TextAlign.center),
+                    const SizedBox(height: AppDimensions.space16),
+                    TextButton.icon(
+                      onPressed: () {
+                        setState(() => _error = null);
+                        _load();
+                      },
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: const Text('Try again'),
+                    ),
+                  ],
+                ),
+              ),
+      ),
+    );
+  }
+}

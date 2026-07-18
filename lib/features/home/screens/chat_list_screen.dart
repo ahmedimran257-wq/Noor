@@ -15,7 +15,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/cubits/chat/chat_cubit.dart';
 import '../../../core/cubits/chat/chat_state.dart';
-import '../../../core/services/supabase_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_curves.dart';
 import '../../../core/theme/app_dimensions.dart';
@@ -58,22 +57,6 @@ class _ChatListScreenState extends State<ChatListScreen>
   void _refreshInbox() {
     if (!mounted) return;
     unawaited(context.read<ChatCubit>().loadConversations(showLoading: false));
-  }
-
-  Future<bool> _canOpenChat(String matchId) async {
-    if (!SupabaseService.isInitialized) return false;
-    try {
-      final response = await SupabaseService.client.rpc(
-        'can_open_chat',
-        params: {'p_match_id': matchId},
-      );
-      final rows = response as List<dynamic>;
-      if (rows.isEmpty) return false;
-      final row = Map<String, dynamic>.from(rows.first as Map);
-      return row['allowed'] == true;
-    } catch (_) {
-      return false;
-    }
   }
 
   @override
@@ -248,10 +231,28 @@ class _ChatListScreenState extends State<ChatListScreen>
                             onTap: () async {
                               final navigator = Navigator.of(context);
                               final chatCubit = context.read<ChatCubit>();
-                              final allowed = await _canOpenChat(conv.id);
+                              final access =
+                                  await chatCubit.checkChatAccess(conv.id);
                               if (!context.mounted) return;
-                              if (!allowed) {
+                              if (access.requiresSubscription) {
                                 PaywallGateSheet.show(context);
+                                return;
+                              }
+                              if (!access.allowed) {
+                                final message = switch (access.reason) {
+                                  ChatAccessReason.suspended =>
+                                    'Messaging is temporarily restricted on this account.',
+                                  ChatAccessReason.closed =>
+                                    'This conversation has ended.',
+                                  _ =>
+                                    'We could not open this conversation. Please try again.',
+                                };
+                                ScaffoldMessenger.of(context)
+                                  ..clearSnackBars()
+                                  ..showSnackBar(SnackBar(
+                                    content: Text(message),
+                                    behavior: SnackBarBehavior.floating,
+                                  ));
                                 return;
                               }
 

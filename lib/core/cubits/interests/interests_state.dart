@@ -97,7 +97,10 @@ class InterestsState extends Equatable {
     this.interestsSentToday = 0,
     this.dailyLimit = 0,
     this.lastResetDate,
+    this.quotaResetsAt,
+    this.isPremium = false,
     this.limitError = false,
+    this.quotaUnavailable = false,
   });
 
   final List<InterestEntry> received;
@@ -108,7 +111,10 @@ class InterestsState extends Equatable {
   final int interestsSentToday;
   final int dailyLimit;
   final DateTime? lastResetDate;
-  final bool limitError; // true after hitting the daily cap
+  final DateTime? quotaResetsAt;
+  final bool isPremium;
+  final bool limitError; // true only after hitting the daily cap
+  final bool quotaUnavailable;
 
   // ── Computed getters ─────────────────────────────────────
 
@@ -132,7 +138,8 @@ class InterestsState extends Equatable {
   int get unreadCount => pendingReceived.length;
 
   /// Item 17: Whether the daily limit has been reached
-  bool get isDailyLimitReached => interestsSentToday >= dailyLimit;
+  bool get isDailyLimitReached =>
+      dailyLimit > 0 && interestsSentToday >= dailyLimit;
 
   /// Item 17: Interests remaining today
   int get remainingToday =>
@@ -145,8 +152,12 @@ class InterestsState extends Equatable {
     int? interestsSentToday,
     int? dailyLimit,
     DateTime? lastResetDate,
+    DateTime? quotaResetsAt,
+    bool? isPremium,
     bool? limitError,
+    bool? quotaUnavailable,
     bool clearLimitError = false,
+    bool clearQuotaUnavailable = false,
   }) {
     return InterestsState(
       received: received ?? this.received,
@@ -155,7 +166,12 @@ class InterestsState extends Equatable {
       interestsSentToday: interestsSentToday ?? this.interestsSentToday,
       dailyLimit: dailyLimit ?? this.dailyLimit,
       lastResetDate: lastResetDate ?? this.lastResetDate,
+      quotaResetsAt: quotaResetsAt ?? this.quotaResetsAt,
+      isPremium: isPremium ?? this.isPremium,
       limitError: clearLimitError ? false : (limitError ?? this.limitError),
+      quotaUnavailable: clearQuotaUnavailable
+          ? false
+          : (quotaUnavailable ?? this.quotaUnavailable),
     );
   }
 
@@ -167,6 +183,9 @@ class InterestsState extends Equatable {
         interestsSentToday,
         dailyLimit,
         lastResetDate,
+        quotaResetsAt,
+        isPremium,
         limitError,
+        quotaUnavailable,
       ];
 }

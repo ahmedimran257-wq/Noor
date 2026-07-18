@@ -16,6 +16,7 @@ import '../../services/referral_service.dart';
 import '../../services/email_address_validation.dart';
 import '../../services/fcm_service.dart';
 import '../../services/legal_consent_service.dart';
+import '../../services/otp_request_coalescer.dart';
 import '../../services/supabase_service.dart';
 import 'auth_state.dart';
 
@@ -52,6 +53,7 @@ class AuthCubit extends Cubit<AuthState> {
 
   String? _pendingEmail;
   String _pendingAuthMode = 'signin';
+  final OtpRequestCoalescer _otpRequests = OtpRequestCoalescer();
   int _sendOtpRequestId = 0;
   int _verifyOtpRequestId = 0;
   StreamSubscription<supabase.AuthState>? _authSubscription;
@@ -190,6 +192,25 @@ class AuthCubit extends Cubit<AuthState> {
     String mode = 'signin',
     String? countryCode,
     bool isResend = false,
+  }) {
+    // Coalesce before registration lookup. Otherwise the first request can
+    // create a pending user while the second sees it and sends the sign-in
+    // template as well, producing two emails with the same token.
+    return _otpRequests.run(
+      () => _sendOtpOnce(
+        email,
+        mode: mode,
+        countryCode: countryCode,
+        isResend: isResend,
+      ),
+    );
+  }
+
+  Future<void> _sendOtpOnce(
+    String email, {
+    required String mode,
+    String? countryCode,
+    required bool isResend,
   }) async {
     final requestId = ++_sendOtpRequestId;
     final normalizedEmail = EmailAddressValidation.normalize(email);

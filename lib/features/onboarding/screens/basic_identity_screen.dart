@@ -859,9 +859,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                       color: _community != null
                           ? AppColors.champagneGold
                           : AppColors.cardBorder,
-                      width: _community != null
-                          ? AppDimensions.borderFocus
-                          : AppDimensions.borderThin,
+                      width: AppDimensions.borderThin,
                     ),
                   ),
                   child: Row(children: [
@@ -946,9 +944,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                       color: _motherTongue != null
                           ? AppColors.champagneGold
                           : AppColors.cardBorder,
-                      width: _motherTongue != null
-                          ? AppDimensions.borderFocus
-                          : AppDimensions.borderThin,
+                      width: AppDimensions.borderThin,
                     ),
                   ),
                   child: Row(
@@ -1146,9 +1142,7 @@ class _GenderPill extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
           border: Border.all(
             color: isSelected ? AppColors.champagneGold : AppColors.cardBorder,
-            width: isSelected
-                ? AppDimensions.borderFocus
-                : AppDimensions.borderThin,
+            width: AppDimensions.borderThin,
           ),
         ),
         child: Row(
@@ -1315,9 +1309,7 @@ class _SelectChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
           border: Border.all(
             color: isSelected ? AppColors.champagneGold : AppColors.cardBorder,
-            width: isSelected
-                ? AppDimensions.borderFocus
-                : AppDimensions.borderThin,
+            width: AppDimensions.borderThin,
           ),
         ),
         child: Text(
@@ -1433,7 +1425,7 @@ class _GenericListPickerState extends State<_GenericListPicker> {
                           BorderRadius.circular(AppDimensions.radiusButton),
                       borderSide: const BorderSide(
                           color: AppColors.champagneGold,
-                          width: AppDimensions.borderFocus)),
+                          width: AppDimensions.borderThin)),
                 ),
               ),
             ),

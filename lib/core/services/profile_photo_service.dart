@@ -6,15 +6,77 @@ import '../models/onboarding_data.dart';
 import 'photo_moderation_service.dart';
 import 'supabase_service.dart';
 
+enum PhotoSyncStage {
+  safetyScan,
+  preparingUpload,
+  transferring,
+  publishing,
+  complete,
+}
+
+class PhotoSyncProgress {
+  const PhotoSyncProgress({
+    required this.slot,
+    required this.completedPhotos,
+    required this.totalPhotos,
+    required this.stage,
+  });
+
+  final int slot;
+  final int completedPhotos;
+  final int totalPhotos;
+  final PhotoSyncStage stage;
+
+  double get fraction {
+    if (totalPhotos == 0) return 1;
+    if (stage == PhotoSyncStage.complete) {
+      return (completedPhotos / totalPhotos).clamp(0.0, 1.0);
+    }
+    const stageWeight = <PhotoSyncStage, double>{
+      PhotoSyncStage.safetyScan: 0.08,
+      PhotoSyncStage.preparingUpload: 0.24,
+      PhotoSyncStage.transferring: 0.46,
+      PhotoSyncStage.publishing: 0.78,
+      PhotoSyncStage.complete: 1,
+    };
+    return ((completedPhotos + stageWeight[stage]!) / totalPhotos)
+        .clamp(0.0, 1.0);
+  }
+}
+
+typedef PhotoSyncProgressCallback = void Function(PhotoSyncProgress progress);
+
 class ProfilePhotoService {
   ProfilePhotoService._();
 
   static final ProfilePhotoService instance = ProfilePhotoService._();
   static const _bucket = 'profile-photos';
-  static const _signedUrlSafetyMargin = Duration(minutes: 5);
+  static const _signedUrlSafetyMargin = Duration(seconds: 30);
   static const _maxCachedUrls = 200;
   final Map<String, _CachedPhotoUrl> _readUrlCache = {};
   final Map<String, Future<String?>> _readUrlLoads = {};
+
+  void invalidateAllPhotoUrls() {
+    _readUrlCache.clear();
+    _readUrlLoads.clear();
+  }
+
+  Future<PhotoPrivacy> getMyPhotoPrivacy() async {
+    final userId = await SupabaseService.currentUserIdOrRefresh();
+    if (userId == null) {
+      throw StateError('Please sign in again to manage your photos.');
+    }
+    final row = await SupabaseService.client
+        .from('profiles')
+        .select('photo_privacy')
+        .eq('user_id', userId)
+        .maybeSingle();
+    return switch (row?['photo_privacy']?.toString()) {
+      'mutual_only' => PhotoPrivacy.mutualOnly,
+      'request_only' => PhotoPrivacy.requestOnly,
+      _ => PhotoPrivacy.publicAll,
+    };
+  }
 
   Future<PhotoModerationResult?> syncLocalPhotos(
     List<String> localPaths, {
@@ -36,6 +98,7 @@ class ProfilePhotoService {
   Future<PhotoModerationResult?> syncPhotoSlots(
     Map<int, String> localPathsBySlot, {
     PhotoPrivacy privacy = PhotoPrivacy.publicAll,
+    PhotoSyncProgressCallback? onProgress,
   }) async {
     if (!SupabaseService.isInitialized ||
         SupabaseService.currentUserId == null) {
@@ -58,13 +121,24 @@ class ProfilePhotoService {
         .where((entry) => entry.key >= 0 && entry.key < 4)
         .toList(growable: false)
       ..sort((a, b) => a.key.compareTo(b.key));
+    var completedPhotos = 0;
     for (final entry in slots) {
       final orderIndex = entry.key;
       final file = File(entry.value);
       if (!await file.exists()) continue;
 
+      void report(PhotoSyncStage stage) => onProgress?.call(
+            PhotoSyncProgress(
+              slot: orderIndex,
+              completedPhotos: completedPhotos,
+              totalPhotos: slots.length,
+              stage: stage,
+            ),
+          );
+
       // Scan again at the upload boundary so stale onboarding state cannot
       // bypass moderation. A failed scan is rejected rather than uploaded.
+      report(PhotoSyncStage.safetyScan);
       final moderation =
           await PhotoModerationService.instance.scanFile(file.path);
       if (orderIndex == 0) primaryModeration = moderation;
@@ -76,6 +150,7 @@ class ProfilePhotoService {
         );
       }
 
+      report(PhotoSyncStage.preparingUpload);
       final signed = await SupabaseService.client.functions.invoke(
         'get-signed-url',
         body: {
@@ -97,6 +172,7 @@ class ProfilePhotoService {
       }
 
       final bytes = await file.readAsBytes();
+      report(PhotoSyncStage.transferring);
       await SupabaseService.client.storage
           .from(_bucket)
           .uploadBinaryToSignedUrl(
@@ -106,10 +182,13 @@ class ProfilePhotoService {
             const FileOptions(contentType: 'image/webp', upsert: true),
           );
 
+      report(PhotoSyncStage.publishing);
       await _validateUploaded(storagePath, moderation);
       if (replacedStoragePath != null && replacedStoragePath.isNotEmpty) {
         await _removeReplacedStorageObject(replacedStoragePath);
       }
+      completedPhotos += 1;
+      report(PhotoSyncStage.complete);
     }
     _invalidateOwner(SupabaseService.currentUserId);
     return primaryModeration;
@@ -258,7 +337,7 @@ class ProfilePhotoService {
     _cacheUrl(
       cacheKey,
       url,
-      (payload['expires_in'] as num?)?.toInt() ?? 3600,
+      (payload['expires_in'] as num?)?.toInt() ?? 300,
     );
     return url;
   }
@@ -310,7 +389,7 @@ class ProfilePhotoService {
     final loaded = urls.map(
       (key, value) => MapEntry(key.toString(), value?.toString() ?? ''),
     )..removeWhere((_, value) => value.isEmpty);
-    final expiresIn = (payload['expires_in'] as num?)?.toInt() ?? 3600;
+    final expiresIn = (payload['expires_in'] as num?)?.toInt() ?? 300;
     for (final entry in loaded.entries) {
       _cacheUrl(
         '$viewerId:${entry.key}:$orderIndex',
@@ -396,7 +475,13 @@ class ProfilePhotoService {
 
   String _moderationMessage(PhotoModerationResult moderation) {
     if (moderation.category == 'invalid_image') {
-      return 'Choose a valid, non-blank image file.';
+      return 'Choose a valid photo file.';
+    }
+    if (moderation.category == 'no_person_detected') {
+      return 'Choose a photo that includes at least one person.';
+    }
+    if (moderation.category == 'explicit_content') {
+      return 'Photos with explicit content are not permitted.';
     }
     return 'This photo could not be safety checked. Please choose another image.';
   }

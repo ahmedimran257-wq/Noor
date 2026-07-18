@@ -45,6 +45,19 @@ if (-not ([string]$defines.SUPABASE_URL).StartsWith('https://')) {
     throw 'SUPABASE_URL must use HTTPS. Build cancelled.'
 }
 
+$firebasePath = Join-Path $workspace 'android\app\google-services.json'
+if (-not (Test-Path -LiteralPath $firebasePath)) {
+    throw 'Firebase android/app/google-services.json is missing. Build cancelled.'
+}
+$firebase = Get-Content -LiteralPath $firebasePath -Raw | ConvertFrom-Json
+$firebasePackages = @(
+    $firebase.client |
+        ForEach-Object { [string]$_.client_info.android_client_info.package_name }
+)
+if ('com.silarah.app' -notin $firebasePackages) {
+    throw 'Firebase configuration does not contain com.silarah.app. Build cancelled.'
+}
+
 $deviceArgs = @()
 if (-not [string]::IsNullOrWhiteSpace($Device)) {
     $deviceArgs = @('-d', $Device)
@@ -62,7 +75,14 @@ if ($Mode -eq 'release') {
     if ($LASTEXITCODE -ne 0) { throw 'Flutter dependency restore failed.' }
 }
 
-& flutter build apk "--$Mode" "--dart-define-from-file=$configPath"
+if ($Mode -eq 'release') {
+    # Never ship/install a universal release APK containing every CPU runtime.
+    # Play distributes equivalent ABI splits from an AAB; local release
+    # installs should use the same per-device footprint.
+    & flutter build apk "--$Mode" --split-per-abi "--dart-define-from-file=$configPath"
+} else {
+    & flutter build apk "--$Mode" "--dart-define-from-file=$configPath"
+}
 if ($LASTEXITCODE -ne 0) { throw 'Flutter build failed.' }
 
 Write-Host 'Installing APK without clearing app data...'
@@ -87,14 +107,26 @@ if (-not $adb) {
     throw 'Android Debug Bridge (adb) was not found. Install Android platform-tools or configure ANDROID_SDK_ROOT.'
 }
 
-$apkPath = Join-Path $workspace "build\app\outputs\flutter-apk\app-$Mode.apk"
-if (-not (Test-Path -LiteralPath $apkPath)) {
-    throw "Built APK was not found at $apkPath."
-}
-
 $adbArgs = @()
 if (-not [string]::IsNullOrWhiteSpace($Device)) {
     $adbArgs = @('-s', $Device)
+}
+
+$apkPath = if ($Mode -eq 'release') {
+    $deviceAbi = (& $adb @adbArgs shell getprop ro.product.cpu.abi).Trim()
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($deviceAbi)) {
+        throw 'Could not determine the connected device CPU architecture.'
+    }
+    $supportedAbis = @('arm64-v8a', 'armeabi-v7a', 'x86_64')
+    if ($deviceAbi -notin $supportedAbis) {
+        throw "Unsupported device CPU architecture: $deviceAbi"
+    }
+    Join-Path $workspace "build\app\outputs\flutter-apk\app-$deviceAbi-release.apk"
+} else {
+    Join-Path $workspace "build\app\outputs\flutter-apk\app-debug.apk"
+}
+if (-not (Test-Path -LiteralPath $apkPath)) {
+    throw "Built APK was not found at $apkPath."
 }
 
 & $adb @adbArgs install -r $apkPath

@@ -10,6 +10,7 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
 import '../../../core/widgets/buttons/silarah_primary_button.dart';
+import '../../../core/widgets/animations/silarah_motion.dart';
 
 class _Language {
   const _Language({
@@ -144,14 +145,7 @@ class LanguageSelectionScreen extends StatefulWidget {
       _LanguageSelectionScreenState();
 }
 
-class _LanguageSelectionScreenState extends State<LanguageSelectionScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _enterCtrl;
-  late final Animation<double> _headerFade;
-  late final Animation<Offset> _listSlide;
-  late final Animation<double> _listFade;
-  late final Animation<double> _buttonFade;
-
+class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
   String _selectedCode = 'en';
   bool _didReadLocale = false;
 
@@ -159,36 +153,6 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen>
         (language) => language.code == _selectedCode,
         orElse: () => _completeLanguages.first,
       );
-
-  @override
-  void initState() {
-    super.initState();
-    _enterCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 650),
-    )..forward();
-    _headerFade = CurvedAnimation(
-      parent: _enterCtrl,
-      curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
-    );
-    _listSlide = Tween<Offset>(
-      begin: const Offset(0.0, 0.06),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _enterCtrl,
-        curve: const Interval(0.18, 1.0, curve: Curves.easeOutCubic),
-      ),
-    );
-    _listFade = CurvedAnimation(
-      parent: _enterCtrl,
-      curve: const Interval(0.18, 0.85, curve: Curves.easeOut),
-    );
-    _buttonFade = CurvedAnimation(
-      parent: _enterCtrl,
-      curve: const Interval(0.55, 1.0, curve: Curves.easeOut),
-    );
-  }
 
   @override
   void didChangeDependencies() {
@@ -199,12 +163,6 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen>
       _selectedCode = activeCode;
     }
     _didReadLocale = true;
-  }
-
-  @override
-  void dispose() {
-    _enterCtrl.dispose();
-    super.dispose();
   }
 
   Future<void> _onContinue() async {
@@ -242,46 +200,42 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen>
                   AppDimensions.horizontalMargin,
                   AppDimensions.space24,
                 ),
-                child: FadeTransition(
-                  opacity: _headerFade,
+                child: SilarahEntrance(
                   child: _Header(language: selectedLanguage),
                 ),
               ),
               Expanded(
-                child: SlideTransition(
-                  position: _listSlide,
-                  child: FadeTransition(
-                    opacity: _listFade,
-                    child: ListView.separated(
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.onDrag,
-                      padding: const EdgeInsets.fromLTRB(
-                        AppDimensions.horizontalMargin,
-                        0,
-                        AppDimensions.horizontalMargin,
-                        AppDimensions.space16,
-                      ),
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: _completeLanguages.length,
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(height: AppDimensions.space12),
-                      itemBuilder: (context, index) {
-                        final language = _completeLanguages[index];
-                        return _LanguageTile(
-                          language: language,
-                          isSelected: _selectedCode == language.code,
-                          onTap: () {
-                            FocusManager.instance.primaryFocus?.unfocus();
-                            setState(() => _selectedCode = language.code);
-                          },
-                        );
-                      },
+                child: SilarahEntrance(
+                  delay: const Duration(milliseconds: 55),
+                  child: ListView.separated(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: const EdgeInsets.fromLTRB(
+                      AppDimensions.horizontalMargin,
+                      0,
+                      AppDimensions.horizontalMargin,
+                      AppDimensions.space16,
                     ),
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: _completeLanguages.length,
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(height: AppDimensions.space12),
+                    itemBuilder: (context, index) {
+                      final language = _completeLanguages[index];
+                      return _LanguageTile(
+                        language: language,
+                        isSelected: _selectedCode == language.code,
+                        onTap: () {
+                          FocusManager.instance.primaryFocus?.unfocus();
+                          setState(() => _selectedCode = language.code);
+                        },
+                      );
+                    },
                   ),
                 ),
               ),
-              FadeTransition(
-                opacity: _buttonFade,
+              SilarahEntrance(
+                delay: const Duration(milliseconds: 110),
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(

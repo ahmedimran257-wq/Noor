@@ -22,6 +22,7 @@ import '../../../core/cubits/auth/auth_state.dart';
 import '../../../core/cubits/subscription/subscription_cubit.dart';
 import '../../../core/cubits/subscription/subscription_state.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/loaders/silarah_shimmer.dart';
 import 'legal_doc_screen.dart';
@@ -460,7 +461,7 @@ class _PremiumPhoneVerificationSheetState
                     borderRadius: BorderRadius.circular(14),
                     borderSide: const BorderSide(
                       color: AppColors.champagneGold,
-                      width: 1.4,
+                      width: AppDimensions.borderThin,
                     ),
                   ),
                 ),
@@ -951,7 +952,7 @@ class _IncludedFeatures extends StatelessWidget {
 
   static const _maleFeatures = [
     (Icons.all_inclusive_rounded, 'Unlimited profile browsing'),
-    (Icons.favorite_rounded, '20 interests per day'),
+    (Icons.favorite_rounded, '25 interests per day'),
     (Icons.chat_bubble_outline_rounded, 'Full messaging access'),
     (Icons.visibility_rounded, 'See who liked your profile'),
     (Icons.tune_rounded, 'Advanced filters — income & distance'),
@@ -959,6 +960,7 @@ class _IncludedFeatures extends StatelessWidget {
   ];
 
   static const _femaleFeatures = [
+    (Icons.favorite_rounded, '25 interests per day'),
     (Icons.tune_rounded, 'Advanced filters (distance, income)'),
     (Icons.rocket_launch_outlined, 'Weekly profile boost'),
     (Icons.visibility_rounded, 'See everyone who viewed your profile'),

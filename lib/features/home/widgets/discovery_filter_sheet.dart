@@ -604,6 +604,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                         child: _MultiChipGroup(
                           options: const [
                             'Same City',
+                            'Same State / Region',
                             '25km',
                             '50km',
                             '100km',
@@ -621,6 +622,9 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                                   maxDistanceKm: int.tryParse(radius ?? ''),
                                   clearDistanceLabel: v == null,
                                   clearMaxDistance: radius == null,
+                                  diasporaMode: false,
+                                  clearDiasporaCountries: true,
+                                  clearBrowseCountries: true,
                                 ));
                           },
                         ),
@@ -652,6 +656,84 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                       const SizedBox(height: 20),
 
                       // ── DIASPORA MODE (Premium) ──────────────────
+                      const _SectionLabel(label: 'BROWSE COUNTRIES'),
+                      const SizedBox(height: 8),
+                      _SubscriberGate(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Explore members currently living in selected countries.',
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.slateMist,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                ...(_draft.browseCountries ?? []).map((code) {
+                                  final country = kAllCountries.firstWhere(
+                                    (c) => c.iso2 == code,
+                                    orElse: () => CountryInfo(
+                                      iso2: code,
+                                      dialCode: '',
+                                      name: code,
+                                    ),
+                                  );
+                                  return Chip(
+                                    backgroundColor: AppColors.champagneGold
+                                        .withValues(alpha: 0.12),
+                                    side: const BorderSide(
+                                      color: AppColors.goldBorder,
+                                    ),
+                                    label: Text(
+                                      '${country.flag} ${country.name}',
+                                      style: AppTypography.chipLabel.copyWith(
+                                        color: AppColors.champagneGold,
+                                      ),
+                                    ),
+                                    onDeleted: () {
+                                      setState(() {
+                                        final current = List<String>.from(
+                                          _draft.browseCountries ?? [],
+                                        )..remove(code);
+                                        _draft = _draft.copyWith(
+                                          browseCountries: current,
+                                          clearBrowseCountries: current.isEmpty,
+                                        );
+                                      });
+                                    },
+                                    deleteIconColor: AppColors.champagneGold,
+                                  );
+                                }),
+                                ActionChip(
+                                  backgroundColor: AppColors.surfaceGlass,
+                                  side: const BorderSide(
+                                    color: AppColors.cardBorder,
+                                  ),
+                                  avatar: const Icon(
+                                    Icons.public_rounded,
+                                    color: AppColors.slateMist,
+                                    size: 16,
+                                  ),
+                                  label: Text(
+                                    (_draft.browseCountries ?? []).isEmpty
+                                        ? 'Choose countries'
+                                        : 'Change countries',
+                                    style: AppTypography.chipLabel,
+                                  ),
+                                  onPressed: () =>
+                                      _showCountrySelector(diaspora: false),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
                       _SectionLabel(key: _diasporaKey, label: 'DIASPORA MODE'),
                       const SizedBox(height: 8),
                       _SubscriberGate(
@@ -666,6 +748,9 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                                   _draft = _draft.copyWith(
                                     diasporaMode: v,
                                     clearDiasporaCountries: !v,
+                                    clearBrowseCountries: v,
+                                    clearDistanceLabel: v,
+                                    clearMaxDistance: v,
                                   );
                                 });
                               },
@@ -721,7 +806,8 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                                         color: AppColors.slateMist, size: 16),
                                     label: const Text('Add Country',
                                         style: AppTypography.chipLabel),
-                                    onPressed: _showCountrySelector,
+                                    onPressed: () =>
+                                        _showCountrySelector(diaspora: true),
                                   ),
                                 ],
                               ),
@@ -852,10 +938,13 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
     );
   }
 
-  void _showCountrySelector() {
+  void _showCountrySelector({required bool diaspora}) {
     final searchCtrl = TextEditingController();
-    List<String> tempSelected =
-        List<String>.from(_draft.diasporaCountries ?? []);
+    final tempSelected = List<String>.from(
+      diaspora
+          ? (_draft.diasporaCountries ?? [])
+          : (_draft.browseCountries ?? []),
+    );
 
     showModalBottomSheet<void>(
       context: context,
@@ -882,7 +971,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Select Home Countries',
+                        diaspora ? 'Select Home Countries' : 'Choose Countries',
                         style: AppTypography.screenTitle.copyWith(fontSize: 18),
                       ),
                       IconButton(
@@ -955,7 +1044,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                             setSheetState(() {
                               if (isSel) {
                                 tempSelected.remove(country.iso2);
-                              } else {
+                              } else if (tempSelected.length < 20) {
                                 tempSelected.add(country.iso2);
                               }
                             });
@@ -978,10 +1067,24 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                       ),
                       onPressed: () {
                         setState(() {
-                          _draft = _draft.copyWith(
-                            diasporaCountries: tempSelected,
-                            clearDiasporaCountries: tempSelected.isEmpty,
-                          );
+                          if (diaspora) {
+                            _draft = _draft.copyWith(
+                              diasporaCountries: tempSelected,
+                              clearDiasporaCountries: tempSelected.isEmpty,
+                              clearBrowseCountries: true,
+                              clearDistanceLabel: true,
+                              clearMaxDistance: true,
+                            );
+                          } else {
+                            _draft = _draft.copyWith(
+                              browseCountries: tempSelected,
+                              clearBrowseCountries: tempSelected.isEmpty,
+                              diasporaMode: false,
+                              clearDiasporaCountries: true,
+                              clearDistanceLabel: true,
+                              clearMaxDistance: true,
+                            );
+                          }
                         });
                         Navigator.pop(sheetCtx);
                       },

@@ -58,9 +58,8 @@ void main() {
   _stroke(canvas, path, 184, img.ColorRgb8(224, 168, 68));
   _stroke(canvas, path, 140, img.ColorRgb8(249, 207, 112));
 
-  final highlight = path
-      .map((point) => math.Point(point.x - 18, point.y - 16))
-      .toList();
+  final highlight =
+      path.map((point) => math.Point(point.x - 18, point.y - 16)).toList();
   _stroke(canvas, highlight, 34, img.ColorRgba8(255, 241, 185, 185));
 
   for (final endpoint in [path.first, path.last]) {

@@ -1,6 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { verifyFirebaseToken } from "../_shared/firebase_verifier.ts";
 import { corsHeaders, handleCors } from "../_shared/cors.ts";
+import {
+  consumeDistributedRateLimit,
+  rateLimitHeaders,
+} from "../_shared/distributed_rate_limit.ts";
 
 // DEPRECATED: signup/signin no longer uses Firebase phone SMS.
 // The app now uses Supabase auth.verifyOTP(type: email) directly.
@@ -28,7 +32,14 @@ const DIAL_COUNTRY_CODES: Array<[string, string]> = [
 ];
 
 type AuthMode = "signup" | "signin";
-type SupabaseAdminClient = ReturnType<typeof createClient>;
+
+function createAdminClient() {
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
+
+type SupabaseAdminClient = ReturnType<typeof createAdminClient>;
 
 Deno.serve(async (req: Request) => {
   const corsResponse = handleCors(req);
@@ -64,9 +75,31 @@ Deno.serve(async (req: Request) => {
     );
     const phoneNumber = claims.phone_number;
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
-      auth: { autoRefreshToken: false, persistSession: false },
+    const supabase = createAdminClient();
+
+    const rateLimit = await consumeDistributedRateLimit(supabase, {
+      scope: "legacy_auth_exchange",
+      subject: claims.uid,
+      maxRequests: 10,
+      windowSeconds: 10 * 60,
     });
+    if (!rateLimit.allowed) {
+      return new Response(
+        JSON.stringify({
+          status: "error",
+          code: "RATE_LIMITED",
+          message: "Too many authentication attempts. Please try again later.",
+        }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            ...rateLimitHeaders(rateLimit),
+            "Content-Type": "application/json",
+          },
+        },
+      );
+    }
 
     const existingUser = await findExistingUser(supabase, phoneNumber);
     let supabaseUserId: string;

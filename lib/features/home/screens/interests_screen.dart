@@ -24,6 +24,58 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/silarah_empty_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import 'chat_screen.dart';
+import 'paywall_gate_screen.dart';
+
+Future<void> _openChatForProfile(
+  BuildContext context,
+  DiscoveryProfile profile,
+) async {
+  final chatCubit = context.read<ChatCubit>();
+  final navigator = Navigator.of(context);
+  final convId = await chatCubit.openOrCreateConversation(
+    profile.id,
+    profile.firstName,
+    profile.lastNameInitial,
+  );
+  if (!context.mounted) return;
+  if (convId.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text('Your conversation is still being prepared. Try again.'),
+      behavior: SnackBarBehavior.floating,
+    ));
+    return;
+  }
+
+  final access = await chatCubit.checkChatAccess(convId);
+  if (!context.mounted) return;
+  if (access.requiresSubscription) {
+    await PaywallGateSheet.show(context);
+    return;
+  }
+  if (!access.allowed) {
+    final message = switch (access.reason) {
+      ChatAccessReason.suspended =>
+        'Messaging is temporarily restricted on this account.',
+      ChatAccessReason.closed => 'This conversation has ended.',
+      _ => 'We could not open this conversation. Please try again.',
+    };
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      behavior: SnackBarBehavior.floating,
+    ));
+    return;
+  }
+
+  navigator.push(
+    PageRouteBuilder(
+      transitionDuration: AppDimensions.durationReveal,
+      pageBuilder: (ctx, anim, _) => FadeTransition(
+        opacity: anim,
+        child: ChatScreen(conversationId: convId),
+      ),
+    ),
+  );
+}
 
 class InterestsScreen extends StatefulWidget {
   const InterestsScreen({super.key});
@@ -124,24 +176,8 @@ class _InterestsScreenState extends State<InterestsScreen>
                       ),
                       onPressed: () async {
                         HapticFeedback.mediumImpact();
-                        final chatCubit = context.read<ChatCubit>();
-                        final navigator = Navigator.of(context);
-                        navigator.pop();
-                        final convId = await chatCubit.openOrCreateConversation(
-                            profile.id,
-                            profile.firstName,
-                            profile.lastNameInitial);
-                        if (convId.isNotEmpty) {
-                          navigator.push(
-                            PageRouteBuilder(
-                              transitionDuration: AppDimensions.durationReveal,
-                              pageBuilder: (ctx, anim, _) => FadeTransition(
-                                opacity: anim,
-                                child: ChatScreen(conversationId: convId),
-                              ),
-                            ),
-                          );
-                        }
+                        Navigator.of(context).pop();
+                        await _openChatForProfile(this.context, profile);
                       },
                       child: const Text('Message Now',
                           style: AppTypography.button),
@@ -212,29 +248,7 @@ class _InterestsScreenState extends State<InterestsScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return BlocConsumer<InterestsCubit, InterestsState>(
-      listenWhen: (prev, curr) => !prev.limitError && curr.limitError,
-      listener: (context, state) {
-        // Item 17: show SnackBar when daily limit is hit
-        final isSubscribed = state.dailyLimit >= 20;
-        final msg = isSubscribed
-            ? 'Daily limit reached. Resets at midnight.'
-            : 'Daily limit reached. Resets at midnight. '
-                'Subscribe for 20 interests per day.';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(msg, style: AppTypography.body),
-            backgroundColor: AppColors.surfaceGlassHover,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-              side: const BorderSide(color: AppColors.cardBorder),
-            ),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-        context.read<InterestsCubit>().clearLimitError();
-      },
+    return BlocBuilder<InterestsCubit, InterestsState>(
       builder: (context, state) {
         return Column(
           children: [
@@ -345,8 +359,7 @@ class _InterestsScreenState extends State<InterestsScreen>
                   // ── Sent tab ──────────────────────────────
                   Column(
                     children: [
-                      // Item 17: daily counter banner (male users only)
-                      // In production, check gender from AuthCubit.
+                      // Supabase-authoritative quota for every member.
                       _DailyLimitBanner(state: state),
 
                       Expanded(
@@ -383,7 +396,7 @@ class _DailyLimitBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (state.dailyLimit >= 9999) return const SizedBox.shrink();
+    if (state.dailyLimit <= 0) return const SizedBox.shrink();
 
     final sent = state.interestsSentToday;
     final limit = state.dailyLimit;
@@ -404,14 +417,21 @@ class _DailyLimitBanner extends StatelessWidget {
                 color: atLimit ? AppColors.softCoral : AppColors.champagneGold,
               ),
               const SizedBox(width: AppDimensions.space6),
-              Text(
-                '$sent of $limit interests sent today',
-                style: AppTypography.caption.copyWith(
-                  color:
-                      atLimit ? AppColors.softCoral : AppColors.champagneGold,
-                  fontWeight: FontWeight.w600,
+              Expanded(
+                child: Text(
+                  '${state.isPremium ? 'Premium' : 'Free'} · $sent of $limit sent today',
+                  style: AppTypography.caption.copyWith(
+                    color:
+                        atLimit ? AppColors.softCoral : AppColors.champagneGold,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
+              if (!atLimit)
+                Text(
+                  '${state.remainingToday} remaining',
+                  style: AppTypography.caption,
+                ),
             ],
           ),
           const SizedBox(height: AppDimensions.space6),
@@ -715,21 +735,7 @@ class _ReceivedTile extends StatelessWidget {
                     style: AppTypography.buttonSecondary),
                 onPressed: () async {
                   HapticFeedback.selectionClick();
-                  final chatCubit = context.read<ChatCubit>();
-                  final navigator = Navigator.of(context);
-                  final convId = await chatCubit.openOrCreateConversation(
-                      p.id, p.firstName, p.lastNameInitial);
-                  if (convId.isNotEmpty) {
-                    navigator.push(
-                      PageRouteBuilder(
-                        transitionDuration: AppDimensions.durationReveal,
-                        pageBuilder: (ctx, anim, _) => FadeTransition(
-                          opacity: anim,
-                          child: ChatScreen(conversationId: convId),
-                        ),
-                      ),
-                    );
-                  }
+                  await _openChatForProfile(context, p);
                 },
               ),
             ),

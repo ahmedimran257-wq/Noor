@@ -109,6 +109,10 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     }
 
     try {
+      filter = await _enforceLocationFilterAccess(filter);
+      if (!_isCurrentRequest(requestVersion)) return;
+      await _saveFilterToPrefs(filter);
+      if (!_isCurrentRequest(requestVersion)) return;
       final quota = await _loadServerViewQuota();
       if (!_isCurrentRequest(requestVersion)) return;
       _resetCursors();
@@ -174,20 +178,25 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   /// Apply new filters — resets the feed and reloads from cursor 0.
   Future<void> applyFilter(DiscoveryFilter filter) async {
     final requestVersion = _nextRequestVersion();
-    emit(state.copyWith(
-      status:
-          state.profiles.isEmpty ? FeedStatus.loading : FeedStatus.refreshing,
-      activeFilter: filter,
-    ));
-
-    // Persist the filter
-    await _saveFilterToPrefs(filter);
-    if (!_isCurrentRequest(requestVersion)) return;
-
     try {
+      final effectiveFilter = await _enforceLocationFilterAccess(filter);
+      if (!_isCurrentRequest(requestVersion)) return;
+      emit(state.copyWith(
+        status:
+            state.profiles.isEmpty ? FeedStatus.loading : FeedStatus.refreshing,
+        activeFilter: effectiveFilter,
+      ));
+
+      // Persist only the server-authorized filter. This prevents an expired
+      // Premium scope from breaking discovery on every subsequent launch.
+      await _saveFilterToPrefs(effectiveFilter);
+      if (!_isCurrentRequest(requestVersion)) return;
+
       _resetCursors();
-      final profiles =
-          await _getPool(filter: filter, requestVersion: requestVersion);
+      final profiles = await _getPool(
+        filter: effectiveFilter,
+        requestVersion: requestVersion,
+      );
       if (!_isCurrentRequest(requestVersion)) return;
       final batch = _toFeedProfiles(profiles, offset: 0);
       if (!isClosed) {
@@ -268,6 +277,33 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     }
   }
 
+  Future<DiscoveryFilter> _enforceLocationFilterAccess(
+    DiscoveryFilter filter,
+  ) async {
+    if (filter.locationScope == 'global') return filter;
+    if (!SupabaseService.isInitialized) {
+      throw StateError('Location filters require a Supabase connection.');
+    }
+
+    final response = await SupabaseService.client.rpc(
+      'get_discovery_filter_access',
+    );
+    final rows = response as List<dynamic>;
+    if (rows.isEmpty) {
+      throw StateError('Unable to verify Premium location-filter access.');
+    }
+    final row = Map<String, dynamic>.from(rows.first as Map);
+    if (row['allowed'] == true) return filter;
+
+    return filter.copyWith(
+      diasporaMode: false,
+      clearDiasporaCountries: true,
+      clearBrowseCountries: true,
+      clearDistanceLabel: true,
+      clearMaxDistance: true,
+    );
+  }
+
   // ── Filter Persistence ────────────────────────────────────
 
   Future<DiscoveryFilter?> _loadFilterFromPrefs() async {
@@ -301,6 +337,9 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         diasporaMode: (j['diasporaMode'] as bool?) ?? false,
         diasporaCountries: j['diasporaCountries'] != null
             ? List<String>.from(j['diasporaCountries'] as Iterable)
+            : null,
+        browseCountries: j['browseCountries'] != null
+            ? List<String>.from(j['browseCountries'] as Iterable)
             : null,
       );
     } catch (e) {
@@ -339,6 +378,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         'willingToRelocate': f.willingToRelocate,
         'diasporaMode': f.diasporaMode,
         'diasporaCountries': f.diasporaCountries,
+        'browseCountries': f.browseCountries,
       });
       await prefs.setString(_kFilterKey, json);
     } catch (e) {
@@ -392,10 +432,19 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     final hasChildren = _enumToken(f.hasChildren);
 
     return {
+      'location_scope': f.locationScope,
       if (maxKm != null) 'max_distance_km': maxKm,
       if (f.distanceLabel == 'Same City') 'same_city': true,
+      if (f.distanceLabel == 'Same State' ||
+          f.distanceLabel == 'Same State / Region')
+        'same_region': true,
       if (f.distanceLabel == 'Same Country') 'same_country': true,
       if (f.distanceLabel == 'Anywhere') 'anywhere': true,
+      if (f.browseCountries != null && f.browseCountries!.isNotEmpty)
+        'country_codes': f.browseCountries,
+      'diaspora_mode': f.diasporaMode,
+      if (f.diasporaCountries != null && f.diasporaCountries!.isNotEmpty)
+        'diaspora_countries': f.diasporaCountries,
       if (f.ageMin != null) 'age_min': f.ageMin,
       if (f.ageMax != null) 'age_max': f.ageMax,
       'active_recently': f.activeRecentlyOnly,

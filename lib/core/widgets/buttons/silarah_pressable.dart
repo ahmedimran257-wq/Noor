@@ -61,6 +61,8 @@ class _SilarahPressableState extends State<SilarahPressable> {
 
   @override
   Widget build(BuildContext context) {
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     return Semantics(
       button: true,
       enabled: widget.enabled,
@@ -80,16 +82,22 @@ class _SilarahPressableState extends State<SilarahPressable> {
           behavior: HitTestBehavior.opaque,
           child: AnimatedScale(
             scale: _pressed ? widget.pressedScale : 1,
-            duration: _pressed
-                ? AppDimensions.durationButtonPress
-                : AppDimensions.durationTransition,
+            duration: reduceMotion
+                ? Duration.zero
+                : _pressed
+                    ? AppDimensions.durationButtonPress
+                    : AppDimensions.durationTransition,
             curve: _pressed ? Curves.easeOutCubic : Curves.easeOutQuart,
             child: AnimatedSlide(
-              duration: AppDimensions.durationTransition,
+              duration: reduceMotion
+                  ? Duration.zero
+                  : AppDimensions.durationTransition,
               curve: Curves.easeOutCubic,
               offset: Offset(0, _hovered && widget.enabled ? -0.015 : 0),
               child: AnimatedOpacity(
-                duration: AppDimensions.durationButtonPress,
+                duration: reduceMotion
+                    ? Duration.zero
+                    : AppDimensions.durationButtonPress,
                 opacity: !widget.enabled ? 0.5 : (_pressed ? 0.9 : 1),
                 child: widget.child,
               ),

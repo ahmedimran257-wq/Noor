@@ -22,24 +22,28 @@ import {
   createClient,
   type SupabaseClient,
 } from "https://esm.sh/@supabase/supabase-js@2";
+import { createRemoteJWKSet, jwtVerify } from "npm:jose@5.9.6";
 import { corsHeaders, handleCors } from "../_shared/cors.ts";
+import {
+  consumeDistributedRateLimit,
+  rateLimitHeaders,
+} from "../_shared/distributed_rate_limit.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
 const BUCKET_NAME = "profile-photos";
 const KYC_BUCKET_NAME = "kyc-documents";
 const MAX_PHOTOS = 4;
 const UPLOAD_URL_EXPIRES_IN = 300; // Upload tokens stay deliberately short-lived.
-const READ_URL_EXPIRES_IN = 3600; // Read URLs are refreshed by the client on failure.
+// Keep private grants revocable. The client refreshes authorized URLs on
+// expiry, so a revoked viewer loses access within five minutes at most.
+const READ_URL_EXPIRES_IN = 300;
 const RATE_LIMIT_WINDOW = 60 * 60; // 1 hour in seconds
 const RATE_LIMIT_MAX = 100; // Max URL requests per user per hour
-
-// In-memory rate limiter (per function instance)
-// For production at scale, use Upstash Redis instead:
-// https://upstash.com/docs/redis/sdks/deno
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const AUTH_JWKS = createRemoteJWKSet(
+  new URL(`${SUPABASE_URL}/auth/v1/.well-known/jwks.json`),
+);
 
 Deno.serve(async (req: Request) => {
   const corsResponse = handleCors(req);
@@ -52,34 +56,66 @@ Deno.serve(async (req: Request) => {
       return errorResponse(401, "Missing or invalid Authorization header.");
     }
     const userToken = authHeader.replace("Bearer ", "");
+    const requestApiKey = req.headers.get("apikey");
+    if (!requestApiKey) {
+      return errorResponse(401, "Missing project API key.");
+    }
 
-    // User-scoped client to get auth.uid()
-    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    // Verify the access token cryptographically against the project's JWKS.
+    // Do not call auth.getUser() here: GoTrue can reject an otherwise valid,
+    // unexpired access JWT when its session row has just rotated or been
+    // cleaned up, while PostgREST still correctly accepts the same JWT. That
+    // split made private photos disappear until the next login. JWKS
+    // verification matches Supabase's JWT/RLS boundary and still enforces
+    // signature, issuer, audience, and expiry.
+    let userId: string;
+    try {
+      const { payload } = await jwtVerify(userToken, AUTH_JWKS, {
+        issuer: `${SUPABASE_URL}/auth/v1`,
+        audience: "authenticated",
+      });
+      if (
+        payload.role !== "authenticated" ||
+        typeof payload.sub !== "string" ||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+          .test(payload.sub)
+      ) {
+        throw new Error("Access token is not an authenticated user token.");
+      }
+      userId = payload.sub;
+    } catch (_) {
+      return errorResponse(401, "Unauthorized.");
+    }
+
+    const userClient = createClient(SUPABASE_URL, requestApiKey, {
       global: { headers: { Authorization: `Bearer ${userToken}` } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { data: { user }, error: authError } = await userClient.auth
-      .getUser();
-    if (authError || !user) {
-      return errorResponse(401, "Unauthorized.");
-    }
-    const userId = user.id;
-
     // ── Rate limiting (anti-scraping) ──────────────────────────
-    const now = Math.floor(Date.now() / 1000);
-    const rateEntry = rateLimitMap.get(userId);
-
-    if (rateEntry && rateEntry.resetAt > now) {
-      if (rateEntry.count >= RATE_LIMIT_MAX) {
-        console.warn(`[get-signed-url] Rate limit exceeded for user ${userId}`);
-        // Flag for admin review (potential scraper)
-        await flagSuspiciousUser(userId, "rate_limit_exceeded_signed_url");
-        return errorResponse(429, "Too many requests. Please try again later.");
-      }
-      rateEntry.count++;
-    } else {
-      rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+    const rateLimitClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const rateLimit = await consumeDistributedRateLimit(rateLimitClient, {
+      scope: "signed_photo_url",
+      subject: userId,
+      maxRequests: RATE_LIMIT_MAX,
+      windowSeconds: RATE_LIMIT_WINDOW,
+    });
+    if (!rateLimit.allowed) {
+      console.warn(`[get-signed-url] Rate limit exceeded for user ${userId}`);
+      await flagSuspiciousUser(userId, "rate_limit_exceeded_signed_url");
+      return new Response(
+        JSON.stringify({ error: "Too many requests. Please try again later." }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            ...rateLimitHeaders(rateLimit),
+            "Content-Type": "application/json",
+          },
+        },
+      );
     }
 
     // ── Parse request ──────────────────────────────────────────
@@ -164,13 +200,12 @@ Deno.serve(async (req: Request) => {
     }
     const profileId = profile.id;
 
-    const { data: existingPhoto, error: existingPhotoError } =
-      await adminClient
-        .from("photos")
-        .select("storage_path")
-        .eq("profile_id", profileId)
-        .eq("order_index", order_index)
-        .maybeSingle();
+    const { data: existingPhoto, error: existingPhotoError } = await adminClient
+      .from("photos")
+      .select("storage_path")
+      .eq("profile_id", profileId)
+      .eq("order_index", order_index)
+      .maybeSingle();
     if (existingPhotoError) {
       throw new Error(
         `Existing photo query failed: ${existingPhotoError.message}`,
@@ -334,7 +369,10 @@ async function deleteReplacedProfilePhotoObject(
     throw new Error(`Photo reference check failed: ${referenceError.message}`);
   }
   if ((count ?? 0) > 0) {
-    return errorResponse(409, "The photo is still active and cannot be removed.");
+    return errorResponse(
+      409,
+      "The photo is still active and cannot be removed.",
+    );
   }
   const { error } = await adminClient.storage
     .from(BUCKET_NAME)
@@ -416,14 +454,9 @@ async function createAuthorizedProfilePhotoReadUrl(
   });
   const { data, error } = await adminClient.storage
     .from(BUCKET_NAME)
-    .createSignedUrl(photo.storage_path, READ_URL_EXPIRES_IN, {
-      transform: {
-        width: 768,
-        height: 1024,
-        resize: "cover",
-        quality: 72,
-      },
-    } as never);
+    // Image transformations are not part of the Supabase Free plan. Uploads
+    // are already bounded WebP files, so serve the original private object.
+    .createSignedUrl(photo.storage_path, READ_URL_EXPIRES_IN);
 
   if (error || !data?.signedUrl) {
     throw new Error(`Failed to generate read URL: ${error?.message}`);
@@ -508,14 +541,7 @@ async function createAuthorizedProfilePhotoReadUrls(
   const storagePaths = [...pathToOwner.keys()];
   const { data, error } = await adminClient.storage
     .from(BUCKET_NAME)
-    .createSignedUrls(storagePaths, READ_URL_EXPIRES_IN, {
-      transform: {
-        width: 768,
-        height: 1024,
-        resize: "cover",
-        quality: 72,
-      },
-    } as never);
+    .createSignedUrls(storagePaths, READ_URL_EXPIRES_IN);
 
   if (error || !data) {
     throw new Error(`Failed to generate batch read URLs: ${error?.message}`);

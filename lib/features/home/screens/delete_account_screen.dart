@@ -221,9 +221,9 @@ class _Step1 extends StatelessWidget {
           const _InfoCard(
             icon: Icons.credit_card_off_outlined,
             color: AppColors.slateMist,
-            title: 'Subscriptions cancelled',
+            title: 'Cancel store billing separately',
             body:
-                'Any active SILARAH Premium subscription will be cancelled at the end of the current billing period.',
+                'Deleting Silarah does not cancel Apple or Google billing. Cancel your subscription in the store before continuing.',
           ),
           const SizedBox(height: AppDimensions.space40),
           SizedBox(

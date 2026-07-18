@@ -18,12 +18,23 @@ import {
 } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import { isAuthorizedCronRequest } from "../_shared/cron_auth.ts";
+import {
+  consumeDistributedRateLimit,
+  rateLimitHeaders,
+} from "../_shared/distributed_rate_limit.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-// Firebase service account JSON (stored as a Supabase secret)
-const FIREBASE_SERVICE_ACCOUNT_JSON = Deno.env.get("FIREBASE_SERVICE_ACCOUNT")!;
+// Prefer base64 for structured credentials: it survives CLI, shell, and dashboard
+// transport without JSON quoting or PEM newline corruption. The raw JSON secret
+// remains a backwards-compatible fallback during secret rotation.
+const FIREBASE_SERVICE_ACCOUNT_B64 = Deno.env.get(
+  "FIREBASE_SERVICE_ACCOUNT_B64",
+);
+const FIREBASE_SERVICE_ACCOUNT_JSON = Deno.env.get(
+  "FIREBASE_SERVICE_ACCOUNT",
+);
 const FIREBASE_PROJECT_ID = Deno.env.get("FIREBASE_PROJECT_ID")!;
 
 const FCM_API_URL =
@@ -47,7 +58,7 @@ async function getAccessToken(): Promise<string> {
     return _cachedAccessToken;
   }
 
-  const serviceAccount = JSON.parse(FIREBASE_SERVICE_ACCOUNT_JSON);
+  const serviceAccount = readFirebaseServiceAccount();
 
   // Create JWT for Google OAuth2
   const header = { alg: "RS256", typ: "JWT" };
@@ -115,6 +126,25 @@ Deno.serve(async (req: Request) => {
   });
 
   if (directPayload) {
+    const rateLimit = await consumeDistributedRateLimit(supabase, {
+      scope: "profile_live_dispatch",
+      subject: directPayload.user_id,
+      maxRequests: 5,
+      windowSeconds: 24 * 60 * 60,
+    });
+    if (!rateLimit.allowed) {
+      return new Response(
+        JSON.stringify({ error: "Notification request limit reached." }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            ...rateLimitHeaders(rateLimit),
+            "Content-Type": "application/json",
+          },
+        },
+      );
+    }
     const { data: profile } = await supabase
       .from("profiles")
       .select("id, visibility, approved_at")
@@ -148,14 +178,26 @@ Deno.serve(async (req: Request) => {
       scheduled_at: new Date().toISOString(),
     });
     if (insertError) {
-      console.error("[dispatch-notifications] Direct insert failed:", insertError.message);
+      console.error(
+        "[dispatch-notifications] Direct insert failed:",
+        insertError.message,
+      );
+      await recordDispatchResult(supabase, false, insertError.message);
       return new Response("Internal Server Error", { status: 500 });
     }
   }
 
-  if (!FIREBASE_SERVICE_ACCOUNT_JSON || !FIREBASE_PROJECT_ID) {
+  if (
+    (!FIREBASE_SERVICE_ACCOUNT_B64 && !FIREBASE_SERVICE_ACCOUNT_JSON) ||
+    !FIREBASE_PROJECT_ID
+  ) {
     console.error(
       "[dispatch-notifications] Missing Firebase service account/project secrets.",
+    );
+    await recordDispatchResult(
+      supabase,
+      false,
+      "Firebase configuration missing",
     );
     return new Response("Internal Server Error", { status: 500 });
   }
@@ -169,10 +211,12 @@ Deno.serve(async (req: Request) => {
       "[dispatch-notifications] Checkout error:",
       checkoutError.message,
     );
+    await recordDispatchResult(supabase, false, checkoutError.message);
     return new Response("Internal Server Error", { status: 500 });
   }
 
   if (!notifications || notifications.length === 0) {
+    await recordDispatchResult(supabase, true, null, { dispatched: 0 });
     return new Response(JSON.stringify({ dispatched: 0 }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -196,6 +240,11 @@ Deno.serve(async (req: Request) => {
       "[dispatch-notifications] Failed to get FCM access token:",
       e,
     );
+    await recordDispatchResult(
+      supabase,
+      false,
+      e instanceof Error ? e.message : "FCM token exchange failed",
+    );
     return new Response("Internal Server Error", { status: 500 });
   }
 
@@ -217,6 +266,7 @@ Deno.serve(async (req: Request) => {
       "[dispatch-notifications] Token lookup error:",
       tokenError.message,
     );
+    await recordDispatchResult(supabase, false, tokenError.message);
     return new Response("Internal Server Error", { status: 500 });
   }
 
@@ -285,6 +335,13 @@ Deno.serve(async (req: Request) => {
     `[dispatch-notifications] Sent: ${succeeded}, failed: ${failed}, in-app-only: ${noToken}`,
   );
 
+  await recordDispatchResult(
+    supabase,
+    failed === 0,
+    failed === 0 ? null : `${failed} notification deliveries failed`,
+    { dispatched: succeeded, failed, in_app_only: noToken },
+  );
+
   return new Response(
     JSON.stringify({ dispatched: succeeded, failed }),
     {
@@ -293,6 +350,60 @@ Deno.serve(async (req: Request) => {
     },
   );
 });
+
+interface FirebaseServiceAccount {
+  project_id: string;
+  client_email: string;
+  private_key: string;
+}
+
+function readFirebaseServiceAccount(): FirebaseServiceAccount {
+  const encoded = FIREBASE_SERVICE_ACCOUNT_B64?.trim();
+  const serialized = encoded
+    ? new TextDecoder().decode(
+      Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0)),
+    )
+    : FIREBASE_SERVICE_ACCOUNT_JSON;
+
+  if (!serialized) {
+    throw new Error("Firebase service account is not configured");
+  }
+
+  const parsed = JSON.parse(serialized) as Partial<FirebaseServiceAccount>;
+  if (
+    !parsed.project_id ||
+    !parsed.client_email ||
+    !parsed.private_key ||
+    parsed.project_id !== FIREBASE_PROJECT_ID
+  ) {
+    throw new Error("Firebase service account metadata is invalid");
+  }
+
+  return parsed as FirebaseServiceAccount;
+}
+
+async function recordDispatchResult(
+  supabase: SupabaseClient,
+  success: boolean,
+  error: string | null,
+  details: Record<string, unknown> = {},
+): Promise<void> {
+  const { error: healthError } = await supabase.rpc(
+    "record_edge_function_result",
+    {
+      p_function_name: "dispatch-notifications",
+      p_success: success,
+      p_error: error,
+      p_details: details,
+    },
+  );
+  if (healthError) {
+    console.error(
+      "[dispatch-notifications] Unable to persist worker health:",
+      healthError.message,
+    );
+  }
+}
 
 async function authenticatedProfileLivePayload(
   req: Request,
@@ -313,10 +424,14 @@ async function authenticatedProfileLivePayload(
 
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) return null;
-  const userClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
-    global: { headers: { Authorization: authHeader } },
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+  const userClient = createClient(
+    SUPABASE_URL,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+    {
+      global: { headers: { Authorization: authHeader } },
+      auth: { autoRefreshToken: false, persistSession: false },
+    },
+  );
   const { data: { user }, error } = await userClient.auth.getUser();
   if (error || !user || user.id !== body.user_id) return null;
 
