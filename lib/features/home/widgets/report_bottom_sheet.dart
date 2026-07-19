@@ -90,9 +90,9 @@ class _ReportContentState extends State<_ReportContent> {
     return BlocBuilder<BlockReportCubit, BlockReportState>(
       builder: (context, state) {
         return Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: AppColors.surfaceMid,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             border: Border(top: BorderSide(color: AppColors.goldBorder)),
           ),
           padding: EdgeInsets.fromLTRB(
@@ -183,7 +183,7 @@ class _Step1 extends StatelessWidget {
           style: AppTypography.screenTitle.copyWith(fontSize: 20),
         ),
         const SizedBox(height: AppDimensions.space6),
-        const Text(
+        Text(
           'Help keep the community safe. Your report is anonymous.',
           style: AppTypography.bodyMuted,
         ),
@@ -238,7 +238,7 @@ class _Step1 extends StatelessWidget {
         Center(
           child: TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel', style: AppTypography.bodyMuted),
+            child: Text('Cancel', style: AppTypography.bodyMuted),
           ),
         ),
       ],
@@ -274,7 +274,7 @@ class _Step2 extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.arrow_back_rounded,
+              Icon(Icons.arrow_back_rounded,
                   color: AppColors.slateMist, size: 16),
               const SizedBox(width: AppDimensions.space4),
               Text('Back',
@@ -288,7 +288,7 @@ class _Step2 extends StatelessWidget {
         Text('Tell us more',
             style: AppTypography.bodyMedium.copyWith(fontSize: 18)),
         const SizedBox(height: AppDimensions.space6),
-        const Text('Optional — helps our team review faster.',
+        Text('Optional — helps our team review faster.',
             style: AppTypography.bodyMuted),
         const SizedBox(height: AppDimensions.space16),
 
@@ -304,11 +304,11 @@ class _Step2 extends StatelessWidget {
             filled: true,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.cardBorder),
+              borderSide: BorderSide(color: AppColors.cardBorder),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
+              borderSide: BorderSide(
                 color: AppColors.champagneGold,
                 width: AppDimensions.borderThin,
               ),
@@ -332,7 +332,7 @@ class _Step2 extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: isLoading
-                ? const SilarahPulseLoader(
+                ? SilarahPulseLoader(
                     size: 24,
                     accentColor: AppColors.pearlWhite,
                     highlightColor: AppColors.pearlWhite,
@@ -381,7 +381,7 @@ class _Step3 extends StatelessWidget {
             color: AppColors.verifiedTeal.withValues(alpha: 0.12),
             border: Border.all(color: AppColors.verifiedTeal, width: 1.5),
           ),
-          child: const Icon(Icons.check_rounded,
+          child: Icon(Icons.check_rounded,
               color: AppColors.verifiedTeal, size: 32),
         ),
         const SizedBox(height: AppDimensions.space20),
@@ -413,7 +413,7 @@ class _Step3 extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 16),
               elevation: 0,
             ),
-            child: const Text('Done', style: AppTypography.button),
+            child: Text('Done', style: AppTypography.button),
           ),
         ),
       ],
@@ -480,7 +480,7 @@ class _ReasonTile extends StatelessWidget {
                 ),
               ),
               child: isSelected
-                  ? const Icon(Icons.check_rounded,
+                  ? Icon(Icons.check_rounded,
                       size: 12, color: AppColors.pearlWhite)
                   : null,
             ),

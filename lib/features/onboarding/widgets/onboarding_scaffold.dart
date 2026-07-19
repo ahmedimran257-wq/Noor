@@ -215,7 +215,7 @@ class _SaveErrorNotice extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.error_outline_rounded,
                 color: AppColors.softCoral,
                 size: AppDimensions.iconSizeMedium,

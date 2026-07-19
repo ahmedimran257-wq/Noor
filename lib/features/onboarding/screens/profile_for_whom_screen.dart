@@ -260,9 +260,8 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
                   ),
 
                   // ── Guardian sub-options (animated expand) ───
-                  SizeTransition(
-                    sizeFactor: _expandAnim,
-                    axisAlignment: -1.0,
+                  SilarahSizeReveal(
+                    factor: _expandAnim,
                     child: Padding(
                       padding: const EdgeInsets.only(
                         top: AppDimensions.space12,
@@ -411,7 +410,7 @@ class _ProfileForWhomSaveError extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.error_outline_rounded,
             color: AppColors.softCoral,
             size: AppDimensions.iconSizeMedium,
@@ -540,11 +539,11 @@ class _SelectionCard extends StatelessWidget {
                 child: Container(
                   width: 24,
                   height: 24,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: AppColors.champagneGold,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.check_rounded,
                     color: AppColors.obsidianNight,
                     size: 16,
@@ -622,11 +621,11 @@ class _RelationChip extends StatelessWidget {
               Container(
                 width: 18,
                 height: 18,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.champagneGold,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.check_rounded,
                   color: AppColors.obsidianNight,
                   size: 12,

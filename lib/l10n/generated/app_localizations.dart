@@ -708,6 +708,42 @@ abstract class AppLocalizations {
   /// **'You\'ve seen everyone nearby'**
   String get discovery_empty_title;
 
+  /// No description provided for @discovery_handoff_interest_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Profiles with an active request move to Interests while you wait or respond.'**
+  String get discovery_handoff_interest_subtitle;
+
+  /// No description provided for @discovery_handoff_interest_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Your interest is in progress'**
+  String get discovery_handoff_interest_title;
+
+  /// No description provided for @discovery_handoff_match_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Matched profiles move to Chat, so they are not shown again in Discover.'**
+  String get discovery_handoff_match_subtitle;
+
+  /// No description provided for @discovery_handoff_match_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Your connection is ready'**
+  String get discovery_handoff_match_title;
+
+  /// No description provided for @discovery_handoff_open_chat.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Chat'**
+  String get discovery_handoff_open_chat;
+
+  /// No description provided for @discovery_handoff_open_interests.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Interests'**
+  String get discovery_handoff_open_interests;
+
   /// No description provided for @discovery_header_title.
   ///
   /// In en, this message translates to:

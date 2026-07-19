@@ -191,9 +191,9 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: RadialGradient(
-              center: Alignment(0, -0.5),
+              center: const Alignment(0, -0.5),
               radius: 1.2,
               colors: [
                 AppColors.navyCharcoal,
@@ -399,7 +399,7 @@ class _EmailView extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: AppDimensions.space6),
-                            const Icon(
+                            Icon(
                               Icons.arrow_forward_rounded,
                               size: 16,
                               color: AppColors.champagneGold,
@@ -718,7 +718,7 @@ class _OtpViewState extends State<_OtpView>
                 'Change email',
                 style: AppTypography.caption.copyWith(
                   color: AppColors.slateMist,
-                  decoration: TextDecoration.underline,
+                  decoration: TextDecoration.none,
                   decorationColor: AppColors.slateMist,
                 ),
               ),
@@ -891,7 +891,14 @@ class _OtpBoxesState extends State<_OtpBoxes> with WidgetsBindingObserver {
                 ),
                 cursorColor: Colors.transparent,
                 decoration: const InputDecoration(
+                  filled: false,
+                  fillColor: Colors.transparent,
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
+                  errorBorder: InputBorder.none,
+                  focusedErrorBorder: InputBorder.none,
                   counterText: '',
                   contentPadding: EdgeInsets.zero,
                 ),
@@ -1048,7 +1055,7 @@ class _DigitText extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       digit,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 22,
         fontWeight: FontWeight.w700,
         color: AppColors.pearlWhite,

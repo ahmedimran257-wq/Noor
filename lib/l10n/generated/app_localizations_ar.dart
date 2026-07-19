@@ -343,6 +343,26 @@ class AppLocalizationsAr extends AppLocalizations {
   String get discovery_empty_title => 'لقد رأيت الجميع في مكان قريب';
 
   @override
+  String get discovery_handoff_interest_subtitle =>
+      'تنتقل الملفات ذات الطلب النشط إلى الاهتمامات أثناء انتظارك أو ردّك.';
+
+  @override
+  String get discovery_handoff_interest_title => 'اهتمامك قيد المتابعة';
+
+  @override
+  String get discovery_handoff_match_subtitle =>
+      'تنتقل الملفات المتطابقة إلى الدردشة، لذلك لن تظهر مرة أخرى في الاستكشاف.';
+
+  @override
+  String get discovery_handoff_match_title => 'اتصالك جاهز';
+
+  @override
+  String get discovery_handoff_open_chat => 'افتح الدردشة';
+
+  @override
+  String get discovery_handoff_open_interests => 'افتح الاهتمامات';
+
+  @override
   String get discovery_header_title => '<العلامة التجارية0/>';
 
   @override

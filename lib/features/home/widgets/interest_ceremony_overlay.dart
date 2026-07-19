@@ -258,8 +258,6 @@ class _ParticlePainter extends CustomPainter {
   final double progress;
 
   static const _particleCount = 12;
-  static final _rng = math.Random(42); // seeded for consistent positions
-
   @override
   void paint(Canvas canvas, Size size) {
     if (progress == 0.0) return;
@@ -272,9 +270,11 @@ class _ParticlePainter extends CustomPainter {
 
     for (int i = 0; i < _particleCount; i++) {
       final angle = (i / _particleCount) * 2 * math.pi;
-      final distance = 60.0 + _rng.nextDouble() * 40;
+      // Deterministic geometry prevents particles from changing trajectory on
+      // every repaint, which previously looked like visual jitter.
+      final distance = 62.0 + ((i * 29) % 37);
       final spread = progress * distance;
-      final size2 = 3.0 + _rng.nextDouble() * 3;
+      final size2 = 3.0 + ((i * 17) % 4) * 0.7;
 
       final pos = Offset(
         center.dx + math.cos(angle) * spread,

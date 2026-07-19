@@ -26,6 +26,7 @@ import '../../../core/services/supabase_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/animations/silarah_motion.dart';
 import '../../../core/widgets/loaders/silarah_shimmer.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -268,7 +269,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         ..clearSnackBars()
         ..showSnackBar(
           SnackBar(
-            content: const Text(
+            content: Text(
               'Explicit content was detected. This photo will be reviewed and will not appear publicly.',
               style: AppTypography.body,
             ),
@@ -276,7 +277,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-              side: const BorderSide(color: AppColors.goldBorder),
+              side: BorderSide(color: AppColors.goldBorder),
             ),
           ),
         );
@@ -400,13 +401,13 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
             Text(l10n.photo_add_photo, style: AppTypography.bodyMedium),
             const SizedBox(height: AppDimensions.space16),
             ListTile(
-              leading: const Icon(Icons.camera_alt_outlined,
+              leading: Icon(Icons.camera_alt_outlined,
                   color: AppColors.champagneGold),
               title: Text(l10n.photo_sheet_camera, style: AppTypography.body),
               onTap: () => Navigator.pop(sheetCtx, ImageSource.camera),
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library_outlined,
+              leading: Icon(Icons.photo_library_outlined,
                   color: AppColors.champagneGold),
               title: Text(l10n.photo_sheet_gallery, style: AppTypography.body),
               onTap: () => Navigator.pop(sheetCtx, ImageSource.gallery),
@@ -523,7 +524,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-              side: const BorderSide(color: AppColors.cardBorder),
+              side: BorderSide(color: AppColors.cardBorder),
             ),
           ),
         );
@@ -546,7 +547,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-            side: const BorderSide(color: AppColors.goldBorder),
+            side: BorderSide(color: AppColors.goldBorder),
           ),
         ),
       );
@@ -681,9 +682,8 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
                 switchOutCurve: Curves.easeInCubic,
                 transitionBuilder: (child, animation) => FadeTransition(
                   opacity: animation,
-                  child: SizeTransition(
-                    sizeFactor: animation,
-                    axisAlignment: -1,
+                  child: SilarahSizeReveal(
+                    factor: animation,
                     child: child,
                   ),
                 ),
@@ -720,7 +720,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.cloud_off_rounded,
+                      Icon(Icons.cloud_off_rounded,
                           color: AppColors.softCoral, size: 20),
                       const SizedBox(width: AppDimensions.space10),
                       Expanded(
@@ -836,7 +836,7 @@ class _GallerySummary extends StatelessWidget {
               color: AppColors.goldGlow,
               borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
             ),
-            child: const Icon(Icons.collections_outlined,
+            child: Icon(Icons.collections_outlined,
                 color: AppColors.champagneGold, size: 20),
           ),
           const SizedBox(width: AppDimensions.space12),
@@ -957,7 +957,7 @@ class _SafetyPolicyNote extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(Icons.shield_outlined, color: AppColors.slateMist, size: 18),
+        Icon(Icons.shield_outlined, color: AppColors.slateMist, size: 18),
         const SizedBox(width: AppDimensions.space8),
         Expanded(
           child: Text(
@@ -995,8 +995,8 @@ class _SlotProgressOverlay extends StatelessWidget {
             child: child,
           ),
           child: complete
-              ? const Icon(Icons.check_circle_rounded,
-                  key: ValueKey('complete'),
+              ? Icon(Icons.check_circle_rounded,
+                  key: const ValueKey('complete'),
                   color: AppColors.verifiedTeal,
                   size: 42)
               : SizedBox(
@@ -1109,7 +1109,7 @@ class _PhotoSlot extends StatelessWidget {
                         errorWidget: (_, __, ___) => Container(
                           color: AppColors.surfaceGlass,
                           alignment: Alignment.center,
-                          child: const Icon(
+                          child: Icon(
                             Icons.broken_image_outlined,
                             color: AppColors.slateMist,
                             size: 32,
@@ -1154,7 +1154,7 @@ class _PhotoSlot extends StatelessWidget {
                   style: AppTypography.caption.copyWith(
                     color: isPrimary
                         ? AppColors.champagneLight
-                        : AppColors.pearlWhite,
+                        : AppColors.onMedia,
                     fontWeight: FontWeight.w600,
                     fontSize: isPrimary ? 12 : 10,
                   ),
@@ -1226,7 +1226,7 @@ class _PhotoSlot extends StatelessWidget {
                       border: Border.all(color: AppColors.cardBorder),
                     ),
                     child: const Icon(Icons.delete_outline_rounded,
-                        color: AppColors.pearlWhite, size: 17),
+                        color: AppColors.onMedia, size: 17),
                   ),
                 ),
               ),
@@ -1379,11 +1379,11 @@ class _PrivacyTile extends StatelessWidget {
               Container(
                 width: 20,
                 height: 20,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.champagneGold,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.check_rounded,
+                child: Icon(Icons.check_rounded,
                     color: AppColors.obsidianNight, size: 14),
               ),
           ],

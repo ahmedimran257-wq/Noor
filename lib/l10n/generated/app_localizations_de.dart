@@ -349,6 +349,27 @@ class AppLocalizationsDe extends AppLocalizations {
   String get discovery_empty_title => 'Du hast jeden in der Nähe gesehen';
 
   @override
+  String get discovery_handoff_interest_subtitle =>
+      'Profile mit einer aktiven Anfrage wechseln zu Interessen, während du wartest oder antwortest.';
+
+  @override
+  String get discovery_handoff_interest_title =>
+      'Dein Interesse wird bearbeitet';
+
+  @override
+  String get discovery_handoff_match_subtitle =>
+      'Matches wechseln in den Chat und werden deshalb nicht erneut in Entdecken angezeigt.';
+
+  @override
+  String get discovery_handoff_match_title => 'Deine Verbindung ist bereit';
+
+  @override
+  String get discovery_handoff_open_chat => 'Chat öffnen';
+
+  @override
+  String get discovery_handoff_open_interests => 'Interessen öffnen';
+
+  @override
   String get discovery_header_title => 'Silarah';
 
   @override

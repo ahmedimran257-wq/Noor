@@ -86,7 +86,7 @@ class InterestsCubit extends Cubit<InterestsState> {
             .from('interests')
             .select('id, sender_id, note, status, created_at, expires_at')
             .eq('receiver_id', userId)
-            .eq('status', 'pending')
+            .inFilter('status', ['pending', 'accepted', 'declined'])
             .order('created_at', ascending: false)
             .limit(_maxRowsPerSection),
         SupabaseService.client
@@ -133,7 +133,7 @@ class InterestsCubit extends Cubit<InterestsState> {
           timeAgo: _timeAgoString(createdAt),
           sentAt: createdAt,
           createdAt: createdAt,
-          status: InterestStatus.pending,
+          status: _parseStatus(row['status'] as String),
           note: row['note'] as String?,
         ));
       }
@@ -359,8 +359,8 @@ class InterestsCubit extends Cubit<InterestsState> {
   // ── Received actions ──────────────────────────────────────
 
   /// Accept an incoming interest → creates a match (via DB trigger).
-  void acceptInterest(String id) async {
-    if (!SupabaseService.isInitialized) return;
+  Future<bool> acceptInterest(String id) async {
+    if (!SupabaseService.isInitialized) return false;
 
     if (SupabaseService.isInitialized) {
       try {
@@ -370,13 +370,16 @@ class InterestsCubit extends Cubit<InterestsState> {
         // DB trigger create_match_on_accept() automatically creates the match row
       } catch (e) {
         debugPrint('[InterestsCubit] Error accepting interest: $e');
-        return;
+        return false;
       }
     }
 
     final updated = List<InterestEntry>.from(state.received);
     final idx = updated.indexWhere((e) => e.id == id);
-    if (idx == -1) return;
+    if (idx == -1) {
+      await loadData(force: true);
+      return state.matches.any((entry) => entry.id == id);
+    }
 
     final accepted = updated[idx].copyWith(status: InterestStatus.accepted);
     updated[idx] = accepted;
@@ -385,6 +388,7 @@ class InterestsCubit extends Cubit<InterestsState> {
       ..add(accepted);
 
     emit(state.copyWith(received: updated, matches: updatedMatches));
+    return true;
   }
 
   /// Decline an incoming interest.
@@ -435,13 +439,11 @@ class InterestsCubit extends Cubit<InterestsState> {
       return false;
     }
 
-    // Prevent duplicate sends to the same profile
-    final alreadySent = state.sent.any(
-      (e) =>
-          e.profile.id == profile.id &&
-          e.effectiveStatus == InterestStatus.pending,
-    );
-    if (alreadySent) return true;
+    // One active relationship owns this pair. Repeated interests would be
+    // spam and are also rejected by the database constraint.
+    if (state.interactionWith(profile.id) != ProfileInteractionState.none) {
+      return false;
+    }
 
     final now = DateTime.now();
     final filteredNote =
@@ -477,10 +479,12 @@ class InterestsCubit extends Cubit<InterestsState> {
         ));
         return false;
       }
-      // For duplicate errors, treat as success because the server already has it.
+      // Refresh stale UI when the server already owns this relationship. A
+      // duplicate is not a new successful send and must not replay ceremony.
       if (e.toString().contains('interest_already_exists') ||
           e.toString().contains('already sent')) {
-        return true;
+        await loadData(force: true);
+        return false;
       }
       return false;
     }

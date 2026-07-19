@@ -346,6 +346,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get discovery_empty_title => 'You\'ve seen everyone nearby';
 
   @override
+  String get discovery_handoff_interest_subtitle =>
+      'Profiles with an active request move to Interests while you wait or respond.';
+
+  @override
+  String get discovery_handoff_interest_title => 'Your interest is in progress';
+
+  @override
+  String get discovery_handoff_match_subtitle =>
+      'Matched profiles move to Chat, so they are not shown again in Discover.';
+
+  @override
+  String get discovery_handoff_match_title => 'Your connection is ready';
+
+  @override
+  String get discovery_handoff_open_chat => 'Open Chat';
+
+  @override
+  String get discovery_handoff_open_interests => 'Open Interests';
+
+  @override
   String get discovery_header_title => 'Silarah';
 
   @override

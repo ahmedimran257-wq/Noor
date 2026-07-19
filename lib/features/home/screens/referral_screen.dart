@@ -85,7 +85,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
         duration: const Duration(seconds: 2),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          side: const BorderSide(color: AppColors.cardBorder),
+          side: BorderSide(color: AppColors.cardBorder),
         ),
       ),
     );
@@ -99,7 +99,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
               color: AppColors.pearlWhite),
           onPressed: () => Navigator.pop(context),
         ),
@@ -123,20 +123,20 @@ class _ReferralScreenState extends State<ReferralScreen> {
                       shape: BoxShape.circle,
                       border: Border.all(color: AppColors.goldBorder, width: 2),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.card_giftcard_rounded,
                       color: AppColors.champagneGold,
                       size: 48,
                     ),
                   ),
                   const SizedBox(height: AppDimensions.space24),
-                  const Text(
+                  Text(
                     'Spread the word, earn Premium!',
                     style: AppTypography.screenTitle,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppDimensions.space12),
-                  const Text(
+                  Text(
                     'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 7 days of FREE Premium!',
                     style: AppTypography.bodyMuted,
                     textAlign: TextAlign.center,
@@ -163,7 +163,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                     ),
                     child: Column(
                       children: [
-                        const Text(
+                        Text(
                           'YOUR REFERRAL CODE',
                           style: AppTypography.captionMedium,
                         ),
@@ -193,14 +193,14 @@ class _ReferralScreenState extends State<ReferralScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: AppDimensions.space16),
-                                const Icon(Icons.copy_rounded,
+                                Icon(Icons.copy_rounded,
                                     color: AppColors.champagneGold, size: 20),
                               ],
                             ),
                           ),
                         ),
                         const SizedBox(height: AppDimensions.space12),
-                        const Text(
+                        Text(
                           'Tap code to copy',
                           style: AppTypography.caption,
                         ),
@@ -253,7 +253,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                         elevation: 0,
                       ),
                       icon: const Icon(Icons.share_rounded, size: 20),
-                      label: const Text('Share Code with Friends',
+                      label: Text('Share Code with Friends',
                           style: AppTypography.button),
                       onPressed: _shareReferral,
                     ),

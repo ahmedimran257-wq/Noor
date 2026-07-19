@@ -181,8 +181,8 @@ class _EmptyScenePainter extends CustomPainter {
   final double progress;
   final IconData? fallbackIcon;
 
-  static const _gold = AppColors.champagneGold;
-  static const _light = AppColors.champagneLight;
+  Color get _gold => AppColors.champagneGold;
+  Color get _light => AppColors.champagneLight;
 
   Paint _line(double alpha, [double width = 1.4]) => Paint()
     ..color = _gold.withValues(alpha: alpha)

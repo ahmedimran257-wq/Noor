@@ -35,6 +35,7 @@ class HomeScreen extends StatefulWidget {
 class HomeScreenState extends State<HomeScreen> {
   int _currentTab = 0;
   late final List<Widget?> _tabCache;
+  int _profileRefreshToken = 0;
   static const _tabCount = 4;
 
   @override
@@ -62,24 +63,38 @@ class HomeScreenState extends State<HomeScreen> {
     if (index < 0 || index >= _tabCount || index == _currentTab) return;
     setState(() {
       _ensureTabBuilt(index);
+      if (index == 3) {
+        _tabCache[3] = MyProfileScreen(refreshToken: ++_profileRefreshToken);
+      }
       _currentTab = index;
     });
+    _refreshTabData(index);
   }
 
   void _selectTab(int index) {
     if (index == _currentTab) return;
     setState(() {
       _ensureTabBuilt(index);
+      if (index == 3) {
+        _tabCache[3] = MyProfileScreen(refreshToken: ++_profileRefreshToken);
+      }
       _currentTab = index;
     });
+    _refreshTabData(index);
+  }
+
+  void _refreshTabData(int index) {
+    if (index == 1) {
+      context.read<InterestsCubit>().loadData(force: true);
+    }
   }
 
   void _ensureTabBuilt(int index) {
     _tabCache[index] ??= switch (index) {
-      0 => const DiscoveryFeedScreen(),
+      0 => DiscoveryFeedScreen(onOpenTab: switchToTab),
       1 => const InterestsScreen(),
       2 => const ChatListScreen(),
-      _ => const MyProfileScreen(),
+      _ => MyProfileScreen(refreshToken: _profileRefreshToken),
     };
   }
 

@@ -835,9 +835,9 @@ class _DeenCard extends StatelessWidget {
             Container(
               width: 20,
               height: 20,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                   color: AppColors.champagneGold, shape: BoxShape.circle),
-              child: const Icon(Icons.check_rounded,
+              child: Icon(Icons.check_rounded,
                   color: AppColors.obsidianNight, size: 14),
             ),
         ]),

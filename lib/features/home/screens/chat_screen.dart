@@ -19,8 +19,9 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_curves.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/animations/spring_keyboard_padding.dart';
+import '../../../core/widgets/animations/silarah_motion.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
+import '../../../core/widgets/loaders/silarah_blur_image.dart';
 import '../../../core/widgets/loaders/silarah_shimmer.dart';
 import 'paywall_gate_screen.dart';
 
@@ -172,8 +173,50 @@ class _ChatScreenState extends State<ChatScreen>
     _chatCubit.updateTyping(widget.conversationId, isTyping: false);
     HapticFeedback.selectionClick();
     _dismissOpeners();
-    await context.read<ChatCubit>().sendMessage(widget.conversationId, text);
+    final sent = await context
+        .read<ChatCubit>()
+        .sendMessage(widget.conversationId, text);
+    if (!mounted) return;
+    if (!sent) _showMessageSendFailure();
     _scrollToBottom(animated: true);
+  }
+
+  Future<void> _retryMessage(ChatMessage message) async {
+    HapticFeedback.selectionClick();
+    final sent = await _chatCubit.retryMessage(
+      widget.conversationId,
+      message.id,
+    );
+    if (!mounted) return;
+    if (!sent) _showMessageSendFailure();
+  }
+
+  void _showMessageSendFailure() {
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.surfaceElevated,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+            side: BorderSide(color: AppColors.softCoral),
+          ),
+          content: Row(
+            children: [
+              Icon(Icons.sync_problem_rounded,
+                  color: AppColors.softCoral, size: 20),
+              const SizedBox(width: AppDimensions.space10),
+              Expanded(
+                child: Text(
+                  'Message not sent. Tap the alert beside it to retry.',
+                  style: AppTypography.captionMedium,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
   }
 
   void _useOpener(String text) {
@@ -208,10 +251,10 @@ class _ChatScreenState extends State<ChatScreen>
         backgroundColor: AppColors.surfaceElevated,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-          side: const BorderSide(color: AppColors.cardBorder),
+          side: BorderSide(color: AppColors.cardBorder),
         ),
         title: Text('Block $name?', style: AppTypography.bodyMedium),
-        content: const Text(
+        content: Text(
           'This closes the match and prevents further messages.',
           style: AppTypography.bodyMuted,
         ),
@@ -267,9 +310,9 @@ class _ChatScreenState extends State<ChatScreen>
   Widget build(BuildContext context) {
     final access = _accessDecision;
     if (access == null) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: AppColors.obsidianNight,
-        body: Center(child: SilarahPulseLoader(label: 'Securing chat')),
+        body: const Center(child: SilarahPulseLoader(label: 'Securing chat')),
       );
     }
     if (!access.allowed) {
@@ -318,9 +361,10 @@ class _ChatScreenState extends State<ChatScreen>
             .firstOrNull;
 
         if (conv == null) {
-          return const Scaffold(
+          return Scaffold(
             backgroundColor: AppColors.obsidianNight,
-            body: Center(child: SilarahPulseLoader(label: 'Opening chat')),
+            body:
+                const Center(child: SilarahPulseLoader(label: 'Opening chat')),
           );
         }
 
@@ -333,17 +377,22 @@ class _ChatScreenState extends State<ChatScreen>
         }
 
         return Scaffold(
-          resizeToAvoidBottomInset: false,
+          // Let the platform apply the authoritative IME inset. The previous
+          // custom spring padding could lag behind fast keyboard transitions
+          // and leave the composer underneath the keyboard.
+          resizeToAvoidBottomInset: true,
           backgroundColor: AppColors.obsidianNight,
           appBar: _ChatAppBar(
-            name: conv.matchName,
-            initial: conv.matchLastInitial,
+            displayName: conv.displayName,
+            firstName: conv.matchName,
+            photoUrl: conv.photoUrl,
             isClosed: isClosed,
             isTyping: isTyping,
             onEndMatch: () => _showEndMatchSheet(context),
             onBlock: () => _showBlockDialog(context, conv.matchName),
           ),
-          body: SpringKeyboardPadding(
+          body: SafeArea(
+            top: false,
             child: Column(
               children: [
                 // Closed match banner
@@ -387,7 +436,13 @@ class _ChatScreenState extends State<ChatScreen>
                                           .toggleTimestamp(
                                               widget.conversationId, msg.id),
                                       onLongPress: () =>
-                                          _showReportSheet(context, msg),
+                                          msg.status == MessageStatus.failed
+                                              ? _retryMessage(msg)
+                                              : _showReportSheet(context, msg),
+                                      onRetry:
+                                          msg.status == MessageStatus.failed
+                                              ? () => _retryMessage(msg)
+                                              : null,
                                       onTranslate: () => context
                                           .read<ChatCubit>()
                                           .translateMessage(
@@ -449,8 +504,7 @@ class _ClosedBanner extends StatelessWidget {
       ),
       color: AppColors.softCoral.withValues(alpha: 0.1),
       child: Row(children: [
-        const Icon(Icons.lock_outline_rounded,
-            color: AppColors.softCoral, size: 16),
+        Icon(Icons.lock_outline_rounded, color: AppColors.softCoral, size: 16),
         const SizedBox(width: AppDimensions.space8),
         Expanded(
             child: Text(
@@ -474,11 +528,11 @@ class _ClosedInputBar extends StatelessWidget {
         AppDimensions.space16,
         AppDimensions.space12 + MediaQuery.of(context).padding.bottom,
       ),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.obsidianNight,
         border: Border(top: BorderSide(color: AppColors.cardBorder)),
       ),
-      child: const Center(
+      child: Center(
           child: Text(
         'This conversation is closed',
         style: AppTypography.caption,
@@ -512,8 +566,7 @@ class _SuspendedBanner extends StatelessWidget {
       ),
       color: AppColors.softCoral.withValues(alpha: 0.1),
       child: Row(children: [
-        const Icon(Icons.warning_amber_rounded,
-            color: AppColors.softCoral, size: 16),
+        Icon(Icons.warning_amber_rounded, color: AppColors.softCoral, size: 16),
         const SizedBox(width: AppDimensions.space8),
         Expanded(
             child: Text(
@@ -540,11 +593,11 @@ class _SuspendedInputBar extends StatelessWidget {
         AppDimensions.space16,
         AppDimensions.space12 + MediaQuery.of(context).padding.bottom,
       ),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.obsidianNight,
         border: Border(top: BorderSide(color: AppColors.cardBorder)),
       ),
-      child: const Center(
+      child: Center(
           child: Text(
         'Messaging is temporarily suspended',
         style: AppTypography.caption,
@@ -593,7 +646,7 @@ class _EndMatchSheetState extends State<_EndMatchSheet> {
               style: AppTypography.bodyMedium
                   .copyWith(color: AppColors.pearlWhite)),
           const SizedBox(height: AppDimensions.space6),
-          const Text(
+          Text(
             'Choose a respectful message to close this conversation. The other person will be notified.',
             style: AppTypography.caption,
           ),
@@ -668,7 +721,7 @@ class _EndMatchSheetState extends State<_EndMatchSheet> {
             height: AppDimensions.buttonHeightSmall,
             child: OutlinedButton(
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: AppColors.cardBorder),
+                side: BorderSide(color: AppColors.cardBorder),
                 shape: RoundedRectangleBorder(
                     borderRadius:
                         BorderRadius.circular(AppDimensions.radiusButton)),
@@ -713,9 +766,9 @@ class _ReportMessageSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Report message', style: AppTypography.bodyMedium),
+          Text('Report message', style: AppTypography.bodyMedium),
           const SizedBox(height: AppDimensions.space6),
-          const Text(
+          Text(
             'Reports are reviewed by Silarah safety staff.',
             style: AppTypography.caption,
           ),
@@ -746,7 +799,7 @@ class _ReportMessageSheet extends StatelessWidget {
             height: AppDimensions.buttonHeightSmall,
             child: OutlinedButton(
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: AppColors.cardBorder),
+                side: BorderSide(color: AppColors.cardBorder),
                 shape: RoundedRectangleBorder(
                   borderRadius:
                       BorderRadius.circular(AppDimensions.radiusButton),
@@ -784,11 +837,10 @@ class _SuggestedOpenersArea extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text('Begin with Bismillah', style: AppTypography.tagline),
+        Text('Begin with Bismillah', style: AppTypography.tagline),
         const SizedBox(height: AppDimensions.space20),
-        SizeTransition(
-          sizeFactor: sizeAnim,
-          axisAlignment: -1,
+        SilarahSizeReveal(
+          factor: sizeAnim,
           child: SizedBox(
             height: 110,
             child: ListView.separated(
@@ -913,7 +965,7 @@ class _ChatAccessGate extends StatelessWidget {
                     const SizedBox(height: AppDimensions.space8),
                     TextButton(
                       onPressed: onRetry,
-                      child: const Text(
+                      child: Text(
                         'Refresh access',
                         style: AppTypography.bodyMuted,
                       ),
@@ -931,15 +983,17 @@ class _ChatAccessGate extends StatelessWidget {
 
 class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   const _ChatAppBar({
-    required this.name,
-    required this.initial,
+    required this.displayName,
+    required this.firstName,
+    required this.photoUrl,
     required this.isClosed,
     required this.isTyping,
     required this.onEndMatch,
     required this.onBlock,
   });
-  final String name;
-  final String initial;
+  final String displayName;
+  final String firstName;
+  final String? photoUrl;
   final bool isClosed;
   final bool isTyping;
   final VoidCallback onEndMatch;
@@ -955,7 +1009,7 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
     return Container(
       height: 64 + MediaQuery.of(context).padding.top,
       padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.obsidianNight,
         border: Border(bottom: BorderSide(color: AppColors.cardBorder)),
       ),
@@ -970,7 +1024,7 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                 color: AppColors.surfaceGlass,
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.cardBorder)),
-            child: const Icon(Icons.arrow_back_rounded,
+            child: Icon(Icons.arrow_back_rounded,
                 color: AppColors.pearlWhite,
                 size: AppDimensions.iconSizeMedium),
           ),
@@ -982,8 +1036,16 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
               shape: BoxShape.circle,
               color: AppColors.surfaceGlassHover,
               border: Border.all(color: AppColors.goldBorder)),
-          child: const Icon(Icons.person_outline_rounded,
-              color: AppColors.slateMist, size: 22),
+          child: ClipOval(
+            child: photoUrl == null || photoUrl!.isEmpty
+                ? Icon(Icons.person_outline_rounded,
+                    color: AppColors.slateMist, size: 22)
+                : SilarahBlurImage(
+                    imageUrl: photoUrl!,
+                    width: 40,
+                    height: 40,
+                  ),
+          ),
         ),
         const SizedBox(width: AppDimensions.space12),
         Expanded(
@@ -991,8 +1053,7 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('$name $initial.',
-                style: AppTypography.bodyMedium, maxLines: 1),
+            Text(displayName, style: AppTypography.bodyMedium, maxLines: 1),
             AnimatedSwitcher(
               duration: reduceMotion
                   ? Duration.zero
@@ -1016,7 +1077,7 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                 isClosed
                     ? 'Match closed'
                     : isTyping
-                        ? '$name is typing'
+                        ? '$firstName is typing'
                         : 'Private conversation',
                 key: ValueKey('${isClosed}_$isTyping'),
                 style: AppTypography.caption.copyWith(
@@ -1041,20 +1102,20 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                   color: AppColors.surfaceGlass,
                   shape: BoxShape.circle,
                   border: Border.all(color: AppColors.cardBorder)),
-              child: const Icon(Icons.more_vert_rounded,
+              child: Icon(Icons.more_vert_rounded,
                   color: AppColors.slateMist,
                   size: AppDimensions.iconSizeMedium),
             ),
             color: AppColors.surfaceElevated,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-              side: const BorderSide(color: AppColors.cardBorder),
+              side: BorderSide(color: AppColors.cardBorder),
             ),
             itemBuilder: (_) => [
               PopupMenuItem<String>(
                 value: 'block',
                 child: Row(children: [
-                  const Icon(Icons.block_rounded,
+                  Icon(Icons.block_rounded,
                       color: AppColors.softCoral, size: 18),
                   const SizedBox(width: AppDimensions.space8),
                   Text('Block user',
@@ -1065,7 +1126,7 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
               PopupMenuItem<String>(
                 value: 'end',
                 child: Row(children: [
-                  const Icon(Icons.do_not_disturb_on_outlined,
+                  Icon(Icons.do_not_disturb_on_outlined,
                       color: AppColors.softCoral, size: 18),
                   const SizedBox(width: AppDimensions.space8),
                   Text('End Match',
@@ -1216,9 +1277,8 @@ class _TypingPresenceBarState extends State<_TypingPresenceBar>
         switchOutCurve: AppCurves.transition,
         transitionBuilder: (child, animation) => FadeTransition(
           opacity: animation,
-          child: SizeTransition(
-            sizeFactor: animation,
-            axisAlignment: -1,
+          child: SilarahSizeReveal(
+            factor: animation,
             child: child,
           ),
         ),
@@ -1297,12 +1357,14 @@ class _MessageBubble extends StatelessWidget {
     required this.onTap,
     required this.onLongPress,
     this.onTranslate,
+    this.onRetry,
   });
   final ChatMessage message;
   final bool sameAsPrev;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
   final VoidCallback? onTranslate;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -1418,7 +1480,7 @@ class _MessageBubble extends StatelessWidget {
                 ),
                 if (isMe) ...[
                   const SizedBox(width: AppDimensions.space4),
-                  _StatusIcon(status: message.status)
+                  _StatusIcon(status: message.status, onRetry: onRetry)
                 ],
               ],
             ),
@@ -1434,7 +1496,7 @@ class _MessageBubble extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.translate,
                       color: AppColors.champagneGold,
                       size: 12,
@@ -1483,27 +1545,38 @@ class _MessageBubble extends StatelessWidget {
 // ── Message status icon ───────────────────────────────────────
 
 class _StatusIcon extends StatelessWidget {
-  const _StatusIcon({required this.status});
+  const _StatusIcon({required this.status, this.onRetry});
   final MessageStatus status;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
     switch (status) {
       case MessageStatus.queued:
-        return const Icon(Icons.access_time_rounded,
+        return Icon(Icons.access_time_rounded,
             color: AppColors.slateMist, size: 12);
       case MessageStatus.sent:
-        return const Icon(Icons.check_rounded,
-            color: AppColors.slateMist, size: 12);
+        return Icon(Icons.check_rounded, color: AppColors.slateMist, size: 12);
       case MessageStatus.delivered:
-        return const Icon(Icons.done_all_rounded,
+        return Icon(Icons.done_all_rounded,
             color: AppColors.slateMist, size: 12);
       case MessageStatus.read:
-        return const Icon(Icons.done_all_rounded,
+        return Icon(Icons.done_all_rounded,
             color: AppColors.champagneGold, size: 12);
       case MessageStatus.failed:
-        return const Icon(Icons.error_outline_rounded,
-            color: AppColors.softCoral, size: 12);
+        return Semantics(
+          button: true,
+          label: 'Message failed. Tap to retry.',
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onRetry,
+            child: Padding(
+              padding: const EdgeInsets.all(6),
+              child: Icon(Icons.sync_problem_rounded,
+                  color: AppColors.softCoral, size: 16),
+            ),
+          ),
+        );
     }
   }
 }
@@ -1550,13 +1623,13 @@ class _InputBarState extends State<_InputBar> {
     final reduceMotion =
         MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     return Container(
-      padding: EdgeInsets.fromLTRB(
+      padding: const EdgeInsets.fromLTRB(
         AppDimensions.space16,
         AppDimensions.space12,
         AppDimensions.space16,
-        AppDimensions.space12 + MediaQuery.of(context).padding.bottom,
+        AppDimensions.space12,
       ),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.obsidianNight,
         border: Border(top: BorderSide(color: AppColors.cardBorder)),
       ),
@@ -1574,7 +1647,7 @@ class _InputBarState extends State<_InputBar> {
                 color: _focused ? AppColors.goldBorder : AppColors.cardBorder,
               ),
               boxShadow: _focused
-                  ? const [
+                  ? [
                       BoxShadow(
                         color: AppColors.goldGlow,
                         blurRadius: 18,
@@ -1594,11 +1667,18 @@ class _InputBarState extends State<_InputBar> {
               style: AppTypography.chatMessage,
               textInputAction: TextInputAction.newline,
               onTapOutside: (_) => _focusNode.unfocus(),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Type a message…',
                 hintStyle: AppTypography.inputLabel,
+                filled: false,
+                fillColor: Colors.transparent,
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
                   horizontal: AppDimensions.space16,
                   vertical: AppDimensions.space12,
                 ),
@@ -1620,7 +1700,7 @@ class _InputBarState extends State<_InputBar> {
                     child: Container(
                       width: 46,
                       height: 46,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
@@ -1639,7 +1719,7 @@ class _InputBarState extends State<_InputBar> {
                           ),
                         ],
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.arrow_upward_rounded,
                         color: AppColors.obsidianNight,
                         size: 23,

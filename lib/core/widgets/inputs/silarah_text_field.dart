@@ -1,4 +1,4 @@
-// lib/core/widgets/inputs/silarah_text_field.dart
+﻿// lib/core/widgets/inputs/silarah_text_field.dart
 // ============================================================
 // SILARAH Input System
 // Single-shell glass fields with animated focus, no nested theme outline.
@@ -370,7 +370,7 @@ class _SilarahOtpFieldState extends State<SilarahOtpField> {
                 enabledBorder: OutlineInputBorder(
                   borderRadius:
                       BorderRadius.circular(AppDimensions.radiusButton),
-                  borderSide: const BorderSide(
+                  borderSide: BorderSide(
                     color: AppColors.cardBorder,
                     width: AppDimensions.borderThin,
                   ),
@@ -378,7 +378,7 @@ class _SilarahOtpFieldState extends State<SilarahOtpField> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius:
                       BorderRadius.circular(AppDimensions.radiusButton),
-                  borderSide: const BorderSide(
+                  borderSide: BorderSide(
                     color: AppColors.champagneGold,
                     width: AppDimensions.borderThin,
                   ),

@@ -12,6 +12,7 @@ class BookmarkService {
   static Set<String>? _cachedIds;
   static DateTime? _cachedAt;
   static Future<Set<String>>? _loadInFlight;
+  static Future<void> _writeQueue = Future<void>.value();
 
   /// Loads saved profile user IDs from the server. Bookmarks are account data,
   /// so production must not fall back to device-local state.
@@ -93,12 +94,25 @@ class BookmarkService {
 
   /// Saves/removes one profile deterministically, avoiding stale toggle races.
   static Future<Set<String>> setSaved(String profileUserId, bool saved) async {
+    final operation = _writeQueue.then(
+      (_) => _setSavedNow(profileUserId, saved),
+    );
+    // A failed write must not poison later bookmark operations.
+    _writeQueue = operation.then<void>((_) {}, onError: (_, __) {});
+    return operation;
+  }
+
+  static Future<Set<String>> _setSavedNow(
+    String profileUserId,
+    bool saved,
+  ) async {
     final userId = await SupabaseService.currentUserIdOrRefresh();
 
     if (!SupabaseService.isInitialized || userId == null) {
       throw StateError('Please sign in again to save profiles.');
     }
 
+    final next = await load();
     if (saved) {
       await SupabaseService.client.from('profile_bookmarks').upsert(
         {
@@ -115,7 +129,6 @@ class BookmarkService {
           .eq('saved_user_id', profileUserId);
     }
 
-    final next = await load();
     saved ? next.add(profileUserId) : next.remove(profileUserId);
     _setCache(userId, next);
     return next;

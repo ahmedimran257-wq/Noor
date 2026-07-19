@@ -346,6 +346,27 @@ class AppLocalizationsHi extends AppLocalizations {
   String get discovery_empty_title => 'आपने सभी को आस-पास देखा है';
 
   @override
+  String get discovery_handoff_interest_subtitle =>
+      'सक्रिय अनुरोध वाली प्रोफ़ाइलें आपके इंतज़ार या जवाब देने तक इंटरेस्ट्स में रहती हैं।';
+
+  @override
+  String get discovery_handoff_interest_title =>
+      'आपकी दिलचस्पी प्रक्रिया में है';
+
+  @override
+  String get discovery_handoff_match_subtitle =>
+      'मैच हुई प्रोफ़ाइलें चैट में चली जाती हैं, इसलिए वे डिस्कवर में दोबारा नहीं दिखतीं।';
+
+  @override
+  String get discovery_handoff_match_title => 'आपका कनेक्शन तैयार है';
+
+  @override
+  String get discovery_handoff_open_chat => 'चैट खोलें';
+
+  @override
+  String get discovery_handoff_open_interests => 'इंटरेस्ट्स खोलें';
+
+  @override
   String get discovery_header_title => '<ब्रांड0/>';
 
   @override

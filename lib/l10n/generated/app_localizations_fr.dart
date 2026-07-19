@@ -350,6 +350,26 @@ class AppLocalizationsFr extends AppLocalizations {
   String get discovery_empty_title => 'Vous avez vu tout le monde à proximité';
 
   @override
+  String get discovery_handoff_interest_subtitle =>
+      'Les profils avec une demande active passent dans Intérêts pendant votre attente ou votre réponse.';
+
+  @override
+  String get discovery_handoff_interest_title => 'Votre intérêt est en cours';
+
+  @override
+  String get discovery_handoff_match_subtitle =>
+      'Les profils compatibles passent dans Chat et ne sont donc plus affichés dans Découvrir.';
+
+  @override
+  String get discovery_handoff_match_title => 'Votre connexion est prête';
+
+  @override
+  String get discovery_handoff_open_chat => 'Ouvrir le chat';
+
+  @override
+  String get discovery_handoff_open_interests => 'Ouvrir les intérêts';
+
+  @override
   String get discovery_header_title => '<marque0/>';
 
   @override

@@ -89,7 +89,7 @@ class _InterestNoteSheetState extends State<_InterestNoteSheet> {
               ),
             ),
             const SizedBox(height: AppDimensions.space6),
-            const Text(
+            Text(
               'A personal note makes your interest stand out.',
               style: AppTypography.caption,
             ),
@@ -116,7 +116,14 @@ class _InterestNoteSheetState extends State<_InterestNoteSheet> {
                 decoration: InputDecoration(
                   hintText: 'Assalamu Alaikum! I was really impressed by…',
                   hintStyle: AppTypography.inputLabel,
+                  filled: false,
+                  fillColor: Colors.transparent,
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
+                  errorBorder: InputBorder.none,
+                  focusedErrorBorder: InputBorder.none,
                   counterStyle: AppTypography.caption.copyWith(fontSize: 10),
                   contentPadding: const EdgeInsets.all(AppDimensions.space14),
                 ),
@@ -175,7 +182,7 @@ class _InterestNoteSheetState extends State<_InterestNoteSheet> {
                   Navigator.pop(context, ''); // empty = no note
                 },
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.cardBorder),
+                  side: BorderSide(color: AppColors.cardBorder),
                   shape: RoundedRectangleBorder(
                     borderRadius:
                         BorderRadius.circular(AppDimensions.radiusButton),

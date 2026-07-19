@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:silarah/core/cubits/interests/interests_cubit.dart';
 import 'package:silarah/core/models/discovery_profile.dart';
 import 'package:silarah/features/home/screens/profile_detail_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -78,13 +80,16 @@ void main() {
     );
 
     await tester.pumpWidget(
-      const MaterialApp(
-        home: ProfileDetailScreen(
-          profile: profile,
-          heroTag: 'gallery-test',
-          isInterestSent: false,
-          onInterestSent: _noop,
-          isOwnProfile: true,
+      BlocProvider(
+        create: (_) => InterestsCubit(),
+        child: const MaterialApp(
+          home: ProfileDetailScreen(
+            profile: profile,
+            heroTag: 'gallery-test',
+            isInterestSent: false,
+            onInterestSent: _noop,
+            isOwnProfile: true,
+          ),
         ),
       ),
     );

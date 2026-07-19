@@ -2,6 +2,41 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_dimensions.dart';
 
+/// Clips and reveals [child] along one axis without relying on Flutter's
+/// version-specific [SizeTransition] alignment API.
+///
+/// Flutter renamed `axisAlignment` to `alignment` in newer SDKs. Keeping this
+/// small primitive in Silarah's motion system gives old and new stable SDKs
+/// identical layout behaviour while CI tracks the latest stable release.
+class SilarahSizeReveal extends AnimatedWidget {
+  const SilarahSizeReveal({
+    super.key,
+    required Animation<double> factor,
+    this.axis = Axis.vertical,
+    this.alignment = AlignmentDirectional.topCenter,
+    this.child,
+  }) : super(listenable: factor);
+
+  final Axis axis;
+  final AlignmentGeometry alignment;
+  final Widget? child;
+
+  Animation<double> get factor => listenable as Animation<double>;
+
+  @override
+  Widget build(BuildContext context) {
+    final value = factor.value.clamp(0.0, 1.0).toDouble();
+    return ClipRect(
+      child: Align(
+        alignment: alignment,
+        widthFactor: axis == Axis.horizontal ? value : null,
+        heightFactor: axis == Axis.vertical ? value : null,
+        child: child,
+      ),
+    );
+  }
+}
+
 /// Restrained content entrance used across onboarding.
 ///
 /// It combines a short 10px lift, a 0.6% scale settle and opacity in one

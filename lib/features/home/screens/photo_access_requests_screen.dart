@@ -115,8 +115,8 @@ class _PhotoAccessRequestsScreenState extends State<PhotoAccessRequestsScreen> {
           context: context,
           builder: (dialogContext) => AlertDialog(
             backgroundColor: AppColors.surfaceElevated,
-            title: const Text('Revoke photo access?',
-                style: AppTypography.bodyMedium),
+            title:
+                Text('Revoke photo access?', style: AppTypography.bodyMedium),
             content: Text(
               '${request.displayName} will no longer be able to open your private photos.',
               style: AppTypography.bodyMuted,
@@ -128,7 +128,7 @@ class _PhotoAccessRequestsScreenState extends State<PhotoAccessRequestsScreen> {
               ),
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, true),
-                child: const Text('Revoke',
+                child: Text('Revoke',
                     style: TextStyle(color: AppColors.softCoral)),
               ),
             ],
@@ -194,7 +194,7 @@ class _PhotoAccessRequestsScreenState extends State<PhotoAccessRequestsScreen> {
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back_rounded),
         ),
-        title: const Text('Photo access', style: AppTypography.bodyMedium),
+        title: Text('Photo access', style: AppTypography.bodyMedium),
       ),
       body: RefreshIndicator(
         color: AppColors.champagneGold,
@@ -277,7 +277,7 @@ class _AccessHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'You decide who sees you',
           style: AppTypography.screenTitle,
         ),
@@ -373,7 +373,7 @@ class _AccessRequestCard extends StatelessWidget {
                 ),
               ),
               if (busy)
-                const SizedBox(
+                SizedBox(
                   width: 22,
                   height: 22,
                   child: CircularProgressIndicator(
@@ -483,15 +483,15 @@ class _NoRequests extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.only(top: AppDimensions.space64),
+    return Padding(
+      padding: const EdgeInsets.only(top: AppDimensions.space64),
       child: Column(
         children: [
           Icon(Icons.lock_person_outlined,
               color: AppColors.champagneGold, size: 48),
-          SizedBox(height: AppDimensions.space16),
+          const SizedBox(height: AppDimensions.space16),
           Text('No photo requests', style: AppTypography.bodyMedium),
-          SizedBox(height: AppDimensions.space6),
+          const SizedBox(height: AppDimensions.space6),
           Text(
             'New requests will appear here instantly.',
             style: AppTypography.bodyMuted,
@@ -514,8 +514,7 @@ class _AccessError extends StatelessWidget {
       padding: const EdgeInsets.only(top: AppDimensions.space48),
       child: Column(
         children: [
-          const Icon(Icons.cloud_off_outlined,
-              color: AppColors.slateMist, size: 42),
+          Icon(Icons.cloud_off_outlined, color: AppColors.slateMist, size: 42),
           const SizedBox(height: AppDimensions.space12),
           Text(message,
               style: AppTypography.bodyMuted, textAlign: TextAlign.center),

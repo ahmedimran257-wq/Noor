@@ -128,7 +128,7 @@ class _SilarahBlurImageState extends State<SilarahBlurImage> {
           color: AppColors.surfaceGlassHover,
           width: widget.width,
           height: widget.height,
-          child: const Icon(
+          child: Icon(
             Icons.broken_image_outlined,
             color: AppColors.slateMist,
             size: AppDimensions.iconSizeMedium,

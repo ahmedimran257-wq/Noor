@@ -211,7 +211,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: AppTypography.body),
+            child: Text('Cancel', style: AppTypography.body),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -332,9 +332,9 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
       maxChildSize: 0.97,
       builder: (ctx, scrollCtrl) {
         return Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: AppColors.surfaceElevated,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             border: Border(top: BorderSide(color: AppColors.cardBorder)),
           ),
           child: Column(
@@ -400,7 +400,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                           borderRadius:
                               BorderRadius.circular(AppDimensions.radiusButton),
                         ),
-                        child: const Icon(Icons.check_rounded,
+                        child: Icon(Icons.check_rounded,
                             color: AppColors.obsidianNight, size: 20),
                       ),
                     ),
@@ -435,7 +435,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.bookmark_rounded,
+                                Icon(Icons.bookmark_rounded,
                                     color: AppColors.champagneGold, size: 14),
                                 const SizedBox(width: 4),
                                 Text(p.name,
@@ -450,9 +450,9 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                   ),
                 ),
 
-              const Divider(color: AppColors.divider, height: 1),
+              Divider(color: AppColors.divider, height: 1),
               if (_optionsLoading)
-                const LinearProgressIndicator(
+                LinearProgressIndicator(
                   minHeight: 1,
                   color: AppColors.champagneGold,
                   backgroundColor: AppColors.surfaceGlass,
@@ -685,7 +685,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                                   return Chip(
                                     backgroundColor: AppColors.champagneGold
                                         .withValues(alpha: 0.12),
-                                    side: const BorderSide(
+                                    side: BorderSide(
                                       color: AppColors.goldBorder,
                                     ),
                                     label: Text(
@@ -710,10 +710,10 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                                 }),
                                 ActionChip(
                                   backgroundColor: AppColors.surfaceGlass,
-                                  side: const BorderSide(
+                                  side: BorderSide(
                                     color: AppColors.cardBorder,
                                   ),
-                                  avatar: const Icon(
+                                  avatar: Icon(
                                     Icons.public_rounded,
                                     color: AppColors.slateMist,
                                     size: 16,
@@ -757,7 +757,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                             ),
                             if (_draft.diasporaMode) ...[
                               const SizedBox(height: 12),
-                              const Text(
+                              Text(
                                 'Target Home Countries',
                                 style: AppTypography.caption,
                               ),
@@ -776,7 +776,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                                     return Chip(
                                       backgroundColor: AppColors.champagneGold
                                           .withValues(alpha: 0.12),
-                                      side: const BorderSide(
+                                      side: BorderSide(
                                           color: AppColors.goldBorder),
                                       label: Text(
                                         '${country.flag} ${country.name}',
@@ -800,11 +800,11 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                                   }),
                                   ActionChip(
                                     backgroundColor: AppColors.surfaceGlass,
-                                    side: const BorderSide(
-                                        color: AppColors.cardBorder),
-                                    avatar: const Icon(Icons.add,
+                                    side:
+                                        BorderSide(color: AppColors.cardBorder),
+                                    avatar: Icon(Icons.add,
                                         color: AppColors.slateMist, size: 16),
-                                    label: const Text('Add Country',
+                                    label: Text('Add Country',
                                         style: AppTypography.chipLabel),
                                     onPressed: () =>
                                         _showCountrySelector(diaspora: true),
@@ -896,8 +896,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                                 AppDimensions.radiusButton),
                             border: Border.all(color: AppColors.cardBorder),
                           ),
-                          child: const Text('Clear All',
-                              style: AppTypography.body),
+                          child: Text('Clear All', style: AppTypography.body),
                         ),
                       ),
                     ),
@@ -975,8 +974,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                         style: AppTypography.screenTitle.copyWith(fontSize: 18),
                       ),
                       IconButton(
-                        icon:
-                            const Icon(Icons.close, color: AppColors.slateMist),
+                        icon: Icon(Icons.close, color: AppColors.slateMist),
                         onPressed: () => Navigator.pop(sheetCtx),
                       ),
                     ],
@@ -989,25 +987,22 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                       hintText: 'Search countries...',
                       hintStyle: AppTypography.bodyMuted,
                       prefixIcon:
-                          const Icon(Icons.search, color: AppColors.slateMist),
+                          Icon(Icons.search, color: AppColors.slateMist),
                       fillColor: AppColors.surfaceGlass,
                       filled: true,
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 12),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide:
-                            const BorderSide(color: AppColors.cardBorder),
+                        borderSide: BorderSide(color: AppColors.cardBorder),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide:
-                            const BorderSide(color: AppColors.cardBorder),
+                        borderSide: BorderSide(color: AppColors.cardBorder),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide:
-                            const BorderSide(color: AppColors.champagneGold),
+                        borderSide: BorderSide(color: AppColors.champagneGold),
                       ),
                     ),
                     onChanged: (_) => setSheetState(() {}),
@@ -1036,9 +1031,9 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                             ),
                           ),
                           trailing: isSel
-                              ? const Icon(Icons.check_circle,
+                              ? Icon(Icons.check_circle,
                                   color: AppColors.champagneGold)
-                              : const Icon(Icons.circle_outlined,
+                              : Icon(Icons.circle_outlined,
                                   color: AppColors.slateMist),
                           onTap: () {
                             setSheetState(() {
@@ -1169,7 +1164,7 @@ class _RadioGroup<T> extends StatelessWidget {
                 child: AnimatedOpacity(
                   duration: const Duration(milliseconds: 100),
                   opacity: isSelected ? 1 : 0,
-                  child: const Icon(
+                  child: Icon(
                     Icons.check_rounded,
                     size: 14,
                     color: AppColors.champagneGold,
@@ -1239,7 +1234,7 @@ class _MultiChipGroup extends StatelessWidget {
                 child: AnimatedOpacity(
                   duration: const Duration(milliseconds: 100),
                   opacity: isSelected ? 1 : 0,
-                  child: const Icon(
+                  child: Icon(
                     Icons.check_rounded,
                     size: 14,
                     color: AppColors.champagneGold,
@@ -1326,7 +1321,7 @@ class _AgeRangeFieldState extends State<_AgeRangeField> {
             onChangeEnd: (values) => widget.onChanged(values.start, values.end),
           ),
         ),
-        const Row(
+        Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text('18', style: AppTypography.caption),
@@ -1389,12 +1384,13 @@ class _DropdownRow extends StatelessWidget {
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
           errorBorder: InputBorder.none,
+          focusedErrorBorder: InputBorder.none,
           disabledBorder: InputBorder.none,
           filled: false,
           fillColor: Colors.transparent,
           contentPadding: EdgeInsets.zero,
         ),
-        icon: const Icon(Icons.expand_more_rounded, color: AppColors.slateMist),
+        icon: Icon(Icons.expand_more_rounded, color: AppColors.slateMist),
         items: options
             .map((o) => DropdownMenuItem(
                   value: o,
@@ -1475,6 +1471,7 @@ class _SheetTextField extends StatelessWidget {
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
           errorBorder: InputBorder.none,
+          focusedErrorBorder: InputBorder.none,
           disabledBorder: InputBorder.none,
           filled: false,
           fillColor: Colors.transparent,
@@ -1527,7 +1524,7 @@ class _SubscriberGate extends StatelessWidget {
                 color: AppColors.goldGlow,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.lock_outline_rounded,
+              child: Icon(Icons.lock_outline_rounded,
                   color: AppColors.champagneGold, size: 18),
             ),
             const SizedBox(width: AppDimensions.space12),
@@ -1539,12 +1536,12 @@ class _SubscriberGate extends StatelessWidget {
                       style: AppTypography.bodyMedium
                           .copyWith(color: AppColors.pearlWhite)),
                   const SizedBox(height: 2),
-                  const Text('Upgrade to refine this criterion',
+                  Text('Upgrade to refine this criterion',
                       style: AppTypography.caption),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded,
+            Icon(Icons.chevron_right_rounded,
                 color: AppColors.champagneGold,
                 size: AppDimensions.iconSizeMedium),
           ],

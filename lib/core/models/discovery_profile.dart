@@ -134,6 +134,17 @@ class DiscoveryProfile {
   final String? familyOriginCity;
   final String? blurhash;
 
+  /// Public profile name supplied by the server. During the rollout the
+  /// legacy surname transport field can contain either an initial (older
+  /// backend) or the full surname (current backend), so rendering never adds
+  /// punctuation that could corrupt a complete name.
+  String get displayName {
+    final surname = (lastName?.trim().isNotEmpty ?? false)
+        ? lastName!.trim()
+        : lastNameInitial.trim();
+    return surname.isEmpty ? firstName.trim() : '${firstName.trim()} $surname';
+  }
+
   /// Real Supabase user/profile identifier.
   ///
   /// Production screens must never invent IDs from names. If the backend row is

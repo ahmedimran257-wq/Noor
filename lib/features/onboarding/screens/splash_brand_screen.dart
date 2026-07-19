@@ -211,17 +211,17 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                     border: OutlineInputBorder(
                       borderRadius:
                           BorderRadius.circular(AppDimensions.radiusButton),
-                      borderSide: const BorderSide(color: AppColors.cardBorder),
+                      borderSide: BorderSide(color: AppColors.cardBorder),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius:
                           BorderRadius.circular(AppDimensions.radiusButton),
-                      borderSide: const BorderSide(color: AppColors.cardBorder),
+                      borderSide: BorderSide(color: AppColors.cardBorder),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius:
                           BorderRadius.circular(AppDimensions.radiusButton),
-                      borderSide: const BorderSide(
+                      borderSide: BorderSide(
                           color: AppColors.champagneGold,
                           width: AppDimensions.borderThin),
                     ),
@@ -268,7 +268,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(
                                 AppDimensions.radiusButton),
-                            side: const BorderSide(color: AppColors.cardBorder),
+                            side: BorderSide(color: AppColors.cardBorder),
                           ),
                         ),
                       );
@@ -413,7 +413,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                               l10n.splash_referral_question,
                               style: AppTypography.captionMedium.copyWith(
                                 color: AppColors.champagneGold,
-                                decoration: TextDecoration.underline,
+                                decoration: TextDecoration.none,
                                 decorationColor: AppColors.champagneGold,
                               ),
                             ),
@@ -445,7 +445,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                       shape: BoxShape.circle,
                       border: Border.all(color: AppColors.cardBorder),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.language_rounded,
                       color: AppColors.pearlWhite,
                       size: 20,

@@ -351,6 +351,26 @@ class AppLocalizationsId extends AppLocalizations {
       'Anda telah melihat semua orang di sekitar';
 
   @override
+  String get discovery_handoff_interest_subtitle =>
+      'Profil dengan permintaan aktif berpindah ke Minat selama Anda menunggu atau merespons.';
+
+  @override
+  String get discovery_handoff_interest_title => 'Minat Anda sedang diproses';
+
+  @override
+  String get discovery_handoff_match_subtitle =>
+      'Profil yang cocok berpindah ke Chat sehingga tidak ditampilkan lagi di Temukan.';
+
+  @override
+  String get discovery_handoff_match_title => 'Koneksi Anda sudah siap';
+
+  @override
+  String get discovery_handoff_open_chat => 'Buka Chat';
+
+  @override
+  String get discovery_handoff_open_interests => 'Buka Minat';
+
+  @override
   String get discovery_header_title => '<merek0/>';
 
   @override

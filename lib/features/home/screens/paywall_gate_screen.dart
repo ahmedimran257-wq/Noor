@@ -51,9 +51,9 @@ class _PaywallGateContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.surfaceMid,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         border: Border(
           top: BorderSide(color: AppColors.goldBorder, width: 1),
         ),
@@ -87,7 +87,7 @@ class _PaywallGateContent extends StatelessWidget {
               color: AppColors.goldGlow,
               border: Border.all(color: AppColors.goldBorder, width: 1.5),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.lock_outline_rounded,
               color: AppColors.champagneGold,
               size: 32,
@@ -144,7 +144,7 @@ class _PaywallGateContent extends StatelessWidget {
                 color: AppColors.champagneGold,
               ),
               alignment: Alignment.center,
-              child: const Text('See Plans', style: AppTypography.button),
+              child: Text('See Plans', style: AppTypography.button),
             ),
           ),
 
@@ -153,7 +153,7 @@ class _PaywallGateContent extends StatelessWidget {
           // Not Now
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text(
+            child: Text(
               'Not Now',
               style: AppTypography.bodyMuted,
             ),

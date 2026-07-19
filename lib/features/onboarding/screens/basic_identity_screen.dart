@@ -381,7 +381,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
+            colorScheme: ColorScheme.dark(
               primary: AppColors.champagneGold,
               onPrimary: AppColors.obsidianNight,
               surface: AppColors.surfaceMid,
@@ -562,7 +562,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.shield_outlined,
+                      Icon(Icons.shield_outlined,
                           color: AppColors.champagneGold, size: 16),
                       const SizedBox(width: AppDimensions.space10),
                       Expanded(
@@ -592,7 +592,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space32),
 
               if (_isGuardianMode) ...[
-                const Text('GUARDIAN CONTACT INFO',
+                Text('GUARDIAN CONTACT INFO',
                     style: AppTypography.sectionLabel),
                 const SizedBox(height: AppDimensions.space8),
                 SilarahTextField(
@@ -662,7 +662,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.calendar_today_outlined,
+                      Icon(Icons.calendar_today_outlined,
                           color: AppColors.slateMist,
                           size: AppDimensions.iconSizeMedium),
                       const SizedBox(width: AppDimensions.space12),
@@ -751,7 +751,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.check_circle_rounded,
+                          Icon(Icons.check_circle_rounded,
                               color: AppColors.champagneGold, size: 18),
                           const SizedBox(width: AppDimensions.space8),
                           Text(l10n.onboarding_location_confirmed,
@@ -763,7 +763,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                       // City
                       Row(
                         children: [
-                          const Icon(Icons.location_city_rounded,
+                          Icon(Icons.location_city_rounded,
                               color: AppColors.slateMist, size: 18),
                           const SizedBox(width: AppDimensions.space12),
                           Text(l10n.onboarding_label_city,
@@ -775,14 +775,14 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                       // State
                       if (_selectedStateName != null &&
                           _selectedStateName!.isNotEmpty) ...[
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 8.0),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
                           child:
                               Divider(color: AppColors.cardBorder, height: 1),
                         ),
                         Row(
                           children: [
-                            const Icon(Icons.map_outlined,
+                            Icon(Icons.map_outlined,
                                 color: AppColors.slateMist, size: 18),
                             const SizedBox(width: AppDimensions.space12),
                             Text(
@@ -798,14 +798,14 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                       ],
                       // Country
                       if (_selectedCountryName != null) ...[
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 8.0),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
                           child:
                               Divider(color: AppColors.cardBorder, height: 1),
                         ),
                         Row(
                           children: [
-                            const Icon(Icons.public,
+                            Icon(Icons.public,
                                 color: AppColors.slateMist, size: 18),
                             const SizedBox(width: AppDimensions.space12),
                             Text(l10n.localeName == 'ar' ? 'البلد' : 'Country',
@@ -878,8 +878,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                             : AppColors.slateMist,
                       ),
                     )),
-                    const Icon(Icons.expand_more_rounded,
-                        color: AppColors.slateMist),
+                    Icon(Icons.expand_more_rounded, color: AppColors.slateMist),
                   ]),
                 ),
               ),
@@ -965,7 +964,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                           ),
                         ),
                       ),
-                      const Icon(Icons.expand_more_rounded,
+                      Icon(Icons.expand_more_rounded,
                           color: AppColors.slateMist),
                     ],
                   ),
@@ -1012,7 +1011,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.lock_outline_rounded,
+                    Icon(Icons.lock_outline_rounded,
                         color: AppColors.slateMist, size: 14),
                     const SizedBox(width: AppDimensions.space8),
                     Expanded(
@@ -1072,7 +1071,7 @@ class _MissingLocationCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.location_off_outlined,
+          Icon(Icons.location_off_outlined,
               color: AppColors.softCoral, size: 20),
           const SizedBox(width: AppDimensions.space12),
           Expanded(
@@ -1099,7 +1098,7 @@ class _MissingLocationCard extends StatelessWidget {
                     'Go to location step',
                     style: AppTypography.captionMedium.copyWith(
                       color: AppColors.champagneGold,
-                      decoration: TextDecoration.underline,
+                      decoration: TextDecoration.none,
                       decorationColor: AppColors.champagneGold,
                     ),
                   ),
@@ -1403,7 +1402,7 @@ class _GenericListPickerState extends State<_GenericListPicker> {
                 decoration: InputDecoration(
                   hintText: 'Search…',
                   hintStyle: AppTypography.inputLabel,
-                  prefixIcon: const Icon(Icons.search_rounded,
+                  prefixIcon: Icon(Icons.search_rounded,
                       color: AppColors.slateMist, size: 20),
                   filled: true,
                   fillColor: AppColors.inputSurface,
@@ -1413,17 +1412,15 @@ class _GenericListPickerState extends State<_GenericListPicker> {
                   border: OutlineInputBorder(
                       borderRadius:
                           BorderRadius.circular(AppDimensions.radiusButton),
-                      borderSide:
-                          const BorderSide(color: AppColors.cardBorder)),
+                      borderSide: BorderSide(color: AppColors.cardBorder)),
                   enabledBorder: OutlineInputBorder(
                       borderRadius:
                           BorderRadius.circular(AppDimensions.radiusButton),
-                      borderSide:
-                          const BorderSide(color: AppColors.cardBorder)),
+                      borderSide: BorderSide(color: AppColors.cardBorder)),
                   focusedBorder: OutlineInputBorder(
                       borderRadius:
                           BorderRadius.circular(AppDimensions.radiusButton),
-                      borderSide: const BorderSide(
+                      borderSide: BorderSide(
                           color: AppColors.champagneGold,
                           width: AppDimensions.borderThin)),
                 ),
@@ -1432,8 +1429,8 @@ class _GenericListPickerState extends State<_GenericListPicker> {
             const SizedBox(height: AppDimensions.space8),
             Flexible(
               child: _filtered.isEmpty
-                  ? const Padding(
-                      padding: EdgeInsets.all(AppDimensions.space24),
+                  ? Padding(
+                      padding: const EdgeInsets.all(AppDimensions.space24),
                       child: Text('Nothing found.',
                           style: AppTypography.bodyMuted,
                           textAlign: TextAlign.center),
@@ -1448,7 +1445,7 @@ class _GenericListPickerState extends State<_GenericListPicker> {
                         return ListTile(
                           title: Text(item, style: AppTypography.body),
                           trailing: isSel
-                              ? const Icon(Icons.check_rounded,
+                              ? Icon(Icons.check_rounded,
                                   color: AppColors.champagneGold, size: 20)
                               : null,
                           selected: isSel,

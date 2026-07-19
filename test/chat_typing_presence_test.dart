@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:silarah/core/cubits/chat/chat_cubit.dart';
 import 'package:silarah/core/cubits/chat/chat_state.dart';
+import 'package:silarah/core/widgets/loaders/silarah_blur_image.dart';
 import 'package:silarah/features/home/screens/chat_screen.dart';
 
 class _TestChatCubit extends ChatCubit {
@@ -32,8 +33,9 @@ const _conversationId = '00000000-0000-0000-0000-000000000123';
 const _conversation = Conversation(
   id: _conversationId,
   matchName: 'Amina',
-  matchLastInitial: 'K',
+  matchLastInitial: 'Khan',
   messages: [],
+  photoUrl: 'https://example.test/avatar.webp',
 );
 
 void main() {
@@ -68,8 +70,9 @@ void main() {
       ),
     );
     await tester.pump();
-    expect(find.text('Amina K.'), findsOneWidget);
+    expect(find.text('Amina Khan'), findsOneWidget);
     expect(find.text('Private conversation'), findsOneWidget);
+    expect(find.byType(SilarahBlurImage), findsOneWidget);
 
     cubit.seed(const ChatState(
       conversations: [_conversation],

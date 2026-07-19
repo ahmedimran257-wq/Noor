@@ -113,7 +113,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
               shape: BoxShape.circle,
               border: Border.all(color: AppColors.cardBorder),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.arrow_back_rounded,
               color: AppColors.pearlWhite,
               size: AppDimensions.iconSizeMedium,
@@ -183,7 +183,7 @@ class _Step1 extends StatelessWidget {
               border: Border.all(
                   color: AppColors.softCoral.withValues(alpha: 0.4), width: 2),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.warning_amber_rounded,
               color: AppColors.softCoral,
               size: 56,
@@ -196,13 +196,13 @@ class _Step1 extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppDimensions.space16),
-          const Text(
+          Text(
             'We\'d hate to see you go. Before you proceed, here\'s what will happen:',
             style: AppTypography.bodyMuted,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppDimensions.space24),
-          const _InfoCard(
+          _InfoCard(
             icon: Icons.timer_outlined,
             color: AppColors.premiumGold,
             title: '30-day grace period',
@@ -210,7 +210,7 @@ class _Step1 extends StatelessWidget {
                 'Your account will be scheduled for deletion. You can log back in any time within 30 days to cancel.',
           ),
           const SizedBox(height: AppDimensions.space12),
-          const _InfoCard(
+          _InfoCard(
             icon: Icons.delete_sweep_outlined,
             color: AppColors.softCoral,
             title: 'Permanent data loss',
@@ -218,7 +218,7 @@ class _Step1 extends StatelessWidget {
                 'All matches, messages, and profile data will be permanently deleted after 30 days. This cannot be undone.',
           ),
           const SizedBox(height: AppDimensions.space12),
-          const _InfoCard(
+          _InfoCard(
             icon: Icons.credit_card_off_outlined,
             color: AppColors.slateMist,
             title: 'Cancel store billing separately',
@@ -238,7 +238,7 @@ class _Step1 extends StatelessWidget {
                 ),
               ),
               onPressed: onKeepAccount,
-              child: const Text('Keep My Account', style: AppTypography.button),
+              child: Text('Keep My Account', style: AppTypography.button),
             ),
           ),
           const SizedBox(height: AppDimensions.space12),
@@ -247,7 +247,7 @@ class _Step1 extends StatelessWidget {
             height: AppDimensions.buttonHeight,
             child: OutlinedButton(
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: AppColors.softCoral),
+                side: BorderSide(color: AppColors.softCoral),
                 shape: RoundedRectangleBorder(
                   borderRadius:
                       BorderRadius.circular(AppDimensions.radiusButton),
@@ -299,7 +299,7 @@ class _Step2 extends StatelessWidget {
           Text('Why are you leaving?',
               style: AppTypography.screenTitle.copyWith(fontSize: 22)),
           const SizedBox(height: AppDimensions.space8),
-          const Text('This helps us improve SILARAH for others.',
+          Text('This helps us improve SILARAH for others.',
               style: AppTypography.bodyMuted),
           const SizedBox(height: AppDimensions.space24),
           Container(
@@ -340,7 +340,7 @@ class _Step2 extends StatelessWidget {
                                 ),
                               ),
                               child: isSelected
-                                  ? const Icon(Icons.check_rounded,
+                                  ? Icon(Icons.check_rounded,
                                       color: AppColors.obsidianNight, size: 14)
                                   : null,
                             ),
@@ -353,8 +353,7 @@ class _Step2 extends StatelessWidget {
                       ),
                     ),
                     if (!isLast)
-                      const Divider(
-                          color: AppColors.divider, height: 1, indent: 52),
+                      Divider(color: AppColors.divider, height: 1, indent: 52),
                   ],
                 );
               }),
@@ -413,7 +412,7 @@ class _Step3 extends StatelessWidget {
           Text('Last step',
               style: AppTypography.screenTitle.copyWith(fontSize: 22)),
           const SizedBox(height: AppDimensions.space8),
-          const Text('Type DELETE to confirm you want to delete your account.',
+          Text('Type DELETE to confirm you want to delete your account.',
               style: AppTypography.bodyMuted),
           const SizedBox(height: AppDimensions.space24),
 
@@ -458,7 +457,14 @@ class _Step3 extends StatelessWidget {
                 hintText: 'Type DELETE here',
                 hintStyle: AppTypography.inputText
                     .copyWith(color: AppColors.slateMist),
+                filled: false,
+                fillColor: Colors.transparent,
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(
                     horizontal: AppDimensions.space16,
                     vertical: AppDimensions.space16),

@@ -20,6 +20,7 @@ import '../../../core/theme/app_curves.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
+import '../../../core/widgets/loaders/silarah_blur_image.dart';
 import '../../../core/widgets/silarah_empty_state.dart';
 import 'chat_screen.dart';
 import 'paywall_gate_screen.dart';
@@ -128,19 +129,19 @@ class _ChatListScreenState extends State<ChatListScreen>
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(
                                       AppDimensions.radiusButton),
-                                  borderSide: const BorderSide(
-                                      color: AppColors.cardBorder),
+                                  borderSide:
+                                      BorderSide(color: AppColors.cardBorder),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(
                                       AppDimensions.radiusButton),
-                                  borderSide: const BorderSide(
-                                      color: AppColors.goldBorder),
+                                  borderSide:
+                                      BorderSide(color: AppColors.goldBorder),
                                 ),
                               ),
                             )
-                          : const Align(
-                              key: ValueKey('messages_title'),
+                          : Align(
+                              key: const ValueKey('messages_title'),
                               alignment: Alignment.centerLeft,
                               child: Text(
                                 'Messages',
@@ -412,10 +413,19 @@ class _ConversationTile extends StatelessWidget {
                               : AppColors.cardBorder,
                         ),
                       ),
-                      child: const Icon(
-                        Icons.person_outline_rounded,
-                        color: AppColors.slateMist,
-                        size: 26,
+                      child: ClipOval(
+                        child: conversation.photoUrl == null ||
+                                conversation.photoUrl!.isEmpty
+                            ? Icon(
+                                Icons.person_outline_rounded,
+                                color: AppColors.slateMist,
+                                size: 26,
+                              )
+                            : SilarahBlurImage(
+                                imageUrl: conversation.photoUrl!,
+                                width: 50,
+                                height: 50,
+                              ),
                       ),
                     ),
                     const SizedBox(width: AppDimensions.space12),
@@ -427,7 +437,7 @@ class _ConversationTile extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            '${conversation.matchName} ${conversation.matchLastInitial}.',
+                            conversation.displayName,
                             style: hasUnread
                                 ? AppTypography.bodyMedium
                                 : AppTypography.body,
@@ -471,7 +481,7 @@ class _ConversationTile extends StatelessWidget {
                           Container(
                             width: 22,
                             height: 22,
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               color: AppColors.champagneGold,
                               shape: BoxShape.circle,
                             ),

@@ -225,7 +225,7 @@ class _RegionSearchFieldState extends State<RegionSearchField> {
           decoration: InputDecoration(
             hintText: widget.hint ?? 'Search state or region',
             hintStyle: AppTypography.inputLabel,
-            prefixIcon: const Icon(
+            prefixIcon: Icon(
               Icons.map_outlined,
               color: AppColors.slateMist,
               size: 20,
@@ -238,7 +238,7 @@ class _RegionSearchFieldState extends State<RegionSearchField> {
                 : _selectedDisplay != null
                     ? GestureDetector(
                         onTap: () => setState(() => _clearSelection()),
-                        child: const Icon(
+                        child: Icon(
                           Icons.close_rounded,
                           color: AppColors.slateMist,
                           size: 18,
@@ -280,16 +280,16 @@ class _RegionSearchFieldState extends State<RegionSearchField> {
           ],
         ),
         child: _loading
-            ? const Padding(
-                padding: EdgeInsets.all(16),
+            ? Padding(
+                padding: const EdgeInsets.all(16),
                 child: Text(
                   'Searching regions...',
                   style: AppTypography.bodyMuted,
                 ),
               )
             : _results.isEmpty
-                ? const Padding(
-                    padding: EdgeInsets.all(16),
+                ? Padding(
+                    padding: const EdgeInsets.all(16),
                     child: Text(
                       'No matching region found. You can search city or area below.',
                       style: AppTypography.bodyMuted,
@@ -299,7 +299,7 @@ class _RegionSearchFieldState extends State<RegionSearchField> {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: _results.length,
-                    separatorBuilder: (_, __) => const Divider(
+                    separatorBuilder: (_, __) => Divider(
                       height: 1,
                       color: AppColors.cardBorder,
                     ),
@@ -323,7 +323,7 @@ class _RegionSearchFieldState extends State<RegionSearchField> {
                                       .withValues(alpha: 0.08),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.map_rounded,
                                   color: AppColors.champagneGold,
                                   size: 18,

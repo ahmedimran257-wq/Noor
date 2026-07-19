@@ -22,8 +22,7 @@ import '../loaders/silarah_blur_image.dart';
 class SilarahProfileCard extends StatelessWidget {
   const SilarahProfileCard({
     super.key,
-    required this.firstName,
-    required this.lastNameInitial,
+    required this.displayName,
     required this.age,
     required this.cityName,
     this.sect,
@@ -43,8 +42,7 @@ class SilarahProfileCard extends StatelessWidget {
     this.blurhash,
   });
 
-  final String firstName;
-  final String lastNameInitial;
+  final String displayName;
   final int age;
   final String cityName;
   final String? sect;
@@ -78,7 +76,7 @@ class SilarahProfileCard extends StatelessWidget {
                 color: isFocused ? AppColors.goldBorder : AppColors.cardBorder,
                 width: AppDimensions.borderThin,
               ),
-              gradient: const LinearGradient(
+              gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
@@ -154,7 +152,7 @@ class SilarahProfileCard extends StatelessWidget {
                             children: [
                               // Name
                               Text(
-                                '$firstName $lastNameInitial.',
+                                displayName,
                                 style: AppTypography.userName,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -305,7 +303,7 @@ class _PrivatePhotoPlaceholder extends StatelessWidget {
                   width: 2,
                 ),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.person_outline_rounded,
                 color: AppColors.slateMist,
                 size: 40,
@@ -333,7 +331,7 @@ class _GradientOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
@@ -341,7 +339,7 @@ class _GradientOverlay extends StatelessWidget {
             AppColors.cardGradientMid,
             AppColors.cardGradientBottom,
           ],
-          stops: [0.0, 0.5, 1.0],
+          stops: const [0.0, 0.5, 1.0],
         ),
         boxShadow: [
           BoxShadow(
@@ -375,7 +373,7 @@ class _VerifiedBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.verified_rounded,
             color: AppColors.verifiedTeal,
             size: 12,
@@ -415,12 +413,12 @@ class _FrostedPhotoPill extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.lock_outline_rounded,
-              color: AppColors.pearlWhite, size: 14),
+              color: AppColors.onMedia, size: 14),
           const SizedBox(width: AppDimensions.space6),
           Text(
             '$photoCount photo${photoCount > 1 ? 's' : ''} · visible after acceptance',
             style: AppTypography.caption.copyWith(
-              color: AppColors.pearlWhite,
+              color: AppColors.onMedia,
               fontSize: 11,
             ),
           ),
@@ -450,12 +448,12 @@ class _PhotoCountPill extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.camera_alt_outlined,
-              color: AppColors.pearlWhite, size: 12),
+              color: AppColors.onMedia, size: 12),
           const SizedBox(width: AppDimensions.space4),
           Text(
             '$count',
             style: AppTypography.caption.copyWith(
-              color: AppColors.pearlWhite,
+              color: AppColors.onMedia,
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
@@ -519,7 +517,7 @@ class _SendInterestButton extends StatelessWidget {
                     AppColors.inkTeal.withValues(alpha: 0.10),
                   ],
                 )
-              : const LinearGradient(
+              : LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
@@ -604,7 +602,7 @@ class _IconActionButton extends StatelessWidget {
         ),
         child: Icon(
           icon,
-          color: AppColors.pearlWhite,
+          color: AppColors.onMedia,
           size: AppDimensions.iconSizeMedium,
         ),
       ),
@@ -644,7 +642,7 @@ class _LastActivePill extends StatelessWidget {
           Text(
             label,
             style: AppTypography.caption.copyWith(
-              color: AppColors.pearlWhite,
+              color: AppColors.onMedia,
               fontSize: 10,
               fontWeight: FontWeight.w500,
             ),

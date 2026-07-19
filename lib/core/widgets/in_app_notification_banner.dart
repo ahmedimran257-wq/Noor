@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/material.dart';
 
@@ -125,7 +125,7 @@ class _InAppNotificationBannerHostState
                         borderRadius: BorderRadius.circular(
                           AppDimensions.radiusButton,
                         ),
-                        side: const BorderSide(
+                        side: BorderSide(
                           color: AppColors.champagneGold,
                           width: 1.2,
                         ),
@@ -143,11 +143,11 @@ class _InAppNotificationBannerHostState
                               Container(
                                 width: 38,
                                 height: 38,
-                                decoration: const BoxDecoration(
+                                decoration: BoxDecoration(
                                   color: AppColors.goldGlow,
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.notifications_active_rounded,
                                   color: AppColors.champagneGold,
                                   size: 20,
@@ -182,7 +182,7 @@ class _InAppNotificationBannerHostState
                                 button: true,
                                 child: IconButton(
                                   onPressed: _dismiss,
-                                  icon: const Icon(
+                                  icon: Icon(
                                     Icons.close_rounded,
                                     color: AppColors.slateMist,
                                     size: 19,

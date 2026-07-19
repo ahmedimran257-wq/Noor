@@ -15,6 +15,7 @@
 //   • Sticky bottom bar: bookmark + gold "Send Interest"
 // ============================================================
 
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -23,12 +24,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/widgets/loaders/silarah_blur_image.dart';
 import '../../../core/models/discovery_profile.dart';
 import '../../../core/cubits/block_report/block_report_cubit.dart';
+import '../../../core/cubits/chat/chat_cubit.dart';
 import '../../../core/cubits/interests/interests_cubit.dart';
+import '../../../core/cubits/interests/interests_state.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/services/compatibility_service.dart';
 import '../../../core/services/bookmark_service.dart';
 import '../../../core/services/photo_access_service.dart';
 import '../../../core/services/profile_photo_service.dart';
+import '../../../core/services/profile_view_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
@@ -36,6 +40,8 @@ import '../../../core/widgets/buttons/silarah_pressable.dart';
 import '../widgets/interest_ceremony_overlay.dart';
 import '../widgets/interest_note_sheet.dart';
 import '../widgets/report_bottom_sheet.dart';
+import 'chat_screen.dart';
+import 'paywall_gate_screen.dart';
 
 class ProfileDetailScreen extends StatefulWidget {
   const ProfileDetailScreen({
@@ -66,6 +72,7 @@ class ProfileDetailScreen extends StatefulWidget {
 class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   late bool _interestSent;
   bool _bookmarked = false;
+  bool _bookmarkUpdating = false;
   int _photoPage = 0;
   late final PageController _photoController;
   late List<String?> _photoUrls;
@@ -97,6 +104,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     _interestSent = widget.isInterestSent;
     _photoController = PageController();
     _photoUrls = _initialPhotoUrls(widget.profile);
+    if (!widget.isOwnProfile) {
+      unawaited(ProfileViewService.instance.record(widget.profile.id));
+    }
     if (_requiresPhotoAuthorization) {
       _loadPhotoAccessContext();
     } else if (_photoUrls.whereType<String>().length < _photoUrls.length) {
@@ -299,6 +309,8 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   }
 
   Future<void> _handleBookmark() async {
+    if (_bookmarkUpdating) return;
+    _bookmarkUpdating = true;
     HapticFeedback.selectionClick();
     final previous = _bookmarked;
     setState(() => _bookmarked = !_bookmarked);
@@ -310,8 +322,53 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
         setState(() => _bookmarked = ids.contains(widget.profile.id));
       }
     } catch (_) {
-      if (mounted) setState(() => _bookmarked = previous);
+      if (mounted) {
+        setState(() => _bookmarked = previous);
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(const SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Saved profiles could not be updated. Try again.'),
+          ));
+      }
+    } finally {
+      _bookmarkUpdating = false;
     }
+  }
+
+  Future<void> _openMatchedConversation() async {
+    final chatCubit = context.read<ChatCubit>();
+    final conversationId = await chatCubit.openOrCreateConversation(
+      widget.profile.id,
+      widget.profile.firstName,
+      widget.profile.lastNameInitial,
+    );
+    if (!mounted) return;
+    if (conversationId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text('Your conversation is still being prepared. Try again.'),
+      ));
+      return;
+    }
+    final access = await chatCubit.checkChatAccess(conversationId);
+    if (!mounted) return;
+    if (access.requiresSubscription) {
+      await PaywallGateSheet.show(context);
+      return;
+    }
+    if (!access.allowed) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text('This conversation is not available right now.'),
+      ));
+      return;
+    }
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => ChatScreen(conversationId: conversationId),
+      ),
+    );
   }
 
   void _handleShare() {
@@ -328,7 +385,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
         duration: const Duration(seconds: 2),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          side: const BorderSide(color: AppColors.cardBorder),
+          side: BorderSide(color: AppColors.cardBorder),
         ),
       ),
     );
@@ -366,6 +423,14 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final p = widget.profile;
+    var interaction = context.select<InterestsCubit, ProfileInteractionState>(
+      (cubit) => cubit.state.interactionWith(p.id),
+    );
+    if (widget.isMutualMatch) {
+      interaction = ProfileInteractionState.matched;
+    } else if (interaction == ProfileInteractionState.none && _interestSent) {
+      interaction = ProfileInteractionState.pendingSent;
+    }
 
     return Scaffold(
       backgroundColor: AppColors.obsidianNight,
@@ -443,8 +508,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     // Name + age + location
-                    _NameBlock(
-                        profile: p, isMutualMatch: _effectiveMutualMatch),
+                    _NameBlock(profile: p),
                     const SizedBox(height: AppDimensions.space20),
 
                     // Compatibility indicator
@@ -620,9 +684,15 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
               bottom: 0,
               child: _CtaBar(
                 firstName: p.firstName,
-                isInterestSent: _interestSent,
+                interaction: interaction,
                 isBookmarked: _bookmarked,
-                onSendInterest: _interestSent ? null : _handleSendInterest,
+                onSendInterest: interaction == ProfileInteractionState.none
+                    ? _handleSendInterest
+                    : null,
+                onOpenConversation:
+                    interaction == ProfileInteractionState.matched
+                        ? _openMatchedConversation
+                        : null,
                 onBookmark: _handleBookmark,
               ),
             )
@@ -808,14 +878,14 @@ class _PhotoCarousel extends StatelessWidget {
         ),
 
         // Bottom gradient fade
-        const IgnorePointer(
+        IgnorePointer(
           child: DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [Colors.transparent, AppColors.obsidianNight],
-                stops: [0.5, 1.0],
+                stops: const [0.5, 1.0],
               ),
             ),
           ),
@@ -839,7 +909,7 @@ class _PhotoCarousel extends StatelessWidget {
                 child: Text(
                   '${currentPage + 1} / $totalPhotos',
                   style: AppTypography.caption.copyWith(
-                    color: AppColors.pearlWhite,
+                    color: AppColors.onMedia,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -894,7 +964,7 @@ class _PhotoCarousel extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: i == currentPage
                           ? AppColors.champagneGold
-                          : AppColors.pearlWhite.withValues(alpha: 0.4),
+                          : AppColors.onMedia.withValues(alpha: 0.4),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -951,11 +1021,11 @@ class _SinglePhotoSlide extends StatelessWidget {
     return GestureDetector(
       onTap: () => _openFullScreen(context),
       child: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF1A1A2F), AppColors.obsidianNight],
+            colors: [const Color(0xFF1A1A2F), AppColors.obsidianNight],
           ),
         ),
         child: isPrivate
@@ -1030,7 +1100,7 @@ class _PublicSlide extends StatelessWidget {
       );
     }
     if (isLoading) {
-      return const Center(
+      return Center(
         child: CircularProgressIndicator(
           color: AppColors.champagneGold,
           strokeWidth: 2,
@@ -1081,7 +1151,7 @@ class _GalleryNavButton extends StatelessWidget {
               shape: BoxShape.circle,
               border: Border.all(color: AppColors.cardBorder),
             ),
-            child: Icon(icon, color: AppColors.pearlWhite, size: 28),
+            child: Icon(icon, color: AppColors.onMedia, size: 28),
           ),
         ),
       ),
@@ -1127,14 +1197,14 @@ class _PrivateSlide extends StatelessWidget {
               color: AppColors.surfaceGlass,
             ),
             child: accessLoading
-                ? const Padding(
-                    padding: EdgeInsets.all(30),
+                ? Padding(
+                    padding: const EdgeInsets.all(30),
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       color: AppColors.champagneGold,
                     ),
                   )
-                : const Icon(
+                : Icon(
                     Icons.lock_outline_rounded,
                     color: AppColors.champagneGold,
                     size: 38,
@@ -1276,7 +1346,7 @@ class _PersonPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Icon(Icons.person_outline_rounded,
           color: AppColors.slateMist, size: 80),
     );
@@ -1345,21 +1415,24 @@ class _FullScreenPhotoViewerState extends State<_FullScreenPhotoViewer> {
                 child: Container(
                   width: double.infinity,
                   height: MediaQuery.of(context).size.height * 0.8,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Color(0xFF1A1A2F), AppColors.obsidianNight],
+                      colors: [
+                        const Color(0xFF1A1A2F),
+                        AppColors.obsidianNight
+                      ],
                     ),
                   ),
                   child: isPrivate
-                      ? const Center(
+                      ? Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.lock_outline_rounded,
                                   color: AppColors.slateMist, size: 60),
-                              SizedBox(height: 12),
+                              const SizedBox(height: 12),
                               Text('Locked', style: AppTypography.bodyMuted),
                             ],
                           ),
@@ -1391,7 +1464,7 @@ class _FullScreenPhotoViewerState extends State<_FullScreenPhotoViewer> {
                   border: Border.all(color: AppColors.cardBorder),
                 ),
                 child: const Icon(Icons.close_rounded,
-                    color: AppColors.pearlWhite, size: 20),
+                    color: AppColors.onMedia, size: 20),
               ),
             ),
           ),
@@ -1414,7 +1487,7 @@ class _FullScreenPhotoViewerState extends State<_FullScreenPhotoViewer> {
                 child: Text(
                   '${_page + 1} / $totalPhotos',
                   style: AppTypography.caption.copyWith(
-                    color: AppColors.pearlWhite,
+                    color: AppColors.onMedia,
                   ),
                 ),
               ),
@@ -1455,9 +1528,8 @@ class _HeaderButton extends StatelessWidget {
 // ── Name Block ────────────────────────────────────────────────
 
 class _NameBlock extends StatelessWidget {
-  const _NameBlock({required this.profile, required this.isMutualMatch});
+  const _NameBlock({required this.profile});
   final DiscoveryProfile profile;
-  final bool isMutualMatch;
 
   @override
   Widget build(BuildContext context) {
@@ -1471,9 +1543,7 @@ class _NameBlock extends StatelessWidget {
       heightStr = '$cm cm ($feet ft $inches in)';
     }
 
-    final displayName = isMutualMatch
-        ? '${profile.firstName} ${profile.lastName ?? profile.lastNameInitial}'
-        : '${profile.firstName} ${profile.lastNameInitial}.';
+    final displayName = profile.displayName;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1519,8 +1589,7 @@ class _VerifiedPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.verified_rounded,
-              color: AppColors.verifiedTeal, size: 12),
+          Icon(Icons.verified_rounded, color: AppColors.verifiedTeal, size: 12),
           const SizedBox(width: AppDimensions.space4),
           Text(
             'Verified',
@@ -1573,7 +1642,7 @@ class _OwnProfilePreviewNotice extends StatelessWidget {
               color: AppColors.verifiedTeal.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
             ),
-            child: const Icon(Icons.visibility_outlined,
+            child: Icon(Icons.visibility_outlined,
                 color: AppColors.verifiedTeal, size: 20),
           ),
           const SizedBox(width: AppDimensions.space12),
@@ -1581,7 +1650,7 @@ class _OwnProfilePreviewNotice extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Member preview', style: AppTypography.bodyMedium),
+                Text('Member preview', style: AppTypography.bodyMedium),
                 const SizedBox(height: AppDimensions.space4),
                 Text(
                   'This is the profile members see in discovery. Swipe through all $photoCount ${photoCount == 1 ? 'photo' : 'photos'} to review the full experience.',
@@ -1644,7 +1713,7 @@ class _OwnProfileActionBar extends StatelessWidget {
         AppDimensions.space16,
         MediaQuery.of(context).padding.bottom + AppDimensions.space12,
       ),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.navBarSurface,
         border: Border(top: BorderSide(color: AppColors.navBarBorder)),
       ),
@@ -1696,7 +1765,7 @@ class _OwnProfileAction extends StatelessWidget {
         height: AppDimensions.buttonHeight,
         decoration: BoxDecoration(
           gradient: primary
-              ? const LinearGradient(colors: [
+              ? LinearGradient(colors: [
                   AppColors.champagneLight,
                   AppColors.champagneGold,
                 ])
@@ -1797,7 +1866,7 @@ class _CompatibilityIndicator extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: AppDimensions.space4),
-                const Text(
+                Text(
                   'Based on sect, deen, education & age preferences',
                   style: AppTypography.caption,
                 ),
@@ -1823,7 +1892,7 @@ class _SectionHeader extends StatelessWidget {
       children: [
         Text(label.toUpperCase(), style: AppTypography.sectionLabel),
         const SizedBox(height: AppDimensions.space8),
-        const Divider(color: AppColors.divider, height: 1),
+        Divider(color: AppColors.divider, height: 1),
       ],
     );
   }
@@ -1935,20 +2004,45 @@ class _DetailChip extends StatelessWidget {
 class _CtaBar extends StatelessWidget {
   const _CtaBar({
     required this.firstName,
-    required this.isInterestSent,
+    required this.interaction,
     required this.isBookmarked,
     this.onSendInterest,
+    this.onOpenConversation,
     required this.onBookmark,
   });
 
   final String firstName;
-  final bool isInterestSent;
+  final ProfileInteractionState interaction;
   final bool isBookmarked;
   final Future<void> Function()? onSendInterest;
+  final Future<void> Function()? onOpenConversation;
   final VoidCallback onBookmark;
 
   @override
   Widget build(BuildContext context) {
+    final isActive = interaction != ProfileInteractionState.none;
+    final isMatched = interaction == ProfileInteractionState.matched;
+    final normalizedName = firstName.trim();
+    final (label, icon) = switch (interaction) {
+      ProfileInteractionState.pendingSent => (
+          normalizedName.isEmpty
+              ? 'Awaiting response'
+              : 'Awaiting $normalizedName\'s response',
+          Icons.schedule_rounded,
+        ),
+      ProfileInteractionState.pendingReceived => (
+          'Respond from Interests',
+          Icons.favorite_outline_rounded,
+        ),
+      ProfileInteractionState.matched => (
+          'Open conversation',
+          Icons.chat_bubble_outline_rounded,
+        ),
+      ProfileInteractionState.none => (
+          'Send interest to $firstName',
+          Icons.favorite_outline_rounded,
+        ),
+    };
     return Container(
       padding: EdgeInsets.fromLTRB(
         AppDimensions.space24,
@@ -1956,7 +2050,7 @@ class _CtaBar extends StatelessWidget {
         AppDimensions.space24,
         AppDimensions.space12 + MediaQuery.of(context).padding.bottom,
       ),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
@@ -1998,31 +2092,50 @@ class _CtaBar extends StatelessWidget {
 
           // Send Interest — fills remaining space
           Expanded(
-            child: GestureDetector(
-              onTap: isInterestSent ? null : () => onSendInterest?.call(),
+            child: SilarahPressable(
+              semanticLabel: label,
+              enabled: !isActive || isMatched,
+              onTap: isMatched
+                  ? () => onOpenConversation?.call()
+                  : isActive
+                      ? null
+                      : () => onSendInterest?.call(),
               child: AnimatedContainer(
                 duration: AppDimensions.durationTransition,
                 height: AppDimensions.buttonHeight,
                 decoration: BoxDecoration(
-                  color: isInterestSent
+                  color: isActive
                       ? AppColors.champagneGold.withValues(alpha: 0.15)
                       : AppColors.champagneGold,
                   borderRadius:
                       BorderRadius.circular(AppDimensions.radiusButton),
-                  border: isInterestSent
+                  border: isActive
                       ? Border.all(color: AppColors.champagneGold)
                       : null,
                 ),
-                child: Center(
-                  child: Text(
-                    isInterestSent
-                        ? 'Interest Sent ✓'
-                        : 'Send Interest to $firstName',
-                    style: isInterestSent
-                        ? AppTypography.button
-                            .copyWith(color: AppColors.champagneGold)
-                        : AppTypography.button,
-                  ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      icon,
+                      size: 19,
+                      color: isActive
+                          ? AppColors.champagneGold
+                          : AppColors.obsidianNight,
+                    ),
+                    const SizedBox(width: AppDimensions.space8),
+                    Flexible(
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: isActive
+                            ? AppTypography.button
+                                .copyWith(color: AppColors.champagneGold)
+                            : AppTypography.button,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -2085,7 +2198,7 @@ class _ReportBlockSheet extends StatelessWidget {
             },
           ),
           const SizedBox(height: AppDimensions.space4),
-          const Divider(color: AppColors.divider),
+          Divider(color: AppColors.divider),
           const SizedBox(height: AppDimensions.space4),
           _SheetAction(
             icon: Icons.block_rounded,
@@ -2114,7 +2227,7 @@ class _ReportBlockSheet extends StatelessWidget {
             height: AppDimensions.buttonHeightSmall,
             child: OutlinedButton(
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: AppColors.cardBorder),
+                side: BorderSide(color: AppColors.cardBorder),
                 shape: RoundedRectangleBorder(
                   borderRadius:
                       BorderRadius.circular(AppDimensions.radiusButton),

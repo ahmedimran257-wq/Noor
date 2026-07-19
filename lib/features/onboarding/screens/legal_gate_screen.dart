@@ -65,9 +65,9 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: RadialGradient(
-            center: Alignment(0, -0.5), // slightly above center
+            center: const Alignment(0, -0.5), // slightly above center
             radius: 1.2,
             colors: [
               AppColors.navyCharcoal, // Deep premium navy-charcoal core
@@ -366,7 +366,7 @@ class _LegalSaveError extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.error_outline_rounded,
                 color: AppColors.softCoral,
                 size: AppDimensions.iconSizeMedium,
@@ -450,7 +450,7 @@ class _TermsSummaryCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.delete_outline_rounded,
+                Icon(Icons.delete_outline_rounded,
                     color: AppColors.champagneGold, size: 20),
                 const SizedBox(width: AppDimensions.space12),
                 Expanded(
@@ -505,7 +505,7 @@ class _SilarahCheckbox extends StatelessWidget {
               ),
             ),
             child: value
-                ? const Icon(Icons.check_rounded,
+                ? Icon(Icons.check_rounded,
                     color: AppColors.obsidianNight, size: 16)
                 : null,
           ),

@@ -54,7 +54,7 @@ class _GoldOrnament extends StatelessWidget {
         Container(
           width: 5,
           height: 5,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: AppColors.champagneGold,
           ),

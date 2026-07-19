@@ -108,7 +108,8 @@ void main() {
       expect(profile, contains('await context.read<AuthCubit>().signOut()'));
       expect(profile, contains('onChanged: _loadBookmarks'));
       expect(profile, isNot(contains("'is_boosted': true")));
-      expect(views, contains(".gte("));
+      expect(views, contains("'get_my_profile_viewers'"));
+      expect(views, contains('subscription.isSubscribed'));
       expect(views, contains('final sent = await context'));
       expect(
           migration,

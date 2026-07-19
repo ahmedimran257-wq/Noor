@@ -162,7 +162,7 @@ class _QuickLocationScreenState extends State<QuickLocationScreen> {
             subtitle: 'This helps us show you relevant matches nearby.',
           ),
           const SizedBox(height: AppDimensions.space32),
-          const Text('Country', style: AppTypography.sectionLabel),
+          Text('Country', style: AppTypography.sectionLabel),
           const SizedBox(height: AppDimensions.space8),
           InkWell(
             borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
@@ -187,14 +187,13 @@ class _QuickLocationScreenState extends State<QuickLocationScreen> {
                 Text(_country.flag, style: const TextStyle(fontSize: 24)),
                 const SizedBox(width: 12),
                 Expanded(child: Text(_country.name, style: AppTypography.body)),
-                const Icon(Icons.keyboard_arrow_down_rounded,
+                Icon(Icons.keyboard_arrow_down_rounded,
                     color: AppColors.slateMist),
               ]),
             ),
           ),
           const SizedBox(height: AppDimensions.space24),
-          const Text('State / Region (optional)',
-              style: AppTypography.sectionLabel),
+          Text('State / Region (optional)', style: AppTypography.sectionLabel),
           const SizedBox(height: AppDimensions.space8),
           RegionSearchField(
             key: ValueKey('region_${_country.iso2}'),
@@ -210,12 +209,12 @@ class _QuickLocationScreenState extends State<QuickLocationScreen> {
             }),
           ),
           const SizedBox(height: AppDimensions.space8),
-          const Text(
+          Text(
             'Optional, but helps narrow city results in large countries.',
             style: AppTypography.bodyMuted,
           ),
           const SizedBox(height: AppDimensions.space24),
-          const Text('City', style: AppTypography.sectionLabel),
+          Text('City', style: AppTypography.sectionLabel),
           const SizedBox(height: AppDimensions.space8),
           CitySearchField(
             key: ValueKey('${_country.iso2}_${_region?.name ?? ''}'),
@@ -238,7 +237,7 @@ class _QuickLocationScreenState extends State<QuickLocationScreen> {
             }),
           ),
           const SizedBox(height: AppDimensions.space16),
-          const Text(
+          Text(
             'Select a city from the results to continue.',
             style: AppTypography.bodyMuted,
           ),

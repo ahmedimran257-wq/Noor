@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/cubits/interests/interests_cubit.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/cubits/auth/auth_state.dart';
+import '../../../core/cubits/subscription/subscription_cubit.dart';
+import '../../../core/cubits/subscription/subscription_state.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/models/discovery_profile.dart';
 import '../../../core/theme/app_colors.dart';
@@ -31,16 +35,20 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
   final Set<String> _interestSent = {};
   List<_Viewer> _loadedViewers = [];
   bool _isLoading = false;
+  bool _hasLoaded = false;
 
   @override
   void initState() {
     super.initState();
-    if (SupabaseService.isInitialized) {
-      _loadViews();
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && context.read<SubscriptionCubit>().state.isSubscribed) {
+        _loadViews();
+      }
+    });
   }
 
   Future<void> _loadViews() async {
+    if (_isLoading || _hasLoaded) return;
     setState(() => _isLoading = true);
     try {
       final authState = context.read<AuthCubit>().state;
@@ -50,58 +58,23 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
         return;
       }
 
-      // 1. Get my profile ID
-      final myProfileRes = await SupabaseService.client
-          .from('profiles')
-          .select('id')
-          .eq('user_id', myUserId)
-          .single();
-      final myProfileId = myProfileRes['id'] as String;
-
-      // 2. Fetch views
-      final response = await SupabaseService.client
-          .from('profile_views')
-          .select('''
-            viewed_at,
-            viewer:profiles!viewer_profile_id (
-              id,
-              user_id,
-              first_name,
-              last_name,
-              date_of_birth,
-              gender,
-              is_verified,
-              bio,
-              photo_privacy,
-              sect,
-              deen_level,
-              city_id,
-              cities:cities!city_id (name)
-            )
-          ''')
-          .eq('viewed_profile_id', myProfileId)
-          .gte(
-            'viewed_at',
-            DateTime.now()
-                .subtract(const Duration(days: 7))
-                .toUtc()
-                .toIso8601String(),
-          )
-          .order('viewed_at', ascending: false)
-          .limit(50);
+      final response = await SupabaseService.client.rpc(
+        'get_my_profile_viewers',
+        params: {'p_limit': 50},
+      );
 
       final List<dynamic> rows = response as List<dynamic>;
       final List<_Viewer> viewersList = [];
 
       for (final row in rows) {
-        final viewedAt =
-            DateTime.tryParse(row['viewed_at'] as String) ?? DateTime.now();
-        final viewerData = row['viewer'] as Map<String, dynamic>?;
-        if (viewerData == null) continue;
-
-        final viewerUserId = (viewerData['user_id'] as String?)?.trim();
+        final viewerData = Map<String, dynamic>.from(row as Map);
+        final viewedAt = DateTime.tryParse(
+              viewerData['viewed_at']?.toString() ?? '',
+            ) ??
+            DateTime.now();
+        final viewerUserId = (viewerData['viewer_user_id'] as String?)?.trim();
         final firstName = (viewerData['first_name'] as String?)?.trim();
-        final dobStr = viewerData['date_of_birth'] as String?;
+        final dobStr = viewerData['date_of_birth']?.toString();
         final dob = dobStr != null ? DateTime.tryParse(dobStr) : null;
         final age = dob == null ? null : _ageFromDob(dob);
         if (viewerUserId == null ||
@@ -113,13 +86,7 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
           continue;
         }
 
-        final citiesData = viewerData['cities'];
-        final cityName = citiesData is List && citiesData.isNotEmpty
-            ? (citiesData.first as Map<String, dynamic>)['name'] as String?
-            : citiesData is Map<String, dynamic>
-                ? citiesData['name'] as String?
-                : null;
-        if (cityName == null || cityName.trim().isEmpty) continue;
+        final cityName = viewerData['city_name']?.toString().trim();
 
         final lastName = (viewerData['last_name'] as String?)?.trim();
 
@@ -128,8 +95,11 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
           firstName: firstName,
           lastNameInitial:
               lastName != null && lastName.isNotEmpty ? lastName[0] : '',
+          lastName: lastName,
           age: age,
-          cityName: cityName.trim(),
+          cityName: cityName == null || cityName.isEmpty
+              ? 'Location private'
+              : cityName,
           sect: (viewerData['sect'] as String?)?.toUpperCase(),
           deenLevel: viewerData['deen_level'] as String?,
           isVerified: viewerData['is_verified'] as bool? ?? false,
@@ -144,12 +114,16 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
         setState(() {
           _loadedViewers = viewersList;
           _isLoading = false;
+          _hasLoaded = true;
         });
       }
     } catch (e) {
       debugPrint('[ProfileViewsScreen] Error loading views: $e');
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+          _hasLoaded = true;
+        });
       }
     }
   }
@@ -174,114 +148,194 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.obsidianNight,
-      appBar: AppBar(
+    return BlocConsumer<SubscriptionCubit, SubscriptionState>(
+      listenWhen: (previous, current) =>
+          previous.isSubscribed != current.isSubscribed,
+      listener: (context, subscription) {
+        if (subscription.isSubscribed) _loadViews();
+      },
+      builder: (context, subscription) => Scaffold(
         backgroundColor: AppColors.obsidianNight,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        leading: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            margin: const EdgeInsets.all(AppDimensions.space8),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceGlass,
-              shape: BoxShape.circle,
-              border: Border.all(color: AppColors.cardBorder),
-            ),
-            child: const Icon(
-              Icons.arrow_back_rounded,
-              color: AppColors.pearlWhite,
-              size: AppDimensions.iconSizeMedium,
+        appBar: AppBar(
+          backgroundColor: AppColors.obsidianNight,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          leading: GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              margin: const EdgeInsets.all(AppDimensions.space8),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceGlass,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.cardBorder),
+              ),
+              child: Icon(
+                Icons.arrow_back_rounded,
+                color: AppColors.pearlWhite,
+                size: AppDimensions.iconSizeMedium,
+              ),
             ),
           ),
+          title: Text('Profile Views',
+              style: AppTypography.screenTitle.copyWith(fontSize: 20)),
         ),
-        title: Text('Profile Views',
-            style: AppTypography.screenTitle.copyWith(fontSize: 20)),
-      ),
-      body: _isLoading
-          ? const _ShimmerLoader()
-          : _loadedViewers.isEmpty
-              ? const _EmptyState()
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-                      child: Text(
-                        '${_loadedViewers.length} people viewed your profile this week',
-                        style: AppTypography.screenTitle.copyWith(fontSize: 18),
-                      ),
-                    ),
-                    Expanded(
-                      child: ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
-                        itemCount: _loadedViewers.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(height: AppDimensions.space8),
-                        itemBuilder: (context, i) {
-                          final viewer = _loadedViewers[i];
-                          final p = viewer.profile;
-                          final sent = _interestSent.contains(p.id);
-                          return _ViewerTile(
-                            firstName: p.firstName,
-                            lastNameInitial: p.lastNameInitial,
-                            age: p.age,
-                            city: p.cityName,
-                            timeLabel: _timeLabel(viewer.viewedAt),
-                            isVerified: p.isVerified,
-                            isInterestSent: sent,
-                            onSendInterest: sent
-                                ? null
-                                : () async {
-                                    HapticFeedback.mediumImpact();
-                                    final sent = await context
-                                        .read<InterestsCubit>()
-                                        .sendInterest(p);
-                                    if (!context.mounted) return;
-                                    if (!sent) {
-                                      ScaffoldMessenger.of(context)
-                                        ..clearSnackBars()
-                                        ..showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Interest could not be sent. Check your limit and try again.',
-                                            ),
-                                          ),
-                                        );
-                                      return;
-                                    }
-                                    setState(() => _interestSent.add(p.id));
-                                    ScaffoldMessenger.of(context)
-                                      ..clearSnackBars()
-                                      ..showSnackBar(
-                                        SnackBar(
-                                          content: Row(children: [
-                                            const Icon(Icons.favorite_rounded,
-                                                color: AppColors.champagneGold,
-                                                size: 16),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                                'Interest sent to ${p.firstName}',
-                                                style: AppTypography.body),
-                                          ]),
-                                          backgroundColor:
-                                              AppColors.surfaceGlassHover,
-                                          behavior: SnackBarBehavior.floating,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                                AppDimensions.radiusButton),
-                                          ),
-                                          duration: const Duration(seconds: 2),
-                                        ),
-                                      );
+        body: subscription.isLoading && !subscription.isSubscribed
+            ? const _ShimmerLoader()
+            : !subscription.isSubscribed
+                ? _PremiumViewerGate(
+                    onUpgrade: () => context.push(AppRoutes.subscription),
+                  )
+                : _isLoading
+                    ? const _ShimmerLoader()
+                    : _loadedViewers.isEmpty
+                        ? const _EmptyState()
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(24, 8, 24, 16),
+                                child: Text(
+                                  '${_loadedViewers.length} people viewed your profile this week',
+                                  style: AppTypography.screenTitle
+                                      .copyWith(fontSize: 18),
+                                ),
+                              ),
+                              Expanded(
+                                child: ListView.separated(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(24, 0, 24, 40),
+                                  itemCount: _loadedViewers.length,
+                                  separatorBuilder: (_, __) => const SizedBox(
+                                      height: AppDimensions.space8),
+                                  itemBuilder: (context, i) {
+                                    final viewer = _loadedViewers[i];
+                                    final p = viewer.profile;
+                                    final sent = _interestSent.contains(p.id);
+                                    return _ViewerTile(
+                                      displayName: p.displayName,
+                                      age: p.age,
+                                      city: p.cityName,
+                                      timeLabel: _timeLabel(viewer.viewedAt),
+                                      isVerified: p.isVerified,
+                                      isInterestSent: sent,
+                                      onSendInterest: sent
+                                          ? null
+                                          : () async {
+                                              HapticFeedback.mediumImpact();
+                                              final sent = await context
+                                                  .read<InterestsCubit>()
+                                                  .sendInterest(p);
+                                              if (!context.mounted) return;
+                                              if (!sent) {
+                                                ScaffoldMessenger.of(context)
+                                                  ..clearSnackBars()
+                                                  ..showSnackBar(
+                                                    const SnackBar(
+                                                      content: Text(
+                                                        'Interest could not be sent. Check your limit and try again.',
+                                                      ),
+                                                    ),
+                                                  );
+                                                return;
+                                              }
+                                              setState(() =>
+                                                  _interestSent.add(p.id));
+                                              ScaffoldMessenger.of(context)
+                                                ..clearSnackBars()
+                                                ..showSnackBar(
+                                                  SnackBar(
+                                                    content: Row(children: [
+                                                      Icon(
+                                                          Icons
+                                                              .favorite_rounded,
+                                                          color: AppColors
+                                                              .champagneGold,
+                                                          size: 16),
+                                                      const SizedBox(width: 8),
+                                                      Text(
+                                                          'Interest sent to ${p.firstName}',
+                                                          style: AppTypography
+                                                              .body),
+                                                    ]),
+                                                    backgroundColor: AppColors
+                                                        .surfaceGlassHover,
+                                                    behavior: SnackBarBehavior
+                                                        .floating,
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              AppDimensions
+                                                                  .radiusButton),
+                                                    ),
+                                                    duration: const Duration(
+                                                        seconds: 2),
+                                                  ),
+                                                );
+                                            },
+                                    );
                                   },
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
+                                ),
+                              ),
+                            ],
+                          ),
+      ),
+    );
+  }
+}
+
+class _PremiumViewerGate extends StatelessWidget {
+  const _PremiumViewerGate({required this.onUpgrade});
+
+  final VoidCallback onUpgrade;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppDimensions.space24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.champagneGold.withValues(alpha: .1),
+                border: Border.all(color: AppColors.goldBorder),
+              ),
+              child: Icon(
+                Icons.visibility_outlined,
+                color: AppColors.champagneGold,
+                size: 32,
+              ),
+            ),
+            const SizedBox(height: AppDimensions.space24),
+            Text(
+              'Your weekly count stays visible',
+              style: AppTypography.screenTitle.copyWith(fontSize: 22),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppDimensions.space10),
+            Text(
+              'Premium reveals the people behind those views. Silarah never calls interests “likes” or creates a second, confusing action.',
+              style: AppTypography.bodyMuted.copyWith(height: 1.5),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppDimensions.space24),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: onUpgrade,
+                icon: const Icon(Icons.workspace_premium_outlined),
+                label: const Text('Explore Premium'),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -311,7 +365,7 @@ class _ShimmerLoader extends StatelessWidget {
               Container(
                 width: 52,
                 height: 52,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: AppColors.surfaceGlassHover,
                 ),
@@ -370,7 +424,7 @@ class _EmptyState extends StatelessWidget {
                 border: Border.all(color: AppColors.cardBorder, width: 2),
                 color: AppColors.surfaceGlass,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.remove_red_eye_outlined,
                 color: AppColors.slateMist,
                 size: 48,
@@ -383,7 +437,7 @@ class _EmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppDimensions.space12),
-            const Text(
+            Text(
               'Keep editing and improving your profile\nto get discovered by matches.',
               style: AppTypography.bodyMuted,
               textAlign: TextAlign.center,
@@ -399,8 +453,7 @@ class _EmptyState extends StatelessWidget {
 
 class _ViewerTile extends StatelessWidget {
   const _ViewerTile({
-    required this.firstName,
-    required this.lastNameInitial,
+    required this.displayName,
     required this.age,
     required this.city,
     required this.timeLabel,
@@ -409,8 +462,7 @@ class _ViewerTile extends StatelessWidget {
     required this.onSendInterest,
   });
 
-  final String firstName;
-  final String lastNameInitial;
+  final String displayName;
   final int age;
   final String city;
   final String timeLabel;
@@ -443,7 +495,7 @@ class _ViewerTile extends StatelessWidget {
                     width: 1.5,
                   ),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.person_outline_rounded,
                   color: AppColors.slateMist,
                   size: 24,
@@ -456,11 +508,11 @@ class _ViewerTile extends StatelessWidget {
                   child: Container(
                     width: 18,
                     height: 18,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: AppColors.verifiedTeal,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.check_rounded,
+                    child: Icon(Icons.check_rounded,
                         color: AppColors.pearlWhite, size: 12),
                   ),
                 ),
@@ -474,7 +526,7 @@ class _ViewerTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$firstName $lastNameInitial.',
+                  displayName,
                   style: AppTypography.bodyMedium,
                 ),
                 const SizedBox(height: AppDimensions.space4),
@@ -485,7 +537,7 @@ class _ViewerTile extends StatelessWidget {
                 const SizedBox(height: AppDimensions.space4),
                 Row(
                   children: [
-                    const Icon(Icons.remove_red_eye_outlined,
+                    Icon(Icons.remove_red_eye_outlined,
                         size: 12, color: AppColors.slateMist),
                     const SizedBox(width: 4),
                     Text(timeLabel, style: AppTypography.caption),
@@ -510,7 +562,7 @@ class _ViewerTile extends StatelessWidget {
                           BorderRadius.circular(AppDimensions.radiusButton),
                       border: Border.all(color: AppColors.goldBorder),
                     ),
-                    child: const Icon(Icons.favorite_rounded,
+                    child: Icon(Icons.favorite_rounded,
                         color: AppColors.champagneGold, size: 18),
                   )
                 : GestureDetector(
@@ -524,7 +576,7 @@ class _ViewerTile extends StatelessWidget {
                         borderRadius:
                             BorderRadius.circular(AppDimensions.radiusButton),
                       ),
-                      child: const Icon(Icons.favorite_border_rounded,
+                      child: Icon(Icons.favorite_border_rounded,
                           color: AppColors.obsidianNight, size: 18),
                     ),
                   ),

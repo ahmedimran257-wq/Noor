@@ -78,7 +78,7 @@ class _BlockListScreenState extends State<BlockListScreen> {
         backgroundColor: AppColors.surfaceElevated,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-          side: const BorderSide(color: AppColors.cardBorder),
+          side: BorderSide(color: AppColors.cardBorder),
         ),
         title: Text('Unblock this person?',
             style: AppTypography.bodyMedium
@@ -123,7 +123,7 @@ class _BlockListAppBar extends StatelessWidget implements PreferredSizeWidget {
     return Container(
       height: 64 + MediaQuery.of(context).padding.top,
       padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.obsidianNight,
         border: Border(
           bottom: BorderSide(color: AppColors.cardBorder),
@@ -142,7 +142,7 @@ class _BlockListAppBar extends StatelessWidget implements PreferredSizeWidget {
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.cardBorder),
               ),
-              child: const Icon(Icons.arrow_back_rounded,
+              child: Icon(Icons.arrow_back_rounded,
                   color: AppColors.pearlWhite,
                   size: AppDimensions.iconSizeMedium),
             ),
@@ -153,7 +153,7 @@ class _BlockListAppBar extends StatelessWidget implements PreferredSizeWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Blocked Profiles', style: AppTypography.bodyMedium),
+                Text('Blocked Profiles', style: AppTypography.bodyMedium),
                 if (count > 0)
                   Text('$count blocked',
                       style: AppTypography.caption.copyWith(fontSize: 12)),
@@ -197,7 +197,7 @@ class _BlockedTile extends StatelessWidget {
               color: AppColors.surfaceGlassHover,
               border: Border.all(color: AppColors.cardBorder),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.person_outline_rounded,
               color: AppColors.slateMist,
               size: 26,
@@ -212,7 +212,7 @@ class _BlockedTile extends StatelessWidget {
               children: [
                 Text(name, style: AppTypography.bodyMedium),
                 const SizedBox(height: AppDimensions.space2),
-                const Text('Blocked profile', style: AppTypography.caption),
+                Text('Blocked profile', style: AppTypography.caption),
               ],
             ),
           ),
@@ -222,7 +222,7 @@ class _BlockedTile extends StatelessWidget {
           OutlinedButton(
             onPressed: onUnblock,
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: AppColors.cardBorder),
+              side: BorderSide(color: AppColors.cardBorder),
               foregroundColor: AppColors.pearlWhite,
               padding: const EdgeInsets.symmetric(
                 horizontal: AppDimensions.space14,

@@ -281,7 +281,7 @@ class _CitySearchFieldState extends State<CitySearchField> {
         decoration: InputDecoration(
           hintText: widget.hint ?? 'Search city or area',
           hintStyle: AppTypography.inputLabel,
-          prefixIcon: const Icon(
+          prefixIcon: Icon(
             Icons.location_on_outlined,
             color: AppColors.slateMist,
             size: 20,
@@ -294,7 +294,7 @@ class _CitySearchFieldState extends State<CitySearchField> {
               : _selectedDisplay != null
                   ? GestureDetector(
                       onTap: () => setState(() => _clearSelection()),
-                      child: const Icon(
+                      child: Icon(
                         Icons.close_rounded,
                         color: AppColors.slateMist,
                         size: 18,
@@ -336,16 +336,16 @@ class _CitySearchFieldState extends State<CitySearchField> {
           ],
         ),
         child: _loading
-            ? const Padding(
-                padding: EdgeInsets.all(16),
+            ? Padding(
+                padding: const EdgeInsets.all(16),
                 child: Text(
                   'Searching cities...',
                   style: AppTypography.bodyMuted,
                 ),
               )
             : _results.isEmpty
-                ? const Padding(
-                    padding: EdgeInsets.all(16),
+                ? Padding(
+                    padding: const EdgeInsets.all(16),
                     child: Text(
                       'No matching city or area found. Try a different spelling.',
                       style: AppTypography.bodyMuted,
@@ -355,7 +355,7 @@ class _CitySearchFieldState extends State<CitySearchField> {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: _results.length,
-                    separatorBuilder: (_, __) => const Divider(
+                    separatorBuilder: (_, __) => Divider(
                       height: 1,
                       color: AppColors.cardBorder,
                     ),
@@ -408,7 +408,7 @@ class _CityTile extends StatelessWidget {
                 color: AppColors.champagneGold.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.location_city_rounded,
                 color: AppColors.champagneGold,
                 size: 18,

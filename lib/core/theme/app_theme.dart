@@ -15,14 +15,16 @@ import 'silarah_spring.dart';
 abstract final class AppTheme {
   // ── Dark Theme (SILARAH Default) ─────────────────────────────
 
-  static ThemeData get darkTheme {
+  static ThemeData forMode(SilarahThemeMode mode) {
+    AppColors.activate(mode);
+    final brightness = mode.isDark ? Brightness.dark : Brightness.light;
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.dark,
+      brightness: brightness,
 
       // ── Color Scheme ────────────────────────────────────
-      colorScheme: const ColorScheme.dark(
-        brightness: Brightness.dark,
+      colorScheme: ColorScheme(
+        brightness: brightness,
         primary: AppColors.champagneGold,
         onPrimary: AppColors.obsidianNight,
         secondary: AppColors.verifiedTeal,
@@ -33,6 +35,8 @@ abstract final class AppTheme {
         onSurface: AppColors.pearlWhite,
         surfaceContainerHighest: AppColors.surfaceGlassHover,
         outline: AppColors.cardBorder,
+        tertiary: AppColors.inkTeal,
+        onTertiary: AppColors.pearlWhite,
       ),
 
       // ── Scaffold ─────────────────────────────────────────
@@ -43,7 +47,7 @@ abstract final class AppTheme {
       fontFamily: 'Inter',
 
       // ── App Bar ──────────────────────────────────────────
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: AppColors.obsidianNight,
         foregroundColor: AppColors.pearlWhite,
         elevation: 0,
@@ -56,8 +60,14 @@ abstract final class AppTheme {
         ),
         systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light,
-          statusBarBrightness: Brightness.dark,
+          statusBarIconBrightness:
+              mode.isDark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: mode.isDark ? Brightness.dark : Brightness.light,
+          systemNavigationBarColor: AppColors.obsidianNight,
+          systemNavigationBarIconBrightness:
+              mode.isDark ? Brightness.light : Brightness.dark,
+          systemNavigationBarDividerColor: Colors.transparent,
+          systemNavigationBarContrastEnforced: false,
         ),
       ),
 
@@ -70,7 +80,7 @@ abstract final class AppTheme {
       focusColor: AppColors.goldGlow,
 
       // ── Icon Theme ───────────────────────────────────────
-      iconTheme: const IconThemeData(
+      iconTheme: IconThemeData(
         color: AppColors.pearlWhite,
         size: AppDimensions.iconSizeLarge,
       ),
@@ -120,14 +130,14 @@ abstract final class AppTheme {
         // Rounded outline border — premium, not underline
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          borderSide: const BorderSide(
+          borderSide: BorderSide(
             color: AppColors.cardBorder,
             width: AppDimensions.borderThin,
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          borderSide: const BorderSide(
+          borderSide: BorderSide(
             color: AppColors.cardBorder,
             width: AppDimensions.borderThin,
           ),
@@ -135,21 +145,21 @@ abstract final class AppTheme {
         // Focus: refined gold border
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          borderSide: const BorderSide(
+          borderSide: BorderSide(
             color: AppColors.champagneGold,
             width: AppDimensions.borderThin,
           ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          borderSide: const BorderSide(
+          borderSide: BorderSide(
             color: AppColors.softCoral,
             width: AppDimensions.borderThin,
           ),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          borderSide: const BorderSide(
+          borderSide: BorderSide(
             color: AppColors.softCoral,
             width: AppDimensions.borderThin,
           ),
@@ -166,7 +176,7 @@ abstract final class AppTheme {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-          side: const BorderSide(
+          side: BorderSide(
             color: AppColors.cardBorder,
             width: AppDimensions.borderThin,
           ),
@@ -179,7 +189,7 @@ abstract final class AppTheme {
         backgroundColor: AppColors.surfaceGlass,
         selectedColor: AppColors.goldGlow,
         labelStyle: AppTypography.chipLabel,
-        side: const BorderSide(
+        side: BorderSide(
           color: AppColors.cardBorder,
           width: AppDimensions.borderThin,
         ),
@@ -195,11 +205,11 @@ abstract final class AppTheme {
 
       // ── Bottom Sheet Theme ───────────────────────────────
       // "NO Pop-ups: Use Bottom Sheets that slide up with easeOutCubic."
-      bottomSheetTheme: const BottomSheetThemeData(
+      bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: AppColors.obsidianNight,
         modalBackgroundColor: AppColors.obsidianNight,
         elevation: 0,
-        shape: RoundedRectangleBorder(
+        shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
             top: Radius.circular(AppDimensions.radiusCard),
           ),
@@ -230,14 +240,14 @@ abstract final class AppTheme {
       ),
 
       // ── Divider Theme ────────────────────────────────────
-      dividerTheme: const DividerThemeData(
+      dividerTheme: DividerThemeData(
         color: AppColors.divider,
         thickness: AppDimensions.borderThin,
         space: 0,
       ),
 
       // ── Progress Indicator ───────────────────────────────
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
+      progressIndicatorTheme: ProgressIndicatorThemeData(
         color: AppColors.champagneGold,
         linearTrackColor: AppColors.progressBarBase,
       ),

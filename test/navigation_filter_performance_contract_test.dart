@@ -37,7 +37,8 @@ void main() {
     expect(home, contains('TickerMode('));
     expect(home, contains('enabled: index == _currentTab'));
     expect(home, contains('_tabCache[index] ?? const SizedBox.shrink()'));
-    expect(home, isNot(contains('_profileRefreshToken')));
+    expect(home, contains('_profileRefreshToken'));
+    expect(home, contains('MyProfileScreen(refreshToken:'));
     expect(home, isNot(contains('refreshToken++')));
   });
 

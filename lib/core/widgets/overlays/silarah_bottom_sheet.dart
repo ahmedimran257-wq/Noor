@@ -119,9 +119,9 @@ class SilarahBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0x990A0A0F), // Frosted glass obsidian night
-        borderRadius: BorderRadius.vertical(
+      decoration: BoxDecoration(
+        color: const Color(0x990A0A0F), // Frosted glass obsidian night
+        borderRadius: const BorderRadius.vertical(
           top: Radius.circular(AppDimensions.radiusCard),
         ),
         border: Border(
@@ -291,7 +291,7 @@ class _ReportOption extends StatelessWidget {
           AppDimensions.space16,
         ),
         decoration: BoxDecoration(
-          border: const Border(
+          border: Border(
             bottom: BorderSide(
               color: AppColors.divider,
               width: AppDimensions.borderThin,
@@ -312,7 +312,7 @@ class _ReportOption extends StatelessWidget {
               ),
             ),
             if (isSelected)
-              const Icon(
+              Icon(
                 Icons.check_rounded,
                 color: AppColors.champagneGold,
                 size: AppDimensions.iconSizeMedium,

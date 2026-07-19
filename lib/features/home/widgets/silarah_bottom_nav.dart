@@ -61,7 +61,7 @@ class SilarahBottomNav extends StatelessWidget {
               textScaler: TextScaler.noScaling,
             ),
             child: DecoratedBox(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.navBarSurface,
                 border: Border(
                   top: BorderSide(
@@ -181,7 +181,7 @@ class _NavTab extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: AppDimensions.space2),
               decoration: BoxDecoration(
                 gradient: isActive
-                    ? const LinearGradient(
+                    ? LinearGradient(
                         colors: [
                           AppColors.champagneLight,
                           AppColors.champagneGold,
@@ -256,7 +256,7 @@ class _Badge extends StatelessWidget {
       constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           colors: [
             AppColors.champagneLight,
             AppColors.champagneGold,

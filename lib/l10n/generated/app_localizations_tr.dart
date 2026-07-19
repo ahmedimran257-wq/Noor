@@ -349,6 +349,26 @@ class AppLocalizationsTr extends AppLocalizations {
   String get discovery_empty_title => 'Yakındaki herkesi gördün';
 
   @override
+  String get discovery_handoff_interest_subtitle =>
+      'Aktif isteği olan profiller, beklerken veya yanıt verirken İlgiler bölümüne taşınır.';
+
+  @override
+  String get discovery_handoff_interest_title => 'İlginiz devam ediyor';
+
+  @override
+  String get discovery_handoff_match_subtitle =>
+      'Eşleşen profiller Sohbet\'e taşınır ve Keşfet\'te tekrar gösterilmez.';
+
+  @override
+  String get discovery_handoff_match_title => 'Bağlantınız hazır';
+
+  @override
+  String get discovery_handoff_open_chat => 'Sohbeti aç';
+
+  @override
+  String get discovery_handoff_open_interests => 'İlgileri aç';
+
+  @override
   String get discovery_header_title => '<marka0/>';
 
   @override

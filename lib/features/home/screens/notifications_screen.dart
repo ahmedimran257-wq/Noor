@@ -36,7 +36,7 @@ class NotificationsScreen extends StatelessWidget {
               shape: BoxShape.circle,
               border: Border.all(color: AppColors.cardBorder),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.arrow_back_rounded,
               color: AppColors.pearlWhite,
               size: AppDimensions.iconSizeMedium,
@@ -52,8 +52,8 @@ class NotificationsScreen extends StatelessWidget {
               return PopupMenuButton<_NotificationMenuAction>(
                 tooltip: 'Notification options',
                 color: AppColors.surfaceElevated,
-                icon: const Icon(Icons.more_horiz_rounded,
-                    color: AppColors.slateMist),
+                icon:
+                    Icon(Icons.more_horiz_rounded, color: AppColors.slateMist),
                 onSelected: (action) async {
                   final cubit = context.read<NotificationsCubit>();
                   if (action == _NotificationMenuAction.markAllRead) {
@@ -73,7 +73,7 @@ class NotificationsScreen extends StatelessWidget {
                       value: _NotificationMenuAction.markAllRead,
                       child: Row(
                         children: [
-                          const Icon(Icons.done_all_rounded,
+                          Icon(Icons.done_all_rounded,
                               color: AppColors.verifiedTeal, size: 19),
                           const SizedBox(width: AppDimensions.space10),
                           Text(
@@ -84,13 +84,13 @@ class NotificationsScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: _NotificationMenuAction.clearAll,
                     child: Row(
                       children: [
                         Icon(Icons.delete_sweep_outlined,
                             color: AppColors.softCoral, size: 19),
-                        SizedBox(width: AppDimensions.space10),
+                        const SizedBox(width: AppDimensions.space10),
                         Text('Clear all notifications',
                             style: AppTypography.body),
                       ],
@@ -134,7 +134,7 @@ class NotificationsScreen extends StatelessWidget {
                     border: Border.all(
                         color: AppColors.softCoral.withValues(alpha: 0.35)),
                   ),
-                  child: const Icon(Icons.delete_outline_rounded,
+                  child: Icon(Icons.delete_outline_rounded,
                       color: AppColors.softCoral),
                 ),
                 child: _NotificationTile(
@@ -163,9 +163,8 @@ Future<bool> _confirmDeleteOne(BuildContext context) async {
         context: context,
         builder: (dialogContext) => AlertDialog(
           backgroundColor: AppColors.surfaceElevated,
-          title: const Text('Remove notification?',
-              style: AppTypography.bodyMedium),
-          content: const Text(
+          title: Text('Remove notification?', style: AppTypography.bodyMedium),
+          content: Text(
             'This notification will be permanently removed from your account.',
             style: AppTypography.bodyMuted,
           ),
@@ -176,8 +175,8 @@ Future<bool> _confirmDeleteOne(BuildContext context) async {
             ),
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Remove',
-                  style: TextStyle(color: AppColors.softCoral)),
+              child:
+                  Text('Remove', style: TextStyle(color: AppColors.softCoral)),
             ),
           ],
         ),
@@ -190,9 +189,9 @@ Future<bool> _confirmClearAll(BuildContext context) async {
         context: context,
         builder: (dialogContext) => AlertDialog(
           backgroundColor: AppColors.surfaceElevated,
-          title: const Text('Clear notification history?',
+          title: Text('Clear notification history?',
               style: AppTypography.bodyMedium),
-          content: const Text(
+          content: Text(
             'Every notification will be permanently removed. New notifications will continue to arrive normally.',
             style: AppTypography.bodyMuted,
           ),
@@ -203,7 +202,7 @@ Future<bool> _confirmClearAll(BuildContext context) async {
             ),
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Clear all',
+              child: Text('Clear all',
                   style: TextStyle(color: AppColors.softCoral)),
             ),
           ],
@@ -295,7 +294,7 @@ class _NotificationTile extends StatelessWidget {
                             Container(
                               width: 7,
                               height: 7,
-                              decoration: const BoxDecoration(
+                              decoration: BoxDecoration(
                                 color: AppColors.champagneGold,
                                 shape: BoxShape.circle,
                               ),
@@ -411,7 +410,7 @@ class _EmptyState extends StatelessWidget {
               shape: BoxShape.circle,
               border: Border.all(color: AppColors.cardBorder, width: 2),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.notifications_none_rounded,
               color: AppColors.slateMist,
               size: 48,

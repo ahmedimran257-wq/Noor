@@ -86,6 +86,7 @@ DiscoveryProfile mapDbRowToDiscoveryProfile(Map<String, dynamic> row) {
         ? DateTime.tryParse(row['last_active_at'] as String)
         : null,
     countryCode: row['country_code'] as String?,
+    lastName: _optionalText(row, 'last_name'),
     blurhash: row['blurhash'] as String?,
   );
 }

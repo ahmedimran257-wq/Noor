@@ -24,6 +24,7 @@ import '../../../core/cubits/subscription/subscription_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/inputs/silarah_field_frame.dart';
 import '../../../core/widgets/loaders/silarah_shimmer.dart';
 import 'legal_doc_screen.dart';
 
@@ -124,7 +125,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
             elevation: 0,
             leading: IconButton(
               onPressed: () => Navigator.of(context).pop(),
-              icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              icon: Icon(Icons.arrow_back_ios_new_rounded,
                   color: AppColors.pearlWhite, size: 20),
             ),
           ),
@@ -375,9 +376,9 @@ class _PremiumPhoneVerificationSheetState
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
       child: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.surfaceDark,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
           border: Border(top: BorderSide(color: AppColors.cardBorder)),
         ),
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
@@ -387,13 +388,13 @@ class _PremiumPhoneVerificationSheetState
           children: [
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.verified_user_outlined,
                   color: AppColors.champagneGold,
                   size: 22,
                 ),
                 const SizedBox(width: 10),
-                const Expanded(
+                Expanded(
                   child: Text(
                     'Verify phone to continue',
                     style: AppTypography.bodyMedium,
@@ -402,7 +403,7 @@ class _PremiumPhoneVerificationSheetState
                 IconButton(
                   onPressed:
                       _loading ? null : () => Navigator.of(context).pop(false),
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.close_rounded,
                     color: AppColors.slateMist,
                   ),
@@ -451,15 +452,15 @@ class _PremiumPhoneVerificationSheetState
                   fillColor: AppColors.inputSurface,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: AppColors.cardBorder),
+                    borderSide: BorderSide(color: AppColors.cardBorder),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: AppColors.cardBorder),
+                    borderSide: BorderSide(color: AppColors.cardBorder),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(
+                    borderSide: BorderSide(
                       color: AppColors.champagneGold,
                       width: AppDimensions.borderThin,
                     ),
@@ -499,7 +500,7 @@ class _PremiumPhoneVerificationSheetState
   }
 }
 
-class _PhoneEntryRow extends StatelessWidget {
+class _PhoneEntryRow extends StatefulWidget {
   const _PhoneEntryRow({
     required this.country,
     required this.controller,
@@ -513,28 +514,50 @@ class _PhoneEntryRow extends StatelessWidget {
   final ValueChanged<CountryInfo> onCountryChanged;
 
   @override
+  State<_PhoneEntryRow> createState() => _PhoneEntryRowState();
+}
+
+class _PhoneEntryRowState extends State<_PhoneEntryRow> {
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(_handleFocus);
+  }
+
+  @override
+  void dispose() {
+    _focusNode
+      ..removeListener(_handleFocus)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _handleFocus() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 58,
-      decoration: BoxDecoration(
-        color: AppColors.inputSurface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.cardBorder),
-      ),
+    return SilarahFieldFrame(
+      focused: _focusNode.hasFocus,
+      enabled: widget.enabled,
+      minHeight: 58,
       child: Row(
         children: [
           SizedBox(
             width: 126,
             child: DropdownButtonHideUnderline(
               child: DropdownButton<CountryInfo>(
-                value: country,
+                value: widget.country,
                 isExpanded: true,
                 dropdownColor: AppColors.surfaceDark,
                 iconEnabledColor: AppColors.slateMist,
                 padding: const EdgeInsets.only(left: 12, right: 4),
-                onChanged: enabled
+                onChanged: widget.enabled
                     ? (value) {
-                        if (value != null) onCountryChanged(value);
+                        if (value != null) widget.onCountryChanged(value);
                       }
                     : null,
                 selectedItemBuilder: (_) => kAllCountries
@@ -566,22 +589,30 @@ class _PhoneEntryRow extends StatelessWidget {
               ),
             ),
           ),
-          const VerticalDivider(
+          VerticalDivider(
             width: 1,
             thickness: 1,
             color: AppColors.cardBorder,
           ),
           Expanded(
             child: TextField(
-              controller: controller,
-              enabled: enabled,
+              controller: widget.controller,
+              focusNode: _focusNode,
+              enabled: widget.enabled,
               keyboardType: TextInputType.phone,
               style: AppTypography.body.copyWith(color: AppColors.pearlWhite),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Phone number',
                 hintStyle: AppTypography.bodyMuted,
+                filled: false,
+                fillColor: Colors.transparent,
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 14),
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14),
               ),
             ),
           ),
@@ -620,7 +651,7 @@ class _SheetPrimaryButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
         ),
         child: loading
-            ? const SilarahPulseLoader(
+            ? SilarahPulseLoader(
                 size: 24,
                 accentColor: AppColors.obsidianNight,
                 highlightColor: AppColors.obsidianDeep,
@@ -710,7 +741,7 @@ class _PricingStatusCard extends StatelessWidget {
             SizedBox.square(
               dimension: isSmallScreen ? 36 : 42,
               child: isLoading
-                  ? const SilarahPulseLoader(
+                  ? SilarahPulseLoader(
                       size: 30,
                       accentColor: AppColors.champagneGold,
                       highlightColor: AppColors.champagneLight,
@@ -720,7 +751,7 @@ class _PricingStatusCard extends StatelessWidget {
                         AppColors.champagneLight,
                       ],
                     )
-                  : const DecoratedBox(
+                  : DecoratedBox(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: AppColors.goldGlow,
@@ -931,7 +962,7 @@ class _PlanCard extends StatelessWidget {
                       isSelected ? AppColors.champagneGold : Colors.transparent,
                 ),
                 child: isSelected
-                    ? const Icon(Icons.check_rounded,
+                    ? Icon(Icons.check_rounded,
                         size: 10, color: AppColors.obsidianNight)
                     : null,
               ),
@@ -954,7 +985,7 @@ class _IncludedFeatures extends StatelessWidget {
     (Icons.all_inclusive_rounded, 'Unlimited profile browsing'),
     (Icons.favorite_rounded, '25 interests per day'),
     (Icons.chat_bubble_outline_rounded, 'Full messaging access'),
-    (Icons.visibility_rounded, 'See who liked your profile'),
+    (Icons.visibility_rounded, 'See everyone who viewed your profile'),
     (Icons.tune_rounded, 'Advanced filters — income & distance'),
     (Icons.rocket_launch_outlined, 'One profile boost per week'),
   ];
@@ -1013,7 +1044,7 @@ class _FeatureRow extends StatelessWidget {
           Container(
             width: isSmallScreen ? 24 : 32,
             height: isSmallScreen ? 24 : 32,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.goldGlow,
             ),
@@ -1067,7 +1098,7 @@ class _CtaButton extends StatelessWidget {
         ),
         alignment: Alignment.center,
         child: isLoading
-            ? const SilarahPulseLoader(
+            ? SilarahPulseLoader(
                 size: 26,
                 accentColor: AppColors.obsidianNight,
                 highlightColor: AppColors.obsidianDeep,

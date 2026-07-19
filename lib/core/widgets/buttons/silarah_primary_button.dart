@@ -50,7 +50,7 @@ class SilarahPrimaryButton extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: isActive
-                ? const [
+                ? [
                     AppColors.champagneLight,
                     AppColors.champagneGold,
                     AppColors.antiqueGold,
@@ -107,7 +107,7 @@ class SilarahPrimaryButton extends StatelessWidget {
             ),
             Center(
               child: isLoading
-                  ? const SilarahPulseLoader(
+                  ? SilarahPulseLoader(
                       size: 26,
                       accentColor: AppColors.obsidianNight,
                       highlightColor: AppColors.obsidianDeep,

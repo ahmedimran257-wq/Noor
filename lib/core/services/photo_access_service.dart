@@ -71,7 +71,7 @@ class IncomingPhotoAccessRequest {
   final DateTime? respondedAt;
 
   String get displayName =>
-      lastNameInitial.isEmpty ? firstName : '$firstName $lastNameInitial.';
+      lastNameInitial.isEmpty ? firstName : '$firstName $lastNameInitial';
 
   IncomingPhotoAccessRequest copyWith({String? status}) {
     return IncomingPhotoAccessRequest(

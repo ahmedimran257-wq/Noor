@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/cubits/notifications/notifications_cubit.dart';
@@ -67,7 +67,7 @@ class NotificationBellButton extends StatelessWidget {
                           key: const ValueKey('notification-unread-dot'),
                           width: 8,
                           height: 8,
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             color: AppColors.champagneGold,
                             shape: BoxShape.circle,
                           ),

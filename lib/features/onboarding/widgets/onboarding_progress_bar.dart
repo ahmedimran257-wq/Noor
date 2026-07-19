@@ -54,7 +54,7 @@ class OnboardingProgressBar extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   gradient: isFilled
-                      ? const LinearGradient(
+                      ? LinearGradient(
                           colors: [
                             AppColors.champagneLight,
                             AppColors.champagneGold,

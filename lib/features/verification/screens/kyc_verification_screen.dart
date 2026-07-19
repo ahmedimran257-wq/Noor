@@ -156,9 +156,9 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
         child: ListView(
           padding: const EdgeInsets.all(AppDimensions.space24),
           children: [
-            const Text('Verify your profile', style: AppTypography.screenTitle),
+            Text('Verify your profile', style: AppTypography.screenTitle),
             const SizedBox(height: AppDimensions.space8),
-            const Text(
+            Text(
               'Capture-quality checks run on this device. Your private document and selfie are then reviewed by Silarah. Device scores never approve your identity.',
               style: AppTypography.bodyMuted,
             ),
@@ -205,7 +205,7 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
                 label: const Text('Verify with DigiLocker'),
               ),
               const SizedBox(height: AppDimensions.space8),
-              const Text(
+              Text(
                 'A badge is granted only when your DigiLocker account and an authenticated issued identity document match your profile name and date of birth. Authorization alone is not verification.',
                 style: AppTypography.caption,
               ),

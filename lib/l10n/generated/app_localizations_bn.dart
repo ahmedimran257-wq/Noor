@@ -347,6 +347,26 @@ class AppLocalizationsBn extends AppLocalizations {
   String get discovery_empty_title => 'আপনি কাছাকাছি সবাইকে দেখেছেন';
 
   @override
+  String get discovery_handoff_interest_subtitle =>
+      'সক্রিয় অনুরোধের প্রোফাইলগুলো অপেক্ষা বা উত্তর দেওয়ার সময় ইন্টারেস্টসে থাকে।';
+
+  @override
+  String get discovery_handoff_interest_title => 'আপনার আগ্রহটি প্রক্রিয়াধীন';
+
+  @override
+  String get discovery_handoff_match_subtitle =>
+      'ম্যাচ হওয়া প্রোফাইলগুলো চ্যাটে চলে যায়, তাই ডিসকভারে আবার দেখানো হয় না।';
+
+  @override
+  String get discovery_handoff_match_title => 'আপনার সংযোগ প্রস্তুত';
+
+  @override
+  String get discovery_handoff_open_chat => 'চ্যাট খুলুন';
+
+  @override
+  String get discovery_handoff_open_interests => 'ইন্টারেস্টস খুলুন';
+
+  @override
   String get discovery_header_title => 'Silarah';
 
   @override

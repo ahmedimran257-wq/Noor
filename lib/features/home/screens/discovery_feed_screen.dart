@@ -22,6 +22,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/cubits/discovery/discovery_feed_cubit.dart';
 import '../../../core/cubits/discovery/discovery_feed_state.dart';
 import '../../../core/cubits/interests/interests_cubit.dart';
+import '../../../core/cubits/interests/interests_state.dart';
 import '../../../core/services/bookmark_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
@@ -39,7 +40,9 @@ import 'profile_detail_screen.dart';
 import 'notifications_screen.dart';
 
 class DiscoveryFeedScreen extends StatefulWidget {
-  const DiscoveryFeedScreen({super.key});
+  const DiscoveryFeedScreen({super.key, this.onOpenTab});
+
+  final ValueChanged<int>? onOpenTab;
 
   @override
   State<DiscoveryFeedScreen> createState() => _DiscoveryFeedScreenState();
@@ -53,6 +56,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
   final Set<String> _recordedViewIds = {};
   // Bookmarks now use profile IDs (String) for persistence
   Set<String> _bookmarked = {};
+  final Set<String> _bookmarkWritesInFlight = <String>{};
 
   @override
   bool get wantKeepAlive => true;
@@ -117,11 +121,15 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
     setState(() => _sentInterests.add(fp.profile.id));
     HapticFeedback.mediumImpact();
     await showInterestCeremony(context, firstName: fp.profile.firstName);
+    if (!mounted) return;
+    await context.read<DiscoveryFeedCubit>().loadInitial(force: true);
   }
 
   Future<void> _handleBookmark(int index, FeedProfile fp) async {
-    HapticFeedback.selectionClick();
     final id = fp.profile.id;
+    if (_bookmarkWritesInFlight.contains(id)) return;
+    _bookmarkWritesInFlight.add(id);
+    HapticFeedback.selectionClick();
     final previous = Set<String>.from(_bookmarked);
     setState(() {
       if (_bookmarked.contains(id)) {
@@ -137,8 +145,11 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
       if (mounted) setState(() => _bookmarked = saved);
     } catch (_) {
       if (mounted) setState(() => _bookmarked = previous);
+      _bookmarkWritesInFlight.remove(id);
       return;
     }
+
+    _bookmarkWritesInFlight.remove(id);
 
     if (!mounted) return;
     final l10n = AppLocalizations.of(context);
@@ -156,7 +167,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-            side: const BorderSide(color: AppColors.cardBorder),
+            side: BorderSide(color: AppColors.cardBorder),
           ),
           duration: const Duration(seconds: 1),
         ),
@@ -231,7 +242,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
                       Text('سيلارا',
                           style: AppTypography.wordmark.copyWith(fontSize: 26)),
                       const SizedBox(width: AppDimensions.space8),
-                      const Text('SILARAH', style: AppTypography.wordmark),
+                      Text('SILARAH', style: AppTypography.wordmark),
                       const Spacer(),
                       // Free-tier counter badge
                       if ((feedState.status == FeedStatus.loaded ||
@@ -280,7 +291,10 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
     }
 
     if (feedState.status == FeedStatus.empty) {
-      return const _EmptyFeed();
+      return _EmptyFeed(
+        onOpenInterests: () => widget.onOpenTab?.call(1),
+        onOpenChat: () => widget.onOpenTab?.call(2),
+      );
     }
 
     if (feedState.status == FeedStatus.error) {
@@ -323,8 +337,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
                 Hero(
                   tag: 'profile_card_$index',
                   child: SilarahProfileCard(
-                    firstName: p.firstName,
-                    lastNameInitial: p.lastNameInitial,
+                    displayName: p.displayName,
                     age: p.age,
                     cityName: p.cityName,
                     sect: p.sect,
@@ -367,7 +380,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
     return Stack(
       children: [
         carousel,
-        const Positioned(
+        Positioned(
           top: 0,
           left: AppDimensions.space40,
           right: AppDimensions.space40,
@@ -576,15 +589,45 @@ class _InitialShimmerState extends State<_InitialShimmer> {
 // ── Empty Feed State ──────────────────────────────────────────
 
 class _EmptyFeed extends StatelessWidget {
-  const _EmptyFeed();
+  const _EmptyFeed({
+    required this.onOpenInterests,
+    required this.onOpenChat,
+  });
+
+  final VoidCallback onOpenInterests;
+  final VoidCallback onOpenChat;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return SilarahEmptyState(
-      visual: SilarahEmptyVisual.discovery,
-      title: l10n.discovery_empty_title,
-      subtitle: l10n.discovery_empty_subtitle,
+    return BlocBuilder<InterestsCubit, InterestsState>(
+      buildWhen: (previous, current) =>
+          previous.discoveryHandoff != current.discoveryHandoff,
+      builder: (context, interests) {
+        return switch (interests.discoveryHandoff) {
+          DiscoveryInteractionHandoff.matched => SilarahEmptyState(
+              visual: SilarahEmptyVisual.connection,
+              title: l10n.discovery_handoff_match_title,
+              subtitle: l10n.discovery_handoff_match_subtitle,
+              ctaLabel: l10n.discovery_handoff_open_chat,
+              onCta: onOpenChat,
+            ),
+          DiscoveryInteractionHandoff.receivedInterest ||
+          DiscoveryInteractionHandoff.sentInterest =>
+            SilarahEmptyState(
+              visual: SilarahEmptyVisual.interests,
+              title: l10n.discovery_handoff_interest_title,
+              subtitle: l10n.discovery_handoff_interest_subtitle,
+              ctaLabel: l10n.discovery_handoff_open_interests,
+              onCta: onOpenInterests,
+            ),
+          DiscoveryInteractionHandoff.none => SilarahEmptyState(
+              visual: SilarahEmptyVisual.discovery,
+              title: l10n.discovery_empty_title,
+              subtitle: l10n.discovery_empty_subtitle,
+            ),
+        };
+      },
     );
   }
 }
@@ -610,7 +653,7 @@ class _FreeTierLimitReached extends StatelessWidget {
                 color: AppColors.champagneGold.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.goldBorder),
-                boxShadow: const [
+                boxShadow: [
                   BoxShadow(
                     color: AppColors.goldGlow,
                     blurRadius: 24,
@@ -618,7 +661,7 @@ class _FreeTierLimitReached extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.lock_clock_rounded,
                 color: AppColors.champagneGold,
                 size: 44,

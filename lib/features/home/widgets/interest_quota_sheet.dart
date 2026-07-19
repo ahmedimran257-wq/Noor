@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../../core/cubits/interests/interests_state.dart';
 import '../../../core/theme/app_colors.dart';
@@ -107,7 +107,7 @@ class _InterestQuotaContent extends StatelessWidget {
                       color: AppColors.champagneGold.withValues(alpha: 0.32),
                     ),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.favorite_border_rounded,
                     color: AppColors.champagneGold,
                     size: 22,
@@ -181,7 +181,7 @@ class _InterestQuotaContent extends StatelessWidget {
                         value: value,
                         minHeight: 5,
                         backgroundColor: AppColors.surfaceGlassHover,
-                        valueColor: const AlwaysStoppedAnimation<Color>(
+                        valueColor: AlwaysStoppedAnimation<Color>(
                           AppColors.champagneGold,
                         ),
                       ),
@@ -223,7 +223,7 @@ class _InterestQuotaContent extends StatelessWidget {
               Center(
                 child: TextButton(
                   onPressed: navigator.pop,
-                  child: const Text(
+                  child: Text(
                     "I'll wait until tomorrow",
                     style: AppTypography.bodyMuted,
                   ),

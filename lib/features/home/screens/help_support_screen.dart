@@ -19,7 +19,7 @@ class HelpSupportScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
               color: AppColors.pearlWhite, size: 20),
         ),
         title: Text(
@@ -59,7 +59,7 @@ class HelpSupportScreen extends StatelessWidget {
             onTap: () => _contactEmail(context, 'grievance@silarah.com'),
           ),
           const SizedBox(height: AppDimensions.space20),
-          const Text('Common Help', style: AppTypography.sectionLabel),
+          Text('Common Help', style: AppTypography.sectionLabel),
           const SizedBox(height: AppDimensions.space8),
           const _FaqTile(
             question: 'Why are my photos not visible?',
@@ -100,7 +100,7 @@ class HelpSupportScreen extends StatelessWidget {
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-            side: const BorderSide(color: AppColors.cardBorder),
+            side: BorderSide(color: AppColors.cardBorder),
           ),
         ),
       );
@@ -153,7 +153,7 @@ class _SupportCard extends StatelessWidget {
               label: Text(actionLabel),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.champagneGold,
-                side: const BorderSide(color: AppColors.goldBorder),
+                side: BorderSide(color: AppColors.goldBorder),
                 shape: RoundedRectangleBorder(
                   borderRadius:
                       BorderRadius.circular(AppDimensions.radiusButton),
@@ -179,19 +179,19 @@ class _EmailTrustNotice extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
         border: Border.all(color: AppColors.goldBorder),
       ),
-      child: const Row(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(Icons.mark_email_read_outlined,
               color: AppColors.champagneGold, size: 21),
-          SizedBox(width: AppDimensions.space12),
+          const SizedBox(width: AppDimensions.space12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Recognize official Silarah email',
                     style: AppTypography.bodyMedium),
-                SizedBox(height: AppDimensions.space4),
+                const SizedBox(height: AppDimensions.space4),
                 Text(
                   'Account and security messages use @mail.silarah.com. Product updates use @news.silarah.com. We never ask for passwords or verification codes.',
                   style: AppTypography.caption,

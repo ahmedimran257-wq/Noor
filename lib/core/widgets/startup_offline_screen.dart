@@ -81,12 +81,12 @@ class _StartupOfflineScreenState extends State<StartupOfflineScreen>
     return Scaffold(
       backgroundColor: AppColors.obsidianNight,
       body: DecoratedBox(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: RadialGradient(
-            center: Alignment(0, -0.28),
+            center: const Alignment(0, -0.28),
             radius: 1.05,
             colors: [AppColors.midnightPlum, AppColors.obsidianNight],
-            stops: [0, 0.72],
+            stops: const [0, 0.72],
           ),
         ),
         child: SafeArea(
@@ -178,7 +178,7 @@ class _StartupOfflineScreenState extends State<StartupOfflineScreen>
                             AppDimensions.radiusButton,
                           ),
                           border: Border.all(color: AppColors.goldBorder),
-                          boxShadow: const [
+                          boxShadow: [
                             BoxShadow(
                               color: AppColors.goldGlow,
                               blurRadius: 28,
@@ -190,7 +190,7 @@ class _StartupOfflineScreenState extends State<StartupOfflineScreen>
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             if (_retrying)
-                              const SizedBox(
+                              SizedBox(
                                 width: 18,
                                 height: 18,
                                 child: CircularProgressIndicator(
@@ -199,7 +199,7 @@ class _StartupOfflineScreenState extends State<StartupOfflineScreen>
                                 ),
                               )
                             else
-                              const Icon(
+                              Icon(
                                 Icons.sync_rounded,
                                 size: 20,
                                 color: AppColors.champagneGold,
@@ -238,13 +238,13 @@ class _OfflineWordmark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Row(
+    return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         SizedBox(width: 24, child: Divider(color: AppColors.goldBorder)),
-        SizedBox(width: AppDimensions.space12),
+        const SizedBox(width: AppDimensions.space12),
         Text('SILARAH', style: AppTypography.wordmark),
-        SizedBox(width: AppDimensions.space12),
+        const SizedBox(width: AppDimensions.space12),
         SizedBox(width: 24, child: Divider(color: AppColors.goldBorder)),
       ],
     );
@@ -288,7 +288,7 @@ class _ConnectionStatus extends StatelessWidget {
             Container(
               width: 6,
               height: 6,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.champagneGold,
                 shape: BoxShape.circle,
                 boxShadow: [
@@ -362,7 +362,7 @@ class _ConnectionSealPainter extends CustomPainter {
         const Radius.circular(6),
       ),
       Paint()
-        ..shader = const LinearGradient(
+        ..shader = LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [AppColors.champagneLight, AppColors.antiqueGold],

@@ -42,6 +42,8 @@ import 'core/cubits/notification_prefs/notification_prefs_cubit.dart';
 import 'core/cubits/block_report/block_report_cubit.dart';
 import 'core/cubits/notifications/notifications_cubit.dart';
 import 'core/cubits/locale/locale_cubit.dart';
+import 'core/cubits/theme/theme_cubit.dart';
+import 'core/theme/app_colors.dart';
 import 'core/cubits/account_standing/account_standing_cubit.dart';
 import 'core/router/app_router.dart';
 import 'core/widgets/in_app_notification_banner.dart';
@@ -103,18 +105,18 @@ void main() async {
           );
         }
 
-        return Material(
-          color: const Color(0xFF0A0A0F), // AppColors.obsidianNight
+        return const Material(
+          color: Color(0xFF0A0A0F), // AppColors.obsidianNight
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(32),
+              padding: EdgeInsets.all(32),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.error_outline_rounded,
+                  Icon(Icons.error_outline_rounded,
                       color: Color(0xFFE67E7E), size: 48),
-                  const SizedBox(height: 16),
-                  const Text(
+                  SizedBox(height: 16),
+                  Text(
                     'Something went wrong',
                     style: TextStyle(
                       color: Color(0xFFF5F5F7),
@@ -123,12 +125,10 @@ void main() async {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
-                    kDebugMode
-                        ? details.exception.toString()
-                        : 'Please restart the app.',
-                    style: const TextStyle(
+                    'This screen update was interrupted. Go back once and reopen it.',
+                    style: TextStyle(
                       color: Color(0xFF8E8E93),
                       fontSize: 14,
                     ),
@@ -158,6 +158,8 @@ void main() async {
     statusBarIconBrightness: Brightness.light,
     statusBarBrightness: Brightness.dark,
     systemNavigationBarColor: Color(0xFF0A0A0F),
+    systemNavigationBarDividerColor: Colors.transparent,
+    systemNavigationBarContrastEnforced: false,
   ));
 
   // Portrait-only for Phase 1. Do not block the first frame on this.
@@ -168,8 +170,12 @@ void main() async {
   // ── SharedPreferences check for returning users ──────────────
   final prefs = await SharedPreferences.getInstance();
   final introCompleted = prefs.getBool('silarah_intro_completed') ?? false;
+  final initialTheme = SilarahThemeMode.fromStorage(
+    prefs.getString(ThemeCubit.preferenceKey),
+  );
   runApp(SilarahApp(
     initialLocation: introCompleted ? AppRoutes.boot : AppRoutes.assalam,
+    initialTheme: initialTheme,
   ));
 }
 
@@ -244,9 +250,14 @@ Future<void> _configureRevenueCat() async {
 }
 
 class SilarahApp extends StatefulWidget {
-  const SilarahApp({super.key, required this.initialLocation});
+  const SilarahApp({
+    super.key,
+    required this.initialLocation,
+    this.initialTheme = SilarahThemeMode.obsidian,
+  });
 
   final String initialLocation;
+  final SilarahThemeMode initialTheme;
 
   @override
   State<SilarahApp> createState() => _SilarahAppState();
@@ -270,11 +281,13 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
   late final NotificationPrefsCubit _notificationPrefsCubit;
   late final NotificationsCubit _notificationsCubit;
   late final LocaleCubit _localeCubit;
+  late final ThemeCubit _themeCubit;
   late final AccountStandingCubit _accountStandingCubit;
 
   late final GoRouter _router;
   late final Future<void> _revenueCatReady;
   StreamSubscription<bool>? _connectivitySubscription;
+  StreamSubscription<NotificationItem>? _notificationRefreshSubscription;
   ConnectivityService? _connectivityService;
   _StartupNetworkState _startupNetworkState = _StartupNetworkState.checking;
   Future<bool>? _startupRecoveryInFlight;
@@ -293,7 +306,17 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
     _notificationPrefsCubit = NotificationPrefsCubit();
     _notificationsCubit = NotificationsCubit();
     _localeCubit = LocaleCubit();
+    _themeCubit = ThemeCubit(initialMode: widget.initialTheme);
     _accountStandingCubit = AccountStandingCubit();
+
+    _notificationRefreshSubscription =
+        _notificationsCubit.inAppNotifications.listen((item) {
+      if (item.type == 'new_message') {
+        unawaited(
+          _chatCubit.loadConversations(showLoading: false, force: true),
+        );
+      }
+    });
 
     _router =
         buildAppRouter(_authCubit, initialLocation: widget.initialLocation);
@@ -413,8 +436,11 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
       unawaited(_accountStandingCubit.refresh());
       unawaited(_notificationsCubit.loadNotifications());
       unawaited(_discoveryFeedCubit.loadInitial());
+      unawaited(_interestsCubit.loadData(force: true));
       unawaited(_onboardingCubit.refreshProfileFromDb());
-      unawaited(_chatCubit.loadConversations(showLoading: false));
+      unawaited(
+        _chatCubit.loadConversations(showLoading: false, force: true),
+      );
     }
   }
 
@@ -445,6 +471,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_connectivitySubscription?.cancel());
+    unawaited(_notificationRefreshSubscription?.cancel());
     PresenceService.instance.stop();
     // ── Dispose Cubits ─────────────────────────────────────────
     _authCubit.close();
@@ -457,6 +484,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
     _notificationPrefsCubit.close();
     _notificationsCubit.close();
     _localeCubit.close();
+    _themeCubit.close();
     _accountStandingCubit.close();
 
     // ── Dispose Services ───────────────────────────────────────
@@ -483,6 +511,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
         BlocProvider<BlockReportCubit>.value(value: _blockReportCubit),
         BlocProvider<NotificationsCubit>.value(value: _notificationsCubit),
         BlocProvider<LocaleCubit>.value(value: _localeCubit),
+        BlocProvider<ThemeCubit>.value(value: _themeCubit),
         BlocProvider<AccountStandingCubit>.value(
           value: _accountStandingCubit,
         ),
@@ -536,69 +565,75 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
               }
             },
             child: BlocBuilder<LocaleCubit, Locale>(
-              builder: (context, locale) => MaterialApp.router(
-                title: 'Silarah',
-                debugShowCheckedModeBanner: false,
-                theme: AppTheme.darkTheme,
-                darkTheme: AppTheme.darkTheme,
-                themeMode: ThemeMode.dark,
-                locale: locale,
+              builder: (context, locale) =>
+                  BlocBuilder<ThemeCubit, ThemeSelectionState>(
+                builder: (context, themeState) => MaterialApp.router(
+                  title: 'Silarah',
+                  debugShowCheckedModeBanner: false,
+                  theme: AppTheme.forMode(themeState.activeMode),
+                  themeMode: ThemeMode.light,
+                  themeAnimationDuration: const Duration(milliseconds: 420),
+                  themeAnimationCurve: Curves.easeOutCubic,
+                  locale: locale,
 
-                // ── Router ───────────────────────────────────
-                routerConfig: _router,
+                  // ── Router ───────────────────────────────────
+                  routerConfig: _router,
 
-                // ── Localizations ─────────────────────────────
-                supportedLocales: AppLocalizations.supportedLocales,
-                localizationsDelegates: const [
-                  AppLocalizations.delegate,
-                  GlobalMaterialLocalizations.delegate,
-                  GlobalWidgetsLocalizations.delegate,
-                  GlobalCupertinoLocalizations.delegate,
-                ],
-                localeResolutionCallback: (deviceLocale, supportedLocales) {
-                  for (final supported in supportedLocales) {
-                    if (deviceLocale?.languageCode == supported.languageCode) {
-                      return supported;
+                  // ── Localizations ─────────────────────────────
+                  supportedLocales: AppLocalizations.supportedLocales,
+                  localizationsDelegates: const [
+                    AppLocalizations.delegate,
+                    GlobalMaterialLocalizations.delegate,
+                    GlobalWidgetsLocalizations.delegate,
+                    GlobalCupertinoLocalizations.delegate,
+                  ],
+                  localeResolutionCallback: (deviceLocale, supportedLocales) {
+                    for (final supported in supportedLocales) {
+                      if (deviceLocale?.languageCode ==
+                          supported.languageCode) {
+                        return supported;
+                      }
                     }
-                  }
-                  return const Locale('en');
-                },
+                    return const Locale('en');
+                  },
 
-                // ── RTL-aware directionality ──────────────────
-                builder: (context, child) {
-                  final loc = Localizations.localeOf(context);
-                  final isRtl = _rtlLocales.contains(loc.languageCode);
-                  final textDir = isRtl ? TextDirection.rtl : TextDirection.ltr;
+                  // ── RTL-aware directionality ──────────────────
+                  builder: (context, child) {
+                    final loc = Localizations.localeOf(context);
+                    final isRtl = _rtlLocales.contains(loc.languageCode);
+                    final textDir =
+                        isRtl ? TextDirection.rtl : TextDirection.ltr;
 
-                  final routedApp = Directionality(
-                    textDirection: textDir,
-                    child: InAppNotificationBannerHost(
-                      notifications: _notificationsCubit.inAppNotifications,
-                      onTap: _openInAppNotification,
-                      child: child ?? const SizedBox.shrink(),
-                    ),
-                  );
-                  return AnimatedSwitcher(
-                    duration: AppDimensions.durationReveal,
-                    switchInCurve: Curves.easeOutCubic,
-                    switchOutCurve: Curves.easeInCubic,
-                    child: switch (_startupNetworkState) {
-                      _StartupNetworkState.checking =>
-                        const StartupOfflineScreen(
-                          key: ValueKey('startup-connectivity-checking'),
-                          checking: true,
-                        ),
-                      _StartupNetworkState.offline => StartupOfflineScreen(
-                          key: const ValueKey('startup-connectivity-offline'),
-                          onRetry: _retryStartupConnectivity,
-                        ),
-                      _StartupNetworkState.ready => KeyedSubtree(
-                          key: const ValueKey('startup-connectivity-ready'),
-                          child: routedApp,
-                        ),
-                    },
-                  );
-                },
+                    final routedApp = Directionality(
+                      textDirection: textDir,
+                      child: InAppNotificationBannerHost(
+                        notifications: _notificationsCubit.inAppNotifications,
+                        onTap: _openInAppNotification,
+                        child: child ?? const SizedBox.shrink(),
+                      ),
+                    );
+                    return AnimatedSwitcher(
+                      duration: AppDimensions.durationReveal,
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
+                      child: switch (_startupNetworkState) {
+                        _StartupNetworkState.checking =>
+                          const StartupOfflineScreen(
+                            key: ValueKey('startup-connectivity-checking'),
+                            checking: true,
+                          ),
+                        _StartupNetworkState.offline => StartupOfflineScreen(
+                            key: const ValueKey('startup-connectivity-offline'),
+                            onRetry: _retryStartupConnectivity,
+                          ),
+                        _StartupNetworkState.ready => KeyedSubtree(
+                            key: const ValueKey('startup-connectivity-ready'),
+                            child: routedApp,
+                          ),
+                      },
+                    );
+                  },
+                ),
               ),
             ),
           );

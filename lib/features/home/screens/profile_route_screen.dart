@@ -115,7 +115,7 @@ class _ProfileRouteScreenState extends State<ProfileRouteScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.person_off_outlined,
+                    Icon(Icons.person_off_outlined,
                         color: AppColors.slateMist, size: 46),
                     const SizedBox(height: AppDimensions.space16),
                     Text(_error!,

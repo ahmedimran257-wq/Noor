@@ -304,17 +304,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Row(children: [
+        content: Row(children: [
           Icon(Icons.check_circle_rounded,
               color: AppColors.champagneGold, size: 18),
-          SizedBox(width: AppDimensions.space8),
+          const SizedBox(width: AppDimensions.space8),
           Text('Profile saved', style: AppTypography.body),
         ]),
         backgroundColor: AppColors.surfaceGlassHover,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          side: const BorderSide(color: AppColors.goldBorder),
+          side: BorderSide(color: AppColors.goldBorder),
         ),
         duration: const Duration(seconds: 2),
       ),
@@ -341,7 +341,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   shape: BoxShape.circle,
                   border: Border.all(color: AppColors.cardBorder),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.arrow_back_rounded,
                   color: AppColors.pearlWhite,
                   size: AppDimensions.iconSizeMedium,
@@ -355,7 +355,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             top: false,
             child: Container(
               padding: const EdgeInsets.fromLTRB(24, 12, 24, 14),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.navBarSurface,
                 border: Border(top: BorderSide(color: AppColors.cardBorder)),
               ),
@@ -369,7 +369,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   decoration: BoxDecoration(
                     gradient: _isSaving
                         ? null
-                        : const LinearGradient(colors: [
+                        : LinearGradient(colors: [
                             AppColors.champagneLight,
                             AppColors.champagneGold,
                           ]),
@@ -379,12 +379,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   child: _isSaving
                       ? const SilarahPulseLoader(size: 26)
-                      : const Row(
+                      : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.check_rounded,
                                 color: AppColors.obsidianNight, size: 20),
-                            SizedBox(width: AppDimensions.space8),
+                            const SizedBox(width: AppDimensions.space8),
                             Text('Save changes', style: AppTypography.button),
                           ],
                         ),
@@ -799,28 +799,28 @@ class _PhotoGridState extends State<_PhotoGrid> {
                           memCacheWidth: 276,
                           maxWidthDiskCache: 384,
                         )
-                      : const Icon(Icons.add_a_photo_outlined,
+                      : Icon(Icons.add_a_photo_outlined,
                           color: AppColors.champagneGold, size: 30),
                 ),
               ),
             ),
             const SizedBox(width: AppDimensions.space16),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Manage your photos', style: AppTypography.bodyMedium),
-                  SizedBox(height: AppDimensions.space6),
+                  const SizedBox(height: AppDimensions.space6),
                   Text(
                     'Reorder, replace or add photos. Every new upload runs through the safety scan.',
                     style: AppTypography.caption,
                   ),
-                  SizedBox(height: AppDimensions.space12),
+                  const SizedBox(height: AppDimensions.space12),
                   Row(
                     children: [
                       Text('Open photo manager',
                           style: AppTypography.buttonSecondary),
-                      SizedBox(width: AppDimensions.space4),
+                      const SizedBox(width: AppDimensions.space4),
                       Icon(Icons.arrow_forward_rounded,
                           color: AppColors.champagneGold, size: 17),
                     ],
@@ -854,18 +854,18 @@ class _EditorIntro extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
         border: Border.all(color: AppColors.goldBorder),
       ),
-      child: const Row(
+      child: Row(
         children: [
           Icon(Icons.auto_awesome_outlined,
               color: AppColors.champagneGold, size: 22),
-          SizedBox(width: AppDimensions.space12),
+          const SizedBox(width: AppDimensions.space12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Shape your first impression',
                     style: AppTypography.bodyMedium),
-                SizedBox(height: AppDimensions.space4),
+                const SizedBox(height: AppDimensions.space4),
                 Text(
                   'Changes are saved securely and reflected in discovery immediately.',
                   style: AppTypography.caption,
@@ -931,11 +931,11 @@ class _LocationEditor extends StatelessWidget {
               Container(
                 width: 38,
                 height: 38,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: AppColors.goldGlow,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.location_on_outlined,
                   color: AppColors.champagneGold,
                   size: 20,
@@ -963,7 +963,7 @@ class _LocationEditor extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppDimensions.space20),
-          const Text('COUNTRY', style: AppTypography.sectionLabel),
+          Text('COUNTRY', style: AppTypography.sectionLabel),
           const SizedBox(height: AppDimensions.space8),
           Semantics(
             button: true,
@@ -980,7 +980,7 @@ class _LocationEditor extends StatelessWidget {
                     Expanded(
                       child: Text(country.name, style: AppTypography.body),
                     ),
-                    const Icon(
+                    Icon(
                       Icons.chevron_right_rounded,
                       color: AppColors.champagneGold,
                     ),
@@ -990,7 +990,7 @@ class _LocationEditor extends StatelessWidget {
             ),
           ),
           const Divider(height: AppDimensions.space24),
-          const Text('STATE / REGION', style: AppTypography.sectionLabel),
+          Text('STATE / REGION', style: AppTypography.sectionLabel),
           const SizedBox(height: AppDimensions.space8),
           RegionSearchField(
             key: ValueKey('edit_region_${country.iso2}'),
@@ -1001,7 +1001,7 @@ class _LocationEditor extends StatelessWidget {
             onCleared: onRegionCleared,
           ),
           const SizedBox(height: AppDimensions.space16),
-          const Text('CITY', style: AppTypography.sectionLabel),
+          Text('CITY', style: AppTypography.sectionLabel),
           const SizedBox(height: AppDimensions.space8),
           CitySearchField(
             key: ValueKey('edit_city_${country.iso2}_${region?.name ?? ''}'),
@@ -1017,9 +1017,9 @@ class _LocationEditor extends StatelessWidget {
           AnimatedSwitcher(
             duration: AppDimensions.durationTransition,
             child: locationLabel == null
-                ? const Padding(
-                    key: ValueKey('location-guidance'),
-                    padding: EdgeInsets.only(top: AppDimensions.space10),
+                ? Padding(
+                    key: const ValueKey('location-guidance'),
+                    padding: const EdgeInsets.only(top: AppDimensions.space10),
                     child: Text(
                       'Choose a verified result so distance matching stays accurate.',
                       style: AppTypography.caption,
@@ -1030,7 +1030,7 @@ class _LocationEditor extends StatelessWidget {
                     padding: const EdgeInsets.only(top: AppDimensions.space12),
                     child: Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.verified_rounded,
                           color: AppColors.verifiedTeal,
                           size: 17,
@@ -1084,7 +1084,7 @@ class _SectionHeader extends StatelessWidget {
         const SizedBox(width: AppDimensions.space10),
         Text(label, style: AppTypography.bodyMedium),
         const SizedBox(width: AppDimensions.space12),
-        const Expanded(child: Divider(color: AppColors.divider, height: 1)),
+        Expanded(child: Divider(color: AppColors.divider, height: 1)),
       ],
     );
   }
@@ -1142,6 +1142,7 @@ class _SilarahTextFieldState extends State<_SilarahTextField> {
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
                 errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
                 disabledBorder: InputBorder.none,
                 filled: false,
                 fillColor: Colors.transparent,
@@ -1203,12 +1204,13 @@ class _DropdownField extends StatelessWidget {
               enabledBorder: InputBorder.none,
               focusedBorder: InputBorder.none,
               errorBorder: InputBorder.none,
+              focusedErrorBorder: InputBorder.none,
               disabledBorder: InputBorder.none,
               filled: false,
               fillColor: Colors.transparent,
               contentPadding: EdgeInsets.zero,
             ),
-            icon: const Icon(
+            icon: Icon(
               Icons.expand_more_rounded,
               color: AppColors.slateMist,
             ),
@@ -1399,7 +1401,7 @@ class _AgeRangeField extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Text('Partner age range', style: AppTypography.body),
+              Text('Partner age range', style: AppTypography.body),
               const Spacer(),
               Text(
                 '${min.round()} – ${max.round()} yrs',
@@ -1470,7 +1472,7 @@ class _InterestChips extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Interests (up to 6)', style: AppTypography.sectionLabel),
+        Text('Interests (up to 6)', style: AppTypography.sectionLabel),
         const SizedBox(height: AppDimensions.space8),
         Wrap(
           spacing: AppDimensions.space8,

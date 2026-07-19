@@ -320,7 +320,7 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
         if (camera != null && camera.value.isInitialized)
           CameraPreview(camera)
         else
-          const ColoredBox(color: AppColors.obsidianNight),
+          ColoredBox(color: AppColors.obsidianNight),
         const ColoredBox(color: Color(0x36000000)),
         SafeArea(
           child: Column(
@@ -331,10 +331,10 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
                   children: [
                     IconButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.close_rounded,
+                      icon: Icon(Icons.close_rounded,
                           color: AppColors.pearlWhite),
                     ),
-                    const Expanded(
+                    Expanded(
                       child: Text('Passive face scan',
                           textAlign: TextAlign.center,
                           style: AppTypography.bodyMedium),
@@ -443,11 +443,11 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
                 color: AppColors.softCoral.withValues(alpha: 0.10),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.face_retouching_off_rounded,
+              child: Icon(Icons.face_retouching_off_rounded,
                   color: AppColors.softCoral, size: 28),
             ),
             const SizedBox(height: AppDimensions.space24),
-            const Text('Scan not completed',
+            Text('Scan not completed',
                 style: AppTypography.screenTitle, textAlign: TextAlign.center),
             const SizedBox(height: AppDimensions.space10),
             Text(_failureReason ?? 'Move to better lighting',
@@ -464,7 +464,7 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
                   borderRadius:
                       BorderRadius.circular(AppDimensions.radiusButton),
                 ),
-                child: const Text('Retry scan', style: AppTypography.button),
+                child: Text('Retry scan', style: AppTypography.button),
               ),
             ),
           ],
@@ -483,17 +483,17 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
             Container(
               width: 72,
               height: 72,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.goldGlow,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.verified_rounded,
+              child: Icon(Icons.verified_rounded,
                   color: AppColors.champagneGold, size: 34),
             ),
             const SizedBox(height: AppDimensions.space24),
-            const Text('Badge active', style: AppTypography.screenTitle),
+            Text('Badge active', style: AppTypography.screenTitle),
             const SizedBox(height: AppDimensions.space10),
-            const Text(
+            Text(
               'Your passive face scan passed. The verification badge is now visible on your profile.',
               style: AppTypography.bodyMuted,
               textAlign: TextAlign.center,
@@ -510,7 +510,7 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
                   borderRadius:
                       BorderRadius.circular(AppDimensions.radiusButton),
                 ),
-                child: const Text('Done', style: AppTypography.button),
+                child: Text('Done', style: AppTypography.button),
               ),
             ),
           ],

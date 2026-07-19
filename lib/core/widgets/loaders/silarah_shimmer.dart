@@ -15,17 +15,17 @@ class SilarahPulseLoader extends StatefulWidget {
     super.key,
     this.label,
     this.size = 54,
-    this.accentColor = AppColors.champagneGold,
-    this.highlightColor = AppColors.champagneLight,
-    this.markColor = AppColors.obsidianNight,
+    this.accentColor,
+    this.highlightColor,
+    this.markColor,
     this.coreGradientColors,
   });
 
   final String? label;
   final double size;
-  final Color accentColor;
-  final Color highlightColor;
-  final Color markColor;
+  final Color? accentColor;
+  final Color? highlightColor;
+  final Color? markColor;
   final List<Color>? coreGradientColors;
 
   @override
@@ -53,6 +53,8 @@ class _SilarahPulseLoaderState extends State<SilarahPulseLoader>
 
   @override
   Widget build(BuildContext context) {
+    final accentColor = widget.accentColor ?? AppColors.champagneGold;
+    final highlightColor = widget.highlightColor ?? AppColors.champagneLight;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -76,7 +78,7 @@ class _SilarahPulseLoaderState extends State<SilarahPulseLoader>
                       child: Container(
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: widget.accentColor,
+                          color: accentColor,
                         ),
                       ),
                     ),
@@ -87,7 +89,7 @@ class _SilarahPulseLoaderState extends State<SilarahPulseLoader>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: widget.accentColor.withValues(alpha: 0.2),
+                          color: accentColor.withValues(alpha: 0.2),
                           width: 1,
                         ),
                       ),
@@ -99,7 +101,7 @@ class _SilarahPulseLoaderState extends State<SilarahPulseLoader>
                           margin: EdgeInsets.only(top: widget.size * 0.08),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: widget.highlightColor,
+                            color: highlightColor,
                           ),
                         ),
                       ),
@@ -115,7 +117,7 @@ class _SilarahPulseLoaderState extends State<SilarahPulseLoader>
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: widget.coreGradientColors ??
-                            const [
+                            [
                               AppColors.champagneLight,
                               AppColors.champagneGold,
                               AppColors.antiqueGold,
@@ -123,7 +125,7 @@ class _SilarahPulseLoaderState extends State<SilarahPulseLoader>
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: widget.accentColor.withValues(alpha: 0.18),
+                          color: accentColor.withValues(alpha: 0.18),
                           blurRadius: 18,
                           offset: const Offset(0, 8),
                         ),
@@ -209,7 +211,7 @@ class _SilarahShimmerState extends State<SilarahShimmer>
             return LinearGradient(
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
-              colors: const [
+              colors: [
                 AppColors.surfaceGlass,
                 AppColors.slateMist, // The bright sweep point
                 AppColors.surfaceGlassHover,

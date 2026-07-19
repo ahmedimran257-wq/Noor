@@ -179,9 +179,9 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
     return Scaffold(
       backgroundColor: AppColors.obsidianNight,
       body: DecoratedBox(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: RadialGradient(
-            center: Alignment(0, -0.55),
+            center: const Alignment(0, -0.55),
             radius: 1.18,
             colors: [
               AppColors.navyCharcoal,

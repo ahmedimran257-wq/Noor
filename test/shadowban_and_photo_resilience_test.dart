@@ -71,7 +71,8 @@ void main() {
       expect(profileScreen, contains('onPhotoLoadFailed'));
       expect(profileScreen, contains('didChangeAppLifecycleState'));
       expect(homeScreen, contains('TickerMode('));
-      expect(homeScreen, isNot(contains('_profileRefreshToken')));
+      expect(homeScreen, contains('_profileRefreshToken'));
+      expect(homeScreen, contains('MyProfileScreen(refreshToken:'));
       expect(homeScreen, contains('List<Widget?>.filled(_tabCount, null)'));
       expect(homeScreen, contains('_ensureTabBuilt'));
       expect(supabaseService, contains('_isSessionUsable'));

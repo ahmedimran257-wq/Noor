@@ -23,7 +23,7 @@ class LegalDocScreen extends StatelessWidget {
         leading: IconButton(
           tooltip: 'Back',
           onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios_new_rounded,
             color: AppColors.pearlWhite,
             size: 20,
@@ -76,7 +76,7 @@ class _DocumentHeader extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.policy_outlined,
                 color: AppColors.champagneGold,
                 size: 20,
@@ -98,7 +98,7 @@ class _DocumentHeader extends StatelessWidget {
             style: AppTypography.bodyMuted.copyWith(height: 1.55),
           ),
           const SizedBox(height: AppDimensions.space14),
-          const Text(
+          Text(
             'Effective ${LegalDocuments.effectiveDate}  •  Version ${LegalDocuments.version}',
             style: AppTypography.caption,
           ),
@@ -122,7 +122,7 @@ class _PolicySection extends StatelessWidget {
         children: [
           Text(section.title, style: AppTypography.bodyMedium),
           const SizedBox(height: AppDimensions.space8),
-          const Divider(color: AppColors.divider, height: 1),
+          Divider(color: AppColors.divider, height: 1),
           const SizedBox(height: AppDimensions.space12),
           Text(
             section.body,

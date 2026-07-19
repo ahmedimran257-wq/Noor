@@ -13,6 +13,7 @@
 // ============================================================
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -20,6 +21,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../l10n/generated/app_localizations.dart';
 
 import '../../../core/cubits/locale/locale_cubit.dart';
+import '../../../core/cubits/theme/theme_cubit.dart';
 import '../../../core/cubits/notification_prefs/notification_prefs_cubit.dart';
 import '../../../core/cubits/notification_prefs/notification_prefs_state.dart';
 import '../../../core/cubits/block_report/block_report_cubit.dart';
@@ -136,7 +138,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         elevation: 0,
         leading: IconButton(
           onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
               color: AppColors.pearlWhite, size: 20),
         ),
         title: Text(l10n.settings_title,
@@ -253,6 +255,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // ── 5. APP ────────────────────────────────────────
           _SectionHeader(l10n.settings_section_app),
           _SettingsCard(children: [
+            BlocBuilder<ThemeCubit, ThemeSelectionState>(
+              builder: (context, themeState) => _NavTile(
+                icon: Icons.palette_outlined,
+                label: 'Appearance',
+                value: themeState.requiresRestart
+                    ? '${themeState.selectedMode.label} · restart'
+                    : themeState.activeMode.label,
+                onTap: () => _showThemeSheet(context),
+              ),
+            ),
+            _Divider(),
             BlocBuilder<LocaleCubit, Locale>(
               builder: (context, locale) {
                 final lang = _kLanguages.firstWhere(
@@ -312,7 +325,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _NavTile(
               icon: Icons.gavel_outlined,
               label: l10n.localeName == 'ar'
-                  ? 'Ù…Ø³Ø¤ÙˆÙ„ Ø§Ù„Ø´ÙƒØ§ÙˆÙ‰'
+                  ? 'مسؤول الشكاوى'
                   : 'Grievance Officer',
               onTap: () => _showGrievanceInfo(context),
             ),
@@ -376,13 +389,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         backgroundColor: AppColors.surfaceMid,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-          side: const BorderSide(color: AppColors.cardBorder),
+          side: BorderSide(color: AppColors.cardBorder),
         ),
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.gavel_outlined,
                 color: AppColors.champagneGold, size: 20),
-            SizedBox(width: 10),
+            const SizedBox(width: 10),
             Text('Grievance Officer', style: AppTypography.bodyMedium),
           ],
         ),
@@ -403,7 +416,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.email_outlined,
+                      Icon(Icons.email_outlined,
                           color: AppColors.champagneGold, size: 16),
                       const SizedBox(width: 8),
                       Text('grievance@silarah.com',
@@ -412,7 +425,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ],
                   ),
                   const SizedBox(height: AppDimensions.space12),
-                  const Text(
+                  Text(
                     'Response time: Within 48 hours of receipt',
                     style: AppTypography.caption,
                   ),
@@ -441,6 +454,106 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // ── Photo privacy ──────────────────────────────────────────
   // ── Language sheet ─────────────────────────────────────────
+  void _showThemeSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: AppColors.overlayBlack55,
+      builder: (sheetContext) => BlocProvider<ThemeCubit>.value(
+        value: context.read<ThemeCubit>(),
+        child: _ThemePickerSheet(
+          onThemeScheduled: (mode) {
+            Navigator.of(sheetContext).pop();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (context.mounted) _showThemeRestartSheet(context, mode);
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showThemeRestartSheet(
+    BuildContext context,
+    SilarahThemeMode mode,
+  ) {
+    showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: AppColors.overlayBlack55,
+      builder: (sheetContext) => Container(
+        padding: EdgeInsets.fromLTRB(
+          24,
+          18,
+          24,
+          24 + MediaQuery.viewPaddingOf(sheetContext).bottom,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceMid,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          border: Border(top: BorderSide(color: AppColors.cardBorder)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 42,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.cardBorder,
+                borderRadius: BorderRadius.circular(99),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: AppColors.champagneGold.withValues(alpha: .12),
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.goldBorder),
+              ),
+              child: Icon(
+                Icons.restart_alt_rounded,
+                color: AppColors.champagneGold,
+                size: 28,
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              '${mode.label} is ready',
+              style: AppTypography.screenTitle.copyWith(fontSize: 22),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Restart Silarah to apply the new identity consistently to every screen and system control.',
+              style: AppTypography.bodyMuted.copyWith(height: 1.5),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 22),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => Navigator.of(sheetContext).pop(),
+                child: const Text('I’ll restart the app'),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Your choice is saved securely on this device.',
+              style: AppTypography.caption,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showLanguageSheet(BuildContext context, SupportedLanguage current) {
     showModalBottomSheet<void>(
       context: context,
@@ -666,7 +779,7 @@ class _GuardianSectionState extends State<_GuardianSection> {
       // Guardian Mode master toggle
       ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-        leading: const Icon(Icons.supervisor_account_outlined,
+        leading: Icon(Icons.supervisor_account_outlined,
             color: AppColors.champagneGold, size: 20),
         title: Text(l10n.settings_guardian_title, style: AppTypography.body),
         subtitle:
@@ -724,7 +837,7 @@ class _GuardianSectionState extends State<_GuardianSection> {
                 ListTile(
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                  leading: const Icon(Icons.family_restroom_outlined,
+                  leading: Icon(Icons.family_restroom_outlined,
                       color: AppColors.slateMist, size: 20),
                   title: Text(l10n.settings_guardian_relationship,
                       style: AppTypography.body),
@@ -734,7 +847,7 @@ class _GuardianSectionState extends State<_GuardianSection> {
                     underline: const SizedBox.shrink(),
                     style: AppTypography.caption
                         .copyWith(color: AppColors.champagneGold),
-                    icon: const Icon(Icons.expand_more_rounded,
+                    icon: Icon(Icons.expand_more_rounded,
                         color: AppColors.slateMist, size: 16),
                     items: _relationships
                         .map((r) => DropdownMenuItem(
@@ -753,7 +866,7 @@ class _GuardianSectionState extends State<_GuardianSection> {
                 ListTile(
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                  leading: const Icon(Icons.content_copy_outlined,
+                  leading: Icon(Icons.content_copy_outlined,
                       color: AppColors.slateMist, size: 20),
                   title: Text(l10n.settings_guardian_mirror,
                       style: AppTypography.body),
@@ -776,7 +889,7 @@ class _GuardianSectionState extends State<_GuardianSection> {
                 ListTile(
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                  leading: const Icon(Icons.reply_outlined,
+                  leading: Icon(Icons.reply_outlined,
                       color: AppColors.slateMist, size: 20),
                   title: Text(l10n.settings_guardian_reply,
                       style: AppTypography.body),
@@ -813,8 +926,8 @@ class _GuardianSectionState extends State<_GuardianSection> {
                       child: AnimatedSwitcher(
                         duration: AppDimensions.durationTransition,
                         child: _saving
-                            ? const SilarahPulseLoader(
-                                key: ValueKey('saving'),
+                            ? SilarahPulseLoader(
+                                key: const ValueKey('saving'),
                                 size: 24,
                                 accentColor: AppColors.obsidianNight,
                                 highlightColor: AppColors.obsidianDeep,
@@ -829,7 +942,7 @@ class _GuardianSectionState extends State<_GuardianSection> {
                                     key: const ValueKey('saved'),
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(Icons.check_rounded,
+                                      Icon(Icons.check_rounded,
                                           color: AppColors.obsidianNight,
                                           size: 16),
                                       const SizedBox(width: 6),
@@ -1113,7 +1226,7 @@ class _PrivacySectionState extends State<_PrivacySection> {
               );
             },
           ),
-          const Divider(color: AppColors.cardBorder, height: 24),
+          Divider(color: AppColors.cardBorder, height: 24),
           Semantics(
             button: true,
             label: 'Manage photo access requests',
@@ -1131,7 +1244,7 @@ class _PrivacySectionState extends State<_PrivacySection> {
                         color: AppColors.champagneGold.withValues(alpha: 0.10),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.admin_panel_settings_outlined,
                         color: AppColors.champagneGold,
                         size: 20,
@@ -1149,14 +1262,14 @@ class _PrivacySectionState extends State<_PrivacySection> {
                             ),
                           ),
                           const SizedBox(height: 2),
-                          const Text(
+                          Text(
                             'Approve access, decline requests, or revoke sharing',
                             style: AppTypography.caption,
                           ),
                         ],
                       ),
                     ),
-                    const Icon(
+                    Icon(
                       Icons.chevron_right_rounded,
                       color: AppColors.slateMist,
                     ),
@@ -1210,7 +1323,7 @@ class _PrivacySectionState extends State<_PrivacySection> {
                       color: AppColors.premiumGold.withValues(alpha: 0.3)),
                 ),
                 child: Row(children: [
-                  const Icon(Icons.visibility_off_outlined,
+                  Icon(Icons.visibility_off_outlined,
                       color: AppColors.premiumGold, size: 18),
                   const SizedBox(width: 8),
                   Expanded(
@@ -1268,7 +1381,7 @@ class _PrivacyCard extends StatelessWidget {
                       key: const ValueKey('saved'),
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.check_rounded,
+                        Icon(Icons.check_rounded,
                             color: AppColors.verifiedTeal, size: 14),
                         const SizedBox(width: 3),
                         Text(
@@ -1339,7 +1452,7 @@ class _RadioRow extends StatelessWidget {
               ),
             ),
             child: selected
-                ? const Icon(Icons.check_rounded,
+                ? Icon(Icons.check_rounded,
                     color: AppColors.obsidianNight, size: 14)
                 : null,
           ),
@@ -1355,6 +1468,256 @@ class _RadioRow extends StatelessWidget {
 // LANGUAGE PICKER SHEET
 // ═══════════════════════════════════════════════════════════════
 
+class _ThemePickerSheet extends StatelessWidget {
+  const _ThemePickerSheet({required this.onThemeScheduled});
+
+  final ValueChanged<SilarahThemeMode> onThemeScheduled;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+    return BlocBuilder<ThemeCubit, ThemeSelectionState>(
+      builder: (context, themeState) => AnimatedContainer(
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeOutCubic,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * .9,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceMid,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          border: Border(top: BorderSide(color: AppColors.cardBorder)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: .18),
+              blurRadius: 36,
+              offset: const Offset(0, -10),
+            ),
+          ],
+        ),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(24, 14, 24, 24 + bottomInset),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.cardBorder,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Choose your atmosphere',
+                style: AppTypography.screenTitle.copyWith(fontSize: 24),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'A complete visual identity—not a color filter. Every surface, '
+                'field and system control is applied together after restart.',
+                style: AppTypography.bodyMuted,
+              ),
+              const SizedBox(height: 24),
+              for (final mode in SilarahThemeMode.values) ...[
+                _ThemePreviewCard(
+                  mode: mode,
+                  selected: mode == themeState.selectedMode,
+                  onTap: () async {
+                    if (mode == themeState.selectedMode) return;
+                    HapticFeedback.selectionClick();
+                    await context.read<ThemeCubit>().scheduleForRestart(mode);
+                    if (context.mounted) onThemeScheduled(mode);
+                  },
+                ),
+                if (mode != SilarahThemeMode.values.last)
+                  const SizedBox(height: 12),
+              ],
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.restart_alt_rounded,
+                    color: AppColors.verifiedTeal,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Saved on this device · restart to apply fully',
+                    style: AppTypography.caption.copyWith(fontSize: 12),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ThemePreviewCard extends StatelessWidget {
+  const _ThemePreviewCard({
+    required this.mode,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final SilarahThemeMode mode;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = SilarahPalette.forMode(mode);
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: '${mode.label} theme. ${mode.description}',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.goldGlow : AppColors.surfaceGlass,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: selected ? AppColors.champagneGold : AppColors.cardBorder,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              _ThemeMiniature(palette: palette),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      mode.label,
+                      style: AppTypography.bodyMedium.copyWith(
+                        fontSize: 16,
+                        color: selected
+                            ? AppColors.champagneGold
+                            : AppColors.pearlWhite,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(mode.description, style: AppTypography.caption),
+                  ],
+                ),
+              ),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                child: selected
+                    ? Container(
+                        key: const ValueKey('selected'),
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.champagneGold,
+                        ),
+                        child: Icon(
+                          Icons.check_rounded,
+                          color: AppColors.obsidianNight,
+                          size: 17,
+                        ),
+                      )
+                    : Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        key: const ValueKey('available'),
+                        color: AppColors.slateMist,
+                        size: 15,
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ThemeMiniature extends StatelessWidget {
+  const _ThemeMiniature({required this.palette});
+
+  final SilarahPalette palette;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: 72,
+        height: 82,
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: palette.background,
+          borderRadius: BorderRadius.circular(13),
+          border: Border.all(color: palette.border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: .08),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 9,
+                  height: 9,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: palette.accent,
+                  ),
+                ),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: Container(
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: palette.contentPrimary.withValues(alpha: .65),
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: palette.surfaceInteractive,
+                  borderRadius: BorderRadius.circular(7),
+                  border: Border.all(color: palette.border),
+                ),
+              ),
+            ),
+            const SizedBox(height: 7),
+            Container(
+              width: double.infinity,
+              height: 7,
+              decoration: BoxDecoration(
+                color: palette.accent,
+                borderRadius: BorderRadius.circular(99),
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
 class _LanguagePickerSheet extends StatelessWidget {
   const _LanguagePickerSheet({required this.currentLocale});
   final String currentLocale;
@@ -1364,9 +1727,9 @@ class _LanguagePickerSheet extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final bottomPad = MediaQuery.of(context).viewPadding.bottom;
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.surfaceMid,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         border: Border(top: BorderSide(color: AppColors.cardBorder)),
       ),
       constraints: BoxConstraints(
@@ -1461,7 +1824,7 @@ class _LanguagePickerSheet extends StatelessWidget {
                           ]),
                   ),
                   if (isSelected)
-                    const Icon(Icons.check_rounded,
+                    Icon(Icons.check_rounded,
                         color: AppColors.champagneGold, size: 18),
                 ]),
               ),
@@ -1506,7 +1869,7 @@ class _SettingsCard extends StatelessWidget {
 
 class _Divider extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => const Divider(
+  Widget build(BuildContext context) => Divider(
         color: AppColors.divider,
         height: 1,
         indent: 52,
@@ -1518,7 +1881,7 @@ class _DividerFull extends StatelessWidget {
   const _DividerFull();
   @override
   Widget build(BuildContext context) =>
-      const Divider(color: AppColors.divider, height: 1);
+      Divider(color: AppColors.divider, height: 1);
 }
 
 class _NavTile extends StatelessWidget {
@@ -1637,7 +2000,14 @@ class _TextFieldTile extends StatelessWidget {
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: AppTypography.bodyMuted,
+            filled: false,
+            fillColor: Colors.transparent,
             border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            disabledBorder: InputBorder.none,
+            errorBorder: InputBorder.none,
+            focusedErrorBorder: InputBorder.none,
             isDense: true,
             contentPadding: EdgeInsets.zero,
           ),
@@ -1656,9 +2026,9 @@ class _ReportHistorySheet extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final bottomPad = MediaQuery.of(context).viewPadding.bottom;
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.surfaceMid,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         border: Border(top: BorderSide(color: AppColors.cardBorder)),
       ),
       padding: EdgeInsets.fromLTRB(24, 20, 24, 24 + bottomPad),
@@ -1695,7 +2065,7 @@ class _ReportHistorySheet extends StatelessWidget {
                       border: Border.all(color: AppColors.cardBorder),
                     ),
                     child: Row(children: [
-                      const Icon(Icons.flag_outlined,
+                      Icon(Icons.flag_outlined,
                           color: AppColors.softCoral, size: 18),
                       const SizedBox(width: 10),
                       Expanded(

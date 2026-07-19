@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../data/country_data.dart';
 import '../theme/app_colors.dart';
@@ -63,7 +63,7 @@ class _CountryPickerScreenState extends State<CountryPickerScreen> {
                       Text(country.flag, style: const TextStyle(fontSize: 22)),
                   title: Text(country.name, style: AppTypography.body),
                   trailing: selected
-                      ? const Icon(Icons.check_rounded,
+                      ? Icon(Icons.check_rounded,
                           color: AppColors.champagneGold)
                       : null,
                   onTap: () {

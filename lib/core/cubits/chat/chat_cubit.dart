@@ -11,6 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../services/supabase_service.dart';
 import '../../services/translation_service.dart';
+import '../../services/profile_photo_service.dart';
 import 'chat_state.dart';
 
 enum ChatAccessReason {
@@ -51,9 +52,12 @@ class ChatCubit extends Cubit<ChatState> {
   static const Duration _remoteTypingExpiry = Duration(milliseconds: 7000);
 
   RealtimeChannel? _activeChatSubscription;
+  RealtimeChannel? _inboxSubscription;
   String? _realtimeUserId;
+  String? _inboxRealtimeUserId;
   String? _activeConversationId;
   String? _loadedUserId;
+  bool _reloadInboxAfterCurrentLoad = false;
   Timer? _localTypingIdleTimer;
   Timer? _remoteTypingExpiryTimer;
   DateTime? _lastTypingBroadcastAt;
@@ -97,8 +101,14 @@ class ChatCubit extends Cubit<ChatState> {
     bool showLoading = true,
     bool force = false,
   }) async {
-    if (_inboxLoadInFlight) return;
     final me = SupabaseService.currentUserId;
+    if (me != null && _isRealMode) {
+      _setupInboxRealtime(me);
+    }
+    if (_inboxLoadInFlight) {
+      if (force) _reloadInboxAfterCurrentLoad = true;
+      return;
+    }
     final lastLoadedAt = _lastInboxLoadedAt;
     if (!force &&
         me != null &&
@@ -146,8 +156,13 @@ class ChatCubit extends Cubit<ChatState> {
       final userRow = results[0] as Map<String, dynamic>?;
       final inboxRows = _asRows(results[1]);
       final suspendedUntil = _parseDate(userRow?['messaging_suspended_until']);
-      final loaded =
-          inboxRows.map((row) => _conversationFromInbox(row, me)).toList();
+      final photoUrls = await _loadConversationPhotoUrls(inboxRows);
+      if (!_isCurrentLoad(loadVersion) || SupabaseService.currentUserId != me) {
+        return;
+      }
+      final loaded = inboxRows
+          .map((row) => _conversationFromInbox(row, me, photoUrls))
+          .toList();
 
       emit(state.copyWith(
         conversations: _mergeLoadedConversations(state.conversations, loaded),
@@ -161,6 +176,12 @@ class ChatCubit extends Cubit<ChatState> {
       if (_isCurrentLoad(loadVersion)) emit(state.copyWith(isLoading: false));
     } finally {
       _inboxLoadInFlight = false;
+      if (_reloadInboxAfterCurrentLoad &&
+          !isClosed &&
+          SupabaseService.currentUserId != null) {
+        _reloadInboxAfterCurrentLoad = false;
+        unawaited(loadConversations(showLoading: false, force: true));
+      }
     }
   }
 
@@ -234,12 +255,12 @@ class ChatCubit extends Cubit<ChatState> {
     return afterLoad.isNotEmpty ? afterLoad.first.id : '';
   }
 
-  Future<void> sendMessage(String conversationId, String text) async {
+  Future<bool> sendMessage(String conversationId, String text) async {
     final trimmed = text.trim();
-    if (trimmed.isEmpty || state.isSuspended) return;
+    if (trimmed.isEmpty || state.isSuspended) return false;
 
     final conv = _findConversation(conversationId);
-    if (conv == null || conv.isMatchClosed || !_isRealMode) return;
+    if (conv == null || conv.isMatchClosed || !_isRealMode) return false;
 
     _msgCounter++;
     final tempMsgId = 'local_$_msgCounter';
@@ -252,12 +273,37 @@ class ChatCubit extends Cubit<ChatState> {
     );
     _appendMessage(conversationId, localMsg);
 
+    return _persistMessage(conversationId, localMsg);
+  }
+
+  /// Retries the same local failed bubble instead of creating duplicates.
+  Future<bool> retryMessage(String conversationId, String messageId) async {
+    final conv = _findConversation(conversationId);
+    if (conv == null || conv.isMatchClosed || state.isSuspended) return false;
+    final failed = conv.messages
+        .where((message) =>
+            message.id == messageId && message.status == MessageStatus.failed)
+        .firstOrNull;
+    if (failed == null) return false;
+    _updateMessageStatus(conversationId, messageId, MessageStatus.queued);
+    return _persistMessage(
+      conversationId,
+      failed.copyWith(status: MessageStatus.queued),
+    );
+  }
+
+  Future<bool> _persistMessage(
+    String conversationId,
+    ChatMessage localMessage,
+  ) async {
+    final localId = localMessage.id;
+
     try {
       final rows = _asRows(await SupabaseService.client.rpc(
         'send_chat_message',
         params: {
           'p_match_id': conversationId,
-          'p_content': trimmed,
+          'p_content': localMessage.text,
         },
       ));
 
@@ -265,27 +311,29 @@ class ChatCubit extends Cubit<ChatState> {
       final realId = row['message_id']?.toString();
       final createdAt = _parseDate(row['created_at']) ?? DateTime.now();
       if (realId == null) {
-        _updateMessageStatus(conversationId, tempMsgId, MessageStatus.failed);
-        return;
+        _updateMessageStatus(conversationId, localId, MessageStatus.failed);
+        return false;
       }
 
       _replaceQueuedMessage(
         conversationId,
-        tempMsgId,
+        localId,
         ChatMessage(
           id: realId,
-          text: trimmed,
+          text: localMessage.text,
           sentAt: createdAt,
           isMe: true,
           status: MessageStatus.sent,
         ),
       );
+      return true;
     } catch (e) {
       debugPrint('ChatCubit: Error sending message: $e');
-      _updateMessageStatus(conversationId, tempMsgId, MessageStatus.failed);
+      _updateMessageStatus(conversationId, localId, MessageStatus.failed);
       if (_isSafetyBlock(e)) {
         unawaited(loadConversations(force: true));
       }
+      return false;
     }
   }
 
@@ -459,8 +507,66 @@ class ChatCubit extends Cubit<ChatState> {
     _loadedUserId = null;
     _lastInboxLoadedAt = null;
     _inboxLoadInFlight = false;
+    _reloadInboxAfterCurrentLoad = false;
     _disposeRealtime();
+    _disposeInboxRealtime();
     if (!isClosed) emit(const ChatState());
+  }
+
+  /// Keeps the Chat badge authoritative while the user is anywhere in the
+  /// app. The channel is filtered at Postgres to this receiver, so it does not
+  /// stream other members' messages or require an FCM delivery to refresh UI.
+  void _setupInboxRealtime(String me) {
+    if (_inboxRealtimeUserId == me && _inboxSubscription != null) return;
+
+    _disposeInboxRealtime();
+    _inboxRealtimeUserId = me;
+    _inboxSubscription = SupabaseService.client
+        .channel('chat_inbox:$me')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'messages',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'receiver_id',
+            value: me,
+          ),
+          callback: (payload) => _handleInboxMessageInsert(payload, me),
+        )
+        .subscribe();
+  }
+
+  void _handleInboxMessageInsert(
+    PostgresChangePayload payload,
+    String subscribedUserId,
+  ) {
+    if (isClosed || SupabaseService.currentUserId != subscribedUserId) return;
+    final record = payload.newRecord;
+    if (record['receiver_id']?.toString() != subscribedUserId) return;
+    final matchId = record['match_id']?.toString();
+    if (matchId == null || matchId.isEmpty) return;
+
+    final conversationIsLoaded = _conversationExists(matchId);
+    if (conversationIsLoaded) {
+      final isOpen = _activeConversationId == matchId;
+      _appendMessage(
+        matchId,
+        _messageFromRow(record, subscribedUserId),
+        incrementUnread: !isOpen,
+      );
+      if (isOpen) unawaited(markRead(matchId));
+    } else {
+      _requestInboxReload();
+    }
+  }
+
+  void _requestInboxReload() {
+    if (_inboxLoadInFlight) {
+      _reloadInboxAfterCurrentLoad = true;
+      return;
+    }
+    unawaited(loadConversations(showLoading: false, force: true));
   }
 
   void _subscribeToActiveChat(String conversationId) {
@@ -569,7 +675,11 @@ class ChatCubit extends Cubit<ChatState> {
     }
 
     if (payload.eventType == PostgresChangeEvent.insert) {
-      _appendMessage(matchId, _messageFromRow(record, me));
+      _appendMessage(
+        matchId,
+        _messageFromRow(record, me),
+        incrementUnread: false,
+      );
       if (record['receiver_id'] == me) {
         unawaited(markRead(matchId));
       }
@@ -604,13 +714,24 @@ class ChatCubit extends Cubit<ChatState> {
     _activeConversationId = null;
   }
 
+  void _disposeInboxRealtime() {
+    _inboxSubscription?.unsubscribe();
+    _inboxSubscription = null;
+    _inboxRealtimeUserId = null;
+  }
+
   @override
   Future<void> close() {
     _disposeRealtime();
+    _disposeInboxRealtime();
     return super.close();
   }
 
-  Conversation _conversationFromInbox(Map<String, dynamic> row, String me) {
+  Conversation _conversationFromInbox(
+    Map<String, dynamic> row,
+    String me,
+    Map<String, String> photoUrls,
+  ) {
     final lastMessageId = row['last_message_id']?.toString();
     final lastMessage = lastMessageId == null
         ? null
@@ -636,12 +757,34 @@ class ChatCubit extends Cubit<ChatState> {
       unreadCount: (row['unread_count'] as num?)?.toInt() ?? 0,
       matchId: row['match_id'].toString(),
       otherUserId: row['other_user_id']?.toString(),
+      photoUrl: photoUrls[row['other_user_id']?.toString()],
       isMatchClosed: status == 'closed' ||
           status == 'expired' ||
           status == 'blocked' ||
           status == 'reported',
       closureMessage: row['closure_reason'] as String?,
     );
+  }
+
+  Future<Map<String, String>> _loadConversationPhotoUrls(
+    List<Map<String, dynamic>> inboxRows,
+  ) async {
+    final ownerIds = inboxRows
+        .map((row) => row['other_user_id']?.toString())
+        .whereType<String>()
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
+    if (ownerIds.isEmpty) return const {};
+    try {
+      return await ProfilePhotoService.instance.getAuthorizedPhotoUrls(
+        ownerUserIds: ownerIds,
+      );
+    } catch (error) {
+      // A photo must never prevent a conversation from opening.
+      debugPrint('ChatCubit: Error loading conversation photos: $error');
+      return const {};
+    }
   }
 
   ChatMessage _messageFromRow(Map<String, dynamic> row, String me) {
@@ -669,15 +812,20 @@ class ChatCubit extends Cubit<ChatState> {
     return isMe ? MessageStatus.sent : MessageStatus.delivered;
   }
 
-  void _appendMessage(String convId, ChatMessage msg) {
+  void _appendMessage(
+    String convId,
+    ChatMessage msg, {
+    bool incrementUnread = true,
+  }) {
     if (isClosed) return;
     final updated = state.conversations.map((c) {
       if (c.id != convId) return c;
       final alreadyPresent = c.messages.any((m) => m.id == msg.id);
       return c.copyWith(
         messages: _mergeMessagesById(c.messages, [msg]),
-        unreadCount:
-            !msg.isMe && !alreadyPresent ? c.unreadCount + 1 : c.unreadCount,
+        unreadCount: incrementUnread && !msg.isMe && !alreadyPresent
+            ? c.unreadCount + 1
+            : c.unreadCount,
       );
     }).toList();
     emit(state.copyWith(conversations: updated));

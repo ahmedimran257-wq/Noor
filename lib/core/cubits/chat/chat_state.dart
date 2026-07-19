@@ -82,6 +82,7 @@ class Conversation extends Equatable {
     this.unreadCount = 0,
     this.matchId,
     this.otherUserId,
+    this.photoUrl,
     this.isMatchClosed = false,
     this.closureMessage,
   });
@@ -93,8 +94,14 @@ class Conversation extends Equatable {
   final int unreadCount;
   final String? matchId;
   final String? otherUserId;
+  final String? photoUrl;
   final bool isMatchClosed; // true when respectful closure sent
   final String? closureMessage; // the pre-written closing message
+
+  String get displayName {
+    final surname = matchLastInitial.trim();
+    return surname.isEmpty ? matchName.trim() : '${matchName.trim()} $surname';
+  }
 
   ChatMessage? get lastMessage => messages.isEmpty ? null : messages.last;
 
@@ -119,6 +126,7 @@ class Conversation extends Equatable {
     int? unreadCount,
     bool? isMatchClosed,
     String? closureMessage,
+    String? photoUrl,
   }) {
     return Conversation(
       id: id,
@@ -128,6 +136,7 @@ class Conversation extends Equatable {
       unreadCount: unreadCount ?? this.unreadCount,
       matchId: matchId,
       otherUserId: otherUserId,
+      photoUrl: photoUrl ?? this.photoUrl,
       isMatchClosed: isMatchClosed ?? this.isMatchClosed,
       closureMessage: closureMessage ?? this.closureMessage,
     );
@@ -142,6 +151,7 @@ class Conversation extends Equatable {
         unreadCount,
         matchId,
         otherUserId,
+        photoUrl,
         isMatchClosed,
         closureMessage
       ];

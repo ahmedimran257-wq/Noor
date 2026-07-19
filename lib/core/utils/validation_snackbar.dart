@@ -24,7 +24,7 @@ void showValidationSnackbar(BuildContext context, List<String> missingFields) {
         content: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.info_outline_rounded,
+            Icon(Icons.info_outline_rounded,
                 color: AppColors.champagneGold, size: 20),
             const SizedBox(width: 10),
             Expanded(
@@ -39,7 +39,7 @@ void showValidationSnackbar(BuildContext context, List<String> missingFields) {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          side: const BorderSide(color: AppColors.goldBorder),
+          side: BorderSide(color: AppColors.goldBorder),
         ),
         duration: const Duration(seconds: 3),
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 80),

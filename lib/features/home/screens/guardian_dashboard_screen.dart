@@ -367,16 +367,16 @@ class _ChatTile extends StatelessWidget {
                   horizontal: AppDimensions.space16,
                   vertical: AppDimensions.space10,
                 ),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.goldGlow,
-                  borderRadius: BorderRadius.only(
+                  borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(AppDimensions.radiusCard),
                     bottomRight: Radius.circular(AppDimensions.radiusCard),
                   ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.verified_user_outlined,
                       color: AppColors.champagneGold,
                       size: 16,
@@ -512,14 +512,14 @@ class _Avatar extends StatelessWidget {
                 fit: BoxFit.cover,
                 memCacheWidth: 144,
                 maxWidthDiskCache: 192,
-                errorWidget: (_, __, ___) => const Icon(
+                errorWidget: (_, __, ___) => Icon(
                   Icons.person,
                   color: AppColors.slateMist,
                   size: 24,
                 ),
               ),
             )
-          : const Icon(Icons.person, color: AppColors.slateMist, size: 24),
+          : Icon(Icons.person, color: AppColors.slateMist, size: 24),
     );
   }
 }
@@ -545,7 +545,7 @@ class _EmptyDashboard extends StatelessWidget {
                 border: Border.all(color: AppColors.goldBorder, width: 2),
                 color: AppColors.goldGlow,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.shield_outlined,
                 color: AppColors.champagneGold,
                 size: 36,
@@ -558,7 +558,7 @@ class _EmptyDashboard extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppDimensions.space12),
-            const Text(
+            Text(
               'Your ward hasn\'t started any conversations yet.\n'
               'You\'ll see their chats here when they do.',
               style: AppTypography.bodyMuted,
@@ -597,7 +597,7 @@ class _DashboardShimmer extends StatelessWidget {
               Container(
                 width: 48,
                 height: 48,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: AppColors.surfaceGlassHover,
                 ),

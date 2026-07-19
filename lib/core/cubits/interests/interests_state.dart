@@ -23,6 +23,28 @@ enum InterestStatus {
   expired, // Auto-set after 14 days
 }
 
+/// Explains why an otherwise healthy discovery feed may be empty.
+///
+/// Active relationship state owns the profile once an interest is sent. This
+/// keeps a person from appearing simultaneously in Discover, Interests, and
+/// Chat while still giving the UI an authoritative handoff destination.
+enum DiscoveryInteractionHandoff {
+  none,
+  receivedInterest,
+  sentInterest,
+  matched,
+}
+
+/// Authoritative relationship state for one profile. The app never offers a
+/// second active interest for the same pair; it hands the member to the stage
+/// that already owns that relationship instead.
+enum ProfileInteractionState {
+  none,
+  pendingSent,
+  pendingReceived,
+  matched,
+}
+
 class InterestEntry extends Equatable {
   const InterestEntry({
     required this.id,
@@ -144,6 +166,36 @@ class InterestsState extends Equatable {
   /// Item 17: Interests remaining today
   int get remainingToday =>
       (dailyLimit - interestsSentToday).clamp(0, dailyLimit);
+
+  DiscoveryInteractionHandoff get discoveryHandoff {
+    if (matches.isNotEmpty) return DiscoveryInteractionHandoff.matched;
+    if (pendingReceived.isNotEmpty) {
+      return DiscoveryInteractionHandoff.receivedInterest;
+    }
+    if (sent.any(
+      (entry) => entry.effectiveStatus == InterestStatus.pending,
+    )) {
+      return DiscoveryInteractionHandoff.sentInterest;
+    }
+    return DiscoveryInteractionHandoff.none;
+  }
+
+  ProfileInteractionState interactionWith(String userId) {
+    if (matches.any((entry) => entry.profile.id == userId)) {
+      return ProfileInteractionState.matched;
+    }
+    if (pendingReceived.any((entry) => entry.profile.id == userId)) {
+      return ProfileInteractionState.pendingReceived;
+    }
+    if (sent.any(
+      (entry) =>
+          entry.profile.id == userId &&
+          entry.effectiveStatus == InterestStatus.pending,
+    )) {
+      return ProfileInteractionState.pendingSent;
+    }
+    return ProfileInteractionState.none;
+  }
 
   InterestsState copyWith({
     List<InterestEntry>? received,

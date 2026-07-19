@@ -348,6 +348,26 @@ class AppLocalizationsUr extends AppLocalizations {
   String get discovery_empty_title => 'آپ نے آس پاس کے سبھی لوگوں کو دیکھا ہے۔';
 
   @override
+  String get discovery_handoff_interest_subtitle =>
+      'فعال درخواست والے پروفائلز آپ کے انتظار یا جواب تک دلچسپیوں میں منتقل ہو جاتے ہیں۔';
+
+  @override
+  String get discovery_handoff_interest_title => 'آپ کی دلچسپی زیرِ عمل ہے';
+
+  @override
+  String get discovery_handoff_match_subtitle =>
+      'میچ شدہ پروفائلز چیٹ میں منتقل ہو جاتے ہیں، اس لیے وہ ڈسکور میں دوبارہ نہیں دکھتے۔';
+
+  @override
+  String get discovery_handoff_match_title => 'آپ کا رابطہ تیار ہے';
+
+  @override
+  String get discovery_handoff_open_chat => 'چیٹ کھولیں';
+
+  @override
+  String get discovery_handoff_open_interests => 'دلچسپیاں کھولیں';
+
+  @override
   String get discovery_header_title => 'Silarah';
 
   @override
