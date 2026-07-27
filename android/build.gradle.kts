@@ -1,3 +1,7 @@
+import org.gradle.api.tasks.compile.JavaCompile
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 allprojects {
     repositories {
         google()
@@ -23,6 +27,22 @@ subprojects {
     // detector only, so remove the obsolete transitive module everywhere.
     configurations.configureEach {
         exclude(group = "com.google.firebase", module = "firebase-iid")
+    }
+
+    // Flutter plugins do not all publish the same Java bytecode target. A
+    // clean runner can otherwise pair a plugin's Java 11 task with Kotlin 17
+    // and fail Gradle's release validation. Preserve each Android module's
+    // declared Java level and make its paired Kotlin task use the same level.
+    afterEvaluate {
+        tasks.withType<KotlinCompile>().configureEach {
+            val javaTaskName = name.replace("Kotlin", "JavaWithJavac")
+            val javaTask = tasks.findByName(javaTaskName) as? JavaCompile
+            if (javaTask != null) {
+                compilerOptions.jvmTarget.set(
+                    JvmTarget.fromTarget(javaTask.targetCompatibility),
+                )
+            }
+        }
     }
 }
 subprojects {
