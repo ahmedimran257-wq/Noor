@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// The three intentional visual identities available in Silarah.
+/// The intentional visual identities available in Silarah.
 ///
 /// Storage values are explicit so renaming a display label never invalidates a
 /// member's saved preference.

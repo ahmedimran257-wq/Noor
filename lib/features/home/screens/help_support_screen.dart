@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/legal/public_site_links.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
@@ -76,6 +77,39 @@ class HelpSupportScreen extends StatelessWidget {
             answer:
                 'Profile photo verification uses a passive face and liveness scan. Identity verification separately matches a government ID with your selfie. Both are available in Profile under Trust & identity.',
           ),
+          const SizedBox(height: AppDimensions.space20),
+          Text('Official online resources', style: AppTypography.sectionLabel),
+          const SizedBox(height: AppDimensions.space8),
+          _WebResourceTile(
+            icon: Icons.help_center_outlined,
+            title: 'Full Help Center',
+            uri: PublicSiteLinks.help,
+            onTap: () => _openWebPage(context, PublicSiteLinks.help),
+          ),
+          _WebResourceTile(
+            icon: Icons.quiz_outlined,
+            title: 'Frequently Asked Questions',
+            uri: PublicSiteLinks.faq,
+            onTap: () => _openWebPage(context, PublicSiteLinks.faq),
+          ),
+          _WebResourceTile(
+            icon: Icons.health_and_safety_outlined,
+            title: 'Safety Center',
+            uri: PublicSiteLinks.safety,
+            onTap: () => _openWebPage(context, PublicSiteLinks.safety),
+          ),
+          _WebResourceTile(
+            icon: Icons.account_balance_outlined,
+            title: 'Legal Center',
+            uri: PublicSiteLinks.legal,
+            onTap: () => _openWebPage(context, PublicSiteLinks.legal),
+          ),
+          _WebResourceTile(
+            icon: Icons.info_outline_rounded,
+            title: 'About Silarah',
+            uri: PublicSiteLinks.about,
+            onTap: () => _openWebPage(context, PublicSiteLinks.about),
+          ),
         ],
       ),
     );
@@ -104,6 +138,83 @@ class HelpSupportScreen extends StatelessWidget {
           ),
         ),
       );
+  }
+
+  static Future<void> _openWebPage(BuildContext context, Uri uri) async {
+    if (await launchUrl(uri, mode: LaunchMode.externalApplication)) return;
+    await Clipboard.setData(ClipboardData(text: uri.toString()));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: const Text('Web address copied to your clipboard.'),
+          backgroundColor: AppColors.surfaceGlassHover,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+  }
+}
+
+class _WebResourceTile extends StatelessWidget {
+  const _WebResourceTile({
+    required this.icon,
+    required this.title,
+    required this.uri,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final Uri uri;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppDimensions.space8),
+      child: Material(
+        color: AppColors.surfaceGlass,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+          child: Container(
+            padding: const EdgeInsets.all(AppDimensions.space16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+              border: Border.all(color: AppColors.cardBorder),
+            ),
+            child: Row(
+              children: [
+                Icon(icon, color: AppColors.champagneGold, size: 20),
+                const SizedBox(width: AppDimensions.space12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: AppTypography.bodyMedium),
+                      const SizedBox(height: AppDimensions.space2),
+                      Text(
+                        uri.host + uri.path,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.caption,
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.open_in_new_rounded,
+                  color: AppColors.slateMist,
+                  size: 18,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

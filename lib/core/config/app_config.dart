@@ -18,6 +18,4 @@ abstract final class AppConfig {
       String.fromEnvironment('REVENUECAT_TEST_KEY');
 
   static const String appVersion = '1.0.0';
-  static const String tosVersion = '1.0';
-  static const String privacyVersion = '1.0';
 }

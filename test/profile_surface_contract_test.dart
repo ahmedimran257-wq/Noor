@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 
 void main() {
   test('notifications support owned row deletion and clear-all', () {
@@ -46,6 +47,11 @@ void main() {
   test('premium launcher source exists at store resolution', () {
     final icon = File('assets/icon/app_icon.png');
     expect(icon.existsSync(), isTrue);
-    expect(icon.lengthSync(), greaterThan(100000));
+
+    final decoded = img.decodePng(icon.readAsBytesSync());
+    expect(decoded, isNotNull);
+    expect(decoded!.width, 1024);
+    expect(decoded.height, 1024);
+    expect(decoded.numChannels, greaterThanOrEqualTo(3));
   });
 }

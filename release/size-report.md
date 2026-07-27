@@ -1,10 +1,10 @@
 # Android bundle size report
 
-Measured from the signed `1.0.0+2002` release App Bundle on 18 July 2026.
+Measured from the signed `1.0.0+4003` release App Bundle on 27 July 2026.
 
 | Metric | Before | Current |
 | --- | ---: | ---: |
-| Signed AAB | 191.3 MiB | 125.2 MiB |
+| Signed AAB | 191.3 MiB | 124.3 MiB |
 | Bundled NSFW model | 83.9 MiB raw | 11.3 MiB raw |
 | NSFW model compressed inside AAB | 73.9 MiB | 10.4 MiB |
 | Estimated arm64 compressed delivery | Not recorded | 50.7 MiB |

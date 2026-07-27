@@ -1,30 +1,19 @@
-// lib/features/onboarding/screens/splash_brand_screen.dart
-// ============================================================
-// SILARAH - Splash Brand Screen
-// Spec from blueprint:
-//   0ms    — Dark background #0A0A0F
-//   300ms  — سيلارا fades in, scales 0.8→1.0 (600ms ease-out-cubic)
-//   600ms  — 6 light rays emanate from center (staggered 50ms)
-//   900ms  — Rays fade out (400ms)
-//   1000ms — "SILARAH" wordmark fades in (400ms)
-//   1400ms — Tagline "Begin with bismillah" fades in (300ms)
-//   2000ms — Buttons slide up from bottom (400ms)
-//   2500ms — Everything settled, interactive
-// ============================================================
-
-import 'dart:async';
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/buttons/silarah_primary_button.dart';
 import '../../../core/widgets/buttons/silarah_secondary_button.dart';
-import '../../../core/router/app_router.dart';
+import '../../../core/widgets/silarah_launch_sequence.dart';
 import '../../../l10n/generated/app_localizations.dart';
 
+/// Unauthenticated landing surface. Its top lockup is the exact final frame
+/// of [SilarahLaunchSequence], preventing a second logo animation after startup.
 class SplashBrandScreen extends StatefulWidget {
   const SplashBrandScreen({super.key});
 
@@ -33,138 +22,127 @@ class SplashBrandScreen extends StatefulWidget {
 }
 
 class _SplashBrandScreenState extends State<SplashBrandScreen>
-    with TickerProviderStateMixin {
-  // ── Animation controllers ─────────────────────────────────
-  late final AnimationController _silarahCtrl;
-  late final AnimationController _raysCtrl;
-  late final AnimationController _wordmarkCtrl;
-  late final AnimationController _taglineCtrl;
-  late final AnimationController _buttonsCtrl;
-  bool _sequenceCancelled = false;
-  Timer? _sequenceTimer;
-  Completer<bool>? _sequenceDelayCompleter;
-
-  // ── Animations ────────────────────────────────────────────
-  late final Animation<double> _silarahOpacity;
-  late final Animation<double> _silarahScale;
-  late final Animation<double> _raysOpacity;
-  late final Animation<double> _raysLength;
-  late final Animation<double> _wordmarkOpacity;
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _orchestrator;
+  late final Animation<double> _lockupOpacity;
+  late final Animation<Offset> _lockupSlide;
   late final Animation<double> _taglineOpacity;
-  late final Animation<Offset> _buttonsSlide;
-  late final Animation<double> _buttonsOpacity;
+  late final Animation<Offset> _taglineSlide;
+  late final Animation<double> _primaryOpacity;
+  late final Animation<Offset> _primarySlide;
+  late final Animation<double> _secondaryOpacity;
+  late final Animation<Offset> _secondarySlide;
+  late final Animation<double> _tertiaryOpacity;
+  bool _motionPreferenceApplied = false;
+  bool _orchestrationStarted = false;
 
   @override
   void initState() {
     super.initState();
-
-    // سيلارا letterform — 600ms
-    _silarahCtrl = AnimationController(
+    _orchestrator = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 1400),
     );
-    _silarahOpacity =
-        CurvedAnimation(parent: _silarahCtrl, curve: Curves.easeOut);
-    _silarahScale = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _silarahCtrl, curve: Curves.easeOutCubic),
+    _lockupOpacity = CurvedAnimation(
+      parent: _orchestrator,
+      curve: const Interval(0, .25, curve: Curves.easeOutCubic),
     );
-
-    // Light rays — 800ms total (start fading at 400ms)
-    _raysCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
-    _raysOpacity = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0.0, end: 0.8), weight: 50),
-      TweenSequenceItem(tween: Tween(begin: 0.8, end: 0.0), weight: 50),
-    ]).animate(CurvedAnimation(parent: _raysCtrl, curve: Curves.easeInOut));
-    _raysLength = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _raysCtrl, curve: Curves.easeOut),
-    );
-
-    // SILARAH wordmark — 400ms
-    _wordmarkCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    );
-    _wordmarkOpacity = CurvedAnimation(
-      parent: _wordmarkCtrl,
-      curve: Curves.easeOut,
-    );
-
-    // Tagline — 300ms
-    _taglineCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _taglineOpacity = CurvedAnimation(
-      parent: _taglineCtrl,
-      curve: Curves.easeOut,
-    );
-
-    // Buttons — 400ms
-    _buttonsCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    );
-    _buttonsSlide = Tween<Offset>(
-      begin: const Offset(0, 0.6),
+    _lockupSlide = Tween<Offset>(
+      begin: const Offset(0, .06),
       end: Offset.zero,
     ).animate(
-        CurvedAnimation(parent: _buttonsCtrl, curve: Curves.easeOutCubic));
-    _buttonsOpacity = CurvedAnimation(
-      parent: _buttonsCtrl,
-      curve: Curves.easeOut,
+      CurvedAnimation(
+        parent: _orchestrator,
+        curve: const Interval(0, .30, curve: Curves.easeOutCubic),
+      ),
     );
-
-    _runSequence();
+    _taglineOpacity = CurvedAnimation(
+      parent: _orchestrator,
+      curve: const Interval(.15, .40, curve: Curves.easeOutCubic),
+    );
+    _taglineSlide = Tween<Offset>(
+      begin: const Offset(0, .08),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _orchestrator,
+        curve: const Interval(.15, .42, curve: Curves.easeOutCubic),
+      ),
+    );
+    _primaryOpacity = CurvedAnimation(
+      parent: _orchestrator,
+      curve: const Interval(.35, .60, curve: Curves.easeOutCubic),
+    );
+    _primarySlide = Tween<Offset>(
+      begin: const Offset(0, .12),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _orchestrator,
+        curve: const Interval(.35, .65, curve: Curves.easeOutCubic),
+      ),
+    );
+    _secondaryOpacity = CurvedAnimation(
+      parent: _orchestrator,
+      curve: const Interval(.45, .70, curve: Curves.easeOutCubic),
+    );
+    _secondarySlide = Tween<Offset>(
+      begin: const Offset(0, .12),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _orchestrator,
+        curve: const Interval(.45, .75, curve: Curves.easeOutCubic),
+      ),
+    );
+    _tertiaryOpacity = CurvedAnimation(
+      parent: _orchestrator,
+      curve: const Interval(.60, .85, curve: Curves.easeOutCubic),
+    );
+    SilarahLaunchSequence.revealCompleted.addListener(_handleLaunchReveal);
   }
 
-  Future<void> _runSequence() async {
-    Future<bool> wait(Duration delay) async {
-      _sequenceTimer?.cancel();
-      final completer = Completer<bool>();
-      _sequenceDelayCompleter = completer;
-      _sequenceTimer = Timer(delay, () {
-        if (!completer.isCompleted) {
-          completer.complete(mounted && !_sequenceCancelled);
-        }
-      });
-      return completer.future;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_motionPreferenceApplied) return;
+    _motionPreferenceApplied = true;
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _orchestrationStarted = true;
+      _orchestrator.value = 1;
+    } else {
+      _handleLaunchReveal();
     }
+  }
 
-    if (!await wait(const Duration(milliseconds: 300))) return;
-    _silarahCtrl.forward();
-    if (!await wait(const Duration(milliseconds: 300))) return;
-    _raysCtrl.forward();
-    if (!await wait(const Duration(milliseconds: 400))) return;
-    _wordmarkCtrl.forward();
-    if (!await wait(const Duration(milliseconds: 400))) return;
-    _taglineCtrl.forward();
-    if (!await wait(const Duration(milliseconds: 600))) return;
-    _buttonsCtrl.forward();
+  void _handleLaunchReveal() {
+    if (!mounted ||
+        !_motionPreferenceApplied ||
+        _orchestrationStarted ||
+        !SilarahLaunchSequence.revealCompleted.value) {
+      return;
+    }
+    _orchestrationStarted = true;
+    _orchestrator.forward();
   }
 
   @override
   void dispose() {
-    _sequenceCancelled = true;
-    _sequenceTimer?.cancel();
-    final completer = _sequenceDelayCompleter;
-    if (completer != null && !completer.isCompleted) {
-      completer.complete(false);
-    }
-    _silarahCtrl.dispose();
-    _raysCtrl.dispose();
-    _wordmarkCtrl.dispose();
-    _taglineCtrl.dispose();
-    _buttonsCtrl.dispose();
+    SilarahLaunchSequence.revealCompleted.removeListener(_handleLaunchReveal);
+    _orchestrator.dispose();
     super.dispose();
+  }
+
+  void _lightTap(VoidCallback action) {
+    HapticFeedback.lightImpact();
+    action();
   }
 
   void _showReferralSheet(BuildContext context) {
     FocusManager.instance.primaryFocus?.unfocus();
     final l10n = AppLocalizations.of(context);
-    final codeCtrl = TextEditingController();
+    final codeController = TextEditingController();
+
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surfaceMid,
@@ -172,11 +150,11 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) {
-        final bottom = MediaQuery.of(context).viewInsets.bottom;
+      builder: (sheetContext) {
+        final bottom = MediaQuery.viewInsetsOf(sheetContext).bottom;
         return Padding(
           padding: EdgeInsets.only(bottom: bottom),
-          child: Container(
+          child: Padding(
             padding: const EdgeInsets.all(AppDimensions.space24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -196,7 +174,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                 ),
                 const SizedBox(height: AppDimensions.space24),
                 TextField(
-                  controller: codeCtrl,
+                  controller: codeController,
                   onTapOutside: (_) =>
                       FocusManager.instance.primaryFocus?.unfocus(),
                   style: AppTypography.inputText,
@@ -209,21 +187,25 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                     fillColor: AppColors.inputSurface,
                     counterText: '',
                     border: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppDimensions.radiusButton),
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.radiusButton,
+                      ),
                       borderSide: BorderSide(color: AppColors.cardBorder),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppDimensions.radiusButton),
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.radiusButton,
+                      ),
                       borderSide: BorderSide(color: AppColors.cardBorder),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppDimensions.radiusButton),
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.radiusButton,
+                      ),
                       borderSide: BorderSide(
-                          color: AppColors.champagneGold,
-                          width: AppDimensions.borderThin),
+                        color: AppColors.champagneGold,
+                        width: AppDimensions.borderThin,
+                      ),
                     ),
                   ),
                 ),
@@ -232,17 +214,20 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.champagneGold,
                     foregroundColor: AppColors.obsidianNight,
-                    minimumSize:
-                        const Size(double.infinity, AppDimensions.buttonHeight),
+                    minimumSize: const Size(
+                      double.infinity,
+                      AppDimensions.buttonHeight,
+                    ),
                     shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppDimensions.radiusButton),
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.radiusButton,
+                      ),
                     ),
                   ),
                   onPressed: () async {
-                    final code = codeCtrl.text.trim().toUpperCase();
+                    final code = codeController.text.trim().toUpperCase();
                     if (code.length != 6) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      ScaffoldMessenger.of(sheetContext).showSnackBar(
                         SnackBar(
                           content: Text(l10n.splash_referral_invalid),
                           backgroundColor: AppColors.errorRed,
@@ -250,32 +235,31 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                       );
                       return;
                     }
-
-                    // Save to SharedPreferences
                     final prefs = await SharedPreferences.getInstance();
                     await prefs.setString('pending_referral_code', code);
-
-                    if (context.mounted) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            l10n.splash_referral_saved,
-                            style: AppTypography.body,
-                          ),
-                          backgroundColor: AppColors.surfaceGlassHover,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                                AppDimensions.radiusButton),
-                            side: BorderSide(color: AppColors.cardBorder),
-                          ),
+                    if (!sheetContext.mounted) return;
+                    Navigator.pop(sheetContext);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          l10n.splash_referral_saved,
+                          style: AppTypography.body,
                         ),
-                      );
-                    }
+                        backgroundColor: AppColors.surfaceGlassHover,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            AppDimensions.radiusButton,
+                          ),
+                          side: BorderSide(color: AppColors.cardBorder),
+                        ),
+                      ),
+                    );
                   },
-                  child: Text(l10n.splash_referral_button,
-                      style: AppTypography.button),
+                  child: Text(
+                    l10n.splash_referral_button,
+                    style: AppTypography.button,
+                  ),
                 ),
                 const SizedBox(height: AppDimensions.space12),
               ],
@@ -283,7 +267,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
           ),
         );
       },
-    );
+    ).whenComplete(codeController.dispose);
   }
 
   @override
@@ -291,210 +275,226 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
     final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.obsidianNight,
-      body: Stack(
-        children: [
-          // ── Radial glow from center ───────────────────────
-          Center(
-            child: AnimatedBuilder(
-              animation: _silarahCtrl,
-              builder: (context, _) => Opacity(
-                opacity: _silarahCtrl.value * 0.4,
-                child: Container(
-                  width: 280,
-                  height: 280,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        Color(0x40C5A059),
-                        Colors.transparent,
-                      ],
-                    ),
+      body: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: RadialGradient(
+            center: const Alignment(0, -.55),
+            radius: 1.2,
+            colors: [
+              AppColors.inkTeal.withValues(alpha: .18),
+              AppColors.obsidianNight.withValues(alpha: .95),
+              AppColors.obsidianNight,
+            ],
+            stops: const [0, .45, 1],
+          ),
+        ),
+        child: SafeArea(
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: _WelcomeGreetingBackdrop(
+                    animation: _orchestrator,
                   ),
                 ),
               ),
-            ),
-          ),
-
-          // ── Light rays ────────────────────────────────────
-          Center(
-            child: AnimatedBuilder(
-              animation: _raysCtrl,
-              builder: (context, _) => CustomPaint(
-                size: const Size(280, 280),
-                painter: _RaysPainter(
-                  opacity: _raysOpacity.value,
-                  length: _raysLength.value,
-                ),
-              ),
-            ),
-          ),
-
-          // ── Main content ──────────────────────────────────
-          SafeArea(
-            child: Column(
-              children: [
-                const Spacer(flex: 3),
-
-                // سيلارا Arabic letterform
-                AnimatedBuilder(
-                  animation: _silarahCtrl,
-                  builder: (context, _) => Opacity(
-                    opacity: _silarahOpacity.value,
-                    child: Transform.scale(
-                      scale: _silarahScale.value,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 14),
+                  FadeTransition(
+                    opacity: _lockupOpacity,
+                    child: SlideTransition(
+                      position: _lockupSlide,
+                      child: const Center(child: SilarahCompactLockup()),
+                    ),
+                  ),
+                  FadeTransition(
+                    opacity: _taglineOpacity,
+                    child: SlideTransition(
+                      position: _taglineSlide,
                       child: Text(
-                        l10n.localeName == 'ar' ? 'سيلارا' : 'سيلارا',
-                        style: TextStyle(
-                          fontFamily: 'serif',
-                          fontSize: 72,
-                          color: AppColors.champagneGold,
-                          height: 1.0,
-                          shadows: [
-                            Shadow(
-                              color: AppColors.champagneGold
-                                  .withValues(alpha: 0.4),
-                              blurRadius: 24,
-                            ),
-                          ],
-                        ),
-                        textDirection: TextDirection.rtl,
+                        l10n.appTagline,
+                        textAlign: TextAlign.center,
+                        style: AppTypography.tagline,
                       ),
                     ),
                   ),
-                ),
-
-                const SizedBox(height: AppDimensions.space16),
-
-                // SILARAH wordmark
-                FadeTransition(
-                  opacity: _wordmarkOpacity,
-                  child: Text(l10n.appName, style: AppTypography.wordmark),
-                ),
-
-                const SizedBox(height: AppDimensions.space12),
-
-                // Tagline
-                FadeTransition(
-                  opacity: _taglineOpacity,
-                  child: Text(
-                    l10n.appTagline,
-                    style: AppTypography.tagline,
-                  ),
-                ),
-
-                const Spacer(flex: 4),
-
-                // Buttons
-                SlideTransition(
-                  position: _buttonsSlide,
-                  child: FadeTransition(
-                    opacity: _buttonsOpacity,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppDimensions.space24,
-                      ),
-                      child: Column(
-                        children: [
-                          SilarahPrimaryButton(
-                            label: l10n.splash_button_createProfile,
-                            onTap: () => context.push(AppRoutes.legal),
+                  const Spacer(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppDimensions.space24,
+                    ),
+                    child: Column(
+                      children: [
+                        FadeTransition(
+                          opacity: _primaryOpacity,
+                          child: SlideTransition(
+                            position: _primarySlide,
+                            child: SilarahPrimaryButton(
+                              label: l10n.splash_button_createProfile,
+                              haptic: false,
+                              onTap: () => _lightTap(
+                                () => context.push(AppRoutes.legal),
+                              ),
+                            ),
                           ),
-                          const SizedBox(height: AppDimensions.space12),
-                          SilarahSecondaryButton(
-                            label: l10n.splash_button_signIn,
-                            onTap: () =>
-                                context.push('${AppRoutes.email}?mode=signin'),
+                        ),
+                        const SizedBox(height: AppDimensions.space12),
+                        FadeTransition(
+                          opacity: _secondaryOpacity,
+                          child: SlideTransition(
+                            position: _secondarySlide,
+                            child: SilarahSecondaryButton(
+                              label: l10n.splash_button_signIn,
+                              haptic: false,
+                              onTap: () => _lightTap(
+                                () => context.push(
+                                  '${AppRoutes.email}?mode=signin',
+                                ),
+                              ),
+                            ),
                           ),
-                          const SizedBox(height: AppDimensions.space16),
-                          TextButton(
-                            onPressed: () => _showReferralSheet(context),
+                        ),
+                        const SizedBox(height: AppDimensions.space16),
+                        FadeTransition(
+                          opacity: _tertiaryOpacity,
+                          child: TextButton(
+                            onPressed: () => _lightTap(
+                              () => _showReferralSheet(context),
+                            ),
                             child: Text(
                               l10n.splash_referral_question,
                               style: AppTypography.captionMedium.copyWith(
                                 color: AppColors.champagneGold,
                                 decoration: TextDecoration.none,
-                                decorationColor: AppColors.champagneGold,
                               ),
                             ),
                           ),
-                        ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppDimensions.space48),
+                ],
+              ),
+              PositionedDirectional(
+                start: 12,
+                top: 8,
+                child: FadeTransition(
+                  opacity: _tertiaryOpacity,
+                  child: Semantics(
+                    button: true,
+                    label: 'Change language',
+                    child: InkResponse(
+                      onTap: () => _lightTap(
+                        () => context.go(AppRoutes.languageSelect),
+                      ),
+                      radius: 28,
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceGlass,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.cardBorder),
+                        ),
+                        child: Icon(
+                          Icons.language_rounded,
+                          color: AppColors.pearlWhite,
+                          size: 20,
+                        ),
                       ),
                     ),
                   ),
                 ),
-
-                const SizedBox(height: AppDimensions.space48),
-              ],
-            ),
-          ),
-
-          // ── Back button (top-left, visible after animations) ──
-          SafeArea(
-            child: FadeTransition(
-              opacity: _buttonsOpacity,
-              child: Padding(
-                padding: const EdgeInsets.only(left: 12, top: 8),
-                child: GestureDetector(
-                  onTap: () => context.go(AppRoutes.languageSelect),
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceGlass,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.cardBorder),
-                    ),
-                    child: Icon(
-                      Icons.language_rounded,
-                      color: AppColors.pearlWhite,
-                      size: 20,
-                    ),
-                  ),
-                ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
-// ── Light rays painter ────────────────────────────────────────
+class _WelcomeGreetingBackdrop extends StatelessWidget {
+  const _WelcomeGreetingBackdrop({required this.animation});
 
-class _RaysPainter extends CustomPainter {
-  const _RaysPainter({required this.opacity, required this.length});
-  final double opacity;
-  final double length;
+  final Animation<double> animation;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    if (opacity <= 0) return;
-
-    final center = Offset(size.width / 2, size.height / 2);
-    final paint = Paint()
-      ..color = AppColors.champagneGold.withValues(alpha: opacity * 0.7)
-      ..strokeWidth = 1.5
-      ..strokeCap = StrokeCap.round;
-
-    for (int i = 0; i < 6; i++) {
-      final angle = (i * 60) * (math.pi / 180);
-      const startR = 48.0;
-      final endR = startR + (80 * length);
-      final start = Offset(
-        center.dx + startR * math.cos(angle),
-        center.dy + startR * math.sin(angle),
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: animation,
+        builder: (context, _) {
+          final reveal = Curves.easeOutCubic.transform(
+            ((animation.value - .12) / .46).clamp(0.0, 1.0),
+          );
+          final drift = 10 * (1 - reveal);
+          return Align(
+            alignment: const Alignment(0, -.10),
+            child: Transform.translate(
+              offset: Offset(0, drift),
+              child: Opacity(
+                opacity: reveal,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'السلام عليكم',
+                      textDirection: TextDirection.rtl,
+                      textAlign: TextAlign.center,
+                      style: AppTypography.screenTitle.copyWith(
+                        color: AppColors.champagneGold.withValues(alpha: .36),
+                        fontSize: 38,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: .4,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _GreetingRule(
+                          color: AppColors.champagneGold.withValues(alpha: .30),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            'Assalamu Alaikum',
+                            style: AppTypography.tagline.copyWith(
+                              color: AppColors.champagneLight
+                                  .withValues(alpha: .56),
+                              fontSize: 18,
+                              letterSpacing: .5,
+                            ),
+                          ),
+                        ),
+                        _GreetingRule(
+                          color: AppColors.champagneGold.withValues(alpha: .30),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       );
-      final end = Offset(
-        center.dx + endR * math.cos(angle),
-        center.dy + endR * math.sin(angle),
-      );
-      canvas.drawLine(start, end, paint);
-    }
-  }
+}
+
+class _GreetingRule extends StatelessWidget {
+  const _GreetingRule({required this.color});
+
+  final Color color;
 
   @override
-  bool shouldRepaint(_RaysPainter old) =>
-      old.opacity != opacity || old.length != length;
+  Widget build(BuildContext context) => Container(
+        width: 34,
+        height: 1,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(1),
+        ),
+      );
 }

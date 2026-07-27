@@ -1,0 +1,42 @@
+import 'dart:io';
+
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  test('welcome screen uses deterministic staggered orchestration', () {
+    final source = File(
+      'lib/features/onboarding/screens/splash_brand_screen.dart',
+    ).readAsStringSync();
+
+    expect(source, contains('with SingleTickerProviderStateMixin'));
+    expect(source, contains('Duration(milliseconds: 1400)'));
+    expect(source, contains('_lockupOpacity'));
+    expect(source, contains('_taglineOpacity'));
+    expect(source, contains('_primaryOpacity'));
+    expect(source, contains('_secondaryOpacity'));
+    expect(source, contains('_tertiaryOpacity'));
+    expect(source, contains('MediaQuery.disableAnimationsOf(context)'));
+    expect(source, contains('revealCompleted.addListener'));
+    expect(source, contains('!SilarahLaunchSequence.revealCompleted.value'));
+    expect(source, contains('HapticFeedback.lightImpact()'));
+    expect(RegExp(r'haptic:\s*false').allMatches(source).length, 2);
+  });
+
+  test('email auth depth and focus treatment retain one field shell', () {
+    final email = File(
+      'lib/features/onboarding/screens/email_verification_screen.dart',
+    ).readAsStringSync();
+    final frame = File(
+      'lib/core/widgets/inputs/silarah_field_frame.dart',
+    ).readAsStringSync();
+
+    expect(email, contains('center: const Alignment(0, -0.65)'));
+    expect(email, contains('radius: 1.4'));
+    expect(email, contains('stops: const [0, .4, 1]'));
+    expect(email, contains('HapticFeedback.lightImpact()'));
+    expect(email, contains('haptic: false'));
+    expect(frame, contains('AppColors.champagneGold.withValues(alpha: 0.11)'));
+    expect(frame, contains('if (focused && enabled && !hasError)'));
+    expect(email, isNot(contains('UnderlineInputBorder')));
+  });
+}

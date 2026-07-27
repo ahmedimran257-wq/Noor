@@ -18,7 +18,6 @@ import '../cubits/onboarding/onboarding_cubit.dart';
 import '../onboarding/onboarding_flow.dart';
 
 import '../../features/onboarding/screens/splash_brand_screen.dart';
-import '../../features/onboarding/screens/assalam_animation_screen.dart';
 import '../../features/onboarding/screens/language_selection_screen.dart';
 import '../../features/onboarding/screens/legal_gate_screen.dart';
 import '../../features/onboarding/screens/email_verification_screen.dart';
@@ -49,7 +48,6 @@ import '../widgets/loaders/silarah_shimmer.dart';
 abstract final class AppRoutes {
   static const boot = '/boot';
   static const splash = '/';
-  static const assalam = '/assalam';
   static const languageSelect = '/language';
   static const legal = '/legal';
   static const email = '/email';
@@ -98,8 +96,7 @@ GoRouter buildAppRouter(
       // current pre-auth screen during that request; only unknown protected
       // locations should fall back to the boot gate.
       if (authState is AuthInitial || authState is AuthLoading) {
-        if (location == AppRoutes.assalam ||
-            location == AppRoutes.languageSelect ||
+        if (location == AppRoutes.languageSelect ||
             location == AppRoutes.splash ||
             location == AppRoutes.legal ||
             location == AppRoutes.email ||
@@ -115,8 +112,7 @@ GoRouter buildAppRouter(
 
       // Unauthenticated: always go to splash
       if (authState is AuthUnauthenticated || authState is AuthOtpSent) {
-        if (location == AppRoutes.assalam ||
-            location == AppRoutes.languageSelect ||
+        if (location == AppRoutes.languageSelect ||
             location == AppRoutes.splash ||
             location == AppRoutes.legal ||
             location == AppRoutes.email) {
@@ -127,9 +123,6 @@ GoRouter buildAppRouter(
 
       // Authenticated
       if (authState is AuthAuthenticated) {
-        // Always allow the assalam greeting animation (it auto-navigates away)
-        if (location == AppRoutes.assalam) return null;
-
         if (authState.isOnboardingComplete) {
           // Fully onboarded — go to home unless already there or on sub-routes
           if (location.startsWith(AppRoutes.home) ||
@@ -180,13 +173,6 @@ GoRouter buildAppRouter(
         pageBuilder: (context, state) => _fadePage(
           key: state.pageKey,
           child: const _BootGateScreen(),
-        ),
-      ),
-      GoRoute(
-        path: AppRoutes.assalam,
-        pageBuilder: (context, state) => _slidePage(
-          key: state.pageKey,
-          child: const AssalamAnimationScreen(),
         ),
       ),
       GoRoute(

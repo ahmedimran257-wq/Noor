@@ -35,6 +35,7 @@ import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/cubits/account_standing/account_standing_cubit.dart';
 import '../../../core/models/onboarding_data.dart';
 import '../../../core/services/profile_photo_service.dart';
+import '../../../core/services/app_lifecycle_service.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/services/wali_mode_service.dart';
 import '../../../core/legal/legal_documents.dart';
@@ -56,6 +57,7 @@ IconData _legalIcon(String slug) => switch (slug) {
       'terms' => Icons.description_outlined,
       'privacy' => Icons.privacy_tip_outlined,
       'community-guidelines' => Icons.groups_2_outlined,
+      'child-safety' => Icons.child_care_outlined,
       'refund-policy' => Icons.receipt_long_outlined,
       'data-deletion' => Icons.delete_sweep_outlined,
       'verification-policy' => Icons.badge_outlined,
@@ -484,73 +486,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       useSafeArea: true,
       backgroundColor: Colors.transparent,
       barrierColor: AppColors.overlayBlack55,
-      builder: (sheetContext) => Container(
-        padding: EdgeInsets.fromLTRB(
-          24,
-          18,
-          24,
-          24 + MediaQuery.viewPaddingOf(sheetContext).bottom,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceMid,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          border: Border(top: BorderSide(color: AppColors.cardBorder)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 42,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.cardBorder,
-                borderRadius: BorderRadius.circular(99),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: AppColors.champagneGold.withValues(alpha: .12),
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.goldBorder),
-              ),
-              child: Icon(
-                Icons.restart_alt_rounded,
-                color: AppColors.champagneGold,
-                size: 28,
-              ),
-            ),
-            const SizedBox(height: 18),
-            Text(
-              '${mode.label} is ready',
-              style: AppTypography.screenTitle.copyWith(fontSize: 22),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Restart Silarah to apply the new identity consistently to every screen and system control.',
-              style: AppTypography.bodyMuted.copyWith(height: 1.5),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 22),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () => Navigator.of(sheetContext).pop(),
-                child: const Text('I’ll restart the app'),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Your choice is saved securely on this device.',
-              style: AppTypography.caption,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
+      builder: (_) => _ThemeRestartSheet(mode: mode),
     );
   }
 
@@ -1464,8 +1400,162 @@ class _RadioRow extends StatelessWidget {
   }
 }
 
+class _ThemeRestartSheet extends StatefulWidget {
+  const _ThemeRestartSheet({required this.mode});
+
+  final SilarahThemeMode mode;
+
+  @override
+  State<_ThemeRestartSheet> createState() => _ThemeRestartSheetState();
+}
+
+class _ThemeRestartSheetState extends State<_ThemeRestartSheet> {
+  bool _restarting = false;
+  bool _restartFailed = false;
+
+  Future<void> _restartNow() async {
+    if (_restarting) return;
+    HapticFeedback.mediumImpact();
+    setState(() {
+      _restarting = true;
+      _restartFailed = false;
+    });
+    final accepted = await AppLifecycleService.restartNow();
+    if (!mounted || accepted) return;
+    setState(() {
+      _restarting = false;
+      _restartFailed = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final supportsRestart = AppLifecycleService.supportsInPlaceRestart;
+    return PopScope(
+      canPop: !_restarting,
+      child: Container(
+        padding: EdgeInsets.fromLTRB(
+          24,
+          18,
+          24,
+          24 + MediaQuery.viewPaddingOf(context).bottom,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceMid,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          border: Border(top: BorderSide(color: AppColors.cardBorder)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 42,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.cardBorder,
+                borderRadius: BorderRadius.circular(99),
+              ),
+            ),
+            const SizedBox(height: 24),
+            AnimatedContainer(
+              duration: AppDimensions.durationTransition,
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: AppColors.champagneGold.withValues(alpha: .12),
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.goldBorder),
+              ),
+              child: _restarting
+                  ? Padding(
+                      padding: const EdgeInsets.all(17),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.2,
+                        color: AppColors.champagneGold,
+                      ),
+                    )
+                  : Icon(
+                      Icons.restart_alt_rounded,
+                      color: AppColors.champagneGold,
+                      size: 28,
+                    ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              _restarting
+                  ? 'Restarting Silarah…'
+                  : '${widget.mode.label} is ready',
+              style: AppTypography.screenTitle.copyWith(fontSize: 22),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              supportsRestart
+                  ? 'Restart now to apply the new identity consistently to every screen and system control.'
+                  : 'Close and reopen Silarah to apply the new identity consistently to every screen and system control.',
+              style: AppTypography.bodyMuted.copyWith(height: 1.5),
+              textAlign: TextAlign.center,
+            ),
+            AnimatedSize(
+              duration: AppDimensions.durationTransition,
+              curve: Curves.easeOutCubic,
+              child: _restartFailed
+                  ? Padding(
+                      padding: const EdgeInsets.only(top: 14),
+                      child: Semantics(
+                        liveRegion: true,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.softCoral.withValues(alpha: .1),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: AppColors.softCoral.withValues(alpha: .4),
+                            ),
+                          ),
+                          child: Text(
+                            'Silarah could not restart automatically. Your theme is saved—close and reopen the app to finish.',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.softCoral,
+                              height: 1.4,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+            const SizedBox(height: 22),
+            if (supportsRestart)
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _restarting ? null : _restartNow,
+                  child: const Text('Restart now'),
+                ),
+              ),
+            if (supportsRestart) const SizedBox(height: 6),
+            TextButton(
+              onPressed: _restarting ? null : () => Navigator.of(context).pop(),
+              child: Text(supportsRestart ? 'Later' : 'Done'),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Your account session and saved data stay protected.',
+              style: AppTypography.caption,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════
-// LANGUAGE PICKER SHEET
+// THEME PICKER SHEET
 // ═══════════════════════════════════════════════════════════════
 
 class _ThemePickerSheet extends StatelessWidget {

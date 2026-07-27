@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/legal/legal_documents.dart';
+import '../../../core/legal/public_site_links.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
@@ -35,6 +38,18 @@ class LegalDocScreen extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: AppTypography.screenTitle.copyWith(fontSize: 20),
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Open official web version',
+            onPressed: () => _openOfficialWebVersion(context, document),
+            icon: Icon(
+              Icons.open_in_new_rounded,
+              color: AppColors.champagneGold,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: AppDimensions.space8),
+        ],
       ),
       body: SelectionArea(
         child: SingleChildScrollView(
@@ -53,6 +68,26 @@ class LegalDocScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  static Future<void> _openOfficialWebVersion(
+    BuildContext context,
+    LegalDocument document,
+  ) async {
+    final uri = PublicSiteLinks.policy(document.slug);
+    if (await launchUrl(uri, mode: LaunchMode.externalApplication)) return;
+
+    await Clipboard.setData(ClipboardData(text: uri.toString()));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: const Text('Web address copied to your clipboard.'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.surfaceGlassHover,
+        ),
+      );
   }
 }
 

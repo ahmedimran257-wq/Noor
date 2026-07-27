@@ -13,11 +13,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@opennextjs/cloudflare": "^1.20.1",
+    "@opennextjs/cloudflare": "^1.20.2",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.2",
     "lucide-react": "^1.21.0",
-    "next": "^16.2.9",
+    "next": "^16.2.12",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
@@ -29,13 +29,23 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.4",
-    "eslint-config-next": "^16.2.9",
-    "postcss": "8.5.15",
+    "eslint-config-next": "^16.2.12",
+    "postcss": "8.5.23",
     "tailwindcss": "^3.4.1",
     "typescript": "^5",
-    "wrangler": "^4.110.0"
+    "wrangler": "^4.114.0"
   },
   "overrides": {
-    "postcss": "$postcss"
+    "postcss": "$postcss",
+    "sharp": "0.35.3",
+    "@node-minify/core@8.0.6": {
+      "glob": "13.0.6"
+    },
+    "minimatch@3.1.5": {
+      "brace-expansion": "1.1.16"
+    },
+    "minimatch@10.2.5": {
+      "brace-expansion": "5.0.8"
+    }
   }
 }

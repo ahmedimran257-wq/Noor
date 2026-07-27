@@ -192,6 +192,52 @@ abstract final class LegalDocuments {
     ],
   );
 
+  static const childSafety = LegalDocument(
+    id: 'child_safety_standards',
+    slug: 'child-safety',
+    title: 'Child Safety Standards',
+    summary:
+        'The adult-only eligibility, reporting, review and enforcement standards used to prevent child sexual abuse and exploitation.',
+    sections: [
+      LegalSection(
+        '1. Adults only',
+        'Silarah is strictly for adults aged 18 and over. Members must be legally able to use the service, and adults may not create matrimonial profiles for minors. An account belonging to, representing or appearing to represent a person under 18 may be restricted while age is assessed. Attempts to conceal age, provide a false date of birth or help a minor evade eligibility controls are prohibited.',
+      ),
+      LegalSection(
+        '2. Zero tolerance for exploitation',
+        'Silarah prohibits grooming, sexualization of minors, solicitation, trafficking, sextortion, child sexual abuse material (CSAM), synthetic or altered exploitative imagery, requests for such material, and links, instructions or communities that facilitate abuse. This prohibition applies to profiles, photos, biographies, interests, messages, external links and any other feature of the Service.',
+      ),
+      LegalSection(
+        '3. Content and conduct',
+        'Members must not upload, request, send, describe, promote, normalize, trade or threaten to distribute exploitative content involving a minor. Attempts to move a suspected minor off-platform, conceal an age concern, evade a safety restriction, intimidate a reporter or preserve prohibited material for personal use are serious violations. Apparent joking, role-play or coded language does not excuse conduct that creates a child-safety risk.',
+      ),
+      LegalSection(
+        '4. Reporting and immediate danger',
+        'Members can block and report a profile or conversation in the app and may contact safety@silarah.com for a child-safety concern. Reports should identify the relevant account and explain the concern without downloading, forwarding or redistributing suspected CSAM. If a child is in immediate danger, contact local emergency services or the appropriate child-protection authority first; Silarah is not an emergency service.',
+      ),
+      LegalSection(
+        '5. Review and enforcement',
+        'We may immediately restrict access, preserve necessary evidence, remove content, suspend or permanently ban accounts, prevent re-registration and escalate serious matters. Safety action may occur without advance notice when needed to protect a child, prevent distribution or preserve an investigation. A report is assessed using the available account, content, device, moderation and behavioural context, with access limited to authorized safety handling.',
+      ),
+      LegalSection(
+        '6. CSAM response and authorities',
+        'When we become aware of apparent CSAM, we take steps to restrict access, preserve only what is necessary and lawful, and report to the relevant authority or designated reporting organization where required. Silarah responds to valid legal requests and cooperates with lawful investigations consistent with applicable law, member rights and evidence-preservation duties. We do not promise a particular investigative or prosecutorial outcome.',
+      ),
+      LegalSection(
+        '7. Privacy and data handling',
+        'Child-safety reports and preserved evidence are sensitive and access-restricted. We disclose them only to personnel, service providers, reporting organizations or authorities who need the information for safety handling, legal compliance or a valid investigation. Retention is limited to operational, evidentiary, abuse-prevention and legal needs and follows the Privacy and Data Deletion Policies.',
+      ),
+      LegalSection(
+        '8. Appeals and good-faith reporting',
+        'A restricted member may appeal through safety@silarah.com using the account email and relevant facts, but must not email prohibited imagery. An appeal does not automatically restore access or prevent a legally required report. Good-faith reporters are protected from retaliation; knowingly false, malicious or retaliatory reports may themselves result in enforcement.',
+      ),
+      LegalSection(
+        '9. Related standards and contact',
+        'These standards operate with the Terms of Service, Privacy Policy, Community Guidelines and Photo Moderation Policy. The designated child-safety contact is safety@silarah.com, and ordinary product support is available at support@silarah.com. Material changes will be published and communicated where legally required.',
+      ),
+    ],
+  );
+
   static const refund = LegalDocument(
     id: 'refund_policy',
     slug: 'refund-policy',
@@ -322,6 +368,7 @@ abstract final class LegalDocuments {
     terms,
     privacy,
     community,
+    childSafety,
     refund,
     deletion,
     verification,
@@ -333,6 +380,7 @@ abstract final class LegalDocuments {
     final normalized = switch (type) {
       'tos' => 'terms',
       'guidelines' => 'community-guidelines',
+      'child-safety' || 'csae' => 'child-safety',
       'refund' => 'refund-policy',
       'deletion' => 'data-deletion',
       'kyc' || 'verification' => 'verification-policy',

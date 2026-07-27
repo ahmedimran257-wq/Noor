@@ -27,7 +27,7 @@ class FcmService {
 
   FirebaseMessaging get _messaging => FirebaseMessaging.instance;
   Future<void>? _initializeFuture;
-  bool _initialized = false;
+  Future<void>? _pushRegistrationFuture;
   bool _pushAvailable = false;
   StreamSubscription<String>? _tokenRefreshSub;
   StreamSubscription<RemoteMessage>? _messageOpenedSub;
@@ -37,73 +37,36 @@ class FcmService {
   /// always overwrites its own token row (via UPSERT).
   String? _deviceId;
 
-  /// Initialize FCM: request permissions, get token, and save it.
-  /// Call this in main() after Firebase.initializeApp().
-  Future<void> initialize() async {
-    final existing = _initializeFuture;
-    if (existing != null) return existing;
-
-    final future = _initialize().catchError((Object error) {
-      _initializeFuture = null;
-      throw error;
-    });
-    _initializeFuture = future;
-    return future;
+  /// Initializes tap and foreground-message handling without presenting a
+  /// system permission dialog. Push authorization is deliberately deferred
+  /// until an authenticated session exists.
+  Future<void> initialize({bool requestPermission = false}) async {
+    var future = _initializeFuture;
+    if (future == null) {
+      future = _initialize().catchError((Object error) {
+        _initializeFuture = null;
+        throw error;
+      });
+      _initializeFuture = future;
+    }
+    await future;
+    if (requestPermission) await _enablePushRegistration();
   }
 
   Future<void> _initialize() async {
     if (!_hasUsableFirebaseConfig()) {
       _pushAvailable = false;
-      _initialized = true;
       debugPrint(
         '[FcmService] Firebase config is missing or placeholder; push registration disabled.',
       );
       return;
     }
 
-    // Request notification permissions (iOS requires explicit permission)
-    final settings = await _messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      provisional: false,
-    );
-
-    if (settings.authorizationStatus == AuthorizationStatus.denied) {
-      debugPrint('[FcmService] Notification permissions denied by user.');
-      _pushAvailable = false;
-      _initialized = true;
-      return;
-    }
-
-    _pushAvailable = true;
-
     await _messaging.setForegroundNotificationPresentationOptions(
       alert: true,
       badge: true,
       sound: true,
     );
-
-    debugPrint(
-        '[FcmService] Notification permissions: ${settings.authorizationStatus}');
-
-    // Get or create a stable device ID
-    _deviceId = await _getOrCreateDeviceId();
-
-    // Get the current FCM token
-    final token = await _messaging.getToken();
-    if (token != null) {
-      debugPrint(
-          '[FcmService] FCM token obtained (${token.substring(0, 20)}...)');
-      await _saveTokenToSupabase(token);
-    }
-
-    // Listen for token refresh (Firebase rotates tokens periodically)
-    await _tokenRefreshSub?.cancel();
-    _tokenRefreshSub = _messaging.onTokenRefresh.listen((newToken) async {
-      debugPrint('[FcmService] FCM token refreshed.');
-      await _saveTokenToSupabase(newToken);
-    });
 
     // Handle notification taps when app is in background
     await _messageOpenedSub?.cancel();
@@ -123,8 +86,59 @@ class FcmService {
     if (initialMessage != null) {
       _handleNotificationTap(initialMessage);
     }
+  }
 
-    _initialized = true;
+  Future<void> _enablePushRegistration() async {
+    if (!_hasUsableFirebaseConfig()) {
+      _pushAvailable = false;
+      return;
+    }
+
+    var future = _pushRegistrationFuture;
+    if (future == null) {
+      future = _registerForPush().catchError((Object error) {
+        _pushRegistrationFuture = null;
+        throw error;
+      });
+      _pushRegistrationFuture = future;
+    }
+    await future;
+  }
+
+  Future<void> _registerForPush() async {
+    final settings = await _messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+      provisional: false,
+    );
+
+    if (settings.authorizationStatus == AuthorizationStatus.denied) {
+      debugPrint('[FcmService] Notification permissions denied by user.');
+      _pushAvailable = false;
+      return;
+    }
+
+    _pushAvailable = true;
+    debugPrint(
+      '[FcmService] Notification permissions: '
+      '${settings.authorizationStatus}',
+    );
+
+    _deviceId = await _getOrCreateDeviceId();
+    final token = await _messaging.getToken();
+    if (token != null) {
+      debugPrint(
+        '[FcmService] FCM token obtained (${token.substring(0, 20)}...)',
+      );
+      await _saveTokenToSupabase(token);
+    }
+
+    await _tokenRefreshSub?.cancel();
+    _tokenRefreshSub = _messaging.onTokenRefresh.listen((newToken) async {
+      debugPrint('[FcmService] FCM token refreshed.');
+      await _saveTokenToSupabase(newToken);
+    });
   }
 
   /// Save (upsert) the FCM token to the user_fcm_tokens table in Supabase.
@@ -167,13 +181,11 @@ class FcmService {
   /// Called after successful authentication to ensure the token
   /// is linked to the authenticated user.
   Future<void> onUserLogin() async {
-    if (!_initialized) {
-      try {
-        await initialize();
-      } catch (e) {
-        debugPrint('[FcmService] Failed to initialize after login: $e');
-        return;
-      }
+    try {
+      await initialize(requestPermission: true);
+    } catch (e) {
+      debugPrint('[FcmService] Failed to initialize after login: $e');
+      return;
     }
 
     if (!_pushAvailable) {

@@ -260,7 +260,7 @@ class _OnboardingBackdrop extends StatelessWidget {
           colors: [
             AppColors.midnightPlum.withValues(alpha: 0.64),
             AppColors.obsidianNight,
-            AppColors.inkTeal.withValues(alpha: 0.26),
+            AppColors.inkTeal.withValues(alpha: 0.08),
           ],
           stops: const [0, 0.54, 1],
         ),

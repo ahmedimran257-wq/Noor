@@ -74,7 +74,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   }
 
   void _sendOtp() {
-    HapticFeedback.mediumImpact();
+    HapticFeedback.lightImpact();
     setState(() => _pivotReason = null);
     final authMode = _mode == EmailAuthMode.signUp ? 'signup' : 'signin';
     context.read<AuthCubit>().sendOtp(_email, mode: authMode);
@@ -193,12 +193,14 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
         body: Container(
           decoration: BoxDecoration(
             gradient: RadialGradient(
-              center: const Alignment(0, -0.5),
-              radius: 1.2,
+              center: const Alignment(0, -0.65),
+              radius: 1.4,
               colors: [
+                AppColors.inkTeal.withValues(alpha: .10),
                 AppColors.navyCharcoal,
                 AppColors.obsidianNight,
               ],
+              stops: const [0, .4, 1],
             ),
           ),
           child: SafeArea(
@@ -371,6 +373,7 @@ class _EmailView extends StatelessWidget {
                       label: ctaLabel,
                       isLoading: state is AuthLoading,
                       enabled: isComplete,
+                      haptic: false,
                       onTap:
                           isComplete && state is! AuthLoading ? onSend : null,
                     ),

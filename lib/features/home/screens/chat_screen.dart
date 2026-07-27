@@ -24,6 +24,7 @@ import '../../../core/widgets/buttons/silarah_pressable.dart';
 import '../../../core/widgets/loaders/silarah_blur_image.dart';
 import '../../../core/widgets/loaders/silarah_shimmer.dart';
 import 'paywall_gate_screen.dart';
+import 'profile_route_screen.dart';
 
 /// G12: Profile-aware openers — include the match's name.
 List<String> _buildOpeners(String name) => [
@@ -60,6 +61,7 @@ class _ChatScreenState extends State<ChatScreen>
   final Set<String> _knownMessageIds = {};
   bool _messageSnapshotReady = false;
   ChatAccessDecision? _accessDecision;
+  bool _profileOpening = false;
 
   bool _showSuggestedOpeners = true;
   late final AnimationController _openersAnim;
@@ -179,6 +181,36 @@ class _ChatScreenState extends State<ChatScreen>
     if (!mounted) return;
     if (!sent) _showMessageSendFailure();
     _scrollToBottom(animated: true);
+  }
+
+  Future<void> _openMatchProfile(Conversation conversation) async {
+    if (_profileOpening) return;
+    final profileId = conversation.otherUserId?.trim();
+    if (profileId == null || profileId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('This profile is unavailable right now.'),
+          backgroundColor: AppColors.surfaceGlassHover,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+            side: BorderSide(color: AppColors.cardBorder),
+          ),
+        ),
+      );
+      return;
+    }
+
+    _profileOpening = true;
+    try {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ProfileRouteScreen(profileIdentifier: profileId),
+        ),
+      );
+    } finally {
+      _profileOpening = false;
+    }
   }
 
   Future<void> _retryMessage(ChatMessage message) async {
@@ -388,6 +420,7 @@ class _ChatScreenState extends State<ChatScreen>
             photoUrl: conv.photoUrl,
             isClosed: isClosed,
             isTyping: isTyping,
+            onOpenProfile: () => _openMatchProfile(conv),
             onEndMatch: () => _showEndMatchSheet(context),
             onBlock: () => _showBlockDialog(context, conv.matchName),
           ),
@@ -988,6 +1021,7 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.photoUrl,
     required this.isClosed,
     required this.isTyping,
+    required this.onOpenProfile,
     required this.onEndMatch,
     required this.onBlock,
   });
@@ -996,6 +1030,7 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String? photoUrl;
   final bool isClosed;
   final bool isTyping;
+  final VoidCallback onOpenProfile;
   final VoidCallback onEndMatch;
   final VoidCallback onBlock;
 
@@ -1029,69 +1064,92 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                 size: AppDimensions.iconSizeMedium),
           ),
         ),
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.surfaceGlassHover,
-              border: Border.all(color: AppColors.goldBorder)),
-          child: ClipOval(
-            child: photoUrl == null || photoUrl!.isEmpty
-                ? Icon(Icons.person_outline_rounded,
-                    color: AppColors.slateMist, size: 22)
-                : SilarahBlurImage(
-                    imageUrl: photoUrl!,
-                    width: 40,
-                    height: 40,
-                  ),
-          ),
-        ),
-        const SizedBox(width: AppDimensions.space12),
         Expanded(
-            child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(displayName, style: AppTypography.bodyMedium, maxLines: 1),
-            AnimatedSwitcher(
-              duration: reduceMotion
-                  ? Duration.zero
-                  : AppDimensions.durationTransition,
-              reverseDuration: reduceMotion
-                  ? Duration.zero
-                  : AppDimensions.durationTransition,
-              switchInCurve: AppCurves.reveal,
-              switchOutCurve: AppCurves.transition,
-              transitionBuilder: (child, animation) => FadeTransition(
-                opacity: animation,
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0, 0.22),
-                    end: Offset.zero,
-                  ).animate(animation),
-                  child: child,
+          child: Semantics(
+            button: true,
+            label: 'Open $displayName profile',
+            child: SilarahPressable(
+              onTap: onOpenProfile,
+              child: Padding(
+                padding: const EdgeInsetsDirectional.only(
+                  start: 2,
+                  end: AppDimensions.space8,
+                  top: AppDimensions.space8,
+                  bottom: AppDimensions.space8,
                 ),
-              ),
-              child: Text(
-                isClosed
-                    ? 'Match closed'
-                    : isTyping
-                        ? '$firstName is typing'
-                        : 'Private conversation',
-                key: ValueKey('${isClosed}_$isTyping'),
-                style: AppTypography.caption.copyWith(
-                  fontSize: 11,
-                  color: isClosed
-                      ? AppColors.softCoral
-                      : isTyping
-                          ? AppColors.champagneGold
-                          : AppColors.slateMist,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.surfaceGlassHover,
+                          border: Border.all(color: AppColors.goldBorder)),
+                      child: ClipOval(
+                        child: photoUrl == null || photoUrl!.isEmpty
+                            ? Icon(Icons.person_outline_rounded,
+                                color: AppColors.slateMist, size: 22)
+                            : SilarahBlurImage(
+                                imageUrl: photoUrl!,
+                                width: 40,
+                                height: 40,
+                              ),
+                      ),
+                    ),
+                    const SizedBox(width: AppDimensions.space12),
+                    Expanded(
+                        child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(displayName,
+                            style: AppTypography.bodyMedium, maxLines: 1),
+                        AnimatedSwitcher(
+                          duration: reduceMotion
+                              ? Duration.zero
+                              : AppDimensions.durationTransition,
+                          reverseDuration: reduceMotion
+                              ? Duration.zero
+                              : AppDimensions.durationTransition,
+                          switchInCurve: AppCurves.reveal,
+                          switchOutCurve: AppCurves.transition,
+                          transitionBuilder: (child, animation) =>
+                              FadeTransition(
+                            opacity: animation,
+                            child: SlideTransition(
+                              position: Tween<Offset>(
+                                begin: const Offset(0, 0.22),
+                                end: Offset.zero,
+                              ).animate(animation),
+                              child: child,
+                            ),
+                          ),
+                          child: Text(
+                            isClosed
+                                ? 'Match closed'
+                                : isTyping
+                                    ? '$firstName is typing'
+                                    : 'Private conversation',
+                            key: ValueKey('${isClosed}_$isTyping'),
+                            style: AppTypography.caption.copyWith(
+                              fontSize: 11,
+                              color: isClosed
+                                  ? AppColors.softCoral
+                                  : isTyping
+                                      ? AppColors.champagneGold
+                                      : AppColors.slateMist,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )),
+                  ],
                 ),
               ),
             ),
-          ],
-        )),
+          ),
+        ),
         if (!isClosed)
           PopupMenuButton<String>(
             icon: Container(

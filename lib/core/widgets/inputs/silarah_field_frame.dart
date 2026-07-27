@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimensions.dart';
@@ -54,6 +54,12 @@ class SilarahFieldFrame extends StatelessWidget {
           strokeAlign: BorderSide.strokeAlignInside,
         ),
         boxShadow: [
+          if (focused && enabled && !hasError)
+            BoxShadow(
+              color: AppColors.champagneGold.withValues(alpha: 0.11),
+              blurRadius: 20,
+              spreadRadius: 0.5,
+            ),
           BoxShadow(
             color: AppColors.obsidianNight.withValues(
               alpha: focused ? 0.34 : 0.22,

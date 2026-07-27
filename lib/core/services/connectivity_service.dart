@@ -19,6 +19,8 @@ import 'package:flutter/widgets.dart';
 import 'package:silarah/core/config/app_config.dart';
 import 'package:silarah/core/services/supabase_service.dart';
 
+enum BackendConnectionQuality { unknown, good, poor, offline }
+
 class ConnectivityService with WidgetsBindingObserver {
   ConnectivityService._({
     this.checkInterval = const Duration(minutes: 5),
@@ -48,6 +50,8 @@ class ConnectivityService with WidgetsBindingObserver {
   Timer? _timer;
   Future<bool>? _checkInFlight;
   bool _lastKnownState = true;
+  BackendConnectionQuality _lastQuality = BackendConnectionQuality.unknown;
+  Duration? _lastLatency;
   bool _isForeground = true;
   DateTime? _lastCheckedAt;
 
@@ -59,6 +63,12 @@ class ConnectivityService with WidgetsBindingObserver {
 
   /// Whether the device was online at last check.
   bool get isOnline => _lastKnownState;
+
+  /// Quality is based on the same authenticated-backend health request used
+  /// for reachability. It adds no network calls and avoids platform-specific
+  /// radio permissions that would not work consistently on Wi-Fi.
+  BackendConnectionQuality get quality => _lastQuality;
+  Duration? get lastLatency => _lastLatency;
 
   /// Immediately check connectivity and return result.
   Future<bool> checkNow() {
@@ -74,6 +84,7 @@ class ConnectivityService with WidgetsBindingObserver {
 
   Future<bool> _performCheck() async {
     HttpClient? client;
+    final stopwatch = Stopwatch()..start();
     try {
       Uri endpoint = Uri.https('1.1.1.1', '/cdn-cgi/trace');
       if (SupabaseService.isInitialized) {
@@ -94,16 +105,29 @@ class ConnectivityService with WidgetsBindingObserver {
           );
       await response.drain<void>();
       final online = response.statusCode >= 200 && response.statusCode < 500;
+      stopwatch.stop();
+      _lastLatency = stopwatch.elapsed;
+      _lastQuality = !online
+          ? BackendConnectionQuality.offline
+          : stopwatch.elapsed > const Duration(milliseconds: 1100)
+              ? BackendConnectionQuality.poor
+              : BackendConnectionQuality.good;
       _updateState(online);
       return online;
     } on SocketException catch (_) {
+      _lastLatency = null;
+      _lastQuality = BackendConnectionQuality.offline;
       _updateState(false);
       return false;
     } on TimeoutException catch (_) {
+      _lastLatency = null;
+      _lastQuality = BackendConnectionQuality.offline;
       _updateState(false);
       return false;
     } catch (e) {
       debugPrint('ConnectivityService: unexpected error: $e');
+      _lastLatency = null;
+      _lastQuality = BackendConnectionQuality.offline;
       _updateState(false);
       return false;
     } finally {

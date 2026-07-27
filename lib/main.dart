@@ -48,19 +48,49 @@ import 'core/cubits/account_standing/account_standing_cubit.dart';
 import 'core/router/app_router.dart';
 import 'core/widgets/in_app_notification_banner.dart';
 import 'core/widgets/startup_offline_screen.dart';
+import 'core/widgets/silarah_launch_sequence.dart';
 import 'l10n/generated/app_localizations.dart';
 
 const _rtlLocales = {'ar', 'ur'};
 
 enum _StartupNetworkState { checking, offline, ready }
 
+enum _BootstrapStage { loading, ready, failed }
+
+final ValueNotifier<_BootstrapStage> _bootstrapStage =
+    ValueNotifier(_BootstrapStage.loading);
+String _bootstrapInitialLocation = AppRoutes.boot;
+SilarahThemeMode _bootstrapInitialTheme = SilarahThemeMode.obsidian;
+
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  final binding = WidgetsFlutterBinding.ensureInitialized();
+  // Keep the native launch surface visible until Flutter has composed the
+  // first obsidian wordmark frame. This prevents a white hand-off flash.
+  binding.deferFirstFrame();
+  final startupStartedAt = DateTime.now();
+
+  // Render before invoking any plugin channel. Preferences, Firebase and
+  // Supabase initialize behind the one continuous brand sequence.
+  runApp(
+    _SilarahBootstrap(
+      startupStartedAt: startupStartedAt,
+    ),
+  );
 
   // ── Firebase Initialization ─────────────────────────────────
   try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
+    final startupDependencies = await Future.wait<Object>([
+      SharedPreferences.getInstance(),
+      Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      ),
+    ]);
+    final prefs = startupDependencies.first as SharedPreferences;
+    final introCompleted = prefs.getBool('silarah_intro_completed') ?? false;
+    _bootstrapInitialLocation =
+        introCompleted ? AppRoutes.boot : AppRoutes.languageSelect;
+    _bootstrapInitialTheme = SilarahThemeMode.fromStorage(
+      prefs.getString(ThemeCubit.preferenceKey),
     );
 
     // ── Supabase Initialization ─────────────────────────────────
@@ -68,7 +98,7 @@ void main() async {
     await SupabaseService.initialize();
   } catch (error, stack) {
     debugPrint('[main] Critical startup configuration error: $error\n$stack');
-    runApp(const _StartupFailureApp());
+    _bootstrapStage.value = _BootstrapStage.failed;
     return;
   }
 
@@ -167,16 +197,125 @@ void main() async {
     DeviceOrientation.portraitUp,
   ]));
 
-  // ── SharedPreferences check for returning users ──────────────
-  final prefs = await SharedPreferences.getInstance();
-  final introCompleted = prefs.getBool('silarah_intro_completed') ?? false;
-  final initialTheme = SilarahThemeMode.fromStorage(
-    prefs.getString(ThemeCubit.preferenceKey),
-  );
-  runApp(SilarahApp(
-    initialLocation: introCompleted ? AppRoutes.boot : AppRoutes.assalam,
-    initialTheme: initialTheme,
-  ));
+  _bootstrapStage.value = _BootstrapStage.ready;
+}
+
+class _SilarahBootstrap extends StatefulWidget {
+  const _SilarahBootstrap({
+    required this.startupStartedAt,
+  });
+
+  final DateTime startupStartedAt;
+
+  @override
+  State<_SilarahBootstrap> createState() => _SilarahBootstrapState();
+}
+
+class _SilarahBootstrapState extends State<_SilarahBootstrap> {
+  bool _brandRevealCompleted = false;
+  bool _startupGateResolved = false;
+  bool _firstFlutterFrameScheduled = false;
+  bool _launchMayAnimate = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_firstFlutterFrameScheduled) return;
+    _firstFlutterFrameScheduled = true;
+    unawaited(_releaseNativeLaunchSurface());
+  }
+
+  Future<void> _releaseNativeLaunchSurface() async {
+    // The opening wordmark is rendered from bundled fonts, so there is no
+    // bitmap to decode. First present one motionless obsidian Flutter frame,
+    // then enable brand motion. This ordering prevents Android's native
+    // launch surface from consuming the animation during a cold engine start.
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) {
+      WidgetsBinding.instance.allowFirstFrame();
+      return;
+    }
+
+    final firstPresentedFrame = Completer<void>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!firstPresentedFrame.isCompleted) firstPresentedFrame.complete();
+    });
+    WidgetsBinding.instance.allowFirstFrame();
+    WidgetsBinding.instance.scheduleFrame();
+    await firstPresentedFrame.future;
+
+    if (!mounted || _launchMayAnimate) return;
+    setState(() => _launchMayAnimate = true);
+  }
+
+  void _completeBrandReveal() {
+    if (_brandRevealCompleted || !mounted) return;
+    setState(() => _brandRevealCompleted = true);
+  }
+
+  void _resolveStartupGate() {
+    if (_startupGateResolved || !mounted) return;
+    setState(() => _startupGateResolved = true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<_BootstrapStage>(
+      valueListenable: _bootstrapStage,
+      builder: (context, stage, _) {
+        final destinationReady = switch (stage) {
+          _BootstrapStage.loading => false,
+          _BootstrapStage.ready => _startupGateResolved,
+          _BootstrapStage.failed => true,
+        };
+        final keepBrandLayer = !_brandRevealCompleted || !destinationReady;
+
+        return ColoredBox(
+          color: SilarahLaunchSequence.surface,
+          child: Stack(
+            textDirection: TextDirection.ltr,
+            children: [
+              Positioned.fill(
+                child: switch (stage) {
+                  _BootstrapStage.loading => const ColoredBox(
+                      color: SilarahLaunchSequence.surface,
+                    ),
+                  _BootstrapStage.ready => SilarahApp(
+                      initialLocation: _bootstrapInitialLocation,
+                      initialTheme: _bootstrapInitialTheme,
+                      startupStartedAt: widget.startupStartedAt,
+                      onStartupGateResolved: _resolveStartupGate,
+                    ),
+                  _BootstrapStage.failed => const _StartupFailureApp(),
+                },
+              ),
+              Positioned.fill(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 360),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeOutCubic,
+                  child: keepBrandLayer
+                      ? MaterialApp(
+                          key: const ValueKey('startup-brand-layer'),
+                          color: SilarahLaunchSequence.surface,
+                          debugShowCheckedModeBanner: false,
+                          theme: AppTheme.forMode(SilarahThemeMode.obsidian),
+                          home: SilarahLaunchSequence(
+                            play: _launchMayAnimate,
+                            onCompleted: _completeBrandReveal,
+                          ),
+                        )
+                      : const SizedBox.expand(
+                          key: ValueKey('startup-destination-layer'),
+                        ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _StartupFailureApp extends StatelessWidget {
@@ -253,11 +392,15 @@ class SilarahApp extends StatefulWidget {
   const SilarahApp({
     super.key,
     required this.initialLocation,
+    this.startupStartedAt,
     this.initialTheme = SilarahThemeMode.obsidian,
+    this.onStartupGateResolved,
   });
 
   final String initialLocation;
+  final DateTime? startupStartedAt;
   final SilarahThemeMode initialTheme;
+  final VoidCallback? onStartupGateResolved;
 
   @override
   State<SilarahApp> createState() => _SilarahAppState();
@@ -269,6 +412,8 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
   /// BlocListener which calls initialize() and wipes all accumulated form data.
   bool _onboardingInitialized = false;
   String? _activeSessionUserId;
+  late final DateTime _startupStartedAt =
+      widget.startupStartedAt ?? DateTime.now();
 
   // Create cubits at the top level so they outlive any individual screen.
   late final AuthCubit _authCubit;
@@ -290,7 +435,18 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
   StreamSubscription<NotificationItem>? _notificationRefreshSubscription;
   ConnectivityService? _connectivityService;
   _StartupNetworkState _startupNetworkState = _StartupNetworkState.checking;
+  BackendConnectionQuality _startupConnectionQuality =
+      BackendConnectionQuality.unknown;
   Future<bool>? _startupRecoveryInFlight;
+  bool _startupGateReported = false;
+
+  void _reportStartupGateResolved() {
+    if (_startupGateReported) return;
+    _startupGateReported = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.onStartupGateResolved?.call();
+    });
+  }
 
   @override
   void initState() {
@@ -365,7 +521,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
     // Widget tests run without a native Firebase app. Production still
     // initializes FCM here after Firebase.initializeApp() in main().
     if (!Platform.environment.containsKey('FLUTTER_TEST')) {
-      unawaited(FcmService.instance.initialize());
+      unawaited(FcmService.instance.initialize(requestPermission: false));
     }
   }
 
@@ -373,9 +529,16 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
     final online = await _connectivityService!.checkNow();
     if (!mounted) return;
     if (online) {
+      setState(() {
+        _startupConnectionQuality = _connectivityService!.quality;
+      });
       await _recoverStartupIdentity();
     } else if (_startupNetworkState != _StartupNetworkState.ready) {
-      setState(() => _startupNetworkState = _StartupNetworkState.offline);
+      setState(() {
+        _startupConnectionQuality = BackendConnectionQuality.offline;
+        _startupNetworkState = _StartupNetworkState.offline;
+      });
+      _reportStartupGateResolved();
     }
   }
 
@@ -384,9 +547,16 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
       return;
     }
     if (online) {
+      setState(() {
+        _startupConnectionQuality = _connectivityService!.quality;
+      });
       unawaited(_recoverStartupIdentity());
     } else if (_startupNetworkState != _StartupNetworkState.offline) {
-      setState(() => _startupNetworkState = _StartupNetworkState.offline);
+      setState(() {
+        _startupConnectionQuality = BackendConnectionQuality.offline;
+        _startupNetworkState = _StartupNetworkState.offline;
+      });
+      _reportStartupGateResolved();
     }
   }
 
@@ -412,19 +582,46 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
     if (!mounted) return false;
     if (result == AuthSessionCheckResult.authenticated ||
         result == AuthSessionCheckResult.signedOut) {
+      await _waitForBrandReveal();
+      if (!mounted) return false;
       setState(() => _startupNetworkState = _StartupNetworkState.ready);
+      _reportStartupGateResolved();
       return true;
     }
     // The device is online but session/profile hydration is not yet
     // authoritative. Keep protected routing covered and let retry perform the
     // complete transaction again instead of exposing sign-up/onboarding.
-    setState(() => _startupNetworkState = _StartupNetworkState.offline);
+    setState(() {
+      _startupConnectionQuality = BackendConnectionQuality.offline;
+      _startupNetworkState = _StartupNetworkState.offline;
+    });
+    _reportStartupGateResolved();
     return false;
+  }
+
+  Future<void> _waitForBrandReveal() async {
+    if (Platform.environment.containsKey('FLUTTER_TEST') ||
+        ui.PlatformDispatcher.instance.accessibilityFeatures
+            .disableAnimations) {
+      return;
+    }
+    final elapsed = DateTime.now().difference(_startupStartedAt);
+    final remaining = SilarahLaunchSequence.duration - elapsed;
+    if (remaining > Duration.zero) {
+      await Future<void>.delayed(remaining);
+    }
   }
 
   Future<bool> _retryStartupConnectivity() async {
     final online = await _connectivityService!.checkNow();
     if (!online || !mounted) return false;
+    setState(() {
+      _startupConnectionQuality = _connectivityService!.quality;
+    });
+    // Give the offline tower one restrained confirmation pulse (green for a
+    // healthy connection, amber for a slow one) before restoring the route.
+    await Future<void>.delayed(const Duration(milliseconds: 420));
+    if (!mounted) return false;
     return _recoverStartupIdentity();
   }
 
@@ -617,14 +814,17 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
                       switchInCurve: Curves.easeOutCubic,
                       switchOutCurve: Curves.easeInCubic,
                       child: switch (_startupNetworkState) {
-                        _StartupNetworkState.checking =>
-                          const StartupOfflineScreen(
-                            key: ValueKey('startup-connectivity-checking'),
-                            checking: true,
+                        // The root bootstrap owns the only visible brand
+                        // sequence. Keeping this layer neutral prevents a
+                        // second animation from flashing through at handoff.
+                        _StartupNetworkState.checking => const ColoredBox(
+                            key: ValueKey('startup-brand-underlay'),
+                            color: SilarahLaunchSequence.surface,
                           ),
                         _StartupNetworkState.offline => StartupOfflineScreen(
                             key: const ValueKey('startup-connectivity-offline'),
                             onRetry: _retryStartupConnectivity,
+                            quality: _startupConnectionQuality,
                           ),
                         _StartupNetworkState.ready => KeyedSubtree(
                             key: const ValueKey('startup-connectivity-ready'),

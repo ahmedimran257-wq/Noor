@@ -8,6 +8,7 @@ void main() {
     'terms': 'Terms of Service',
     'privacy': 'Privacy Policy',
     'community-guidelines': 'Community Guidelines',
+    'child-safety': 'Child Safety Standards',
     'refund-policy': 'Refund Policy',
     'data-deletion': 'Data Deletion Policy',
     'verification-policy': 'KYC & Verification Policy',
@@ -15,7 +16,7 @@ void main() {
     'guardian-policy': 'Guardian / Wali Policy',
   };
 
-  test('all eight launch policies are substantive and uniquely versioned', () {
+  test('all launch policies are substantive and uniquely versioned', () {
     expect(LegalDocuments.version, matches(RegExp(r'^\d+\.\d+\.\d+$')));
     expect(LegalDocuments.effectiveDate, isNotEmpty);
     expect(LegalDocuments.all.length, expected.length);

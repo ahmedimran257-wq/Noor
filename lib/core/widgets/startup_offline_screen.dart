@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_dimensions.dart';
 import '../theme/app_typography.dart';
+import '../services/connectivity_service.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'buttons/silarah_pressable.dart';
 
@@ -14,12 +15,12 @@ import 'buttons/silarah_pressable.dart';
 class StartupOfflineScreen extends StatefulWidget {
   const StartupOfflineScreen({
     super.key,
-    this.onRetry,
-    this.checking = false,
-  }) : assert(checking || onRetry != null);
+    required this.onRetry,
+    this.quality = BackendConnectionQuality.offline,
+  });
 
-  final Future<bool> Function()? onRetry;
-  final bool checking;
+  final Future<bool> Function() onRetry;
+  final BackendConnectionQuality quality;
 
   @override
   State<StartupOfflineScreen> createState() => _StartupOfflineScreenState();
@@ -65,7 +66,7 @@ class _StartupOfflineScreenState extends State<StartupOfflineScreen>
       _retrying = true;
       _retryFailed = false;
     });
-    final online = await widget.onRetry!();
+    final online = await widget.onRetry();
     if (!mounted) return;
     if (!online) {
       setState(() {
@@ -73,6 +74,17 @@ class _StartupOfflineScreenState extends State<StartupOfflineScreen>
         _retryFailed = true;
       });
     }
+  }
+
+  BackendConnectionQuality get _visualQuality {
+    if (_retryFailed) return BackendConnectionQuality.offline;
+    if (_retrying &&
+        (widget.quality == BackendConnectionQuality.good ||
+            widget.quality == BackendConnectionQuality.poor)) {
+      return widget.quality;
+    }
+    if (_retrying) return BackendConnectionQuality.unknown;
+    return BackendConnectionQuality.offline;
   }
 
   @override
@@ -115,17 +127,16 @@ class _StartupOfflineScreenState extends State<StartupOfflineScreen>
                   const Spacer(flex: 2),
                   Semantics(
                     image: true,
-                    label: widget.checking
-                        ? l10n.startup_connectivity_preparing_body
-                        : l10n.startup_connectivity_offline_body,
+                    label: l10n.startup_connectivity_offline_body,
                     child: Center(
                       child: RepaintBoundary(
                         child: AnimatedBuilder(
                           animation: _signalController,
                           builder: (_, __) => CustomPaint(
                             size: const Size.square(176),
-                            painter: _ConnectionSealPainter(
+                            painter: _MobileTowerPainter(
                               progress: _signalController.value,
+                              quality: _visualQuality,
                             ),
                           ),
                         ),
@@ -134,17 +145,13 @@ class _StartupOfflineScreenState extends State<StartupOfflineScreen>
                   ),
                   const SizedBox(height: AppDimensions.space40),
                   Text(
-                    widget.checking
-                        ? l10n.startup_connectivity_preparing_title
-                        : l10n.startup_connectivity_offline_title,
+                    l10n.startup_connectivity_offline_title,
                     textAlign: TextAlign.center,
                     style: AppTypography.screenTitle,
                   ),
                   const SizedBox(height: AppDimensions.space12),
                   Text(
-                    widget.checking
-                        ? l10n.startup_connectivity_preparing_body
-                        : l10n.startup_connectivity_offline_body,
+                    l10n.startup_connectivity_offline_body,
                     textAlign: TextAlign.center,
                     style: AppTypography.bodyMuted.copyWith(height: 1.55),
                   ),
@@ -154,72 +161,68 @@ class _StartupOfflineScreenState extends State<StartupOfflineScreen>
                       duration: AppDimensions.durationTransition,
                       child: _ConnectionStatus(
                         key: ValueKey(
-                          (widget.checking, _retrying, _retryFailed),
+                          (_retrying, _retryFailed, _visualQuality),
                         ),
-                        retrying: widget.checking || _retrying,
+                        retrying: _retrying,
                         retryFailed: _retryFailed,
+                        quality: _visualQuality,
                       ),
                     ),
                   ),
                   const Spacer(flex: 3),
-                  if (widget.checking)
-                    const SizedBox(height: AppDimensions.buttonHeight)
-                  else
-                    SilarahPressable(
-                      semanticLabel: l10n.startup_connectivity_check,
-                      enabled: !_retrying,
-                      onTap: _retry,
-                      child: AnimatedContainer(
-                        duration: AppDimensions.durationTransition,
-                        height: AppDimensions.buttonHeight,
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceGlass,
-                          borderRadius: BorderRadius.circular(
-                            AppDimensions.radiusButton,
-                          ),
-                          border: Border.all(color: AppColors.goldBorder),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.goldGlow,
-                              blurRadius: 28,
-                              spreadRadius: -8,
-                            ),
-                          ],
+                  SilarahPressable(
+                    semanticLabel: l10n.startup_connectivity_check,
+                    enabled: !_retrying,
+                    onTap: _retry,
+                    child: AnimatedContainer(
+                      duration: AppDimensions.durationTransition,
+                      height: AppDimensions.buttonHeight,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceGlass,
+                        borderRadius: BorderRadius.circular(
+                          AppDimensions.radiusButton,
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            if (_retrying)
-                              SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppColors.champagneGold,
-                                ),
-                              )
-                            else
-                              Icon(
-                                Icons.sync_rounded,
-                                size: 20,
+                        border: Border.all(color: AppColors.goldBorder),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.goldGlow,
+                            blurRadius: 28,
+                            spreadRadius: -8,
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (_retrying)
+                            SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
                                 color: AppColors.champagneGold,
                               ),
-                            const SizedBox(width: AppDimensions.space10),
-                            Text(
-                              _retrying
-                                  ? l10n.startup_connectivity_checking
-                                  : l10n.startup_connectivity_check,
-                              style: AppTypography.buttonSecondary,
+                            )
+                          else
+                            Icon(
+                              Icons.sync_rounded,
+                              size: 20,
+                              color: AppColors.champagneGold,
                             ),
-                          ],
-                        ),
+                          const SizedBox(width: AppDimensions.space10),
+                          Text(
+                            _retrying
+                                ? l10n.startup_connectivity_checking
+                                : l10n.startup_connectivity_check,
+                            style: AppTypography.buttonSecondary,
+                          ),
+                        ],
                       ),
                     ),
+                  ),
                   const SizedBox(height: AppDimensions.space16),
                   Text(
-                    widget.checking
-                        ? l10n.startup_connectivity_protected
-                        : l10n.startup_connectivity_auto,
+                    l10n.startup_connectivity_auto,
                     textAlign: TextAlign.center,
                     style: AppTypography.caption,
                   ),
@@ -256,10 +259,12 @@ class _ConnectionStatus extends StatelessWidget {
     super.key,
     required this.retrying,
     required this.retryFailed,
+    required this.quality,
   });
 
   final bool retrying;
   final bool retryFailed;
+  final BackendConnectionQuality quality;
 
   @override
   Widget build(BuildContext context) {
@@ -269,6 +274,7 @@ class _ConnectionStatus extends StatelessWidget {
         : retryFailed
             ? l10n.startup_connectivity_still_waiting
             : l10n.startup_connectivity_waiting;
+    final signalColor = _connectionColor(quality);
     return Semantics(
       liveRegion: true,
       label: label,
@@ -289,10 +295,13 @@ class _ConnectionStatus extends StatelessWidget {
               width: 6,
               height: 6,
               decoration: BoxDecoration(
-                color: AppColors.champagneGold,
+                color: signalColor,
                 shape: BoxShape.circle,
                 boxShadow: [
-                  BoxShadow(color: AppColors.goldGlow, blurRadius: 8),
+                  BoxShadow(
+                    color: signalColor.withValues(alpha: .38),
+                    blurRadius: 8,
+                  ),
                 ],
               ),
             ),
@@ -305,73 +314,112 @@ class _ConnectionStatus extends StatelessWidget {
   }
 }
 
-class _ConnectionSealPainter extends CustomPainter {
-  const _ConnectionSealPainter({required this.progress});
+Color _connectionColor(BackendConnectionQuality quality) => switch (quality) {
+      BackendConnectionQuality.good => AppColors.onlineGreen,
+      BackendConnectionQuality.poor ||
+      BackendConnectionQuality.unknown =>
+        AppColors.expiryAmber,
+      BackendConnectionQuality.offline => AppColors.errorRed,
+    };
+
+class _MobileTowerPainter extends CustomPainter {
+  const _MobileTowerPainter({
+    required this.progress,
+    required this.quality,
+  });
 
   final double progress;
+  final BackendConnectionQuality quality;
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);
+    final signalColor = _connectionColor(quality);
     final pulse = (math.sin(progress * math.pi * 2) + 1) / 2;
 
     canvas.drawCircle(
       center,
       78,
       Paint()
-        ..color = AppColors.goldGlow.withValues(alpha: 0.18 + pulse * 0.12)
+        ..color = signalColor.withValues(alpha: 0.05 + pulse * 0.04)
         ..style = PaintingStyle.fill,
     );
 
+    final node = Offset(center.dx, center.dy - 22);
+    final stroke = Paint()
+      ..color = signalColor
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
     for (var ring = 0; ring < 3; ring++) {
-      final radius = 42.0 + (ring * 17);
-      final direction = ring.isEven ? 1.0 : -1.0;
-      final start = (progress * math.pi * 2 * direction) + (ring * 0.85);
-      final sweep = math.pi * (0.72 + ring * 0.08);
-      final rect = Rect.fromCircle(center: center, radius: radius);
-      canvas.drawArc(
-        rect,
-        start,
-        sweep,
-        false,
-        Paint()
-          ..color = AppColors.champagneGold.withValues(
-            alpha: 0.28 + (ring * 0.12),
-          )
-          ..strokeWidth = ring == 0 ? 2.2 : 1.2
-          ..strokeCap = StrokeCap.round
-          ..style = PaintingStyle.stroke,
-      );
+      final radius = 23.0 + ring * 17;
+      final wave = (math.sin(progress * math.pi * 2 - ring * .8) + 1) / 2;
+      final strength = switch (quality) {
+        BackendConnectionQuality.good => .52 + wave * .36,
+        BackendConnectionQuality.poor => ring == 0
+            ? .78
+            : ring == 1
+                ? .18 + wave * .24
+                : .08,
+        BackendConnectionQuality.unknown => .18 + wave * .48,
+        BackendConnectionQuality.offline => .10,
+      };
+      stroke
+        ..strokeWidth = 2.6 - ring * .35
+        ..color = signalColor.withValues(alpha: strength);
+      final rect = Rect.fromCircle(center: node, radius: radius);
+      canvas.drawArc(rect, math.pi * .72, math.pi * .56, false, stroke);
+      canvas.drawArc(rect, -math.pi * .28, math.pi * .56, false, stroke);
     }
 
-    final orbitAngle = progress * math.pi * 2;
-    final orbitDot =
-        center + Offset(math.cos(orbitAngle), math.sin(orbitAngle)) * 59;
+    final towerPaint = Paint()
+      ..color = signalColor.withValues(alpha: .92)
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..strokeWidth = 3;
     canvas.drawCircle(
-      orbitDot,
-      3.2,
-      Paint()..color = AppColors.champagneLight,
+      node,
+      5.5,
+      Paint()
+        ..color = signalColor
+        ..style = PaintingStyle.fill,
+    );
+    canvas.drawPath(
+      Path()
+        ..moveTo(node.dx, node.dy + 7)
+        ..lineTo(node.dx - 25, node.dy + 69)
+        ..moveTo(node.dx, node.dy + 7)
+        ..lineTo(node.dx + 25, node.dy + 69)
+        ..moveTo(node.dx - 15, node.dy + 45)
+        ..lineTo(node.dx + 15, node.dy + 45)
+        ..moveTo(node.dx - 24, node.dy + 69)
+        ..lineTo(node.dx + 24, node.dy + 69),
+      towerPaint,
     );
 
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    canvas.rotate(math.pi / 4);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        const Rect.fromLTWH(-13, -13, 26, 26),
-        const Radius.circular(6),
-      ),
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.champagneLight, AppColors.antiqueGold],
-        ).createShader(const Rect.fromLTWH(-13, -13, 26, 26)),
-    );
-    canvas.restore();
+    if (quality == BackendConnectionQuality.offline) {
+      final crossPaint = Paint()
+        ..color = signalColor
+        ..strokeWidth = 3.4
+        ..strokeCap = StrokeCap.round;
+      const half = 8.0;
+      final crossCenter = Offset(node.dx, node.dy + 28);
+      canvas.drawLine(
+        crossCenter - const Offset(half, half),
+        crossCenter + const Offset(half, half),
+        crossPaint,
+      );
+      canvas.drawLine(
+        crossCenter + const Offset(half, -half),
+        crossCenter + const Offset(-half, half),
+        crossPaint,
+      );
+    }
   }
 
   @override
-  bool shouldRepaint(covariant _ConnectionSealPainter oldDelegate) =>
-      oldDelegate.progress != progress;
+  bool shouldRepaint(covariant _MobileTowerPainter oldDelegate) =>
+      oldDelegate.progress != progress || oldDelegate.quality != quality;
 }

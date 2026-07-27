@@ -23,6 +23,7 @@ class SilarahPrimaryButton extends StatelessWidget {
     this.enabled = true,
     this.icon,
     this.width,
+    this.haptic = true,
   });
 
   final String label;
@@ -31,6 +32,7 @@ class SilarahPrimaryButton extends StatelessWidget {
   final bool enabled;
   final IconData? icon;
   final double? width;
+  final bool haptic;
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +41,7 @@ class SilarahPrimaryButton extends StatelessWidget {
     return SilarahPressable(
       onTap: isActive ? onTap : null,
       enabled: isActive,
+      haptic: haptic,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeOutCubic,

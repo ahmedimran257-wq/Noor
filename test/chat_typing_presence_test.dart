@@ -6,6 +6,16 @@ import 'package:silarah/core/cubits/chat/chat_state.dart';
 import 'package:silarah/core/widgets/loaders/silarah_blur_image.dart';
 import 'package:silarah/features/home/screens/chat_screen.dart';
 
+class _RecordingNavigatorObserver extends NavigatorObserver {
+  final List<Route<dynamic>> pushes = <Route<dynamic>>[];
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    pushes.add(route);
+    super.didPush(route, previousRoute);
+  }
+}
+
 class _TestChatCubit extends ChatCubit {
   @override
   Future<ChatAccessDecision> checkChatAccess(String matchId) async {
@@ -35,6 +45,7 @@ const _conversation = Conversation(
   matchName: 'Amina',
   matchLastInitial: 'Khan',
   messages: [],
+  otherUserId: '00000000-0000-0000-0000-000000000456',
   photoUrl: 'https://example.test/avatar.webp',
 );
 
@@ -88,6 +99,35 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 320));
     expect(find.text('Amina is typing'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await cubit.close();
+  });
+
+  testWidgets('chat header opens the other member profile', (tester) async {
+    final cubit = _TestChatCubit();
+    final observer = _RecordingNavigatorObserver();
+    cubit.seed(const ChatState(conversations: [_conversation]));
+
+    await tester.pumpWidget(
+      BlocProvider<ChatCubit>.value(
+        value: cubit,
+        child: MaterialApp(
+          navigatorObservers: [observer],
+          home: const MediaQuery(
+            data: MediaQueryData(disableAnimations: true),
+            child: ChatScreen(conversationId: _conversationId),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(observer.pushes.length, 1);
+    await tester.tap(find.text('Amina Khan'));
+    await tester.pump();
+
+    expect(observer.pushes.length, 2);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await cubit.close();
