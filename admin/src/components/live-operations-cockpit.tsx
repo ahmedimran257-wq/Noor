@@ -135,7 +135,7 @@ export function LiveOperationsCockpit({
 
   const pipeline = [
     { label: "Profile completion", value: snapshot.pipeline.completionRate },
-    { label: "Verification", value: snapshot.pipeline.verificationRate },
+    { label: "Government ID verified", value: snapshot.pipeline.verificationRate },
     { label: "Subscribers", value: snapshot.pipeline.subscriberRate },
     { label: "Photo clearance", value: snapshot.pipeline.photoClearanceRate },
   ] as const;

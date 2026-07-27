@@ -105,7 +105,7 @@ export const getAuditFeed = () => rpc<AuditRow[]>("admin_audit_feed", { p_limit:
 export const getAdminInbox = () => rpc<AdminNotificationRow[]>("admin_inbox", { p_limit: 200 });
 export const getSecurityMetrics = () => rpc<DashboardMetrics>("admin_security_metrics");
 
-export type UserRow = { user_id:string; profile_id:string; name:string; email:string|null; country_code:string; gender:string; joined_at:string; last_active_at:string|null; onboarding_step:number; completeness_score:number; visibility:string; is_banned:boolean; is_shadowbanned:boolean; subscription_status:string; verification_status:string; has_verification_badge:boolean; can_approve_profile:boolean; approval_block_reason:string|null; total_count?:number };
+export type UserRow = { user_id:string; profile_id:string; name:string; email:string|null; country_code:string; gender:string; joined_at:string; last_active_at:string|null; onboarding_step:number; completeness_score:number; visibility:string; is_banned:boolean; is_shadowbanned:boolean; subscription_status:string; verification_status:string; has_verification_badge:boolean; kyc_status:"not_started"|"pending_review"|"approved"|"rejected"|"resubmit_required"|"expired"; kyc_status_reason:string|null; kyc_submitted_at:string|null; can_approve_profile:boolean; approval_block_reason:string|null; total_count?:number };
 export type RevealedUserPii = { user_id:string; name:string; email:string|null; revealed_at:string };
 export type KycRow = {
   submission_id:string; user_id:string; profile_id:string; name:string;

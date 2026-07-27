@@ -23,6 +23,15 @@ function safePage(value?: string) {
   return Number.isFinite(parsed) ? Math.max(1, Math.floor(parsed)) : 1;
 }
 
+const kycPresentation = {
+  not_started: { label: "Not started", tone: "neutral" },
+  pending_review: { label: "In review", tone: "warning" },
+  approved: { label: "Approved", tone: "success" },
+  rejected: { label: "Rejected", tone: "danger" },
+  resubmit_required: { label: "Action needed", tone: "danger" },
+  expired: { label: "Expired", tone: "warning" },
+} as const;
+
 export default async function UsersPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string; reveal?: string }> }) {
   const admin = await requireAdmin();
   const params = await searchParams;
@@ -98,6 +107,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                 : user.is_shadowbanned
                   ? "Shadowbanned"
                   : user.visibility;
+              const kyc = kycPresentation[user.kyc_status] ?? kycPresentation.not_started;
               return (
               <tr key={user.user_id} className={isRevealed ? "revealed-row" : undefined}>
                 {canModerate ? (
@@ -110,7 +120,17 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                 </td>
                 <td>{user.country_code || "N/A"}</td>
                 <td>{new Date(user.joined_at).toLocaleDateString()}</td>
-                <td><span className="status-pill">{user.verification_status}</span></td>
+                <td>
+                  <span
+                    className={`status-pill ${kyc.tone}`}
+                    title={user.kyc_status_reason ?? undefined}
+                  >
+                    {kyc.label}
+                  </span>
+                  {user.kyc_submitted_at ? (
+                    <small>Submitted {new Date(user.kyc_submitted_at).toLocaleDateString()}</small>
+                  ) : null}
+                </td>
                 <td>{user.subscription_status}</td>
                 <td><span className={user.is_banned ? "status-pill danger" : user.is_shadowbanned ? "status-pill warning" : "status-pill"}>{statusLabel}</span></td>
                 <td>

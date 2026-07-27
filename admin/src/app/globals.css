@@ -1463,6 +1463,8 @@ td small { display: block; margin-top: 3px; color: #706d67; font-size: 10px; }
 .status-pill { display: inline-flex; min-height: 22px; align-items: center; padding: 0 7px; border: 1px solid #35343a; border-radius: 5px; color: #aaa69e; background: #19191d; font-size: 10px; font-weight: 560; text-transform: capitalize; }
 .status-pill.danger { border-color: #573535; color: #e49a9a; background: #1d1213; }
 .status-pill.warning { border-color: #665127; color: #d9b867; background: #1d1911; }
+.status-pill.success { border-color: #315847; color: #83d2a0; background: #111c17; }
+.status-pill.neutral { border-color: #35343a; color: #8f8b84; background: #17171a; }
 .json-chip { display: block; max-width: 340px; overflow: hidden; color: #97938b; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 
 .queue-list { display: grid; gap: 8px; }

@@ -6,7 +6,46 @@ import 'face_match_service.dart';
 import 'id_ocr_service.dart';
 import 'supabase_service.dart';
 
-enum KycVerificationStatus { verified, pendingReview, rejected }
+enum KycVerificationStatus {
+  notStarted,
+  pendingReview,
+  approved,
+  rejected,
+  resubmitRequired,
+  expired,
+}
+
+class KycStatusSnapshot {
+  const KycStatusSnapshot({
+    required this.status,
+    required this.canSubmit,
+    this.method,
+    this.assuranceLevel = 'none',
+    this.submittedAt,
+    this.reviewedAt,
+    this.reason,
+  });
+
+  const KycStatusSnapshot.notStarted()
+      : status = KycVerificationStatus.notStarted,
+        canSubmit = true,
+        method = null,
+        assuranceLevel = 'none',
+        submittedAt = null,
+        reviewedAt = null,
+        reason = null;
+
+  final KycVerificationStatus status;
+  final bool canSubmit;
+  final String? method;
+  final String assuranceLevel;
+  final DateTime? submittedAt;
+  final DateTime? reviewedAt;
+  final String? reason;
+
+  bool get isApproved => status == KycVerificationStatus.approved;
+  bool get isPending => status == KycVerificationStatus.pendingReview;
+}
 
 class KycVerificationResult {
   const KycVerificationResult({
@@ -29,6 +68,33 @@ class KycVerificationService {
   static final instance = KycVerificationService._();
 
   static const _bucket = 'kyc-documents';
+
+  Future<KycStatusSnapshot> fetchStatus() async {
+    if (!SupabaseService.isInitialized ||
+        SupabaseService.currentUserId == null) {
+      return const KycStatusSnapshot.notStarted();
+    }
+
+    final response = await SupabaseService.client.rpc('get_my_kyc_status');
+    final Map<String, dynamic>? record = switch (response) {
+      final Map value => Map<String, dynamic>.from(value),
+      final List value when value.isNotEmpty && value.first is Map =>
+        Map<String, dynamic>.from(value.first as Map),
+      _ => null,
+    };
+    if (record == null) return const KycStatusSnapshot.notStarted();
+
+    return KycStatusSnapshot(
+      status: _parseStatus(record['status']?.toString()),
+      canSubmit: record['can_submit'] as bool? ?? true,
+      method: record['method']?.toString(),
+      assuranceLevel: record['assurance_level']?.toString() ?? 'none',
+      submittedAt: DateTime.tryParse(record['submitted_at']?.toString() ?? ''),
+      reviewedAt: DateTime.tryParse(record['reviewed_at']?.toString() ?? ''),
+      reason: _nonEmpty(record['reason']?.toString()),
+    );
+  }
+
   Future<KycVerificationResult> verify({
     required File selfie,
     required File idPhoto,
@@ -82,9 +148,7 @@ class KycVerificationService {
     final payload = Map<String, dynamic>.from(response.data as Map);
     final status = payload['status'] as String?;
     return KycVerificationResult(
-      status: status == 'pending_review'
-          ? KycVerificationStatus.pendingReview
-          : KycVerificationStatus.rejected,
+      status: _parseStatus(status),
       message: payload['message'] as String? ??
           'Verification could not be completed.',
       faceSimilarity: faceSimilarity,
@@ -132,4 +196,20 @@ class KycVerificationService {
 
   String _isoDate(DateTime date) =>
       '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+  static KycVerificationStatus _parseStatus(String? status) => switch (status) {
+        'pending_review' || 'pending' => KycVerificationStatus.pendingReview,
+        'approved' || 'verified' => KycVerificationStatus.approved,
+        'rejected' => KycVerificationStatus.rejected,
+        'resubmit_required' ||
+        'resubmit' =>
+          KycVerificationStatus.resubmitRequired,
+        'expired' => KycVerificationStatus.expired,
+        _ => KycVerificationStatus.notStarted,
+      };
+
+  static String? _nonEmpty(String? value) {
+    final normalized = value?.trim();
+    return normalized == null || normalized.isEmpty ? null : normalized;
+  }
 }

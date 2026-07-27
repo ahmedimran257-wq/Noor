@@ -21,6 +21,7 @@ import '../../../core/models/discovery_profile.dart';
 import '../../../core/models/onboarding_data.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/services/bookmark_service.dart';
+import '../../../core/services/kyc_verification_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
@@ -113,7 +114,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   bool _verificationLoading = true;
   bool _trustStateLoading = true;
   bool _emailVerified = false;
-  String _kycStatus = 'unverified';
+  KycVerificationStatus _kycStatus = KycVerificationStatus.notStarted;
   String _kycAssuranceLevel = 'none';
   String? _accountEmail;
   String? _primaryPhotoUrl;
@@ -430,26 +431,12 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     if (userId == null) return;
 
     try {
-      final profile = await SupabaseService.client
-          .from('profiles')
-          .select('kyc_verified, verification_status, kyc_assurance_level')
-          .eq('user_id', userId)
-          .maybeSingle();
+      final kyc = await KycVerificationService.instance.fetchStatus();
       final authUser = SupabaseService.client.auth.currentUser;
       if (!mounted) return;
       setState(() {
-        final kycVerified = profile?['kyc_verified'] as bool? ?? false;
-        final reviewStatus = profile?['verification_status']?.toString();
-        // verification_status also represents the separate passive
-        // face/liveness badge. It must never be promoted to government-ID
-        // verification. Only kyc_verified can produce the strong state.
-        _kycStatus = kycVerified
-            ? 'verified'
-            : reviewStatus == 'pending_review'
-                ? 'pending_review'
-                : 'unverified';
-        _kycAssuranceLevel =
-            profile?['kyc_assurance_level']?.toString() ?? 'none';
+        _kycStatus = kyc.status;
+        _kycAssuranceLevel = kyc.assuranceLevel;
         _accountEmail = authUser?.email;
         _emailVerified = authUser?.emailConfirmedAt != null;
         _trustStateLoading = false;
@@ -1178,7 +1165,7 @@ class _TrustCenterCard extends StatelessWidget {
   });
 
   final bool loading;
-  final String kycStatus;
+  final KycVerificationStatus kycStatus;
   final String kycAssuranceLevel;
   final bool hasFaceBadge;
   final String? email;
@@ -1188,10 +1175,46 @@ class _TrustCenterCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final identityVerified = kycStatus == 'verified';
-    final identityPending = kycStatus == 'pending_review';
+    final identityVerified = kycStatus == KycVerificationStatus.approved;
+    final identityPending = kycStatus == KycVerificationStatus.pendingReview;
     final isDigiLocker = kycAssuranceLevel == 'government_document_match';
     final isManualReview = kycAssuranceLevel == 'manual_document_review';
+    final identityPresentation = switch (kycStatus) {
+      KycVerificationStatus.approved => (
+          status: isDigiLocker ? 'DigiLocker verified' : 'ID reviewed',
+          subtitle: isDigiLocker
+              ? 'Government document matched through DigiLocker'
+              : isManualReview
+                  ? 'Document and selfie reviewed by Silarah'
+                  : 'Identity evidence reviewed',
+          color: AppColors.verifiedTeal,
+        ),
+      KycVerificationStatus.pendingReview => (
+          status: 'In review',
+          subtitle: 'Submitted for a secure human review',
+          color: AppColors.champagneGold,
+        ),
+      KycVerificationStatus.rejected => (
+          status: 'Not approved',
+          subtitle: 'Open to review the decision and available next steps',
+          color: AppColors.softCoral,
+        ),
+      KycVerificationStatus.resubmitRequired => (
+          status: 'Action needed',
+          subtitle: 'New or clearer identity evidence is required',
+          color: AppColors.softCoral,
+        ),
+      KycVerificationStatus.expired => (
+          status: 'Expired',
+          subtitle: 'Submit a current government-issued document',
+          color: AppColors.champagneGold,
+        ),
+      KycVerificationStatus.notStarted => (
+          status: 'Verify',
+          subtitle: 'Match a government ID with your selfie',
+          color: AppColors.champagneGold,
+        ),
+    };
 
     return Container(
       decoration: BoxDecoration(
@@ -1227,26 +1250,12 @@ class _TrustCenterCard extends StatelessWidget {
           _TrustRow(
             icon: Icons.badge_outlined,
             title: 'Government ID check',
-            subtitle: identityVerified
-                ? isDigiLocker
-                    ? 'Government document matched through DigiLocker'
-                    : isManualReview
-                        ? 'Document and selfie reviewed by Silarah'
-                        : 'Identity evidence reviewed'
-                : identityPending
-                    ? 'Submitted for a secure review'
-                    : 'Match a government ID with your selfie',
-            status: identityVerified
-                ? isDigiLocker
-                    ? 'DigiLocker verified'
-                    : 'ID reviewed'
-                : identityPending
-                    ? 'In review'
-                    : 'Verify',
-            statusColor: identityVerified
-                ? AppColors.verifiedTeal
-                : AppColors.champagneGold,
-            onTap: identityPending || loading ? null : onIdentityVerification,
+            subtitle: identityPresentation.subtitle,
+            status: identityPresentation.status,
+            statusColor: identityPresentation.color,
+            onTap: identityVerified || identityPending || loading
+                ? null
+                : onIdentityVerification,
           ),
           Divider(height: 1, indent: 56, color: AppColors.cardBorder),
           _TrustRow(

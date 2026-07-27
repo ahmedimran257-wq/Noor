@@ -38,12 +38,14 @@ void main() {
   test('government ID UI never falls back to the liveness status', () {
     final profile = File('lib/features/home/screens/my_profile_screen.dart')
         .readAsStringSync();
-    expect(profile, contains('final kycVerified'));
-    expect(profile, contains("reviewStatus == 'pending_review'"));
+    expect(
+      profile,
+      contains('KycVerificationService.instance.fetchStatus()'),
+    );
     expect(
       profile,
       isNot(contains(
-        ": profile?['verification_status']?.toString() ?? 'unverified'",
+        ".select('kyc_verified, verification_status, kyc_assurance_level')",
       )),
     );
   });
