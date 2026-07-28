@@ -97,6 +97,8 @@ jobs:
         run: npm run typecheck
       - name: Build admin panel
         run: npm run build
+      - name: Verify production admin security headers
+        run: npm run test:security-headers
       - name: Audit admin production dependencies
         run: npm audit --omit=dev --audit-level=moderate
 
