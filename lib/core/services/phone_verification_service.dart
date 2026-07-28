@@ -81,11 +81,7 @@ class PhoneVerificationService {
       type: OtpType.phoneChange,
     );
 
-    await SupabaseService.client.from('users').update({
-      'phone': phone,
-      'phone_country_code': country.iso2.toUpperCase(),
-      'phone_verified_at': DateTime.now().toUtc().toIso8601String(),
-    }).eq('id', SupabaseService.currentUserId!);
+    await SupabaseService.client.rpc('confirm_my_verified_phone');
   }
 
   String _fullPhone(CountryInfo country, String nationalDigits) {

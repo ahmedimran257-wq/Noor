@@ -68,7 +68,8 @@ void main() {
       expect(profile, contains('_TrustCenterCard('));
       expect(profile, contains('AppRoutes.verify'));
       expect(profile, contains('Government ID check'));
-      expect(profile, contains('Profile photo check'));
+      expect(profile, contains('On-device photo check'));
+      expect(profile, contains('not government ID'));
       expect(profile, contains('noreply@mail.silarah.com'));
       expect(profile, contains('Live in discovery'));
     });

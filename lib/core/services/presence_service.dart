@@ -16,9 +16,10 @@ class PresenceService {
   PresenceService._();
   static final instance = PresenceService._();
 
-  // Five minutes keeps the admin's 15-minute online window accurate while
-  // reducing presence writes by 80% versus the previous one-minute loop.
-  static const _heartbeatInterval = Duration(minutes: 5);
+  // Ten minutes aligns with the database's 12-minute online window. The
+  // heartbeat updates one indexed row; profile activity is coalesced server
+  // side to at most once per hour.
+  static const _heartbeatInterval = Duration(minutes: 10);
   static const _duplicateStateWindow = Duration(seconds: 20);
 
   Timer? _timer;

@@ -934,7 +934,7 @@ class _PrivacySectionState extends State<_PrivacySection> {
     if (SupabaseService.isInitialized && userId != null) {
       try {
         final row = await SupabaseService.client
-            .from('profiles')
+            .from('my_profile_private')
             .select('id, photo_privacy, visibility, onboarding_completed')
             .eq('user_id', userId)
             .maybeSingle();
@@ -985,9 +985,11 @@ class _PrivacySectionState extends State<_PrivacySection> {
       return 'Please sign in again to update this setting.';
     }
     try {
-      final updates = <String, dynamic>{};
       if (key == _kPhotoVisibility && value is String) {
-        updates['photo_privacy'] = _photoVisibilityToDb(value);
+        await SupabaseService.client.rpc(
+          'set_my_photo_privacy',
+          params: {'p_privacy': _photoVisibilityToDb(value)},
+        );
       } else if (key == _kProfilePaused && value is bool) {
         final response = await SupabaseService.client.rpc(
           'set_profile_pause',
@@ -1005,11 +1007,6 @@ class _PrivacySectionState extends State<_PrivacySection> {
         }
         return null;
       }
-      if (updates.isEmpty) return null;
-      await SupabaseService.client
-          .from('profiles')
-          .update(updates)
-          .eq('user_id', userId);
       if (key == _kPhotoVisibility && value is String && mounted) {
         final privacy = switch (_photoVisibilityToDb(value)) {
           'mutual_only' => PhotoPrivacy.mutualOnly,

@@ -14,7 +14,7 @@ void main() {
     expect(connectivity, contains('_offlineRetryInterval'));
     expect(connectivity, contains('if (!_isForeground)'));
     expect(main, isNot(contains('checkInterval: const Duration(seconds: 10)')));
-    expect(presence, contains('Duration(minutes: 5)'));
+    expect(presence, contains('Duration(minutes: 10)'));
     expect(presence, contains('_duplicateStateWindow'));
   });
 
@@ -56,7 +56,10 @@ void main() {
     expect(interests, contains('_loadProfilesForUsers'));
     expect(interests, isNot(contains('_loadProfileForUser')));
     expect(interests, contains('_maxRowsPerSection = 100'));
-    expect(blocks, contains(".inFilter('user_id', relatedUserIds"));
+    expect(
+      blocks,
+      contains('AuthorizedProfileService.load(relatedUserIds)'),
+    );
     expect(home, contains('List<Widget?>.filled(_tabCount, null)'));
   });
 

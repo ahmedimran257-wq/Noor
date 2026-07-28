@@ -64,7 +64,7 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
     if (!SupabaseService.isInitialized || userId == null) return;
     try {
       final profile = await SupabaseService.client
-          .from('profiles')
+          .from('my_profile_private')
           .select('country_code')
           .eq('user_id', userId)
           .maybeSingle();

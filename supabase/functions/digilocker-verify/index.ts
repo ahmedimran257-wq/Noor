@@ -1,6 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, handleCors } from "../_shared/cors.ts";
 import {
+  readResponseBytes,
+  readResponseJson,
+} from "../_shared/bounded_response.ts";
+import {
   consumeDistributedRateLimit,
   rateLimitHeaders,
 } from "../_shared/distributed_rate_limit.ts";
@@ -20,7 +24,7 @@ const clientId = Deno.env.get("DIGILOCKER_CLIENT_ID") ?? "";
 const clientSecret = Deno.env.get("DIGILOCKER_CLIENT_SECRET") ?? "";
 const evidenceSecret = Deno.env.get("DIGILOCKER_EVIDENCE_HMAC_SECRET") ?? "";
 const redirectUri = Deno.env.get("DIGILOCKER_REDIRECT_URI") ??
-  "silarah://digilocker/callback";
+  "https://silarah.com/auth/digilocker/callback";
 
 const tokenUrl = Deno.env.get("DIGILOCKER_TOKEN_URL") ??
   "https://digilocker.meripehchaan.gov.in/public/oauth2/2/token";
@@ -158,8 +162,11 @@ Deno.serve(async (request) => {
         message: "DigiLocker authorization was not completed.",
       });
     }
-    const tokenPayload = await tokenResponse.json();
-    accessToken = typeof tokenPayload?.access_token === "string"
+    const tokenPayload = await readResponseJson(
+      tokenResponse,
+      64 * 1024,
+    ) as Record<string, unknown>;
+    accessToken = typeof tokenPayload.access_token === "string"
       ? tokenPayload.access_token
       : "";
     if (!accessToken) {
@@ -174,7 +181,10 @@ Deno.serve(async (request) => {
       headers: bearerHeaders,
     });
     const accountPayload = accountResponse.ok
-      ? await accountResponse.json() as Record<string, unknown>
+      ? await readResponseJson(
+        accountResponse,
+        256 * 1024,
+      ) as Record<string, unknown>
       : {};
     const accountIdentity = accountResponse.ok
       ? parseAccountIdentity(accountPayload)
@@ -185,7 +195,10 @@ Deno.serve(async (request) => {
       headers: bearerHeaders,
     });
     if (issuedListResponse.ok) {
-      issuedListPayload = await issuedListResponse.json();
+      issuedListPayload = await readResponseJson(
+        issuedListResponse,
+        512 * 1024,
+      );
     }
 
     let document: IssuedDocumentMetadata | null = null;
@@ -200,7 +213,10 @@ Deno.serve(async (request) => {
         headers: bearerHeaders,
       });
       if (eAadhaarResponse.ok) {
-        const bytes = new Uint8Array(await eAadhaarResponse.arrayBuffer());
+        const bytes = await readResponseBytes(
+          eAadhaarResponse,
+          2 * 1024 * 1024,
+        );
         documentIntegrityVerified = await verifyDigiLockerHmac(
           bytes,
           eAadhaarResponse.headers.get("hmac"),
@@ -231,7 +247,10 @@ Deno.serve(async (request) => {
           headers: bearerHeaders,
         });
         if (xmlResponse.ok) {
-          const bytes = new Uint8Array(await xmlResponse.arrayBuffer());
+          const bytes = await readResponseBytes(
+            xmlResponse,
+            2 * 1024 * 1024,
+          );
           documentIntegrityVerified = await verifyDigiLockerHmac(
             bytes,
             xmlResponse.headers.get("hmac"),

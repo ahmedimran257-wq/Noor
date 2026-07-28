@@ -1,213 +1,171 @@
-// ============================================================
-// EDGE FUNCTION: admin-purge-deleted-users
-// supabase/functions/admin-purge-deleted-users/index.ts
-//
-// Safely purges accounts that have passed their 30-day
-// deletion grace period.
-//
-// "Zombie Auth" Prevention:
-//   NEVER delete from public.users directly from pg_cron.
-//   This leaves orphaned auth.users records that can still
-//   log in and receive OTPs even after "deletion".
-//
-// Correct order:
-//   1. Find users with deletion_status = 'pending_deletion'
-//      AND deleted_at < now() - 30 days
-//   2. Call supabase.auth.admin.deleteUser(uid) — deletes
-//      from auth.users AND invalidates all sessions
-//   3. ONLY after Auth API returns 200, delete from public.users
-//   4. The CASCADE foreign key deletes all related data
-//   5. Clean up Supabase Storage via storage_cleanup_queue
-//
-// Called by pg_cron at 03:15 UTC via pg_net.http_post().
-// ============================================================
-
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders } from "../_shared/cors.ts";
 import { isAuthorizedCronRequest } from "../_shared/cron_auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const BUCKETS = ["profile-photos", "kyc-documents", "selfie-verifications"];
+const CONCURRENCY = 3;
 
-const GRACE_PERIOD_DAYS = 30;
-const BUCKET_NAME = "profile-photos";
-const BATCH_SIZE = 50; // Process max 50 deletions per run
-
-Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
-
-  // ── This endpoint is internal-only (cron-triggered) ────────
-  // Verify the Authorization header is the service role key
-  if (!(await isAuthorizedCronRequest(req))) {
-    console.warn("[admin-purge] Unauthorized invocation blocked.");
-    return new Response("Unauthorized", { status: 401 });
-  }
-
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+function createAdminClient() {
+  return createClient(SUPABASE_URL, SERVICE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+}
+type AdminClient = ReturnType<typeof createAdminClient>;
 
-  // ── Fetch accounts ready for purge ────────────────────────
-  const cutoff = new Date(Date.now() - GRACE_PERIOD_DAYS * 24 * 60 * 60 * 1000)
-    .toISOString();
+type PurgeJob = {
+  user_id: string;
+  phase: "storage" | "auth" | "database";
+  lease_token: string;
+};
 
-  const { data: pendingUsers, error: fetchError } = await supabase
-    .from("users")
-    .select("id, phone, deleted_at")
-    .eq("deletion_status", "pending_deletion")
-    .lt("deleted_at", cutoff)
-    .limit(BATCH_SIZE);
-
-  if (fetchError) {
-    console.error("[admin-purge] Fetch error:", fetchError.message);
-    return new Response("Internal Server Error", { status: 500 });
+Deno.serve(async (req) => {
+  if (req.method !== "POST") return json(405, { error: "method_not_allowed" });
+  if (!(await isAuthorizedCronRequest(req))) {
+    return json(401, { error: "unauthorized" });
   }
-
-  if (!pendingUsers || pendingUsers.length === 0) {
-    console.log("[admin-purge] No accounts due for purge.");
-    return new Response(JSON.stringify({ purged: 0 }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  console.log(
-    `[admin-purge] Processing ${pendingUsers.length} account(s) for purge...`,
+  const admin = createAdminClient();
+  const { data, error } = await admin.rpc("checkout_account_purge_jobs", {
+    p_limit: 10,
+  });
+  if (error) return json(503, { error: "purge_queue_unavailable" });
+  const jobs = (data ?? []) as PurgeJob[];
+  const outcomes = await mapWithConcurrency(
+    jobs,
+    CONCURRENCY,
+    (job) => processJob(admin, job),
   );
-
-  let purgedCount = 0;
-  let failedCount = 0;
-
-  for (const user of pendingUsers) {
-    try {
-      // ── Step 1: Delete from Supabase Auth FIRST ─────────────
-      const { error: authDeleteError } = await supabase.auth.admin.deleteUser(
-        user.id,
-      );
-
-      if (authDeleteError) {
-        // auth.users record may already not exist — log and continue
-        console.error(
-          `[admin-purge] Auth delete failed for ${user.id}:`,
-          authDeleteError.message,
-        );
-        // Fall through to DB delete only if auth user was already removed
-        const isNotFound = authDeleteError.message.toLowerCase().includes(
-          "not found",
-        );
-        if (!isNotFound) {
-          failedCount++;
-          continue;
-        }
-      }
-
-      // ── Step 2: Purge Storage objects ───────────────────────
-      await purgeUserStorage(supabase, user.id);
-
-      // ── Step 3: Delete from public.users (CASCADE removes all) ─
-      const { error: dbDeleteError } = await supabase
-        .from("users")
-        .delete()
-        .eq("id", user.id);
-
-      if (dbDeleteError) {
-        console.error(
-          `[admin-purge] DB delete failed for ${user.id}:`,
-          dbDeleteError.message,
-        );
-        failedCount++;
-        continue;
-      }
-
-      // ── Step 4: Mark storage cleanup as done ─────────────────
-      await supabase
-        .from("storage_cleanup_queue")
-        .update({ status: "done" })
-        .eq("user_id", user.id);
-
-      // ── Step 5: Log the purge ─────────────────────────────────
-      await supabase.from("admin_audit_log").insert({
-        admin_id: "00000000-0000-0000-0000-000000000000", // System actor
-        action_type: "account_purged",
-        target_user_id: user.id,
-        details: {
-          phone_hash: await hashPhone(user.phone),
-          deleted_at: user.deleted_at,
-        },
-      });
-
-      purgedCount++;
-      console.log(`[admin-purge] ✅ Purged user ${user.id}`);
-    } catch (err) {
-      console.error(`[admin-purge] Unexpected error for ${user.id}:`, err);
-      failedCount++;
-    }
-  }
-
-  console.log(
-    `[admin-purge] Complete. Purged: ${purgedCount}, Failed: ${failedCount}`,
-  );
-
-  return new Response(
-    JSON.stringify({ purged: purgedCount, failed: failedCount }),
-    {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    },
-  );
+  return json(200, {
+    processed: jobs.length,
+    advanced: outcomes.filter(Boolean).length,
+    failed: outcomes.filter((value) => !value).length,
+  });
 });
 
-// ── Remove all Storage objects for a user ─────────────────────
-
-async function purgeUserStorage(
-  supabase: ReturnType<typeof createClient>,
-  userId: string,
-): Promise<void> {
+async function processJob(
+  admin: AdminClient,
+  job: PurgeJob,
+): Promise<boolean> {
   try {
-    // List all objects in the user's storage folder
-    const { data: objects, error: listError } = await supabase.storage
-      .from(BUCKET_NAME)
-      .list(userId, { limit: 100 });
-
-    if (listError) {
-      console.warn(
-        `[admin-purge] Storage list failed for ${userId}:`,
-        listError.message,
-      );
-      return;
+    if (job.phase === "storage") {
+      for (const bucket of BUCKETS) {
+        await purgeBucketPrefix(admin, bucket, job.user_id);
+      }
+      await finish(admin, job, true, "auth");
+      return true;
     }
-
-    if (!objects || objects.length === 0) return;
-
-    const paths = objects.map((obj) => `${userId}/${obj.name}`);
-    const { error: removeError } = await supabase.storage
-      .from(BUCKET_NAME)
-      .remove(paths);
-
-    if (removeError) {
-      console.warn(
-        `[admin-purge] Storage remove failed for ${userId}:`,
-        removeError.message,
-      );
-    } else {
-      console.log(
-        `[admin-purge] 🗑️ Removed ${paths.length} storage object(s) for ${userId}`,
-      );
+    if (job.phase === "auth") {
+      const { error } = await admin.auth.admin.deleteUser(job.user_id);
+      if (error && !error.message.toLowerCase().includes("not found")) {
+        throw new Error("auth_delete_failed");
+      }
+      await finish(admin, job, true, "database");
+      return true;
     }
-  } catch (err) {
-    console.warn(`[admin-purge] Storage purge exception for ${userId}:`, err);
-    // Non-fatal — DB deletion still proceeds
+    for (const bucket of BUCKETS) {
+      await assertBucketPrefixEmpty(admin, bucket, job.user_id);
+    }
+    const { error: deleteError } = await admin.from("users")
+      .delete().eq("id", job.user_id);
+    if (deleteError) throw new Error("database_delete_failed");
+    await finish(admin, job, true, "completed");
+    return true;
+  } catch (error) {
+    console.error("[admin-purge]", {
+      userId: job.user_id,
+      phase: job.phase,
+      error: error instanceof Error ? error.message : "unknown",
+    });
+    await finish(
+      admin,
+      job,
+      false,
+      null,
+      error instanceof Error ? error.message : "purge_phase_failed",
+    ).catch(() => undefined);
+    return false;
   }
 }
 
-// One-way hash of phone for audit log (never store plaintext in logs)
-async function hashPhone(phone: string): Promise<string> {
-  const bytes = new TextEncoder().encode(phone);
-  const hash = await crypto.subtle.digest("SHA-256", bytes);
-  return Array.from(new Uint8Array(hash))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("")
-    .slice(0, 16); // Short hash for audit reference only
+async function purgeBucketPrefix(
+  admin: AdminClient,
+  bucket: string,
+  userId: string,
+): Promise<void> {
+  for (let page = 0; page < 100; page++) {
+    const { data, error } = await admin.storage.from(bucket).list(userId, {
+      limit: 100,
+      offset: 0,
+      sortBy: { column: "name", order: "asc" },
+    });
+    if (error) throw new Error(`storage_list_${bucket}`);
+    if (!data || data.length === 0) return;
+    const paths = data.map((item) => `${userId}/${item.name}`);
+    const { error: removeError } = await admin.storage.from(bucket).remove(
+      paths,
+    );
+    if (removeError) throw new Error(`storage_remove_${bucket}`);
+  }
+  throw new Error(`storage_pagination_limit_${bucket}`);
+}
+
+async function assertBucketPrefixEmpty(
+  admin: AdminClient,
+  bucket: string,
+  userId: string,
+): Promise<void> {
+  const { data, error } = await admin.storage.from(bucket).list(userId, {
+    limit: 1,
+  });
+  if (error || (data?.length ?? 0) > 0) {
+    throw new Error(`storage_not_empty_${bucket}`);
+  }
+}
+
+async function finish(
+  admin: AdminClient,
+  job: PurgeJob,
+  success: boolean,
+  nextPhase: string | null,
+  errorCode: string | null = null,
+) {
+  const { error } = await admin.rpc("finish_account_purge_phase", {
+    p_user_id: job.user_id,
+    p_lease_token: job.lease_token,
+    p_success: success,
+    p_next_phase: nextPhase,
+    p_error_code: errorCode,
+  });
+  if (error) throw new Error("purge_checkpoint_failed");
+}
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  task: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+  const workers = Array.from(
+    { length: Math.min(concurrency, items.length) },
+    async () => {
+      while (true) {
+        const index = cursor++;
+        if (index >= items.length) return;
+        results[index] = await task(items[index]);
+      }
+    },
+  );
+  await Promise.all(workers);
+  return results;
+}
+
+function json(status: number, body: unknown): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+    },
+  });
 }

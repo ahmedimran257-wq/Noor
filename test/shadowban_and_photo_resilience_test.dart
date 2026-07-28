@@ -83,9 +83,11 @@ void main() {
       expect(photoService, contains('currentUserIdOrRefresh()'));
       expect(signedUrlFunction, contains('UPLOAD_URL_EXPIRES_IN = 300'));
       expect(signedUrlFunction, contains('READ_URL_EXPIRES_IN = 300'));
-      expect(signedUrlFunction, contains('jwtVerify(userToken, AUTH_JWKS'));
-      expect(signedUrlFunction, contains('createRemoteJWKSet'));
-      expect(signedUrlFunction, contains('req.headers.get("apikey")'));
+      expect(signedUrlFunction, contains('.getUser(userToken)'));
+      expect(
+        signedUrlFunction,
+        contains('.select("is_banned, deleted_at, account_status")'),
+      );
       expect(
         signedUrlFunction,
         isNot(contains('createClient(SUPABASE_URL, SUPABASE_ANON_KEY')),

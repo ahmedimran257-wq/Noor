@@ -158,35 +158,69 @@ export async function sendBrevoTransactionalEmail(args: {
   email: RenderedTransactionalEmail;
   dedupeKey: string;
 }): Promise<string | null> {
-  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-    method: "POST",
-    headers: {
-      accept: "application/json",
-      "api-key": args.apiKey,
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      sender: { name: "Silarah", email: "noreply@mail.silarah.com" },
-      to: [{
-        email: args.to,
-        ...(args.recipientName ? { name: args.recipientName } : {}),
-      }],
-      subject: args.email.subject,
-      htmlContent: args.email.html,
-      textContent: args.email.text,
-      tags: ["transactional", "subscription"],
-      headers: { "X-Silarah-Dedupe-Key": args.dedupeKey },
-    }),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+  let response: Response;
+  try {
+    response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        accept: "application/json",
+        "api-key": args.apiKey,
+        "content-type": "application/json",
+        "idempotency-key": args.dedupeKey,
+      },
+      body: JSON.stringify({
+        sender: { name: "Silarah", email: "noreply@mail.silarah.com" },
+        to: [{
+          email: args.to,
+          ...(args.recipientName ? { name: args.recipientName } : {}),
+        }],
+        subject: args.email.subject,
+        htmlContent: args.email.html,
+        textContent: args.email.text,
+        tags: ["transactional", "subscription"],
+        headers: { "X-Silarah-Dedupe-Key": args.dedupeKey },
+      }),
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) {
     throw new Error(`Brevo rejected transactional email (${response.status}).`);
   }
 
-  const payload = await response.json().catch(() => ({})) as {
-    messageId?: string;
-  };
+  const responseText = await readResponseTextLimited(response, 64 * 1024);
+  const payload = (() => {
+    try {
+      return JSON.parse(responseText) as { messageId?: string };
+    } catch {
+      return {};
+    }
+  })();
   return payload.messageId ?? null;
+}
+
+async function readResponseTextLimited(
+  response: Response,
+  maxBytes: number,
+): Promise<string> {
+  if (!response.body) return "";
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let bytesRead = 0;
+  let result = "";
+  while (bytesRead < maxBytes) {
+    const { value, done } = await reader.read();
+    if (done || !value) break;
+    const remaining = Math.min(value.byteLength, maxBytes - bytesRead);
+    result += decoder.decode(value.slice(0, remaining), { stream: true });
+    bytesRead += remaining;
+  }
+  await reader.cancel().catch(() => undefined);
+  return result;
 }
 
 function copyFor(

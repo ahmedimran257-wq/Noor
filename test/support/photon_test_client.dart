@@ -1,26 +1,24 @@
-import 'dart:convert';
+import 'package:silarah/core/services/country_context_service.dart';
 
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
-
-Future<T> withPhotonFixtures<T>(Future<T> Function() body) {
-  final client = MockClient((request) async {
-    if (request.url.host != 'photon.komoot.io' || request.url.path != '/api') {
-      return http.Response('Not found', 404);
-    }
-
-    final query = request.url.queryParameters['q']?.toLowerCase().trim() ?? '';
-    final fixture = _fixtures[query];
-    final features =
-        fixture == null ? const <Map<String, Object?>>[] : [fixture];
-    return http.Response(
-      jsonEncode({'type': 'FeatureCollection', 'features': features}),
-      200,
-      headers: const {'content-type': 'application/json; charset=utf-8'},
-    );
-  });
-
-  return http.runWithClient(body, () => client);
+Future<T> withPhotonFixtures<T>(Future<T> Function() body) async {
+  final previous = CountryContextService.debugLocationFeatureLoader;
+  CountryContextService.debugLocationFeatureLoader = ({
+    required query,
+    required countryCode,
+    required limit,
+    required mode,
+  }) async {
+    final normalizedQuery = query.toLowerCase().trim();
+    final fixture = _fixtures[normalizedQuery];
+    return fixture == null
+        ? const <Map<String, dynamic>>[]
+        : [Map<String, dynamic>.from(fixture)];
+  };
+  try {
+    return await body();
+  } finally {
+    CountryContextService.debugLocationFeatureLoader = previous;
+  }
 }
 
 Map<String, Object?> _feature({

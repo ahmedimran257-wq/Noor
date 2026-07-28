@@ -8,6 +8,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, handleCors } from "../_shared/cors.ts";
+import { readResponseJson } from "../_shared/bounded_response.ts";
 import {
   consumeDistributedRateLimit,
   rateLimitHeaders,
@@ -64,33 +65,65 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const { text, target_lang, source_lang } = await req.json() as {
-      text?: string;
+    const { message_id, target_lang } = await req.json() as {
+      message_id?: string;
       target_lang?: string;
-      source_lang?: string;
     };
 
-    if (!text || text.trim() === "") {
-      return errorResponse(
-        400,
-        "text parameter is required and cannot be empty.",
-      );
+    if (
+      !message_id ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+        .test(message_id)
+    ) {
+      return errorResponse(400, "invalid_message");
     }
-    if (!target_lang || target_lang.trim() === "") {
-      return errorResponse(400, "target_lang parameter is required.");
+    const allowedLocales = new Set([
+      "en",
+      "ar",
+      "ur",
+      "hi",
+      "bn",
+      "tr",
+      "fr",
+      "de",
+      "es",
+      "id",
+      "ms",
+    ]);
+    if (!target_lang || !allowedLocales.has(target_lang)) {
+      return errorResponse(400, "unsupported_locale");
     }
 
-    const langPair = source_lang
-      ? `${source_lang}|${target_lang}`
-      : `autodetect|${target_lang}`;
+    const { data: message, error: messageError } = await userClient
+      .from("messages")
+      .select("id, content, translations")
+      .eq("id", message_id)
+      .maybeSingle();
+    if (messageError || !message) {
+      return errorResponse(404, "message_unavailable");
+    }
+    const existing = message.translations?.[target_lang];
+    if (typeof existing === "string" && existing.length > 0) {
+      return new Response(JSON.stringify({ translated_text: existing }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const text = String(message.content ?? "").trim();
+    if (text.length < 1 || text.length > 2000) {
+      return errorResponse(400, "message_length_unsupported");
+    }
+
+    const langPair = `autodetect|${target_lang}`;
     const uri = new URL("https://api.mymemory.translated.net/get");
     uri.searchParams.set("q", text);
     uri.searchParams.set("langpair", langPair);
 
     const response = await fetch(uri.toString(), {
       headers: {
-        "User-Agent": "SilarahApp/1.0 (contact@silarah.com; matchmaking app)",
+        "User-Agent": "SilarahApp/1.0 (contact@silarah.com; matrimonial app)",
       },
+      signal: AbortSignal.timeout(8_000),
     });
 
     if (!response.ok) {
@@ -103,13 +136,32 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const data = await response.json();
-    const translatedText = data.responseData?.translatedText;
-    if (!translatedText) {
+    const data = await readResponseJson(
+      response,
+      64 * 1024,
+    ) as Record<string, unknown>;
+    const responseData = data.responseData as Record<string, unknown> | null;
+    const translatedText = responseData?.translatedText;
+    if (typeof translatedText !== "string" || translatedText.length > 4000) {
       return errorResponse(
         502,
         "Downstream service returned invalid response format.",
       );
+    }
+
+    const { data: translations, error: storeError } = await userClient.rpc(
+      "store_message_translation",
+      {
+        p_message_id: message_id,
+        p_target_lang: target_lang,
+        p_translation: translatedText,
+      },
+    );
+    if (storeError || !translations) {
+      console.error("[translate-message] translation persistence failed", {
+        code: storeError?.code,
+      });
+      return errorResponse(503, "translation_store_failed");
     }
 
     return new Response(
@@ -120,17 +172,22 @@ Deno.serve(async (req: Request) => {
       },
     );
   } catch (err) {
-    console.error("[translate-message] Error:", err);
-    const message = err instanceof Error
-      ? err.message
-      : "Internal Server Error";
-    return errorResponse(500, message);
+    const correlationId = crypto.randomUUID();
+    console.error("[translate-message] request failed", {
+      correlationId,
+      error: err instanceof Error ? err.name : "unknown",
+    });
+    return errorResponse(500, "translation_unavailable", correlationId);
   }
 });
 
-function errorResponse(status: number, message: string): Response {
+function errorResponse(
+  status: number,
+  message: string,
+  correlationId?: string,
+): Response {
   return new Response(
-    JSON.stringify({ error: message }),
+    JSON.stringify({ error: message, correlation_id: correlationId }),
     { status, headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );
 }

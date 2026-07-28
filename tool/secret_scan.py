@@ -19,6 +19,7 @@ SKIP_DIRS = {
     "build",
     "node_modules",
     ".next",
+    ".open-next",
     ".vercel",
     "coverage",
 }
@@ -64,23 +65,46 @@ def is_binary(path: pathlib.Path) -> bool:
     return b"\0" in chunk
 
 
+def git_ignored_paths(paths: list[pathlib.Path]) -> set[str]:
+    """Return ignored paths while preserving scans of untracked source files."""
+    if not paths:
+        return set()
+    relative_paths = [str(path.relative_to(ROOT)).replace("\\", "/") for path in paths]
+    try:
+        result = subprocess.run(
+            ["git", "check-ignore", "-z", "--stdin"],
+            cwd=ROOT,
+            input=b"\0".join(path.encode("utf-8") for path in relative_paths),
+            capture_output=True,
+            check=False,
+        )
+    except OSError:
+        # Archive/CI environments without Git still receive the directory-based
+        # scanner rather than silently skipping the security check.
+        return set()
+    return {
+        raw_path.decode("utf-8").replace("\\", "/")
+        for raw_path in result.stdout.split(b"\0")
+        if raw_path
+    }
+
+
 def main() -> int:
     findings: list[str] = []
-    tracked = subprocess.run(
-        ["git", "ls-files", "-z"],
-        cwd=ROOT,
-        check=True,
-        capture_output=True,
-    ).stdout.split(b"\0")
-    for raw_relative in tracked:
-        if not raw_relative:
-            continue
-        relative = pathlib.Path(raw_relative.decode("utf-8"))
-        path = ROOT / relative
+    # Walk the checked-out workspace, not only Git's index. This catches a
+    # generated or newly added secret before it is staged and makes the scanner
+    # equally useful for archives and CI workspaces.
+    candidates = [
+        path
+        for path in ROOT.rglob("*")
+        if path.is_file() and not should_skip(path)
+    ]
+    ignored_paths = git_ignored_paths(candidates)
+    for path in candidates:
+        relative = path.relative_to(ROOT)
         if (
             relative in PUBLIC_MOBILE_CONFIG
-            or not path.is_file()
-            or should_skip(path)
+            or relative.as_posix() in ignored_paths
             or is_binary(path)
         ):
             continue
@@ -98,7 +122,7 @@ def main() -> int:
                     findings.append(f"{path.relative_to(ROOT)}:{line_no}: {name}")
 
     if findings:
-        print("Potential committed live config/secrets found:")
+        print("Potential live config/secrets found in workspace:")
         print("\n".join(findings))
         return 1
 

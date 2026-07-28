@@ -461,7 +461,7 @@ class AuthCubit extends Cubit<AuthState> {
         var profileOnboardingCompleted = false;
         try {
           final profileRow = await SupabaseService.client
-              .from('profiles')
+              .from('my_profile_private')
               .select('onboarding_completed')
               .eq('user_id', userId)
               .maybeSingle();
@@ -474,25 +474,10 @@ class AuthCubit extends Cubit<AuthState> {
             (current is AuthAuthenticated && current.onboardingCompleted) ||
                 userOnboardingCompleted ||
                 profileOnboardingCompleted;
-        final contactFields = <String, dynamic>{
-          if (current is AuthAuthenticated &&
-              current.email != null &&
-              current.email!.isNotEmpty)
-            'email': current.email,
-          if (countryCode != null && countryCode.isNotEmpty)
-            'country_code': countryCode,
-        };
-
         if (existingGender == normalizedGender) {
-          // Idempotency fix: pressing Continue again must not trigger a locked
-          // gender update. Keep contact/country metadata fresh without touching
-          // the gender column.
-          if (contactFields.isNotEmpty) {
-            await SupabaseService.client
-                .from('users')
-                .update(contactFields)
-                .eq('id', userId);
-          }
+          await SupabaseService.client.rpc('sync_my_user', params: {
+            'p_country_code': countryCode,
+          });
         } else if (existingGender != null &&
             existingGender.isNotEmpty &&
             genderLocked) {
@@ -504,21 +489,10 @@ class AuthCubit extends Cubit<AuthState> {
           // referrals, and the profiles.gender trigger. Unfinished onboarding
           // may correct an accidental tap; completed profiles stay locked by
           // the app guard and the database trigger.
-          final writeFields = <String, dynamic>{
-            ...contactFields,
-            'gender': normalizedGender,
-          };
-          if (existingUser == null) {
-            await SupabaseService.client.from('users').upsert({
-              'id': userId,
-              ...writeFields,
-            }, onConflict: 'id');
-          } else {
-            await SupabaseService.client
-                .from('users')
-                .update(writeFields)
-                .eq('id', userId);
-          }
+          await SupabaseService.client.rpc('sync_my_user', params: {
+            'p_country_code': countryCode,
+            'p_gender': normalizedGender,
+          });
         }
       } catch (e) {
         debugPrint('AuthCubit: failed to persist gender: $e');
@@ -547,8 +521,9 @@ class AuthCubit extends Cubit<AuthState> {
     final current = state;
     if (_isRealMode && current is AuthAuthenticated) {
       try {
-        await SupabaseService.client.from('users').update(
-            {'country_code': normalizedCountryCode}).eq('id', current.userId);
+        await SupabaseService.client.rpc('patch_my_user', params: {
+          'p_fields': {'country_code': normalizedCountryCode},
+        });
       } catch (e) {
         debugPrint('AuthCubit: failed to persist country code: $e');
         return false;
@@ -575,12 +550,9 @@ class AuthCubit extends Cubit<AuthState> {
     final prefs = await SharedPreferences.getInstance();
     final countryCode = prefs.getString('user_country_code')?.toUpperCase();
     try {
-      await SupabaseService.client.from('users').upsert({
-        'id': userId,
-        'email': email,
-        if (countryCode != null && countryCode.isNotEmpty)
-          'country_code': countryCode,
-      }, onConflict: 'id');
+      await SupabaseService.client.rpc('sync_my_user', params: {
+        'p_country_code': countryCode,
+      });
     } catch (_) {
       await SupabaseService.client.auth.signOut();
       rethrow;
@@ -761,7 +733,7 @@ class AuthCubit extends Cubit<AuthState> {
       }
 
       final profileRow = await SupabaseService.client
-          .from('profiles')
+          .from('my_profile_private')
           .select(
               'onboarding_step, profile_owner_type, guardian_mode, gender, onboarding_completed')
           .eq('user_id', userId)

@@ -236,7 +236,8 @@ void main() {
       fcmSource.indexOf('Future<void> _initialize()'),
       lessThan(fcmSource.indexOf('Future<void> _registerForPush()')),
     );
-    expect(connectivitySource, contains("'/auth/v1/health'"));
+    expect(connectivitySource, contains("'/functions/v1/health-probe'"));
+    expect(connectivitySource, contains("'x-silarah-health'"));
     expect(connectivitySource, contains('Future<bool>? _checkInFlight'));
     expect(connectivitySource, contains('Stopwatch()..start()'));
     expect(connectivitySource, contains('Duration(milliseconds: 1100)'));

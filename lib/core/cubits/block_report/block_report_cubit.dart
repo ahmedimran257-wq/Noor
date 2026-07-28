@@ -23,6 +23,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../services/supabase_service.dart';
+import '../../services/authorized_profile_service.dart';
 import 'block_report_state.dart';
 
 class BlockReportCubit extends Cubit<BlockReportState> {
@@ -80,12 +81,7 @@ class BlockReportCubit extends Cubit<BlockReportState> {
         for (final row in blockedRows) row['blocked_id'] as String,
         for (final row in reportRows) row['reported_user_id'] as String,
       };
-      final profileRows = relatedUserIds.isEmpty
-          ? const <dynamic>[]
-          : await SupabaseService.client
-              .from('profiles')
-              .select('user_id, first_name, last_name')
-              .inFilter('user_id', relatedUserIds.toList(growable: false));
+      final profileRows = await AuthorizedProfileService.load(relatedUserIds);
       final profilesByUser = <String, Map<String, dynamic>>{
         for (final raw in profileRows)
           if ((raw as Map)['user_id'] != null)
@@ -266,20 +262,14 @@ class BlockReportCubit extends Cubit<BlockReportState> {
     String? reportId;
 
     if (_isRealMode) {
-      final myId = activeUserId;
       try {
-        final result = await SupabaseService.client
-            .from('reports')
-            .insert({
-              'reporter_id': myId,
-              'reported_user_id': reportedUserId,
-              'reason': reason.key,
-              'description': description,
-            })
-            .select('id')
-            .single();
-        reportId = result['id'] as String;
-        // DB trigger check_report_threshold() auto-suspends after 3 unique reports
+        final result =
+            await SupabaseService.client.rpc('submit_user_report', params: {
+          'p_reported_user_id': reportedUserId,
+          'p_reason': reason.key,
+          'p_description': description,
+        });
+        reportId = result?.toString();
       } catch (e) {
         debugPrint('[BlockReportCubit] Error reporting user: $e');
         emit(state.copyWith(isSubmitting: false));

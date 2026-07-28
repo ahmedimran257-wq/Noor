@@ -171,9 +171,12 @@ export function LiveOperationsCockpit({
             {pipeline.map((item) => (
               <div className="progress-row" key={item.label}>
                 <div><span>{item.label}</span><strong>{percent(item.value)}%</strong></div>
-                <div className="premium-progress" aria-label={`${item.label} ${percent(item.value)}%`}>
-                  <span style={{ width: `${percent(item.value)}%` }} />
-                </div>
+                <progress
+                  className="premium-progress"
+                  aria-label={`${item.label} ${percent(item.value)}%`}
+                  max={100}
+                  value={percent(item.value)}
+                />
               </div>
             ))}
           </div>

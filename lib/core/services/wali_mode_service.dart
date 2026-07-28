@@ -16,6 +16,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_service.dart';
+import 'authorized_profile_service.dart';
 
 /// Manages Wali (Guardian) mode operations.
 ///
@@ -160,18 +161,18 @@ class WaliModeService {
             ? match['user_b'] as String
             : match['user_a'] as String;
 
-        // Fetch names
-        final wardProfile = await _supabase
-            .from('profiles')
-            .select('first_name')
-            .eq('user_id', mirror['ward_id'])
-            .single();
-
-        final otherProfile = await _supabase
-            .from('profiles')
-            .select('first_name')
-            .eq('user_id', otherUserId)
-            .single();
+        final authorizedProfiles = await AuthorizedProfileService.load([
+          mirror['ward_id'] as String,
+          otherUserId,
+        ]);
+        final profilesByUser = {
+          for (final profile in authorizedProfiles)
+            profile['user_id'] as String: profile,
+        };
+        final wardProfile =
+            profilesByUser[mirror['ward_id']] ?? const <String, dynamic>{};
+        final otherProfile =
+            profilesByUser[otherUserId] ?? const <String, dynamic>{};
 
         chats.add(GuardianMirroredChat(
           mirrorId: mirror['id'] as String,
@@ -271,12 +272,9 @@ class WaliModeService {
     required String content,
   }) async {
     try {
-      await _supabase.from('messages').insert({
-        'match_id': matchId,
-        'sender_id': wardId, // Sent as the ward
-        'receiver_id': receiverId,
-        'content': content,
-        'sent_by_guardian': true, // §3.2: Transparency flag
+      await _supabase.rpc('send_guardian_chat_message', params: {
+        'p_match_id': matchId,
+        'p_content': content,
       });
 
       debugPrint('[WaliModeService] Message sent as guardian for ward $wardId');
@@ -310,7 +308,7 @@ class WaliModeService {
       if (userId == null) return false;
 
       final response = await _supabase
-          .from('profiles')
+          .from('my_guardian_wards')
           .select('id')
           .eq('guardian_user_id', userId)
           .limit(1);
@@ -337,7 +335,7 @@ class WaliModeService {
     }
 
     final profile = await _supabase
-        .from('profiles')
+        .from('my_profile_private')
         .select('id')
         .eq('user_id', userId)
         .maybeSingle();
@@ -346,13 +344,12 @@ class WaliModeService {
       throw StateError('Profile was not found for guardian settings.');
     }
 
-    final mode = enabled ? (canReply ? 'active' : 'passive') : 'none';
-    await _supabase.from('profiles').update({
-      'guardian_name': enabled ? guardianName.trim() : null,
-      'guardian_relationship': enabled ? _dbRelationship(relationship) : null,
-      'guardian_mode': mode,
-      if (!enabled) 'guardian_user_id': null,
-    }).eq('id', profileId);
+    await _supabase.rpc('set_my_guardian_settings', params: {
+      'p_enabled': enabled,
+      'p_can_reply': canReply,
+      'p_name': guardianName.trim(),
+      'p_relationship': _dbRelationship(relationship),
+    });
 
     if (enabled && guardianPhone.trim().isNotEmpty) {
       await _supabase.rpc('set_guardian_phone', params: {
@@ -386,7 +383,7 @@ class WaliModeService {
       if (userId == null) return null;
 
       final response = await _supabase
-          .from('profiles')
+          .from('my_profile_private')
           .select(
             'guardian_name, guardian_relationship, guardian_mode, guardian_user_id',
           )

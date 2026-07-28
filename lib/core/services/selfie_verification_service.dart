@@ -193,35 +193,11 @@ class SelfieVerificationService {
 
   Future<bool> submitBadgeVerification() async {
     if (!SupabaseService.isInitialized) return false;
-    final userId = await SupabaseService.currentUserIdOrRefresh();
-    if (userId == null) return false;
+    if (await SupabaseService.currentUserIdOrRefresh() == null) return false;
 
     try {
-      final now = DateTime.now().toUtc().toIso8601String();
-      await SupabaseService.client.from('profiles').update({
-        'has_verification_badge': true,
-        'badge_earned_at': now,
-        'badge_pose_sequence': <String>[],
-        'verification_status': 'verified',
-        'verification_challenge': 'passive_face_scan',
-        'verified_at': now,
-        'is_verified': true,
-      }).eq('user_id', userId);
+      await SupabaseService.client.rpc('submit_my_photo_badge_verification');
 
-      try {
-        await SupabaseService.client.functions.invoke(
-          'dispatch-notifications',
-          body: {
-            'user_id': userId,
-            'type': 'badge_earned',
-            'title': 'Verification badge earned',
-            'body':
-                'Your identity check passed and your Silarah badge is now active.',
-          },
-        );
-      } catch (error) {
-        debugPrint('Badge notification dispatch deferred: $error');
-      }
       return true;
     } catch (error) {
       debugPrint('Badge verification update failed: $error');
@@ -252,7 +228,7 @@ class SelfieVerificationService {
     }
     try {
       final response = await SupabaseService.client
-          .from('profiles')
+          .from('my_profile_private')
           .select('verification_status, verification_attempts, verified_at')
           .eq('user_id', userId)
           .single();
@@ -272,12 +248,9 @@ class SelfieVerificationService {
     final userId = await SupabaseService.currentUserIdOrRefresh();
     if (userId == null) return false;
     try {
-      final response = await SupabaseService.client
-          .from('profiles')
-          .select('has_verification_badge')
-          .eq('user_id', userId)
-          .single();
-      return response['has_verification_badge'] == true;
+      final response =
+          await SupabaseService.client.rpc('get_my_photo_liveness_status');
+      return response == true;
     } catch (_) {
       return false;
     }

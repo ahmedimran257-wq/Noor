@@ -51,7 +51,8 @@ void main() {
   test('remote deletion and replacement cleanup are ownership scoped', () {
     expect(service, contains("'purpose': 'delete_profile_photo'"));
     expect(edge, contains('deleteOwnProfilePhoto(userId, order_index)'));
-    expect(edge, contains(r'storagePath.startsWith(`${userId}/`)'));
+    expect(edge, contains('"request_profile_photo_deletion"'));
+    expect(edge, contains('p_user_id: userId'));
     expect(
         edge, contains('!existingPhoto && (existingCount ?? 0) >= MAX_PHOTOS'));
   });

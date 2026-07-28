@@ -50,7 +50,7 @@ class AccountStandingCubit extends Cubit<AccountStandingState> {
     final version = ++_loadVersion;
     try {
       final profile = await SupabaseService.client
-          .from('profiles')
+          .from('my_profile_private')
           .select('id, visibility')
           .eq('user_id', userId)
           .maybeSingle();

@@ -23,16 +23,21 @@ const securityHeaders = [
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
   { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
   {
+    key: "Strict-Transport-Security",
+    value: "max-age=63072000; includeSubDomains; preload",
+  },
+  {
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
       `script-src 'self'${isDev ? " 'unsafe-eval'" : ""}`,
-      "style-src 'self' 'unsafe-inline'",
+      "style-src 'self'",
       `img-src 'self' data: ${supabaseImageHost}`,
       "font-src 'self'",
       `connect-src 'self' ${process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://*.supabase.co"}`,
       "frame-ancestors 'none'",
-      "base-uri 'self'",
+      "object-src 'none'",
+      "base-uri 'none'",
       "form-action 'self'",
     ].join("; "),
   },

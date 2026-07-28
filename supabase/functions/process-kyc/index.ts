@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { Image } from "https://deno.land/x/imagescript@1.2.15/mod.ts";
 import { corsHeaders, handleCors } from "../_shared/cors.ts";
 import {
   consumeDistributedRateLimit,
@@ -9,8 +10,8 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 const bucket = "kyc-documents";
-const maxFileBytes = 10 * 1024 * 1024;
-const maxUploadAgeMs = 30 * 60 * 1000;
+const maxFileBytes = 8 * 1024 * 1024;
+const maxUploadAgeMs = 15 * 60 * 1000;
 const supportedIdTypes = new Set([
   "government_id",
   "national_id",
@@ -89,10 +90,25 @@ Deno.serve(async (request) => {
       return json(400, "Invalid optional OCR date hint.");
     }
 
-    await Promise.all([
-      assertFreshPrivateImage(admin, selfiePath, user.id),
-      assertFreshPrivateImage(admin, idPath, user.id),
+    const [selfieObject, idObject] = await Promise.all([
+      inspectFreshPrivateImage(admin, selfiePath, user.id),
+      inspectFreshPrivateImage(admin, idPath, user.id),
     ]);
+    const { error: reservationError } = await admin.rpc(
+      "consume_kyc_upload_reservations",
+      {
+        p_user_id: user.id,
+        p_selfie_path: selfiePath,
+        p_selfie_mime: selfieObject.mime,
+        p_selfie_bytes: selfieObject.size,
+        p_id_path: idPath,
+        p_id_mime: idObject.mime,
+        p_id_bytes: idObject.size,
+      },
+    );
+    if (reservationError) {
+      throw new Error("Identity upload reservation is invalid or expired.");
+    }
 
     const { data, error: submitError } = await admin.rpc(
       "submit_manual_kyc_for_review",
@@ -151,11 +167,11 @@ Deno.serve(async (request) => {
   }
 });
 
-async function assertFreshPrivateImage(
+async function inspectFreshPrivateImage(
   admin: ReturnType<typeof createAdminClient>,
   path: string,
   userId: string,
-): Promise<void> {
+): Promise<{ size: number; mime: string }> {
   const name = path.slice(userId.length + 1);
   const { data, error } = await admin.storage.from(bucket).list(userId, {
     limit: 10,
@@ -171,14 +187,41 @@ async function assertFreshPrivateImage(
     .toLowerCase();
   const createdAt = Date.parse(object.created_at ?? "");
   if (!Number.isFinite(size) || size <= 0 || size > maxFileBytes) {
-    throw new Error("Identity images must be between 1 byte and 10 MB.");
+    throw new Error("Identity images must be between 1 byte and 8 MB.");
   }
-  if (!new Set(["image/jpeg", "image/png", "image/webp"]).has(mime)) {
+  if (!new Set(["image/jpeg", "image/webp"]).has(mime)) {
     throw new Error("Identity evidence must be a supported image.");
   }
   if (!Number.isFinite(createdAt) || Date.now() - createdAt > maxUploadAgeMs) {
     throw new Error("Identity upload expired. Please capture new images.");
   }
+  const { data: blob, error: downloadError } = await admin.storage.from(bucket)
+    .download(path);
+  if (downloadError || !blob) {
+    throw new Error("Private identity upload could not be inspected.");
+  }
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  if (bytes.byteLength !== size || !matchesMime(bytes, mime)) {
+    throw new Error("Identity evidence format did not match its upload.");
+  }
+  try {
+    const image = await Image.decode(bytes);
+    if (
+      image.width < 320 || image.height < 320 ||
+      image.width * image.height > 32_000_000
+    ) {
+      throw new Error("invalid_dimensions");
+    }
+  } catch {
+    throw new Error("Identity evidence is not a valid image.");
+  }
+  return { size, mime };
+}
+
+function matchesMime(bytes: Uint8Array, mime: string): boolean {
+  if (mime === "image/jpeg") return bytes[0] === 0xff && bytes[1] === 0xd8;
+  return new TextDecoder().decode(bytes.slice(0, 4)) === "RIFF" &&
+    new TextDecoder().decode(bytes.slice(8, 12)) === "WEBP";
 }
 
 async function queueIdentityNotification(

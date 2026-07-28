@@ -17,9 +17,15 @@ export async function requireStaffSession(): Promise<CurrentAdmin> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at).getTime() : Date.now();
+  const { data: { session } } = await supabase.auth.getSession();
+  const tokenPayload = session?.access_token
+    ? decodeJwtPayload(session.access_token)
+    : undefined;
+  const issuedAt = typeof tokenPayload?.iat === "number"
+    ? tokenPayload.iat * 1000
+    : 0;
   const maxSessionMs = 12 * 60 * 60 * 1000;
-  if (Date.now() - lastSignIn > maxSessionMs) {
+  if (!issuedAt || Date.now() - issuedAt > maxSessionMs) {
     await supabase.auth.signOut();
     redirect("/login?error=Session+expired.+Please+sign+in+again.");
   }
@@ -39,6 +45,19 @@ export async function requireStaffSession(): Promise<CurrentAdmin> {
     role: membership.role as AdminRole,
     mfaRequired: membership.mfa_required,
   };
+}
+
+function decodeJwtPayload(token: string): { iat?: number } | undefined {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return undefined;
+    return JSON.parse(
+      Buffer.from(payload.replace(/-/g, "+").replace(/_/g, "/"), "base64")
+        .toString("utf8"),
+    ) as { iat?: number };
+  } catch {
+    return undefined;
+  }
 }
 
 export async function requireAdmin(): Promise<CurrentAdmin> {

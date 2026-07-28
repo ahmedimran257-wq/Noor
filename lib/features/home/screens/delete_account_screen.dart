@@ -54,13 +54,10 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
       try {
         final userId = SupabaseService.currentUserId;
         if (userId != null) {
-          // 1. Update users table in Supabase (sets deleted_at, triggering soft-delete cascade)
-          await SupabaseService.client.from('users').update({
-            'deletion_status': 'pending_deletion',
-            'deletion_reason': _reason,
-            'deletion_requested_at': DateTime.now().toUtc().toIso8601String(),
-            'deleted_at': DateTime.now().toUtc().toIso8601String(),
-          }).eq('id', userId);
+          await SupabaseService.client.rpc(
+            'request_my_account_deletion',
+            params: {'p_reason': _reason},
+          );
 
           // 2. RevenueCat logOut
           try {

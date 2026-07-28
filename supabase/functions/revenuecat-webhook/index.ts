@@ -10,6 +10,13 @@ const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const REVENUECAT_WEBHOOK_SECRET = Deno.env.get("REVENUECAT_WEBHOOK_SECRET")!;
 const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY") ?? "";
 
+function createAdminClient() {
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
+type AdminClient = ReturnType<typeof createAdminClient>;
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -29,7 +36,7 @@ Deno.serve(async (req: Request) => {
   }
 
   const event = payload.event;
-  if (!event) {
+  if (!event || !validRevenueCatEvent(event)) {
     return new Response("Bad Request: missing event", { status: 400 });
   }
 
@@ -39,16 +46,17 @@ Deno.serve(async (req: Request) => {
     return new Response("OK", { status: 200 });
   }
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+  const supabase = createAdminClient();
 
-  const eventTimestampMs = event.event_timestamp_ms ?? Date.now();
+  const eventTimestampMs = event.event_timestamp_ms!;
   let newStatus: "active" | "none" | "grace";
   let newExpiresAt: string | null = null;
 
   const expiresAt = event.expiration_at_ms
     ? new Date(event.expiration_at_ms).toISOString()
+    : null;
+  const graceExpiresAt = event.grace_period_expiration_at_ms
+    ? new Date(event.grace_period_expiration_at_ms).toISOString()
     : null;
 
   switch (event.type) {
@@ -65,8 +73,13 @@ Deno.serve(async (req: Request) => {
       newExpiresAt = null;
       break;
     case "BILLING_ISSUE":
+      if (!graceExpiresAt && !expiresAt) {
+        return new Response("Bad Request: missing authoritative grace expiry", {
+          status: 400,
+        });
+      }
       newStatus = "grace";
-      newExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      newExpiresAt = graceExpiresAt ?? expiresAt;
       break;
     default:
       console.log(`[revenuecat-webhook] Unhandled event type: ${event.type}`);
@@ -80,6 +93,7 @@ Deno.serve(async (req: Request) => {
     "apply_revenuecat_subscription_event",
     {
       p_user_id: supabaseUserId,
+      p_provider_event_id: event.id,
       p_event_type: event.type,
       p_event_timestamp_ms: eventTimestampMs,
       p_subscription_status: newStatus,
@@ -99,7 +113,12 @@ Deno.serve(async (req: Request) => {
     return new Response("Internal Server Error", { status: 500 });
   }
 
-  if (!applyResult?.applied && applyResult?.reason !== "stale_event") {
+  if (
+    !applyResult?.applied &&
+    !["stale_event", "duplicate_event"].includes(
+      String(applyResult?.reason ?? ""),
+    )
+  ) {
     console.log(
       `[revenuecat-webhook] Ignored event for ${supabaseUserId}: ${
         applyResult?.reason ?? "not_applied"
@@ -142,10 +161,12 @@ Deno.serve(async (req: Request) => {
 });
 
 interface RevenueCatEvent {
+  id: string;
   type: string;
   app_user_id: string;
   event_timestamp_ms?: number;
   expiration_at_ms?: number;
+  grace_period_expiration_at_ms?: number;
   product_id?: string;
   period_type?: string;
   currency?: string;
@@ -156,13 +177,32 @@ interface RevenueCatEvent {
   cancel_reason?: string;
 }
 
+function validRevenueCatEvent(event: RevenueCatEvent): boolean {
+  const timestamp = event.event_timestamp_ms;
+  const now = Date.now();
+  return typeof event.id === "string" &&
+    event.id.length >= 8 &&
+    event.id.length <= 200 &&
+    typeof event.type === "string" &&
+    typeof event.app_user_id === "string" &&
+    Number.isSafeInteger(timestamp) &&
+    timestamp! >= Date.UTC(2018, 0, 1) &&
+    timestamp! <= now + 5 * 60 * 1000 &&
+    (event.expiration_at_ms == null ||
+      Number.isSafeInteger(event.expiration_at_ms)) &&
+    (event.grace_period_expiration_at_ms == null ||
+      Number.isSafeInteger(event.grace_period_expiration_at_ms)) &&
+    (event.price == null ||
+      (Number.isFinite(event.price) && event.price >= 0));
+}
+
 interface RevenueCatWebhookPayload {
   event?: RevenueCatEvent;
   api_version?: string;
 }
 
 async function deliverSubscriptionEmail(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AdminClient,
   dedupeKey: string,
   event: RevenueCatEvent,
   expiresAt: string | null,
@@ -260,7 +300,7 @@ async function deliverSubscriptionEmail(
 }
 
 async function queueSubscriptionNotification(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AdminClient,
   userId: string,
   eventType: string,
 ): Promise<void> {

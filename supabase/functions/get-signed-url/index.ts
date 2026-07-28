@@ -18,11 +18,7 @@
 // served via signed URLs from this function only.
 // ============================================================
 
-import {
-  createClient,
-  type SupabaseClient,
-} from "https://esm.sh/@supabase/supabase-js@2";
-import { createRemoteJWKSet, jwtVerify } from "npm:jose@5.9.6";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, handleCors } from "../_shared/cors.ts";
 import {
   consumeDistributedRateLimit,
@@ -40,10 +36,12 @@ const UPLOAD_URL_EXPIRES_IN = 300; // Upload tokens stay deliberately short-live
 // expiry, so a revoked viewer loses access within five minutes at most.
 const READ_URL_EXPIRES_IN = 300;
 const RATE_LIMIT_WINDOW = 60 * 60; // 1 hour in seconds
-const RATE_LIMIT_MAX = 100; // Max URL requests per user per hour
-const AUTH_JWKS = createRemoteJWKSet(
-  new URL(`${SUPABASE_URL}/auth/v1/.well-known/jwks.json`),
-);
+const PURPOSE_LIMITS: Record<string, number> = {
+  read: 300,
+  upload: 20,
+  delete: 20,
+  kyc: 10,
+};
 
 Deno.serve(async (req: Request) => {
   const corsResponse = handleCors(req);
@@ -55,51 +53,59 @@ Deno.serve(async (req: Request) => {
     if (!authHeader?.startsWith("Bearer ")) {
       return errorResponse(401, "Missing or invalid Authorization header.");
     }
-    const userToken = authHeader.replace("Bearer ", "");
-    const requestApiKey = req.headers.get("apikey");
-    if (!requestApiKey) {
-      return errorResponse(401, "Missing project API key.");
-    }
-
-    // Verify the access token cryptographically against the project's JWKS.
-    // Do not call auth.getUser() here: GoTrue can reject an otherwise valid,
-    // unexpired access JWT when its session row has just rotated or been
-    // cleaned up, while PostgREST still correctly accepts the same JWT. That
-    // split made private photos disappear until the next login. JWKS
-    // verification matches Supabase's JWT/RLS boundary and still enforces
-    // signature, issuer, audience, and expiry.
-    let userId: string;
-    try {
-      const { payload } = await jwtVerify(userToken, AUTH_JWKS, {
-        issuer: `${SUPABASE_URL}/auth/v1`,
-        audience: "authenticated",
-      });
-      if (
-        payload.role !== "authenticated" ||
-        typeof payload.sub !== "string" ||
-        !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-          .test(payload.sub)
-      ) {
-        throw new Error("Access token is not an authenticated user token.");
-      }
-      userId = payload.sub;
-    } catch (_) {
+    const userToken = authHeader.slice("Bearer ".length);
+    const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const { data: authData, error: authError } = await adminClient.auth
+      .getUser(userToken);
+    const userId = authData.user?.id;
+    if (authError || !userId || !isUuid(userId)) {
       return errorResponse(401, "Unauthorized.");
     }
 
-    const userClient = createClient(SUPABASE_URL, requestApiKey, {
-      global: { headers: { Authorization: `Bearer ${userToken}` } },
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
+    const { data: account, error: accountError } = await adminClient
+      .from("users")
+      .select("is_banned, deleted_at, account_status")
+      .eq("id", userId)
+      .maybeSingle();
+    if (
+      accountError || !account || account.is_banned === true ||
+      account.deleted_at != null ||
+      ["banned", "suspended", "deleted"].includes(
+        String(account.account_status ?? ""),
+      )
+    ) {
+      return errorResponse(403, "This account cannot access private media.");
+    }
+
+    const requestBody = await req.json() as {
+      order_index?: number;
+      file_extension?: string;
+      purpose?:
+        | "kyc_selfie"
+        | "kyc_id"
+        | "read_profile_photo"
+        | "read_profile_photos"
+        | "delete_profile_photo"
+        | "delete_replaced_profile_photo";
+      owner_user_id?: string;
+      owner_user_ids?: string[];
+      storage_path?: string;
+    };
+    const purposeScope = requestBody.purpose?.startsWith("read_")
+      ? "read"
+      : requestBody.purpose?.startsWith("delete_")
+      ? "delete"
+      : requestBody.purpose?.startsWith("kyc_")
+      ? "kyc"
+      : "upload";
 
     // ── Rate limiting (anti-scraping) ──────────────────────────
-    const rateLimitClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
-    const rateLimit = await consumeDistributedRateLimit(rateLimitClient, {
-      scope: "signed_photo_url",
+    const rateLimit = await consumeDistributedRateLimit(adminClient, {
+      scope: `signed_url_${purposeScope}`,
       subject: userId,
-      maxRequests: RATE_LIMIT_MAX,
+      maxRequests: PURPOSE_LIMITS[purposeScope],
       windowSeconds: RATE_LIMIT_WINDOW,
     });
     if (!rateLimit.allowed) {
@@ -126,24 +132,10 @@ Deno.serve(async (req: Request) => {
       owner_user_id,
       owner_user_ids,
       storage_path,
-    } = await req.json() as {
-      order_index?: number;
-      file_extension?: string;
-      purpose?:
-        | "kyc_selfie"
-        | "kyc_id"
-        | "read_profile_photo"
-        | "read_profile_photos"
-        | "delete_profile_photo"
-        | "delete_replaced_profile_photo";
-      owner_user_id?: string;
-      owner_user_ids?: string[];
-      storage_path?: string;
-    };
+    } = requestBody;
 
     if (purpose === "read_profile_photo") {
       return await createAuthorizedProfilePhotoReadUrl(
-        userClient,
         userId,
         owner_user_id,
         order_index ?? 0,
@@ -151,7 +143,6 @@ Deno.serve(async (req: Request) => {
     }
     if (purpose === "read_profile_photos") {
       return await createAuthorizedProfilePhotoReadUrls(
-        userClient,
         userId,
         owner_user_ids,
         order_index ?? 0,
@@ -165,9 +156,11 @@ Deno.serve(async (req: Request) => {
     }
 
     const ext = (file_extension ?? "webp").toLowerCase();
-    const allowedTypes = ["webp", "jpg", "jpeg", "png"];
+    const allowedTypes = purpose === "kyc_selfie" || purpose === "kyc_id"
+      ? ["webp", "jpg", "jpeg"]
+      : ["webp"];
     if (!allowedTypes.includes(ext)) {
-      return errorResponse(400, "Only webp, jpg, jpeg, and png are allowed.");
+      return errorResponse(400, "Unsupported image format.");
     }
 
     // KYC uploads use a dedicated private bucket. They never create a public
@@ -179,11 +172,6 @@ Deno.serve(async (req: Request) => {
     if (order_index === undefined || order_index < 0 || order_index > 3) {
       return errorResponse(400, "order_index must be 0, 1, 2, or 3.");
     }
-
-    // ── Service-role client for DB operations ──────────────────
-    const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
 
     // ── Get user's profile ID ──────────────────────────────────
     const { data: profile, error: profileError } = await adminClient
@@ -202,9 +190,10 @@ Deno.serve(async (req: Request) => {
 
     const { data: existingPhoto, error: existingPhotoError } = await adminClient
       .from("photos")
-      .select("storage_path")
+      .select("id, storage_path")
       .eq("profile_id", profileId)
       .eq("order_index", order_index)
+      .eq("status", "active")
       .maybeSingle();
     if (existingPhotoError) {
       throw new Error(
@@ -237,22 +226,21 @@ Deno.serve(async (req: Request) => {
     // ── Insert 'pending_upload' placeholder (atomic gate) ──────
     // This row is inserted BEFORE the URL is returned.
     // If the upload never completes, a cleanup job removes stale pending_upload rows.
-    const { error: insertError } = await adminClient
-      .from("photos")
-      .upsert({
-        profile_id: profileId,
-        storage_path: storagePath,
-        status: "pending_upload",
-        order_index,
-        admin_approved: false,
-        nsfw_cleared: false,
-        moderation_status: "pending_upload",
-      }, {
-        onConflict: "profile_id,order_index", // Replaces existing pending for same slot
+    const { data: reservationRows, error: reservationError } = await adminClient
+      .rpc("reserve_upload", {
+        p_user_id: userId,
+        p_bucket_id: BUCKET_NAME,
+        p_purpose: "profile_photo",
+        p_storage_path: storagePath,
+        p_expected_mime: "image/webp",
+        p_max_bytes: 5 * 1024 * 1024,
+        p_order_index: order_index,
       });
-
-    if (insertError) {
-      throw new Error(`Failed to reserve photo slot: ${insertError.message}`);
+    const reservation = Array.isArray(reservationRows)
+      ? reservationRows[0]
+      : reservationRows;
+    if (reservationError || !reservation?.reservation_id) {
+      return errorResponse(409, "The photo slot could not be reserved.");
     }
 
     // ── Generate the pre-signed upload URL ─────────────────────
@@ -262,11 +250,7 @@ Deno.serve(async (req: Request) => {
       .createSignedUploadUrl(storagePath);
 
     if (urlError || !signedUrlData?.signedUrl) {
-      // Rollback the placeholder row since we can't provide the URL
-      await adminClient.from("photos").delete()
-        .eq("profile_id", profileId)
-        .eq("storage_path", storagePath);
-      throw new Error(`Failed to generate upload URL: ${urlError?.message}`);
+      return errorResponse(503, "A secure upload URL could not be issued.");
     }
 
     console.log(
@@ -277,6 +261,7 @@ Deno.serve(async (req: Request) => {
       JSON.stringify({
         signed_url: signedUrlData.signedUrl,
         storage_path: storagePath,
+        reservation_id: reservation.reservation_id,
         token: signedUrlData.token,
         replaced_storage_path: existingPhoto?.storage_path ?? null,
         expires_in: UPLOAD_URL_EXPIRES_IN,
@@ -287,11 +272,18 @@ Deno.serve(async (req: Request) => {
       },
     );
   } catch (err) {
-    console.error("[get-signed-url] Error:", err);
-    const message = err instanceof Error
-      ? err.message
-      : "Failed to generate upload URL.";
-    return errorResponse(500, message);
+    const correlationId = crypto.randomUUID();
+    console.error(`[get-signed-url] ${correlationId}`, err);
+    return new Response(
+      JSON.stringify({
+        error: "The secure media request could not be completed.",
+        correlation_id: correlationId,
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 });
 
@@ -305,85 +297,24 @@ async function deleteOwnProfilePhoto(
   const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
-  const { data: profile, error: profileError } = await adminClient
-    .from("profiles")
-    .select("id")
-    .eq("user_id", userId)
-    .single();
-  if (profileError || !profile) {
-    return errorResponse(404, "Profile not found.");
+  const { data: queued, error } = await adminClient.rpc(
+    "request_profile_photo_deletion",
+    { p_user_id: userId, p_order_index: orderIndex! },
+  );
+  if (error) {
+    throw new Error("photo_deletion_queue_failed");
   }
-  const { data: photo, error: photoError } = await adminClient
-    .from("photos")
-    .select("id, storage_path")
-    .eq("profile_id", profile.id)
-    .eq("order_index", orderIndex!)
-    .maybeSingle();
-  if (photoError) {
-    throw new Error(`Photo lookup failed: ${photoError.message}`);
-  }
-  if (!photo) {
-    return new Response(JSON.stringify({ deleted: false }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  const { error: deleteError } = await adminClient
-    .from("photos")
-    .delete()
-    .eq("id", photo.id)
-    .eq("profile_id", profile.id);
-  if (deleteError) {
-    throw new Error(`Photo deletion failed: ${deleteError.message}`);
-  }
-  const { error: storageError } = await adminClient.storage
-    .from(BUCKET_NAME)
-    .remove([photo.storage_path]);
-  if (storageError) {
-    console.warn(
-      `[get-signed-url] orphaned deleted photo ${photo.storage_path}: ${storageError.message}`,
-    );
-  }
-  return new Response(JSON.stringify({ deleted: true }), {
+  return new Response(JSON.stringify({ deletion_queued: queued === true }), {
     status: 200,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
 
-async function deleteReplacedProfilePhotoObject(
-  userId: string,
-  storagePath: string | undefined,
-): Promise<Response> {
-  if (!storagePath || !storagePath.startsWith(`${userId}/`)) {
-    return errorResponse(400, "A valid replaced storage path is required.");
-  }
-  const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-  const { count, error: referenceError } = await adminClient
-    .from("photos")
-    .select("id", { count: "exact", head: true })
-    .eq("storage_path", storagePath);
-  if (referenceError) {
-    throw new Error(`Photo reference check failed: ${referenceError.message}`);
-  }
-  if ((count ?? 0) > 0) {
-    return errorResponse(
-      409,
-      "The photo is still active and cannot be removed.",
-    );
-  }
-  const { error } = await adminClient.storage
-    .from(BUCKET_NAME)
-    .remove([storagePath]);
-  if (error) {
-    throw new Error(`Replaced photo cleanup failed: ${error.message}`);
-  }
-  return new Response(JSON.stringify({ deleted: true }), {
-    status: 200,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+function deleteReplacedProfilePhotoObject(
+  _userId: string,
+  _storagePath: string | undefined,
+): Response {
+  return errorResponse(410, "Client-side replaced-photo cleanup is retired.");
 }
 
 async function createKycSignedUploadUrl(
@@ -394,8 +325,28 @@ async function createKycSignedUploadUrl(
   const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+  const canonicalExtension = extension === "jpeg" ? "jpg" : extension;
   const storagePath =
-    `${userId}/${purpose}_${crypto.randomUUID()}.${extension}`;
+    `${userId}/${purpose}_${crypto.randomUUID()}.${canonicalExtension}`;
+  const expectedMime = canonicalExtension === "webp"
+    ? "image/webp"
+    : "image/jpeg";
+  const { data: reservationRows, error: reservationError } = await adminClient
+    .rpc("reserve_upload", {
+      p_user_id: userId,
+      p_bucket_id: KYC_BUCKET_NAME,
+      p_purpose: purpose,
+      p_storage_path: storagePath,
+      p_expected_mime: expectedMime,
+      p_max_bytes: 8 * 1024 * 1024,
+      p_order_index: null,
+    });
+  const reservation = Array.isArray(reservationRows)
+    ? reservationRows[0]
+    : reservationRows;
+  if (reservationError || !reservation?.reservation_id) {
+    return errorResponse(409, "The identity upload could not be reserved.");
+  }
   const { data, error } = await adminClient.storage
     .from(KYC_BUCKET_NAME)
     .createSignedUploadUrl(storagePath);
@@ -406,6 +357,7 @@ async function createKycSignedUploadUrl(
     JSON.stringify({
       signed_url: data.signedUrl,
       storage_path: storagePath,
+      reservation_id: reservation.reservation_id,
       token: data.token,
       expires_in: UPLOAD_URL_EXPIRES_IN,
     }),
@@ -417,7 +369,6 @@ async function createKycSignedUploadUrl(
 }
 
 async function createAuthorizedProfilePhotoReadUrl(
-  userClient: SupabaseClient,
   viewerUserId: string,
   ownerUserId: string | undefined,
   orderIndex: number,
@@ -429,18 +380,20 @@ async function createAuthorizedProfilePhotoReadUrl(
     return errorResponse(400, "order_index must be 0, 1, 2, or 3.");
   }
 
-  // This user-scoped query is intentional: photos RLS calls can_view_photo(),
-  // so public, mutual_only, and request_only privacy are enforced before any
-  // service-role signed URL is created. The client never supplies a storage path.
-  const { data: photo, error: photoError } = await userClient
-    .from("photos")
-    .select("storage_path, profiles!inner(user_id)")
-    .eq("profiles.user_id", ownerUserId)
-    .eq("order_index", orderIndex)
-    .eq("status", "active")
-    .eq("admin_approved", true)
-    .eq("nsfw_cleared", true)
-    .maybeSingle();
+  // The service-only RPC enforces discovery/relationship authorization and
+  // photo privacy before any private object path reaches this worker.
+  const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const { data: rows, error: photoError } = await adminClient.rpc(
+    "get_authorized_photo_paths",
+    {
+      p_viewer_user_id: viewerUserId,
+      p_owner_user_ids: [ownerUserId],
+      p_order_index: orderIndex,
+    },
+  );
+  const photo = Array.isArray(rows) ? rows[0] : null;
 
   if (photoError) {
     throw new Error(`Photo authorization failed: ${photoError.message}`);
@@ -449,9 +402,6 @@ async function createAuthorizedProfilePhotoReadUrl(
     return errorResponse(403, "You do not have access to this photo.");
   }
 
-  const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
   const { data, error } = await adminClient.storage
     .from(BUCKET_NAME)
     // Image transformations are not part of the Supabase Free plan. Uploads
@@ -479,7 +429,6 @@ async function createAuthorizedProfilePhotoReadUrl(
 }
 
 async function createAuthorizedProfilePhotoReadUrls(
-  userClient: SupabaseClient,
   viewerUserId: string,
   ownerUserIds: string[] | undefined,
   orderIndex: number,
@@ -494,16 +443,18 @@ async function createAuthorizedProfilePhotoReadUrls(
     return errorResponse(400, "order_index must be 0, 1, 2, or 3.");
   }
 
-  // User-scoped query enforces photos RLS/can_view_photo() for every owner.
   // The client supplies owner IDs only, never storage paths.
-  const { data: photos, error: photoError } = await userClient
-    .from("photos")
-    .select("storage_path, profiles!inner(user_id)")
-    .in("profiles.user_id", uniqueOwnerIds)
-    .eq("order_index", orderIndex)
-    .eq("status", "active")
-    .eq("admin_approved", true)
-    .eq("nsfw_cleared", true);
+  const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const { data: photos, error: photoError } = await adminClient.rpc(
+    "get_authorized_photo_paths",
+    {
+      p_viewer_user_id: viewerUserId,
+      p_owner_user_ids: uniqueOwnerIds,
+      p_order_index: orderIndex,
+    },
+  );
 
   if (photoError) {
     throw new Error(`Photo authorization failed: ${photoError.message}`);
@@ -513,13 +464,10 @@ async function createAuthorizedProfilePhotoReadUrls(
   for (const photo of photos ?? []) {
     const row = photo as unknown as {
       storage_path?: unknown;
-      profiles?: { user_id?: unknown } | Array<{ user_id?: unknown }>;
+      owner_user_id?: unknown;
     };
     const storagePath = String(row.storage_path ?? "");
-    const relation = row.profiles;
-    const ownerId = Array.isArray(relation)
-      ? relation[0]?.user_id
-      : relation?.user_id;
+    const ownerId = row.owner_user_id;
     if (storagePath && typeof ownerId === "string") {
       pathToOwner.set(storagePath, ownerId);
     }
@@ -535,9 +483,6 @@ async function createAuthorizedProfilePhotoReadUrls(
     );
   }
 
-  const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
   const storagePaths = [...pathToOwner.keys()];
   const { data, error } = await adminClient.storage
     .from(BUCKET_NAME)
@@ -593,8 +538,10 @@ async function flagSuspiciousUser(
       message: `User ${userId} flagged: ${reason}`,
       related_user_id: userId,
     });
-  } catch (_) {
-    // Non-critical — don't throw
+  } catch {
+    // Keep the member request available, but make the failed security signal
+    // observable without leaking the member identifier into provider logs.
+    console.error("[get-signed-url] suspicious_activity_alert_failed");
   }
 }
 

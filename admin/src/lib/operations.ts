@@ -53,19 +53,21 @@ export async function getKycQueue(): Promise<KycRow[]> {
   if (rows.length === 0) return rows;
 
   const adminClient = createAdminClient();
-  return Promise.all(rows.map(async (row) => {
-    const [selfie, document] = await Promise.all([
-      adminClient.storage.from("kyc-documents").createSignedUrl(row.selfie_path, 60 * 5),
-      adminClient.storage.from("kyc-documents").createSignedUrl(row.id_path, 60 * 5),
-    ]);
-    const errors = [selfie.error?.message, document.error?.message].filter(Boolean);
+  const paths = rows.flatMap((row) => [row.selfie_path, row.id_path]);
+  const { data, error } = await adminClient.storage
+    .from("kyc-documents")
+    .createSignedUrls(paths, 60 * 5);
+  const signedByPath = new Map(
+    (data ?? []).map((entry) => [entry.path, entry.signedUrl ?? null]),
+  );
+  return rows.map((row) => {
     return {
       ...row,
-      selfie_url: selfie.error ? null : selfie.data?.signedUrl ?? null,
-      id_url: document.error ? null : document.data?.signedUrl ?? null,
-      preview_error: errors.length > 0 ? errors.join("; ") : null,
+      selfie_url: signedByPath.get(row.selfie_path) ?? null,
+      id_url: signedByPath.get(row.id_path) ?? null,
+      preview_error: error ? "Identity previews are temporarily unavailable." : null,
     };
-  }));
+  });
 }
 export const getReports = () => rpc<ReportRow[]>("admin_reports_queue", { p_limit: 100 });
 export const getMessageReports = () => rpc<MessageReportRow[]>("admin_message_reports_queue", { p_limit: 100 });
@@ -74,21 +76,17 @@ export async function getPhotos(): Promise<PhotoRow[]> {
   if (rows.length === 0) return rows;
 
   const adminClient = createAdminClient();
-  const withSignedUrls = await Promise.all(
-    rows.map(async (photo) => {
-      const { data, error } = await adminClient.storage
-        .from("profile-photos")
-        .createSignedUrl(photo.storage_path, 60 * 5);
-
-      return {
-        ...photo,
-        preview_url: error ? null : data?.signedUrl ?? null,
-        preview_error: error?.message ?? null,
-      };
-    }),
+  const { data, error } = await adminClient.storage
+    .from("profile-photos")
+    .createSignedUrls(rows.map((photo) => photo.storage_path), 60 * 5);
+  const signedByPath = new Map(
+    (data ?? []).map((entry) => [entry.path, entry.signedUrl ?? null]),
   );
-
-  return withSignedUrls;
+  return rows.map((photo) => ({
+    ...photo,
+    preview_url: signedByPath.get(photo.storage_path) ?? null,
+    preview_error: error ? "Photo previews are temporarily unavailable." : null,
+  }));
 }
 export const getMatchMetrics = () => rpc<DashboardMetrics>("admin_match_metrics");
 export const getMatches = () => rpc<MatchRow[]>("admin_active_matches", { p_limit: 100 });

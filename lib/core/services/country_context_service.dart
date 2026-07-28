@@ -14,15 +14,14 @@
 // remains globally functional when external providers are unavailable.
 // ============================================================
 
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/country_communities_data.dart';
 import '../data/country_languages_data.dart';
 import '../data/country_sects_data.dart';
 import 'supabase_service.dart';
+import 'operational_telemetry_service.dart';
 
 // ── Models ────────────────────────────────────────────────────
 
@@ -88,12 +87,18 @@ class CountryContextService {
   CountryContextService._();
   static final CountryContextService instance = CountryContextService._();
 
+  @visibleForTesting
+  static Future<List<Map<String, dynamic>>> Function({
+    required String query,
+    required String countryCode,
+    required int limit,
+    required String mode,
+  })? debugLocationFeatureLoader;
+
   // Simple in-memory cache for bundled and location-enriched language lists.
   final _languageCache = <String, List<String>>{};
   final _locationLanguageCache = <String, List<String>>{};
 
-  static const _photonUserAgent =
-      'SilarahApp/1.0 (contact@silarah.com; matchmaking app)';
   static const _photonRegionOsmValues = {
     'state',
     'province',
@@ -149,7 +154,7 @@ class CountryContextService {
     return languages;
   }
 
-  // ── 2. SEARCH CITIES (Supabase cache → Photon) ───────────
+  // ── 2. SEARCH CITIES (Supabase cache → authenticated proxy) ───────────
 
   Future<List<String>> getLanguagesForLocation({
     required String countryCode,
@@ -178,19 +183,7 @@ class CountryContextService {
       }
     } catch (_) {}
 
-    final locationLangs = <String>[];
-    for (final placeName in <String>[state, city]) {
-      if (placeName.isEmpty) continue;
-      final langs = await _fetchWikidataLocationLanguages(
-        placeName: placeName,
-        countryCode: code,
-      );
-      locationLangs.addAll(langs);
-      if (locationLangs.length >= 8) break;
-    }
-
     final merged = _uniqueLanguages([
-      ...locationLangs,
       ...await getLanguages(code),
       ..._fallbackLanguages(code),
     ]);
@@ -203,66 +196,6 @@ class CountryContextService {
     } catch (_) {}
 
     return merged;
-  }
-
-  Future<List<String>> _fetchWikidataLocationLanguages({
-    required String placeName,
-    required String countryCode,
-  }) async {
-    final escapedName = _escapeSparqlString(placeName);
-    final escapedCode = _escapeSparqlString(countryCode.toUpperCase());
-    final query = '''
-SELECT DISTINCT ?languageLabel WHERE {
-  ?country wdt:P297 "$escapedCode".
-  ?place rdfs:label "$escapedName"@en.
-  ?place (wdt:P17|wdt:P131*/wdt:P17) ?country.
-  {
-    ?place (wdt:P37|wdt:P2936) ?language.
-  } UNION {
-    ?place wdt:P131* ?admin.
-    ?admin (wdt:P37|wdt:P2936) ?language.
-  }
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-}
-LIMIT 12
-''';
-
-    try {
-      final uri = Uri.https(
-        'query.wikidata.org',
-        '/sparql',
-        {
-          'query': query,
-          'format': 'json',
-        },
-      );
-      final response = await http.get(
-        uri,
-        headers: {
-          'Accept': 'application/sparql-results+json',
-          'User-Agent':
-              'SilarahApp/1.0 (contact@silarah.com; language resolution)',
-        },
-      ).timeout(const Duration(seconds: 6));
-
-      if (response.statusCode != 200) return const [];
-      final data =
-          jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
-      final results = data['results'] as Map<String, dynamic>? ?? {};
-      final bindings = results['bindings'] as List<dynamic>? ?? const [];
-
-      return _uniqueLanguages(bindings.map((binding) {
-        final map = binding as Map<String, dynamic>;
-        final label = map['languageLabel'] as Map<String, dynamic>?;
-        return label?['value'] as String? ?? '';
-      }));
-    } catch (e) {
-      debugPrint(
-        '[CountryContextService] Wikidata language fetch failed for '
-        '$placeName, $countryCode: $e',
-      );
-      return const [];
-    }
   }
 
   Future<List<RegionResult>> searchRegions(
@@ -302,6 +235,10 @@ LIMIT 12
       }
     } catch (e) {
       debugPrint('[CountryContextService] search_regions failed: $e');
+      OperationalTelemetryService.record(
+        'location',
+        'region_cache_query_failed',
+      );
     }
 
     return _searchPhotonRegions(query.trim(), selectedCountry);
@@ -350,6 +287,10 @@ LIMIT 12
         }
       } catch (e) {
         debugPrint('[CountryContextService] Supabase search_cities failed: $e');
+        OperationalTelemetryService.record(
+          'location',
+          'city_cache_query_failed',
+        );
       }
     }
 
@@ -359,7 +300,11 @@ LIMIT 12
     try {
       debugPrint(
           '[CountryContextService] Querying Photon Geocoding API for "$query" (countryCode: $countryCode)...');
-      final features = await _fetchPhotonFeatures(query.trim(), limit: 15);
+      final features = await _fetchPhotonFeatures(
+        query.trim(),
+        countryCode: selectedCountry,
+        limit: 15,
+      );
       final parsedResults = <CityResult>[];
       for (final feat in features) {
         final result = _cityResultFromPhotonFeature(
@@ -377,6 +322,10 @@ LIMIT 12
       }
     } catch (e) {
       debugPrint('[CountryContextService] Photon search failed: $e');
+      OperationalTelemetryService.record(
+        'location',
+        'provider_city_search_failed',
+      );
     }
 
     // 3. Do not accept unverified free text: matching needs real coordinates.
@@ -392,6 +341,7 @@ LIMIT 12
     try {
       final features = await _fetchPhotonFeatures(
         query,
+        countryCode: selectedCountry,
         limit: 12,
         osmTags: const ['place:state'],
       );
@@ -423,33 +373,42 @@ LIMIT 12
       return results;
     } catch (e) {
       debugPrint('[CountryContextService] Photon region search failed: $e');
+      OperationalTelemetryService.record(
+        'location',
+        'provider_region_search_failed',
+      );
       return const [];
     }
   }
 
   Future<List<Map<String, dynamic>>> _fetchPhotonFeatures(
     String query, {
+    required String countryCode,
     int limit = 10,
     List<String>? osmTags,
   }) async {
-    final params = <String, dynamic>{
-      'q': query,
-      'limit': limit.clamp(1, 20).toString(),
-      if (osmTags != null && osmTags.isNotEmpty) 'osm_tag': osmTags,
-    };
-    final uri = Uri.https('photon.komoot.io', '/api', params);
-    final response = await http.get(
-      uri,
-      headers: {'User-Agent': _photonUserAgent},
-    ).timeout(const Duration(seconds: 6));
-
-    debugPrint(
-        '[CountryContextService] Photon status code: ${response.statusCode}');
-
-    if (response.statusCode != 200) return const [];
-    final data =
-        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
-    final features = data['features'] as List<dynamic>? ?? const [];
+    final testLoader = debugLocationFeatureLoader;
+    if (testLoader != null) {
+      return testLoader(
+        query: query,
+        countryCode: countryCode,
+        limit: limit.clamp(1, 15),
+        mode: osmTags?.contains('place:state') == true ? 'region' : 'city',
+      );
+    }
+    if (!SupabaseService.isInitialized) return const [];
+    final response = await SupabaseService.client.functions.invoke(
+      'location-search',
+      body: {
+        'query': query,
+        'country_code': countryCode,
+        'mode': osmTags?.contains('place:state') == true ? 'region' : 'city',
+        'limit': limit.clamp(1, 15),
+      },
+    ).timeout(const Duration(seconds: 8));
+    final payload = response.data;
+    if (payload is! Map) return const [];
+    final features = payload['features'] as List<dynamic>? ?? const [];
     return features.whereType<Map<String, dynamic>>().toList();
   }
 
@@ -650,10 +609,6 @@ LIMIT 12
   static bool _hasUsableLanguages(List<String>? languages) {
     return languages != null &&
         languages.any((language) => language.trim().toLowerCase() != 'other');
-  }
-
-  static String _escapeSparqlString(String value) {
-    return value.replaceAll(r'\', r'\\').replaceAll('"', r'\"');
   }
 
   static List<String> _uniqueLanguages(Iterable<String> values) {

@@ -67,7 +67,7 @@ class ProfilePhotoService {
       throw StateError('Please sign in again to manage your photos.');
     }
     final row = await SupabaseService.client
-        .from('profiles')
+        .from('my_profile_private')
         .select('photo_privacy')
         .eq('user_id', userId)
         .maybeSingle();
@@ -107,14 +107,13 @@ class ProfilePhotoService {
       );
     }
 
-    final profileId = await _currentProfileId();
-    if (profileId == null) {
+    if (await _currentProfileId() == null) {
       throw StateError('Profile must be saved before uploading photos.');
     }
-
-    await SupabaseService.client
-        .from('profiles')
-        .update({'photo_privacy': _privacyValue(privacy)}).eq('id', profileId);
+    await SupabaseService.client.rpc(
+      'set_my_photo_privacy',
+      params: {'p_privacy': _privacyValue(privacy)},
+    );
 
     PhotoModerationResult? primaryModeration;
     final slots = localPathsBySlot.entries
@@ -166,7 +165,6 @@ class ProfilePhotoService {
       final payload = Map<String, dynamic>.from(signed.data as Map);
       final storagePath = payload['storage_path'] as String?;
       final token = payload['token'] as String?;
-      final replacedStoragePath = payload['replaced_storage_path'] as String?;
       if (storagePath == null || token == null) {
         throw StateError('Profile photo upload response was incomplete.');
       }
@@ -184,9 +182,6 @@ class ProfilePhotoService {
 
       report(PhotoSyncStage.publishing);
       await _validateUploaded(storagePath, moderation);
-      if (replacedStoragePath != null && replacedStoragePath.isNotEmpty) {
-        await _removeReplacedStorageObject(replacedStoragePath);
-      }
       completedPhotos += 1;
       report(PhotoSyncStage.complete);
     }
@@ -430,7 +425,7 @@ class ProfilePhotoService {
     if (userId == null) return null;
 
     final profile = await SupabaseService.client
-        .from('profiles')
+        .from('my_profile_private')
         .select('id')
         .eq('user_id', userId)
         .maybeSingle();
@@ -449,27 +444,13 @@ class ProfilePhotoService {
         'moderation': moderation.toValidationPayload(),
       },
     );
-    if (response.status != 200 || response.data is! Map) {
+    if ((response.status != 200 && response.status != 202) ||
+        response.data is! Map) {
       throw StateError('Photo validation could not be completed.');
     }
     final action = (response.data as Map)['action'] as String?;
-    if (action != 'approved' && action != 'flagged') {
-      throw StateError('Photo validation did not approve this upload.');
-    }
-  }
-
-  Future<void> _removeReplacedStorageObject(String storagePath) async {
-    try {
-      await SupabaseService.client.functions.invoke(
-        'get-signed-url',
-        body: {
-          'purpose': 'delete_replaced_profile_photo',
-          'storage_path': storagePath,
-        },
-      );
-    } catch (_) {
-      // The new photo is already active. Orphan cleanup is best-effort and
-      // must never roll the user's successful replacement back.
+    if (action != 'pending_review') {
+      throw StateError('Photo validation did not accept this upload.');
     }
   }
 

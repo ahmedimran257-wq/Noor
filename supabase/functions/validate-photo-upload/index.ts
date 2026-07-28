@@ -1,378 +1,185 @@
-// ============================================================
-// EDGE FUNCTION: validate-photo-upload
-// supabase/functions/validate-photo-upload/index.ts
-//
-// Fixes Audit Finding 9.1 (Medium):
-//   Photo upload quota race condition. A user could request 4 URLs,
-//   use them, delete a photo, and request another — bypassing quota.
-//
-// Registered as a Supabase Storage webhook on ObjectCreated events
-// in the 'profile-photos' bucket. Validates the final file commit
-// against the photos table count, rolling back if count > 4.
-// ============================================================
-
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders } from "../_shared/cors.ts";
 import { Image } from "https://deno.land/x/imagescript@1.2.15/mod.ts";
 import { encode } from "https://esm.sh/blurhash@2.0.5";
+import { corsHeaders } from "../_shared/cors.ts";
 import {
   consumeDistributedRateLimit,
   rateLimitHeaders,
 } from "../_shared/distributed_rate_limit.ts";
-import {
-  type ClientPhotoModerationPayload,
-  resolveClientModerationVerdict,
-} from "./photo_moderation_policy.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-
 const BUCKET_NAME = "profile-photos";
-const MAX_PHOTOS = 4;
+const MAX_BYTES = 5 * 1024 * 1024;
 
-interface StorageWebhookPayload {
-  type: "ObjectCreated" | "ObjectDeleted";
-  record: {
-    name: string; // e.g. "user-uuid/photo-uuid.webp"
-    bucket_id: string;
-    owner: string;
-    metadata: Record<string, unknown>;
+type ValidationPayload = {
+  storage_path?: string;
+  moderation?: {
+    nsfw_confidence?: unknown;
+    category?: unknown;
   };
-}
-
-interface DirectValidationPayload {
-  storage_path: string;
-  moderation: ClientPhotoModerationPayload;
-}
+  record?: { name?: string };
+};
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
-
+  const correlationId = crypto.randomUUID();
   try {
-    const payload = await req.json() as
-      | StorageWebhookPayload
-      | DirectValidationPayload;
-
-    let storagePath: string;
-    let moderation: DirectValidationPayload["moderation"] | null = null;
-    let authenticatedUserId: string | null = null;
-    if ("record" in payload && payload.type === "ObjectCreated") {
-      storagePath = payload.record.name;
-    } else if ("storage_path" in payload) {
-      const authHeader = req.headers.get("Authorization");
-      if (!authHeader?.startsWith("Bearer ")) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        global: { headers: { Authorization: authHeader } },
-        auth: { autoRefreshToken: false, persistSession: false },
-      });
-      const { data: { user }, error: authError } = await userClient.auth
-        .getUser();
-      if (
-        authError || !user || !payload.storage_path.startsWith(`${user.id}/`)
-      ) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      storagePath = payload.storage_path;
-      moderation = payload.moderation ?? null;
-      authenticatedUserId = user.id;
-    } else {
-      return new Response(JSON.stringify({ action: "ignored" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (req.method !== "POST") {
+      return json(405, { error: "method_not_allowed" });
     }
-
-    // Ignore storage delete webhook events.
-    if ("type" in payload && payload.type !== "ObjectCreated") {
-      return new Response(JSON.stringify({ action: "ignored" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return json(401, { error: "unauthorized" });
     }
-
-    // Extract user_id from the storage path (format: {user_id}/{filename}.webp)
-    const pathParts = storagePath.split("/");
-    if (pathParts.length < 2) {
-      console.warn(
-        `[validate-photo-upload] Invalid storage path: ${storagePath}`,
-      );
-      return new Response(JSON.stringify({ action: "invalid_path" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const userId = pathParts[0];
-
-    const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+    const token = authHeader.slice("Bearer ".length);
+    const { data: authData, error: authError } = await admin.auth.getUser(
+      token,
+    );
+    const userId = authData.user?.id;
+    if (authError || !userId) return json(401, { error: "unauthorized" });
 
-    if (moderation !== null && authenticatedUserId) {
-      const rateLimit = await consumeDistributedRateLimit(adminClient, {
-        scope: "photo_validation",
-        subject: authenticatedUserId,
-        maxRequests: 24,
-        windowSeconds: 60 * 60,
-      });
-      if (!rateLimit.allowed) {
-        return new Response(
-          JSON.stringify({
-            error: "Photo validation limit reached. Please try again later.",
-          }),
-          {
-            status: 429,
-            headers: {
-              ...corsHeaders,
-              ...rateLimitHeaders(rateLimit),
-              "Content-Type": "application/json",
-            },
+    const payload = await req.json() as ValidationPayload;
+    const storagePath = String(payload.storage_path ?? "");
+    if (
+      !storagePath.startsWith(`${userId}/`) ||
+      !/^[0-9a-f-]{36}\/[0-9a-f-]{36}[.]webp$/i.test(storagePath)
+    ) {
+      return json(400, { error: "invalid_upload_path" });
+    }
+    const rateLimit = await consumeDistributedRateLimit(admin, {
+      scope: "photo_validation",
+      subject: userId,
+      maxRequests: 20,
+      windowSeconds: 60 * 60,
+    });
+    if (!rateLimit.allowed) {
+      return new Response(
+        JSON.stringify({ error: "validation_rate_limited" }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            ...rateLimitHeaders(rateLimit),
+            "Content-Type": "application/json",
           },
-        );
-      }
-    }
-
-    // Storage webhooks cannot prove that the on-device model ran. Keep those
-    // rows pending; only the authenticated client validation path can activate.
-    if (moderation === null) {
-      return new Response(JSON.stringify({ action: "awaiting_client_scan" }), {
-        status: 202,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const moderationAction = resolveClientModerationVerdict(moderation);
-
-    if (moderationAction === "reject") {
-      await adminClient.storage.from(BUCKET_NAME).remove([storagePath]);
-      await adminClient.from("photos").delete().eq("storage_path", storagePath);
-      await adminClient.from("admin_notifications").insert({
-        type: "photo_moderation_rejected",
-        message: `On-device NSFW moderation rejected photo ${storagePath}.`,
-        related_user_id: userId,
-      });
-      return new Response(
-        JSON.stringify({
-          action: "rejected",
-          reason: "photo_moderation_failed",
-        }),
-        {
-          status: 422,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
       );
     }
 
-    // Get the user's profile
-    const { data: profile, error: profileError } = await adminClient
-      .from("profiles")
-      .select("id, visibility")
-      .eq("user_id", userId)
-      .single();
-
-    if (profileError || !profile) {
-      console.error(
-        `[validate-photo-upload] Profile not found for user ${userId}`,
-      );
-      // Delete the uploaded file — no valid profile
-      await adminClient.storage.from(BUCKET_NAME).remove([storagePath]);
-      return new Response(JSON.stringify({ action: "deleted_orphan" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Count ALL photos for this profile (active + pending_upload)
-    const { count, error: countError } = await adminClient
-      .from("photos")
-      .select("id", { count: "exact", head: true })
-      .eq("profile_id", profile.id);
-
-    if (countError) {
-      console.error(
-        `[validate-photo-upload] Count error: ${countError.message}`,
-      );
-      return new Response(JSON.stringify({ action: "count_error" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if ((count ?? 0) > MAX_PHOTOS) {
-      console.warn(
-        `[validate-photo-upload] ❌ Quota exceeded for user ${userId}: ` +
-          `${count} photos (max ${MAX_PHOTOS}). Rolling back upload.`,
-      );
-
-      // Delete the uploaded file from storage
-      await adminClient.storage.from(BUCKET_NAME).remove([storagePath]);
-
-      // Delete the corresponding photos row
-      await adminClient
-        .from("photos")
-        .delete()
-        .eq("profile_id", profile.id)
-        .eq("storage_path", storagePath);
-
-      // Flag for admin review
-      await adminClient.from("admin_notifications").insert({
-        type: "quota_violation",
-        message:
-          `User ${userId} attempted to exceed photo quota (${count}/${MAX_PHOTOS}). Upload rolled back.`,
-        related_user_id: userId,
-      });
-
-      return new Response(
-        JSON.stringify({
-          action: "rolled_back",
-          reason: `Photo quota exceeded (${count}/${MAX_PHOTOS})`,
-        }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
-
-    // Quota OK — activate the photo if it's still in pending_upload
-    const isFlagged = moderationAction === "flagged";
-    const { data: validatedPhoto, error: updateError } = await adminClient
-      .from("photos")
-      .update({
-        status: "active",
-        admin_approved: !isFlagged,
-        nsfw_cleared: !isFlagged,
-        nsfw_score: moderation.nsfw_confidence,
-        nsfw_category: moderation.category,
-        nsfw_scanned_at: new Date().toISOString(),
-        moderation_source: "opennsfw2_litert_mlkit_on_device",
-        moderation_status: isFlagged ? "pending" : "approved",
-      })
-      .eq("profile_id", profile.id)
+    const { data: prior } = await admin.from("photos")
+      .select("id")
       .eq("storage_path", storagePath)
-      .eq("status", "pending_upload")
-      .select("id, order_index")
-      .single();
-
-    if (updateError) {
-      console.warn(
-        `[validate-photo-upload] Could not activate photo: ${updateError.message}`,
-      );
-    } else if (validatedPhoto) {
-      console.log(
-        `[validate-photo-upload] ✅ Photo activated for user ${userId}: ${storagePath}`,
-      );
-
-      if (isFlagged) {
-        const { error: queueError } = await adminClient
-          .from("photo_moderation_queue")
-          .upsert({
-            photo_id: validatedPhoto.id,
-            user_id: userId,
-            confidence: moderation.nsfw_confidence,
-            category: moderation.category,
-            status: "pending_review",
-          }, { onConflict: "photo_id" });
-        if (queueError) throw queueError;
-      } else if (
-        validatedPhoto.order_index === 0 &&
-        profile.visibility !== "suspended" &&
-        profile.visibility !== "deactivated"
-      ) {
-        const { error: liveError } = await adminClient
-          .from("profiles")
-          .update({
-            visibility: "visible",
-            approved_at: new Date().toISOString(),
-          })
-          .eq("id", profile.id);
-        if (liveError) throw liveError;
-      }
-
-      // Generate BlurHash
-      try {
-        const { data: fileData, error: downloadError } = await adminClient
-          .storage
-          .from(BUCKET_NAME)
-          .download(storagePath);
-
-        if (downloadError) {
-          console.error(
-            `[validate-photo-upload] Failed to download image for BlurHash: ${downloadError.message}`,
-          );
-        } else if (fileData) {
-          const arrayBuffer = await fileData.arrayBuffer();
-          const uint8Array = new Uint8Array(arrayBuffer);
-          const image = await Image.decode(uint8Array);
-          const width = image.width;
-          const height = image.height;
-
-          // Scale down for speed/memory efficiency
-          const scale = Math.min(32 / width, 32 / height, 1);
-          const thumbWidth = Math.max(1, Math.round(width * scale));
-          const thumbHeight = Math.max(1, Math.round(height * scale));
-          const thumbnail = image.resize(thumbWidth, thumbHeight);
-
-          const rgba = thumbnail.bitmap;
-          const clamped = new Uint8ClampedArray(
-            rgba.buffer,
-            rgba.byteOffset,
-            rgba.byteLength,
-          );
-          const hash = encode(clamped, thumbWidth, thumbHeight, 4, 3);
-
-          const { error: dbUpdateError } = await adminClient
-            .from("photos")
-            .update({ blurhash: hash })
-            .eq("profile_id", profile.id)
-            .eq("storage_path", storagePath);
-
-          if (dbUpdateError) {
-            console.error(
-              `[validate-photo-upload] Failed to save BlurHash to DB: ${dbUpdateError.message}`,
-            );
-          } else {
-            console.log(
-              `[validate-photo-upload] ✅ BlurHash generated and saved: ${hash}`,
-            );
-          }
-        }
-      } catch (err) {
-        console.error(
-          `[validate-photo-upload] Error generating BlurHash:`,
-          err,
-        );
-      }
+      .maybeSingle();
+    if (prior) {
+      return json(200, { action: "pending_review", photo_id: prior.id });
     }
 
-    return new Response(
-      JSON.stringify({ action: moderationAction, photo_count: count }),
+    const { data: object, error: downloadError } = await admin.storage
+      .from(BUCKET_NAME)
+      .download(storagePath);
+    if (downloadError || !object) {
+      return json(404, { error: "upload_not_found" });
+    }
+    const bytes = new Uint8Array(await object.arrayBuffer());
+    if (
+      bytes.byteLength < 32 || bytes.byteLength > MAX_BYTES ||
+      !isWebp(bytes)
+    ) {
+      await admin.storage.from(BUCKET_NAME).remove([storagePath]);
+      return json(422, { error: "invalid_image" });
+    }
+
+    let image: Image;
+    try {
+      image = await Image.decode(bytes);
+    } catch {
+      await admin.storage.from(BUCKET_NAME).remove([storagePath]);
+      return json(422, { error: "invalid_image" });
+    }
+    if (
+      image.width < 320 || image.height < 320 ||
+      image.width > 8000 || image.height > 8000 ||
+      image.width * image.height > 32_000_000
+    ) {
+      await admin.storage.from(BUCKET_NAME).remove([storagePath]);
+      return json(422, { error: "invalid_image_dimensions" });
+    }
+
+    const blurhash = createBlurHash(image);
+    const clientScore = boundedScore(payload.moderation?.nsfw_confidence);
+    const { data: finalizedRows, error: finalizeError } = await admin.rpc(
+      "finalize_profile_photo_upload",
       {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        p_user_id: userId,
+        p_storage_path: storagePath,
+        p_observed_mime: "image/webp",
+        p_observed_bytes: bytes.byteLength,
+        p_blurhash: blurhash,
+        p_client_nsfw_score: clientScore,
       },
     );
-  } catch (err) {
-    console.error("[validate-photo-upload] Error:", err);
-    return new Response(
-      JSON.stringify({
-        error: err instanceof Error ? err.message : "Unknown error",
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
+    const finalized = Array.isArray(finalizedRows)
+      ? finalizedRows[0]
+      : finalizedRows;
+    if (finalizeError || !finalized?.photo_id) {
+      await admin.storage.from(BUCKET_NAME).remove([storagePath]);
+      console.warn(
+        `[validate-photo-upload] ${correlationId} finalize rejected`,
+        finalizeError?.code ?? "invalid_result",
+      );
+      return json(409, { error: "upload_reservation_invalid" });
+    }
+
+    return json(202, {
+      action: "pending_review",
+      photo_id: finalized.photo_id,
+      message: "Photo received for safety review.",
+    });
+  } catch (error) {
+    console.error(`[validate-photo-upload] ${correlationId}`, error);
+    return json(500, {
+      error: "photo_validation_failed",
+      correlation_id: correlationId,
+    });
   }
 });
+
+function isWebp(bytes: Uint8Array): boolean {
+  return new TextDecoder().decode(bytes.slice(0, 4)) === "RIFF" &&
+    new TextDecoder().decode(bytes.slice(8, 12)) === "WEBP";
+}
+
+function boundedScore(value: unknown): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.min(1, Math.max(0, parsed)) : 0;
+}
+
+function createBlurHash(image: Image): string {
+  const scale = Math.min(32 / image.width, 32 / image.height, 1);
+  const width = Math.max(1, Math.round(image.width * scale));
+  const height = Math.max(1, Math.round(image.height * scale));
+  const thumbnail = image.resize(width, height);
+  const rgba = new Uint8ClampedArray(
+    thumbnail.bitmap.buffer,
+    thumbnail.bitmap.byteOffset,
+    thumbnail.bitmap.byteLength,
+  );
+  return encode(rgba, width, height, 4, 3);
+}
+
+function json(status: number, body: unknown): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+    },
+  });
+}

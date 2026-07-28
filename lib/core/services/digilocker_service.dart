@@ -42,7 +42,7 @@ class DigiLockerService {
   static const _clientId = String.fromEnvironment('DIGILOCKER_CLIENT_ID');
   static const _redirectUri = String.fromEnvironment(
     'DIGILOCKER_REDIRECT_URI',
-    defaultValue: 'silarah://digilocker/callback',
+    defaultValue: 'https://silarah.com/auth/digilocker/callback',
   );
   static const _authorizeEndpoint =
       'https://digilocker.meripehchaan.gov.in/public/oauth2/1/authorize';
@@ -66,9 +66,9 @@ class DigiLockerService {
     final callback = Completer<Uri>();
     late final StreamSubscription<Uri> subscription;
     subscription = link.uriLinkStream.listen((uri) {
-      if (uri.scheme == 'silarah' &&
-          uri.host == 'digilocker' &&
-          uri.path == '/callback' &&
+      if (uri.scheme == 'https' &&
+          uri.host == 'silarah.com' &&
+          uri.path == '/auth/digilocker/callback' &&
           uri.queryParameters['state'] == state &&
           !callback.isCompleted) {
         callback.complete(uri);

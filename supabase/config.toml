@@ -39,9 +39,9 @@ enabled = false
 [auth]
 site_url = "https://silarah.com"
 additional_redirect_urls = [
-  "silarah://**",
-  "mithaq://**",
-  "https://silarah.com/**"
+  "https://silarah.com/auth/callback",
+  "https://silarah.com/auth/digilocker/callback",
+  "https://app.silarah.com/auth/callback"
 ]
 jwt_expiry = 3600
 enable_refresh_token_rotation = true
@@ -116,6 +116,15 @@ verify_jwt = false
 # the function before touching private identity documents.
 verify_jwt = true
 
+[functions.location-search]
+# Typed location data is proxied through an authenticated, rate-limited
+# boundary instead of being disclosed directly from the member's device.
+verify_jwt = true
+
+[functions.health-probe]
+# Exact, content-validated connectivity probe under Silarah's backend.
+verify_jwt = false
+
 [functions.revenuecat-webhook]
 # RevenueCat signs requests with REVENUECAT_WEBHOOK_SECRET; Supabase JWT
 # verification must stay off so external webhooks can reach our own verifier.
@@ -126,5 +135,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.purge-kyc-documents]
+# Private pg_cron request authenticated by the Vault-backed cron credential.
+verify_jwt = false
+
+[functions.storage-lifecycle-worker]
 # Private pg_cron request authenticated by the Vault-backed cron credential.
 verify_jwt = false

@@ -7,6 +7,7 @@
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -290,9 +291,10 @@ class NotificationsCubit extends Cubit<NotificationsState> {
 
     try {
       await SupabaseService.client
-          .from('notifications')
-          .update({'read_at': DateTime.now().toIso8601String()}).eq('id', id);
-    } catch (_) {}
+          .rpc('mark_notification_read', params: {'p_notification_id': id});
+    } catch (error, stackTrace) {
+      debugPrint('[NotificationsCubit] mark read failed: $error\n$stackTrace');
+    }
   }
 
   Future<void> markAllRead() async {
@@ -305,12 +307,11 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     if (me == null) return;
 
     try {
-      await SupabaseService.client
-          .from('notifications')
-          .update({'read_at': DateTime.now().toIso8601String()})
-          .eq('user_id', me)
-          .isFilter('read_at', null);
-    } catch (_) {}
+      await SupabaseService.client.rpc('mark_all_notifications_read');
+    } catch (error, stackTrace) {
+      debugPrint(
+          '[NotificationsCubit] mark all read failed: $error\n$stackTrace');
+    }
   }
 
   Future<bool> deleteNotification(String id) async {
@@ -322,10 +323,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     if (!SupabaseService.isInitialized || me == null) return true;
     try {
       await SupabaseService.client
-          .from('notifications')
-          .delete()
-          .eq('id', id)
-          .eq('user_id', me);
+          .rpc('delete_my_notification', params: {'p_notification_id': id});
       return true;
     } catch (_) {
       if (!isClosed && SupabaseService.currentUserId == me) {
@@ -343,10 +341,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
 
     if (!SupabaseService.isInitialized || me == null) return true;
     try {
-      await SupabaseService.client
-          .from('notifications')
-          .delete()
-          .eq('user_id', me);
+      await SupabaseService.client.rpc('clear_my_notifications');
       return true;
     } catch (_) {
       if (!isClosed && SupabaseService.currentUserId == me) {

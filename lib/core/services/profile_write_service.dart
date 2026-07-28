@@ -12,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/country_data.dart';
 import '../models/onboarding_data.dart';
 import '../onboarding/onboarding_flow.dart';
+import 'operational_telemetry_service.dart';
 import 'supabase_service.dart';
 
 class ProfileWriteService {
@@ -71,7 +72,7 @@ class ProfileWriteService {
       if (pendingPhone == null) return;
 
       final profileRes = await SupabaseService.client
-          .from('profiles')
+          .from('my_profile_private')
           .select('id')
           .eq('user_id', _userId!)
           .single();
@@ -82,7 +83,11 @@ class ProfileWriteService {
       });
 
       await prefs.remove(_keyPendingPhoneRetry);
-    } catch (e) {
+    } catch (_) {
+      OperationalTelemetryService.record(
+        'profile_write',
+        'guardian_phone_retry_failed',
+      );
       return;
     }
   }
@@ -137,34 +142,15 @@ class ProfileWriteService {
         return true;
       }
 
-      final updatedProfile = await SupabaseService.client
-          .from('profiles')
-          .update(fields)
-          .eq('user_id', _userId!)
-          .select('id')
-          .maybeSingle();
-      if (updatedProfile == null) {
-        return false;
-      }
-
-      // If this step includes preferences, upsert those too
       final prefFields = _preferenceFieldsForStep(step, dataToWrite);
-      if (prefFields.isNotEmpty) {
-        // Get the profile ID first
-        final profileRes = await SupabaseService.client
-            .from('profiles')
-            .select('id')
-            .eq('user_id', _userId!)
-            .single();
-
-        await SupabaseService.client.from('profile_preferences').upsert({
-          'profile_id': profileRes['id'],
-          ...prefFields,
-        }, onConflict: 'profile_id');
-      }
+      await SupabaseService.client.rpc('save_my_profile_bundle', params: {
+        'p_profile_fields': fields,
+        'p_preference_fields': prefFields,
+      });
 
       return true;
     } catch (_) {
+      OperationalTelemetryService.record('profile_write', 'save_step_failed');
       return false;
     }
   }
@@ -185,6 +171,10 @@ class ProfileWriteService {
       );
       return true;
     } catch (_) {
+      OperationalTelemetryService.record(
+        'profile_write',
+        'profile_type_resume_failed',
+      );
       return false;
     }
   }
@@ -224,6 +214,10 @@ class ProfileWriteService {
       );
       return true;
     } catch (_) {
+      OperationalTelemetryService.record(
+        'profile_write',
+        'onboarding_location_failed',
+      );
       return false;
     }
   }
@@ -249,7 +243,7 @@ class ProfileWriteService {
   }) async {
     try {
       final existing = await SupabaseService.client
-          .from('profiles')
+          .from('my_profile_private')
           .select('id')
           .eq('user_id', _userId!)
           .maybeSingle();
@@ -327,7 +321,7 @@ class ProfileWriteService {
   static Future<void> _saveGuardianPhone(OnboardingData data) async {
     try {
       final profileRes = await SupabaseService.client
-          .from('profiles')
+          .from('my_profile_private')
           .select('id')
           .eq('user_id', _userId!)
           .single();
@@ -421,12 +415,8 @@ class ProfileWriteService {
     if (!_canWrite || _userId == null) return false;
     try {
       await SupabaseService.client
-          .from('profiles')
-          .update({'onboarding_step': step}).eq('user_id', _userId!);
-      return _updateUserOnboardingProgress(
-        step,
-        writeStepDirectly: true,
-      );
+          .rpc('set_my_onboarding_step_for_back', params: {'p_step': step});
+      return true;
     } catch (_) {
       return false;
     }
@@ -465,9 +455,7 @@ class ProfileWriteService {
 
     try {
       await SupabaseService.client
-          .from('users')
-          .update(fields)
-          .eq('id', _userId!);
+          .rpc('patch_my_user', params: {'p_fields': fields});
       return true;
     } catch (_) {
       return false;
@@ -499,26 +487,11 @@ class ProfileWriteService {
         fields.remove('city_id');
         fields.remove('country_code');
       }
-      if (fields.isNotEmpty) {
-        await SupabaseService.client.from('profiles').upsert({
-          'user_id': _userId,
-          ...fields,
-        }, onConflict: 'user_id');
-      }
-
       final prefFields = _preferenceFields(effectiveData);
-      if (prefFields.isNotEmpty) {
-        final profileRes = await SupabaseService.client
-            .from('profiles')
-            .select('id')
-            .eq('user_id', _userId!)
-            .single();
-
-        await SupabaseService.client.from('profile_preferences').upsert({
-          'profile_id': profileRes['id'],
-          ...prefFields,
-        }, onConflict: 'profile_id');
-      }
+      await SupabaseService.client.rpc('save_my_profile_bundle', params: {
+        'p_profile_fields': fields,
+        'p_preference_fields': prefFields,
+      });
 
       if (locationChanged) {
         final committedLocation = await _commitProfileLocation(effectiveData);
@@ -1063,7 +1036,7 @@ class ProfileWriteService {
 
       // 2. Fetch profiles table row
       final profileRes = await SupabaseService.client
-          .from('profiles')
+          .from('my_profile_private')
           .select(_profileRestoreColumns)
           .eq('user_id', _userId!)
           .maybeSingle();

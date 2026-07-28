@@ -42,8 +42,9 @@ void main() {
     final operations = source('admin/src/lib/operations.ts');
     final page = source('admin/src/app/(staff)/kyc/page.tsx');
 
-    expect(operations, contains('createSignedUrl(row.selfie_path, 60 * 5)'));
-    expect(operations, contains('createSignedUrl(row.id_path, 60 * 5)'));
+    expect(operations, contains('.createSignedUrls(paths, 60 * 5)'));
+    expect(operations, contains('signedByPath.get(row.selfie_path)'));
+    expect(operations, contains('signedByPath.get(row.id_path)'));
     expect(page, contains('Device hints — not a decision'));
     expect(page, contains('Approval checklist'));
     expect(page, contains('Request resubmission'));

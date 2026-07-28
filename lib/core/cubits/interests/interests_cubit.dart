@@ -19,6 +19,7 @@ import 'interests_state.dart';
 import '../../models/discovery_profile.dart';
 import '../../services/supabase_service.dart';
 import '../../services/profile_photo_service.dart';
+import '../../services/authorized_profile_service.dart';
 import '../../utils/content_filter.dart';
 import '../../utils/silarah_compute.dart';
 
@@ -200,21 +201,7 @@ class InterestsCubit extends Cubit<InterestsState> {
     Set<String> userIds,
   ) async {
     if (userIds.isEmpty) return const {};
-    final rows = await SupabaseService.client.from('profiles').select('''
-      id, user_id, first_name, last_name, date_of_birth, gender, country_code,
-      sect, deen_level, photo_privacy, bio, profession, education_level,
-      education_rank, family_type, previously_married, children_count,
-      mother_tongue, community, living_expectation, quran_memorization,
-      religious_education, willing_to_relocate, languages, interests,
-      last_active_at, is_verified, cities:cities!city_id(name)
-    ''').inFilter('user_id', userIds.toList(growable: false));
-
-    final mappedRows = (rows as List<dynamic>).map((raw) {
-      final row = Map<String, dynamic>.from(raw as Map);
-      final city = row['cities'];
-      if (city is Map) row['city_name'] = city['name'];
-      return row;
-    }).toList(growable: false);
+    final mappedRows = await AuthorizedProfileService.load(userIds);
     final profileIds = mappedRows
         .map((row) => row['id']?.toString())
         .whereType<String>()
@@ -364,9 +351,10 @@ class InterestsCubit extends Cubit<InterestsState> {
 
     if (SupabaseService.isInitialized) {
       try {
-        await SupabaseService.client
-            .from('interests')
-            .update({'status': 'accepted'}).eq('id', id);
+        await SupabaseService.client.rpc('respond_to_interest', params: {
+          'p_interest_id': id,
+          'p_decision': 'accepted',
+        });
         // DB trigger create_match_on_accept() automatically creates the match row
       } catch (e) {
         debugPrint('[InterestsCubit] Error accepting interest: $e');
@@ -397,9 +385,10 @@ class InterestsCubit extends Cubit<InterestsState> {
 
     if (SupabaseService.isInitialized) {
       try {
-        await SupabaseService.client
-            .from('interests')
-            .update({'status': 'declined'}).eq('id', id);
+        await SupabaseService.client.rpc('respond_to_interest', params: {
+          'p_interest_id': id,
+          'p_decision': 'declined',
+        });
       } catch (e) {
         debugPrint('[InterestsCubit] Error declining interest: $e');
         return;
@@ -454,16 +443,12 @@ class InterestsCubit extends Cubit<InterestsState> {
     final myId = SupabaseService.currentUserId;
     if (myId == null) return false;
     try {
-      final result = await SupabaseService.client
-          .from('interests')
-          .insert({
-            'sender_id': myId,
-            'receiver_id': profile.id,
-            if (filteredNote != null) 'note': filteredNote,
-          })
-          .select('id')
-          .single();
-      interestId = result['id'] as String;
+      final result =
+          await SupabaseService.client.rpc('send_interest', params: {
+        'p_receiver_id': profile.id,
+        'p_note': filteredNote,
+      });
+      interestId = result?.toString();
     } catch (e) {
       debugPrint('[InterestsCubit] Error sending interest: $e');
       // If the DB rejects (e.g., daily limit hit by trigger), surface the error.
@@ -489,7 +474,7 @@ class InterestsCubit extends Cubit<InterestsState> {
       return false;
     }
 
-    if (interestId.isEmpty) return false;
+    if (interestId == null || interestId.isEmpty) return false;
 
     final entry = InterestEntry(
       id: interestId,
@@ -549,8 +534,7 @@ class InterestsCubit extends Cubit<InterestsState> {
     if (SupabaseService.isInitialized) {
       try {
         await SupabaseService.client
-            .from('interests')
-            .update({'status': 'withdrawn'}).eq('id', id);
+            .rpc('withdraw_interest', params: {'p_interest_id': id});
       } catch (e) {
         debugPrint('[InterestsCubit] Error withdrawing interest: $e');
         return;

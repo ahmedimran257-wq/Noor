@@ -39,7 +39,9 @@ const FIREBASE_PROJECT_ID = Deno.env.get("FIREBASE_PROJECT_ID")!;
 
 const FCM_API_URL =
   `https://fcm.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/messages:send`;
-const BATCH_SIZE = 500;
+const BATCH_SIZE = 100;
+const MAX_CONCURRENCY = 8;
+const OUTBOUND_TIMEOUT_MS = 10_000;
 
 interface DirectProfileLivePayload {
   user_id: string;
@@ -88,18 +90,19 @@ async function getAccessToken(): Promise<string> {
   const jwt = `${signatureInput}.${encodedSignature}`;
 
   // Exchange JWT for access token
-  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body:
-      `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`,
-  });
+  const tokenRes = await fetchWithTimeout(
+    "https://oauth2.googleapis.com/token",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body:
+        `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`,
+    },
+    OUTBOUND_TIMEOUT_MS,
+  );
 
   if (!tokenRes.ok) {
-    const errText = await tokenRes.text();
-    throw new Error(
-      `Failed to get Google access token: ${tokenRes.status} ${errText}`,
-    );
+    throw new Error(`google_oauth_${tokenRes.status}`);
   }
 
   const tokenData = await tokenRes.json();
@@ -232,9 +235,11 @@ Deno.serve(async (req: Request) => {
   try {
     accessToken = await getAccessToken();
   } catch (e) {
-    await releaseCheckedOutNotifications(
+    await finishCheckedOutNotifications(
       supabase,
       notifications as NotificationRow[],
+      "retry",
+      "fcm_oauth_unavailable",
     );
     console.error(
       "[dispatch-notifications] Failed to get FCM access token:",
@@ -258,9 +263,11 @@ Deno.serve(async (req: Request) => {
     .in("user_id", userIds);
 
   if (tokenError) {
-    await releaseCheckedOutNotifications(
+    await finishCheckedOutNotifications(
       supabase,
       notifications as NotificationRow[],
+      "retry",
+      "token_lookup_failed",
     );
     console.error(
       "[dispatch-notifications] Token lookup error:",
@@ -279,57 +286,36 @@ Deno.serve(async (req: Request) => {
   }
 
   // ── Dispatch each notification via FCM ─────────────────────
-  const attempts: DeliveryAttempt[] = [];
-  let noToken = 0;
-  for (const notif of notifications as NotificationRow[]) {
-    const tokens = tokenMap.get(notif.user_id);
-    if (!tokens || tokens.length === 0) {
-      noToken += 1;
-      console.warn(
-        `[dispatch-notifications] No FCM token for user ${notif.user_id}; keeping notification in-app only.`,
-      );
-      continue;
-    }
-    for (const token of tokens) {
-      attempts.push({ notificationId: notif.id, token, notif });
-    }
-  }
-
-  const results = await Promise.allSettled(
-    attempts.map((attempt) =>
-      sendFCM(accessToken, attempt.token, attempt.notif)
-    ),
+  const outcomes = await mapWithConcurrency(
+    notifications as NotificationRow[],
+    MAX_CONCURRENCY,
+    async (notification) => {
+      try {
+        return await deliverNotification(
+          supabase,
+          accessToken,
+          notification,
+          tokenMap.get(notification.user_id) ?? [],
+        );
+      } catch {
+        try {
+          await finishNotification(
+            supabase,
+            notification,
+            "retry",
+            "delivery_worker_failed",
+          );
+        } catch {
+          // The database lease remains recoverable after five minutes even if
+          // the completion call itself is unavailable.
+        }
+        return "retry" as const;
+      }
+    },
   );
-
-  const deliveredNotificationIds = new Set<string>();
-  const failedNotificationIds = new Set<string>();
-  results.forEach((result, index) => {
-    const notificationId = attempts[index]?.notificationId;
-    if (!notificationId) return;
-    if (result.status === "fulfilled") {
-      deliveredNotificationIds.add(notificationId);
-    } else {
-      failedNotificationIds.add(notificationId);
-      console.error(
-        `[dispatch-notifications] FCM delivery failed for notification ${notificationId}:`,
-        result.reason,
-      );
-    }
-  });
-
-  for (const deliveredId of deliveredNotificationIds) {
-    failedNotificationIds.delete(deliveredId);
-  }
-
-  if (failedNotificationIds.size > 0) {
-    await supabase
-      .from("notifications")
-      .update({ sent_at: null })
-      .in("id", [...failedNotificationIds]);
-  }
-
-  const succeeded = deliveredNotificationIds.size;
-  const failed = failedNotificationIds.size;
+  const succeeded = outcomes.filter((value) => value === "sent").length;
+  const failed = outcomes.filter((value) => value === "retry").length;
+  const noToken = outcomes.filter((value) => value === "in_app_only").length;
 
   console.log(
     `[dispatch-notifications] Sent: ${succeeded}, failed: ${failed}, in-app-only: ${noToken}`,
@@ -449,7 +435,7 @@ async function sendFCM(
   accessToken: string,
   fcmToken: string,
   notif: NotificationRow,
-): Promise<void> {
+): Promise<FcmResult> {
   const message: Record<string, unknown> = {
     message: {
       token: fcmToken,
@@ -476,42 +462,156 @@ async function sendFCM(
     },
   };
 
-  const res = await fetch(FCM_API_URL, {
+  const res = await fetchWithTimeout(FCM_API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify(message),
-  });
+  }, OUTBOUND_TIMEOUT_MS);
 
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`FCM API error ${res.status}: ${err}`);
-  }
+  if (res.ok) return { status: "sent", errorCode: null };
+  const errorBody = await readTextLimited(res, 4096);
+  const invalid = res.status === 404 || errorBody.includes("UNREGISTERED") ||
+    errorBody.includes("registration-token-not-registered");
+  return {
+    status: invalid ? "invalid_token" : "retry",
+    errorCode: invalid ? "fcm_token_invalid" : `fcm_http_${res.status}`,
+  };
 }
 
-async function releaseCheckedOutNotifications(
+async function deliverNotification(
+  supabase: SupabaseClient,
+  accessToken: string,
+  notification: NotificationRow,
+  tokens: string[],
+): Promise<DeliveryOutcome> {
+  if (tokens.length === 0) {
+    await finishNotification(supabase, notification, "in_app_only", "no_token");
+    return "in_app_only";
+  }
+  let sent = false;
+  let transientFailure = false;
+  for (const token of tokens.slice(0, 5)) {
+    let result: FcmResult;
+    try {
+      result = await sendFCM(accessToken, token, notification);
+    } catch {
+      result = { status: "retry", errorCode: "fcm_timeout" };
+    }
+    await supabase.rpc("record_notification_token_delivery", {
+      p_notification_id: notification.id,
+      p_lease_token: notification.lease_token,
+      p_fcm_token: token,
+      p_status: result.status,
+      p_error_code: result.errorCode,
+    });
+    if (result.status === "sent") sent = true;
+    if (result.status === "retry") transientFailure = true;
+    if (result.status === "invalid_token") {
+      await supabase.from("user_fcm_tokens").delete().eq("fcm_token", token);
+    }
+  }
+  const outcome: DeliveryOutcome = sent
+    ? "sent"
+    : transientFailure
+    ? "retry"
+    : "in_app_only";
+  await finishNotification(
+    supabase,
+    notification,
+    outcome,
+    outcome === "retry" ? "fcm_transient_failure" : null,
+  );
+  return outcome;
+}
+
+async function finishNotification(
+  supabase: SupabaseClient,
+  notification: NotificationRow,
+  status: DeliveryOutcome,
+  errorCode: string | null,
+): Promise<void> {
+  const { error } = await supabase.rpc("finish_notification_delivery", {
+    p_notification_id: notification.id,
+    p_lease_token: notification.lease_token,
+    p_status: status,
+    p_error_code: errorCode,
+  });
+  if (error) throw new Error("notification_lease_completion_failed");
+}
+
+async function finishCheckedOutNotifications(
   supabase: SupabaseClient,
   notifications: NotificationRow[],
+  status: DeliveryOutcome,
+  errorCode: string,
 ): Promise<void> {
-  const ids = notifications.map((notification) => notification.id);
-  if (ids.length === 0) return;
-
-  const { error } = await supabase
-    .from("notifications")
-    .update({ sent_at: null })
-    .in("id", ids);
-
-  if (error) {
-    console.error(
-      "[dispatch-notifications] Failed to release checked-out notifications:",
-      error.message,
-    );
-  }
+  await mapWithConcurrency(
+    notifications,
+    MAX_CONCURRENCY,
+    (notification) =>
+      finishNotification(supabase, notification, status, errorCode),
+  );
 }
 
 // ── Crypto helpers for JWT signing ────────────────────────────
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  task: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+  const workers = Array.from(
+    { length: Math.min(concurrency, items.length) },
+    async () => {
+      while (true) {
+        const index = cursor++;
+        if (index >= items.length) return;
+        results[index] = await task(items[index]);
+      }
+    },
+  );
+  await Promise.all(workers);
+  return results;
+}
+
+async function fetchWithTimeout(
+  input: string,
+  init: RequestInit,
+  timeoutMs: number,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function readTextLimited(
+  response: Response,
+  maxBytes: number,
+): Promise<string> {
+  if (!response.body) return "";
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let result = "";
+  let bytes = 0;
+  while (bytes < maxBytes) {
+    const { value, done } = await reader.read();
+    if (done || !value) break;
+    const remaining = Math.min(value.byteLength, maxBytes - bytes);
+    result += decoder.decode(value.slice(0, remaining), { stream: true });
+    bytes += remaining;
+  }
+  await reader.cancel().catch(() => undefined);
+  return result;
+}
 
 function base64urlEncode(str: string): string {
   return btoa(str)
@@ -559,10 +659,11 @@ interface NotificationRow {
   title: string;
   body: string;
   deep_link: string | null;
+  lease_token: string;
 }
 
-interface DeliveryAttempt {
-  notificationId: string;
-  token: string;
-  notif: NotificationRow;
-}
+type DeliveryOutcome = "sent" | "retry" | "in_app_only";
+type FcmResult = {
+  status: "sent" | "retry" | "invalid_token";
+  errorCode: string | null;
+};

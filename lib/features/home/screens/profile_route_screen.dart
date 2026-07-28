@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/models/discovery_profile.dart';
 import '../../../core/services/photo_access_service.dart';
 import '../../../core/services/profile_photo_service.dart';
-import '../../../core/services/supabase_service.dart';
+import '../../../core/services/authorized_profile_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
@@ -41,20 +41,10 @@ class _ProfileRouteScreenState extends State<ProfileRouteScreen> {
     }
     try {
       final context = await PhotoAccessService.instance.getContext(id);
-      final raw = await SupabaseService.client.from('profiles').select('''
-            id, user_id, first_name, last_name, date_of_birth, gender,
-            country_code, sect, deen_level, photo_privacy, bio, profession,
-            education_level, education_rank, family_type, previously_married,
-            children_count, mother_tongue, community, diet_type,
-            living_expectation, quran_memorization, religious_education,
-            marriage_timeline, willing_to_relocate, height_cm, complexion,
-            smoking_habit, vaping_habit, hookah_habit, languages, interests,
-            last_active_at, is_verified, cities:cities!city_id(name)
-          ''').or('user_id.eq.$id,id.eq.$id').maybeSingle();
+      final authorized = await AuthorizedProfileService.load([id]);
+      final raw = authorized.isEmpty ? null : authorized.first;
       if (raw == null) throw StateError('This profile is unavailable.');
       final row = Map<String, dynamic>.from(raw);
-      final city = row['cities'];
-      if (city is Map) row['city_name'] = city['name'];
       row['photo_count'] = context.photoCount;
       row['photo_privacy'] = switch (context.privacy) {
         ProfilePhotoPrivacy.mutualOnly => 'mutual_only',

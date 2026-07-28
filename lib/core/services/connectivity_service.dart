@@ -14,10 +14,10 @@
 // ============================================================
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/widgets.dart';
 import 'package:silarah/core/config/app_config.dart';
-import 'package:silarah/core/services/supabase_service.dart';
 
 enum BackendConnectionQuality { unknown, good, poor, offline }
 
@@ -86,13 +86,17 @@ class ConnectivityService with WidgetsBindingObserver {
     HttpClient? client;
     final stopwatch = Stopwatch()..start();
     try {
-      Uri endpoint = Uri.https('1.1.1.1', '/cdn-cgi/trace');
-      if (SupabaseService.isInitialized) {
-        final uri = Uri.tryParse(AppConfig.supabaseUrl);
-        if (uri != null && uri.host.isNotEmpty) {
-          endpoint = uri.replace(path: '/auth/v1/health', query: null);
-        }
+      final backend = Uri.tryParse(AppConfig.supabaseUrl);
+      if (backend == null || backend.scheme != 'https' || backend.host.isEmpty) {
+        _lastQuality = BackendConnectionQuality.offline;
+        _updateState(false);
+        return false;
       }
+      final endpoint = backend.replace(
+        path: '/functions/v1/health-probe',
+        query: null,
+        fragment: null,
+      );
 
       client = HttpClient()..connectionTimeout = const Duration(seconds: 4);
       final request = await client.getUrl(endpoint).timeout(
@@ -103,8 +107,15 @@ class ConnectivityService with WidgetsBindingObserver {
       final response = await request.close().timeout(
             const Duration(seconds: 4),
           );
-      await response.drain<void>();
-      final online = response.statusCode >= 200 && response.statusCode < 500;
+      final body = await utf8.decoder
+          .bind(response)
+          .join()
+          .timeout(const Duration(seconds: 2));
+      final online = response.statusCode == HttpStatus.ok &&
+          response.headers.value('x-silarah-health') == 'ok' &&
+          body.length <= 128 &&
+          body.contains('"service":"silarah"') &&
+          body.contains('"status":"ok"');
       stopwatch.stop();
       _lastLatency = stopwatch.elapsed;
       _lastQuality = !online

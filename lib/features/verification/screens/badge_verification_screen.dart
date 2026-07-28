@@ -252,7 +252,7 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
 
       final saved = await _service.submitBadgeVerification();
       if (!saved) {
-        await _showFailure('Could not save your badge. Please retry');
+        await _showFailure('Could not save your photo check. Please retry');
         return;
       }
       await _disposeCamera();
@@ -491,10 +491,10 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
                   color: AppColors.champagneGold, size: 34),
             ),
             const SizedBox(height: AppDimensions.space24),
-            Text('Badge active', style: AppTypography.screenTitle),
+            Text('Photo check complete', style: AppTypography.screenTitle),
             const SizedBox(height: AppDimensions.space10),
             Text(
-              'Your passive face scan passed. The verification badge is now visible on your profile.',
+              'Your passive face scan passed. This on-device photo check is separate from government identity verification.',
               style: AppTypography.bodyMuted,
               textAlign: TextAlign.center,
             ),

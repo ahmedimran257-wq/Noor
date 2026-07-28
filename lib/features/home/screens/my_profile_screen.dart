@@ -21,6 +21,7 @@ import '../../../core/models/discovery_profile.dart';
 import '../../../core/models/onboarding_data.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/services/bookmark_service.dart';
+import '../../../core/services/authorized_profile_service.dart';
 import '../../../core/services/kyc_verification_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
@@ -177,21 +178,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     }
 
     try {
-      final rows = await SupabaseService.client.from('profiles').select('''
-            id, user_id, first_name, last_name, date_of_birth, gender, sect,
-            deen_level, city_id, country_code, is_verified, bio,
-            photo_privacy, education_level, profession, mother_tongue,
-            languages, interests, cities:cities!city_id(name)
-          ''').inFilter('user_id', ids.toList()).limit(20);
-
-      final mappedRows = (rows as List<dynamic>).map((row) {
-        final mapped = Map<String, dynamic>.from(row as Map<String, dynamic>);
-        final city = mapped['cities'];
-        if (city is Map<String, dynamic>) {
-          mapped['city_name'] = city['name'];
-        }
-        return mapped;
-      }).toList();
+      final mappedRows = await AuthorizedProfileService.load(ids.take(20));
 
       final profileIds =
           mappedRows.map((row) => row['id']?.toString()).whereType<String>();
@@ -372,7 +359,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           : data.photoPrivacy == PhotoPrivacy.requestOnly
               ? 'request_only'
               : 'public',
-      isVerified: _hasVerificationBadge,
+      isVerified: _kycStatus == KycVerificationStatus.approved,
       occupation: data.profession,
       education: data.educationLabel,
       bio: data.bio,
@@ -509,7 +496,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
       final myUserId = await SupabaseService.currentUserIdOrRefresh();
       if (myUserId == null) return;
       final profile = await SupabaseService.client
-          .from('profiles')
+          .from('my_profile_private')
           .select('id')
           .eq('user_id', myUserId)
           .maybeSingle();
@@ -1260,11 +1247,11 @@ class _TrustCenterCard extends StatelessWidget {
           Divider(height: 1, indent: 56, color: AppColors.cardBorder),
           _TrustRow(
             icon: Icons.face_retouching_natural_outlined,
-            title: 'Profile photo check',
+            title: 'On-device photo check',
             subtitle: hasFaceBadge
-                ? 'Liveness and face checks complete'
-                : 'Complete a passive face scan in seconds',
-            status: hasFaceBadge ? 'Verified' : 'Start',
+                ? 'Passive liveness check completed'
+                : 'Checks photo readiness; not government ID',
+            status: hasFaceBadge ? 'Completed' : 'Start',
             statusColor:
                 hasFaceBadge ? AppColors.verifiedTeal : AppColors.champagneGold,
             onTap: hasFaceBadge ? null : onFaceVerification,
@@ -1413,7 +1400,7 @@ class _BoostSectionState extends State<_BoostSection> {
     final userId = await SupabaseService.currentUserIdOrRefresh();
     if (SupabaseService.isInitialized && userId != null) {
       final row = await SupabaseService.client
-          .from('profiles')
+          .from('my_profile_private')
           .select('is_boosted, boost_expires_at')
           .eq('user_id', userId)
           .maybeSingle();

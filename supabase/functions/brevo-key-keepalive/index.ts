@@ -21,9 +21,16 @@ Deno.serve(async (request: Request) => {
   // Brevo expires even a no-expiration API key after 90 days of inactivity.
   // This authenticated account lookup records safe API activity without
   // sending mail, reading contacts, or modifying provider data.
-  const response = await fetch("https://api.brevo.com/v3/account", {
-    headers: { "api-key": BREVO_API_KEY },
-  });
+  let response: Response;
+  try {
+    response = await fetch("https://api.brevo.com/v3/account", {
+      headers: { "api-key": BREVO_API_KEY },
+      signal: AbortSignal.timeout(8_000),
+    });
+  } catch {
+    console.error("[brevo-key-keepalive] Provider request timed out.");
+    return new Response("Email provider unavailable", { status: 503 });
+  }
 
   if (!response.ok) {
     console.error(

@@ -120,8 +120,18 @@ jobs:
           version: latest
       - name: Validate migration files
         run: python tool/validate_supabase_migrations.py
+      - name: Start fresh local Supabase
+        run: supabase start
+      - name: Apply every migration to a clean database
+        run: supabase db reset --local
+      - name: Run database authorization and integrity tests
+        run: supabase test db
       - name: Check Edge Function formatting
         run: deno fmt --check supabase/functions
+      - name: Typecheck Edge Functions
+        run: |
+          find supabase/functions -name 'index.ts' -print0 \
+            | xargs -0 -n1 deno check
       - name: Lint Edge Functions
         run: deno lint supabase/functions
       - name: Test Edge Functions

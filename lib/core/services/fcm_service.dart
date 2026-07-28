@@ -19,6 +19,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:uuid/uuid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'supabase_service.dart';
+import 'operational_telemetry_service.dart';
 import '../utils/notification_deep_link.dart';
 
 class FcmService {
@@ -36,6 +37,8 @@ class FcmService {
   /// Device ID - persisted across sessions so the same device
   /// always overwrites its own token row (via UPSERT).
   String? _deviceId;
+  static const _pendingRegistrationKey = 'silarah_pending_fcm_registration_v1';
+  static const _pendingRemovalKey = 'silarah_pending_fcm_removal_v1';
 
   /// Initializes tap and foreground-message handling without presenting a
   /// system permission dialog. Push authorization is deliberately deferred
@@ -128,9 +131,6 @@ class FcmService {
     _deviceId = await _getOrCreateDeviceId();
     final token = await _messaging.getToken();
     if (token != null) {
-      debugPrint(
-        '[FcmService] FCM token obtained (${token.substring(0, 20)}...)',
-      );
       await _saveTokenToSupabase(token);
     }
 
@@ -159,28 +159,33 @@ class FcmService {
 
     _deviceId ??= await _getOrCreateDeviceId();
 
-    final userId = session.user.id;
     final platform =
         defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android';
 
     try {
-      await SupabaseService.client.from('user_fcm_tokens').upsert({
-        'user_id': userId,
-        'device_id': _deviceId,
-        'fcm_token': token,
-        'platform': platform,
-        'updated_at': DateTime.now().toUtc().toIso8601String(),
-      }, onConflict: 'user_id,device_id');
+      await SupabaseService.client.rpc('register_my_fcm_token', params: {
+        'p_device_id': _deviceId,
+        'p_fcm_token': token,
+        'p_platform': platform,
+      });
 
-      debugPrint('[FcmService] FCM token saved to Supabase for user $userId');
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_pendingRegistrationKey);
+      debugPrint('[FcmService] Push registration synchronized.');
     } catch (e) {
-      debugPrint('[FcmService] Failed to save FCM token: $e');
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _pendingRegistrationKey,
+        '$platform|${_deviceId!}|$token',
+      );
+      debugPrint('[FcmService] Push registration queued for retry.');
     }
   }
 
   /// Called after successful authentication to ensure the token
   /// is linked to the authenticated user.
   Future<void> onUserLogin() async {
+    await _flushPendingTokenOperations();
     try {
       await initialize(requestPermission: true);
     } catch (e) {
@@ -208,15 +213,70 @@ class FcmService {
     if (session == null) return;
 
     try {
-      await SupabaseService.client
-          .from('user_fcm_tokens')
-          .delete()
-          .eq('user_id', session.user.id)
-          .eq('device_id', _deviceId!);
+      await SupabaseService.client.rpc(
+        'unregister_my_fcm_token',
+        params: {'p_device_id': _deviceId},
+      );
 
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_pendingRemovalKey);
       debugPrint('[FcmService] FCM token deleted from Supabase.');
     } catch (e) {
-      debugPrint('[FcmService] Failed to delete FCM token: $e');
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _pendingRemovalKey,
+        '${session.user.id}|${_deviceId!}',
+      );
+      debugPrint('[FcmService] Push removal queued for retry.');
+      OperationalTelemetryService.record('push', 'token_removal_deferred');
+    }
+  }
+
+  Future<void> _flushPendingTokenOperations() async {
+    if (!SupabaseService.isInitialized ||
+        SupabaseService.client.auth.currentSession == null) {
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final removal = prefs.getString(_pendingRemovalKey);
+    final removalParts = removal?.split('|') ?? const <String>[];
+    if (removalParts.length == 2 &&
+        removalParts[0] == SupabaseService.currentUserId) {
+      try {
+        await SupabaseService.client.rpc(
+          'unregister_my_fcm_token',
+          params: {'p_device_id': removalParts[1]},
+        );
+        await prefs.remove(_pendingRemovalKey);
+      } catch (_) {
+        debugPrint('[FcmService] Pending push removal will retry later.');
+        OperationalTelemetryService.record(
+          'push',
+          'pending_token_removal_failed',
+        );
+      }
+    }
+    final pending = prefs.getString(_pendingRegistrationKey);
+    if (pending == null) return;
+    final parts = pending.split('|');
+    if (parts.length != 3) {
+      await prefs.remove(_pendingRegistrationKey);
+      return;
+    }
+    _deviceId = parts[1];
+    try {
+      await SupabaseService.client.rpc('register_my_fcm_token', params: {
+        'p_device_id': parts[1],
+        'p_fcm_token': parts[2],
+        'p_platform': parts[0],
+      });
+      await prefs.remove(_pendingRegistrationKey);
+    } catch (_) {
+      debugPrint('[FcmService] Pending push registration will retry later.');
+      OperationalTelemetryService.record(
+        'push',
+        'pending_token_registration_failed',
+      );
     }
   }
 

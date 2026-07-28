@@ -547,7 +547,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       return;
     }
     final profile = await SupabaseService.client
-        .from('profiles')
+        .from('my_profile_private')
         .select('id, visibility, onboarding_completed, approved_at')
         .eq('user_id', currentUserId)
         .maybeSingle();

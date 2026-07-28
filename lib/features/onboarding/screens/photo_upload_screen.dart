@@ -22,7 +22,6 @@ import '../../../core/cubits/onboarding/onboarding_state.dart';
 import '../../../core/models/onboarding_data.dart';
 import '../../../core/services/profile_photo_service.dart';
 import '../../../core/services/photo_moderation_service.dart';
-import '../../../core/services/supabase_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
@@ -290,8 +289,8 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       _bytes[index] = bytes;
       _remoteUrls[index] = null;
       _removedRemoteSlots.remove(index);
-      _operationTitle = 'Ready to publish';
-      _operationDetail = 'Photo ${index + 1} passed the safety check';
+      _operationTitle = 'Ready to upload';
+      _operationDetail = 'Photo ${index + 1} is ready for protected review';
       _operationProgress = 1;
       _operationComplete = true;
     });
@@ -342,13 +341,13 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
           'Transferring photo ${progress.slot + 1} securely'
         ),
       PhotoSyncStage.publishing => (
-          'Publishing changes',
-          'Confirming photo ${progress.slot + 1} on your profile'
+          'Submitting for review',
+          'Securing photo ${progress.slot + 1} in the moderation queue'
         ),
       PhotoSyncStage.complete => (
-          progress.fraction >= 1 ? 'Photos published' : 'Photo published',
+          progress.fraction >= 1 ? 'Photos submitted' : 'Photo submitted',
           progress.fraction >= 1
-              ? 'Your gallery is up to date'
+              ? 'Your gallery will update after safety review'
               : 'Continuing with the next photo'
         ),
     };
@@ -469,17 +468,13 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         );
     setState(() => _uploading = true);
     try {
-      final primaryModeration =
-          await ProfilePhotoService.instance.syncPhotoSlots(
+      await ProfilePhotoService.instance.syncPhotoSlots(
         localSlots,
         privacy: _privacy,
         onProgress: _handleSyncProgress,
       );
       for (final slot in _removedRemoteSlots.toList()..sort()) {
         await ProfilePhotoService.instance.deleteMyPhotoSlot(slot);
-      }
-      if (primaryModeration?.decision == PhotoModerationDecision.approved) {
-        await _makeProfileLive();
       }
       if (!mounted) return;
       final cubit = context.read<OnboardingCubit>();
@@ -492,8 +487,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         _showOperation(
           slot: _activeSlot ?? 0,
           title: 'Gallery updated',
-          detail:
-              'Your photos are now visible according to your privacy settings',
+          detail: 'Your photos were submitted for the server safety review',
           progress: 1,
           complete: true,
         );
@@ -562,40 +556,6 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       _showSaveRequirement('Add a main photo before saving.');
     } else if (!_primaryReady) {
       _showSaveRequirement('Wait for the main photo safety check to finish.');
-    }
-  }
-
-  Future<void> _makeProfileLive() async {
-    final currentUserId = SupabaseService.currentUserId;
-    if (currentUserId == null) {
-      throw StateError('Please sign in again to publish your profile.');
-    }
-
-    await SupabaseService.client
-        .from('profiles')
-        .update({'visibility': 'visible'}).eq('user_id', currentUserId);
-
-    try {
-      final response = await SupabaseService.client.functions.invoke(
-        'dispatch-notifications',
-        body: {
-          'user_id': currentUserId,
-          'type': 'profile_live',
-          'title': 'Your profile is now live! 🎉',
-          'body': 'Muslims in your area can now find you on Silarah.',
-        },
-      );
-      if (response.status < 200 || response.status >= 300) {
-        debugPrint(
-          '[PhotoUploadScreen] profile_live notification dispatch failed: ${response.status}',
-        );
-      }
-    } catch (error) {
-      // Publishing succeeded. Notification delivery is retried by the server
-      // queue and must not send the user back through photo onboarding.
-      debugPrint(
-        '[PhotoUploadScreen] profile_live notification dispatch failed: $error',
-      );
     }
   }
 
@@ -961,7 +921,7 @@ class _SafetyPolicyNote extends StatelessWidget {
         const SizedBox(width: AppDimensions.space8),
         Expanded(
           child: Text(
-            'Photos with explicit content are not permitted. Safety checks run before publishing.',
+            'Photos are checked privately before they become visible. Explicit content is not permitted.',
             style: AppTypography.caption.copyWith(color: AppColors.slateMist),
           ),
         ),

@@ -13,23 +13,21 @@ class TranslationService {
   TranslationService._();
   static final TranslationService instance = TranslationService._();
 
-  /// Translates [text] from [sourceLang] (optional) to [targetLang] (e.g. 'ur', 'tr', 'en').
-  /// Invokes the Supabase Edge Function 'translate-message'.
+  /// Translates one authorized chat message. The server fetches the message
+  /// body after proving the caller belongs to its match.
   Future<String?> translate({
-    required String text,
+    required String messageId,
     required String targetLang,
-    String? sourceLang,
   }) async {
-    if (text.trim().isEmpty) return null;
+    if (messageId.trim().isEmpty) return null;
     if (!SupabaseService.isInitialized) return null;
 
     try {
       final response = await SupabaseService.client.functions.invoke(
         'translate-message',
         body: {
-          'text': text,
+          'message_id': messageId,
           'target_lang': targetLang,
-          if (sourceLang != null) 'source_lang': sourceLang,
         },
       );
 

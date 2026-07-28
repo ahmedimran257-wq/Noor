@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -12,7 +13,36 @@ const pendingMfaCookieName = "silarah_admin_pending_mfa";
 export type PendingMfaFactor = {
   factorId: string;
   uri: string;
+  previousFactorId?: string;
 };
+
+const pendingCookieSecret =
+  process.env.ADMIN_MFA_COOKIE_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+function encodePendingFactor(value: Record<string, string>) {
+  if (!pendingCookieSecret) throw new Error("MFA cookie secret is not configured.");
+  const payload = Buffer.from(JSON.stringify(value)).toString("base64url");
+  const signature = createHmac("sha256", pendingCookieSecret)
+    .update(payload)
+    .digest("base64url");
+  return `${payload}.${signature}`;
+}
+
+function decodePendingFactor(raw: string): unknown {
+  if (!pendingCookieSecret) return undefined;
+  const [payload, signature] = raw.split(".");
+  if (!payload || !signature) return undefined;
+  const expected = createHmac("sha256", pendingCookieSecret)
+    .update(payload)
+    .digest("base64url");
+  const actualBuffer = Buffer.from(signature);
+  const expectedBuffer = Buffer.from(expected);
+  if (
+    actualBuffer.length !== expectedBuffer.length ||
+    !timingSafeEqual(actualBuffer, expectedBuffer)
+  ) return undefined;
+  return JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+}
 
 async function withTimeout<T>(request: PromiseLike<T>): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -59,13 +89,24 @@ async function getAuthenticatedClient() {
 
 async function setPendingMfaFactor(userId: string, factor: PendingMfaFactor) {
   const cookieStore = await cookies();
-  cookieStore.set(pendingMfaCookieName, JSON.stringify({ userId, ...factor }), {
+  cookieStore.set(
+    pendingMfaCookieName,
+    encodePendingFactor({
+      userId,
+      factorId: factor.factorId,
+      uri: factor.uri,
+      ...(factor.previousFactorId
+        ? { previousFactorId: factor.previousFactorId }
+        : {}),
+    }),
+    {
     httpOnly: true,
     maxAge: 10 * 60,
     path: "/mfa",
     sameSite: "strict",
     secure: process.env.NODE_ENV === "production",
-  });
+    },
+  );
 }
 
 async function clearPendingMfaFactor() {
@@ -80,10 +121,19 @@ export async function getPendingMfaFactor(userId: string): Promise<PendingMfaFac
 
   try {
     const parsed = z
-      .object({ userId: z.string().uuid(), factorId: z.string().uuid(), uri: z.string().url() })
-      .parse(JSON.parse(raw));
+      .object({
+        userId: z.string().uuid(),
+        factorId: z.string().uuid(),
+        uri: z.string().url(),
+        previousFactorId: z.string().uuid().optional(),
+      })
+      .parse(decodePendingFactor(raw));
     if (parsed.userId !== userId) return undefined;
-    return { factorId: parsed.factorId, uri: parsed.uri };
+    return {
+      factorId: parsed.factorId,
+      uri: parsed.uri,
+      previousFactorId: parsed.previousFactorId,
+    };
   } catch {
     return undefined;
   }
@@ -146,32 +196,18 @@ async function replaceAuthenticator(input: { factorId: string; password: string 
       return { ok: false as const, message: "This staff account has no email address. Contact another super administrator." };
     }
 
-    const credentials = { email: session.user.email, password: parsed.data.password };
-    const { error: passwordError } = await withTimeout(
-      session.supabase.auth.signInWithPassword(credentials),
+    const { data: assurance, error: assuranceError } = await withTimeout(
+      session.supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
     );
-    if (passwordError) return { ok: false as const, message: "That password was not accepted." };
-
-    // Supabase requires AAL2 to remove a verified factor. A staff member can
-    // reset only their own factor after proving possession of their password.
-    const adminClient = createAdminClient();
-    const { error: removeError } = await withTimeout(
-      adminClient.auth.admin.mfa.deleteFactor({
-        id: parsed.data.factorId,
-        userId: session.user.id,
-      }),
-    );
-    if (removeError) {
-      return { ok: false as const, message: "The existing authenticator could not be replaced. Please try again." };
+    if (assuranceError || assurance?.currentLevel !== "aal2") {
+      return {
+        ok: false as const,
+        message:
+          "Verify your current authenticator first. Password-only replacement is not permitted.",
+      };
     }
 
-    const { error: renewedSessionError } = await withTimeout(
-      session.supabase.auth.signInWithPassword(credentials),
-    );
-    if (renewedSessionError) {
-      return { ok: false as const, message: "Your security session could not be renewed. Please sign in again." };
-    }
-
+    // Enroll and verify the replacement before the existing factor is removed.
     const { data, error: enrollError } = await withTimeout(
       session.supabase.auth.mfa.enroll({
         factorType: "totp",
@@ -187,6 +223,7 @@ async function replaceAuthenticator(input: { factorId: string; password: string 
       userId: session.user.id,
       factorId: data.id,
       uri: data.totp.uri,
+      previousFactorId: parsed.data.factorId,
     };
   } catch {
     return { ok: false as const, message: "The security service did not respond. Please try again." };
@@ -231,6 +268,28 @@ async function verifyAuthenticator(input: { factorId: string; code: string }) {
       return { ok: false as const, message: "Your code was accepted, but the secure session was not ready. Please enter a fresh code." };
     }
 
+    const pending = await getPendingMfaFactor(session.user.id);
+    if (
+      pending?.factorId === parsed.data.factorId &&
+      pending.previousFactorId &&
+      pending.previousFactorId !== parsed.data.factorId
+    ) {
+      const adminClient = createAdminClient();
+      const { error: removeError } = await withTimeout(
+        adminClient.auth.admin.mfa.deleteFactor({
+          id: pending.previousFactorId,
+          userId: session.user.id,
+        }),
+      );
+      if (removeError) {
+        return {
+          ok: false as const,
+          message:
+            "The new authenticator is active, but the old factor could not be retired. Contact another super administrator.",
+        };
+      }
+    }
+
     return { ok: true as const };
   } catch {
     return { ok: false as const, message: "The security service did not respond. Please enter a fresh code and try again." };
@@ -262,6 +321,7 @@ export async function replaceAuthenticatorForm(formData: FormData) {
   await setPendingMfaFactor(result.userId, {
     factorId: result.factorId,
     uri: result.uri,
+    previousFactorId: result.previousFactorId,
   });
   redirect("/mfa");
 }

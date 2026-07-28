@@ -443,25 +443,15 @@ class ChatCubit extends Cubit<ChatState> {
     if (message == null || message.translations.containsKey(targetLang)) return;
 
     try {
-      final response = await SupabaseService.client
-          .from('messages')
-          .select('translations')
-          .eq('id', messageId)
-          .single();
-      final dbTranslations =
-          Map<String, dynamic>.from(response['translations'] ?? {});
-
-      if (!dbTranslations.containsKey(targetLang)) {
-        final translated = await TranslationService.instance.translate(
-          text: message.text,
-          targetLang: targetLang,
-        );
-        if (translated == null) return;
-        dbTranslations[targetLang] = translated;
-        await SupabaseService.client
-            .from('messages')
-            .update({'translations': dbTranslations}).eq('id', messageId);
-      }
+      final translated = await TranslationService.instance.translate(
+        messageId: messageId,
+        targetLang: targetLang,
+      );
+      if (translated == null) return;
+      final dbTranslations = <String, dynamic>{
+        ...message.translations,
+        targetLang: translated,
+      };
       _updateMessageTranslations(conversationId, messageId, dbTranslations);
     } catch (e) {
       debugPrint('ChatCubit: Error translating message in DB: $e');

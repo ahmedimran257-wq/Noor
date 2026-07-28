@@ -31,13 +31,19 @@ void main() {
       expect(screen, contains('setState(() => _countdown = 3)'));
     });
 
-    test('runs post-capture anti-spoofing and grants the badge', () {
+    test('runs post-capture anti-spoofing without forging identity trust', () {
       expect(service, contains('_analyseTextureAndLighting'));
       expect(service, contains('faces.length != 1'));
-      expect(service, contains("'has_verification_badge': true"));
-      expect(service, contains("'type': 'badge_earned'"));
-      expect(
-          service, contains("'verification_challenge': 'passive_face_scan'"));
+      expect(service, contains("'submit_my_photo_badge_verification'"));
+      expect(service, isNot(contains("'has_verification_badge': true")));
+      expect(service, isNot(contains("'type': 'badge_earned'")));
+
+      final boundary = File(
+        'supabase/migrations/155_photo_liveness_trust_boundary.sql',
+      ).readAsStringSync();
+      expect(boundary, contains('photo_liveness_check_completed = true'));
+      expect(boundary, isNot(contains('SET has_verification_badge = true')));
+      expect(boundary, isNot(contains("verification_status = 'verified'")));
     });
 
     test('returns specific recovery reasons', () {
