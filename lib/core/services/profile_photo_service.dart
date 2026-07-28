@@ -213,33 +213,36 @@ class ProfilePhotoService {
     if (!SupabaseService.isInitialized || ownerUserId.trim().isEmpty) {
       return const {};
     }
-    if (await SupabaseService.currentUserIdOrRefresh() == null) {
+    final viewerId = await SupabaseService.currentUserIdOrRefresh();
+    if (viewerId == null) {
       throw StateError('Please sign in again to view profile photos.');
     }
 
-    final rows = await SupabaseService.client
-        .from('photos')
-        .select('order_index, profiles!inner(user_id)')
-        .eq('profiles.user_id', ownerUserId)
-        .eq('status', 'active')
-        .eq('admin_approved', true)
-        .eq('nsfw_cleared', true)
-        .order('order_index');
-
+    final response = await SupabaseService.client.functions.invoke(
+      'get-signed-url',
+      body: {
+        'purpose': 'read_profile_gallery',
+        'owner_user_id': ownerUserId,
+      },
+    );
+    if (response.status != 200 || response.data is! Map) {
+      throw StateError('Your photos could not be loaded securely. Try again.');
+    }
+    final payload = Map<String, dynamic>.from(response.data as Map);
+    final slots = payload['slots'];
+    if (slots is! Map) {
+      throw StateError('Your photos could not be loaded securely. Try again.');
+    }
     final result = <int, String>{};
-    for (final row in rows) {
-      final rawIndex = row['order_index'];
-      final orderIndex =
-          rawIndex is int ? rawIndex : int.tryParse(rawIndex?.toString() ?? '');
+    final expiresIn = (payload['expires_in'] as num?)?.toInt() ?? 300;
+    for (final entry in slots.entries) {
+      final orderIndex = int.tryParse(entry.key.toString());
       if (orderIndex == null || orderIndex < 0 || orderIndex > 3) continue;
-      final url = await getAuthorizedPhotoUrl(
-        ownerUserId: ownerUserId,
-        orderIndex: orderIndex,
-      );
+      final url = entry.value?.toString();
       if (url == null || url.isEmpty) {
-        throw StateError(
-            'Your photos could not be loaded securely. Try again.');
+        continue;
       }
+      _cacheUrl('$viewerId:$ownerUserId:$orderIndex', url, expiresIn);
       result[orderIndex] = url;
     }
     return result;

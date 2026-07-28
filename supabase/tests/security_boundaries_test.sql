@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select extensions.plan(20);
+select extensions.plan(25);
 
 select extensions.ok(
   not has_table_privilege('authenticated', 'public.users', 'INSERT,UPDATE,DELETE'),
@@ -51,6 +51,10 @@ select extensions.ok(
   'members cannot read base profiles'
 );
 select extensions.ok(
+  not has_table_privilege('authenticated', 'public.matches', 'SELECT'),
+  'members cannot read raw matches'
+);
+select extensions.ok(
   not has_table_privilege('authenticated', 'public.discovery_pool', 'SELECT'),
   'members cannot bypass discovery RPCs'
 );
@@ -65,6 +69,52 @@ select extensions.ok(
     'EXECUTE'
   ),
   'authenticated consent RPC is available'
+);
+select extensions.ok(
+  has_function_privilege(
+    'authenticated',
+    'public.get_chat_inbox(integer,timestamp with time zone)',
+    'EXECUTE'
+  ),
+  'authenticated participant chat inbox is available'
+);
+select extensions.ok(
+  has_function_privilege(
+    'authenticated',
+    'public.get_my_matches(integer)',
+    'EXECUTE'
+  ),
+  'authenticated participant match projection is available'
+);
+select extensions.ok(
+  has_function_privilege(
+    'service_role',
+    'public.get_authorized_photo_gallery_paths(uuid,uuid)',
+    'EXECUTE'
+  )
+  and not has_function_privilege(
+    'authenticated',
+    'public.get_authorized_photo_gallery_paths(uuid,uuid)',
+    'EXECUTE'
+  ),
+  'gallery path projection is service-only'
+);
+select extensions.ok(
+  (
+    select bool_and(p.prosecdef)
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.proname in (
+        'get_chat_inbox',
+        'get_chat_messages',
+        'mark_chat_read',
+        'report_chat_message',
+        'block_chat_user',
+        'close_chat_match'
+      )
+  ),
+  'chat RPCs use checked definer boundaries after raw table grants are removed'
 );
 select extensions.ok(
   not has_function_privilege(

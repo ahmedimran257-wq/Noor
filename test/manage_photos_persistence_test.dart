@@ -19,8 +19,9 @@ void main() {
     expect(screen, contains('remoteUrl: _remoteUrls[index]'));
     expect(screen, contains('CachedNetworkImage('));
     expect(screen, contains('maxWidthDiskCache: 640'));
-    expect(service, contains(".from('photos')"));
-    expect(service, contains(".eq('status', 'active')"));
+    expect(service, contains("'purpose': 'read_profile_gallery'"));
+    expect(service, isNot(contains('profiles!inner')));
+    expect(edge, contains('get_authorized_photo_gallery_paths'));
   });
 
   test('photo manager preserves explicit indexes instead of compacting gaps',

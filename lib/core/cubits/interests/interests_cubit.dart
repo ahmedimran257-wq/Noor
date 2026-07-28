@@ -77,11 +77,24 @@ class InterestsCubit extends Cubit<InterestsState> {
       return;
     }
 
+    _InterestQuota quota;
+    try {
+      quota = await _loadServerQuota();
+    } catch (e) {
+      debugPrint('[InterestsCubit] Error loading daily quota: $e');
+      if (!isClosed) {
+        emit(state.copyWith(quotaUnavailable: true));
+      }
+      return;
+    }
+
     try {
       final now = DateTime.now();
 
-      // Fetch the three bounded sections and quota concurrently. Profiles and
-      // photos are batch-loaded below, avoiding the former 3-5 queries per row.
+      // Fetch the three bounded relationship sections concurrently. Profiles
+      // and photos are batch-loaded below, avoiding the former 3-5 queries per
+      // row. Quota is handled independently so a relationship read failure can
+      // never be misreported as a daily-allowance failure.
       final results = await Future.wait<dynamic>([
         SupabaseService.client
             .from('interests')
@@ -98,19 +111,15 @@ class InterestsCubit extends Cubit<InterestsState> {
                 'status', ['pending', 'accepted', 'declined', 'withdrawn'])
             .order('created_at', ascending: false)
             .limit(_maxRowsPerSection),
-        SupabaseService.client
-            .from('matches')
-            .select('id, user_a, user_b, created_at')
-            .or('user_a.eq.$userId,user_b.eq.$userId')
-            .order('created_at', ascending: false)
-            .limit(_maxRowsPerSection),
-        _loadServerQuota(),
+        SupabaseService.client.rpc(
+          'get_my_matches',
+          params: {'p_limit': _maxRowsPerSection},
+        ),
       ]);
 
       final receivedRows = results[0] as List<dynamic>;
       final sentRows = results[1] as List<dynamic>;
       final matchRows = results[2] as List<dynamic>;
-      final quota = results[3] as _InterestQuota;
       final relatedUserIds = <String>{
         for (final row in receivedRows) row['sender_id'] as String,
         for (final row in sentRows) row['receiver_id'] as String,
@@ -192,7 +201,14 @@ class InterestsCubit extends Cubit<InterestsState> {
     } catch (e) {
       debugPrint('[InterestsCubit] Error loading from DB: $e');
       if (!isClosed) {
-        emit(const InterestsState(dailyLimit: 0, quotaUnavailable: true));
+        emit(state.copyWith(
+          interestsSentToday: quota.sentToday,
+          dailyLimit: quota.dailyLimit,
+          lastResetDate: DateTime.now(),
+          quotaResetsAt: quota.resetsAt,
+          isPremium: quota.isPremium,
+          clearQuotaUnavailable: true,
+        ));
       }
     }
   }

@@ -86,8 +86,10 @@ void main() {
       expect(signedUrlFunction, contains('.getUser(userToken)'));
       expect(
         signedUrlFunction,
-        contains('.select("is_banned, deleted_at, account_status")'),
+        contains('.select("is_banned, deleted_at")'),
       );
+      expect(signedUrlFunction, contains('.select("visibility")'));
+      expect(signedUrlFunction, isNot(contains('account_status')));
       expect(
         signedUrlFunction,
         isNot(contains('createClient(SUPABASE_URL, SUPABASE_ANON_KEY')),

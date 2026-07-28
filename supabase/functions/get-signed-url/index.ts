@@ -64,16 +64,27 @@ Deno.serve(async (req: Request) => {
       return errorResponse(401, "Unauthorized.");
     }
 
-    const { data: account, error: accountError } = await adminClient
-      .from("users")
-      .select("is_banned, deleted_at, account_status")
-      .eq("id", userId)
-      .maybeSingle();
+    const [
+      { data: account, error: accountError },
+      { data: profileState, error: profileStateError },
+    ] = await Promise.all([
+      adminClient
+        .from("users")
+        .select("is_banned, deleted_at")
+        .eq("id", userId)
+        .maybeSingle(),
+      adminClient
+        .from("profiles")
+        .select("visibility")
+        .eq("user_id", userId)
+        .maybeSingle(),
+    ]);
     if (
-      accountError || !account || account.is_banned === true ||
+      accountError || profileStateError || !account ||
+      account.is_banned === true ||
       account.deleted_at != null ||
-      ["banned", "suspended", "deleted"].includes(
-        String(account.account_status ?? ""),
+      ["suspended", "deactivated"].includes(
+        String(profileState?.visibility ?? ""),
       )
     ) {
       return errorResponse(403, "This account cannot access private media.");
@@ -87,6 +98,7 @@ Deno.serve(async (req: Request) => {
         | "kyc_id"
         | "read_profile_photo"
         | "read_profile_photos"
+        | "read_profile_gallery"
         | "delete_profile_photo"
         | "delete_replaced_profile_photo";
       owner_user_id?: string;
@@ -146,6 +158,12 @@ Deno.serve(async (req: Request) => {
         userId,
         owner_user_ids,
         order_index ?? 0,
+      );
+    }
+    if (purpose === "read_profile_gallery") {
+      return await createAuthorizedProfilePhotoGalleryReadUrls(
+        userId,
+        owner_user_id,
       );
     }
     if (purpose === "delete_profile_photo") {
@@ -513,6 +531,80 @@ async function createAuthorizedProfilePhotoReadUrls(
       urls,
       expires_in: READ_URL_EXPIRES_IN,
     }),
+    {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    },
+  );
+}
+
+async function createAuthorizedProfilePhotoGalleryReadUrls(
+  viewerUserId: string,
+  ownerUserId: string | undefined,
+): Promise<Response> {
+  if (!ownerUserId || !isUuid(ownerUserId)) {
+    return errorResponse(400, "owner_user_id is required.");
+  }
+
+  const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const { data: photos, error: photoError } = await adminClient.rpc(
+    "get_authorized_photo_gallery_paths",
+    {
+      p_viewer_user_id: viewerUserId,
+      p_owner_user_id: ownerUserId,
+    },
+  );
+  if (photoError) {
+    throw new Error(`Photo authorization failed: ${photoError.message}`);
+  }
+
+  const pathToSlot = new Map<string, number>();
+  for (const photo of photos ?? []) {
+    const row = photo as unknown as {
+      order_index?: unknown;
+      storage_path?: unknown;
+    };
+    const orderIndex = Number(row.order_index);
+    const storagePath = String(row.storage_path ?? "");
+    if (
+      Number.isInteger(orderIndex) &&
+      orderIndex >= 0 &&
+      orderIndex <= 3 &&
+      storagePath
+    ) {
+      pathToSlot.set(storagePath, orderIndex);
+    }
+  }
+
+  if (pathToSlot.size === 0) {
+    return new Response(
+      JSON.stringify({ slots: {}, expires_in: READ_URL_EXPIRES_IN }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
+  }
+
+  const { data, error } = await adminClient.storage
+    .from(BUCKET_NAME)
+    .createSignedUrls([...pathToSlot.keys()], READ_URL_EXPIRES_IN);
+  if (error || !data) {
+    throw new Error(`Failed to generate gallery URLs: ${error?.message}`);
+  }
+
+  const slots: Record<string, string> = {};
+  for (const item of data) {
+    const orderIndex = item.path ? pathToSlot.get(item.path) : undefined;
+    if (orderIndex !== undefined && item.signedUrl) {
+      slots[String(orderIndex)] = item.signedUrl;
+    }
+  }
+
+  return new Response(
+    JSON.stringify({ slots, expires_in: READ_URL_EXPIRES_IN }),
     {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

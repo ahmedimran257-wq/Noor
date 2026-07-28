@@ -65,4 +65,44 @@ void main() {
     expect(source, isNot(contains('₹249')));
     expect(source, contains('Plans are shown in your local currency'));
   });
+
+  test('relationship history uses a participant-scoped projection', () {
+    final cubit = File(
+      'lib/core/cubits/interests/interests_cubit.dart',
+    ).readAsStringSync();
+    final migration = File(
+      'supabase/migrations/158_restore_secure_member_read_paths.sql',
+    ).readAsStringSync();
+
+    expect(cubit, contains("'get_my_matches'"));
+    expect(cubit, isNot(contains(".from('matches')")));
+    expect(migration, contains('SECURITY DEFINER'));
+    expect(
+      migration,
+      contains('(m.user_a = auth.uid() OR m.user_b = auth.uid())'),
+    );
+  });
+
+  test('relationship read errors cannot masquerade as quota failures', () {
+    final cubit = File(
+      'lib/core/cubits/interests/interests_cubit.dart',
+    ).readAsStringSync();
+
+    expect(cubit, contains('Error loading daily quota'));
+    expect(cubit, contains('Error loading from DB'));
+    expect(
+      cubit,
+      contains('clearQuotaUnavailable: true'),
+    );
+  });
+
+  test('private-media preflight references only real account state', () {
+    final edge = File(
+      'supabase/functions/get-signed-url/index.ts',
+    ).readAsStringSync();
+
+    expect(edge, isNot(contains('account_status')));
+    expect(edge, contains('.select("is_banned, deleted_at")'));
+    expect(edge, contains('.select("visibility")'));
+  });
 }

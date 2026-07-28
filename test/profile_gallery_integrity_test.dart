@@ -60,7 +60,8 @@ void main() {
     expect(detailScreen, contains('_OwnProfileActionBar'));
     expect(profileScreen, contains('onManageOwnPhotos:'));
     expect(photoService, contains('getVisiblePhotoSlots'));
-    expect(photoService, contains(".order('order_index')"));
+    expect(photoService, contains("'purpose': 'read_profile_gallery'"));
+    expect(photoService, isNot(contains('profiles!inner')));
   });
 
   testWidgets('profile preview exposes and navigates every gallery photo',
