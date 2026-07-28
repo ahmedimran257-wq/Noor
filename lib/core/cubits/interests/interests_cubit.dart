@@ -443,8 +443,7 @@ class InterestsCubit extends Cubit<InterestsState> {
     final myId = SupabaseService.currentUserId;
     if (myId == null) return false;
     try {
-      final result =
-          await SupabaseService.client.rpc('send_interest', params: {
+      final result = await SupabaseService.client.rpc('send_interest', params: {
         'p_receiver_id': profile.id,
         'p_note': filteredNote,
       });

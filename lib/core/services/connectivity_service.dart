@@ -87,7 +87,9 @@ class ConnectivityService with WidgetsBindingObserver {
     final stopwatch = Stopwatch()..start();
     try {
       final backend = Uri.tryParse(AppConfig.supabaseUrl);
-      if (backend == null || backend.scheme != 'https' || backend.host.isEmpty) {
+      if (backend == null ||
+          backend.scheme != 'https' ||
+          backend.host.isEmpty) {
         _lastQuality = BackendConnectionQuality.offline;
         _updateState(false);
         return false;
