@@ -52,7 +52,9 @@ class SilarahSecondaryButton extends StatelessWidget {
             colors: [
               AppColors.surfacePanelTop
                   .withValues(alpha: isActive ? 0.72 : 0.42),
-              AppColors.inkTeal.withValues(alpha: isActive ? 0.18 : 0.08),
+              AppColors.midnightPlum.withValues(
+                alpha: isActive ? 0.28 : 0.12,
+              ),
               AppColors.surfaceGlass.withValues(alpha: 0.16),
             ],
           ),

@@ -481,7 +481,7 @@ class _InfoChip extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             AppColors.surfaceGlassHover.withValues(alpha: 0.76),
-            AppColors.inkTeal.withValues(alpha: 0.16),
+            AppColors.midnightPlum.withValues(alpha: 0.24),
           ],
         ),
         borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
@@ -514,7 +514,7 @@ class _SendInterestButton extends StatelessWidget {
               ? LinearGradient(
                   colors: [
                     AppColors.champagneGold.withValues(alpha: 0.12),
-                    AppColors.inkTeal.withValues(alpha: 0.10),
+                    AppColors.midnightPlum.withValues(alpha: 0.18),
                   ],
                 )
               : LinearGradient(

@@ -157,7 +157,7 @@ class _NavTab extends StatelessWidget {
                   end: Alignment.bottomRight,
                   colors: [
                     AppColors.champagneGold.withValues(alpha: 0.16),
-                    AppColors.inkTeal.withValues(alpha: 0.12),
+                    AppColors.midnightPlum.withValues(alpha: 0.24),
                     AppColors.surfaceGlassHover,
                   ],
                 )

@@ -847,7 +847,7 @@ class _EditorIntro extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.inkTeal.withValues(alpha: 0.26),
+            AppColors.midnightPlum.withValues(alpha: 0.34),
             AppColors.champagneGold.withValues(alpha: 0.08),
           ],
         ),

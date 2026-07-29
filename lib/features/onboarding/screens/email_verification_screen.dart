@@ -196,7 +196,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
               center: const Alignment(0, -0.65),
               radius: 1.4,
               colors: [
-                AppColors.inkTeal.withValues(alpha: .10),
+                AppColors.champagneGold.withValues(alpha: .055),
                 AppColors.navyCharcoal,
                 AppColors.obsidianNight,
               ],

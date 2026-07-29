@@ -275,19 +275,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
     final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.obsidianNight,
-      body: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: RadialGradient(
-            center: const Alignment(0, -.55),
-            radius: 1.2,
-            colors: [
-              AppColors.inkTeal.withValues(alpha: .18),
-              AppColors.obsidianNight.withValues(alpha: .95),
-              AppColors.obsidianNight,
-            ],
-            stops: const [0, .45, 1],
-          ),
-        ),
+      body: _ObsidianWelcomeCanvas(
         child: SafeArea(
           child: Stack(
             children: [
@@ -431,56 +419,202 @@ class _WelcomeGreetingBackdrop extends StatelessWidget {
           );
           final drift = 10 * (1 - reveal);
           return Align(
-            alignment: const Alignment(0, -.10),
+            alignment: const Alignment(0, -.08),
             child: Transform.translate(
               offset: Offset(0, drift),
               child: Opacity(
                 opacity: reveal,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'السلام عليكم',
-                      textDirection: TextDirection.rtl,
-                      textAlign: TextAlign.center,
-                      style: AppTypography.screenTitle.copyWith(
-                        color: AppColors.champagneGold.withValues(alpha: .36),
-                        fontSize: 38,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: .4,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _GreetingRule(
-                          color: AppColors.champagneGold.withValues(alpha: .30),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: Text(
-                            'Assalamu Alaikum',
-                            style: AppTypography.tagline.copyWith(
-                              color: AppColors.champagneLight
-                                  .withValues(alpha: .56),
-                              fontSize: 18,
-                              letterSpacing: .5,
+                child: RepaintBoundary(
+                  child: SizedBox(
+                    width: 340,
+                    height: 236,
+                    child: CustomPaint(
+                      painter: _WelcomeFiligreePainter(),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _GreetingRule(
+                                color: AppColors.champagneGold
+                                    .withValues(alpha: .28),
+                              ),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 10),
+                                child: Transform.rotate(
+                                  angle: .785,
+                                  child: Container(
+                                    width: 5,
+                                    height: 5,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: AppColors.champagneGold
+                                            .withValues(alpha: .78),
+                                        width: .8,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              _GreetingRule(
+                                color: AppColors.champagneGold
+                                    .withValues(alpha: .28),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 22),
+                          SizedBox(
+                            width: 292,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: ShaderMask(
+                                blendMode: BlendMode.srcIn,
+                                shaderCallback: (bounds) => LinearGradient(
+                                  colors: [
+                                    AppColors.antiqueGold,
+                                    AppColors.champagneLight,
+                                    AppColors.champagneGold,
+                                  ],
+                                ).createShader(bounds),
+                                child: Text(
+                                  'السلام عليكم',
+                                  textDirection: TextDirection.rtl,
+                                  textAlign: TextAlign.center,
+                                  style: AppTypography.screenTitle.copyWith(
+                                    color: Colors.white,
+                                    fontSize: 43,
+                                    fontWeight: FontWeight.w500,
+                                    letterSpacing: .2,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                        _GreetingRule(
-                          color: AppColors.champagneGold.withValues(alpha: .30),
-                        ),
-                      ],
+                          const SizedBox(height: 13),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _GreetingRule(
+                                color: AppColors.champagneGold
+                                    .withValues(alpha: .46),
+                              ),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 14),
+                                child: SizedBox(
+                                  width: 190,
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      'Assalamu Alaikum',
+                                      style: AppTypography.tagline.copyWith(
+                                        color: AppColors.champagneLight
+                                            .withValues(alpha: .88),
+                                        fontSize: 17,
+                                        letterSpacing: .45,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              _GreetingRule(
+                                color: AppColors.champagneGold
+                                    .withValues(alpha: .46),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
           );
         },
       );
+}
+
+class _ObsidianWelcomeCanvas extends StatelessWidget {
+  const _ObsidianWelcomeCanvas({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.obsidianNight,
+              AppColors.midnightPlum.withValues(alpha: .34),
+              AppColors.obsidianNight,
+            ],
+            stops: const [0, .44, 1],
+          ),
+        ),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: const Alignment(0, -.18),
+              radius: .78,
+              colors: [
+                AppColors.champagneGold.withValues(alpha: .075),
+                AppColors.antiqueGold.withValues(alpha: .025),
+                Colors.transparent,
+              ],
+              stops: const [0, .48, 1],
+            ),
+          ),
+          child: child,
+        ),
+      );
+}
+
+class _WelcomeFiligreePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2 + 3);
+    final gold = AppColors.champagneGold;
+    final arcPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = .8
+      ..shader = LinearGradient(
+        colors: [
+          Colors.transparent,
+          gold.withValues(alpha: .20),
+          gold.withValues(alpha: .20),
+          Colors.transparent,
+        ],
+        stops: const [0, .28, .72, 1],
+      ).createShader(Offset.zero & size);
+
+    canvas.drawArc(
+      Rect.fromCenter(center: center, width: 304, height: 178),
+      3.46,
+      2.50,
+      false,
+      arcPaint,
+    );
+    canvas.drawArc(
+      Rect.fromCenter(center: center, width: 304, height: 178),
+      .32,
+      2.50,
+      false,
+      arcPaint,
+    );
+
+    final pointPaint = Paint()..color = gold.withValues(alpha: .58);
+    canvas.drawCircle(Offset(center.dx, 18), 1.8, pointPaint);
+    canvas.drawCircle(Offset(center.dx, size.height - 18), 1.8, pointPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _WelcomeFiligreePainter oldDelegate) => false;
 }
 
 class _GreetingRule extends StatelessWidget {

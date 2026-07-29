@@ -108,7 +108,8 @@ class SilarahPalette {
     accent: Color(0xFFC5A059),
     accentHighlight: Color(0xFFE4C77A),
     accentPressed: Color(0xFF8F7137),
-    complementary: Color(0xFF143A3B),
+    // Warm decorative depth. Green is reserved for semantic success states.
+    complementary: Color(0xFF2A2118),
     decorativeDepth: Color(0xFF181220),
     contentPrimary: Color(0xFFF5F5F7),
     contentSecondary: Color(0xFF8E8E93),
