@@ -17,6 +17,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart' show getTemporaryDirectory;
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:uuid/uuid.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/cubits/onboarding/onboarding_state.dart';
 import '../../../core/models/onboarding_data.dart';
@@ -56,6 +57,7 @@ class PhotoUploadScreen extends StatefulWidget {
 
 class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
   final _picker = ImagePicker();
+  final _uuid = const Uuid();
 
   // Compressed bytes for each slot (null = empty)
   final List<Uint8List?> _bytes = [null, null, null, null];
@@ -87,35 +89,13 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
     if (widget.returnToPreviousOnSave) {
       _loadingExisting = true;
       unawaited(_loadExistingPhotos());
-    } else if (data.photoLocalPaths != null) {
-      for (final path in data.photoLocalPaths!) {
-        final file = File(path);
-        if (file.existsSync()) {
-          final fileName = file.path.split('/').last.split('\\').last;
-          final match =
-              RegExp(r'silarah_photo_slot_(\d+)').firstMatch(fileName);
-          if (match != null) {
-            final idx = int.parse(match.group(1)!);
-            if (idx >= 0 && idx < 4) {
-              final bytes = file.readAsBytesSync();
-              _bytes[idx] = bytes;
-              _paths[idx] = path;
-              unawaited(_restoreLocalModeration(idx, path));
-            }
-          }
-        }
-      }
     }
   }
 
-  Future<void> _restoreLocalModeration(int index, String path) async {
-    final moderation = await PhotoModerationService.instance.scanFile(path);
-    if (!mounted || _paths[index] != path) return;
-    setState(() => _moderation[index] = moderation);
-    if (!moderation.canUpload) {
-      _removePhoto(index);
-      _showPhotoSafetyError(_photoModerationMessage(moderation));
-    }
+  @override
+  void dispose() {
+    _deleteAllTemporaryPhotos();
+    super.dispose();
   }
 
   Future<void> _loadExistingPhotos() async {
@@ -236,8 +216,14 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
 
   Future<void> _setSlot(int index, Uint8List bytes) async {
     final tempDir = await getTemporaryDirectory();
-    final file = File('${tempDir.path}/silarah_photo_slot_$index.webp');
+    final oldPath = _paths[index];
+    final file = File(
+      '${tempDir.path}/silarah_photo_slot_${index}_${_uuid.v4()}.webp',
+    );
     await file.writeAsBytes(bytes);
+    if (oldPath != null && oldPath != file.path) {
+      _deleteTemporaryPhoto(oldPath);
+    }
 
     _showOperation(
       slot: index,
@@ -503,6 +489,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       } else {
         await cubit.saveAndAdvance(data);
       }
+      _deleteAllTemporaryPhotos();
     } catch (e) {
       if (!mounted) return;
       _clearOperation();
@@ -527,6 +514,25 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         setState(() => _uploading = false);
         if (!_operationComplete) _clearOperation();
       }
+    }
+  }
+
+  void _deleteTemporaryPhoto(String path) {
+    try {
+      final file = File(path);
+      if (file.existsSync()) file.deleteSync();
+    } catch (_) {
+      // The OS temporary-directory sweeper remains the final fallback.
+    }
+  }
+
+  void _deleteAllTemporaryPhotos() {
+    for (var i = 0; i < _paths.length; i++) {
+      final path = _paths[i];
+      if (path != null) _deleteTemporaryPhoto(path);
+      _paths[i] = null;
+      _bytes[i] = null;
+      _moderation[i] = null;
     }
   }
 

@@ -14,7 +14,13 @@ foreach ($key in @(
     'SUPABASE_ANON_KEY',
     'REVENUECAT_ANDROID_KEY',
     'FIREBASE_PROJECT_ID',
-    'FIREBASE_ANDROID_APP_ID'
+    'FIREBASE_MESSAGING_SENDER_ID',
+    'FIREBASE_STORAGE_BUCKET',
+    'FIREBASE_ANDROID_API_KEY',
+    'FIREBASE_ANDROID_APP_ID',
+    'FIREBASE_IOS_API_KEY',
+    'FIREBASE_IOS_APP_ID',
+    'FIREBASE_IOS_BUNDLE_ID'
 )) {
     $value = [string]$defines.$key
     if ([string]::IsNullOrWhiteSpace($value) -or
@@ -25,6 +31,11 @@ foreach ($key in @(
 }
 if (-not ([string]$defines.REVENUECAT_ANDROID_KEY).StartsWith('goog_')) {
     throw 'Release builds require the RevenueCat Google Play public SDK key.'
+}
+
+& python 'tool/verify_firebase_config.py' $configPath
+if ($LASTEXITCODE -ne 0) {
+    throw 'Firebase release configuration verification failed.'
 }
 
 $versionLine = Get-Content -LiteralPath 'pubspec.yaml' |

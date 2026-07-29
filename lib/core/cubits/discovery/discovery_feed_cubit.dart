@@ -57,12 +57,6 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         final dbData = await ProfileWriteService.loadProfile();
         if (dbData != null) return dbData;
       }
-      final prefs = await SharedPreferences.getInstance();
-      final rawJson = prefs.getString('onboarding_data_cache');
-      if (rawJson != null && rawJson.isNotEmpty) {
-        final mapped = jsonDecode(rawJson) as Map<String, dynamic>;
-        return OnboardingData.fromJson(mapped);
-      }
     } catch (e) {
       debugPrint('DiscoveryFeedCubit: Error loading viewer profile: $e');
     }
@@ -309,7 +303,8 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   Future<DiscoveryFilter?> _loadFilterFromPrefs() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString(_kFilterKey);
+      await prefs.remove(_kFilterKey);
+      final raw = prefs.getString(_filterKey);
       if (raw == null || raw.isEmpty) return null;
 
       final j = jsonDecode(raw) as Map<String, dynamic>;
@@ -352,7 +347,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     try {
       final prefs = await SharedPreferences.getInstance();
       if (!f.isActive) {
-        await prefs.remove(_kFilterKey);
+        await prefs.remove(_filterKey);
         return;
       }
       final json = jsonEncode({
@@ -380,9 +375,25 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         'diasporaCountries': f.diasporaCountries,
         'browseCountries': f.browseCountries,
       });
-      await prefs.setString(_kFilterKey, json);
+      await prefs.setString(_filterKey, json);
     } catch (e) {
       debugPrint('DiscoveryFeedCubit: failed to save filter: $e');
+    }
+  }
+
+  String get _filterKey {
+    final userId = SupabaseService.currentUserId;
+    if (userId == null || userId.isEmpty) {
+      throw StateError('Authenticated user is required for filter storage.');
+    }
+    return '${_kFilterKey}_$userId';
+  }
+
+  static Future<void> clearPersistedFilters({String? userId}) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_kFilterKey);
+    if (userId != null && userId.isNotEmpty) {
+      await prefs.remove('${_kFilterKey}_$userId');
     }
   }
 

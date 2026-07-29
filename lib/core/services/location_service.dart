@@ -23,21 +23,26 @@ abstract final class LocationService {
     }
 
     try {
-      final regionName = city.state.trim().isNotEmpty
-          ? city.state.trim()
-          : (city.country.trim().isNotEmpty
-              ? city.country.trim()
-              : city.countryCode.trim());
-      final response =
-          await SupabaseService.client.rpc('get_or_create_city', params: {
-        'p_city_name': city.city,
-        'p_region_name': regionName,
-        'p_country_name': city.country,
-        'p_country_code': city.countryCode,
-        'p_latitude': city.lat,
-        'p_longitude': city.lng,
-      });
-      final cityId = response?.toString();
+      final existingId = city.catalogCityId?.trim();
+      if (existingId != null && existingId.isNotEmpty) {
+        return LocationResolution(cityId: existingId);
+      }
+      final token = city.resolutionToken?.trim();
+      if (token == null || token.isEmpty) {
+        return const LocationResolution(
+          errorMessage:
+              'This location result expired. Search for the city again.',
+        );
+      }
+      final response = await SupabaseService.client.functions.invoke(
+        'location-search',
+        body: {
+          'mode': 'resolve',
+          'resolution_token': token,
+        },
+      );
+      final payload = response.data;
+      final cityId = payload is Map ? payload['city_id']?.toString() : null;
       if (cityId != null && cityId.trim().isNotEmpty) {
         return LocationResolution(cityId: cityId);
       }

@@ -11,7 +11,6 @@
 //   Guardian → completeAt 5
 // ============================================================
 
-import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/onboarding_data.dart';
@@ -47,19 +46,9 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       data = dbData;
       _lastProfileLoadAt = DateTime.now();
     } else {
-      // 2. Fallback to this authenticated user's local cache if the database
-      // has no row yet. The key is user-scoped to avoid carrying a previous
-      // account's self/guardian onboarding data into this session.
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        final rawJson = prefs.getString(_cacheKey);
-        if (rawJson != null && rawJson.isNotEmpty) {
-          final mapped = jsonDecode(rawJson) as Map<String, dynamic>;
-          data = OnboardingData.fromJson(mapped);
-        }
-      } catch (_) {
-        data = const OnboardingData();
-      }
+      // Every resumable step is server-backed. Intimate profile, location,
+      // guardian and photo data is never restored from SharedPreferences.
+      await clearSensitiveDeviceState(userId: _authenticatedUserId);
     }
 
     final authState = _authCubit.state;
@@ -333,20 +322,35 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   // ── Cache Persistence Helper ──────────────────────────────
 
   Future<void> _persistLocalCache(OnboardingData data) async {
+    // Deliberately memory-only. Supabase is the resume source and callers keep
+    // [data] in Cubit state for the current process.
+    await clearSensitiveDeviceState(userId: _authenticatedUserId);
+  }
+
+  static Future<void> clearSensitiveDeviceState({String? userId}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_cacheKey, jsonEncode(data.toJson()));
+      await prefs.remove(_kCacheKey);
+      if (userId != null && userId.isNotEmpty) {
+        await prefs.remove('${_kCacheKey}_$userId');
+      }
+      // Audit-2 cleanup for values written by older releases.
+      for (final key in prefs.getKeys()) {
+        if (key.startsWith('${_kCacheKey}_')) {
+          await prefs.remove(key);
+        }
+      }
     } catch (_) {}
   }
 
   // ── Helpers ───────────────────────────────────────────────
 
-  String get _cacheKey {
+  String? get _authenticatedUserId {
     final authState = _authCubit.state;
     if (authState is AuthAuthenticated) {
-      return '${_kCacheKey}_${authState.userId}';
+      return authState.userId;
     }
-    return _kCacheKey;
+    return null;
   }
 
   int _clampStepForData(int step, OnboardingData data) {

@@ -12,10 +12,7 @@
 // table, saved from Flutter via FirebaseMessaging.instance.getToken().
 // ============================================================
 
-import {
-  createClient,
-  type SupabaseClient,
-} from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { corsHeaders } from "../_shared/cors.ts";
 import { isAuthorizedCronRequest } from "../_shared/cron_auth.ts";
 import {

@@ -3,42 +3,34 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  final migration = File(
-    'supabase/migrations/124_recover_unfinished_email_signup.sql',
+  final containmentMigration = File(
+    'supabase/migrations/160_second_audit_privilege_boundary.sql',
   ).readAsStringSync();
   final authCubit = File(
     'lib/core/cubits/auth/auth_cubit.dart',
   ).readAsStringSync();
 
-  test('registration status distinguishes pending from confirmed users', () {
-    expect(migration, contains('email_registration_status'));
-    expect(migration, contains("THEN 'pending_verification'"));
-    expect(migration, contains('email_confirmed_at IS NOT NULL'));
+  test('registration status oracles are unavailable to API callers', () {
+    expect(containmentMigration, contains('email_registration_status(text)'));
+    expect(containmentMigration, contains('email_is_registered(text)'));
     expect(
-      migration,
-      contains("email_registration_status(p_email) = 'registered'"),
+      containmentMigration,
+      contains('FROM PUBLIC, anon, authenticated'),
     );
   });
 
-  test('pending signup requests a new OTP instead of duplicate-account error',
-      () {
-    expect(authCubit, contains("'email_registration_status'"));
-    expect(
-      authCubit,
-      contains('registrationStatus == _EmailRegistrationStatus.registered'),
-    );
-    expect(
-      authCubit,
-      contains('registrationStatus == _EmailRegistrationStatus.unregistered'),
-    );
-    expect(
-      authCubit,
-      contains('Your signup is not finished.'),
-    );
+  test('OTP requests do not preflight whether an account exists', () {
+    expect(authCubit, isNot(contains("'email_registration_status'")));
     expect(authCubit, isNot(contains("'email_is_registered'")));
+    expect(authCubit, isNot(contains('_EmailRegistrationStatus')));
+    expect(authCubit, contains('bindPendingTransactionToEmail'));
+    expect(
+      authCubit,
+      contains('We could not send a verification code.'),
+    );
   });
 
-  test('concurrent submit events are coalesced before registration lookup', () {
+  test('concurrent submit events are coalesced before the OTP request', () {
     expect(authCubit, contains('OtpRequestCoalescer _otpRequests'));
     expect(authCubit, contains('return _otpRequests.run('));
     expect(authCubit, contains('() => _sendOtpOnce('));

@@ -97,17 +97,22 @@ void main() {
     expect(sources, contains('SilarahSizeReveal('));
   });
 
-  test('CI actions use maintained Node 24 runtimes', () {
+  test('CI actions and toolchains are immutable', () {
     final workflow = File('.github/workflows/ci.yml').readAsStringSync();
 
-    expect(workflow, isNot(contains('actions/checkout@v4')));
-    expect(workflow, isNot(contains('actions/setup-python@v5')));
-    expect(workflow, isNot(contains('actions/setup-node@v4')));
-    expect(workflow, isNot(contains('supabase/setup-cli@v1')));
-    expect(workflow, contains('actions/checkout@v7'));
-    expect(workflow, contains('actions/setup-python@v6'));
-    expect(workflow, contains('actions/setup-node@v7'));
-    expect(workflow, contains('supabase/setup-cli@v3'));
+    expect(
+      RegExp(r'uses:\s+\S+@v\d').hasMatch(workflow),
+      isFalse,
+      reason: 'Actions must use immutable commit SHAs, not mutable tags.',
+    );
+    expect(
+      RegExp(r'uses:\s+\S+@[0-9a-f]{40}').allMatches(workflow).length,
+      greaterThanOrEqualTo(6),
+    );
+    expect(workflow, contains('flutter-version: "3.41.4"'));
+    expect(workflow, contains('deno-version: "2.8.1"'));
+    expect(workflow, contains('version: "2.110.0"'));
+    expect(workflow, isNot(contains('version: latest')));
   });
 
   test('app fields cannot reintroduce thick focused outlines', () {

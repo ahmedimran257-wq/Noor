@@ -8,8 +8,6 @@
 // with no local success fallback.
 // ============================================================
 
-import 'package:shared_preferences/shared_preferences.dart';
-import '../data/country_data.dart';
 import '../models/onboarding_data.dart';
 import '../onboarding/onboarding_flow.dart';
 import 'operational_telemetry_service.dart';
@@ -60,40 +58,6 @@ class ProfileWriteService {
 
   /// Persists the fields modified in [step] to Supabase.
   /// Returns true on success, false on error.
-  static const _keyPendingPhoneRetry = 'pending_guardian_phone_retry';
-
-  /// Retries sending a previously failed guardian phone number RPC update.
-  static Future<void> retryPendingGuardianPhone() async {
-    if (!_canWrite || _userId == null) return;
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final pendingPhone = prefs.getString(_keyPendingPhoneRetry);
-      if (pendingPhone == null) return;
-
-      final profileRes = await SupabaseService.client
-          .from('my_profile_private')
-          .select('id')
-          .eq('user_id', _userId!)
-          .single();
-
-      await SupabaseService.client.rpc('set_guardian_phone', params: {
-        'p_profile_id': profileRes['id'],
-        'p_phone': pendingPhone,
-      });
-
-      await prefs.remove(_keyPendingPhoneRetry);
-    } catch (_) {
-      OperationalTelemetryService.record(
-        'profile_write',
-        'guardian_phone_retry_failed',
-      );
-      return;
-    }
-  }
-
-  /// Persists the fields modified in [step] to Supabase.
-  /// Returns true on success, false on error.
   static Future<bool> saveStep({
     required int step,
     required OnboardingData data,
@@ -102,9 +66,6 @@ class ProfileWriteService {
     if (!_canWrite || _userId == null) {
       return false;
     }
-
-    // Retry before the current write so deferred guardian data cannot race this step.
-    await retryPendingGuardianPhone();
 
     OnboardingData dataToWrite = data;
 
@@ -319,28 +280,19 @@ class ProfileWriteService {
   }
 
   static Future<void> _saveGuardianPhone(OnboardingData data) async {
-    try {
-      final profileRes = await SupabaseService.client
-          .from('my_profile_private')
-          .select('id')
-          .eq('user_id', _userId!)
-          .single();
+    final profileRes = await SupabaseService.client
+        .from('my_profile_private')
+        .select('id')
+        .eq('user_id', _userId!)
+        .single();
 
-      await SupabaseService.client.rpc('set_guardian_phone', params: {
-        'p_profile_id': profileRes['id'],
-        'p_phone': data.guardianPhone!.trim(),
-      });
-    } catch (rpcErr) {
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(
-          _keyPendingPhoneRetry,
-          data.guardianPhone!.trim(),
-        );
-      } catch (_) {
-        return;
-      }
-    }
+    // Guardian contact is never deferred to device-global storage. If the
+    // server invitation cannot be created, the step fails and this same user
+    // must retry explicitly.
+    await SupabaseService.client.rpc('set_guardian_phone', params: {
+      'p_profile_id': profileRes['id'],
+      'p_phone': data.guardianPhone!.trim(),
+    });
   }
 
   static Future<OnboardingData?> _ensureLocationRows(
@@ -355,36 +307,16 @@ class ProfileWriteService {
       return null;
     }
 
-    final regionName =
-        _cleanText(data.stateName) ?? _countryNameFor(countryCode);
-
-    try {
-      // Race/FK guard: the profile write references countries/cities by FK, so
-      // the final save boundary re-resolves the selected city instead of
-      // trusting a stale or malformed cityId from a previous UI step.
-      final response =
-          await SupabaseService.client.rpc('get_or_create_city', params: {
-        'p_city_name': cityName,
-        'p_region_name': regionName,
-        'p_country_name': _countryNameFor(countryCode),
-        'p_country_code': countryCode,
-        'p_latitude': data.lat,
-        'p_longitude': data.lng,
-      });
-
-      final cityId = _intFromRpc(response);
-      if (cityId == null) {
-        return null;
-      }
-
-      return data.copyWith(
-        countryCode: countryCode,
-        cityId: cityId.toString(),
-        cityName: cityName,
-      );
-    } catch (_) {
-      return null;
-    }
+    // Shared catalogue creation is service-only. Quick Location resolves a
+    // provider-signed result through the location-search Edge Function before
+    // any profile write reaches this boundary.
+    final cityId = data.cityId?.trim();
+    if (cityId == null || int.tryParse(cityId) == null) return null;
+    return data.copyWith(
+      countryCode: countryCode,
+      cityId: cityId,
+      cityName: cityName,
+    );
   }
 
   /// Updates the onboarding_step column on the profiles table.
@@ -844,16 +776,6 @@ class ProfileWriteService {
     final raw = _cleanText(data.cityName);
     if (raw == null) return null;
     return raw.split(',').first.trim();
-  }
-
-  static String _countryNameFor(String countryCode) {
-    final normalized = countryCode.toUpperCase();
-    for (final country in kAllCountries) {
-      if (country.iso2.toUpperCase() == normalized) {
-        return country.name;
-      }
-    }
-    return normalized;
   }
 
   static int? _intFromRpc(dynamic response) {

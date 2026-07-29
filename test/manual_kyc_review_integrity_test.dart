@@ -53,12 +53,17 @@ void main() {
 
   test('raw KYC evidence has automatic deletion and durable digests', () {
     final purge = source('supabase/functions/purge-kyc-documents/index.ts');
+    final ingestion = source('supabase/functions/process-kyc/index.ts');
     final migration =
         source('supabase/migrations/136_manual_global_kyc_review.sql');
 
-    expect(purge, contains('.remove(paths)'));
-    expect(purge, contains('SHA-256'));
-    expect(purge, contains('documents_purged_at'));
+    expect(purge, contains('.remove([path])'));
+    expect(purge, contains('checkout_kyc_document_purges'));
+    expect(purge, contains('finish_kyc_document_purge'));
+    expect(purge, isNot(contains('.download(')));
+    expect(ingestion, contains('crypto.subtle.digest("SHA-256"'));
+    expect(ingestion, contains('selfie_sha256: selfieObject.sha256'));
+    expect(ingestion, contains('id_photo_sha256: idObject.sha256'));
     expect(migration, contains("now() + interval '30 days'"));
     expect(migration, contains('purge_kyc_documents_daily'));
   });

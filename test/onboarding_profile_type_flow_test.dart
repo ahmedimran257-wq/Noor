@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:silarah/core/cubits/auth/auth_cubit.dart';
 import 'package:silarah/core/cubits/auth/auth_state.dart';
@@ -99,9 +97,7 @@ void main() {
       lng: 78.0373,
       motherTongue: 'Urdu',
     );
-    SharedPreferences.setMockInitialValues({
-      'onboarding_data_cache_user-1': jsonEncode(validProfileData.toJson()),
-    });
+    SharedPreferences.setMockInitialValues({});
     final authCubit = _SeededAuthCubit()
       ..seed(const AuthAuthenticated(
         userId: 'user-1',
@@ -114,6 +110,9 @@ void main() {
     addTearDown(onboardingCubit.close);
 
     await onboardingCubit.initialize(startStep: 3);
+    // Sensitive onboarding state is deliberately memory-only. Seed the
+    // current process the same way a server-loaded profile does.
+    onboardingCubit.markActive(3, validProfileData);
     onboardingCubit.syncRouteStep(2);
 
     var onboardingState = onboardingCubit.state;

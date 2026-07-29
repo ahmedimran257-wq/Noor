@@ -31,6 +31,9 @@ import 'core/services/wali_mode_service.dart';
 import 'core/services/fcm_service.dart';
 import 'core/services/presence_service.dart';
 import 'core/services/bookmark_service.dart';
+import 'core/services/filter_preset_service.dart';
+import 'core/services/legal_consent_service.dart';
+import 'core/services/digilocker_service.dart';
 import 'core/cubits/auth/auth_cubit.dart';
 import 'core/cubits/auth/auth_state.dart';
 import 'core/cubits/onboarding/onboarding_cubit.dart';
@@ -96,6 +99,7 @@ void main() async {
     // ── Supabase Initialization ─────────────────────────────────
     // Initialize Supabase client
     await SupabaseService.initialize();
+    await DigiLockerService.instance.initialize();
   } catch (error, stack) {
     debugPrint('[main] Critical startup configuration error: $error\n$stack');
     _bootstrapStage.value = _BootstrapStage.failed;
@@ -647,7 +651,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
     await _subscriptionCubit.loginUser(userId);
   }
 
-  void _clearUserScopedState() {
+  void _clearUserScopedState({String? departingUserId}) {
     BookmarkService.clearCache();
     _chatCubit.clear();
     _notificationsCubit.clear();
@@ -656,6 +660,14 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
     _interestsCubit.clear();
     _blockReportCubit.clear();
     unawaited(_accountStandingCubit.stop());
+    unawaited(OnboardingCubit.clearSensitiveDeviceState(
+      userId: departingUserId,
+    ));
+    unawaited(DiscoveryFeedCubit.clearPersistedFilters(
+      userId: departingUserId,
+    ));
+    unawaited(FilterPresetService.clearForUser(departingUserId));
+    unawaited(LegalConsentService.instance.clearPendingTransaction());
   }
 
   void _openInAppNotification(NotificationItem item) {
@@ -720,15 +732,18 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
               // Reset the guard when user signs out so re-login triggers
               // a fresh initialization of the onboarding cubit.
               if (state is AuthUnauthenticated) {
+                final departingUserId = _activeSessionUserId;
                 _onboardingInitialized = false;
                 _activeSessionUserId = null;
                 PresenceService.instance.stop();
-                _clearUserScopedState();
+                _clearUserScopedState(departingUserId: departingUserId);
               }
               if (state is AuthAuthenticated &&
                   _activeSessionUserId != null &&
                   _activeSessionUserId != state.userId) {
-                _clearUserScopedState();
+                _clearUserScopedState(
+                  departingUserId: _activeSessionUserId,
+                );
                 _onboardingInitialized = false;
               }
               final isNewAuthenticatedSession = state is AuthAuthenticated &&

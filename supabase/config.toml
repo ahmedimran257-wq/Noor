@@ -107,10 +107,6 @@ enabled = true
 # Edge Functions are in supabase/functions/
 # Deploy all with: supabase functions deploy
 
-[functions.auth-before-user-created]
-# Supabase Auth calls this endpoint before an anonymous user session exists.
-verify_jwt = false
-
 [functions.process-kyc]
 # KYC accepts only the signed-in user's JWT and re-validates ownership inside
 # the function before touching private identity documents.

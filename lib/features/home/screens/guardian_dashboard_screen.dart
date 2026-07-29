@@ -52,7 +52,7 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
     super.dispose();
   }
 
-  Future<void> _loadDashboard() async {
+  Future<void> _loadDashboard({String? markSeenWardId}) async {
     if (!SupabaseService.isInitialized) {
       if (mounted) {
         setState(() {
@@ -64,7 +64,9 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
     }
     setState(() => _isLoading = true);
     try {
-      final chats = await _waliService.getDashboard();
+      final chats = await _waliService.getDashboard(
+        markSeenWardId: markSeenWardId,
+      );
       if (mounted) {
         setState(() {
           _chats = chats;
@@ -128,8 +130,7 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
   }
 
   Future<void> _handleMarkSeen(GuardianDashboardItem chat) async {
-    await _waliService.markChatAsSeen(wardUserId: chat.wardUserId);
-    await _loadDashboard();
+    await _loadDashboard(markSeenWardId: chat.wardUserId);
   }
 
   @override

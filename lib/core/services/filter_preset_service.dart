@@ -8,6 +8,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../cubits/discovery/discovery_filter.dart';
+import 'supabase_service.dart';
 
 class FilterPreset {
   const FilterPreset({required this.name, required this.filter});
@@ -84,7 +85,8 @@ class FilterPresetService {
 
   static Future<List<FilterPreset>> load() async {
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getStringList(_kKey) ?? [];
+    await prefs.remove(_kKey);
+    final raw = prefs.getStringList(_userKey) ?? [];
     return raw
         .map((s) {
           try {
@@ -101,7 +103,7 @@ class FilterPresetService {
     final prefs = await SharedPreferences.getInstance();
     final capped = presets.take(maxPresets).toList();
     await prefs.setStringList(
-      _kKey,
+      _userKey,
       capped.map((p) => jsonEncode(p.toJson())).toList(),
     );
   }
@@ -109,5 +111,22 @@ class FilterPresetService {
   static Future<void> clear() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_kKey);
+    await prefs.remove(_userKey);
+  }
+
+  static String get _userKey {
+    final userId = SupabaseService.currentUserId;
+    if (userId == null || userId.isEmpty) {
+      throw StateError('Authenticated user is required for filter presets.');
+    }
+    return '${_kKey}_$userId';
+  }
+
+  static Future<void> clearForUser(String? userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_kKey);
+    if (userId != null && userId.isNotEmpty) {
+      await prefs.remove('${_kKey}_$userId');
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "@supabase/supabase-js";
 import { corsHeaders } from "../_shared/cors.ts";
 import { readResponseJson } from "../_shared/bounded_response.ts";
 import {
@@ -8,6 +8,8 @@ import {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const LOCATION_RESULT_SIGNING_SECRET =
+  Deno.env.get("LOCATION_RESULT_SIGNING_SECRET") ?? "";
 const PHOTON_URL = "https://photon.komoot.io/api";
 const TIMEOUT_MS = 6_000;
 const MAX_RESPONSE_BYTES = 512 * 1024;
@@ -17,6 +19,19 @@ type SearchPayload = {
   country_code?: unknown;
   mode?: unknown;
   limit?: unknown;
+  resolution_token?: unknown;
+};
+
+type ResolutionClaim = {
+  v: 1;
+  sub: string;
+  exp: number;
+  city: string;
+  state: string;
+  country: string;
+  country_code: string;
+  lat: number;
+  lng: number;
 };
 
 Deno.serve(async (req) => {
@@ -43,6 +58,40 @@ Deno.serve(async (req) => {
     if (authError || !userId) return json(401, { error: "unauthorized" });
 
     const payload = await req.json() as SearchPayload;
+    if (payload.mode === "resolve") {
+      if (!LOCATION_RESULT_SIGNING_SECRET) {
+        return json(503, { error: "location_resolution_unavailable" });
+      }
+      const claim = await verifyResolutionToken(
+        String(payload.resolution_token ?? ""),
+        userId,
+      );
+      if (!claim) {
+        return json(400, { error: "invalid_location_resolution" });
+      }
+      const { data: cityId, error: cityError } = await admin.rpc(
+        "get_or_create_city",
+        {
+          p_city_name: claim.city,
+          p_region_name: claim.state || claim.country,
+          p_country_name: claim.country,
+          p_country_code: claim.country_code,
+          p_latitude: claim.lat,
+          p_longitude: claim.lng,
+        },
+      );
+      if (cityError || cityId == null) {
+        console.error(
+          `[location-search] ${correlationId} city_resolution_failed`,
+        );
+        return json(503, {
+          error: "location_resolution_failed",
+          correlation_id: correlationId,
+        });
+      }
+      return json(200, { city_id: cityId });
+    }
+
     const query = String(payload.query ?? "").trim();
     const countryCode = String(payload.country_code ?? "").trim().toUpperCase();
     const mode = payload.mode === "region" ? "region" : "city";
@@ -103,7 +152,20 @@ Deno.serve(async (req) => {
     const features = Array.isArray(data.features)
       ? data.features.slice(0, limit)
       : [];
-    return json(200, { features });
+    if (!LOCATION_RESULT_SIGNING_SECRET) {
+      return json(503, { error: "location_resolution_unavailable" });
+    }
+    const signedFeatures = await Promise.all(
+      features.map(async (feature) => {
+        const claim = locationClaim(feature, userId);
+        if (!claim) return null;
+        return {
+          ...(feature as Record<string, unknown>),
+          silarah_resolution_token: await signResolutionClaim(claim),
+        };
+      }),
+    );
+    return json(200, { features: signedFeatures.filter(Boolean) });
   } catch (error) {
     const code = error instanceof DOMException && error.name === "TimeoutError"
       ? "location_provider_timeout"
@@ -122,4 +184,136 @@ function json(status: number, body: unknown): Response {
       "Cache-Control": status === 200 ? "private, max-age=300" : "no-store",
     },
   });
+}
+
+function locationClaim(
+  raw: unknown,
+  userId: string,
+): ResolutionClaim | null {
+  if (!raw || typeof raw !== "object") return null;
+  const feature = raw as Record<string, unknown>;
+  const properties = feature.properties as Record<string, unknown> | undefined;
+  const geometry = feature.geometry as Record<string, unknown> | undefined;
+  const coordinates = geometry?.coordinates;
+  if (
+    !properties ||
+    !Array.isArray(coordinates) ||
+    coordinates.length < 2 ||
+    typeof coordinates[0] !== "number" ||
+    typeof coordinates[1] !== "number"
+  ) return null;
+
+  const city = String(properties.name ?? "").trim();
+  const state = String(properties.state ?? "").trim();
+  const country = String(properties.country ?? "").trim();
+  const countryCode = String(properties.countrycode ?? "").trim().toUpperCase();
+  const osmKey = String(properties.osm_key ?? "").trim().toLowerCase();
+  const lat = coordinates[1];
+  const lng = coordinates[0];
+  if (
+    osmKey !== "place" ||
+    city.length < 2 ||
+    city.length > 100 ||
+    state.length > 100 ||
+    country.length < 2 ||
+    country.length > 100 ||
+    !/^[A-Z]{2}$/.test(countryCode) ||
+    lat < -90 ||
+    lat > 90 ||
+    lng < -180 ||
+    lng > 180
+  ) return null;
+
+  return {
+    v: 1,
+    sub: userId,
+    exp: Date.now() + 10 * 60 * 1000,
+    city,
+    state,
+    country,
+    country_code: countryCode,
+    lat,
+    lng,
+  };
+}
+
+async function signResolutionClaim(claim: ResolutionClaim): Promise<string> {
+  const payload = new TextEncoder().encode(JSON.stringify(claim));
+  const signature = await hmac(payload);
+  return `${base64Url(payload)}.${base64Url(signature)}`;
+}
+
+async function verifyResolutionToken(
+  token: string,
+  userId: string,
+): Promise<ResolutionClaim | null> {
+  const parts = token.split(".");
+  if (parts.length !== 2 || token.length > 2048) return null;
+  try {
+    const payload = fromBase64Url(parts[0]);
+    const supplied = fromBase64Url(parts[1]);
+    const expected = await hmac(payload);
+    if (!constantTimeEqual(supplied, expected)) return null;
+    const claim = JSON.parse(
+      new TextDecoder().decode(payload),
+    ) as ResolutionClaim;
+    if (
+      claim.v !== 1 ||
+      claim.sub !== userId ||
+      !Number.isSafeInteger(claim.exp) ||
+      claim.exp < Date.now() ||
+      claim.exp > Date.now() + 11 * 60 * 1000 ||
+      !/^[A-Z]{2}$/.test(claim.country_code) ||
+      claim.city.length < 2 ||
+      claim.city.length > 100 ||
+      claim.country.length < 2 ||
+      claim.country.length > 100 ||
+      claim.state.length > 100 ||
+      !Number.isFinite(claim.lat) ||
+      claim.lat < -90 ||
+      claim.lat > 90 ||
+      !Number.isFinite(claim.lng) ||
+      claim.lng < -180 ||
+      claim.lng > 180
+    ) return null;
+    return claim;
+  } catch {
+    return null;
+  }
+}
+
+async function hmac(payload: Uint8Array): Promise<Uint8Array> {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(LOCATION_RESULT_SIGNING_SECRET),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const input = Uint8Array.from(payload);
+  return new Uint8Array(
+    await crypto.subtle.sign("HMAC", key, input.buffer),
+  );
+}
+
+function base64Url(bytes: Uint8Array): string {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(
+    /=+$/,
+    "",
+  );
+}
+
+function fromBase64Url(value: string): Uint8Array {
+  const normalized = value.replaceAll("-", "+").replaceAll("_", "/");
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+  return Uint8Array.from(atob(padded), (character) => character.charCodeAt(0));
+}
+
+function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  let difference = 0;
+  for (let i = 0; i < a.length; i += 1) difference |= a[i] ^ b[i];
+  return difference === 0;
 }

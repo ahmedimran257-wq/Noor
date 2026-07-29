@@ -1,18 +1,17 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "@supabase/supabase-js";
 import { isAuthorizedCronRequest } from "../_shared/cron_auth.ts";
 
-const corsHeaders = {
+const responseHeaders = {
   "Content-Type": "application/json",
   "Cache-Control": "no-store",
 };
 
-type Submission = {
+type PurgeClaim = {
   id: string;
-  user_id: string;
-  profile_id: string;
-  status: string;
   selfie_storage_path: string | null;
   id_photo_storage_path: string | null;
+  selfie_purge_status: string;
+  id_photo_purge_status: string;
 };
 
 Deno.serve(async (req) => {
@@ -24,119 +23,104 @@ Deno.serve(async (req) => {
   }
 
   const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("kyc_review_submissions")
-    .select(
-      "id,user_id,profile_id,status,selfie_storage_path,id_photo_storage_path",
-    )
-    .is("documents_purged_at", null)
-    .lte("purge_after", new Date().toISOString())
-    .order("purge_after", { ascending: true })
-    .limit(50);
-  if (error) return response({ error: "Unable to load retention queue" }, 500);
+  const { data, error } = await admin.rpc(
+    "checkout_kyc_document_purges",
+    { p_limit: 5 },
+  );
+  if (error) {
+    console.error("[purge-kyc-documents] claim failed", error.message);
+    return response({ error: "Unable to claim retention work" }, 500);
+  }
 
   let purged = 0;
   let failed = 0;
-  for (const submission of (data ?? []) as Submission[]) {
+  for (const claim of (data ?? []) as PurgeClaim[]) {
     try {
-      const paths = [
-        submission.selfie_storage_path,
-        submission.id_photo_storage_path,
-      ]
-        .filter((path): path is string => Boolean(path));
-      const [selfieHash, idHash] = await Promise.all([
-        digestObject(admin, submission.selfie_storage_path),
-        digestObject(admin, submission.id_photo_storage_path),
-      ]);
-      if (paths.length > 0) {
-        const { error: removeError } = await admin.storage.from("kyc-documents")
-          .remove(paths);
-        if (removeError) throw removeError;
-      }
-
-      const expired = submission.status === "pending";
-      const { error: updateError } = await admin.from("kyc_review_submissions")
-        .update({
-          status: expired ? "expired" : submission.status,
-          review_reason: expired
-            ? "The private evidence reached its retention limit before review."
-            : undefined,
-          selfie_sha256: selfieHash,
-          id_photo_sha256: idHash,
-          selfie_storage_path: null,
-          id_photo_storage_path: null,
-          documents_purged_at: new Date().toISOString(),
-        }).eq("id", submission.id);
-      if (updateError) throw updateError;
-
-      const { data: profile } = await admin.from("profiles")
-        .select("kyc_manual_review_id,has_verification_badge")
-        .eq("id", submission.profile_id)
-        .maybeSingle();
-      if (profile?.kyc_manual_review_id === submission.id) {
-        const profileUpdate = expired
-          ? {
-            kyc_verified: false,
-            kyc_assurance_level: "none",
-            verification_status: profile.has_verification_badge
-              ? "verified"
-              : "unverified",
-            is_verified: Boolean(profile.has_verification_badge),
-            kyc_selfie_storage_path: null,
-            kyc_id_photo_storage_path: null,
-          }
-          : {
-            // Purging raw images must never revoke a completed decision.
-            kyc_selfie_storage_path: null,
-            kyc_id_photo_storage_path: null,
-          };
-        await admin.from("profiles").update(profileUpdate).eq(
-          "id",
-          submission.profile_id,
+      const selfieDeleted = claim.selfie_purge_status === "deleted" ||
+        await deleteObject(
+          admin,
+          claim.id,
+          "selfie",
+          claim.selfie_storage_path,
         );
+      const idDeleted = claim.id_photo_purge_status === "deleted" ||
+        await deleteObject(
+          admin,
+          claim.id,
+          "id_photo",
+          claim.id_photo_storage_path,
+        );
+      if (!selfieDeleted || !idDeleted) {
+        failed += 1;
+        continue;
       }
-      if (expired) {
-        await admin.from("notifications").insert({
-          user_id: submission.user_id,
-          type: "kyc_rejected",
-          title: "Submit your ID check again",
-          body:
-            "Your private identity images expired before review and were deleted. Please submit a new selfie and document.",
-          deep_link: "silarah://verify-identity",
-        });
+
+      const { data: completed, error: finishError } = await admin.rpc(
+        "finish_kyc_document_purge",
+        { p_submission_id: claim.id },
+      );
+      if (finishError || completed !== true) {
+        throw new Error(finishError?.message ?? "purge_not_finalized");
       }
       purged += 1;
     } catch (error) {
       failed += 1;
-      console.error("KYC retention item failed", {
-        submissionId: submission.id,
-        error: String(error),
+      console.error("[purge-kyc-documents] item failed", {
+        submissionId: claim.id,
+        error: safeError(error),
       });
     }
   }
-  return response({ processed: (data ?? []).length, purged, failed });
+
+  return response({
+    processed: (data ?? []).length,
+    purged,
+    failed,
+  });
 });
 
-async function digestObject(
+async function deleteObject(
   admin: ReturnType<typeof createAdminClient>,
+  submissionId: string,
+  kind: "selfie" | "id_photo",
   path: string | null,
-) {
-  if (!path) return null;
-  const { data, error } = await admin.storage.from("kyc-documents").download(
-    path,
+): Promise<boolean> {
+  let success = true;
+  let failure: string | null = null;
+  if (path) {
+    const { error } = await admin.storage.from("kyc-documents").remove([path]);
+    if (error) {
+      success = false;
+      failure = error.message;
+    }
+  }
+
+  const { error: recordError } = await admin.rpc(
+    "record_kyc_purge_object_result",
+    {
+      p_submission_id: submissionId,
+      p_object_kind: kind,
+      p_success: success,
+      p_error: failure,
+    },
   );
-  if (error || !data) return null;
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    await data.arrayBuffer(),
-  );
-  return Array.from(new Uint8Array(digest)).map((byte) =>
-    byte.toString(16).padStart(2, "0")
-  ).join("");
+  if (recordError) {
+    throw new Error(`purge_object_state_failed:${recordError.message}`);
+  }
+  return success;
 }
 
-function response(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), { status, headers: corsHeaders });
+function response(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: responseHeaders,
+  });
+}
+
+function safeError(error: unknown): string {
+  return error instanceof Error
+    ? error.message.slice(0, 300)
+    : "unknown_retention_error";
 }
 
 function createAdminClient() {

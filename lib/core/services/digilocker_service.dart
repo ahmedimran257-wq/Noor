@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:app_links/app_links.dart';
 import 'package:crypto/crypto.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'supabase_service.dart';
@@ -33,8 +34,11 @@ class DigiLockerVerificationResult {
 }
 
 /// Optional India-only evidence-based identity verification. OAuth success is
-/// authorization only; the server grants KYC only after matching DigiLocker
-/// account data and HMAC-authenticated issued-document XML.
+/// authorization only; the server grants KYC after verifying issued evidence.
+///
+/// The PKCE verifier and state are encrypted at rest and tied to the current
+/// account. This lets a callback be completed after Android kills the process
+/// without accepting a callback created for another signed-in identity.
 class DigiLockerService {
   DigiLockerService._();
   static final instance = DigiLockerService._();
@@ -46,67 +50,118 @@ class DigiLockerService {
   );
   static const _authorizeEndpoint =
       'https://digilocker.meripehchaan.gov.in/public/oauth2/1/authorize';
+  static const _attemptKey = 'digilocker_oauth_attempt_v1';
+  static const _attemptLifetime = Duration(minutes: 10);
+  static const _storage = FlutterSecureStorage();
+
+  final AppLinks _appLinks = AppLinks();
+  StreamSubscription<Uri>? _linkSubscription;
+  Completer<Uri>? _callbackCompleter;
+  Uri? _pendingCallback;
+  Future<DigiLockerVerificationResult>? _inFlight;
+  bool _initialized = false;
 
   bool get isConfigured => _clientId.isNotEmpty;
 
-  Future<DigiLockerVerificationResult> verifyIdentity() async {
+  Future<void> initialize() async {
+    if (_initialized) return;
+    _initialized = true;
+    _linkSubscription = _appLinks.uriLinkStream.listen(_captureCallback);
+    final initial = await _appLinks.getInitialLink();
+    if (initial != null) _captureCallback(initial);
+  }
+
+  Future<void> shutdownForTesting() async {
+    await _linkSubscription?.cancel();
+    _linkSubscription = null;
+    _initialized = false;
+  }
+
+  Future<DigiLockerVerificationResult> verifyIdentity() {
+    return _inFlight ??= _verifyIdentityOnce().whenComplete(() {
+      _inFlight = null;
+    });
+  }
+
+  Future<DigiLockerVerificationResult> _verifyIdentityOnce() async {
     if (!isConfigured || !SupabaseService.isInitialized) {
       return const DigiLockerVerificationResult(
         status: DigiLockerVerificationStatus.unavailable,
         message: 'DigiLocker verification is unavailable on this build.',
       );
     }
+    await initialize();
 
-    final state = _randomState();
-    final codeVerifier = _randomCodeVerifier();
-    final codeChallenge = base64Url
-        .encode(sha256.convert(utf8.encode(codeVerifier)).bytes)
-        .replaceAll('=', '');
-    final link = AppLinks();
-    final callback = Completer<Uri>();
-    late final StreamSubscription<Uri> subscription;
-    subscription = link.uriLinkStream.listen((uri) {
-      if (uri.scheme == 'https' &&
-          uri.host == 'silarah.com' &&
-          uri.path == '/auth/digilocker/callback' &&
-          uri.queryParameters['state'] == state &&
-          !callback.isCompleted) {
-        callback.complete(uri);
-      }
-    });
+    final userId = SupabaseService.currentUserId;
+    if (userId == null) {
+      return const DigiLockerVerificationResult(
+        status: DigiLockerVerificationStatus.authorizationFailed,
+        message: 'Sign in again before using DigiLocker.',
+      );
+    }
+
+    var attempt = await _loadAttempt(userId);
+    var callback = _takeMatchingPendingCallback(attempt?.state);
+    if (attempt == null || callback == null) {
+      attempt ??= await _createAttempt(userId);
+      callback = _takeMatchingPendingCallback(attempt.state);
+    }
 
     try {
-      final authorizeUri = Uri.parse(_authorizeEndpoint).replace(
-        queryParameters: {
-          'response_type': 'code',
-          'client_id': _clientId,
-          'redirect_uri': _redirectUri,
-          'state': state,
-          'scope': 'openid files.issueddocs',
-          'req_doctype': 'ADHAR,PANCR,DRVLC',
-          'code_challenge': codeChallenge,
-          'code_challenge_method': 'S256',
-        },
-      );
-      if (!await launchUrl(authorizeUri,
-          mode: LaunchMode.externalApplication)) {
+      if (callback == null) {
+        final authorizeUri = Uri.parse(_authorizeEndpoint).replace(
+          queryParameters: {
+            'response_type': 'code',
+            'client_id': _clientId,
+            'redirect_uri': _redirectUri,
+            'state': attempt.state,
+            'scope': 'openid files.issueddocs',
+            'req_doctype': 'ADHAR,PANCR,DRVLC',
+            'code_challenge': attempt.codeChallenge,
+            'code_challenge_method': 'S256',
+          },
+        );
+        _callbackCompleter = Completer<Uri>();
+        if (!await launchUrl(
+          authorizeUri,
+          mode: LaunchMode.externalApplication,
+        )) {
+          return const DigiLockerVerificationResult(
+            status: DigiLockerVerificationStatus.unavailable,
+            message: 'Could not open DigiLocker securely.',
+          );
+        }
+        callback = _takeMatchingPendingCallback(attempt.state) ??
+            await _callbackCompleter!.future.timeout(
+              const Duration(minutes: 10),
+            );
+      }
+
+      if (callback.queryParameters['state'] != attempt.state) {
         return const DigiLockerVerificationResult(
-          status: DigiLockerVerificationStatus.unavailable,
-          message: 'Could not open DigiLocker securely.',
+          status: DigiLockerVerificationStatus.authorizationFailed,
+          message: 'DigiLocker returned an invalid authorization response.',
         );
       }
-      final result = await callback.future.timeout(const Duration(minutes: 5));
-      if (result.queryParameters['error'] != null) {
+      if (callback.queryParameters['error'] != null) {
         return const DigiLockerVerificationResult(
           status: DigiLockerVerificationStatus.cancelled,
           message: 'DigiLocker authorization was cancelled.',
         );
       }
-      final code = result.queryParameters['code'];
+      final code = callback.queryParameters['code'];
       if (code == null || code.isEmpty) {
         return const DigiLockerVerificationResult(
           status: DigiLockerVerificationStatus.authorizationFailed,
           message: 'DigiLocker did not return an authorization code.',
+        );
+      }
+
+      // Recheck the account after the external app round trip.
+      if (SupabaseService.currentUserId != attempt.userId) {
+        return const DigiLockerVerificationResult(
+          status: DigiLockerVerificationStatus.authorizationFailed,
+          message: 'The signed-in account changed during verification.',
         );
       }
       final response = await SupabaseService.client.functions.invoke(
@@ -114,14 +169,13 @@ class DigiLockerService {
         body: {
           'code': code,
           'redirect_uri': _redirectUri,
-          'code_verifier': codeVerifier,
+          'code_verifier': attempt.codeVerifier,
         },
       );
       final data = response.data is Map
           ? Map<String, dynamic>.from(response.data as Map)
           : const <String, dynamic>{};
       final status = data['status']?.toString();
-      final message = data['message']?.toString();
       return DigiLockerVerificationResult(
         status: switch (status) {
           'verified' => DigiLockerVerificationStatus.verified,
@@ -133,7 +187,7 @@ class DigiLockerService {
           'unavailable' => DigiLockerVerificationStatus.unavailable,
           _ => DigiLockerVerificationStatus.providerError,
         },
-        message: message ??
+        message: data['message']?.toString() ??
             'DigiLocker evidence could not be verified. No badge was granted.',
         reason: data['reason']?.toString(),
       );
@@ -149,17 +203,115 @@ class DigiLockerService {
             'DigiLocker evidence could not be verified. No badge was granted.',
       );
     } finally {
-      await subscription.cancel();
+      _callbackCompleter = null;
+      await _storage.delete(key: _attemptKey);
     }
   }
 
-  String _randomState() {
-    final bytes = List<int>.generate(24, (_) => Random.secure().nextInt(256));
-    return base64UrlEncode(bytes).replaceAll('=', '');
+  void _captureCallback(Uri uri) {
+    if (!_isCallback(uri)) return;
+    final completer = _callbackCompleter;
+    if (completer != null && !completer.isCompleted) {
+      completer.complete(uri);
+    } else {
+      _pendingCallback = uri;
+    }
   }
 
-  String _randomCodeVerifier() {
-    final bytes = List<int>.generate(64, (_) => Random.secure().nextInt(256));
+  Uri? _takeMatchingPendingCallback(String? state) {
+    final callback = _pendingCallback;
+    if (callback == null ||
+        state == null ||
+        callback.queryParameters['state'] != state) {
+      return null;
+    }
+    _pendingCallback = null;
+    return callback;
+  }
+
+  bool _isCallback(Uri uri) {
+    final expected = Uri.parse(_redirectUri);
+    return uri.scheme == expected.scheme &&
+        uri.host == expected.host &&
+        uri.path == expected.path;
+  }
+
+  Future<_DigiLockerAttempt?> _loadAttempt(String userId) async {
+    try {
+      final raw = await _storage.read(key: _attemptKey);
+      if (raw == null) return null;
+      final attempt = _DigiLockerAttempt.fromJson(
+        Map<String, dynamic>.from(jsonDecode(raw) as Map),
+      );
+      if (attempt.userId != userId ||
+          DateTime.now().difference(attempt.createdAt) > _attemptLifetime) {
+        await _storage.delete(key: _attemptKey);
+        return null;
+      }
+      return attempt;
+    } catch (_) {
+      await _storage.delete(key: _attemptKey);
+      return null;
+    }
+  }
+
+  Future<_DigiLockerAttempt> _createAttempt(String userId) async {
+    final codeVerifier = _randomToken(64);
+    final attempt = _DigiLockerAttempt(
+      userId: userId,
+      state: _randomToken(24),
+      codeVerifier: codeVerifier,
+      codeChallenge: base64Url
+          .encode(sha256.convert(utf8.encode(codeVerifier)).bytes)
+          .replaceAll('=', ''),
+      createdAt: DateTime.now().toUtc(),
+    );
+    await _storage.write(
+      key: _attemptKey,
+      value: jsonEncode(attempt.toJson()),
+    );
+    return attempt;
+  }
+
+  String _randomToken(int length) {
+    final bytes = List<int>.generate(
+      length,
+      (_) => Random.secure().nextInt(256),
+    );
     return base64UrlEncode(bytes).replaceAll('=', '');
   }
+}
+
+class _DigiLockerAttempt {
+  const _DigiLockerAttempt({
+    required this.userId,
+    required this.state,
+    required this.codeVerifier,
+    required this.codeChallenge,
+    required this.createdAt,
+  });
+
+  factory _DigiLockerAttempt.fromJson(Map<String, dynamic> json) {
+    return _DigiLockerAttempt(
+      userId: json['user_id'] as String,
+      state: json['state'] as String,
+      codeVerifier: json['code_verifier'] as String,
+      codeChallenge: json['code_challenge'] as String,
+      createdAt: DateTime.parse(json['created_at'] as String).toUtc(),
+    );
+  }
+
+  final String userId;
+  final String state;
+  final String codeVerifier;
+  final String codeChallenge;
+  final DateTime createdAt;
+
+  Map<String, String> toJson() => {
+        'user_id': userId,
+        'state': state,
+        'code_verifier': codeVerifier,
+        'code_challenge': codeChallenge,
+        'created_at': createdAt.toIso8601String(),
+      };
 }

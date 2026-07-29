@@ -16,7 +16,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_service.dart';
-import 'authorized_profile_service.dart';
 
 /// Manages Wali (Guardian) mode operations.
 ///
@@ -92,9 +91,14 @@ class WaliModeService {
   /// Returns a list of active conversations the guardian can see,
   /// including ward name, other party details, last message,
   /// unread count, and match approval status.
-  Future<List<GuardianDashboardItem>> getDashboard() async {
+  Future<List<GuardianDashboardItem>> getDashboard({
+    String? markSeenWardId,
+  }) async {
     try {
-      final response = await _supabase.rpc('get_guardian_dashboard');
+      final response = await _supabase.rpc(
+        'get_guardian_dashboard',
+        params: {'p_mark_seen_ward_id': markSeenWardId},
+      );
       final rows = response as List<dynamic>;
 
       return rows.map((row) {
@@ -121,77 +125,6 @@ class WaliModeService {
       }).toList();
     } catch (e) {
       debugPrint('[WaliModeService] Dashboard fetch error: $e');
-      rethrow;
-    }
-  }
-
-  /// Gets all mirrored chats for the current guardian user.
-  ///
-  /// Returns a list of match conversations the guardian has access to,
-  /// including the ward's name and the other party's name.
-  Future<List<GuardianMirroredChat>> getMirroredChats() async {
-    try {
-      final userId = _supabase.auth.currentUser?.id;
-      if (userId == null) throw Exception('Not authenticated');
-
-      final response = await _supabase.from('guardian_chat_mirrors').select('''
-            id,
-            match_id,
-            ward_id,
-            mode,
-            matches!inner (
-              id,
-              user_a,
-              user_b,
-              status,
-              last_message_at,
-              created_at
-            )
-          ''').eq('guardian_id', userId).order('created_at', ascending: false);
-
-      final mirrors = response as List<dynamic>;
-
-      final chats = <GuardianMirroredChat>[];
-
-      for (final mirror in mirrors) {
-        final match = mirror['matches'] as Map<String, dynamic>;
-
-        // Determine who the ward is talking to
-        final otherUserId = match['user_a'] == mirror['ward_id']
-            ? match['user_b'] as String
-            : match['user_a'] as String;
-
-        final authorizedProfiles = await AuthorizedProfileService.load([
-          mirror['ward_id'] as String,
-          otherUserId,
-        ]);
-        final profilesByUser = {
-          for (final profile in authorizedProfiles)
-            profile['user_id'] as String: profile,
-        };
-        final wardProfile =
-            profilesByUser[mirror['ward_id']] ?? const <String, dynamic>{};
-        final otherProfile =
-            profilesByUser[otherUserId] ?? const <String, dynamic>{};
-
-        chats.add(GuardianMirroredChat(
-          mirrorId: mirror['id'] as String,
-          matchId: mirror['match_id'] as String,
-          wardId: mirror['ward_id'] as String,
-          wardName: _requiredText(wardProfile, 'first_name'),
-          otherPartyId: otherUserId,
-          otherPartyName: _requiredText(otherProfile, 'first_name'),
-          mode: mirror['mode'] as String,
-          matchStatus: match['status'] as String,
-          lastMessageAt: match['last_message_at'] != null
-              ? DateTime.parse(match['last_message_at'] as String)
-              : null,
-        ));
-      }
-
-      return chats;
-    } catch (e) {
-      debugPrint('[WaliModeService] Error fetching mirrored chats: $e');
       rethrow;
     }
   }
@@ -244,20 +177,6 @@ class WaliModeService {
 
     debugPrint(
         '[WaliModeService] ✅ Realtime subscription active for guardian $userId');
-  }
-
-  /// Marks the guardian's last-seen timestamp for a specific ward,
-  /// resetting the unread count on the dashboard.
-  Future<void> markChatAsSeen({required String wardUserId}) async {
-    try {
-      await _supabase.rpc(
-        'update_guardian_last_seen',
-        params: {'p_ward_id': wardUserId},
-      );
-    } catch (e) {
-      debugPrint('[WaliModeService] Mark seen error: $e');
-      rethrow;
-    }
   }
 
   /// Sends a message as the guardian in an active-mode mirrored chat.

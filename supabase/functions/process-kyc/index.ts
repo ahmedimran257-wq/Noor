@@ -1,5 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Image } from "https://deno.land/x/imagescript@1.2.15/mod.ts";
+import { createClient } from "@supabase/supabase-js";
+import { Image } from "imagescript";
 import { corsHeaders, handleCors } from "../_shared/cors.ts";
 import {
   consumeDistributedRateLimit,
@@ -133,6 +133,18 @@ Deno.serve(async (request) => {
       // are redundant and must not become hidden storage cost.
       await admin.storage.from(bucket).remove(uploadedPaths);
     } else {
+      const submissionId = stringValue(payload.submission_id);
+      const { error: digestError } = await admin
+        .from("kyc_review_submissions")
+        .update({
+          selfie_sha256: selfieObject.sha256,
+          id_photo_sha256: idObject.sha256,
+        })
+        .eq("id", submissionId)
+        .eq("user_id", user.id);
+      if (digestError) {
+        throw new Error("Identity evidence digests could not be persisted.");
+      }
       await queueIdentityNotification(
         admin,
         user.id,
@@ -171,7 +183,7 @@ async function inspectFreshPrivateImage(
   admin: ReturnType<typeof createAdminClient>,
   path: string,
   userId: string,
-): Promise<{ size: number; mime: string }> {
+): Promise<{ size: number; mime: string; sha256: string }> {
   const name = path.slice(userId.length + 1);
   const { data, error } = await admin.storage.from(bucket).list(userId, {
     limit: 10,
@@ -215,7 +227,14 @@ async function inspectFreshPrivateImage(
   } catch {
     throw new Error("Identity evidence is not a valid image.");
   }
-  return { size, mime };
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return {
+    size,
+    mime,
+    sha256: Array.from(new Uint8Array(digest))
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join(""),
+  };
 }
 
 function matchesMime(bytes: Uint8Array, mime: string): boolean {

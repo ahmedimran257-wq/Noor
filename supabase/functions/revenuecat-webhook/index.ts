@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "@supabase/supabase-js";
 import { corsHeaders } from "../_shared/cors.ts";
 import {
   renderSubscriptionEmail,
@@ -9,6 +9,18 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const REVENUECAT_WEBHOOK_SECRET = Deno.env.get("REVENUECAT_WEBHOOK_SECRET")!;
 const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY") ?? "";
+const REVENUECAT_EXPECTED_APP_ID = Deno.env.get("REVENUECAT_EXPECTED_APP_ID") ??
+  "";
+const REVENUECAT_EXPECTED_ENVIRONMENT =
+  Deno.env.get("REVENUECAT_EXPECTED_ENVIRONMENT") ?? "PRODUCTION";
+const REVENUECAT_EXPECTED_ENTITLEMENT_ID =
+  Deno.env.get("REVENUECAT_EXPECTED_ENTITLEMENT_ID") ?? "";
+const REVENUECAT_ALLOWED_PRODUCT_IDS = csvSet(
+  Deno.env.get("REVENUECAT_ALLOWED_PRODUCT_IDS"),
+);
+const REVENUECAT_ALLOWED_STORES = csvSet(
+  Deno.env.get("REVENUECAT_ALLOWED_STORES"),
+);
 
 function createAdminClient() {
   return createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
@@ -38,6 +50,24 @@ Deno.serve(async (req: Request) => {
   const event = payload.event;
   if (!event || !validRevenueCatEvent(event)) {
     return new Response("Bad Request: missing event", { status: 400 });
+  }
+  if (
+    !REVENUECAT_EXPECTED_APP_ID ||
+    !REVENUECAT_EXPECTED_ENTITLEMENT_ID ||
+    REVENUECAT_ALLOWED_PRODUCT_IDS.size === 0 ||
+    REVENUECAT_ALLOWED_STORES.size === 0
+  ) {
+    console.error("[revenuecat-webhook] Production allowlist is incomplete.");
+    return new Response("Service Unavailable", { status: 503 });
+  }
+  const productionValidation = validateProductionRevenueCatEvent(event);
+  if (productionValidation != null) {
+    console.warn(
+      `[revenuecat-webhook] Rejected non-production event: ${productionValidation}`,
+    );
+    return new Response("Bad Request: event is outside the production app", {
+      status: 400,
+    });
   }
 
   const supabaseUserId = event.app_user_id;
@@ -174,6 +204,11 @@ interface RevenueCatEvent {
   store?: string;
   transaction_id?: string;
   original_transaction_id?: string;
+  original_app_user_id?: string;
+  aliases?: string[];
+  app_id?: string;
+  environment?: string;
+  entitlement_ids?: string[];
   cancel_reason?: string;
 }
 
@@ -194,6 +229,42 @@ function validRevenueCatEvent(event: RevenueCatEvent): boolean {
       Number.isSafeInteger(event.grace_period_expiration_at_ms)) &&
     (event.price == null ||
       (Number.isFinite(event.price) && event.price >= 0));
+}
+
+function validateProductionRevenueCatEvent(
+  event: RevenueCatEvent,
+): string | null {
+  if (event.app_id !== REVENUECAT_EXPECTED_APP_ID) return "app_id";
+  if (event.environment !== REVENUECAT_EXPECTED_ENVIRONMENT) {
+    return "environment";
+  }
+  if (
+    !Array.isArray(event.entitlement_ids) ||
+    !event.entitlement_ids.includes(REVENUECAT_EXPECTED_ENTITLEMENT_ID)
+  ) return "entitlement";
+  if (
+    typeof event.product_id !== "string" ||
+    !REVENUECAT_ALLOWED_PRODUCT_IDS.has(event.product_id)
+  ) return "product";
+  if (
+    typeof event.store !== "string" ||
+    !REVENUECAT_ALLOWED_STORES.has(event.store)
+  ) return "store";
+  if (
+    event.original_app_user_id != null &&
+    event.original_app_user_id !== event.app_user_id &&
+    !event.aliases?.includes(event.app_user_id)
+  ) return "original_identity";
+  return null;
+}
+
+function csvSet(value: string | undefined): Set<string> {
+  return new Set(
+    String(value ?? "")
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean),
+  );
 }
 
 interface RevenueCatWebhookPayload {

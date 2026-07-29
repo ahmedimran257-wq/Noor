@@ -22,12 +22,6 @@ import 'auth_state.dart';
 
 enum AuthSessionCheckResult { authenticated, signedOut, retryableFailure }
 
-enum _EmailRegistrationStatus {
-  unregistered,
-  pendingVerification,
-  registered,
-}
-
 class AuthProfileHydrationException implements Exception {
   const AuthProfileHydrationException(this.cause);
   final Object cause;
@@ -193,9 +187,8 @@ class AuthCubit extends Cubit<AuthState> {
     String? countryCode,
     bool isResend = false,
   }) {
-    // Coalesce before registration lookup. Otherwise the first request can
-    // create a pending user while the second sees it and sends the sign-in
-    // template as well, producing two emails with the same token.
+    // Coalesce rapid taps so one user action cannot produce duplicate OTP
+    // emails while the first network request is still in flight.
     return _otpRequests.run(
       () => _sendOtpOnce(
         email,
@@ -226,36 +219,24 @@ class AuthCubit extends Cubit<AuthState> {
 
     if (_isRealMode) {
       try {
-        final registrationStatus =
-            await _emailRegistrationStatus(normalizedEmail);
-        if (requestId != _sendOtpRequestId) return;
-
-        if (!isResend &&
-            _pendingAuthMode == 'signup' &&
-            registrationStatus == _EmailRegistrationStatus.registered) {
-          emit(const AuthError(
-            message: 'Account already exists. Please log in instead.',
-          ));
-          return;
-        }
-        if (!isResend &&
-            _pendingAuthMode == 'signin' &&
-            registrationStatus != _EmailRegistrationStatus.registered) {
-          emit(AuthError(
-            message: registrationStatus ==
-                    _EmailRegistrationStatus.pendingVerification
-                ? 'Your signup is not finished. Choose Create Profile to request a new verification code.'
-                : 'No account found. Please create an account first.',
-          ));
-          return;
+        if (_pendingAuthMode == 'signup') {
+          final hasConsent =
+              await LegalConsentService.instance.hasPendingOnboardingConsents();
+          final isBound = hasConsent &&
+              await LegalConsentService.instance
+                  .bindPendingTransactionToEmail(normalizedEmail);
+          if (!isBound) {
+            emit(const AuthError(
+              message:
+                  'Your legal acceptance has expired. Please review and accept it again.',
+            ));
+            return;
+          }
         }
 
         await SupabaseService.client.auth.signInWithOtp(
           email: normalizedEmail,
-          // A pending user already exists in auth.users. Setting this to false
-          // resumes that identity without permitting a second account row.
-          shouldCreateUser: _pendingAuthMode == 'signup' &&
-              registrationStatus == _EmailRegistrationStatus.unregistered,
+          shouldCreateUser: _pendingAuthMode == 'signup',
         );
         if (requestId != _sendOtpRequestId) return;
 
@@ -264,7 +245,12 @@ class AuthCubit extends Cubit<AuthState> {
       } catch (e) {
         if (requestId != _sendOtpRequestId) return;
         debugPrint('AuthCubit: send email OTP error: $e');
-        emit(AuthError(message: _friendlyAuthError(e)));
+        // OTP request failures intentionally do not reveal whether the email
+        // already exists. The verification step remains the identity proof.
+        emit(const AuthError(
+          message:
+              'We could not send a verification code. Check the address or try again shortly.',
+        ));
       }
       return;
     }
@@ -599,20 +585,6 @@ class AuthCubit extends Cubit<AuthState> {
     await prefs.remove(_pendingOtpEmailKey);
     await prefs.remove(_pendingOtpModeKey);
     await prefs.remove(_pendingOtpSentAtKey);
-  }
-
-  Future<_EmailRegistrationStatus> _emailRegistrationStatus(
-    String email,
-  ) async {
-    final status = await SupabaseService.client.rpc<String>(
-      'email_registration_status',
-      params: {'p_email': email},
-    );
-    return switch (status) {
-      'registered' => _EmailRegistrationStatus.registered,
-      'pending_verification' => _EmailRegistrationStatus.pendingVerification,
-      _ => _EmailRegistrationStatus.unregistered,
-    };
   }
 
   Future<void> _applyPendingReferral() async {

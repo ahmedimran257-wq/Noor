@@ -36,6 +36,8 @@ class CityResult {
     required this.placeId,
     required this.lat,
     required this.lng,
+    this.resolutionToken,
+    this.catalogCityId,
   });
 
   final String city;
@@ -47,6 +49,8 @@ class CityResult {
   final String placeId;
   final double lat;
   final double lng;
+  final String? resolutionToken;
+  final String? catalogCityId;
 
   @override
   String toString() => fullAddress;
@@ -469,6 +473,7 @@ class CountryContextService {
       placeId: 'photon-${properties['osm_id'] ?? cityName.toLowerCase()}',
       lat: (coords[1] as num).toDouble(),
       lng: (coords[0] as num).toDouble(),
+      resolutionToken: feature['silarah_resolution_token'] as String?,
     );
   }
 
@@ -536,6 +541,7 @@ class CountryContextService {
       placeId: map['id']?.toString() ?? '',
       lat: lat,
       lng: lng,
+      catalogCityId: map['id']?.toString(),
     );
   }
 

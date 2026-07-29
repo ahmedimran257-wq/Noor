@@ -1,6 +1,6 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Image } from "https://deno.land/x/imagescript@1.2.15/mod.ts";
-import { encode } from "https://esm.sh/blurhash@2.0.5";
+import { createClient } from "@supabase/supabase-js";
+import { Image } from "imagescript";
+import { encode } from "blurhash";
 import { corsHeaders } from "../_shared/cors.ts";
 import {
   consumeDistributedRateLimit,
