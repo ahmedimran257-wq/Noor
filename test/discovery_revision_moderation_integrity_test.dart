@@ -38,6 +38,34 @@ void main() {
     expect(home, isNot(contains('loadInitial(force: true);')));
   });
 
+  test('catalog invalidation is segmented and fixed empty work is guarded', () {
+    final migration = source(
+      'supabase/migrations/179_cost_aware_surface_invalidation.sql',
+    );
+    final workerGuards = source(
+      'supabase/migrations/180_idle_worker_actionability_guards.sql',
+    );
+    final rlsOptimization = source(
+      'supabase/migrations/181_rls_initplan_optimization.sql',
+    );
+
+    expect(
+      migration,
+      contains('private.discovery_catalog_segment_revisions'),
+    );
+    expect(migration, contains("'country:' || v_gender || ':' || v_country"));
+    expect(migration, contains('p_filters jsonb DEFAULT'));
+    expect(migration, contains('get_my_relationship_revision'));
+    expect(migration, contains("jobname = 'refresh_discovery_pool_daily'"));
+    expect(migration, contains('FROM public.live_discovery_pool'));
+    expect(migration, contains('IF NOT EXISTS ('));
+    expect(migration, contains('private.storage_deletion_jobs'));
+    expect(workerGuards, contains("n.delivery_status = 'processing'"));
+    expect(workerGuards, contains('n.attempt_count < 8'));
+    expect(workerGuards, contains("j.status = 'processing'"));
+    expect(rlsOptimization, contains('(SELECT auth.uid())'));
+  });
+
   test('reports and blocks preserve evidence behind checked boundaries', () {
     final migration = source(
       'supabase/migrations/178_discovery_revision_and_moderation_integrity.sql',

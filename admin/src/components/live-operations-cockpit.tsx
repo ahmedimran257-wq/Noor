@@ -40,9 +40,9 @@ type LiveState =
   | { status: "ready"; data: LiveSnapshot; onlineUsers: OnlineUser[]; error: null }
   | { status: "error"; data: LiveSnapshot | null; onlineUsers: OnlineUser[]; error: string };
 
-// A one-minute visible-only refresh is operationally current without running
-// four aggregate database snapshots per minute for every open admin tab.
-const refreshMs = 60000;
+// The backing aggregate snapshot is produced every five minutes. Polling more
+// frequently only repeated the same database read and online-user query.
+const refreshMs = 300000;
 
 function number(value: number | undefined) {
   return Number(value ?? 0).toLocaleString();

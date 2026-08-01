@@ -3,7 +3,9 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
-const refreshMs = 120000;
+// Keep server-rendered admin pages aligned with the five-minute metric snapshot
+// cadence. Visibility and editor guards below prevent background refreshes.
+const refreshMs = 300000;
 
 function hasActiveEditor() {
   const element = document.activeElement;

@@ -107,11 +107,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       case 0:
         context.read<DiscoveryFeedCubit>().refreshIfChanged();
       case 1:
-        context.read<InterestsCubit>().loadData(force: true);
+        context.read<InterestsCubit>().refreshIfChanged();
       case 2:
-        context
-            .read<ChatCubit>()
-            .loadConversations(showLoading: false, force: true);
+        context.read<ChatCubit>().refreshIfChanged();
     }
   }
 

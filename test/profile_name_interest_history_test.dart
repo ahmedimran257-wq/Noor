@@ -38,7 +38,7 @@ void main() {
       contains(".inFilter('status', ['pending', 'accepted', 'declined'])"),
     );
     expect(cubit, contains("status: _parseStatus(row['status'] as String)"));
-    expect(home, contains('loadData(force: true)'));
+    expect(home, contains('read<InterestsCubit>().refreshIfChanged()'));
   });
 
   test('database transports complete surnames on every profile surface', () {

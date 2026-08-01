@@ -47,14 +47,15 @@ void main() {
     expect(nav, contains('2 => chatUnread'));
 
     // Notification Realtime and foreground FCM remain independent recovery
-    // paths, and returning from the background reconciles missed events.
+    // signals, but duplicate signals are coalesced into one reconciliation.
     expect(main, contains("if (item.type == 'new_message')"));
     expect(main, contains('_notificationRefreshSubscription'));
+    expect(main, contains('_chatCubit.scheduleInboxReconciliation()'));
     expect(
-      RegExp(
-        r'_chatCubit\.loadConversations\(showLoading: false, force: true\)',
-      ).allMatches(main).length,
-      greaterThanOrEqualTo(2),
+      RegExp(r'_chatCubit\.scheduleInboxReconciliation\(\)')
+          .allMatches(main)
+          .length,
+      2,
     );
   });
 }

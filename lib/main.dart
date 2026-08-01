@@ -442,9 +442,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
     _notificationRefreshSubscription =
         _notificationsCubit.inAppNotifications.listen((item) {
       if (item.type == 'new_message') {
-        unawaited(
-          _chatCubit.loadConversations(showLoading: false, force: true),
-        );
+        _chatCubit.scheduleInboxReconciliation();
       }
     });
 
@@ -462,13 +460,13 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
         unawaited(_accountStandingCubit.refresh());
       }
       if (message.data['type'] == 'new_message') {
-        unawaited(_chatCubit.loadConversations(force: true));
+        _chatCubit.scheduleInboxReconciliation();
       }
       if (message.data['type'] == 'interest_received' ||
           message.data['type'] == 'interest_accepted' ||
           message.data['type'] == 'match' ||
           message.data['type'] == 'match_accepted') {
-        unawaited(_interestsCubit.loadData(force: true));
+        unawaited(_interestsCubit.refreshIfChanged(forceCheck: true));
       }
     };
 
@@ -606,12 +604,10 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
         SupabaseService.currentUserId != null) {
       unawaited(_accountStandingCubit.refresh());
       unawaited(_notificationsCubit.loadNotifications());
-      unawaited(_discoveryFeedCubit.loadInitial());
-      unawaited(_interestsCubit.loadData(force: true));
+      unawaited(_discoveryFeedCubit.refreshIfChanged());
+      unawaited(_interestsCubit.refreshIfChanged());
       unawaited(_onboardingCubit.refreshProfileFromDb());
-      unawaited(
-        _chatCubit.loadConversations(showLoading: false, force: true),
-      );
+      unawaited(_chatCubit.refreshIfChanged());
     }
   }
 

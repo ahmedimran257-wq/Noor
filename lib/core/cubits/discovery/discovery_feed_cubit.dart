@@ -74,14 +74,6 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     final requestVersion = _nextRequestVersion();
     emit(state.copyWith(status: FeedStatus.loading));
 
-    // Capture the revision before the feed query. If the catalog changes while
-    // the request is running, the next lightweight check will still detect it.
-    final revisionAtStart =
-        _pendingRevisionToken ?? await _readDiscoveryRevisionToken();
-    _pendingRevisionToken = null;
-    _lastRevisionCheckAt = DateTime.now();
-    if (!_isCurrentRequest(requestVersion)) return;
-
     final viewerProfile = await _getViewerProfile();
     if (!_isCurrentRequest(requestVersion)) return;
 
@@ -118,6 +110,14 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       filter = await _enforceLocationFilterAccess(filter);
       if (!_isCurrentRequest(requestVersion)) return;
       await _saveFilterToPrefs(filter);
+      if (!_isCurrentRequest(requestVersion)) return;
+      // Capture the segment-aware revision after the effective filter is known.
+      // If that segment changes during the feed query, the next lightweight
+      // check will still observe a different token.
+      final revisionAtStart =
+          _pendingRevisionToken ?? await _readDiscoveryRevisionToken(filter);
+      _pendingRevisionToken = null;
+      _lastRevisionCheckAt = DateTime.now();
       if (!_isCurrentRequest(requestVersion)) return;
       final quota = await _loadServerViewQuota();
       if (!_isCurrentRequest(requestVersion)) return;
@@ -166,7 +166,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     }
 
     _lastRevisionCheckAt = DateTime.now();
-    final serverToken = await _readDiscoveryRevisionToken();
+    final serverToken = await _readDiscoveryRevisionToken(state.activeFilter);
     if (serverToken == null || isClosed) return;
     if (_loadedRevisionToken == serverToken) return;
 
@@ -234,6 +234,10 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       await _saveFilterToPrefs(effectiveFilter);
       if (!_isCurrentRequest(requestVersion)) return;
 
+      final revisionAtStart =
+          await _readDiscoveryRevisionToken(effectiveFilter);
+      _lastRevisionCheckAt = DateTime.now();
+      if (!_isCurrentRequest(requestVersion)) return;
       _resetCursors();
       final profiles = await _getPool(
         filter: effectiveFilter,
@@ -242,6 +246,9 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       if (!_isCurrentRequest(requestVersion)) return;
       final batch = _toFeedProfiles(profiles, offset: 0);
       if (!isClosed) {
+        if (revisionAtStart != null) {
+          _loadedRevisionToken = revisionAtStart;
+        }
         emit(state.copyWith(
           status: batch.isEmpty ? FeedStatus.empty : FeedStatus.loaded,
           profiles: batch,
@@ -319,13 +326,15 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     }
   }
 
-  Future<String?> _readDiscoveryRevisionToken() async {
+  Future<String?> _readDiscoveryRevisionToken(DiscoveryFilter filter) async {
     if (!SupabaseService.isInitialized) return null;
     final currentUserId = await SupabaseService.currentUserIdOrRefresh();
     if (currentUserId == null) return null;
     try {
-      final response =
-          await SupabaseService.client.rpc('get_my_discovery_revision');
+      final response = await SupabaseService.client.rpc(
+        'get_my_discovery_revision',
+        params: {'p_filters': _mapFilterToJson(filter)},
+      );
       if (response is! List || response.isEmpty) return null;
       final row = Map<String, dynamic>.from(response.first as Map);
       final token = row['revision_token']?.toString();

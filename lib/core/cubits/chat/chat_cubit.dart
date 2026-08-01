@@ -10,6 +10,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../services/supabase_service.dart';
+import '../../services/relationship_revision_service.dart';
 import '../../services/translation_service.dart';
 import '../../services/profile_photo_service.dart';
 import 'chat_state.dart';
@@ -42,6 +43,9 @@ class ChatCubit extends Cubit<ChatState> {
   bool _inboxLoadInFlight = false;
   DateTime? _lastInboxLoadedAt;
   static const _inboxFreshness = Duration(minutes: 2);
+  static const _revisionCheckFreshness = Duration(seconds: 90);
+  String? _loadedRelationshipRevision;
+  DateTime? _lastRelationshipRevisionCheckAt;
   final Set<String> _messageLoadsInFlight = {};
   final Set<String> _exhaustedMessagePages = {};
 
@@ -60,6 +64,7 @@ class ChatCubit extends Cubit<ChatState> {
   bool _reloadInboxAfterCurrentLoad = false;
   Timer? _localTypingIdleTimer;
   Timer? _remoteTypingExpiryTimer;
+  Timer? _inboxReconcileTimer;
   DateTime? _lastTypingBroadcastAt;
   bool _localTypingActive = false;
 
@@ -147,6 +152,7 @@ class ChatCubit extends Cubit<ChatState> {
           'get_chat_inbox',
           params: {'p_limit': 50},
         ),
+        RelationshipRevisionService.readToken(),
       ]);
 
       if (!_isCurrentLoad(loadVersion) || SupabaseService.currentUserId != me) {
@@ -171,6 +177,8 @@ class ChatCubit extends Cubit<ChatState> {
       ));
       _loadedUserId = me;
       _lastInboxLoadedAt = DateTime.now();
+      _loadedRelationshipRevision = results[2] as String?;
+      _lastRelationshipRevisionCheckAt = DateTime.now();
     } catch (e) {
       debugPrint('ChatCubit: Error loading conversations: $e');
       if (_isCurrentLoad(loadVersion)) emit(state.copyWith(isLoading: false));
@@ -183,6 +191,49 @@ class ChatCubit extends Cubit<ChatState> {
         unawaited(loadConversations(showLoading: false, force: true));
       }
     }
+  }
+
+  /// Uses the relationship revision to detect match closures/status changes,
+  /// while the two-minute fallback and targeted Realtime channel cover message
+  /// delivery. Selecting Chat repeatedly therefore does not reload the inbox.
+  Future<void> refreshIfChanged({bool forceCheck = false}) async {
+    final me = SupabaseService.currentUserId;
+    if (me != null && _isRealMode) _setupInboxRealtime(me);
+    if (me == null || _inboxLoadInFlight) return;
+
+    final loadedAt = _lastInboxLoadedAt;
+    if (_loadedUserId != me || loadedAt == null) {
+      await loadConversations(showLoading: false);
+      return;
+    }
+    if (DateTime.now().difference(loadedAt) >= _inboxFreshness) {
+      await loadConversations(showLoading: false);
+      return;
+    }
+
+    final checkedAt = _lastRelationshipRevisionCheckAt;
+    if (!forceCheck &&
+        checkedAt != null &&
+        DateTime.now().difference(checkedAt) < _revisionCheckFreshness) {
+      return;
+    }
+
+    _lastRelationshipRevisionCheckAt = DateTime.now();
+    final serverRevision = await RelationshipRevisionService.readToken();
+    if (serverRevision == null || isClosed) return;
+    if (_loadedRelationshipRevision == serverRevision) return;
+    await loadConversations(showLoading: false, force: true);
+  }
+
+  /// Coalesces overlapping Realtime, notification-table and FCM recovery
+  /// signals into at most one inbox reconciliation per short event burst.
+  void scheduleInboxReconciliation() {
+    _inboxReconcileTimer?.cancel();
+    _inboxReconcileTimer = Timer(const Duration(milliseconds: 800), () {
+      if (!isClosed) {
+        unawaited(loadConversations(showLoading: false, force: true));
+      }
+    });
   }
 
   Future<void> loadMessages(
@@ -712,6 +763,7 @@ class ChatCubit extends Cubit<ChatState> {
 
   @override
   Future<void> close() {
+    _inboxReconcileTimer?.cancel();
     _disposeRealtime();
     _disposeInboxRealtime();
     return super.close();

@@ -57,7 +57,7 @@ class _ChatListScreenState extends State<ChatListScreen>
 
   void _refreshInbox() {
     if (!mounted) return;
-    unawaited(context.read<ChatCubit>().loadConversations(showLoading: false));
+    unawaited(context.read<ChatCubit>().refreshIfChanged());
   }
 
   @override

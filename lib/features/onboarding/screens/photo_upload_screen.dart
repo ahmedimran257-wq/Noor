@@ -3,7 +3,7 @@
 // SILARAH - Photo Upload Screen (fast-start step 5)
 // 4-slot grid. Slot 0 = primary photo (required to proceed).
 // Real image picking via image_picker (Camera / Gallery).
-// Compression via flutter_image_compress (WebP, bounded for mobile delivery).
+// Compression via flutter_image_compress (bounded JPEG for mobile delivery).
 // On-device explicit-content moderation; identity checks live separately.
 // Photo privacy toggle for women.
 // ============================================================
@@ -34,8 +34,8 @@ import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
 
 // Photos are displayed below tablet resolution throughout the app. A 720 px
-// WebP materially reduces private Storage egress without visible degradation
-// on phone screens.
+// JPEG at this bound keeps private Storage egress low while remaining
+// independently decodable by the server-side validation pipeline.
 const int profilePhotoUploadMinDimension = 720;
 const int profilePhotoUploadJpegQuality = 82;
 

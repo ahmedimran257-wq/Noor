@@ -27,6 +27,8 @@ void main() {
     expect(chatList, isNot(contains('Timer.periodic')));
     expect(chat, contains('_inboxFreshness'));
     expect(chat, contains('_inboxLoadInFlight'));
+    expect(chat, contains('Future<void> refreshIfChanged'));
+    expect(chat, contains('scheduleInboxReconciliation'));
     expect(chat, isNot(contains('unawaited(loadConversations());')));
     expect(notifications, contains('_maxRetainedNotifications = 100'));
     expect(notifications, contains('.limit(_maxRetainedNotifications)'));
@@ -76,9 +78,26 @@ void main() {
     expect(discovery, contains('_viewerReadinessFreshness'));
     expect(discovery, contains('_revisionCheckFreshness'));
     expect(discovery, contains('Duration(seconds: 90)'));
-    expect(discovery, contains("rpc('get_my_discovery_revision')"));
-    expect(cockpit, contains('const refreshMs = 60000'));
+    expect(discovery, contains("'get_my_discovery_revision'"));
+    expect(discovery, contains("'p_filters': _mapFilterToJson(filter)"));
+    expect(cockpit, contains('const refreshMs = 300000'));
     expect(cockpit, contains('if (!document.hidden)'));
-    expect(adminRefresh, contains('const refreshMs = 120000'));
+    expect(adminRefresh, contains('const refreshMs = 300000'));
+  });
+
+  test('tab and resume reconciliation do not bypass surface caches', () {
+    final home = source('lib/features/home/home_screen.dart');
+    final main = source('lib/main.dart');
+    final interests = source('lib/core/cubits/interests/interests_cubit.dart');
+    final relationshipRevision =
+        source('lib/core/services/relationship_revision_service.dart');
+
+    expect(home, contains('read<InterestsCubit>().refreshIfChanged()'));
+    expect(home, contains('read<ChatCubit>().refreshIfChanged()'));
+    expect(home, isNot(contains('loadData(force: true)')));
+    expect(main, contains('_interestsCubit.refreshIfChanged()'));
+    expect(main, contains('_chatCubit.refreshIfChanged()'));
+    expect(interests, contains('Future<void> refreshIfChanged'));
+    expect(relationshipRevision, contains('get_my_relationship_revision'));
   });
 }

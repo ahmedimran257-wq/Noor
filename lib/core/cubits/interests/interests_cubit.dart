@@ -18,6 +18,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'interests_state.dart';
 import '../../models/discovery_profile.dart';
 import '../../services/supabase_service.dart';
+import '../../services/relationship_revision_service.dart';
 import '../../services/profile_photo_service.dart';
 import '../../services/authorized_profile_service.dart';
 import '../../utils/content_filter.dart';
@@ -43,7 +44,10 @@ class InterestsCubit extends Cubit<InterestsState> {
   bool _loadInFlight = false;
   DateTime? _lastLoadedAt;
   String? _loadedUserId;
+  String? _loadedRelationshipRevision;
+  DateTime? _lastRelationshipRevisionCheckAt;
   static const _freshness = Duration(minutes: 5);
+  static const _revisionCheckFreshness = Duration(seconds: 90);
   static const _maxRowsPerSection = 100;
 
   // ── Init ──────────────────────────────────────────────────
@@ -60,13 +64,48 @@ class InterestsCubit extends Cubit<InterestsState> {
       return;
     }
     _loadInFlight = true;
+    final revisionAtStart = RelationshipRevisionService.readToken();
     try {
       await _loadFromDb();
       _loadedUserId = userId;
       _lastLoadedAt = DateTime.now();
+      _loadedRelationshipRevision = await revisionAtStart;
+      _lastRelationshipRevisionCheckAt = DateTime.now();
     } finally {
       _loadInFlight = false;
     }
+  }
+
+  /// Reconciles this surface using a tiny relationship token. A full reload is
+  /// retained as a five-minute fallback for quota/subscription changes that do
+  /// not alter an interest or match row.
+  Future<void> refreshIfChanged({bool forceCheck = false}) async {
+    if (!SupabaseService.isInitialized || _loadInFlight) return;
+    final userId = SupabaseService.currentUserId;
+    if (userId == null) return;
+
+    final loadedAt = _lastLoadedAt;
+    if (_loadedUserId != userId || loadedAt == null) {
+      await loadData();
+      return;
+    }
+    if (DateTime.now().difference(loadedAt) >= _freshness) {
+      await loadData();
+      return;
+    }
+
+    final checkedAt = _lastRelationshipRevisionCheckAt;
+    if (!forceCheck &&
+        checkedAt != null &&
+        DateTime.now().difference(checkedAt) < _revisionCheckFreshness) {
+      return;
+    }
+
+    _lastRelationshipRevisionCheckAt = DateTime.now();
+    final serverRevision = await RelationshipRevisionService.readToken();
+    if (serverRevision == null || isClosed) return;
+    if (_loadedRelationshipRevision == serverRevision) return;
+    await loadData(force: true);
   }
 
   /// Load interests, sent interests, and matches from Supabase.
