@@ -105,7 +105,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void _refreshTabData(int index) {
     switch (index) {
       case 0:
-        context.read<DiscoveryFeedCubit>().loadInitial(force: true);
+        context.read<DiscoveryFeedCubit>().refreshIfChanged();
       case 1:
         context.read<InterestsCubit>().loadData(force: true);
       case 2:

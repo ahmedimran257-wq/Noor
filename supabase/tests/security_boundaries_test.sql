@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select extensions.plan(43);
+select extensions.plan(46);
 
 select extensions.ok(
   not has_table_privilege('authenticated', 'public.users', 'INSERT,UPDATE,DELETE'),
@@ -33,6 +33,20 @@ select extensions.ok(
 select extensions.ok(
   not has_table_privilege('authenticated', 'public.message_reports', 'INSERT,UPDATE,DELETE'),
   'message report state is RPC-only'
+);
+select extensions.ok(
+  not has_table_privilege('authenticated', 'public.blocks', 'INSERT,UPDATE,DELETE'),
+  'block state is RPC-only'
+);
+select extensions.ok(
+  has_function_privilege('authenticated', 'public.block_member(uuid,text)', 'EXECUTE')
+  and has_function_privilege('authenticated', 'public.unblock_member(uuid)', 'EXECUTE'),
+  'authenticated members can use checked block RPCs'
+);
+select extensions.ok(
+  has_function_privilege('authenticated', 'public.get_my_discovery_revision()', 'EXECUTE')
+  and not has_table_privilege('authenticated', 'private.discovery_catalog_revision', 'SELECT'),
+  'members can read only their compact discovery revision projection'
 );
 select extensions.ok(
   not has_table_privilege('authenticated', 'public.user_consents', 'INSERT,UPDATE,DELETE'),

@@ -121,7 +121,7 @@ void main() {
     expect(screen, contains("'Refresh Profiles'"));
     expect(screen, contains('loadInitial(force: true)'));
     expect(home, contains('case 0:'));
-    expect(home, contains('loadInitial(force: true)'));
+    expect(home, contains('refreshIfChanged()'));
     expect(home, contains('AppLifecycleState.resumed'));
   });
 }

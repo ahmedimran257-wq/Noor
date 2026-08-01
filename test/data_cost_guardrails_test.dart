@@ -74,6 +74,9 @@ void main() {
       2,
     );
     expect(discovery, contains('_viewerReadinessFreshness'));
+    expect(discovery, contains('_revisionCheckFreshness'));
+    expect(discovery, contains('Duration(seconds: 90)'));
+    expect(discovery, contains("rpc('get_my_discovery_revision')"));
     expect(cockpit, contains('const refreshMs = 60000'));
     expect(cockpit, contains('if (!document.hidden)'));
     expect(adminRefresh, contains('const refreshMs = 120000'));

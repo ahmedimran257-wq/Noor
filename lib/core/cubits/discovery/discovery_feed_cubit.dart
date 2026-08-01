@@ -47,7 +47,11 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   int _requestVersion = 0;
   String? _readyViewerId;
   DateTime? _viewerReadyAt;
+  String? _loadedRevisionToken;
+  String? _pendingRevisionToken;
+  DateTime? _lastRevisionCheckAt;
   static const _viewerReadinessFreshness = Duration(minutes: 10);
+  static const _revisionCheckFreshness = Duration(seconds: 90);
 
   // ── Public API ────────────────────────────────────────────
 
@@ -69,6 +73,14 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     if (!force && state.status != FeedStatus.initial) return;
     final requestVersion = _nextRequestVersion();
     emit(state.copyWith(status: FeedStatus.loading));
+
+    // Capture the revision before the feed query. If the catalog changes while
+    // the request is running, the next lightweight check will still detect it.
+    final revisionAtStart =
+        _pendingRevisionToken ?? await _readDiscoveryRevisionToken();
+    _pendingRevisionToken = null;
+    _lastRevisionCheckAt = DateTime.now();
+    if (!_isCurrentRequest(requestVersion)) return;
 
     final viewerProfile = await _getViewerProfile();
     if (!_isCurrentRequest(requestVersion)) return;
@@ -115,6 +127,9 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       if (!_isCurrentRequest(requestVersion)) return;
       final batch = _toFeedProfiles(profiles, offset: 0);
       if (!isClosed) {
+        if (revisionAtStart != null) {
+          _loadedRevisionToken = revisionAtStart;
+        }
         emit(state.copyWith(
           status: batch.isEmpty ? FeedStatus.empty : FeedStatus.loaded,
           profiles: batch,
@@ -127,6 +142,36 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     } catch (e) {
       if (_isCurrentRequest(requestVersion)) _emitDiscoveryError(e);
     }
+  }
+
+  /// Checks a tiny server revision and reloads only when discovery-relevant
+  /// catalog or relationship state changed. Repeated tab taps and short
+  /// background/resume cycles therefore do not re-query or re-sign the feed.
+  Future<void> refreshIfChanged({bool forceCheck = false}) async {
+    if (state.status == FeedStatus.initial) {
+      await loadInitial();
+      return;
+    }
+    if (state.status == FeedStatus.loading ||
+        state.status == FeedStatus.refreshing ||
+        state.status == FeedStatus.loadingMore) {
+      return;
+    }
+
+    final checkedAt = _lastRevisionCheckAt;
+    if (!forceCheck &&
+        checkedAt != null &&
+        DateTime.now().difference(checkedAt) < _revisionCheckFreshness) {
+      return;
+    }
+
+    _lastRevisionCheckAt = DateTime.now();
+    final serverToken = await _readDiscoveryRevisionToken();
+    if (serverToken == null || isClosed) return;
+    if (_loadedRevisionToken == serverToken) return;
+
+    _pendingRevisionToken = serverToken;
+    await loadInitial(force: true);
   }
 
   /// Load next page (append).
@@ -166,6 +211,9 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     _discoveryLocationPrepared = false;
     _readyViewerId = null;
     _viewerReadyAt = null;
+    _loadedRevisionToken = null;
+    _pendingRevisionToken = null;
+    _lastRevisionCheckAt = null;
     if (!isClosed) emit(const DiscoveryFeedState());
   }
 
@@ -268,6 +316,25 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     } catch (e) {
       debugPrint('DiscoveryFeedCubit: failed to load profile view quota: $e');
       throw StateError('Unable to verify your daily discovery limit.');
+    }
+  }
+
+  Future<String?> _readDiscoveryRevisionToken() async {
+    if (!SupabaseService.isInitialized) return null;
+    final currentUserId = await SupabaseService.currentUserIdOrRefresh();
+    if (currentUserId == null) return null;
+    try {
+      final response =
+          await SupabaseService.client.rpc('get_my_discovery_revision');
+      if (response is! List || response.isEmpty) return null;
+      final row = Map<String, dynamic>.from(response.first as Map);
+      final token = row['revision_token']?.toString();
+      return token == null || token.isEmpty ? null : token;
+    } catch (e) {
+      // Revision invalidation is an optimization. A temporary failure must not
+      // make the primary discovery path unavailable.
+      debugPrint('DiscoveryFeedCubit: revision check unavailable: $e');
+      return null;
     }
   }
 

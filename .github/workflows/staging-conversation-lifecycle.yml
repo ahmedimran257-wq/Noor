@@ -1,0 +1,32 @@
+name: Staging conversation lifecycle
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: staging-conversation-lifecycle
+  cancel-in-progress: false
+
+jobs:
+  lifecycle:
+    name: Verify two-account Premium transition
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "20.19.5"
+      - name: Run staging lifecycle contract
+        env:
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          STAGING_PROJECT_REF: ${{ secrets.STAGING_PROJECT_REF }}
+          PRODUCTION_PROJECT_REF: ${{ secrets.PRODUCTION_PROJECT_REF }}
+          STAGING_FEMALE_EMAIL: ${{ secrets.STAGING_FEMALE_EMAIL }}
+          STAGING_FEMALE_PASSWORD: ${{ secrets.STAGING_FEMALE_PASSWORD }}
+          STAGING_MALE_EMAIL: ${{ secrets.STAGING_MALE_EMAIL }}
+          STAGING_MALE_PASSWORD: ${{ secrets.STAGING_MALE_PASSWORD }}
+        run: node tool/staging_conversation_lifecycle.mjs

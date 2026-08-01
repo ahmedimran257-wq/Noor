@@ -1,13 +1,20 @@
 import {
   Camera,
+  CircleCheck,
   Eye,
   Flag,
+  SearchCheck,
   ShieldAlert,
 } from "lucide-react";
 import Image from "next/image";
 import { requireAdmin } from "@/lib/auth";
 import type { PhotoRow } from "@/lib/operations";
-import { getMessageReports, getPhotos, getReports } from "@/lib/operations";
+import {
+  getDiscoveryEligibility,
+  getMessageReports,
+  getPhotos,
+  getReports,
+} from "@/lib/operations";
 import { resolveMessageReport, resolveReport, reviewPhoto } from "../actions";
 
 function scoreLabel(photo: PhotoRow) {
@@ -19,10 +26,11 @@ function scoreLabel(photo: PhotoRow) {
 
 export default async function ModerationPage() {
   await requireAdmin();
-  const [reports, messageReports, photos] = await Promise.all([
+  const [reports, messageReports, photos, discoveryEligibility] = await Promise.all([
     getReports(),
     getMessageReports(),
     getPhotos(),
+    getDiscoveryEligibility(),
   ]);
   const hardSignals = photos.filter((photo) => Number(photo.nsfw_score ?? 0) > 0.85).length;
   const routineReviews = photos.length - hardSignals;
@@ -55,6 +63,36 @@ export default async function ModerationPage() {
         </div>
       </div>
 
+      <h2 className="section-title"><SearchCheck size={18} /> Discovery eligibility</h2>
+      <p className="muted">
+        Server-computed status for the 25 newest profiles. A missing optional
+        preference row uses defaults and no longer removes a member from discovery.
+      </p>
+      <div className="queue-list">
+        {discoveryEligibility.map((profile) => (
+          <article className="queue-card elevated-panel" key={profile.profile_id}>
+            <div>
+              <h2>{profile.member_name || "Unnamed member"}</h2>
+              <p className="muted">
+                {profile.gender} · {profile.approved_photo_count} approved photos · {new Date(profile.created_at).toLocaleString()}
+              </p>
+              {profile.exclusion_reasons.length > 0 ? (
+                <p>Excluded: {profile.exclusion_reasons.join(", ")}</p>
+              ) : (
+                <p><CircleCheck size={14} /> Eligible in the live catalog</p>
+              )}
+              {profile.diagnostic_notes.length > 0 ? (
+                <small className="muted">Notes: {profile.diagnostic_notes.join(", ")}</small>
+              ) : null}
+            </div>
+            <span className={`status-pill ${profile.eligible ? "" : "danger"}`}>
+              {profile.eligible ? "Eligible" : "Hidden"}
+            </span>
+          </article>
+        ))}
+        {discoveryEligibility.length === 0 && <p className="muted">No profiles found.</p>}
+      </div>
+
       <h2 className="section-title"><ShieldAlert size={18} /> Message reports</h2>
       <div className="queue-list">
         {messageReports.map((report) => (
@@ -71,7 +109,7 @@ export default async function ModerationPage() {
               <form action={resolveMessageReport}>
                 <input type="hidden" name="reportId" value={report.report_id} />
                 <input type="hidden" name="action" value="actioned" />
-                <button>Actioned</button>
+                <button>Restrict messaging 7 days</button>
               </form>
               <form action={resolveMessageReport}>
                 <input type="hidden" name="reportId" value={report.report_id} />
@@ -99,7 +137,7 @@ export default async function ModerationPage() {
               <form action={resolveReport}>
                 <input type="hidden" name="reportId" value={report.report_id} />
                 <input type="hidden" name="action" value="actioned" />
-                <button>Actioned</button>
+                <button>Suspend profile</button>
               </form>
               <form action={resolveReport}>
                 <input type="hidden" name="reportId" value={report.report_id} />

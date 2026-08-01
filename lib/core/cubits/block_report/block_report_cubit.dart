@@ -11,12 +11,8 @@
 //    menu) and from within every conversation. Reporting immediately
 //    hides that profile from the reporter."
 //
-// Real mode:
-//   - blockUser:   INSERT INTO blocks (blocker_id, blocked_id)
-//                  DB trigger sever_ties_on_block() auto-removes matches/interests
-//   - unblockUser: DELETE FROM blocks
-//   - reportUser:  INSERT INTO reports (reporter_id, reported_user_id, reason, description)
-//                  DB trigger check_report_threshold() auto-suspends after 3 unique reports
+// Real mode uses checked RPC boundaries. Blocks soft-close matches so safety
+// evidence is preserved; reports are queued for explicit staff decisions.
 //
 // ============================================================
 
@@ -164,16 +160,11 @@ class BlockReportCubit extends Cubit<BlockReportState> {
     }
 
     if (_isRealMode) {
-      // Real mode: INSERT INTO blocks
-      final myId = activeUserId;
       try {
-        await SupabaseService.client.from('blocks').insert({
-          'blocker_id': myId,
-          'blocked_id': userId,
+        await SupabaseService.client.rpc('block_member', params: {
+          'p_user_id': userId,
+          'p_reason': 'profile_block',
         });
-        // DB trigger sever_ties_on_block() automatically:
-        //   - Deletes matches between blocker and blocked
-        //   - Deletes interests between the pair
       } catch (e) {
         debugPrint('[BlockReportCubit] Error blocking user: $e');
         emit(state.copyWith(isSubmitting: false));
@@ -213,13 +204,11 @@ class BlockReportCubit extends Cubit<BlockReportState> {
     }
 
     if (_isRealMode) {
-      final myId = activeUserId;
       try {
-        await SupabaseService.client
-            .from('blocks')
-            .delete()
-            .eq('blocker_id', myId)
-            .eq('blocked_id', userId);
+        await SupabaseService.client.rpc(
+          'unblock_member',
+          params: {'p_user_id': userId},
+        );
       } catch (e) {
         debugPrint('[BlockReportCubit] Error unblocking user: $e');
         emit(state.copyWith(isSubmitting: false));
