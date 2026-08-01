@@ -664,11 +664,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   Future<List<DiscoveryProfile>> _signPhotoUrls(
       List<DiscoveryProfile> profiles) async {
     final publicPhotoOwners = profiles
-        .where((profile) =>
-            profile.photoCount > 0 &&
-            !profile.isPhotoPrivate &&
-            profile.photoUrl != null &&
-            profile.photoUrl!.isNotEmpty)
+        .where((profile) => profile.photoCount > 0 && !profile.isPhotoPrivate)
         .map((profile) => profile.id)
         .toList(growable: false);
 

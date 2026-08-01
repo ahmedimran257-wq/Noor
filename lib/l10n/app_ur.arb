@@ -721,6 +721,8 @@
   "@splash_button_signIn": {
     "description": "Secondary action on splash screen"
   },
+  "@splash_intention_subtitle": {},
+  "@splash_intention_title": {},
   "@splash_referral_button": {},
   "@splash_referral_hint": {},
   "@splash_referral_invalid": {},
@@ -1399,6 +1401,8 @@
   "settings_title": "ترتیبات",
   "splash_button_createProfile": "پروفائل بنائیں",
   "splash_button_signIn": "سائن ان کریں۔",
+  "splash_intention_subtitle": "نجی تعارف، سوچا سمجھا باہمی میل اور خاندان کا لحاظ رکھنے والا تعلق۔",
+  "splash_intention_title": "شادی، خلوصِ نیت کے ساتھ۔",
   "splash_referral_button": "کوڈ کا اطلاق کریں۔",
   "splash_referral_hint": "جیسے SILARAHXX",
   "splash_referral_invalid": "براہ کرم ایک درست 6 حروف کا کوڈ درج کریں۔",

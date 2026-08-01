@@ -76,9 +76,9 @@ class SilarahPrimaryButton extends StatelessWidget {
                     offset: const Offset(0, 12),
                   ),
                   BoxShadow(
-                    color: AppColors.obsidianNight.withValues(alpha: 0.55),
-                    blurRadius: 18,
-                    offset: const Offset(0, 10),
+                    color: AppColors.antiqueGold.withValues(alpha: 0.13),
+                    blurRadius: 26,
+                    offset: const Offset(0, 12),
                   ),
                 ]
               : null,

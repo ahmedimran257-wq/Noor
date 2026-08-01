@@ -753,6 +753,8 @@ class ChatCubit extends Cubit<ChatState> {
           status == 'blocked' ||
           status == 'reported',
       closureMessage: row['closure_reason'] as String?,
+      closedByMe: row['closed_by'] == null ? null : row['closed_by'] == me,
+      contentLocked: row['content_locked'] == true,
     );
   }
 

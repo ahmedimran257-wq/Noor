@@ -189,7 +189,12 @@ class _ChatScreenState extends State<ChatScreen>
     if (profileId == null || profileId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('This profile is unavailable right now.'),
+          content: Text(
+            'This profile is unavailable right now.',
+            style: TextStyle(
+              color: AppColors.readableOn(AppColors.surfaceGlassHover),
+            ),
+          ),
           backgroundColor: AppColors.surfaceGlassHover,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -242,7 +247,9 @@ class _ChatScreenState extends State<ChatScreen>
               Expanded(
                 child: Text(
                   'Message not sent. Tap the alert beside it to retry.',
-                  style: AppTypography.captionMedium,
+                  style: AppTypography.captionMedium.copyWith(
+                    color: AppColors.readableOn(AppColors.surfaceElevated),
+                  ),
                 ),
               ),
             ],
@@ -429,7 +436,11 @@ class _ChatScreenState extends State<ChatScreen>
             child: Column(
               children: [
                 // Closed match banner
-                if (isClosed) _ClosedBanner(name: conv.matchName),
+                if (isClosed)
+                  _ClosedBanner(
+                    name: conv.matchName,
+                    closedByMe: conv.closedByMe,
+                  ),
 
                 // Suspended banner
                 if (state.isSuspended)
@@ -524,8 +535,9 @@ class _ChatScreenState extends State<ChatScreen>
 // ── Closed Banner ─────────────────────────────────────────────
 
 class _ClosedBanner extends StatelessWidget {
-  const _ClosedBanner({required this.name});
+  const _ClosedBanner({required this.name, required this.closedByMe});
   final String name;
+  final bool? closedByMe;
 
   @override
   Widget build(BuildContext context) {
@@ -541,7 +553,11 @@ class _ClosedBanner extends StatelessWidget {
         const SizedBox(width: AppDimensions.space8),
         Expanded(
             child: Text(
-          'This match has been respectfully closed.',
+          switch (closedByMe) {
+            true => 'You ended this match.',
+            false => '$name ended this match.',
+            null => 'This match has ended.',
+          },
           style: AppTypography.caption.copyWith(color: AppColors.softCoral),
         )),
       ]),

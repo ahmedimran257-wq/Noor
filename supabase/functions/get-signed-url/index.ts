@@ -176,7 +176,7 @@ Deno.serve(async (req: Request) => {
     const ext = (file_extension ?? "webp").toLowerCase();
     const allowedTypes = purpose === "kyc_selfie" || purpose === "kyc_id"
       ? ["webp", "jpg", "jpeg"]
-      : ["webp"];
+      : ["jpg"];
     if (!allowedTypes.includes(ext)) {
       return errorResponse(400, "Unsupported image format.");
     }
@@ -213,9 +213,36 @@ Deno.serve(async (req: Request) => {
       .eq("order_index", order_index)
       .eq("status", "active")
       .maybeSingle();
-    if (existingPhotoError) {
+    const { data: pendingPhoto, error: pendingPhotoError } = await adminClient
+      .from("photos")
+      .select("id, storage_path")
+      .eq("profile_id", profileId)
+      .eq("order_index", order_index)
+      .eq("status", "pending_review")
+      .maybeSingle();
+    if (existingPhotoError || pendingPhotoError) {
       throw new Error(
-        `Existing photo query failed: ${existingPhotoError.message}`,
+        `Existing photo query failed: ${
+          existingPhotoError?.message ?? pendingPhotoError?.message
+        }`,
+      );
+    }
+
+    // Finalization may have committed while the client lost the HTTP response.
+    // Treat that retry as success instead of asking the member to upload the
+    // same slot again or surfacing a misleading reservation error.
+    if (pendingPhoto) {
+      return new Response(
+        JSON.stringify({
+          action: "already_pending",
+          photo_id: pendingPhoto.id,
+          storage_path: pendingPhoto.storage_path,
+          order_index,
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
       );
     }
 
@@ -250,7 +277,7 @@ Deno.serve(async (req: Request) => {
         p_bucket_id: BUCKET_NAME,
         p_purpose: "profile_photo",
         p_storage_path: storagePath,
-        p_expected_mime: "image/webp",
+        p_expected_mime: "image/jpeg",
         p_max_bytes: 5 * 1024 * 1024,
         p_order_index: order_index,
       });

@@ -183,7 +183,12 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Preset "$name" saved', style: AppTypography.body),
+          content: Text(
+            'Preset "$name" saved',
+            style: AppTypography.body.copyWith(
+              color: AppColors.readableOn(AppColors.surfaceGlassHover),
+            ),
+          ),
           backgroundColor: AppColors.surfaceGlassHover,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(

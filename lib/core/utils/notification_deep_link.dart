@@ -12,6 +12,8 @@ String? notificationPathFromDeepLink(String? deepLink) {
 
   final host = uri.host;
   final path = uri.path;
+  if (host == 'discover') return '/home?tab=0';
+  if (host == 'interests') return '/home?tab=1';
   if (host == 'chat') {
     final id = path.replaceFirst('/', '');
     return id.isEmpty ? '/home?tab=2' : '/chat/$id';

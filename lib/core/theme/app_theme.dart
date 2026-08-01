@@ -1,7 +1,7 @@
 // lib/core/theme/app_theme.dart
 // ============================================================
 // SILARAH Design DNA — ThemeData
-// Dark mode by default. Zero Material widgets allowed to
+// Complete palette identities. Zero Material widgets allowed to
 // show through — every component uses SILARAH's design language.
 // ============================================================
 
@@ -13,7 +13,7 @@ import 'app_typography.dart';
 import 'silarah_spring.dart';
 
 abstract final class AppTheme {
-  // ── Dark Theme (SILARAH Default) ─────────────────────────────
+  // ── Identity builder ─────────────────────────────────────────
 
   static ThemeData forMode(SilarahThemeMode mode) {
     AppColors.activate(mode);
@@ -30,7 +30,7 @@ abstract final class AppTheme {
         secondary: AppColors.verifiedTeal,
         onSecondary: AppColors.obsidianNight,
         error: AppColors.softCoral,
-        onError: AppColors.pearlWhite,
+        onError: Colors.white,
         surface: AppColors.surfaceGlass,
         onSurface: AppColors.pearlWhite,
         surfaceContainerHighest: AppColors.surfaceGlassHover,
@@ -254,8 +254,10 @@ abstract final class AppTheme {
 
       // ── Snack Bar — replaced by bottom sheets in SILARAH ────
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: AppColors.surfaceGlassHover,
-        contentTextStyle: AppTypography.body,
+        backgroundColor: AppColors.snackbarSurface,
+        contentTextStyle: AppTypography.body.copyWith(
+          color: AppColors.onSnackbar,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
         ),

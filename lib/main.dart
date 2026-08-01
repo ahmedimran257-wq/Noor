@@ -63,17 +63,15 @@ enum _BootstrapStage { loading, ready, failed }
 final ValueNotifier<_BootstrapStage> _bootstrapStage =
     ValueNotifier(_BootstrapStage.loading);
 String _bootstrapInitialLocation = AppRoutes.boot;
-SilarahThemeMode _bootstrapInitialTheme = SilarahThemeMode.obsidian;
+SilarahThemeMode _bootstrapInitialTheme = SilarahThemeMode.blackWhite;
 
 void main() async {
-  final binding = WidgetsFlutterBinding.ensureInitialized();
-  // Keep the native launch surface visible until Flutter has composed the
-  // first obsidian wordmark frame. This prevents a white hand-off flash.
-  binding.deferFirstFrame();
+  WidgetsFlutterBinding.ensureInitialized();
   final startupStartedAt = DateTime.now();
 
-  // Render before invoking any plugin channel. Preferences, Firebase and
-  // Supabase initialize behind the one continuous brand sequence.
+  // Give Flutter ownership of the screen immediately. The launch sequence
+  // schedules its motion after this first frame, while preferences, Firebase
+  // and Supabase initialize behind the continuous brand surface.
   runApp(
     _SilarahBootstrap(
       startupStartedAt: startupStartedAt,
@@ -92,9 +90,14 @@ void main() async {
     final introCompleted = prefs.getBool('silarah_intro_completed') ?? false;
     _bootstrapInitialLocation =
         introCompleted ? AppRoutes.boot : AppRoutes.languageSelect;
-    _bootstrapInitialTheme = SilarahThemeMode.fromStorage(
-      prefs.getString(ThemeCubit.preferenceKey),
-    );
+    final storedTheme = prefs.getString(ThemeCubit.preferenceKey);
+    _bootstrapInitialTheme = SilarahThemeMode.fromStorage(storedTheme);
+    if (storedTheme != _bootstrapInitialTheme.storageValue) {
+      await prefs.setString(
+        ThemeCubit.preferenceKey,
+        _bootstrapInitialTheme.storageValue,
+      );
+    }
 
     // ── Supabase Initialization ─────────────────────────────────
     // Initialize Supabase client
@@ -128,11 +131,11 @@ void main() async {
             constraints.maxHeight < 160 || constraints.maxWidth < 160;
         if (compact) {
           return const ColoredBox(
-            color: Color(0xFF0A0A0F),
+            color: Color(0xFFFFFFFF),
             child: Center(
               child: Icon(
                 Icons.error_outline_rounded,
-                color: Color(0xFFE67E7E),
+                color: Color(0xFFB32645),
                 size: 20,
               ),
             ),
@@ -140,7 +143,7 @@ void main() async {
         }
 
         return const Material(
-          color: Color(0xFF0A0A0F), // AppColors.obsidianNight
+          color: Color(0xFFFFFFFF),
           child: Center(
             child: SingleChildScrollView(
               padding: EdgeInsets.all(32),
@@ -148,12 +151,12 @@ void main() async {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.error_outline_rounded,
-                      color: Color(0xFFE67E7E), size: 48),
+                      color: Color(0xFFB32645), size: 48),
                   SizedBox(height: 16),
                   Text(
                     'Something went wrong',
                     style: TextStyle(
-                      color: Color(0xFFF5F5F7),
+                      color: Color(0xFF21151A),
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
                     ),
@@ -163,7 +166,7 @@ void main() async {
                   Text(
                     'This screen update was interrupted. Go back once and reopen it.',
                     style: TextStyle(
-                      color: Color(0xFF8E8E93),
+                      color: Color(0xFF665A60),
                       fontSize: 14,
                     ),
                     textAlign: TextAlign.center,
@@ -186,12 +189,13 @@ void main() async {
     return true; // Prevent app crash
   };
 
-  // Status bar: transparent, light icons (dark background)
+  // Status bar: transparent, dark icons on the signature white canvas.
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
-    statusBarBrightness: Brightness.dark,
-    systemNavigationBarColor: Color(0xFF0A0A0F),
+    statusBarIconBrightness: Brightness.dark,
+    statusBarBrightness: Brightness.light,
+    systemNavigationBarColor: Color(0xFFFFFFFF),
+    systemNavigationBarIconBrightness: Brightness.dark,
     systemNavigationBarDividerColor: Colors.transparent,
     systemNavigationBarContrastEnforced: false,
   ));
@@ -218,39 +222,6 @@ class _SilarahBootstrap extends StatefulWidget {
 class _SilarahBootstrapState extends State<_SilarahBootstrap> {
   bool _brandRevealCompleted = false;
   bool _startupGateResolved = false;
-  bool _firstFlutterFrameScheduled = false;
-  bool _launchMayAnimate = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_firstFlutterFrameScheduled) return;
-    _firstFlutterFrameScheduled = true;
-    unawaited(_releaseNativeLaunchSurface());
-  }
-
-  Future<void> _releaseNativeLaunchSurface() async {
-    // The opening wordmark is rendered from bundled fonts, so there is no
-    // bitmap to decode. First present one motionless obsidian Flutter frame,
-    // then enable brand motion. This ordering prevents Android's native
-    // launch surface from consuming the animation during a cold engine start.
-    await WidgetsBinding.instance.endOfFrame;
-    if (!mounted) {
-      WidgetsBinding.instance.allowFirstFrame();
-      return;
-    }
-
-    final firstPresentedFrame = Completer<void>();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!firstPresentedFrame.isCompleted) firstPresentedFrame.complete();
-    });
-    WidgetsBinding.instance.allowFirstFrame();
-    WidgetsBinding.instance.scheduleFrame();
-    await firstPresentedFrame.future;
-
-    if (!mounted || _launchMayAnimate) return;
-    setState(() => _launchMayAnimate = true);
-  }
 
   void _completeBrandReveal() {
     if (_brandRevealCompleted || !mounted) return;
@@ -281,7 +252,7 @@ class _SilarahBootstrapState extends State<_SilarahBootstrap> {
             children: [
               Positioned.fill(
                 child: switch (stage) {
-                  _BootstrapStage.loading => const ColoredBox(
+                  _BootstrapStage.loading => ColoredBox(
                       color: SilarahLaunchSequence.surface,
                     ),
                   _BootstrapStage.ready => SilarahApp(
@@ -295,7 +266,7 @@ class _SilarahBootstrapState extends State<_SilarahBootstrap> {
               ),
               Positioned.fill(
                 child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 360),
+                  duration: const Duration(milliseconds: 220),
                   switchInCurve: Curves.easeOutCubic,
                   switchOutCurve: Curves.easeOutCubic,
                   child: keepBrandLayer
@@ -303,9 +274,8 @@ class _SilarahBootstrapState extends State<_SilarahBootstrap> {
                           key: const ValueKey('startup-brand-layer'),
                           color: SilarahLaunchSequence.surface,
                           debugShowCheckedModeBanner: false,
-                          theme: AppTheme.forMode(SilarahThemeMode.obsidian),
+                          theme: AppTheme.forMode(_bootstrapInitialTheme),
                           home: SilarahLaunchSequence(
-                            play: _launchMayAnimate,
                             onCompleted: _completeBrandReveal,
                           ),
                         )
@@ -330,7 +300,7 @@ class _StartupFailureApp extends StatelessWidget {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        backgroundColor: Color(0xFF0A0A0F),
+        backgroundColor: Color(0xFFFFFFFF),
         body: SafeArea(
           child: Center(
             child: Padding(
@@ -340,7 +310,7 @@ class _StartupFailureApp extends StatelessWidget {
                 children: [
                   Icon(
                     Icons.settings_rounded,
-                    color: Color(0xFFC5A059),
+                    color: Color(0xFFAD285A),
                     size: 52,
                   ),
                   SizedBox(height: 20),
@@ -348,7 +318,7 @@ class _StartupFailureApp extends StatelessWidget {
                     'Silarah could not start',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Color(0xFFF5F5F7),
+                      color: Color(0xFF21151A),
                       fontSize: 22,
                       fontWeight: FontWeight.w600,
                     ),
@@ -397,7 +367,7 @@ class SilarahApp extends StatefulWidget {
     super.key,
     required this.initialLocation,
     this.startupStartedAt,
-    this.initialTheme = SilarahThemeMode.obsidian,
+    this.initialTheme = SilarahThemeMode.blackWhite,
     this.onStartupGateResolved,
   });
 
@@ -816,12 +786,21 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
                     final textDir =
                         isRtl ? TextDirection.rtl : TextDirection.ltr;
 
-                    final routedApp = Directionality(
-                      textDirection: textDir,
-                      child: InAppNotificationBannerHost(
-                        notifications: _notificationsCubit.inAppNotifications,
-                        onTap: _openInAppNotification,
-                        child: child ?? const SizedBox.shrink(),
+                    final routedApp = KeyedSubtree(
+                      // Existing feature surfaces consume semantic color
+                      // tokens directly. The identity key refreshes every
+                      // route atomically while the long-lived router and
+                      // cubits retain the member's navigation and session.
+                      key: ValueKey(
+                        'silarah-identity-${themeState.activeMode.storageValue}',
+                      ),
+                      child: Directionality(
+                        textDirection: textDir,
+                        child: InAppNotificationBannerHost(
+                          notifications: _notificationsCubit.inAppNotifications,
+                          onTap: _openInAppNotification,
+                          child: child ?? const SizedBox.shrink(),
+                        ),
                       ),
                     );
                     return AnimatedSwitcher(
@@ -832,8 +811,8 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
                         // The root bootstrap owns the only visible brand
                         // sequence. Keeping this layer neutral prevents a
                         // second animation from flashing through at handoff.
-                        _StartupNetworkState.checking => const ColoredBox(
-                            key: ValueKey('startup-brand-underlay'),
+                        _StartupNetworkState.checking => ColoredBox(
+                            key: const ValueKey('startup-brand-underlay'),
                             color: SilarahLaunchSequence.surface,
                           ),
                         _StartupNetworkState.offline => StartupOfflineScreen(

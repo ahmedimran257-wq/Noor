@@ -156,7 +156,7 @@ Deno.serve(async (req: Request) => {
         .select("id")
         .eq("profile_id", profile.id)
         .eq("order_index", 0)
-        .eq("moderation_status", "approved")
+        .eq("status", "active")
         .eq("admin_approved", true)
         .eq("nsfw_cleared", true)
         .maybeSingle()

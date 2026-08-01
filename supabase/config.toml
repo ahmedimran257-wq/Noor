@@ -121,6 +121,11 @@ verify_jwt = true
 # Exact, content-validated connectivity probe under Silarah's backend.
 verify_jwt = false
 
+[functions.dispatch-notifications]
+# Private pg_cron calls authenticate with the Vault-backed x-cron-secret;
+# direct member calls are independently verified inside the function.
+verify_jwt = false
+
 [functions.revenuecat-webhook]
 # RevenueCat signs requests with REVENUECAT_WEBHOOK_SECRET; Supabase JWT
 # verification must stay off so external webhooks can reach our own verifier.

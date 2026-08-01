@@ -721,6 +721,8 @@
   "@splash_button_signIn": {
     "description": "Secondary action on splash screen"
   },
+  "@splash_intention_subtitle": {},
+  "@splash_intention_title": {},
   "@splash_referral_button": {},
   "@splash_referral_hint": {},
   "@splash_referral_invalid": {},
@@ -1399,6 +1401,8 @@
   "settings_title": "tetapan",
   "splash_button_createProfile": "Buat Profil",
   "splash_button_signIn": "Log Masuk",
+  "splash_intention_subtitle": "Perkenalan peribadi, keserasian yang dipertimbangkan dan hubungan yang menghormati keluarga.",
+  "splash_intention_title": "Perkahwinan, didekati dengan niat.",
   "splash_referral_button": "Gunakan Kod",
   "splash_referral_hint": "cth. SILARAHXX",
   "splash_referral_invalid": "Sila masukkan kod 6 aksara yang sah.",

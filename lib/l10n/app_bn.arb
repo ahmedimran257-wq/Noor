@@ -721,6 +721,8 @@
   "@splash_button_signIn": {
     "description": "Secondary action on splash screen"
   },
+  "@splash_intention_subtitle": {},
+  "@splash_intention_title": {},
   "@splash_referral_button": {},
   "@splash_referral_hint": {},
   "@splash_referral_invalid": {},
@@ -1399,6 +1401,8 @@
   "settings_title": "সেটিংস",
   "splash_button_createProfile": "প্রোফাইল তৈরি করুন",
   "splash_button_signIn": "সাইন ইন করুন",
+  "splash_intention_subtitle": "ব্যক্তিগত পরিচয়, বিবেচনাপূর্ণ সামঞ্জস্য এবং পরিবার-সচেতন সংযোগ।",
+  "splash_intention_title": "বিয়ে, সচেতন অভিপ্রায়ে।",
   "splash_referral_button": "কোড প্রয়োগ করুন",
   "splash_referral_hint": "যেমন মিথাএক্সএক্সএক্স",
   "splash_referral_invalid": "অনুগ্রহ করে একটি বৈধ 6-অক্ষরের কোড লিখুন।",

@@ -29,7 +29,7 @@ Widget _testApp(Widget child, {bool disableAnimations = false}) {
 }
 
 void main() {
-  testWidgets('obsidian launch shifts fluidly and completes exactly once',
+  testWidgets('white launch shifts fluidly and completes exactly once',
       (tester) async {
     var completions = 0;
     await tester.pumpWidget(
@@ -47,21 +47,25 @@ void main() {
     // The sequence intentionally begins in the post-frame callback so native
     // startup time cannot consume Flutter's brand animation.
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 700));
     final settledTracking = tester.widget<Text>(wordmark).style!.letterSpacing!;
     expect(settledTracking, lessThan(initialTracking - 6));
     expect(find.byType(Image), findsNothing);
 
-    await tester.pump(const Duration(milliseconds: 1400));
+    await tester.pump(const Duration(milliseconds: 600));
     await tester.pump(const Duration(milliseconds: 1));
     expect(completions, 1);
     expect(SilarahLaunchSequence.revealCompleted.value, isTrue);
 
     // Session hydration can outlive the motion on a slow network. The lockup
-    // must hold until root bootstrap removes it, never expose a black stall.
+    // must hold until root bootstrap removes it, never expose a blank stall.
     await tester.pump(const Duration(seconds: 3));
     expect(find.byType(Image), findsNothing);
     expect(find.text('Silarah'), findsOneWidget);
+    final heldFade = tester.widget<FadeTransition>(
+      find.ancestor(of: wordmark, matching: find.byType(FadeTransition)).first,
+    );
+    expect(heldFade.opacity.value, 1);
     expect(completions, 1);
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -98,12 +102,12 @@ void main() {
       ),
     );
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 700));
     expect(
       tester.widget<Text>(wordmark).style!.letterSpacing,
       lessThan(heldTracking - 6),
     );
-    await tester.pump(const Duration(milliseconds: 1401));
+    await tester.pump(const Duration(milliseconds: 601));
     expect(completions, 1);
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -213,7 +217,7 @@ void main() {
     expect(mainSource, contains('_StartupNetworkState.offline'));
     expect(
       mainSource,
-      contains("_StartupNetworkState.checking => const ColoredBox("),
+      contains("_StartupNetworkState.checking => ColoredBox("),
     );
     expect(
       mainSource,
@@ -224,8 +228,12 @@ void main() {
       1,
       reason: 'Only the root bootstrap may own the startup animation.',
     );
-    expect(mainSource, contains('play: _launchMayAnimate'));
-    expect(mainSource, contains('firstPresentedFrame'));
+    expect(
+      mainSource,
+      isNot(contains('deferFirstFrame')),
+      reason: 'The native surface must hand off on Flutter\'s first frame.',
+    );
+    expect(mainSource, isNot(contains('_launchMayAnimate')));
     expect(
       mainSource,
       contains('initialize(requestPermission: false)'),

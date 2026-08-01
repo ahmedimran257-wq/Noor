@@ -79,7 +79,9 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Failed to delete account: $e',
-                  style: AppTypography.body),
+                  style: AppTypography.body.copyWith(
+                    color: AppColors.readableOn(AppColors.errorRed),
+                  )),
               backgroundColor: AppColors.errorRed,
             ),
           );

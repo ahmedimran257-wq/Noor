@@ -264,58 +264,256 @@ class ShimmerBox extends StatelessWidget {
 
 // ── Profile Card Shimmer ──────────────────────────────────────
 
-class SilarahProfileCardShimmer extends StatelessWidget {
+/// A restrained discovery placeholder.
+///
+/// Profile cards occupy most of the viewport, so the generic full-surface
+/// shimmer becomes a high-contrast vertical band on tall phones. This loader
+/// keeps the card geometry stable and animates only a quiet focal mark and
+/// small information placeholders.
+class SilarahProfileCardShimmer extends StatefulWidget {
   const SilarahProfileCardShimmer({super.key});
 
   @override
+  State<SilarahProfileCardShimmer> createState() =>
+      _SilarahProfileCardShimmerState();
+}
+
+class _SilarahProfileCardShimmerState extends State<SilarahProfileCardShimmer>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  bool _reduceMotion = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+      value: .34,
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    if (_reduceMotion == reduceMotion &&
+        (_controller.isAnimating || reduceMotion)) {
+      return;
+    }
+    _reduceMotion = reduceMotion;
+    if (reduceMotion) {
+      _controller
+        ..stop()
+        ..value = .5;
+    } else {
+      _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SilarahShimmer(
-      child: AspectRatio(
-        aspectRatio: AppDimensions.cardAspectRatio,
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColors.surfaceGlassHover,
-            borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-            border: Border.all(
-              color: AppColors.cardBorder,
-              width: AppDimensions.borderThin,
-            ),
-          ),
-          child: const Padding(
-            padding: EdgeInsets.all(AppDimensions.space20),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Location line
-                ShimmerBox(
-                    width: 80, height: 12, radius: AppDimensions.radiusTiny),
-                SizedBox(height: AppDimensions.space8),
-                // Name line
-                ShimmerBox(
-                    width: 160, height: 20, radius: AppDimensions.radiusTiny),
-                SizedBox(height: AppDimensions.space12),
-                // Two chips
-                Row(
-                  children: [
-                    ShimmerBox(
-                        width: 70,
-                        height: 28,
-                        radius: AppDimensions.radiusChip),
-                    SizedBox(width: AppDimensions.space8),
-                    ShimmerBox(
-                        width: 90,
-                        height: 28,
-                        radius: AppDimensions.radiusChip),
-                  ],
+    return Semantics(
+      label: 'Preparing profile recommendations',
+      liveRegion: true,
+      child: ExcludeSemantics(
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
+            final pulse = _reduceMotion
+                ? .5
+                : Curves.easeInOutCubic.transform(_controller.value);
+            final tonalSurface = Color.lerp(
+              AppColors.surfaceDark,
+              AppColors.surfaceGlassHover,
+              .16 + pulse * .12,
+            )!;
+
+            return AspectRatio(
+              aspectRatio: AppDimensions.cardAspectRatio,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.surfaceMid,
+                        tonalSurface,
+                        AppColors.surfaceDark,
+                      ],
+                      stops: const [0, .58, 1],
+                    ),
+                    borderRadius:
+                        BorderRadius.circular(AppDimensions.radiusCard),
+                    border: Border.all(
+                      color: AppColors.cardBorder,
+                      width: AppDimensions.borderThin,
+                    ),
+                  ),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Positioned(
+                        top: -64,
+                        right: -58,
+                        child: Container(
+                          width: 210,
+                          height: 210,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.champagneGold.withValues(
+                              alpha: .025 + pulse * .018,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Center(
+                        child: Transform.scale(
+                          scale: .96 + pulse * .05,
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppColors.surfaceElevated
+                                  .withValues(alpha: .88),
+                              border: Border.all(
+                                color: AppColors.cardBorder,
+                              ),
+                            ),
+                            child: Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: AppColors.champagneGold.withValues(
+                                  alpha: .56 + pulse * .34,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.champagneGold.withValues(
+                                      alpha: .08 + pulse * .09,
+                                    ),
+                                    blurRadius: 12,
+                                    spreadRadius: 3,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        left: AppDimensions.space16,
+                        right: AppDimensions.space16,
+                        bottom: AppDimensions.space16,
+                        child: Container(
+                          padding: const EdgeInsets.all(AppDimensions.space16),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceElevated
+                                .withValues(alpha: .90),
+                            borderRadius: BorderRadius.circular(
+                              AppDimensions.radiusButton,
+                            ),
+                            border: Border.all(color: AppColors.cardBorder),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _ProfileLoaderLine(
+                                widthFactor: .28,
+                                height: 9,
+                                opacity: .34 + pulse * .08,
+                              ),
+                              const SizedBox(height: AppDimensions.space10),
+                              _ProfileLoaderLine(
+                                widthFactor: .58,
+                                height: 16,
+                                opacity: .46 + pulse * .08,
+                              ),
+                              const SizedBox(height: AppDimensions.space14),
+                              Row(
+                                children: [
+                                  _ProfileLoaderPill(
+                                    width: 68,
+                                    opacity: .32 + pulse * .07,
+                                  ),
+                                  const SizedBox(width: AppDimensions.space8),
+                                  _ProfileLoaderPill(
+                                    width: 88,
+                                    opacity: .28 + pulse * .07,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
   }
+}
+
+class _ProfileLoaderLine extends StatelessWidget {
+  const _ProfileLoaderLine({
+    required this.widthFactor,
+    required this.height,
+    required this.opacity,
+  });
+
+  final double widthFactor;
+  final double height;
+  final double opacity;
+
+  @override
+  Widget build(BuildContext context) => FractionallySizedBox(
+        widthFactor: widthFactor,
+        alignment: AlignmentDirectional.centerStart,
+        child: Container(
+          height: height,
+          decoration: BoxDecoration(
+            color: AppColors.slateMist.withValues(alpha: opacity),
+            borderRadius: BorderRadius.circular(99),
+          ),
+        ),
+      );
+}
+
+class _ProfileLoaderPill extends StatelessWidget {
+  const _ProfileLoaderPill({
+    required this.width,
+    required this.opacity,
+  });
+
+  final double width;
+  final double opacity;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: width,
+        height: 26,
+        decoration: BoxDecoration(
+          color: AppColors.slateMist.withValues(alpha: opacity),
+          borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+        ),
+      );
 }
 
 // ── Conversation List Item Shimmer ────────────────────────────

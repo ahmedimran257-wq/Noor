@@ -2162,6 +2162,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get splash_button_signIn => 'Sign In';
 
   @override
+  String get splash_intention_subtitle =>
+      'Private introductions, thoughtful compatibility, and family-aware connection.';
+
+  @override
+  String get splash_intention_title => 'Marriage, approached with intention.';
+
+  @override
   String get splash_referral_button => 'Apply Code';
 
   @override

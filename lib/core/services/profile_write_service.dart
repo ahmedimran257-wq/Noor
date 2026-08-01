@@ -8,6 +8,8 @@
 // with no local success fallback.
 // ============================================================
 
+import 'package:flutter/foundation.dart';
+
 import '../models/onboarding_data.dart';
 import '../onboarding/onboarding_flow.dart';
 import 'operational_telemetry_service.dart';
@@ -274,7 +276,11 @@ class ProfileWriteService {
         'p_lng': data.lng,
       });
       return true;
-    } catch (_) {
+    } catch (error) {
+      debugPrint(
+        '[ProfileWriteService] Basic Identity RPC failed: '
+        '${error.runtimeType}',
+      );
       return false;
     }
   }
@@ -557,9 +563,12 @@ class ProfileWriteService {
         });
 
       case OnboardingFlow.photoUploadStep:
-        return _compactMap({
-          'photo_privacy': _photoPrivacyToString(data.photoPrivacy),
-        });
+        // ProfilePhotoService owns this step transactionally: it persists
+        // photo_privacy through set_my_photo_privacy before reserving and
+        // publishing any photo slots. Repeating the field through the general
+        // profile bundle makes an otherwise successful upload depend on an
+        // unrelated RPC and can strand the user on the final onboarding step.
+        return const <String, dynamic>{};
 
       case 5:
         final fields = <String, dynamic>{

@@ -83,7 +83,12 @@ class LegalDocScreen extends StatelessWidget {
       ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
-          content: const Text('Web address copied to your clipboard.'),
+          content: Text(
+            'Web address copied to your clipboard.',
+            style: TextStyle(
+              color: AppColors.readableOn(AppColors.surfaceGlassHover),
+            ),
+          ),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.surfaceGlassHover,
         ),

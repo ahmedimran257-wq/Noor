@@ -256,7 +256,14 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
                                                       Text(
                                                           'Interest sent to ${p.firstName}',
                                                           style: AppTypography
-                                                              .body),
+                                                              .body
+                                                              .copyWith(
+                                                            color: AppColors
+                                                                .readableOn(
+                                                              AppColors
+                                                                  .surfaceGlassHover,
+                                                            ),
+                                                          )),
                                                     ]),
                                                     backgroundColor: AppColors
                                                         .surfaceGlassHover,

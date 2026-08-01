@@ -16,55 +16,83 @@ import 'package:silarah/core/theme/app_theme.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  tearDown(() => AppColors.activate(SilarahThemeMode.obsidian));
+  tearDown(() => AppColors.activate(SilarahThemeMode.blackWhite));
 
   test('theme modes have stable persistence identities', () {
     expect(
       SilarahThemeMode.values.map((mode) => mode.storageValue).toSet(),
-      {'obsidian', 'rose', 'porcelain'},
+      {'black_white', 'oled', 'prism_luxe'},
+    );
+    expect(
+      SilarahThemeMode.fromStorage('prism_luxe'),
+      SilarahThemeMode.prismLuxe,
     );
     expect(
       SilarahThemeMode.fromStorage('unknown'),
-      SilarahThemeMode.obsidian,
+      SilarahThemeMode.blackWhite,
     );
     expect(
-      SilarahThemeMode.fromStorage('emerald'),
-      SilarahThemeMode.obsidian,
-      reason: 'Removed emerald preferences migrate safely to Obsidian.',
+      SilarahThemeMode.fromStorage('obsidian'),
+      SilarahThemeMode.blackWhite,
+      reason: 'Removed identities migrate safely to Black & White.',
+    );
+    expect(
+      SilarahThemeMode.fromStorage('rose'),
+      SilarahThemeMode.blackWhite,
+    );
+    expect(
+      SilarahThemeMode.fromStorage('floral_pink'),
+      SilarahThemeMode.blackWhite,
+    );
+    expect(
+      SilarahThemeMode.fromStorage('porcelain'),
+      SilarahThemeMode.blackWhite,
     );
   });
 
-  test('theme selection is persisted without partially mutating the app',
-      () async {
+  test('theme selection applies immediately and persists', () async {
     SharedPreferences.setMockInitialValues({});
     final cubit = ThemeCubit();
 
-    await cubit.scheduleForRestart(SilarahThemeMode.rose);
-    expect(cubit.state.activeMode, SilarahThemeMode.obsidian);
-    expect(cubit.state.pendingMode, SilarahThemeMode.rose);
-    expect(cubit.state.requiresRestart, isTrue);
-    expect(AppColors.active.mode, SilarahThemeMode.obsidian);
+    await cubit.applyMode(SilarahThemeMode.prismLuxe);
+    expect(cubit.state.activeMode, SilarahThemeMode.prismLuxe);
+    expect(cubit.state.selectedMode, SilarahThemeMode.prismLuxe);
+    expect(AppColors.active.mode, SilarahThemeMode.prismLuxe);
     expect(
       (await SharedPreferences.getInstance())
           .getString(ThemeCubit.preferenceKey),
-      'rose',
+      'prism_luxe',
     );
     await cubit.close();
 
     final restored = ThemeCubit();
     await restored.ready;
-    expect(restored.state.activeMode, SilarahThemeMode.rose);
-    expect(restored.state.pendingMode, isNull);
-    expect(AppColors.active.mode, SilarahThemeMode.rose);
+    expect(restored.state.activeMode, SilarahThemeMode.prismLuxe);
+    expect(AppColors.active.mode, SilarahThemeMode.prismLuxe);
     await restored.close();
+  });
+
+  test('removed saved identities are normalized during load', () async {
+    SharedPreferences.setMockInitialValues({
+      ThemeCubit.preferenceKey: 'porcelain',
+    });
+    final cubit = ThemeCubit();
+    await cubit.ready;
+    expect(cubit.state.activeMode, SilarahThemeMode.blackWhite);
+    expect(
+      (await SharedPreferences.getInstance())
+          .getString(ThemeCubit.preferenceKey),
+      'black_white',
+    );
+    await cubit.close();
   });
 
   test('preloaded startup theme applies atomically before first frame',
       () async {
-    final cubit = ThemeCubit(initialMode: SilarahThemeMode.porcelain);
+    final cubit = ThemeCubit(initialMode: SilarahThemeMode.oled);
     await cubit.ready;
-    expect(cubit.state.activeMode, SilarahThemeMode.porcelain);
-    expect(AppColors.active.mode, SilarahThemeMode.porcelain);
+    expect(cubit.state.activeMode, SilarahThemeMode.oled);
+    expect(AppColors.active.mode, SilarahThemeMode.oled);
     await cubit.close();
   });
 
@@ -78,9 +106,81 @@ void main() {
       expect(theme.colorScheme.primary, palette.accent);
     }
     expect(
-      SilarahPalette.porcelain.background,
+      SilarahPalette.blackWhite.background,
       const Color(0xFFFFFFFF),
-      reason: 'Porcelain is intentionally a true-white theme.',
+      reason: 'Black & White is intentionally a true-white theme.',
+    );
+    expect(
+      SilarahPalette.blackWhite.accent,
+      const Color(0xFF000000),
+      reason: 'Black & White uses absolute black for primary actions.',
+    );
+    expect(
+      SilarahPalette.oled.background,
+      const Color(0xFF000000),
+      reason: 'Pure OLED must use a literal black canvas.',
+    );
+    expect(
+      SilarahPalette.oled.navBar,
+      const Color(0xFF000000),
+      reason: 'Pure OLED navigation pixels must also switch off.',
+    );
+    expect(
+      SilarahPalette.prismLuxe.background,
+      const Color(0xFF080914),
+      reason: 'Prism Luxe keeps jewel colour grounded in a midnight canvas.',
+    );
+    expect(SilarahThemeMode.prismLuxe.isDark, isTrue);
+    expect(SilarahThemeMode.prismLuxe.isChromatic, isTrue);
+    expect(
+      SilarahPalette.prismLuxe.spectrum.toSet(),
+      hasLength(6),
+      reason: 'The chromatic identity must not collapse into repeated accents.',
+    );
+    const monochrome = SilarahPalette.blackWhite;
+    final monochromeColors = <Color>[
+      monochrome.background,
+      monochrome.backgroundDeep,
+      monochrome.accent,
+      monochrome.accentHighlight,
+      monochrome.accentPressed,
+      monochrome.complementary,
+      monochrome.decorativeDepth,
+      monochrome.contentPrimary,
+      monochrome.contentSecondary,
+      monochrome.surface,
+      monochrome.surfaceInteractive,
+      monochrome.input,
+      monochrome.border,
+      monochrome.accentBorder,
+      monochrome.accentGlow,
+      monochrome.success,
+      monochrome.danger,
+      monochrome.messageReceived,
+      monochrome.progressTrack,
+      monochrome.divider,
+      monochrome.surfaceElevated,
+      monochrome.surfaceMid,
+      monochrome.surfaceDark,
+      monochrome.surfacePressed,
+      monochrome.surfacePanelTop,
+      monochrome.premium,
+      monochrome.online,
+      monochrome.message,
+      monochrome.warning,
+      monochrome.gradientCore,
+      monochrome.dropdown,
+      monochrome.snackbar,
+      monochrome.navBar,
+      monochrome.navBorder,
+      ...monochrome.spectrum,
+    ];
+    expect(
+      monochromeColors.every(
+        (color) => color.r == color.g && color.g == color.b,
+      ),
+      isTrue,
+      reason: 'Black & White must contain no chromatic colour values.',
     );
   });
 
@@ -102,7 +202,56 @@ void main() {
         greaterThanOrEqualTo(4.5),
         reason: '${mode.label} accent contrast',
       );
+      AppColors.activate(mode);
+      expect(
+        _contrast(AppColors.onSnackbar, palette.snackbar),
+        greaterThanOrEqualTo(4.5),
+        reason: '${mode.label} snackbar content contrast',
+      );
     }
+  });
+
+  test('every semantic feedback surface selects WCAG-readable content', () {
+    for (final mode in SilarahThemeMode.values) {
+      final palette = SilarahPalette.forMode(mode);
+      final feedbackSurfaces = <String, Color>{
+        'standard snackbar': palette.snackbar,
+        'error snackbar': palette.danger,
+        'success snackbar': palette.success,
+        'interactive snackbar': palette.surfaceInteractive,
+        'elevated snackbar': palette.surfaceElevated,
+      };
+
+      for (final entry in feedbackSurfaces.entries) {
+        final foreground = AppColors.readableOn(entry.value);
+        expect(
+          foreground,
+          anyOf(const Color(0xFF000000), const Color(0xFFFFFFFF)),
+          reason: '${mode.label} ${entry.key} uses an absolute neutral',
+        );
+        expect(
+          _contrast(foreground, entry.value),
+          greaterThanOrEqualTo(4.5),
+          reason: '${mode.label} ${entry.key} content contrast',
+        );
+      }
+    }
+  });
+
+  test('photo safety feedback uses its semantic foreground token', () {
+    final source = File(
+      'lib/features/onboarding/screens/photo_upload_screen.dart',
+    ).readAsStringSync();
+    expect(
+      source,
+      contains('AppColors.readableOn(AppColors.softCoral)'),
+      reason: 'Photo moderation errors must never inherit page text colour.',
+    );
+    expect(
+      source,
+      contains('AppColors.readableOn(AppColors.surfaceGlassHover)'),
+      reason: 'Photo status feedback must adapt in light and dark themes.',
+    );
   });
 
   test('Android system chrome never adds a contrast divider artifact', () {
@@ -118,7 +267,7 @@ void main() {
     expect(androidStyles, contains('android:enforceNavigationBarContrast'));
   });
 
-  test('launch sequence is black-first and uses one complete wordmark', () {
+  test('launch sequence is white-first and uses one complete wordmark', () {
     final revealSource = File(
       'lib/core/widgets/silarah_launch_sequence.dart',
     ).readAsStringSync();
@@ -128,9 +277,9 @@ void main() {
           .whereType<File>()
           .where((file) => file.path.endsWith('silarah_splash_mark.png')),
       isEmpty,
-      reason: 'The native layer must remain obsidian until Flutter reveals.',
+      reason: 'No separate legacy splash artwork may return.',
     );
-    expect(revealSource, contains('Duration(milliseconds: 2400)'));
+    expect(revealSource, contains('Duration(milliseconds: 1250)'));
     expect(revealSource, contains('_wordTracking'));
     expect(revealSource, contains("'Silarah'"));
     expect(revealSource, contains("'السلام عليكم'"));
@@ -142,11 +291,11 @@ void main() {
     );
     expect(revealSource, contains('final bool play'));
     expect(revealSource, contains('if (!widget.play'));
-    expect(revealSource, contains('_departureOpacity'));
-    expect(revealSource, contains('_ObsidianBloomPainter'));
+    expect(revealSource, isNot(contains('_departureOpacity')));
+    expect(revealSource, contains('_BrandBloomPainter'));
     expect(revealSource, isNot(contains('silarah_liquid_mark.png')));
     expect(revealSource, isNot(contains("Text(\n          'ilarah'")));
-    expect(revealSource, contains('Color(0xFF050507)'));
+    expect(revealSource, contains('AppColors.obsidianNight'));
     expect(revealSource, isNot(contains('SvgPicture')));
     expect(revealSource, isNot(contains('VideoPlayerController')));
     expect(revealSource, isNot(contains('Timer(')));
@@ -164,12 +313,16 @@ void main() {
       lessThan(mainSource.indexOf('Firebase.initializeApp(')),
       reason: 'Core SDK startup must not hold Android\'s static splash.',
     );
-    expect(mainSource, contains('binding.deferFirstFrame()'));
     expect(mainSource, isNot(contains('precacheImage(')));
-    expect(mainSource, contains('endOfFrame'));
-    expect(mainSource, contains('allowFirstFrame()'));
-    expect(mainSource, contains('play: _launchMayAnimate'));
-    expect(mainSource, contains('firstPresentedFrame'));
+    expect(
+      mainSource,
+      isNot(contains('deferFirstFrame')),
+      reason: 'Flutter must replace the native surface without a dead frame.',
+    );
+    expect(mainSource, isNot(contains('endOfFrame')));
+    expect(mainSource, isNot(contains('allowFirstFrame')));
+    expect(mainSource, isNot(contains('_launchMayAnimate')));
+    expect(mainSource, isNot(contains('firstPresentedFrame')));
 
     for (final stylePath in [
       'android/app/src/main/res/values/styles.xml',
@@ -179,7 +332,18 @@ void main() {
       expect(source, isNot(contains('?android:colorBackground')));
       expect(source, contains('@color/launch_background'));
       expect(source, contains('@drawable/launch_background'));
-      expect(source, contains('#050507'));
+      expect(source, contains('#FFFFFF'));
+    }
+    for (final launchPath in [
+      'android/app/src/main/res/drawable/launch_background.xml',
+      'android/app/src/main/res/drawable-v21/launch_background.xml',
+    ]) {
+      expect(
+        File(launchPath).readAsStringSync(),
+        contains('@drawable/ic_launcher_foreground'),
+        reason:
+            'Cold engine startup must show the static brand, not blank white.',
+      );
     }
     for (final stylePath in [
       'android/app/src/main/res/values-v31/styles.xml',
@@ -195,14 +359,14 @@ void main() {
         source,
         contains(
           'android:windowSplashScreenAnimatedIcon">'
-          '@android:color/transparent',
+          '@drawable/ic_launcher_foreground',
         ),
       );
     }
     final iosLaunch = File(
       'ios/Runner/Base.lproj/LaunchScreen.storyboard',
     ).readAsStringSync();
-    expect(iosLaunch, isNot(contains('red="1" green="1" blue="1"')));
+    expect(iosLaunch, contains('red="1" green="1" blue="1"'));
     expect(iosLaunch, isNot(contains('green="0.1803921569"')));
     expect(iosLaunch, isNot(contains('LaunchImage')));
     expect(
@@ -260,10 +424,11 @@ void main() {
       ).hasMatch(pubspec),
       isTrue,
     );
-    expect(pubspec, contains('adaptive_icon_background: "#0A0A0D"'));
+    expect(pubspec, contains('adaptive_icon_background: "#FFFFFF"'));
   });
 
-  test('Restart now invokes the native Android task restart bridge', () async {
+  test('native restart bridge remains available but appearance is live',
+      () async {
     const channel = MethodChannel('com.silarah.app/app_lifecycle');
     final methods = <String>[];
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
@@ -288,8 +453,9 @@ void main() {
     final nativeHost = File(
       'android/app/src/main/kotlin/com/silarah/app/MainActivity.kt',
     ).readAsStringSync();
-    expect(settings, contains("Text('Restart now')"));
-    expect(settings, contains("'Later'"));
+    expect(settings, isNot(contains("Text('Restart now')")));
+    expect(settings, contains('applyMode(mode)'));
+    expect(settings, contains('Applied instantly'));
     expect(nativeHost, contains('Intent.FLAG_ACTIVITY_CLEAR_TASK'));
     expect(nativeHost, contains('finishAffinity()'));
     expect(nativeHost, contains('setOnExitAnimationListener'));

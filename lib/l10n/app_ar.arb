@@ -721,6 +721,8 @@
   "@splash_button_signIn": {
     "description": "Secondary action on splash screen"
   },
+  "@splash_intention_subtitle": {},
+  "@splash_intention_title": {},
   "@splash_referral_button": {},
   "@splash_referral_hint": {},
   "@splash_referral_invalid": {},
@@ -1399,6 +1401,8 @@
   "settings_title": "إعدادات",
   "splash_button_createProfile": "إنشاء الملف الشخصي",
   "splash_button_signIn": "تسجيل الدخول",
+  "splash_intention_subtitle": "تعارف خاص، وتوافق مدروس، وتواصل يراعي الأسرة.",
+  "splash_intention_title": "الزواج، بنية صادقة.",
   "splash_referral_button": "تطبيق الكود",
   "splash_referral_hint": "على سبيل المثال سيلاراXX",
   "splash_referral_invalid": "الرجاء إدخال رمز صالح مكون من 6 أحرف.",

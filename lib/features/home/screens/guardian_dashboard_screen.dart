@@ -105,7 +105,9 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
           SnackBar(
             content: Text(
               'Match approved — ${chat.wardName} can now message ${chat.otherPartyName}',
-              style: AppTypography.body,
+              style: AppTypography.body.copyWith(
+                color: AppColors.readableOn(AppColors.verifiedTeal),
+              ),
             ),
             backgroundColor: AppColors.verifiedTeal,
             behavior: SnackBarBehavior.floating,
@@ -119,8 +121,12 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content:
-                Text('Failed to approve match: $e', style: AppTypography.body),
+            content: Text(
+              'Failed to approve match: $e',
+              style: AppTypography.body.copyWith(
+                color: AppColors.readableOn(AppColors.errorRed),
+              ),
+            ),
             backgroundColor: AppColors.errorRed,
             behavior: SnackBarBehavior.floating,
           ),

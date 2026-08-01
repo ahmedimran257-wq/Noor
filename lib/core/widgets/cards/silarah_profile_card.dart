@@ -36,6 +36,7 @@ class SilarahProfileCard extends StatelessWidget {
     this.onTap,
     this.onSendInterest,
     this.onBookmark,
+    this.isBookmarked = false,
     this.isInterestSent = false,
     this.lastActiveLabel,
     this.cardScale = 1.0,
@@ -56,6 +57,7 @@ class SilarahProfileCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onSendInterest;
   final VoidCallback? onBookmark;
+  final bool isBookmarked;
   final bool isInterestSent;
   final String? lastActiveLabel;
   final double cardScale; // Continuous scale driven by scroll offset
@@ -202,9 +204,14 @@ class SilarahProfileCard extends StatelessWidget {
                                 children: [
                                   // Bookmark
                                   _IconActionButton(
-                                    icon: Icons.bookmark_outline_rounded,
+                                    icon: isBookmarked
+                                        ? Icons.bookmark_rounded
+                                        : Icons.bookmark_outline_rounded,
+                                    isActive: isBookmarked,
                                     onTap: onBookmark,
-                                    tooltip: 'Save',
+                                    tooltip: isBookmarked
+                                        ? 'Remove saved profile'
+                                        : 'Save profile',
                                   ),
                                   const SizedBox(width: AppDimensions.space12),
 
@@ -565,16 +572,19 @@ class _IconActionButton extends StatelessWidget {
   const _IconActionButton({
     required this.icon,
     required this.tooltip,
+    this.isActive = false,
     this.onTap,
   });
   final IconData icon;
   final String tooltip;
+  final bool isActive;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return SilarahPressable(
       onTap: onTap,
+      semanticLabel: tooltip,
       child: Container(
         width: 44,
         height: 44,
@@ -582,27 +592,34 @@ class _IconActionButton extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              AppColors.surfaceGlassHover.withValues(alpha: 0.78),
-              AppColors.surfaceGlass.withValues(alpha: 0.18),
-            ],
+            colors: isActive
+                ? [
+                    AppColors.onMedia,
+                    AppColors.onMedia.withValues(alpha: 0.88),
+                  ]
+                : [
+                    AppColors.overlayBlack87,
+                    AppColors.overlayBlack55,
+                  ],
           ),
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
           border: Border.all(
-            color: AppColors.cardBorder,
+            color: isActive
+                ? AppColors.overlayBlack45
+                : AppColors.onMedia.withValues(alpha: 0.72),
             width: AppDimensions.borderThin,
           ),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
-              color: AppColors.obsidianNight.withValues(alpha: 0.28),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
+              color: AppColors.overlayBlack55,
+              blurRadius: 14,
+              offset: Offset(0, 7),
             ),
           ],
         ),
         child: Icon(
           icon,
-          color: AppColors.onMedia,
+          color: isActive ? AppColors.overlayBlack87 : AppColors.onMedia,
           size: AppDimensions.iconSizeMedium,
         ),
       ),

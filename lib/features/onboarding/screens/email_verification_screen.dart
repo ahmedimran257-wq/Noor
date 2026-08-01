@@ -178,7 +178,12 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
           }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.message),
+              content: Text(
+                state.message,
+                style: TextStyle(
+                  color: AppColors.readableOn(AppColors.softCoral),
+                ),
+              ),
               backgroundColor: AppColors.softCoral,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
@@ -190,45 +195,17 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
       },
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: RadialGradient(
-              center: const Alignment(0, -0.65),
-              radius: 1.4,
-              colors: [
-                AppColors.champagneGold.withValues(alpha: .055),
-                AppColors.navyCharcoal,
-                AppColors.obsidianNight,
-              ],
-              stops: const [0, .4, 1],
-            ),
-          ),
+        body: _QuietAuthCanvas(
           child: SafeArea(
             child: Column(
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                  child: Row(
-                    children: [
-                      _BackBtn(onTap: () => Navigator.of(context).pop()),
-                      const Spacer(),
-                      Text(
-                        'Silarah',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color:
-                              AppColors.champagneGold.withValues(alpha: 0.60),
-                          shadows: [
-                            Shadow(
-                              color: AppColors.champagneGold
-                                  .withValues(alpha: 0.3),
-                              blurRadius: 10,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: _BackBtn(
+                      onTap: () => Navigator.of(context).pop(),
+                    ),
                   ),
                 ),
                 Expanded(
@@ -266,6 +243,96 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
       ),
     );
   }
+}
+
+class _QuietAuthCanvas extends StatelessWidget {
+  const _QuietAuthCanvas({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppColors.midnightPlum.withValues(alpha: .34),
+            AppColors.obsidianNight,
+            AppColors.obsidianNight,
+          ],
+          stops: const [0, .24, 1],
+        ),
+      ),
+      child: CustomPaint(
+        painter: _AuthBotanicalEdgePainter(
+          color: AppColors.champagneGold,
+        ),
+        child: child,
+      ),
+    );
+  }
+}
+
+class _AuthBotanicalEdgePainter extends CustomPainter {
+  const _AuthBotanicalEdgePainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = .75
+      ..color = color.withValues(alpha: .075);
+
+    final upperStem = Path()
+      ..moveTo(size.width + 18, 34)
+      ..cubicTo(
+        size.width * .88,
+        54,
+        size.width * .90,
+        142,
+        size.width * .76,
+        176,
+      );
+    final lowerStem = Path()
+      ..moveTo(-18, size.height - 18)
+      ..cubicTo(
+        size.width * .10,
+        size.height - 60,
+        size.width * .08,
+        size.height - 132,
+        size.width * .20,
+        size.height - 170,
+      );
+    canvas
+      ..drawPath(upperStem, paint)
+      ..drawPath(lowerStem, paint);
+
+    _leaf(canvas, Offset(size.width * .90, 92), -2.35, paint);
+    _leaf(canvas, Offset(size.width * .84, 145), -2.55, paint);
+    _leaf(canvas, Offset(size.width * .10, size.height - 85), .55, paint);
+  }
+
+  void _leaf(Canvas canvas, Offset center, double angle, Paint paint) {
+    canvas.save();
+    canvas
+      ..translate(center.dx, center.dy)
+      ..rotate(angle);
+    final leaf = Path()
+      ..moveTo(0, 0)
+      ..quadraticBezierTo(11, -7, 20, 0)
+      ..quadraticBezierTo(11, 7, 0, 0);
+    canvas.drawPath(leaf, paint);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _AuthBotanicalEdgePainter oldDelegate) =>
+      oldDelegate.color != color;
 }
 
 class _EmailView extends StatelessWidget {

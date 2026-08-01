@@ -88,6 +88,10 @@ class SilarahBottomNav extends StatelessWidget {
                             item: _items[index],
                             isActive: index == currentIndex,
                             badgeCount: badge,
+                            accent: AppColors.spectrum(index),
+                            secondaryAccent: AppColors.isChromatic
+                                ? AppColors.spectrum(index + 1)
+                                : AppColors.midnightPlum,
                             onTap: () {
                               if (index == currentIndex) return;
                               HapticFeedback.selectionClick();
@@ -128,12 +132,16 @@ class _NavTab extends StatelessWidget {
     required this.item,
     required this.isActive,
     required this.badgeCount,
+    required this.accent,
+    required this.secondaryAccent,
     required this.onTap,
   });
 
   final _NavItem item;
   final bool isActive;
   final int badgeCount;
+  final Color accent;
+  final Color secondaryAccent;
   final VoidCallback onTap;
 
   @override
@@ -156,15 +164,15 @@ class _NavTab extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AppColors.champagneGold.withValues(alpha: 0.16),
-                    AppColors.midnightPlum.withValues(alpha: 0.24),
+                    accent.withValues(alpha: 0.17),
+                    secondaryAccent.withValues(alpha: 0.22),
                     AppColors.surfaceGlassHover,
                   ],
                 )
               : null,
           border: Border.all(
             color: isActive
-                ? AppColors.goldBorder.withValues(alpha: 0.72)
+                ? accent.withValues(alpha: 0.68)
                 : AppColors.transparent,
           ),
         ),
@@ -183,8 +191,10 @@ class _NavTab extends StatelessWidget {
                 gradient: isActive
                     ? LinearGradient(
                         colors: [
-                          AppColors.champagneLight,
-                          AppColors.champagneGold,
+                          accent,
+                          AppColors.isChromatic
+                              ? secondaryAccent
+                              : AppColors.champagneLight,
                         ],
                       )
                     : null,
@@ -199,8 +209,11 @@ class _NavTab extends StatelessWidget {
               children: [
                 Icon(
                   isActive ? item.activeIcon : item.icon,
-                  color:
-                      isActive ? AppColors.champagneLight : AppColors.slateMist,
+                  color: isActive
+                      ? accent
+                      : AppColors.isChromatic
+                          ? accent.withValues(alpha: .68)
+                          : AppColors.slateMist,
                   size: 22,
                 ),
 
@@ -209,7 +222,7 @@ class _NavTab extends StatelessWidget {
                   Positioned(
                     top: -4,
                     right: -6,
-                    child: _Badge(count: badgeCount),
+                    child: _Badge(count: badgeCount, accent: accent),
                   ),
               ],
             ),
@@ -220,8 +233,7 @@ class _NavTab extends StatelessWidget {
             AnimatedDefaultTextStyle(
               duration: AppDimensions.durationTransition,
               style: AppTypography.caption.copyWith(
-                color:
-                    isActive ? AppColors.champagneLight : AppColors.slateMist,
+                color: isActive ? accent : AppColors.slateMist,
                 fontSize: 10,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
                 height: 1.0,
@@ -246,8 +258,9 @@ class _NavTab extends StatelessWidget {
 // ── Badge bubble ──────────────────────────────────────────────
 
 class _Badge extends StatelessWidget {
-  const _Badge({required this.count});
+  const _Badge({required this.count, required this.accent});
   final int count;
+  final Color accent;
 
   @override
   Widget build(BuildContext context) {
@@ -258,8 +271,10 @@ class _Badge extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.champagneLight,
-            AppColors.champagneGold,
+            accent,
+            AppColors.isChromatic
+                ? AppColors.spectrum(4)
+                : AppColors.champagneLight,
           ],
         ),
         borderRadius: BorderRadius.circular(AppDimensions.radiusTiny),
@@ -269,7 +284,7 @@ class _Badge extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.champagneGold.withValues(alpha: 0.28),
+            color: accent.withValues(alpha: 0.28),
             blurRadius: 8,
           ),
         ],

@@ -12,6 +12,9 @@ void main() {
   final edge = File(
     'supabase/functions/get-signed-url/index.ts',
   ).readAsStringSync();
+  final profileWriter = File(
+    'lib/core/services/profile_write_service.dart',
+  ).readAsStringSync().replaceAll('\r\n', '\n');
 
   test('manage photos restores persisted server slots after restart', () {
     expect(screen, contains('getMyPhotoSlots()'));
@@ -30,6 +33,29 @@ void main() {
     expect(screen, contains('localSlots[i] = _paths[i]!'));
     expect(screen, contains('syncPhotoSlots('));
     expect(service, contains("'order_index': orderIndex"));
+  });
+
+  test('onboarding photo step has one owner for privacy persistence', () {
+    expect(service, contains("'set_my_photo_privacy'"));
+    expect(
+        screen, contains('await ProfilePhotoService.instance.syncPhotoSlots('));
+    expect(
+      profileWriter,
+      contains(
+        'case OnboardingFlow.photoUploadStep:\n'
+        '        // ProfilePhotoService owns this step transactionally:',
+      ),
+    );
+    expect(
+      profileWriter,
+      isNot(
+        contains(
+          "case OnboardingFlow.photoUploadStep:\n"
+          "        return _compactMap({\n"
+          "          'photo_privacy'",
+        ),
+      ),
+    );
   });
 
   test('save cannot fail silently and exposes progress and retry states', () {

@@ -37,7 +37,7 @@ import '../widgets/step_header.dart';
 // WebP materially reduces private Storage egress without visible degradation
 // on phone screens.
 const int profilePhotoUploadMinDimension = 720;
-const int profilePhotoUploadWebpQuality = 74;
+const int profilePhotoUploadJpegQuality = 82;
 
 // ── Face detection ─────────────────────────────────────────
 
@@ -172,20 +172,23 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       );
       setState(() => _isScanning = true);
 
-      // Compress to webp
+      // JPEG is the canonical profile-photo transport. The server decodes the
+      // bytes again before finalization, so the extension, MIME type and
+      // encoded payload must stay aligned end to end.
       final result = await FlutterImageCompress.compressWithFile(
         xfile.path,
         minWidth: profilePhotoUploadMinDimension,
         minHeight: profilePhotoUploadMinDimension,
-        quality: profilePhotoUploadWebpQuality,
-        format: CompressFormat.webp,
+        quality: profilePhotoUploadJpegQuality,
+        format: CompressFormat.jpeg,
         keepExif: false,
       );
 
       if (!mounted) return;
 
-      // Never write JPEG/PNG source bytes into a `.webp` file. That mismatch
-      // used to pass the local preview but fail during server decoding.
+      // Never write source bytes into a file whose extension promises a
+      // different encoding. That mismatch can pass local preview but must fail
+      // the server's independent decoder.
       if (result == null || result.isEmpty) {
         throw const FormatException(
           'This photo could not be prepared securely. Choose another image.',
@@ -199,7 +202,9 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(l10n.photo_error_pick_failed(e.toString()),
-                style: AppTypography.body),
+                style: AppTypography.body.copyWith(
+                  color: AppColors.readableOn(AppColors.softCoral),
+                )),
             backgroundColor: AppColors.softCoral,
           ),
         );
@@ -218,7 +223,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
     final tempDir = await getTemporaryDirectory();
     final oldPath = _paths[index];
     final file = File(
-      '${tempDir.path}/silarah_photo_slot_${index}_${_uuid.v4()}.webp',
+      '${tempDir.path}/silarah_photo_slot_${index}_${_uuid.v4()}.jpg',
     );
     await file.writeAsBytes(bytes);
     if (oldPath != null && oldPath != file.path) {
@@ -256,7 +261,9 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
           SnackBar(
             content: Text(
               'Explicit content was detected. This photo will be reviewed and will not appear publicly.',
-              style: AppTypography.body,
+              style: AppTypography.body.copyWith(
+                color: AppColors.readableOn(AppColors.surfaceGlassHover),
+              ),
             ),
             backgroundColor: AppColors.surfaceGlassHover,
             behavior: SnackBarBehavior.floating,
@@ -327,13 +334,13 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
           'Transferring photo ${progress.slot + 1} securely'
         ),
       PhotoSyncStage.publishing => (
-          'Submitting for review',
-          'Securing photo ${progress.slot + 1} in the moderation queue'
+          'Publishing photo',
+          'Adding photo ${progress.slot + 1} to your protected gallery'
         ),
       PhotoSyncStage.complete => (
-          progress.fraction >= 1 ? 'Photos submitted' : 'Photo submitted',
+          progress.fraction >= 1 ? 'Photos saved' : 'Photo saved',
           progress.fraction >= 1
-              ? 'Your gallery will update after safety review'
+              ? 'Safe photos are live and remain subject to moderation'
               : 'Continuing with the next photo'
         ),
     };
@@ -473,7 +480,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         _showOperation(
           slot: _activeSlot ?? 0,
           title: 'Gallery updated',
-          detail: 'Your photos were submitted for the server safety review',
+          detail: 'Safe photos are live and remain subject to moderation',
           progress: 1,
           complete: true,
         );
@@ -500,7 +507,12 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         ..clearSnackBars()
         ..showSnackBar(
           SnackBar(
-            content: Text(message, style: AppTypography.body),
+            content: Text(
+              message,
+              style: AppTypography.body.copyWith(
+                color: AppColors.readableOn(AppColors.surfaceGlassHover),
+              ),
+            ),
             backgroundColor: AppColors.surfaceGlassHover,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -542,7 +554,12 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
-          content: Text(message, style: AppTypography.body),
+          content: Text(
+            message,
+            style: AppTypography.body.copyWith(
+              color: AppColors.readableOn(AppColors.surfaceGlassHover),
+            ),
+          ),
           backgroundColor: AppColors.surfaceGlassHover,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -568,7 +585,12 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
   void _showPhotoSafetyError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: AppTypography.body),
+        content: Text(
+          message,
+          style: AppTypography.body.copyWith(
+            color: AppColors.readableOn(AppColors.softCoral),
+          ),
+        ),
         backgroundColor: AppColors.softCoral,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(

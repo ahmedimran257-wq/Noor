@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -12,8 +14,8 @@ import '../../../core/widgets/buttons/silarah_secondary_button.dart';
 import '../../../core/widgets/silarah_launch_sequence.dart';
 import '../../../l10n/generated/app_localizations.dart';
 
-/// Unauthenticated landing surface. Its top lockup is the exact final frame
-/// of [SilarahLaunchSequence], preventing a second logo animation after startup.
+/// Unauthenticated landing surface. The opening greeting belongs exclusively
+/// to [SilarahLaunchSequence]; this screen communicates the product promise.
 class SplashBrandScreen extends StatefulWidget {
   const SplashBrandScreen({super.key});
 
@@ -22,12 +24,13 @@ class SplashBrandScreen extends StatefulWidget {
 }
 
 class _SplashBrandScreenState extends State<SplashBrandScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final AnimationController _orchestrator;
+  late final AnimationController _ambient;
   late final Animation<double> _lockupOpacity;
   late final Animation<Offset> _lockupSlide;
-  late final Animation<double> _taglineOpacity;
-  late final Animation<Offset> _taglineSlide;
+  late final Animation<double> _heroOpacity;
+  late final Animation<Offset> _heroSlide;
   late final Animation<double> _primaryOpacity;
   late final Animation<Offset> _primarySlide;
   late final Animation<double> _secondaryOpacity;
@@ -41,7 +44,11 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
     super.initState();
     _orchestrator = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1400),
+      duration: const Duration(milliseconds: 1350),
+    );
+    _ambient = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 14),
     );
     _lockupOpacity = CurvedAnimation(
       parent: _orchestrator,
@@ -56,17 +63,17 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
         curve: const Interval(0, .30, curve: Curves.easeOutCubic),
       ),
     );
-    _taglineOpacity = CurvedAnimation(
+    _heroOpacity = CurvedAnimation(
       parent: _orchestrator,
-      curve: const Interval(.15, .40, curve: Curves.easeOutCubic),
+      curve: const Interval(.12, .48, curve: Curves.easeOutCubic),
     );
-    _taglineSlide = Tween<Offset>(
-      begin: const Offset(0, .08),
+    _heroSlide = Tween<Offset>(
+      begin: const Offset(0, .045),
       end: Offset.zero,
     ).animate(
       CurvedAnimation(
         parent: _orchestrator,
-        curve: const Interval(.15, .42, curve: Curves.easeOutCubic),
+        curve: const Interval(.12, .52, curve: Curves.easeOutCubic),
       ),
     );
     _primaryOpacity = CurvedAnimation(
@@ -110,6 +117,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
     if (MediaQuery.disableAnimationsOf(context)) {
       _orchestrationStarted = true;
       _orchestrator.value = 1;
+      _ambient.value = .32;
     } else {
       _handleLaunchReveal();
     }
@@ -124,12 +132,14 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
     }
     _orchestrationStarted = true;
     _orchestrator.forward();
+    _ambient.repeat();
   }
 
   @override
   void dispose() {
     SilarahLaunchSequence.revealCompleted.removeListener(_handleLaunchReveal);
     _orchestrator.dispose();
+    _ambient.dispose();
     super.dispose();
   }
 
@@ -138,136 +148,182 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
     action();
   }
 
-  void _showReferralSheet(BuildContext context) {
+  Future<void> _showReferralSheet(BuildContext context) async {
     FocusManager.instance.primaryFocus?.unfocus();
     final l10n = AppLocalizations.of(context);
     final codeController = TextEditingController();
+    var isSaving = false;
 
-    showModalBottomSheet<void>(
+    final saved = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: AppColors.surfaceMid,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (sheetContext) {
-        final bottom = MediaQuery.viewInsetsOf(sheetContext).bottom;
-        return Padding(
-          padding: EdgeInsets.only(bottom: bottom),
-          child: Padding(
-            padding: const EdgeInsets.all(AppDimensions.space24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: AppDimensions.space8),
-                Text(
-                  l10n.splash_referral_title,
-                  style: AppTypography.screenTitle.copyWith(fontSize: 20),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppDimensions.space12),
-                Text(
-                  l10n.splash_referral_subtitle,
-                  style: AppTypography.bodyMuted,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppDimensions.space24),
-                TextField(
-                  controller: codeController,
-                  onTapOutside: (_) =>
-                      FocusManager.instance.primaryFocus?.unfocus(),
-                  style: AppTypography.inputText,
-                  textCapitalization: TextCapitalization.characters,
-                  maxLength: 6,
-                  decoration: InputDecoration(
-                    hintText: l10n.splash_referral_hint,
-                    hintStyle: AppTypography.inputLabel,
-                    filled: true,
-                    fillColor: AppColors.inputSurface,
-                    counterText: '',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(
-                        AppDimensions.radiusButton,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          final bottom = MediaQuery.viewInsetsOf(sheetContext).bottom;
+          return Padding(
+            padding: EdgeInsets.only(bottom: bottom),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppDimensions.space24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: AppDimensions.space8),
+                  Text(
+                    l10n.splash_referral_title,
+                    style: AppTypography.screenTitle.copyWith(fontSize: 20),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppDimensions.space12),
+                  Text(
+                    l10n.splash_referral_subtitle,
+                    style: AppTypography.bodyMuted,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppDimensions.space24),
+                  TextField(
+                    controller: codeController,
+                    onTapOutside: (_) =>
+                        FocusManager.instance.primaryFocus?.unfocus(),
+                    style: AppTypography.inputText,
+                    textCapitalization: TextCapitalization.characters,
+                    maxLength: 6,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r'[A-Za-z0-9]'),
                       ),
-                      borderSide: BorderSide(color: AppColors.cardBorder),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(
-                        AppDimensions.radiusButton,
+                    ],
+                    decoration: InputDecoration(
+                      hintText: l10n.splash_referral_hint,
+                      hintStyle: AppTypography.inputLabel,
+                      filled: true,
+                      fillColor: AppColors.inputSurface,
+                      counterText: '',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppDimensions.radiusButton,
+                        ),
+                        borderSide: BorderSide(color: AppColors.cardBorder),
                       ),
-                      borderSide: BorderSide(color: AppColors.cardBorder),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(
-                        AppDimensions.radiusButton,
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppDimensions.radiusButton,
+                        ),
+                        borderSide: BorderSide(color: AppColors.cardBorder),
                       ),
-                      borderSide: BorderSide(
-                        color: AppColors.champagneGold,
-                        width: AppDimensions.borderThin,
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppDimensions.radiusButton,
+                        ),
+                        borderSide: BorderSide(
+                          color: AppColors.champagneGold,
+                          width: AppDimensions.borderThin,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: AppDimensions.space24),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.champagneGold,
-                    foregroundColor: AppColors.obsidianNight,
-                    minimumSize: const Size(
-                      double.infinity,
-                      AppDimensions.buttonHeight,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        AppDimensions.radiusButton,
+                  const SizedBox(height: AppDimensions.space24),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.champagneGold,
+                      foregroundColor: AppColors.obsidianNight,
+                      minimumSize: const Size(
+                        double.infinity,
+                        AppDimensions.buttonHeight,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppDimensions.radiusButton,
+                        ),
                       ),
                     ),
-                  ),
-                  onPressed: () async {
-                    final code = codeController.text.trim().toUpperCase();
-                    if (code.length != 6) {
-                      ScaffoldMessenger.of(sheetContext).showSnackBar(
-                        SnackBar(
-                          content: Text(l10n.splash_referral_invalid),
-                          backgroundColor: AppColors.errorRed,
-                        ),
-                      );
-                      return;
-                    }
-                    final prefs = await SharedPreferences.getInstance();
-                    await prefs.setString('pending_referral_code', code);
-                    if (!sheetContext.mounted) return;
-                    Navigator.pop(sheetContext);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          l10n.splash_referral_saved,
-                          style: AppTypography.body,
-                        ),
-                        backgroundColor: AppColors.surfaceGlassHover,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            AppDimensions.radiusButton,
+                    onPressed: isSaving
+                        ? null
+                        : () async {
+                            final code =
+                                codeController.text.trim().toUpperCase();
+                            if (code.length != 6) {
+                              ScaffoldMessenger.of(sheetContext).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    l10n.splash_referral_invalid,
+                                    style: TextStyle(
+                                      color: AppColors.readableOn(
+                                          AppColors.errorRed),
+                                    ),
+                                  ),
+                                  backgroundColor: AppColors.errorRed,
+                                ),
+                              );
+                              return;
+                            }
+                            setSheetState(() => isSaving = true);
+                            try {
+                              final prefs =
+                                  await SharedPreferences.getInstance();
+                              await prefs.setString(
+                                  'pending_referral_code', code);
+                              if (!sheetContext.mounted) return;
+                              Navigator.pop(sheetContext, true);
+                            } catch (_) {
+                              if (!sheetContext.mounted) return;
+                              setSheetState(() => isSaving = false);
+                              ScaffoldMessenger.of(sheetContext).showSnackBar(
+                                SnackBar(
+                                  content: Text(l10n.common_error_generic),
+                                  backgroundColor: AppColors.errorRed,
+                                ),
+                              );
+                            }
+                          },
+                    child: isSaving
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.obsidianNight,
+                            ),
+                          )
+                        : Text(
+                            l10n.splash_referral_button,
+                            style: AppTypography.button,
                           ),
-                          side: BorderSide(color: AppColors.cardBorder),
-                        ),
-                      ),
-                    );
-                  },
-                  child: Text(
-                    l10n.splash_referral_button,
-                    style: AppTypography.button,
                   ),
-                ),
-                const SizedBox(height: AppDimensions.space12),
-              ],
+                  const SizedBox(height: AppDimensions.space12),
+                ],
+              ),
             ),
+          );
+        },
+      ),
+    );
+    codeController.dispose();
+
+    // Wait for the modal route to finish closing before using the parent
+    // messenger. This prevents a disposed sheet context (or a fast double
+    // submit) from replacing the discovery tab with ErrorWidget.
+    if (saved != true || !mounted || !context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          l10n.splash_referral_saved,
+          style: AppTypography.body.copyWith(
+            color: AppColors.readableOn(AppColors.surfaceGlassHover),
           ),
-        );
-      },
-    ).whenComplete(codeController.dispose);
+        ),
+        backgroundColor: AppColors.surfaceGlassHover,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+          side: BorderSide(color: AppColors.cardBorder),
+        ),
+      ),
+    );
   }
 
   @override
@@ -275,43 +331,95 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
     final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.obsidianNight,
-      body: _ObsidianWelcomeCanvas(
+      body: _WelcomeCanvas(
         child: SafeArea(
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: _WelcomeGreetingBackdrop(
-                    animation: _orchestrator,
-                  ),
-                ),
-              ),
-              Column(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxHeight < 700;
+              return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 14),
-                  FadeTransition(
-                    opacity: _lockupOpacity,
-                    child: SlideTransition(
-                      position: _lockupSlide,
-                      child: const Center(child: SilarahCompactLockup()),
+                  SizedBox(
+                    height: compact ? 64 : 76,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        FadeTransition(
+                          opacity: _lockupOpacity,
+                          child: SlideTransition(
+                            position: _lockupSlide,
+                            child: const SilarahCompactLockup(),
+                          ),
+                        ),
+                        PositionedDirectional(
+                          start: 12,
+                          child: FadeTransition(
+                            opacity: _tertiaryOpacity,
+                            child: Semantics(
+                              button: true,
+                              label: 'Change language',
+                              child: InkResponse(
+                                onTap: () => _lightTap(
+                                  () => context.go(AppRoutes.languageSelect),
+                                ),
+                                radius: 28,
+                                child: Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surfaceGlass,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: AppColors.cardBorder,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.champagneGold
+                                            .withValues(alpha: .07),
+                                        blurRadius: 18,
+                                        offset: const Offset(0, 8),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Icon(
+                                    Icons.language_rounded,
+                                    color: AppColors.pearlWhite,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  FadeTransition(
-                    opacity: _taglineOpacity,
-                    child: SlideTransition(
-                      position: _taglineSlide,
-                      child: Text(
-                        l10n.appTagline,
-                        textAlign: TextAlign.center,
-                        style: AppTypography.tagline,
+                  Expanded(
+                    child: FadeTransition(
+                      opacity: _heroOpacity,
+                      child: SlideTransition(
+                        position: _heroSlide,
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 440),
+                            child: _IntentionalUnionHero(
+                              reveal: _orchestrator,
+                              ambient: _ambient,
+                              compact: compact,
+                              title: l10n.splash_intention_title,
+                              subtitle: l10n.splash_intention_subtitle,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                  const Spacer(),
                   Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppDimensions.space24,
+                    padding: EdgeInsets.fromLTRB(
+                      AppDimensions.space24,
+                      compact ? AppDimensions.space12 : AppDimensions.space20,
+                      AppDimensions.space24,
+                      compact ? AppDimensions.space20 : AppDimensions.space32,
                     ),
                     child: Column(
                       children: [
@@ -344,7 +452,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                             ),
                           ),
                         ),
-                        const SizedBox(height: AppDimensions.space16),
+                        const SizedBox(height: AppDimensions.space8),
                         FadeTransition(
                           opacity: _tertiaryOpacity,
                           child: TextButton(
@@ -363,41 +471,9 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                       ],
                     ),
                   ),
-                  const SizedBox(height: AppDimensions.space48),
                 ],
-              ),
-              PositionedDirectional(
-                start: 12,
-                top: 8,
-                child: FadeTransition(
-                  opacity: _tertiaryOpacity,
-                  child: Semantics(
-                    button: true,
-                    label: 'Change language',
-                    child: InkResponse(
-                      onTap: () => _lightTap(
-                        () => context.go(AppRoutes.languageSelect),
-                      ),
-                      radius: 28,
-                      child: Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceGlass,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.cardBorder),
-                        ),
-                        child: Icon(
-                          Icons.language_rounded,
-                          color: AppColors.pearlWhite,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+              );
+            },
           ),
         ),
       ),
@@ -405,141 +481,241 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
   }
 }
 
-class _WelcomeGreetingBackdrop extends StatelessWidget {
-  const _WelcomeGreetingBackdrop({required this.animation});
+class _IntentionalUnionHero extends StatelessWidget {
+  const _IntentionalUnionHero({
+    required this.reveal,
+    required this.ambient,
+    required this.compact,
+    required this.title,
+    required this.subtitle,
+  });
 
-  final Animation<double> animation;
+  final Animation<double> reveal;
+  final Animation<double> ambient;
+  final bool compact;
+  final String title;
+  final String subtitle;
 
   @override
-  Widget build(BuildContext context) => AnimatedBuilder(
-        animation: animation,
-        builder: (context, _) {
-          final reveal = Curves.easeOutCubic.transform(
-            ((animation.value - .12) / .46).clamp(0.0, 1.0),
-          );
-          final drift = 10 * (1 - reveal);
-          return Align(
-            alignment: const Alignment(0, -.08),
-            child: Transform.translate(
-              offset: Offset(0, drift),
-              child: Opacity(
-                opacity: reveal,
-                child: RepaintBoundary(
-                  child: SizedBox(
-                    width: 340,
-                    height: 236,
-                    child: CustomPaint(
-                      painter: _WelcomeFiligreePainter(),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _GreetingRule(
-                                color: AppColors.champagneGold
-                                    .withValues(alpha: .28),
-                              ),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 10),
-                                child: Transform.rotate(
-                                  angle: .785,
-                                  child: Container(
-                                    width: 5,
-                                    height: 5,
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                        color: AppColors.champagneGold
-                                            .withValues(alpha: .78),
-                                        width: .8,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              _GreetingRule(
-                                color: AppColors.champagneGold
-                                    .withValues(alpha: .28),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 22),
-                          SizedBox(
-                            width: 292,
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: ShaderMask(
-                                blendMode: BlendMode.srcIn,
-                                shaderCallback: (bounds) => LinearGradient(
-                                  colors: [
-                                    AppColors.antiqueGold,
-                                    AppColors.champagneLight,
-                                    AppColors.champagneGold,
-                                  ],
-                                ).createShader(bounds),
-                                child: Text(
-                                  'السلام عليكم',
-                                  textDirection: TextDirection.rtl,
-                                  textAlign: TextAlign.center,
-                                  style: AppTypography.screenTitle.copyWith(
-                                    color: Colors.white,
-                                    fontSize: 43,
-                                    fontWeight: FontWeight.w500,
-                                    letterSpacing: .2,
-                                    height: 1.3,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 13),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _GreetingRule(
-                                color: AppColors.champagneGold
-                                    .withValues(alpha: .46),
-                              ),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 14),
-                                child: SizedBox(
-                                  width: 190,
-                                  child: FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    child: Text(
-                                      'Assalamu Alaikum',
-                                      style: AppTypography.tagline.copyWith(
-                                        color: AppColors.champagneLight
-                                            .withValues(alpha: .88),
-                                        fontSize: 17,
-                                        letterSpacing: .45,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              _GreetingRule(
-                                color: AppColors.champagneGold
-                                    .withValues(alpha: .46),
-                              ),
-                            ],
-                          ),
-                        ],
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: Listenable.merge([reveal, ambient]),
+      builder: (context, _) => RepaintBoundary(
+        child: SizedBox(
+          height: compact ? 350 : 380,
+          child: CustomPaint(
+            painter: _UnionArchPainter(
+              reveal: reveal.value,
+              ambient: ambient.value,
+              accent: AppColors.champagneGold,
+              highlight: AppColors.champagneLight,
+            ),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppDimensions.space24,
+                compact ? 56 : 82,
+                AppDimensions.space24,
+                compact ? 8 : 10,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: AppTypography.screenTitle.copyWith(
+                      color: AppColors.pearlWhite,
+                      fontSize: compact ? 31 : 36,
+                      height: 1.12,
+                      letterSpacing: -.55,
+                    ),
+                  ),
+                  SizedBox(height: compact ? 12 : 16),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 360),
+                    child: Text(
+                      subtitle,
+                      textAlign: TextAlign.center,
+                      style: AppTypography.bodyMuted.copyWith(
+                        color: AppColors.slateMist,
+                        fontSize: compact ? 14 : 15,
+                        height: 1.55,
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
             ),
-          );
-        },
-      );
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _ObsidianWelcomeCanvas extends StatelessWidget {
-  const _ObsidianWelcomeCanvas({required this.child});
+/// Two fine threads resolve into one architectural arch. The motion is slow
+/// enough to feel like living material rather than a looping illustration.
+class _UnionArchPainter extends CustomPainter {
+  const _UnionArchPainter({
+    required this.reveal,
+    required this.ambient,
+    required this.accent,
+    required this.highlight,
+  });
+
+  final double reveal;
+  final double ambient;
+  final Color accent;
+  final Color highlight;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final lineReveal = Curves.easeOutCubic.transform(
+      ((reveal - .08) / .58).clamp(0.0, 1.0),
+    );
+    if (lineReveal <= .001) return;
+
+    final left = Path()
+      ..moveTo(-8, size.height * .78)
+      ..cubicTo(
+        size.width * .07,
+        size.height * .28,
+        size.width * .30,
+        size.height * .08,
+        size.width * .50,
+        size.height * .10,
+      );
+    final right = Path()
+      ..moveTo(size.width + 8, size.height * .78)
+      ..cubicTo(
+        size.width * .93,
+        size.height * .28,
+        size.width * .70,
+        size.height * .08,
+        size.width * .50,
+        size.height * .10,
+      );
+
+    final basePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = .8
+      ..color = accent.withValues(alpha: .10 * lineReveal);
+    canvas
+      ..drawPath(left, basePaint)
+      ..drawPath(right, basePaint);
+
+    final threadPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 1.35
+      ..color = accent.withValues(alpha: .42);
+    _drawProgress(canvas, left, lineReveal, threadPaint);
+    _drawProgress(canvas, right, lineReveal, threadPaint);
+
+    final phase = (ambient + .06 * math.sin(ambient * math.pi * 2)) % 1;
+    final glintPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 1.65
+      ..color = highlight.withValues(alpha: .34 * lineReveal);
+    _drawMovingSegment(canvas, left, phase, glintPaint);
+    _drawMovingSegment(canvas, right, (phase + .5) % 1, glintPaint);
+
+    final apex = Offset(size.width * .5, size.height * .10);
+    final apexOpacity = Curves.easeOut.transform(
+      ((lineReveal - .72) / .28).clamp(0.0, 1.0),
+    );
+    canvas.save();
+    canvas.translate(apex.dx, apex.dy);
+    canvas.rotate(math.pi / 4);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(center: Offset.zero, width: 7, height: 7),
+        const Radius.circular(1.2),
+      ),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1
+        ..color = accent.withValues(alpha: .62 * apexOpacity),
+    );
+    canvas.restore();
+
+    _drawLeaf(
+      canvas,
+      Offset(size.width * .145, size.height * .49),
+      -1.02,
+      lineReveal,
+    );
+    _drawLeaf(
+      canvas,
+      Offset(size.width * .855, size.height * .49),
+      math.pi + 1.02,
+      lineReveal,
+    );
+  }
+
+  void _drawProgress(
+    Canvas canvas,
+    Path path,
+    double progress,
+    Paint paint,
+  ) {
+    for (final metric in path.computeMetrics()) {
+      canvas.drawPath(
+        metric.extractPath(0, metric.length * progress),
+        paint,
+      );
+    }
+  }
+
+  void _drawMovingSegment(
+    Canvas canvas,
+    Path path,
+    double phase,
+    Paint paint,
+  ) {
+    for (final metric in path.computeMetrics()) {
+      final start = metric.length * phase;
+      final end = math.min(metric.length, start + metric.length * .13);
+      canvas.drawPath(metric.extractPath(start, end), paint);
+    }
+  }
+
+  void _drawLeaf(
+    Canvas canvas,
+    Offset center,
+    double angle,
+    double opacity,
+  ) {
+    canvas.save();
+    canvas
+      ..translate(center.dx, center.dy)
+      ..rotate(angle);
+    final leaf = Path()
+      ..moveTo(0, 0)
+      ..quadraticBezierTo(8, -6, 15, 0)
+      ..quadraticBezierTo(8, 6, 0, 0);
+    canvas.drawPath(
+      leaf,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = .8
+        ..color = accent.withValues(alpha: .18 * opacity),
+    );
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _UnionArchPainter oldDelegate) =>
+      oldDelegate.reveal != reveal ||
+      oldDelegate.ambient != ambient ||
+      oldDelegate.accent != accent ||
+      oldDelegate.highlight != highlight;
+}
+
+class _WelcomeCanvas extends StatelessWidget {
+  const _WelcomeCanvas({required this.child});
 
   final Widget child;
 
@@ -551,84 +727,12 @@ class _ObsidianWelcomeCanvas extends StatelessWidget {
             end: Alignment.bottomCenter,
             colors: [
               AppColors.obsidianNight,
-              AppColors.midnightPlum.withValues(alpha: .34),
+              AppColors.midnightPlum.withValues(alpha: .40),
               AppColors.obsidianNight,
             ],
-            stops: const [0, .44, 1],
+            stops: const [0, .34, 1],
           ),
         ),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: RadialGradient(
-              center: const Alignment(0, -.18),
-              radius: .78,
-              colors: [
-                AppColors.champagneGold.withValues(alpha: .075),
-                AppColors.antiqueGold.withValues(alpha: .025),
-                Colors.transparent,
-              ],
-              stops: const [0, .48, 1],
-            ),
-          ),
-          child: child,
-        ),
-      );
-}
-
-class _WelcomeFiligreePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2 + 3);
-    final gold = AppColors.champagneGold;
-    final arcPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = .8
-      ..shader = LinearGradient(
-        colors: [
-          Colors.transparent,
-          gold.withValues(alpha: .20),
-          gold.withValues(alpha: .20),
-          Colors.transparent,
-        ],
-        stops: const [0, .28, .72, 1],
-      ).createShader(Offset.zero & size);
-
-    canvas.drawArc(
-      Rect.fromCenter(center: center, width: 304, height: 178),
-      3.46,
-      2.50,
-      false,
-      arcPaint,
-    );
-    canvas.drawArc(
-      Rect.fromCenter(center: center, width: 304, height: 178),
-      .32,
-      2.50,
-      false,
-      arcPaint,
-    );
-
-    final pointPaint = Paint()..color = gold.withValues(alpha: .58);
-    canvas.drawCircle(Offset(center.dx, 18), 1.8, pointPaint);
-    canvas.drawCircle(Offset(center.dx, size.height - 18), 1.8, pointPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _WelcomeFiligreePainter oldDelegate) => false;
-}
-
-class _GreetingRule extends StatelessWidget {
-  const _GreetingRule({required this.color});
-
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        width: 34,
-        height: 1,
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(1),
-        ),
+        child: child,
       );
 }

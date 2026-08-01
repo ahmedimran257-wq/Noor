@@ -14,7 +14,7 @@ function scoreLabel(photo: PhotoRow) {
   const score = Number(photo.nsfw_score ?? 0);
   if (photo.nsfw_score === null) return { label: "No score", tone: "neutral" };
   if (score > 0.85) return { label: "Explicit-content flag", tone: "danger" };
-  return { label: "Invalid queue item", tone: "warning" };
+  return { label: "Routine review", tone: "neutral" };
 }
 
 export default async function ModerationPage() {
@@ -25,6 +25,7 @@ export default async function ModerationPage() {
     getPhotos(),
   ]);
   const hardSignals = photos.filter((photo) => Number(photo.nsfw_score ?? 0) > 0.85).length;
+  const routineReviews = photos.length - hardSignals;
 
   return (
     <section className="dashboard-page wide-page">
@@ -33,7 +34,9 @@ export default async function ModerationPage() {
           <p className="eyebrow">Safety operations</p>
           <h1>Moderation</h1>
           <p className="muted">
-            Review reports and only profile photos explicitly flagged above the 0.85 confidence threshold.
+            Every uploaded profile photo remains available for staff review.
+            Photos flagged above the 0.85 explicit-content threshold stay
+            hidden until approved.
           </p>
         </div>
         <div className="hero-badge">{reports.length + messageReports.length + photos.length} pending</div>
@@ -44,6 +47,11 @@ export default async function ModerationPage() {
           <ShieldAlert size={18} />
           <span>Explicit-content flags</span>
           <strong>{hardSignals}</strong>
+        </div>
+        <div className="moderation-signal">
+          <Camera size={18} />
+          <span>Routine photo reviews</span>
+          <strong>{routineReviews}</strong>
         </div>
       </div>
 
@@ -104,7 +112,7 @@ export default async function ModerationPage() {
         {reports.length === 0 && <p className="muted">No open reports.</p>}
       </div>
 
-      <h2 className="section-title"><Camera size={18} /> Flagged photo review</h2>
+      <h2 className="section-title"><Camera size={18} /> Photo moderation review</h2>
       <div className="photo-review-grid">
         {photos.map((photo) => {
           const risk = scoreLabel(photo);
@@ -114,7 +122,7 @@ export default async function ModerationPage() {
                 {photo.preview_url ? (
                   <Image
                     src={photo.preview_url}
-                    alt={`Pending profile photo for ${photo.name || "member"}`}
+                    alt={`Profile photo awaiting moderation for ${photo.name || "member"}`}
                     width={620}
                     height={780}
                     unoptimized
@@ -168,7 +176,7 @@ export default async function ModerationPage() {
             </article>
           );
         })}
-        {photos.length === 0 && <p className="muted">No explicitly flagged photos pending review.</p>}
+        {photos.length === 0 && <p className="muted">No photos pending moderation.</p>}
       </div>
     </section>
   );

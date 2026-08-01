@@ -30,7 +30,10 @@ void showValidationSnackbar(BuildContext context, List<String> missingFields) {
             Expanded(
               child: Text(
                 message,
-                style: AppTypography.body.copyWith(fontSize: 13),
+                style: AppTypography.body.copyWith(
+                  color: AppColors.onSnackbar,
+                  fontSize: 13,
+                ),
               ),
             ),
           ],

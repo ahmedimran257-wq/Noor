@@ -34,6 +34,14 @@ void main() {
         notificationPathFromDeepLink('silarah://subscription'),
         '/subscription',
       );
+      expect(
+        notificationPathFromDeepLink('silarah://discover'),
+        '/home?tab=0',
+      );
+      expect(
+        notificationPathFromDeepLink('silarah://interests'),
+        '/home?tab=1',
+      );
     });
 
     test('enforces activity, completion, and three-day suppression in SQL', () {

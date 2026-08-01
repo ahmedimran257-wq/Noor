@@ -2189,6 +2189,13 @@ class AppLocalizationsMs extends AppLocalizations {
   String get splash_button_signIn => 'Log Masuk';
 
   @override
+  String get splash_intention_subtitle =>
+      'Perkenalan peribadi, keserasian yang dipertimbangkan dan hubungan yang menghormati keluarga.';
+
+  @override
+  String get splash_intention_title => 'Perkahwinan, didekati dengan niat.';
+
+  @override
   String get splash_referral_button => 'Gunakan Kod';
 
   @override

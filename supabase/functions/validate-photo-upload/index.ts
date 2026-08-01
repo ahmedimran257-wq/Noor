@@ -48,7 +48,7 @@ Deno.serve(async (req: Request) => {
     const storagePath = String(payload.storage_path ?? "");
     if (
       !storagePath.startsWith(`${userId}/`) ||
-      !/^[0-9a-f-]{36}\/[0-9a-f-]{36}[.]webp$/i.test(storagePath)
+      !/^[0-9a-f-]{36}\/[0-9a-f-]{36}[.]jpg$/i.test(storagePath)
     ) {
       return json(400, { error: "invalid_upload_path" });
     }
@@ -73,11 +73,14 @@ Deno.serve(async (req: Request) => {
     }
 
     const { data: prior } = await admin.from("photos")
-      .select("id")
+      .select("id, status")
       .eq("storage_path", storagePath)
       .maybeSingle();
     if (prior) {
-      return json(200, { action: "pending_review", photo_id: prior.id });
+      return json(200, {
+        action: prior.status === "active" ? "active" : "pending_review",
+        photo_id: prior.id,
+      });
     }
 
     const { data: object, error: downloadError } = await admin.storage
@@ -89,7 +92,7 @@ Deno.serve(async (req: Request) => {
     const bytes = new Uint8Array(await object.arrayBuffer());
     if (
       bytes.byteLength < 32 || bytes.byteLength > MAX_BYTES ||
-      !isWebp(bytes)
+      !isJpeg(bytes)
     ) {
       await admin.storage.from(BUCKET_NAME).remove([storagePath]);
       return json(422, { error: "invalid_image" });
@@ -118,7 +121,7 @@ Deno.serve(async (req: Request) => {
       {
         p_user_id: userId,
         p_storage_path: storagePath,
-        p_observed_mime: "image/webp",
+        p_observed_mime: "image/jpeg",
         p_observed_bytes: bytes.byteLength,
         p_blurhash: blurhash,
         p_client_nsfw_score: clientScore,
@@ -136,10 +139,13 @@ Deno.serve(async (req: Request) => {
       return json(409, { error: "upload_reservation_invalid" });
     }
 
+    const action = finalized.action === "active" ? "active" : "pending_review";
     return json(202, {
-      action: "pending_review",
+      action,
       photo_id: finalized.photo_id,
-      message: "Photo received for safety review.",
+      message: action === "active"
+        ? "Photo published and queued for ongoing moderation."
+        : "Flagged photo received for safety review.",
     });
   } catch (error) {
     console.error(`[validate-photo-upload] ${correlationId}`, error);
@@ -150,9 +156,12 @@ Deno.serve(async (req: Request) => {
   }
 });
 
-function isWebp(bytes: Uint8Array): boolean {
-  return new TextDecoder().decode(bytes.slice(0, 4)) === "RIFF" &&
-    new TextDecoder().decode(bytes.slice(8, 12)) === "WEBP";
+function isJpeg(bytes: Uint8Array): boolean {
+  return bytes.length >= 4 &&
+    bytes[0] === 0xff &&
+    bytes[1] === 0xd8 &&
+    bytes[bytes.length - 2] === 0xff &&
+    bytes[bytes.length - 1] === 0xd9;
 }
 
 function boundedScore(value: unknown): number {

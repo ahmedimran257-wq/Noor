@@ -379,7 +379,12 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     Clipboard.setData(ClipboardData(text: shareText));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Profile link copied to clipboard'),
+        content: Text(
+          'Profile link copied to clipboard',
+          style: TextStyle(
+            color: AppColors.readableOn(AppColors.surfaceGlassHover),
+          ),
+        ),
         backgroundColor: AppColors.surfaceGlassHover,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
@@ -1025,7 +1030,7 @@ class _SinglePhotoSlide extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [const Color(0xFF1A1A2F), AppColors.obsidianNight],
+            colors: [AppColors.obsidianDeep, AppColors.obsidianNight],
           ),
         ),
         child: isPrivate
@@ -1420,8 +1425,8 @@ class _FullScreenPhotoViewerState extends State<_FullScreenPhotoViewer> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        const Color(0xFF1A1A2F),
-                        AppColors.obsidianNight
+                        AppColors.obsidianDeep,
+                        AppColors.obsidianNight,
                       ],
                     ),
                   ),
@@ -2067,23 +2072,28 @@ class _CtaBar extends StatelessWidget {
               width: AppDimensions.buttonHeight,
               height: AppDimensions.buttonHeight,
               decoration: BoxDecoration(
-                color: isBookmarked
-                    ? AppColors.champagneGold.withValues(alpha: 0.15)
-                    : AppColors.surfaceGlass,
+                color:
+                    isBookmarked ? AppColors.onMedia : AppColors.overlayBlack87,
                 borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
                 border: Border.all(
                   color: isBookmarked
-                      ? AppColors.champagneGold
-                      : AppColors.cardBorder,
+                      ? AppColors.overlayBlack45
+                      : AppColors.onMedia.withValues(alpha: 0.72),
                 ),
+                boxShadow: const [
+                  BoxShadow(
+                    color: AppColors.overlayBlack55,
+                    blurRadius: 14,
+                    offset: Offset(0, 7),
+                  ),
+                ],
               ),
               child: Icon(
                 isBookmarked
                     ? Icons.bookmark_rounded
                     : Icons.bookmark_outline_rounded,
-                color: isBookmarked
-                    ? AppColors.champagneGold
-                    : AppColors.pearlWhite,
+                color:
+                    isBookmarked ? AppColors.overlayBlack87 : AppColors.onMedia,
                 size: AppDimensions.iconSizeLarge,
               ),
             ),
@@ -2211,7 +2221,9 @@ class _ReportBlockSheet extends StatelessWidget {
                 SnackBar(
                   content: Text(
                     '${profile.firstName} blocked.',
-                    style: AppTypography.body,
+                    style: AppTypography.body.copyWith(
+                      color: AppColors.readableOn(AppColors.surfaceGlassHover),
+                    ),
                   ),
                   backgroundColor: AppColors.surfaceGlassHover,
                   behavior: SnackBarBehavior.floating,

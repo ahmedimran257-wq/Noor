@@ -231,7 +231,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   void _showSuccess(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: AppTypography.body),
+        content: Text(
+          message,
+          style: AppTypography.body.copyWith(
+            color: AppColors.readableOn(AppColors.verifiedTeal),
+          ),
+        ),
         backgroundColor: AppColors.verifiedTeal,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -243,7 +248,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   void _showError(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: AppTypography.body),
+        content: Text(
+          message,
+          style: AppTypography.body.copyWith(
+            color: AppColors.readableOn(AppColors.softCoral),
+          ),
+        ),
         backgroundColor: AppColors.softCoral,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

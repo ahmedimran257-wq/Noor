@@ -37,6 +37,22 @@ void main() {
 
     expect(loader, contains("assets/icon/app_icon.png"));
     expect(loader, isNot(contains("'م'")));
+    expect(loader, contains('Preparing profile recommendations'));
+    expect(loader, contains('MediaQuery.disableAnimationsOf(context)'));
+    expect(
+      loader,
+      contains('class SilarahProfileCardShimmer extends StatefulWidget'),
+      reason: 'The discovery card uses restrained local motion.',
+    );
+    final profileLoader = loader.substring(
+      loader.indexOf('class SilarahProfileCardShimmer'),
+      loader.indexOf('class SilarahConversationShimmer'),
+    );
+    expect(
+      profileLoader,
+      isNot(contains('SilarahShimmer(')),
+      reason: 'A viewport-sized sweep causes a vertical loading artifact.',
+    );
     expect(editor, contains('Save changes'));
     expect(editor, contains('Manage your photos'));
     expect(editor, contains('filled: false'));

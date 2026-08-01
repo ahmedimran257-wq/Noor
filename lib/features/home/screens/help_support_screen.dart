@@ -129,7 +129,9 @@ class HelpSupportScreen extends StatelessWidget {
       ..showSnackBar(
         SnackBar(
           content: Text('No email app found. $email was copied.',
-              style: AppTypography.body),
+              style: AppTypography.body.copyWith(
+                color: AppColors.readableOn(AppColors.surfaceGlassHover),
+              )),
           backgroundColor: AppColors.surfaceGlassHover,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -148,7 +150,12 @@ class HelpSupportScreen extends StatelessWidget {
       ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
-          content: const Text('Web address copied to your clipboard.'),
+          content: Text(
+            'Web address copied to your clipboard.',
+            style: TextStyle(
+              color: AppColors.readableOn(AppColors.surfaceGlassHover),
+            ),
+          ),
           backgroundColor: AppColors.surfaceGlassHover,
           behavior: SnackBarBehavior.floating,
         ),

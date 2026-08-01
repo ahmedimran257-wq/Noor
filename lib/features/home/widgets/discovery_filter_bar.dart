@@ -43,6 +43,7 @@ class DiscoveryFilterBar extends StatelessWidget {
             children: [
               _Chip(
                 icon: Icons.tune_rounded,
+                accentSlot: 0,
                 label: f.activeCount > 0
                     ? 'Filters (${f.activeCount})'
                     : 'All Filters',
@@ -52,6 +53,7 @@ class DiscoveryFilterBar extends StatelessWidget {
               const SizedBox(width: AppDimensions.space8),
               _Chip(
                 icon: Icons.cake_outlined,
+                accentSlot: 1,
                 label: (f.ageMin != null || f.ageMax != null)
                     ? '${f.ageMin ?? 18}–${f.ageMax ?? 60}'
                     : 'Age Range',
@@ -61,6 +63,7 @@ class DiscoveryFilterBar extends StatelessWidget {
               const SizedBox(width: AppDimensions.space8),
               _Chip(
                 icon: Icons.mosque_outlined,
+                accentSlot: 2,
                 label: f.sect ?? 'Sect',
                 isActive: f.sect != null,
                 onTap: () => _showSectFilter(context, f),
@@ -68,6 +71,7 @@ class DiscoveryFilterBar extends StatelessWidget {
               const SizedBox(width: AppDimensions.space8),
               _Chip(
                 icon: Icons.brightness_5_outlined,
+                accentSlot: 3,
                 label: f.deenLevel != null
                     ? _formatDeen(f.deenLevel!)
                     : 'Deen Level',
@@ -77,6 +81,7 @@ class DiscoveryFilterBar extends StatelessWidget {
               const SizedBox(width: AppDimensions.space8),
               _Chip(
                 icon: Icons.verified_outlined,
+                accentSlot: 4,
                 label: 'Verified Only',
                 isActive: f.verifiedOnly,
                 onTap: () {
@@ -89,6 +94,7 @@ class DiscoveryFilterBar extends StatelessWidget {
               const SizedBox(width: AppDimensions.space8),
               _Chip(
                 icon: Icons.people_outline_rounded,
+                accentSlot: 5,
                 label: f.familyType ?? 'Family Type',
                 isActive: f.familyType != null,
                 onTap: () => _showFamilyFilter(context, f),
@@ -142,18 +148,21 @@ class DiscoveryFilterBar extends StatelessWidget {
 class _Chip extends StatelessWidget {
   const _Chip({
     required this.icon,
+    required this.accentSlot,
     required this.label,
     required this.isActive,
     required this.onTap,
   });
 
   final IconData icon;
+  final int accentSlot;
   final String label;
   final bool isActive;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final accent = AppColors.spectrum(accentSlot);
     return GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
@@ -171,11 +180,15 @@ class _Chip extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: isActive
-              ? AppColors.champagneGold.withValues(alpha: 0.12)
+              ? accent.withValues(alpha: 0.12)
               : AppColors.surfaceGlass,
           borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
           border: Border.all(
-            color: isActive ? AppColors.champagneGold : AppColors.cardBorder,
+            color: isActive
+                ? accent
+                : AppColors.isChromatic
+                    ? accent.withValues(alpha: .28)
+                    : AppColors.cardBorder,
             width: 1.5,
           ),
         ),
@@ -184,7 +197,11 @@ class _Chip extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isActive ? AppColors.champagneGold : AppColors.slateMist,
+              color: isActive
+                  ? accent
+                  : AppColors.isChromatic
+                      ? accent.withValues(alpha: .78)
+                      : AppColors.slateMist,
               size: AppDimensions.iconSizeSmall,
             ),
             const SizedBox(width: AppDimensions.space6),
@@ -194,8 +211,7 @@ class _Chip extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppTypography.chipLabel.copyWith(
-                  color:
-                      isActive ? AppColors.champagneGold : AppColors.slateMist,
+                  color: isActive ? accent : AppColors.slateMist,
                 ),
               ),
             ),

@@ -16,6 +16,7 @@ import '../cubits/auth/auth_cubit.dart';
 import '../cubits/auth/auth_state.dart';
 import '../cubits/onboarding/onboarding_cubit.dart';
 import '../onboarding/onboarding_flow.dart';
+import '../theme/app_colors.dart';
 
 import '../../features/onboarding/screens/splash_brand_screen.dart';
 import '../../features/onboarding/screens/language_selection_screen.dart';
@@ -485,11 +486,9 @@ class _BootGateScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Color(0xFF0A0A0F),
-      body: Center(
-        child: SilarahPulseLoader(size: 56),
-      ),
+    return Scaffold(
+      backgroundColor: AppColors.obsidianNight,
+      body: const Center(child: SilarahPulseLoader(size: 56)),
     );
   }
 }

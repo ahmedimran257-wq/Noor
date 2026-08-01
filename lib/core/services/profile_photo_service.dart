@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/onboarding_data.dart';
@@ -154,7 +155,7 @@ class ProfilePhotoService {
         'get-signed-url',
         body: {
           'order_index': orderIndex,
-          'file_extension': 'webp',
+          'file_extension': 'jpg',
         },
       );
 
@@ -163,6 +164,11 @@ class ProfilePhotoService {
       }
 
       final payload = Map<String, dynamic>.from(signed.data as Map);
+      if (payload['action'] == 'already_pending') {
+        completedPhotos += 1;
+        report(PhotoSyncStage.complete);
+        continue;
+      }
       final storagePath = payload['storage_path'] as String?;
       final token = payload['token'] as String?;
       if (storagePath == null || token == null) {
@@ -171,14 +177,23 @@ class ProfilePhotoService {
 
       final bytes = await file.readAsBytes();
       report(PhotoSyncStage.transferring);
-      await SupabaseService.client.storage
-          .from(_bucket)
-          .uploadBinaryToSignedUrl(
-            storagePath,
-            token,
-            bytes,
-            const FileOptions(contentType: 'image/webp', upsert: true),
-          );
+      try {
+        await SupabaseService.client.storage
+            .from(_bucket)
+            .uploadBinaryToSignedUrl(
+              storagePath,
+              token,
+              bytes,
+              const FileOptions(contentType: 'image/jpeg', upsert: true),
+            );
+      } catch (error) {
+        debugPrint(
+          '[ProfilePhotoService] transfer failed: ${error.runtimeType}',
+        );
+        throw StateError(
+          'Photo transfer failed. Check your connection and try again.',
+        );
+      }
 
       report(PhotoSyncStage.publishing);
       await _validateUploaded(storagePath, moderation);
@@ -378,11 +393,14 @@ class ProfilePhotoService {
         'order_index': orderIndex,
       },
     );
-    if (response.status != 200 || response.data is! Map) return const {};
+    // Keep already-cached URLs usable when a partial batch refresh fails.
+    // Returning an empty map here used to blank every card, including owners
+    // whose signed URLs were still valid in the local cache.
+    if (response.status != 200 || response.data is! Map) return result;
 
     final payload = Map<String, dynamic>.from(response.data as Map);
     final urls = payload['urls'];
-    if (urls is! Map) return const {};
+    if (urls is! Map) return result;
 
     final loaded = urls.map(
       (key, value) => MapEntry(key.toString(), value?.toString() ?? ''),
@@ -449,10 +467,17 @@ class ProfilePhotoService {
     );
     if ((response.status != 200 && response.status != 202) ||
         response.data is! Map) {
-      throw StateError('Photo validation could not be completed.');
+      debugPrint(
+        '[ProfilePhotoService] validation rejected: HTTP ${response.status}',
+      );
+      throw StateError(
+        response.status == 422
+            ? 'The server could not decode this photo. Choose another image.'
+            : 'Photo validation could not be completed. Please try again.',
+      );
     }
     final action = (response.data as Map)['action'] as String?;
-    if (action != 'pending_review') {
+    if (action != 'active' && action != 'pending_review') {
       throw StateError('Photo validation did not accept this upload.');
     }
   }

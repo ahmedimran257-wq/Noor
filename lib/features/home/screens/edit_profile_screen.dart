@@ -221,7 +221,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void _showSaveError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: AppTypography.body),
+        content: Text(
+          message,
+          style: AppTypography.body.copyWith(
+            color: AppColors.readableOn(AppColors.softCoral),
+          ),
+        ),
         backgroundColor: AppColors.softCoral,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
@@ -308,7 +313,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           Icon(Icons.check_circle_rounded,
               color: AppColors.champagneGold, size: 18),
           const SizedBox(width: AppDimensions.space8),
-          Text('Profile saved', style: AppTypography.body),
+          Text(
+            'Profile saved',
+            style: AppTypography.body.copyWith(
+              color: AppColors.readableOn(AppColors.surfaceGlassHover),
+            ),
+          ),
         ]),
         backgroundColor: AppColors.surfaceGlassHover,
         behavior: SnackBarBehavior.floating,

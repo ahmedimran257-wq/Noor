@@ -2175,6 +2175,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get splash_button_signIn => 'दाखिल करना';
 
   @override
+  String get splash_intention_subtitle =>
+      'निजी परिचय, सोच-समझकर अनुकूलता और परिवार का सम्मान करने वाला जुड़ाव।';
+
+  @override
+  String get splash_intention_title => 'विवाह, नेक इरादे के साथ।';
+
+  @override
   String get splash_referral_button => 'कोड लागू करें';
 
   @override

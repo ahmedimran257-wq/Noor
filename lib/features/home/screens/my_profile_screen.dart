@@ -1487,7 +1487,9 @@ class _BoostSectionState extends State<_BoostSection> {
                 color: AppColors.champagneGold, size: 16),
             const SizedBox(width: 8),
             Text('Your profile is boosted for 2 hours!',
-                style: AppTypography.body),
+                style: AppTypography.body.copyWith(
+                  color: AppColors.readableOn(AppColors.surfaceGlassHover),
+                )),
           ]),
           backgroundColor: AppColors.surfaceGlassHover,
           behavior: SnackBarBehavior.floating,

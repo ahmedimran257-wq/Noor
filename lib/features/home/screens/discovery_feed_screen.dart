@@ -22,7 +22,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/cubits/discovery/discovery_feed_cubit.dart';
 import '../../../core/cubits/discovery/discovery_feed_state.dart';
 import '../../../core/cubits/interests/interests_cubit.dart';
-import '../../../core/cubits/interests/interests_state.dart';
 import '../../../core/services/bookmark_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
@@ -161,7 +160,9 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
             _bookmarked.contains(id)
                 ? l10n.discovery_bookmark_saved(fp.profile.firstName)
                 : l10n.discovery_bookmark_removed(fp.profile.firstName),
-            style: AppTypography.body,
+            style: AppTypography.body.copyWith(
+              color: AppColors.readableOn(AppColors.surfaceGlassHover),
+            ),
           ),
           backgroundColor: AppColors.surfaceGlassHover,
           behavior: SnackBarBehavior.floating,
@@ -216,7 +217,9 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
           previous.activeFilter != current.activeFilter,
       listener: (context, state) {
         _currentPage = 0;
-        if (_pageCtrl.hasClients) _pageCtrl.jumpToPage(0);
+        if (_pageCtrl.positions.length == 1) {
+          _pageCtrl.jumpToPage(0);
+        }
       },
       builder: (context, feedState) {
         return RefreshIndicator(
@@ -292,8 +295,10 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
 
     if (feedState.status == FeedStatus.empty) {
       return _EmptyFeed(
-        onOpenInterests: () => widget.onOpenTab?.call(1),
-        onOpenChat: () => widget.onOpenTab?.call(2),
+        hasActiveFilters: feedState.activeFilter.isActive,
+        onRefresh: () =>
+            context.read<DiscoveryFeedCubit>().loadInitial(force: true),
+        onClearFilters: () => context.read<DiscoveryFeedCubit>().clearFilters(),
       );
     }
 
@@ -350,6 +355,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
                     lastActiveLabel: fp.lastActiveLabel,
                     isFocused: true, // Scale handled externally now
                     cardScale: 1,
+                    isBookmarked: _bookmarked.contains(p.id),
                     isInterestSent: _sentInterests.contains(p.id),
                     onTap: () => _openProfile(index, fp),
                     onSendInterest: _sentInterests.contains(p.id)
@@ -375,21 +381,20 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
         );
       },
     );
-    if (feedState.status != FeedStatus.refreshing) return carousel;
-
     return Stack(
       children: [
         carousel,
-        Positioned(
-          top: 0,
-          left: AppDimensions.space40,
-          right: AppDimensions.space40,
-          child: LinearProgressIndicator(
-            minHeight: 1.5,
-            color: AppColors.champagneGold,
-            backgroundColor: AppColors.transparent,
+        if (feedState.status == FeedStatus.refreshing)
+          Positioned(
+            top: 0,
+            left: AppDimensions.space40,
+            right: AppDimensions.space40,
+            child: LinearProgressIndicator(
+              minHeight: 1.5,
+              color: AppColors.champagneGold,
+              backgroundColor: AppColors.transparent,
+            ),
           ),
-        ),
       ],
     );
   }
@@ -399,7 +404,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
       animation: _pageCtrl,
       child: RepaintBoundary(child: child),
       builder: (context, child) {
-        final page = _pageCtrl.hasClients
+        final page = _pageCtrl.positions.length == 1
             ? (_pageCtrl.page ?? _currentPage.toDouble())
             : _currentPage.toDouble();
         final offset = (index - page).abs();
@@ -535,53 +540,15 @@ class _NotificationButton extends StatelessWidget {
 
 // ── Initial Shimmer (3-card stack) ────────────────────────────
 
-class _InitialShimmer extends StatefulWidget {
-  @override
-  State<_InitialShimmer> createState() => _InitialShimmerState();
-}
-
-class _InitialShimmerState extends State<_InitialShimmer> {
-  late final PageController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = PageController(viewportFraction: 0.88);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
+class _InitialShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return PageView(
-      controller: _controller,
-      children: const [
-        Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: AppDimensions.space6,
-            vertical: AppDimensions.space4,
-          ),
-          child: SilarahProfileCardShimmer(),
-        ),
-        Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: AppDimensions.space6,
-            vertical: AppDimensions.space4,
-          ),
-          child: SilarahProfileCardShimmer(),
-        ),
-        Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: AppDimensions.space6,
-            vertical: AppDimensions.space4,
-          ),
-          child: SilarahProfileCardShimmer(),
-        ),
-      ],
+    return const Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppDimensions.space6,
+        vertical: AppDimensions.space4,
+      ),
+      child: SilarahProfileCardShimmer(),
     );
   }
 }
@@ -590,44 +557,24 @@ class _InitialShimmerState extends State<_InitialShimmer> {
 
 class _EmptyFeed extends StatelessWidget {
   const _EmptyFeed({
-    required this.onOpenInterests,
-    required this.onOpenChat,
+    required this.hasActiveFilters,
+    required this.onRefresh,
+    required this.onClearFilters,
   });
 
-  final VoidCallback onOpenInterests;
-  final VoidCallback onOpenChat;
+  final bool hasActiveFilters;
+  final VoidCallback onRefresh;
+  final VoidCallback onClearFilters;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return BlocBuilder<InterestsCubit, InterestsState>(
-      buildWhen: (previous, current) =>
-          previous.discoveryHandoff != current.discoveryHandoff,
-      builder: (context, interests) {
-        return switch (interests.discoveryHandoff) {
-          DiscoveryInteractionHandoff.matched => SilarahEmptyState(
-              visual: SilarahEmptyVisual.connection,
-              title: l10n.discovery_handoff_match_title,
-              subtitle: l10n.discovery_handoff_match_subtitle,
-              ctaLabel: l10n.discovery_handoff_open_chat,
-              onCta: onOpenChat,
-            ),
-          DiscoveryInteractionHandoff.receivedInterest ||
-          DiscoveryInteractionHandoff.sentInterest =>
-            SilarahEmptyState(
-              visual: SilarahEmptyVisual.interests,
-              title: l10n.discovery_handoff_interest_title,
-              subtitle: l10n.discovery_handoff_interest_subtitle,
-              ctaLabel: l10n.discovery_handoff_open_interests,
-              onCta: onOpenInterests,
-            ),
-          DiscoveryInteractionHandoff.none => SilarahEmptyState(
-              visual: SilarahEmptyVisual.discovery,
-              title: l10n.discovery_empty_title,
-              subtitle: l10n.discovery_empty_subtitle,
-            ),
-        };
-      },
+    return SilarahEmptyState(
+      visual: SilarahEmptyVisual.discovery,
+      title: l10n.discovery_empty_title,
+      subtitle: l10n.discovery_empty_subtitle,
+      ctaLabel: hasActiveFilters ? 'Clear Filters' : 'Refresh Profiles',
+      onCta: hasActiveFilters ? onClearFilters : onRefresh,
     );
   }
 }

@@ -2166,6 +2166,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get splash_button_signIn => 'Oturum aç';
 
   @override
+  String get splash_intention_subtitle =>
+      'Özel tanışmalar, özenle değerlendirilen uyum ve aileyi gözeten bağlar.';
+
+  @override
+  String get splash_intention_title => 'Evliliğe, niyetle yaklaşın.';
+
+  @override
   String get splash_referral_button => 'Kodu Uygula';
 
   @override

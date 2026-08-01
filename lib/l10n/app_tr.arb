@@ -721,6 +721,8 @@
   "@splash_button_signIn": {
     "description": "Secondary action on splash screen"
   },
+  "@splash_intention_subtitle": {},
+  "@splash_intention_title": {},
   "@splash_referral_button": {},
   "@splash_referral_hint": {},
   "@splash_referral_invalid": {},
@@ -1399,6 +1401,8 @@
   "settings_title": "Ayarlar",
   "splash_button_createProfile": "Profil Oluştur",
   "splash_button_signIn": "Oturum aç",
+  "splash_intention_subtitle": "Özel tanışmalar, özenle değerlendirilen uyum ve aileyi gözeten bağlar.",
+  "splash_intention_title": "Evliliğe, niyetle yaklaşın.",
   "splash_referral_button": "Kodu Uygula",
   "splash_referral_hint": "örneğin MİTHAQXX",
   "splash_referral_invalid": "Lütfen 6 karakterlik geçerli bir kod girin.",

@@ -10,6 +10,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/cubits/account_standing/account_standing_cubit.dart';
 import '../../core/cubits/account_standing/account_standing_state.dart';
+import '../../core/cubits/chat/chat_cubit.dart';
+import '../../core/cubits/discovery/discovery_feed_cubit.dart';
 import '../../core/cubits/interests/interests_cubit.dart';
 import '../../core/cubits/interests/interests_state.dart';
 import '../../core/router/app_router.dart';
@@ -32,7 +34,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => HomeScreenState();
 }
 
-class HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _currentTab = 0;
   late final List<Widget?> _tabCache;
   int _profileRefreshToken = 0;
@@ -41,11 +43,25 @@ class HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     if (widget.initialTab != null) {
       _currentTab = widget.initialTab!;
     }
     _tabCache = List<Widget?>.filled(_tabCount, null);
     _ensureTabBuilt(_currentTab);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshTabData(_currentTab);
+    }
   }
 
   @override
@@ -72,7 +88,10 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   void _selectTab(int index) {
-    if (index == _currentTab) return;
+    if (index == _currentTab) {
+      _refreshTabData(index);
+      return;
+    }
     setState(() {
       _ensureTabBuilt(index);
       if (index == 3) {
@@ -84,8 +103,15 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   void _refreshTabData(int index) {
-    if (index == 1) {
-      context.read<InterestsCubit>().loadData(force: true);
+    switch (index) {
+      case 0:
+        context.read<DiscoveryFeedCubit>().loadInitial(force: true);
+      case 1:
+        context.read<InterestsCubit>().loadData(force: true);
+      case 2:
+        context
+            .read<ChatCubit>()
+            .loadConversations(showLoading: false, force: true);
     }
   }
 

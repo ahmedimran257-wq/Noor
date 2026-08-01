@@ -77,7 +77,14 @@ void main() {
     expect(discovery, contains('AnimatedBuilder('));
     expect(discovery, contains('RepaintBoundary(child: child)'));
     expect(discoveryCubit, contains('FeedStatus.refreshing'));
-    expect(discovery, contains('feedState.status != FeedStatus.refreshing'));
+    expect(
+      discovery,
+      contains('if (feedState.status == FeedStatus.refreshing)'),
+    );
+    expect(
+      RegExp(r'_pageCtrl\.positions\.length == 1').allMatches(discovery).length,
+      greaterThanOrEqualTo(2),
+    );
   });
 
   test('modal sheets do not animate a live Gaussian blur or idle handle', () {

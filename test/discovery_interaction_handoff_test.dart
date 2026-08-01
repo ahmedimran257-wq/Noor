@@ -23,7 +23,7 @@ void main() {
         status: status,
       );
 
-  test('an accepted match hands an empty discovery feed to Chat', () {
+  test('an accepted match remains an authoritative relationship state', () {
     final state = InterestsState(
       matches: [entry(InterestStatus.accepted)],
       sent: [entry(InterestStatus.accepted)],
@@ -106,17 +106,22 @@ void main() {
     expect(migration, contains('Message % committed without push enqueue'));
   });
 
-  test('the server keeps active pairs out of duplicate discovery contexts', () {
+  test('relationship history never replaces the current empty feed result', () {
     final migration = File(
       'supabase/migrations/131_authoritative_global_location_discovery.sql',
     ).readAsStringSync();
     final screen = File(
       'lib/features/home/screens/discovery_feed_screen.dart',
     ).readAsStringSync();
+    final home = File('lib/features/home/home_screen.dart').readAsStringSync();
 
     expect(migration, contains("i.status IN ('pending', 'accepted')"));
-    expect(screen, contains('discovery_handoff_match_title'));
-    expect(screen, contains('discovery_handoff_interest_title'));
+    expect(screen, isNot(contains('interests.discoveryHandoff')));
+    expect(screen, isNot(contains('discovery_handoff_match_title')));
+    expect(screen, contains("'Refresh Profiles'"));
     expect(screen, contains('loadInitial(force: true)'));
+    expect(home, contains('case 0:'));
+    expect(home, contains('loadInitial(force: true)'));
+    expect(home, contains('AppLifecycleState.resumed'));
   });
 }

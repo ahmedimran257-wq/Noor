@@ -721,6 +721,8 @@
   "@splash_button_signIn": {
     "description": "Secondary action on splash screen"
   },
+  "@splash_intention_subtitle": {},
+  "@splash_intention_title": {},
   "@splash_referral_button": {},
   "@splash_referral_hint": {},
   "@splash_referral_invalid": {},
@@ -1399,6 +1401,8 @@
   "settings_title": "सेटिंग्स",
   "splash_button_createProfile": "प्रोफ़ाइल बनाएं",
   "splash_button_signIn": "दाखिल करना",
+  "splash_intention_subtitle": "निजी परिचय, सोच-समझकर अनुकूलता और परिवार का सम्मान करने वाला जुड़ाव।",
+  "splash_intention_title": "विवाह, नेक इरादे के साथ।",
   "splash_referral_button": "कोड लागू करें",
   "splash_referral_hint": "जैसे मिथाकएक्सएक्स",
   "splash_referral_invalid": "कृपया एक वैध 6-अक्षर वाला कोड दर्ज करें।",

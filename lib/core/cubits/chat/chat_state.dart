@@ -85,6 +85,8 @@ class Conversation extends Equatable {
     this.photoUrl,
     this.isMatchClosed = false,
     this.closureMessage,
+    this.closedByMe,
+    this.contentLocked = false,
   });
 
   final String id;
@@ -97,6 +99,8 @@ class Conversation extends Equatable {
   final String? photoUrl;
   final bool isMatchClosed; // true when respectful closure sent
   final String? closureMessage; // the pre-written closing message
+  final bool? closedByMe; // null for automatic expiry / legacy rows
+  final bool contentLocked; // authoritative server-side Premium read gate
 
   String get displayName {
     final surname = matchLastInitial.trim();
@@ -106,6 +110,7 @@ class Conversation extends Equatable {
   ChatMessage? get lastMessage => messages.isEmpty ? null : messages.last;
 
   String get lastMessagePreview {
+    if (contentLocked) return 'Unlock Premium to read messages';
     final m = lastMessage;
     if (m == null) return 'Say Assalamu Alaikum!';
     return m.text.length > 50 ? '${m.text.substring(0, 50)}…' : m.text;
@@ -127,6 +132,8 @@ class Conversation extends Equatable {
     bool? isMatchClosed,
     String? closureMessage,
     String? photoUrl,
+    bool? closedByMe,
+    bool? contentLocked,
   }) {
     return Conversation(
       id: id,
@@ -139,6 +146,8 @@ class Conversation extends Equatable {
       photoUrl: photoUrl ?? this.photoUrl,
       isMatchClosed: isMatchClosed ?? this.isMatchClosed,
       closureMessage: closureMessage ?? this.closureMessage,
+      closedByMe: closedByMe ?? this.closedByMe,
+      contentLocked: contentLocked ?? this.contentLocked,
     );
   }
 
@@ -153,7 +162,9 @@ class Conversation extends Equatable {
         otherUserId,
         photoUrl,
         isMatchClosed,
-        closureMessage
+        closureMessage,
+        closedByMe,
+        contentLocked,
       ];
 }
 

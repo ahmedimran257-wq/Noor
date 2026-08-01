@@ -68,8 +68,8 @@ class SilarahSecondaryButton extends StatelessWidget {
           boxShadow: isActive
               ? [
                   BoxShadow(
-                    color: AppColors.obsidianNight.withValues(alpha: 0.42),
-                    blurRadius: 18,
+                    color: AppColors.champagneGold.withValues(alpha: 0.09),
+                    blurRadius: 22,
                     offset: const Offset(0, 10),
                   ),
                 ]
@@ -99,7 +99,7 @@ class SilarahSecondaryButton extends StatelessWidget {
                           textAlign: TextAlign.center,
                           style: AppTypography.buttonSecondary.copyWith(
                             color: isActive
-                                ? AppColors.champagneLight
+                                ? AppColors.champagneGold
                                 : AppColors.slateMist,
                           ),
                         ),

@@ -2170,6 +2170,13 @@ class AppLocalizationsUr extends AppLocalizations {
   String get splash_button_signIn => 'سائن ان کریں۔';
 
   @override
+  String get splash_intention_subtitle =>
+      'نجی تعارف، سوچا سمجھا باہمی میل اور خاندان کا لحاظ رکھنے والا تعلق۔';
+
+  @override
+  String get splash_intention_title => 'شادی، خلوصِ نیت کے ساتھ۔';
+
+  @override
   String get splash_referral_button => 'کوڈ کا اطلاق کریں۔';
 
   @override

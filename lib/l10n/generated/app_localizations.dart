@@ -4080,6 +4080,18 @@ abstract class AppLocalizations {
   /// **'Sign In'**
   String get splash_button_signIn;
 
+  /// No description provided for @splash_intention_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Private introductions, thoughtful compatibility, and family-aware connection.'**
+  String get splash_intention_subtitle;
+
+  /// No description provided for @splash_intention_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Marriage, approached with intention.'**
+  String get splash_intention_title;
+
   /// No description provided for @splash_referral_button.
   ///
   /// In en, this message translates to:

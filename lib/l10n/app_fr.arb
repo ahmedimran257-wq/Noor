@@ -721,6 +721,8 @@
   "@splash_button_signIn": {
     "description": "Secondary action on splash screen"
   },
+  "@splash_intention_subtitle": {},
+  "@splash_intention_title": {},
   "@splash_referral_button": {},
   "@splash_referral_hint": {},
   "@splash_referral_invalid": {},
@@ -1399,6 +1401,8 @@
   "settings_title": "Paramètres",
   "splash_button_createProfile": "Créer un profil",
   "splash_button_signIn": "Se connecter",
+  "splash_intention_subtitle": "Des présentations privées, une compatibilité réfléchie et un lien respectueux de la famille.",
+  "splash_intention_title": "Le mariage, avec intention.",
   "splash_referral_button": "Appliquer le code",
   "splash_referral_hint": "par ex. SILARAHXX",
   "splash_referral_invalid": "Veuillez saisir un code valide à 6 caractères.",

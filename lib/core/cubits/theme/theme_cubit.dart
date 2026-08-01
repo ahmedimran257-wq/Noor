@@ -11,20 +11,16 @@ import '../../theme/app_colors.dart';
 class ThemeSelectionState {
   const ThemeSelectionState({
     required this.activeMode,
-    this.pendingMode,
   });
 
   final SilarahThemeMode activeMode;
-  final SilarahThemeMode? pendingMode;
-
-  SilarahThemeMode get selectedMode => pendingMode ?? activeMode;
-  bool get requiresRestart => pendingMode != null && pendingMode != activeMode;
+  SilarahThemeMode get selectedMode => activeMode;
 }
 
 class ThemeCubit extends Cubit<ThemeSelectionState> {
   ThemeCubit({SilarahThemeMode? initialMode})
       : super(ThemeSelectionState(
-          activeMode: initialMode ?? SilarahThemeMode.obsidian,
+          activeMode: initialMode ?? SilarahThemeMode.blackWhite,
         )) {
     _applySystemIdentity(state.activeMode);
     _ready = initialMode == null ? _load() : Future<void>.value();
@@ -40,26 +36,22 @@ class ThemeCubit extends Cubit<ThemeSelectionState> {
     final mode = SilarahThemeMode.fromStorage(
       preferences.getString(preferenceKey),
     );
+    if (preferences.getString(preferenceKey) != mode.storageValue) {
+      await preferences.setString(preferenceKey, mode.storageValue);
+    }
     if (isClosed) return;
     _applySystemIdentity(mode);
     emit(ThemeSelectionState(activeMode: mode));
   }
 
-  /// Saves the requested identity without mutating the running widget tree.
-  ///
-  /// The application contains long-lived, cached feature surfaces. Applying a
-  /// palette to only the widgets that happen to rebuild can produce a mixed
-  /// identity. A clean process start is therefore the atomic theme boundary.
-  Future<void> scheduleForRestart(SilarahThemeMode mode) async {
+  /// Applies and persists a complete identity in the current frame.
+  Future<void> applyMode(SilarahThemeMode mode) async {
     await _ready;
-    if (isClosed) return;
+    if (isClosed || mode == state.activeMode) return;
+    _applySystemIdentity(mode);
+    emit(ThemeSelectionState(activeMode: mode));
     final preferences = await SharedPreferences.getInstance();
     await preferences.setString(preferenceKey, mode.storageValue);
-    if (isClosed) return;
-    emit(ThemeSelectionState(
-      activeMode: state.activeMode,
-      pendingMode: mode == state.activeMode ? null : mode,
-    ));
   }
 
   static void _applySystemIdentity(SilarahThemeMode mode) {

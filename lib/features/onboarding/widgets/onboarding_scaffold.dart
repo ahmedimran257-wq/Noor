@@ -255,28 +255,14 @@ class _OnboardingBackdrop extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
           colors: [
-            AppColors.midnightPlum.withValues(alpha: 0.64),
+            AppColors.midnightPlum.withValues(alpha: 0.36),
             AppColors.obsidianNight,
-            AppColors.midnightPlum.withValues(alpha: 0.18),
+            AppColors.obsidianNight,
           ],
-          stops: const [0, 0.54, 1],
-        ),
-      ),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: RadialGradient(
-            center: const Alignment(0.18, -0.62),
-            radius: 1.25,
-            colors: [
-              AppColors.champagneGold.withValues(alpha: 0.13),
-              AppColors.navyCharcoal.withValues(alpha: 0.18),
-              Colors.transparent,
-            ],
-            stops: const [0, 0.36, 1],
-          ),
+          stops: const [0, 0.30, 1],
         ),
       ),
     );

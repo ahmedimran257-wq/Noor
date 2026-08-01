@@ -190,7 +190,12 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
           });
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.message),
+              content: Text(
+                state.message,
+                style: TextStyle(
+                  color: AppColors.readableOn(AppColors.softCoral),
+                ),
+              ),
               backgroundColor: AppColors.softCoral,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(

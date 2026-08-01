@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
+
 /// The only Flutter-owned launch treatment.
 ///
-/// The native layer stays solid obsidian and hands directly to this text-only
+/// The native layer stays solid white and hands directly to this text-only
 /// wordmark. No launcher artwork is reused here: that separation prevents the
 /// icon, opening sequence, and signed-out landing screen from drifting apart.
 class SilarahLaunchSequence extends StatefulWidget {
@@ -12,12 +14,12 @@ class SilarahLaunchSequence extends StatefulWidget {
     this.onCompleted,
   });
 
-  static const duration = Duration(milliseconds: 2400);
-  static const surface = Color(0xFF050507);
+  static const duration = Duration(milliseconds: 1250);
+  static Color get surface => AppColors.obsidianNight;
   static final ValueNotifier<bool> revealCompleted = ValueNotifier(false);
 
-  /// Root startup keeps this false until the first Flutter-owned frame has
-  /// actually replaced the native launch surface.
+  /// Tests and embedded previews may pause playback. Production begins on the
+  /// first post-frame callback, after Flutter has replaced the native surface.
   final bool play;
   final VoidCallback? onCompleted;
 
@@ -33,7 +35,6 @@ class _SilarahLaunchSequenceState extends State<SilarahLaunchSequence>
   late final Animation<double> _wordTracking;
   late final Animation<double> _wordLift;
   late final Animation<double> _sheenProgress;
-  late final Animation<double> _departureOpacity;
   bool _completionDelivered = false;
   bool _motionPreferenceApplied = false;
   bool _disableAnimations = false;
@@ -50,7 +51,7 @@ class _SilarahLaunchSequenceState extends State<SilarahLaunchSequence>
 
     _wordOpacity = CurvedAnimation(
       parent: _controller,
-      curve: const Interval(.12, .38, curve: Curves.easeOutCubic),
+      curve: const Interval(.02, .22, curve: Curves.easeOutCubic),
     );
     _wordScale = TweenSequence<double>([
       TweenSequenceItem(
@@ -66,31 +67,25 @@ class _SilarahLaunchSequenceState extends State<SilarahLaunchSequence>
     ]).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(.10, .62),
+        curve: const Interval(.02, .52),
       ),
     );
     _wordTracking = Tween<double>(begin: 8.5, end: .6).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(.12, .48, curve: Curves.easeOutQuart),
+        curve: const Interval(.02, .38, curve: Curves.easeOutQuart),
       ),
     );
     _wordLift = Tween<double>(begin: 12, end: 0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(.12, .46, curve: Curves.easeOutCubic),
+        curve: const Interval(.02, .36, curve: Curves.easeOutCubic),
       ),
     );
     _sheenProgress = Tween<double>(begin: -1.4, end: 1.4).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(.30, .70, curve: Curves.easeInOutCubic),
-      ),
-    );
-    _departureOpacity = Tween<double>(begin: 1, end: 0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(.82, 1, curve: Curves.easeInCubic),
+        curve: const Interval(.18, .68, curve: Curves.easeInOutCubic),
       ),
     );
   }
@@ -166,39 +161,43 @@ class _SilarahLaunchSequenceState extends State<SilarahLaunchSequence>
         children: [
           RepaintBoundary(
             child: CustomPaint(
-              painter: _ObsidianBloomPainter(_controller),
+              painter: _BrandBloomPainter(
+                _controller,
+                accent: AppColors.champagneGold,
+                depth: AppColors.midnightPlum,
+              ),
             ),
           ),
           RepaintBoundary(
             child: CustomPaint(
-              painter: _GreetingTracePainter(_controller),
+              painter: _GreetingTracePainter(
+                _controller,
+                color: AppColors.champagneGold,
+              ),
             ),
           ),
           SafeArea(
             child: Center(
               child: FadeTransition(
-                opacity: _departureOpacity,
-                child: FadeTransition(
-                  opacity: _wordOpacity,
-                  child: AnimatedBuilder(
-                    animation: Listenable.merge([
-                      _wordScale,
-                      _wordTracking,
-                      _wordLift,
-                      _sheenProgress,
-                    ]),
-                    builder: (context, _) => Transform.translate(
-                      offset: Offset(0, _wordLift.value),
-                      child: Transform.scale(
-                        scale: _wordScale.value,
-                        child: Semantics(
-                          image: true,
-                          label: 'Silarah',
-                          child: _SilarahWordmark(
-                            fontSize: 58,
-                            letterSpacing: _wordTracking.value,
-                            sheenProgress: _sheenProgress.value,
-                          ),
+                opacity: _wordOpacity,
+                child: AnimatedBuilder(
+                  animation: Listenable.merge([
+                    _wordScale,
+                    _wordTracking,
+                    _wordLift,
+                    _sheenProgress,
+                  ]),
+                  builder: (context, _) => Transform.translate(
+                    offset: Offset(0, _wordLift.value),
+                    child: Transform.scale(
+                      scale: _wordScale.value,
+                      child: Semantics(
+                        image: true,
+                        label: 'Silarah',
+                        child: _SilarahWordmark(
+                          fontSize: 58,
+                          letterSpacing: _wordTracking.value,
+                          sheenProgress: _sheenProgress.value,
                         ),
                       ),
                     ),
@@ -230,12 +229,12 @@ class _SilarahWordmark extends StatelessWidget {
         shaderCallback: (bounds) => LinearGradient(
           begin: Alignment(sheenProgress - .75, -1),
           end: Alignment(sheenProgress + .75, 1),
-          colors: const [
-            Color(0xFF9E7938),
-            Color(0xFFD8AF55),
-            Color(0xFFFFE9AF),
-            Color(0xFFD8AF55),
-            Color(0xFF9E7938),
+          colors: [
+            AppColors.antiqueGold,
+            AppColors.champagneGold,
+            AppColors.champagneLight,
+            AppColors.champagneGold,
+            AppColors.antiqueGold,
           ],
           stops: const [0, .34, .5, .66, 1],
         ).createShader(bounds),
@@ -256,18 +255,23 @@ class _SilarahWordmark extends StatelessWidget {
       );
 }
 
-class _ObsidianBloomPainter extends CustomPainter {
-  _ObsidianBloomPainter(this.progress) : super(repaint: progress);
+class _BrandBloomPainter extends CustomPainter {
+  _BrandBloomPainter(
+    this.progress, {
+    required this.accent,
+    required this.depth,
+  }) : super(repaint: progress);
 
   final Animation<double> progress;
+  final Color accent;
+  final Color depth;
 
   @override
   void paint(Canvas canvas, Size size) {
     final entrance = Curves.easeOutCubic.transform(
       (progress.value / .34).clamp(0.0, 1.0),
     );
-    final departure = ((progress.value - .82) / .18).clamp(0.0, 1.0);
-    final opacity = entrance * (1 - Curves.easeInCubic.transform(departure));
+    final opacity = entrance;
     if (opacity <= .001) return;
 
     final center = Offset(size.width / 2, size.height / 2);
@@ -275,8 +279,8 @@ class _ObsidianBloomPainter extends CustomPainter {
     final paint = Paint()
       ..shader = RadialGradient(
         colors: [
-          const Color(0xFFD8AF55).withValues(alpha: .14 * opacity),
-          const Color(0xFF6B5128).withValues(alpha: .055 * opacity),
+          accent.withValues(alpha: .09 * opacity),
+          depth.withValues(alpha: .035 * opacity),
           Colors.transparent,
         ],
         stops: const [0, .48, 1],
@@ -285,14 +289,18 @@ class _ObsidianBloomPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _ObsidianBloomPainter oldDelegate) =>
-      oldDelegate.progress != progress;
+  bool shouldRepaint(covariant _BrandBloomPainter oldDelegate) =>
+      oldDelegate.progress != progress ||
+      oldDelegate.accent != accent ||
+      oldDelegate.depth != depth;
 }
 
 class _GreetingTracePainter extends CustomPainter {
-  _GreetingTracePainter(this.progress) : super(repaint: progress);
+  _GreetingTracePainter(this.progress, {required this.color})
+      : super(repaint: progress);
 
   final Animation<double> progress;
+  final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -329,8 +337,7 @@ class _GreetingTracePainter extends CustomPainter {
           text: entry.text,
           style: TextStyle(
             inherit: false,
-            color: const Color(0xFFE7CA84)
-                .withValues(alpha: opacity * entry.alpha),
+            color: color.withValues(alpha: opacity * entry.alpha),
             fontFamily: 'PlayfairDisplay',
             fontSize: entry.fontSize,
             fontStyle: FontStyle.italic,
@@ -350,7 +357,7 @@ class _GreetingTracePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _GreetingTracePainter oldDelegate) =>
-      oldDelegate.progress != progress;
+      oldDelegate.progress != progress || oldDelegate.color != color;
 }
 
 class _GreetingEntry {

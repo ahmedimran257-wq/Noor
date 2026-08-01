@@ -2170,6 +2170,13 @@ class AppLocalizationsBn extends AppLocalizations {
   String get splash_button_signIn => 'সাইন ইন করুন';
 
   @override
+  String get splash_intention_subtitle =>
+      'ব্যক্তিগত পরিচয়, বিবেচনাপূর্ণ সামঞ্জস্য এবং পরিবার-সচেতন সংযোগ।';
+
+  @override
+  String get splash_intention_title => 'বিয়ে, সচেতন অভিপ্রায়ে।';
+
+  @override
   String get splash_referral_button => 'কোড প্রয়োগ করুন';
 
   @override

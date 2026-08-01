@@ -5,15 +5,16 @@ import 'package:silarah/features/onboarding/screens/photo_upload_screen.dart';
 
 void main() {
   group('free-tier scaling contracts', () {
-    test('profile uploads use the bounded mobile WebP policy', () {
+    test('profile uploads use the bounded server-decodable JPEG policy', () {
       expect(profilePhotoUploadMinDimension, 720);
-      expect(profilePhotoUploadWebpQuality, 74);
+      expect(profilePhotoUploadJpegQuality, 82);
 
       final source = File(
         'lib/features/onboarding/screens/photo_upload_screen.dart',
       ).readAsStringSync();
       expect(source, contains('minWidth: profilePhotoUploadMinDimension'));
-      expect(source, contains('quality: profilePhotoUploadWebpQuality'));
+      expect(source, contains('quality: profilePhotoUploadJpegQuality'));
+      expect(source, contains('format: CompressFormat.jpeg'));
       expect(source, contains('keepExif: false'));
     });
 

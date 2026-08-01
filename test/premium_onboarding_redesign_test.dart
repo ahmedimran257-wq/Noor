@@ -12,10 +12,12 @@ void main() {
       'lib/features/onboarding/screens/splash_brand_screen.dart',
     ).readAsStringSync();
 
-    expect(source, contains('with SingleTickerProviderStateMixin'));
-    expect(source, contains('Duration(milliseconds: 1400)'));
+    expect(source, contains('with TickerProviderStateMixin'));
+    expect(source, contains('Duration(milliseconds: 1350)'));
+    expect(source, contains('Duration(seconds: 14)'));
     expect(source, contains('_lockupOpacity'));
-    expect(source, contains('_taglineOpacity'));
+    expect(source, contains('_heroOpacity'));
+    expect(source, contains('_ambient.repeat()'));
     expect(source, contains('_primaryOpacity'));
     expect(source, contains('_secondaryOpacity'));
     expect(source, contains('_tertiaryOpacity'));
@@ -41,9 +43,10 @@ void main() {
       'lib/core/widgets/buttons/silarah_secondary_button.dart',
     ).readAsStringSync();
 
-    expect(welcome, contains('_ObsidianWelcomeCanvas'));
-    expect(welcome, contains('_WelcomeFiligreePainter'));
-    expect(welcome, contains("'السلام عليكم'"));
+    expect(welcome, contains('_WelcomeCanvas'));
+    expect(welcome, contains('_UnionArchPainter'));
+    expect(welcome, isNot(contains("'Assalamu Alaikum'")));
+    expect(welcome, isNot(contains("'السلام عليكم'")));
     expect(welcome, isNot(contains('AppColors.inkTeal')));
     expect(onboarding, isNot(contains('AppColors.inkTeal')));
     expect(navigation, isNot(contains('AppColors.inkTeal')));
@@ -80,7 +83,11 @@ void main() {
       await tester.pump();
 
       expect(find.text('Silarah'), findsOneWidget);
-      expect(find.text('السلام عليكم'), findsOneWidget);
+      expect(
+        find.text('Marriage, approached with intention.'),
+        findsOneWidget,
+      );
+      expect(find.text('Assalamu Alaikum'), findsNothing);
       expect(find.text('Create Profile'), findsOneWidget);
       expect(find.text('Sign In'), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -95,9 +102,9 @@ void main() {
       'lib/core/widgets/inputs/silarah_field_frame.dart',
     ).readAsStringSync();
 
-    expect(email, contains('center: const Alignment(0, -0.65)'));
-    expect(email, contains('radius: 1.4'));
-    expect(email, contains('stops: const [0, .4, 1]'));
+    expect(email, contains('_QuietAuthCanvas'));
+    expect(email, contains('_AuthBotanicalEdgePainter'));
+    expect(email, isNot(contains('RadialGradient')));
     expect(email, contains('HapticFeedback.lightImpact()'));
     expect(email, contains('haptic: false'));
     expect(frame, contains('AppColors.champagneGold.withValues(alpha: 0.11)'));

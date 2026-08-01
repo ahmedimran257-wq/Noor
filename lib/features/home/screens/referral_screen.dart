@@ -79,7 +79,12 @@ class _ReferralScreenState extends State<ReferralScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: AppTypography.body),
+        content: Text(
+          message,
+          style: AppTypography.body.copyWith(
+            color: AppColors.readableOn(AppColors.surfaceGlassHover),
+          ),
+        ),
         backgroundColor: AppColors.surfaceGlassHover,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),

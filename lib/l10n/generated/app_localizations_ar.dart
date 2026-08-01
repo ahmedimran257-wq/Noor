@@ -2142,6 +2142,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get splash_button_signIn => 'تسجيل الدخول';
 
   @override
+  String get splash_intention_subtitle =>
+      'تعارف خاص، وتوافق مدروس، وتواصل يراعي الأسرة.';
+
+  @override
+  String get splash_intention_title => 'الزواج، بنية صادقة.';
+
+  @override
   String get splash_referral_button => 'تطبيق الكود';
 
   @override
