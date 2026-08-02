@@ -14,19 +14,18 @@ BEGIN
   ]
   LOOP
     SELECT pg_get_functiondef(v_signature) INTO v_definition;
-    v_updated := replace(
-      v_definition,
-      '''/home?tab=3''',
-      '''silarah://profile'''
-    );
-
-    IF v_updated = v_definition THEN
+    IF position('''/home?tab=3''' IN v_definition) > 0 THEN
+      v_updated := replace(
+        v_definition,
+        '''/home?tab=3''',
+        '''silarah://profile'''
+      );
+      EXECUTE v_updated;
+    ELSIF position('''silarah://profile''' IN v_definition) = 0 THEN
       RAISE EXCEPTION
-        'Expected legacy profile deep link was not found in %',
+        'Neither legacy nor canonical profile deep link was found in %',
         v_signature;
     END IF;
-
-    EXECUTE v_updated;
   END LOOP;
 END;
 $$;

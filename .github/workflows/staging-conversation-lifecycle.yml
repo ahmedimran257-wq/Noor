@@ -2,6 +2,9 @@ name: Staging conversation lifecycle
 
 on:
   workflow_dispatch:
+  schedule:
+    # Weekly staging proof keeps cost negligible while detecting backend drift.
+    - cron: "17 3 * * 1"
 
 concurrency:
   group: staging-conversation-lifecycle
@@ -25,8 +28,4 @@ jobs:
           STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
           STAGING_PROJECT_REF: ${{ secrets.STAGING_PROJECT_REF }}
           PRODUCTION_PROJECT_REF: ${{ secrets.PRODUCTION_PROJECT_REF }}
-          STAGING_FEMALE_EMAIL: ${{ secrets.STAGING_FEMALE_EMAIL }}
-          STAGING_FEMALE_PASSWORD: ${{ secrets.STAGING_FEMALE_PASSWORD }}
-          STAGING_MALE_EMAIL: ${{ secrets.STAGING_MALE_EMAIL }}
-          STAGING_MALE_PASSWORD: ${{ secrets.STAGING_MALE_PASSWORD }}
         run: node tool/staging_conversation_lifecycle.mjs

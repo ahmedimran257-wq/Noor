@@ -243,9 +243,18 @@ ORDER BY proname;
 
 Before major backend changes:
 
-```bash
-npx supabase db dump --schema public --file backups/schema_YYYYMMDD.sql
-npx supabase db dump --data-only --schema public --file backups/data_YYYYMMDD.sql
+```powershell
+.\tool\backup_supabase.ps1 -ProjectRef <production-project-ref>
 ```
 
-Restore drills should use a temporary Supabase project, never production.
+This writes a custom-format public database archive, readable schema/data
+exports, and a SHA-256 manifest to the Git-ignored `supabase/backups/`
+directory. Register the weekly local job with:
+
+```powershell
+.\tool\register_supabase_backup_task.ps1 -ProjectRef <production-project-ref>
+```
+
+Storage objects and Supabase-managed schemas require separate backup
+procedures. Restore drills should use a temporary Supabase project, never
+production.

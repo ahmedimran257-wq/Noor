@@ -18,6 +18,9 @@ node_modules/
 !.env.example
 config/*.json
 !config/*.example.json
+# Production database backups contain private member data. Keep them local and
+# encrypted/off-repository; only the backup tooling and manifests are tracked.
+/supabase/backups/
 opencode.json
 
 # IntelliJ related

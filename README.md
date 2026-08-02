@@ -337,18 +337,28 @@ Before releasing:
 
 Minimum production backup posture:
 
-- Enable Supabase PITR or scheduled daily backups for production.
-- Export schema before major migrations:
+- Keep a checksummed logical backup before every production migration:
 
-```bash
-npx supabase db dump --schema public --file backups/schema_YYYYMMDD.sql
+```powershell
+.\tool\backup_supabase.ps1 -ProjectRef <production-project-ref>
 ```
 
-- Export critical reference data separately:
+- Register the same command as a weekly local task (Sunday 03:00 by default):
 
-```bash
-npx supabase db dump --data-only --schema public --file backups/data_YYYYMMDD.sql
+```powershell
+.\tool\register_supabase_backup_task.ps1 -ProjectRef <production-project-ref>
 ```
+
+The backup command creates `public.dump`, `public_schema.sql`,
+`public_data.sql`, and a SHA-256 `manifest.json` under the Git-ignored
+`supabase/backups/` directory. The custom archive is the primary restore
+artifact. PostgreSQL 17 client tools are required; pass `-PgDumpPath` when
+they are not installed in the default local tools directory.
+
+- Enable managed Supabase daily backups/PITR before the production risk or
+  recovery objective requires it; local logical backups are supplemental.
+- Supabase-managed `auth`/`storage` schemas and Storage object files are not
+  included in the public-schema logical dump.
 
 - Keep storage backup procedures for private buckets:
   - `profile-photos`
