@@ -60,6 +60,46 @@ class _ChatListScreenState extends State<ChatListScreen>
     unawaited(context.read<ChatCubit>().refreshIfChanged());
   }
 
+  Future<void> _confirmDeleteConversation(Conversation conversation) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.surfaceElevated,
+        title: Text('Delete this chat?', style: AppTypography.bodyMedium),
+        content: Text(
+          'This removes the conversation only from your inbox. The other person keeps their copy, and safety records are retained.',
+          style: AppTypography.bodyMuted,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(
+              'Delete chat',
+              style: AppTypography.button.copyWith(color: AppColors.softCoral),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final hidden =
+        await context.read<ChatCubit>().hideConversation(conversation.id);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(
+        content: Text(hidden
+            ? 'Chat removed from your inbox.'
+            : 'Unable to delete this chat. Please try again.'),
+        behavior: SnackBarBehavior.floating,
+      ));
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
@@ -229,6 +269,9 @@ class _ChatListScreenState extends State<ChatListScreen>
                           delay: Duration(milliseconds: (i.clamp(0, 5)) * 45),
                           child: _ConversationTile(
                             conversation: conv,
+                            onDelete: conv.isMatchClosed
+                                ? () => _confirmDeleteConversation(conv)
+                                : null,
                             onTap: () async {
                               final navigator = Navigator.of(context);
                               final chatCubit = context.read<ChatCubit>();
@@ -351,9 +394,11 @@ class _ConversationTile extends StatelessWidget {
   const _ConversationTile({
     required this.conversation,
     required this.onTap,
+    this.onDelete,
   });
   final Conversation conversation;
   final VoidCallback onTap;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -491,6 +536,44 @@ class _ConversationTile extends StatelessWidget {
                                 style:
                                     AppTypography.badge.copyWith(fontSize: 11),
                               ),
+                            ),
+                          )
+                        else if (onDelete != null)
+                          SizedBox(
+                            width: 28,
+                            height: 22,
+                            child: PopupMenuButton<String>(
+                              padding: EdgeInsets.zero,
+                              tooltip: 'Chat options',
+                              color: AppColors.surfaceElevated,
+                              icon: Icon(
+                                Icons.more_horiz_rounded,
+                                color: AppColors.slateMist,
+                                size: 20,
+                              ),
+                              itemBuilder: (_) => [
+                                PopupMenuItem<String>(
+                                  value: 'delete',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.delete_outline_rounded,
+                                        color: AppColors.softCoral,
+                                        size: 18,
+                                      ),
+                                      const SizedBox(
+                                          width: AppDimensions.space8),
+                                      Text(
+                                        'Delete chat',
+                                        style: AppTypography.body.copyWith(
+                                          color: AppColors.softCoral,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                              onSelected: (_) => onDelete?.call(),
                             ),
                           )
                         else

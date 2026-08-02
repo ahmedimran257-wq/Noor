@@ -357,6 +357,9 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
                     cardScale: 1,
                     isBookmarked: _bookmarked.contains(p.id),
                     isInterestSent: _sentInterests.contains(p.id),
+                    previousMatchLabel: p.previousMatchAt == null
+                        ? null
+                        : 'Previously matched on ${MaterialLocalizations.of(context).formatMediumDate(p.previousMatchAt!.toLocal())}',
                     onTap: () => _openProfile(index, fp),
                     onSendInterest: _sentInterests.contains(p.id)
                         ? null

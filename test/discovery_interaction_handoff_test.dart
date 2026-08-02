@@ -12,7 +12,9 @@ void main() {
     age: 28,
     cityName: 'Kurnool',
   );
-  final now = DateTime.utc(2026, 7, 19);
+  // Keep pending fixtures relative to the test clock so this contract does not
+  // start failing once a hard-coded date crosses the 14-day expiry boundary.
+  final now = DateTime.now().toUtc();
 
   InterestEntry entry(InterestStatus status) => InterestEntry(
         id: '00000000-0000-0000-0000-000000000003',

@@ -39,6 +39,7 @@ class SilarahProfileCard extends StatelessWidget {
     this.isBookmarked = false,
     this.isInterestSent = false,
     this.lastActiveLabel,
+    this.previousMatchLabel,
     this.cardScale = 1.0,
     this.blurhash,
   });
@@ -60,6 +61,7 @@ class SilarahProfileCard extends StatelessWidget {
   final bool isBookmarked;
   final bool isInterestSent;
   final String? lastActiveLabel;
+  final String? previousMatchLabel;
   final double cardScale; // Continuous scale driven by scroll offset
   final String? blurhash;
 
@@ -168,6 +170,31 @@ class SilarahProfileCard extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
+
+                              if (previousMatchLabel != null) ...[
+                                const SizedBox(height: AppDimensions.space6),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.history_rounded,
+                                      size: 14,
+                                      color: AppColors.champagneGold,
+                                    ),
+                                    const SizedBox(width: AppDimensions.space6),
+                                    Expanded(
+                                      child: Text(
+                                        previousMatchLabel!,
+                                        style: AppTypography.caption.copyWith(
+                                          color: AppColors.champagneLight,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
 
                               // Profession line
                               if (profession != null) ...[

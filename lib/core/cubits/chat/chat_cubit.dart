@@ -471,6 +471,32 @@ class ChatCubit extends Cubit<ChatState> {
     }
   }
 
+  /// Removes a finished conversation from this member's inbox only. The
+  /// server retains the other participant's copy and moderation evidence.
+  Future<bool> hideConversation(String conversationId) async {
+    if (!_isRealMode) return false;
+    final conv = _findConversation(conversationId);
+    if (conv == null || !conv.isMatchClosed) return false;
+
+    try {
+      final hidden = await SupabaseService.client.rpc(
+        'hide_chat_conversation',
+        params: {'p_match_id': conversationId},
+      );
+      if (hidden != true || isClosed) return false;
+      emit(state.copyWith(
+        conversations: state.conversations
+            .where((item) => item.id != conversationId)
+            .toList(growable: false),
+      ));
+      if (_activeConversationId == conversationId) _disposeRealtime();
+      return true;
+    } catch (error) {
+      debugPrint('ChatCubit: Error hiding conversation: $error');
+      return false;
+    }
+  }
+
   void toggleTimestamp(String conversationId, String messageId) {
     final updated = state.conversations.map((c) {
       if (c.id != conversationId) return c;

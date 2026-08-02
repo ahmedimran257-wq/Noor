@@ -88,7 +88,16 @@ DiscoveryProfile mapDbRowToDiscoveryProfile(Map<String, dynamic> row) {
     countryCode: row['country_code'] as String?,
     lastName: _optionalText(row, 'last_name'),
     blurhash: row['blurhash'] as String?,
+    previousMatchAt: _optionalDateTime(row, 'previous_match_at'),
+    previousMatchEndedAt: _optionalDateTime(row, 'previous_match_ended_at'),
+    priorMatchCount: (row['prior_match_count'] as num?)?.toInt() ?? 0,
   );
+}
+
+DateTime? _optionalDateTime(Map<String, dynamic> row, String key) {
+  final value = row[key];
+  if (value is DateTime) return value;
+  return value == null ? null : DateTime.tryParse(value.toString());
 }
 
 String _requiredText(Map<String, dynamic> row, String key) {

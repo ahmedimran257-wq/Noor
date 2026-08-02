@@ -322,6 +322,49 @@ class _ChatScreenState extends State<ChatScreen>
     );
   }
 
+  Future<void> _showDeleteChatDialog() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.surfaceElevated,
+        title: Text('Delete this chat?', style: AppTypography.bodyMedium),
+        content: Text(
+          'This removes the conversation only from your inbox. The other person keeps their copy, and safety records are retained.',
+          style: AppTypography.bodyMuted,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(
+              'Delete chat',
+              style: AppTypography.button.copyWith(color: AppColors.softCoral),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final hidden =
+        await context.read<ChatCubit>().hideConversation(widget.conversationId);
+    if (!mounted) return;
+    if (hidden) navigator.pop();
+    messenger
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(
+        content: Text(hidden
+            ? 'Chat removed from your inbox.'
+            : 'Unable to delete this chat. Please try again.'),
+        behavior: SnackBarBehavior.floating,
+      ));
+  }
+
   void _showReportSheet(BuildContext context, ChatMessage message) {
     if (message.isMe) return;
     HapticFeedback.mediumImpact();
@@ -430,6 +473,7 @@ class _ChatScreenState extends State<ChatScreen>
             onOpenProfile: () => _openMatchProfile(conv),
             onEndMatch: () => _showEndMatchSheet(context),
             onBlock: () => _showBlockDialog(context, conv.matchName),
+            onDelete: _showDeleteChatDialog,
           ),
           body: SafeArea(
             top: false,
@@ -1040,6 +1084,7 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.onOpenProfile,
     required this.onEndMatch,
     required this.onBlock,
+    required this.onDelete,
   });
   final String displayName;
   final String firstName;
@@ -1049,6 +1094,7 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onOpenProfile;
   final VoidCallback onEndMatch;
   final VoidCallback onBlock;
+  final VoidCallback onDelete;
 
   @override
   Size get preferredSize => const Size.fromHeight(64);
@@ -1166,26 +1212,37 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
             ),
           ),
         ),
-        if (!isClosed)
-          PopupMenuButton<String>(
-            icon: Container(
-              margin: const EdgeInsets.all(AppDimensions.space8),
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                  color: AppColors.surfaceGlass,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.cardBorder)),
-              child: Icon(Icons.more_vert_rounded,
-                  color: AppColors.slateMist,
-                  size: AppDimensions.iconSizeMedium),
-            ),
-            color: AppColors.surfaceElevated,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-              side: BorderSide(color: AppColors.cardBorder),
-            ),
-            itemBuilder: (_) => [
+        PopupMenuButton<String>(
+          icon: Container(
+            margin: const EdgeInsets.all(AppDimensions.space8),
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+                color: AppColors.surfaceGlass,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.cardBorder)),
+            child: Icon(Icons.more_vert_rounded,
+                color: AppColors.slateMist, size: AppDimensions.iconSizeMedium),
+          ),
+          color: AppColors.surfaceElevated,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+            side: BorderSide(color: AppColors.cardBorder),
+          ),
+          itemBuilder: (_) => [
+            if (isClosed)
+              PopupMenuItem<String>(
+                value: 'delete',
+                child: Row(children: [
+                  Icon(Icons.delete_outline_rounded,
+                      color: AppColors.softCoral, size: 18),
+                  const SizedBox(width: AppDimensions.space8),
+                  Text('Delete chat',
+                      style: AppTypography.body
+                          .copyWith(color: AppColors.softCoral)),
+                ]),
+              )
+            else ...[
               PopupMenuItem<String>(
                 value: 'block',
                 child: Row(children: [
@@ -1209,13 +1266,13 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ]),
               ),
             ],
-            onSelected: (v) {
-              if (v == 'block') onBlock();
-              if (v == 'end') onEndMatch();
-            },
-          )
-        else
-          const SizedBox(width: 48),
+          ],
+          onSelected: (v) {
+            if (v == 'block') onBlock();
+            if (v == 'end') onEndMatch();
+            if (v == 'delete') onDelete();
+          },
+        )
       ]),
     );
   }

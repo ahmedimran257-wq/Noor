@@ -60,6 +60,9 @@ class DiscoveryProfile {
     this.incomeBracket,
     this.familyOriginCity,
     this.blurhash,
+    this.previousMatchAt,
+    this.previousMatchEndedAt,
+    this.priorMatchCount = 0,
   }) : _id = id;
 
   final String? _id;
@@ -133,6 +136,11 @@ class DiscoveryProfile {
   final String? incomeBracket;
   final String? familyOriginCity;
   final String? blurhash;
+  final DateTime? previousMatchAt;
+  final DateTime? previousMatchEndedAt;
+  final int priorMatchCount;
+
+  bool get isRematchCandidate => previousMatchAt != null && priorMatchCount > 0;
 
   /// Public profile name supplied by the server. During the rollout the
   /// legacy surname transport field can contain either an initial (older
@@ -206,6 +214,9 @@ class DiscoveryProfile {
     String? incomeBracket,
     String? familyOriginCity,
     String? blurhash,
+    DateTime? previousMatchAt,
+    DateTime? previousMatchEndedAt,
+    int? priorMatchCount,
     bool clearPhotoUrl = false,
   }) {
     return DiscoveryProfile(
@@ -257,6 +268,9 @@ class DiscoveryProfile {
       incomeBracket: incomeBracket ?? this.incomeBracket,
       familyOriginCity: familyOriginCity ?? this.familyOriginCity,
       blurhash: blurhash ?? this.blurhash,
+      previousMatchAt: previousMatchAt ?? this.previousMatchAt,
+      previousMatchEndedAt: previousMatchEndedAt ?? this.previousMatchEndedAt,
+      priorMatchCount: priorMatchCount ?? this.priorMatchCount,
     );
   }
 

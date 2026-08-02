@@ -617,6 +617,8 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       _updateBackendCursor(rows);
       await _attachCompatibilityPreferences(rows);
       if (!_isCurrentRequest(requestVersion)) return const [];
+      await _attachPriorMatchContext(rows);
+      if (!_isCurrentRequest(requestVersion)) return const [];
       final profiles = await compute(parseProfilesInBackground, rows);
       if (!_isCurrentRequest(requestVersion)) return const [];
       return _signPhotoUrls(profiles);
@@ -701,6 +703,36 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     for (final row in rows) {
       final preferences = preferencesByProfile[row['profile_id']];
       if (preferences != null) row.addAll(preferences);
+    }
+  }
+
+  /// Adds one bounded history projection for the candidates already returned
+  /// in this page. This avoids an N+1 query and lets a rematch candidate be
+  /// presented honestly without exposing blocked or reported relationships.
+  Future<void> _attachPriorMatchContext(
+    List<Map<String, dynamic>> rows,
+  ) async {
+    if (rows.isEmpty) return;
+    final candidateIds = rows
+        .map((row) => row['user_id']?.toString())
+        .whereType<String>()
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
+    if (candidateIds.isEmpty) return;
+
+    final response = await SupabaseService.client.rpc(
+      'get_prior_match_context',
+      params: {'p_candidate_user_ids': candidateIds},
+    );
+    final contextByUser = <String, Map<String, dynamic>>{
+      for (final raw in response as List<dynamic>)
+        if ((raw as Map)['candidate_user_id'] != null)
+          raw['candidate_user_id'].toString(): Map<String, dynamic>.from(raw),
+    };
+    for (final row in rows) {
+      final prior = contextByUser[row['user_id']?.toString()];
+      if (prior != null) row.addAll(prior);
     }
   }
 

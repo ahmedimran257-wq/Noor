@@ -1573,6 +1573,30 @@ class _NameBlock extends StatelessWidget {
           ].join(' · '),
           style: AppTypography.body.copyWith(color: AppColors.slateMist),
         ),
+        if (profile.previousMatchAt != null) ...[
+          const SizedBox(height: AppDimensions.space10),
+          Row(
+            children: [
+              Icon(
+                Icons.history_rounded,
+                color: AppColors.champagneGold,
+                size: 17,
+              ),
+              const SizedBox(width: AppDimensions.space8),
+              Expanded(
+                child: Text(
+                  profile.priorMatchCount > 1
+                      ? 'Previously matched ${profile.priorMatchCount} times · most recently ${MaterialLocalizations.of(context).formatMediumDate(profile.previousMatchAt!.toLocal())}'
+                      : 'Previously matched on ${MaterialLocalizations.of(context).formatMediumDate(profile.previousMatchAt!.toLocal())}',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.champagneLight,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }

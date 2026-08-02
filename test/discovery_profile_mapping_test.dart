@@ -11,6 +11,9 @@ void main() {
       'age': 27,
       'city_name': 'Hyderabad',
       'is_verified': true,
+      'previous_match_at': '2026-07-12T10:30:00Z',
+      'previous_match_ended_at': '2026-07-20T08:00:00Z',
+      'prior_match_count': 2,
     });
 
     expect(profile.id, '8d5c0b0d-6b84-45b6-9c6f-1ac3a7757f2d');
@@ -22,6 +25,10 @@ void main() {
     expect(profile.deenLevel, isNull);
     expect(profile.occupation, isNull);
     expect(profile.education, isNull);
+    expect(profile.previousMatchAt, DateTime.utc(2026, 7, 12, 10, 30));
+    expect(profile.previousMatchEndedAt, DateTime.utc(2026, 7, 20, 8));
+    expect(profile.priorMatchCount, 2);
+    expect(profile.isRematchCandidate, isTrue);
   });
 
   test('rejects discovery rows missing real user identity', () {
