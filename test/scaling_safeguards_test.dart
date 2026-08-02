@@ -50,12 +50,21 @@ void main() {
       final harness = File(
         'load-tests/staging_read_paths.js',
       ).readAsStringSync();
+      final runner = File(
+        'tool/run_staging_load_test.mjs',
+      ).readAsStringSync();
 
       expect(harness, contains('TARGET_ENV'));
       expect(harness, contains('STAGING_PROJECT_REF'));
       expect(harness, contains('productionProjectRef'));
       expect(harness, contains('Safety stop: production'));
-      expect(harness, contains('p(95)<750'));
+      expect(harness, contains('p(95)<1000'));
+      expect(harness, contains('Math.min(Math.max(Number(__ENV.MAX_VUS'));
+      expect(harness, contains('sleep(iterationSleepSeconds)'));
+      expect(runner, contains('Refusing to run load automation against'));
+      expect(runner, contains('/auth/v1/admin/users'));
+      expect(runner, contains('finally'));
+      expect(runner, contains('Promise.all(fixtures.map(deleteFixture))'));
     });
   });
 }

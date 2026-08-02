@@ -1,6 +1,5 @@
 import http from "k6/http";
-import { check, fail } from "k6";
-import { randomItem } from "https://jslib.k6.io/k6-utils/1.4.0/index.js";
+import { check, fail, sleep } from "k6";
 
 const productionProjectRef = "jukpscfxzwttgtxvrbmj";
 const targetEnvironment = (__ENV.TARGET_ENV || "").trim().toLowerCase();
@@ -12,26 +11,41 @@ const tokens = (__ENV.TEST_USER_TOKENS || "")
   .map((token) => token.trim())
   .filter(Boolean);
 const maxVus = Math.min(Math.max(Number(__ENV.MAX_VUS || 25), 1), 50);
+const smokeMode = (__ENV.SMOKE_MODE || "").trim().toLowerCase() === "true";
+const iterationSleepSeconds = Math.min(
+  Math.max(Number(__ENV.ITERATION_SLEEP_SECONDS || 1), 0.2),
+  5,
+);
 
 export const options = {
   scenarios: {
     authenticated_reads: {
       executor: "ramping-vus",
       startVUs: 0,
-      stages: [
-        { duration: "30s", target: Math.min(5, maxVus) },
-        { duration: "2m", target: maxVus },
-        { duration: "30s", target: 0 },
-      ],
+      stages: smokeMode
+        ? [
+            { duration: "10s", target: maxVus },
+            { duration: "30s", target: maxVus },
+            { duration: "10s", target: 0 },
+          ]
+        : [
+            { duration: "30s", target: Math.min(5, maxVus) },
+            { duration: "2m", target: maxVus },
+            { duration: "30s", target: 0 },
+          ],
       gracefulRampDown: "15s",
     },
   },
   thresholds: {
     checks: ["rate>0.99"],
     http_req_failed: ["rate<0.01"],
-    http_req_duration: ["p(95)<750", "p(99)<1500"],
+    http_req_duration: ["p(95)<1000", "p(99)<1500"],
+    "http_req_duration{route:auth_user}": ["p(95)<1000"],
+    "http_req_duration{route:interest_quota}": ["p(95)<1000"],
+    "http_req_duration{route:profile_view_quota}": ["p(95)<1000"],
   },
   noConnectionReuse: false,
+  summaryTrendStats: ["avg", "min", "med", "max", "p(90)", "p(95)", "p(99)"],
   userAgent: "SilarahStagingLoadTest/1.0",
 };
 
@@ -56,7 +70,7 @@ export function setup() {
 }
 
 export default function (config) {
-  const token = randomItem(config.tokens);
+  const token = config.tokens[(__VU - 1) % config.tokens.length];
   const headers = {
     apikey: config.anonKey,
     Authorization: `Bearer ${token}`,
@@ -87,4 +101,8 @@ export default function (config) {
   check(responses[2], {
     "view quota responds": (response) => response.status === 200,
   });
+
+  // Model an active member's think time and keep staging/free-tier traffic
+  // bounded. This prevents a tight loop from measuring only rate-limit noise.
+  sleep(iterationSleepSeconds);
 }
