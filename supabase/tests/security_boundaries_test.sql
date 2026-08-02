@@ -44,7 +44,11 @@ select extensions.ok(
   'authenticated members can use checked block RPCs'
 );
 select extensions.ok(
-  has_function_privilege('authenticated', 'public.get_my_discovery_revision()', 'EXECUTE')
+  has_function_privilege(
+    'authenticated',
+    'public.get_my_discovery_revision(jsonb)',
+    'EXECUTE'
+  )
   and not has_table_privilege('authenticated', 'private.discovery_catalog_revision', 'SELECT'),
   'members can read only their compact discovery revision projection'
 );

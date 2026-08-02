@@ -46,6 +46,22 @@ void main() {
       expect(vaultFallback, isNot(contains('jukpscfxzwttgtxvrbmj')));
     });
 
+    test('database security suite follows the current discovery revision RPC',
+        () {
+      final databaseTests = File(
+        'supabase/tests/security_boundaries_test.sql',
+      ).readAsStringSync();
+
+      expect(
+        databaseTests,
+        contains('public.get_my_discovery_revision(jsonb)'),
+      );
+      expect(
+        databaseTests,
+        isNot(contains("'public.get_my_discovery_revision()'")),
+      );
+    });
+
     test('load tests cannot target the production project', () {
       final harness = File(
         'load-tests/staging_read_paths.js',
