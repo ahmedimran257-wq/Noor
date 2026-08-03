@@ -83,8 +83,6 @@ class _ProfileRouteScreenState extends State<ProfileRouteScreen> {
       return ProfileDetailScreen(
         profile: profile,
         heroTag: 'linked-profile-${profile.id}',
-        isInterestSent: false,
-        onInterestSent: () {},
         isMutualMatch: _isMutual,
       );
     }

@@ -48,8 +48,6 @@ class ProfileDetailScreen extends StatefulWidget {
     super.key,
     required this.profile,
     required this.heroTag,
-    required this.isInterestSent,
-    required this.onInterestSent,
     this.isMutualMatch = false,
     this.isOwnProfile = false,
     this.onEditOwnProfile,
@@ -58,8 +56,6 @@ class ProfileDetailScreen extends StatefulWidget {
 
   final DiscoveryProfile profile;
   final String heroTag;
-  final bool isInterestSent;
-  final VoidCallback onInterestSent;
   final bool isMutualMatch;
   final bool isOwnProfile;
   final VoidCallback? onEditOwnProfile;
@@ -70,7 +66,6 @@ class ProfileDetailScreen extends StatefulWidget {
 }
 
 class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
-  late bool _interestSent;
   bool _bookmarked = false;
   bool _bookmarkUpdating = false;
   int _photoPage = 0;
@@ -101,7 +96,6 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _interestSent = widget.isInterestSent;
     _photoController = PageController();
     _photoUrls = _initialPhotoUrls(widget.profile);
     if (!widget.isOwnProfile) {
@@ -302,8 +296,6 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
           note: note.isNotEmpty ? note : null,
         );
     if (!mounted || !sent) return;
-    setState(() => _interestSent = true);
-    widget.onInterestSent();
     HapticFeedback.mediumImpact();
     await showInterestCeremony(context, firstName: widget.profile.firstName);
   }
@@ -433,8 +425,6 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     );
     if (widget.isMutualMatch) {
       interaction = ProfileInteractionState.matched;
-    } else if (interaction == ProfileInteractionState.none && _interestSent) {
-      interaction = ProfileInteractionState.pendingSent;
     }
 
     return Scaffold(

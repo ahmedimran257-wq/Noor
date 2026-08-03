@@ -273,7 +273,10 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     try {
       final response = await SupabaseService.client.rpc(
         'record_profile_view',
-        params: {'p_viewed_user_id': viewedUserId},
+        params: {
+          'p_viewed_user_id': viewedUserId,
+          'p_notify_owner': false,
+        },
       );
       final rows = response as List<dynamic>;
       final row = rows.isNotEmpty

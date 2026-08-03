@@ -4,8 +4,10 @@ import 'supabase_service.dart';
 
 /// Server-authoritative profile-view analytics.
 ///
-/// Recording is idempotent per viewer/profile/day in Postgres. The free tier
-/// can read its aggregate weekly count; viewer identities remain Premium-only.
+/// Recording is idempotent per viewer/profile/day in Postgres. A detail-page
+/// view can also enqueue a generic, throttled owner notification. The free
+/// tier can read its aggregate weekly count; viewer identities remain
+/// Premium-only.
 class ProfileViewService {
   ProfileViewService._();
 
@@ -18,7 +20,10 @@ class ProfileViewService {
     try {
       await SupabaseService.client.rpc(
         'record_profile_view',
-        params: {'p_viewed_user_id': viewedUserId},
+        params: {
+          'p_viewed_user_id': viewedUserId,
+          'p_notify_owner': true,
+        },
       );
     } catch (error) {
       debugPrint('[ProfileViewService] record failed: $error');

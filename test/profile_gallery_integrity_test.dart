@@ -87,8 +87,6 @@ void main() {
           home: ProfileDetailScreen(
             profile: profile,
             heroTag: 'gallery-test',
-            isInterestSent: false,
-            onInterestSent: _noop,
             isOwnProfile: true,
           ),
         ),
@@ -106,5 +104,3 @@ void main() {
     expect(find.byIcon(Icons.chevron_left_rounded), findsOneWidget);
   });
 }
-
-void _noop() {}

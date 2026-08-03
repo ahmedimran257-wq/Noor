@@ -82,6 +82,11 @@ void main() {
           .interactionWith(profile.id),
       ProfileInteractionState.none,
     );
+    expect(
+      InterestsState(sent: [entry(InterestStatus.withdrawn)])
+          .interactionWith(profile.id),
+      ProfileInteractionState.none,
+    );
   });
 
   test('chat, bookmarks, and interest surfaces keep launch-safe contracts', () {
@@ -122,6 +127,8 @@ void main() {
     expect(screen, isNot(contains('discovery_handoff_match_title')));
     expect(screen, contains("'Refresh Profiles'"));
     expect(screen, contains('loadInitial(force: true)'));
+    expect(screen, isNot(contains('_sentInterests')));
+    expect(screen, contains('pendingSentUserIds'));
     expect(home, contains('case 0:'));
     expect(home, contains('refreshIfChanged()'));
     expect(home, contains('AppLifecycleState.resumed'));

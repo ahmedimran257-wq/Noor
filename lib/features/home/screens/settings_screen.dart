@@ -198,6 +198,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               _Divider(),
               _ToggleTile(
+                icon: Icons.visibility_outlined,
+                label: 'Profile views',
+                caption: 'A private alert when someone opens your profile',
+                value: prefs.profileView,
+                onChanged: (v) =>
+                    context.read<NotificationPrefsCubit>().toggleProfileView(v),
+              ),
+              _Divider(),
+              _ToggleTile(
                 icon: Icons.public_rounded,
                 label: 'Profile goes live',
                 caption: 'Confirmation when your profile becomes visible',

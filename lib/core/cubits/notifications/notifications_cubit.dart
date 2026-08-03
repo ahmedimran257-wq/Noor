@@ -274,6 +274,8 @@ class NotificationsCubit extends Cubit<NotificationsState> {
         return ('Interest accepted', 'You can now start a conversation.');
       case 'new_message':
         return ('New message', 'You have a new message.');
+      case 'profile_view':
+        return ('New profile activity', 'Someone viewed your profile.');
       case 'boost_ready':
         return ('Boost ready', 'Your profile boost is ready to use.');
       default:
@@ -391,6 +393,8 @@ String? notificationPathFor(NotificationItem item) {
       return '/notifications';
     case 'profile_live':
       return '/home?tab=3';
+    case 'profile_view':
+      return '/profile-views';
     case 'photo_access_request':
       return '/photo-requests';
     case 'photo_access_granted':

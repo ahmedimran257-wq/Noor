@@ -16,6 +16,7 @@ class NotificationPrefsState extends Equatable {
   final bool newInterest;
   final bool interestAccepted;
   final bool newMessage;
+  final bool profileView;
   final bool profileLive;
   final bool interestExpiring;
   final bool inactiveNudge;
@@ -29,6 +30,7 @@ class NotificationPrefsState extends Equatable {
     this.newInterest = true,
     this.interestAccepted = true,
     this.newMessage = true,
+    this.profileView = true,
     this.profileLive = true,
     this.interestExpiring = true,
     this.inactiveNudge = true,
@@ -41,6 +43,7 @@ class NotificationPrefsState extends Equatable {
     bool? newInterest,
     bool? interestAccepted,
     bool? newMessage,
+    bool? profileView,
     bool? profileLive,
     bool? interestExpiring,
     bool? inactiveNudge,
@@ -52,6 +55,7 @@ class NotificationPrefsState extends Equatable {
       newInterest: newInterest ?? this.newInterest,
       interestAccepted: interestAccepted ?? this.interestAccepted,
       newMessage: newMessage ?? this.newMessage,
+      profileView: profileView ?? this.profileView,
       profileLive: profileLive ?? this.profileLive,
       interestExpiring: interestExpiring ?? this.interestExpiring,
       inactiveNudge: inactiveNudge ?? this.inactiveNudge,
@@ -66,6 +70,7 @@ class NotificationPrefsState extends Equatable {
         newInterest,
         interestAccepted,
         newMessage,
+        profileView,
         profileLive,
         interestExpiring,
         inactiveNudge,

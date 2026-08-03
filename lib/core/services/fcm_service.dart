@@ -350,6 +350,8 @@ class FcmService {
       path = '/home?tab=1';
     } else if (type == 'profile_live') {
       path = '/home?tab=3';
+    } else if (type == 'profile_view') {
+      path = '/profile-views';
     } else if (type == 'photo_access_request') {
       path = '/photo-requests';
     } else if (type == 'photo_access_granted') {

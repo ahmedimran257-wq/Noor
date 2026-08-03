@@ -244,6 +244,31 @@ try {
   const femaleToken = femaleSession.access_token;
   const maleToken = maleSession.access_token;
 
+  // Token registration must remain self-healing when a member reinstalls the
+  // app repeatedly. The sixth device evicts the oldest instead of preventing
+  // the current device from receiving pushes.
+  for (let index = 0; index < 6; index += 1) {
+    await request("/rest/v1/rpc/register_my_fcm_token", {
+      token: maleToken,
+      method: "POST",
+      body: {
+        p_device_id: `staging-device-${index}`,
+        p_fcm_token: `staging-token-${runId}-${index}`,
+        p_platform: "android",
+      },
+    });
+  }
+  const retainedTokens = await request(
+    `/rest/v1/user_fcm_tokens?user_id=eq.${maleId}&select=device_id`,
+    { apiKey: service },
+  );
+  assert(
+    retainedTokens.length === 5 &&
+      retainedTokens.some((row) => row.device_id === "staging-device-5"),
+    "FCM registration did not retain the current five devices",
+  );
+  console.log("PASS: FCM device registration self-heals at five devices");
+
   // The repaired SECURITY INVOKER views preserve self-only and guardian-only
   // projections without granting direct SELECT on public.profiles.
   const femalePrivate = await request(
@@ -276,16 +301,48 @@ try {
   });
   console.log("PASS: private profile and guardian projection boundaries");
 
+  await request("/rest/v1/rpc/record_profile_view", {
+    token: maleToken,
+    method: "POST",
+    body: { p_viewed_user_id: femaleId, p_notify_owner: true },
+  });
+  const profileViewNotifications = await request(
+    `/rest/v1/notifications?user_id=eq.${femaleId}&type=eq.profile_view&select=type,deep_link`,
+    { apiKey: service },
+  );
+  assert(
+    profileViewNotifications.length === 1 &&
+      profileViewNotifications[0].deep_link === "silarah://profile-views",
+    "Profile detail view did not create a privacy-safe notification",
+  );
+  console.log("PASS: profile detail view creates a throttled generic alert");
+
   const interestId = await request("/rest/v1/rpc/send_interest", {
     token: maleToken,
     method: "POST",
     body: { p_receiver_id: femaleId, p_note: "Staging lifecycle" },
   });
+  const receivedNotifications = await request(
+    `/rest/v1/notifications?user_id=eq.${femaleId}&type=eq.interest_received&select=type`,
+    { apiKey: service },
+  );
+  assert(
+    receivedNotifications.length === 1,
+    "Interest send did not create a receiver notification",
+  );
   await request("/rest/v1/rpc/respond_to_interest", {
     token: femaleToken,
     method: "POST",
     body: { p_interest_id: interestId, p_decision: "accepted" },
   });
+  const acceptedNotifications = await request(
+    `/rest/v1/notifications?user_id=eq.${maleId}&type=eq.interest_accepted&select=type`,
+    { apiKey: service },
+  );
+  assert(
+    acceptedNotifications.length === 1,
+    "Interest acceptance did not create a sender notification",
+  );
 
   let pairMatches = await request(
     `/rest/v1/matches?select=id,status,created_at,closed_at&or=(and(user_a.eq.${femaleId},user_b.eq.${maleId}),and(user_a.eq.${maleId},user_b.eq.${femaleId}))&order=created_at.asc`,

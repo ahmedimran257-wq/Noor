@@ -396,8 +396,6 @@ class _MyProfileScreenState extends State<MyProfileScreen>
         builder: (_) => ProfileDetailScreen(
           profile: profile,
           heroTag: 'own-profile-preview-$userId',
-          isInterestSent: false,
-          onInterestSent: () {},
           isOwnProfile: true,
           onEditOwnProfile: () {
             Navigator.of(context).pop();
@@ -2166,8 +2164,6 @@ class _SavedProfilesSection extends StatelessWidget {
                         builder: (_) => ProfileDetailScreen(
                           profile: p,
                           heroTag: 'saved-profile-${p.id}',
-                          isInterestSent: false,
-                          onInterestSent: () {},
                         ),
                       ),
                     );

@@ -38,7 +38,7 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
       final row = await SupabaseService.client
           .from('notification_prefs')
           .select(
-            'new_interest, interest_accepted, new_message, profile_live, '
+            'new_interest, interest_accepted, new_message, profile_view, profile_live, '
             'interest_expiring, inactive_nudge, boost_available, '
             'quiet_start, quiet_end',
           )
@@ -50,6 +50,7 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
           newInterest: (row['new_interest'] as bool?) ?? true,
           interestAccepted: (row['interest_accepted'] as bool?) ?? true,
           newMessage: (row['new_message'] as bool?) ?? true,
+          profileView: (row['profile_view'] as bool?) ?? true,
           profileLive: (row['profile_live'] as bool?) ?? true,
           interestExpiring: (row['interest_expiring'] as bool?) ?? true,
           inactiveNudge: (row['inactive_nudge'] as bool?) ?? true,
@@ -77,6 +78,11 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
 
   void toggleNewMessage(bool value) {
     emit(state.copyWith(newMessage: value));
+    _schedulePersist();
+  }
+
+  void toggleProfileView(bool value) {
+    emit(state.copyWith(profileView: value));
     _schedulePersist();
   }
 
@@ -152,6 +158,7 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
         'new_interest': snapshot.newInterest,
         'interest_accepted': snapshot.interestAccepted,
         'new_message': snapshot.newMessage,
+        'profile_view': snapshot.profileView,
         'profile_live': snapshot.profileLive,
         'interest_expiring': snapshot.interestExpiring,
         'inactive_nudge': snapshot.inactiveNudge,

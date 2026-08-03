@@ -22,6 +22,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/cubits/discovery/discovery_feed_cubit.dart';
 import '../../../core/cubits/discovery/discovery_feed_state.dart';
 import '../../../core/cubits/interests/interests_cubit.dart';
+import '../../../core/cubits/interests/interests_state.dart';
 import '../../../core/services/bookmark_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
@@ -51,7 +52,6 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
     with AutomaticKeepAliveClientMixin {
   late final PageController _pageCtrl;
   int _currentPage = 0;
-  final Set<String> _sentInterests = {};
   final Set<String> _recordedViewIds = {};
   // Bookmarks now use profile IDs (String) for persistence
   Set<String> _bookmarked = {};
@@ -117,7 +117,6 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
           note: note.isNotEmpty ? note : null,
         );
     if (!mounted || !sent) return;
-    setState(() => _sentInterests.add(fp.profile.id));
     HapticFeedback.mediumImpact();
     await showInterestCeremony(context, firstName: fp.profile.firstName);
     if (!mounted) return;
@@ -188,9 +187,6 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
         builder: (_) => ProfileDetailScreen(
           profile: fp.profile,
           heroTag: 'profile_card_$index',
-          isInterestSent: _sentInterests.contains(fp.profile.id),
-          onInterestSent: () =>
-              setState(() => _sentInterests.add(fp.profile.id)),
         ),
       ),
     );
@@ -212,6 +208,14 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final pendingSentUserIds = context.select<InterestsCubit, Set<String>>(
+      (cubit) => cubit.state.sent
+          .where(
+            (entry) => entry.effectiveStatus == InterestStatus.pending,
+          )
+          .map((entry) => entry.profile.id)
+          .toSet(),
+    );
     return BlocConsumer<DiscoveryFeedCubit, DiscoveryFeedState>(
       listenWhen: (previous, current) =>
           previous.activeFilter != current.activeFilter,
@@ -268,7 +272,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
               // ── Card carousel ────────────────────────────────
               SliverFillRemaining(
                 hasScrollBody: true,
-                child: _buildCarousel(feedState),
+                child: _buildCarousel(feedState, pendingSentUserIds),
               ),
             ],
           ),
@@ -277,7 +281,10 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
     );
   }
 
-  Widget _buildCarousel(DiscoveryFeedState feedState) {
+  Widget _buildCarousel(
+    DiscoveryFeedState feedState,
+    Set<String> pendingSentUserIds,
+  ) {
     // Full-screen skeleton on initial load
     if (feedState.status == FeedStatus.initial ||
         feedState.status == FeedStatus.loading) {
@@ -356,12 +363,12 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
                     isFocused: true, // Scale handled externally now
                     cardScale: 1,
                     isBookmarked: _bookmarked.contains(p.id),
-                    isInterestSent: _sentInterests.contains(p.id),
+                    isInterestSent: pendingSentUserIds.contains(p.id),
                     previousMatchLabel: p.previousMatchAt == null
                         ? null
                         : 'Previously matched on ${MaterialLocalizations.of(context).formatMediumDate(p.previousMatchAt!.toLocal())}',
                     onTap: () => _openProfile(index, fp),
-                    onSendInterest: _sentInterests.contains(p.id)
+                    onSendInterest: pendingSentUserIds.contains(p.id)
                         ? null
                         : () => _handleSendInterest(index, fp),
                     onBookmark: () => _handleBookmark(index, fp),

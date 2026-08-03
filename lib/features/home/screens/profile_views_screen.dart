@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/cubits/interests/interests_cubit.dart';
+import '../../../core/cubits/interests/interests_state.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/cubits/auth/auth_state.dart';
 import '../../../core/cubits/subscription/subscription_cubit.dart';
@@ -32,7 +33,6 @@ class ProfileViewsScreen extends StatefulWidget {
 }
 
 class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
-  final Set<String> _interestSent = {};
   List<_Viewer> _loadedViewers = [];
   bool _isLoading = false;
   bool _hasLoaded = false;
@@ -148,6 +148,7 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final interests = context.watch<InterestsCubit>().state;
     return BlocConsumer<SubscriptionCubit, SubscriptionState>(
       listenWhen: (previous, current) =>
           previous.isSubscribed != current.isSubscribed,
@@ -211,7 +212,9 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
                                   itemBuilder: (context, i) {
                                     final viewer = _loadedViewers[i];
                                     final p = viewer.profile;
-                                    final sent = _interestSent.contains(p.id);
+                                    final sent =
+                                        interests.interactionWith(p.id) !=
+                                            ProfileInteractionState.none;
                                     return _ViewerTile(
                                       displayName: p.displayName,
                                       age: p.age,
@@ -239,8 +242,6 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
                                                   );
                                                 return;
                                               }
-                                              setState(() =>
-                                                  _interestSent.add(p.id));
                                               ScaffoldMessenger.of(context)
                                                 ..clearSnackBars()
                                                 ..showSnackBar(
