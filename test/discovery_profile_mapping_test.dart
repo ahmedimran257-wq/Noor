@@ -4,6 +4,9 @@ import 'package:silarah/core/utils/silarah_compute.dart';
 
 void main() {
   test('maps real Supabase discovery rows without invented defaults', () {
+    final rematchAvailableAt = DateTime.now().toUtc().add(
+          const Duration(days: 3),
+        );
     final profile = mapDbRowToDiscoveryProfile({
       'user_id': '8d5c0b0d-6b84-45b6-9c6f-1ac3a7757f2d',
       'first_name': 'Aisha',
@@ -14,6 +17,7 @@ void main() {
       'previous_match_at': '2026-07-12T10:30:00Z',
       'previous_match_ended_at': '2026-07-20T08:00:00Z',
       'prior_match_count': 2,
+      'rematch_available_at': rematchAvailableAt.toIso8601String(),
     });
 
     expect(profile.id, '8d5c0b0d-6b84-45b6-9c6f-1ac3a7757f2d');
@@ -29,6 +33,8 @@ void main() {
     expect(profile.previousMatchEndedAt, DateTime.utc(2026, 7, 20, 8));
     expect(profile.priorMatchCount, 2);
     expect(profile.isRematchCandidate, isTrue);
+    expect(profile.isInRematchCooldown, isTrue);
+    expect(profile.rematchCooldownDaysRemaining, 3);
   });
 
   test('rejects discovery rows missing real user identity', () {

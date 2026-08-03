@@ -63,6 +63,7 @@ class DiscoveryProfile {
     this.previousMatchAt,
     this.previousMatchEndedAt,
     this.priorMatchCount = 0,
+    this.rematchAvailableAt,
   }) : _id = id;
 
   final String? _id;
@@ -139,8 +140,22 @@ class DiscoveryProfile {
   final DateTime? previousMatchAt;
   final DateTime? previousMatchEndedAt;
   final int priorMatchCount;
+  final DateTime? rematchAvailableAt;
 
   bool get isRematchCandidate => previousMatchAt != null && priorMatchCount > 0;
+
+  bool get isInRematchCooldown {
+    final availableAt = rematchAvailableAt;
+    return availableAt != null && availableAt.isAfter(DateTime.now());
+  }
+
+  int? get rematchCooldownDaysRemaining {
+    final availableAt = rematchAvailableAt;
+    if (availableAt == null) return null;
+    final seconds = availableAt.difference(DateTime.now()).inSeconds;
+    if (seconds <= 0) return null;
+    return (seconds / Duration.secondsPerDay).ceil().clamp(1, 7);
+  }
 
   /// Public profile name supplied by the server. During the rollout the
   /// legacy surname transport field can contain either an initial (older
@@ -217,6 +232,7 @@ class DiscoveryProfile {
     DateTime? previousMatchAt,
     DateTime? previousMatchEndedAt,
     int? priorMatchCount,
+    DateTime? rematchAvailableAt,
     bool clearPhotoUrl = false,
   }) {
     return DiscoveryProfile(
@@ -271,6 +287,7 @@ class DiscoveryProfile {
       previousMatchAt: previousMatchAt ?? this.previousMatchAt,
       previousMatchEndedAt: previousMatchEndedAt ?? this.previousMatchEndedAt,
       priorMatchCount: priorMatchCount ?? this.priorMatchCount,
+      rematchAvailableAt: rematchAvailableAt ?? this.rematchAvailableAt,
     );
   }
 

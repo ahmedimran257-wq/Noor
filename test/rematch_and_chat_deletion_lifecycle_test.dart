@@ -6,6 +6,9 @@ void main() {
   final migration = File(
     'supabase/migrations/182_rematch_cycles_and_private_chat_deletion.sql',
   ).readAsStringSync();
+  final visibilityMigration = File(
+    'supabase/migrations/187_visible_relationship_states_in_discovery.sql',
+  ).readAsStringSync();
 
   test('respectful closures permit a safe new match cycle after cooldown', () {
     expect(migration, contains("interval '7 days'"));
@@ -15,6 +18,24 @@ void main() {
     expect(migration, contains('get_prior_match_context'));
     expect(migration, contains('discovery_rematch_cooldown_token'));
     expect(migration, contains("RAISE EXCEPTION 'rematch_cooldown'"));
+    expect(visibilityMigration, contains("'rematch_cooldown'"));
+    expect(visibilityMigration, contains('rematch_available_at'));
+    expect(
+      visibilityMigration,
+      contains("rematch_guard.status IN ('active','blocked','reported')"),
+    );
+  });
+
+  test('pending interests and respectful cooldowns stay visible', () {
+    expect(visibilityMigration, contains("i.status = 'accepted'"));
+    expect(
+      visibilityMigration,
+      isNot(contains("i.status IN ('pending', 'accepted')")),
+    );
+    expect(visibilityMigration, contains("'pending_sent'"));
+    expect(visibilityMigration, contains("'pending_received'"));
+    expect(
+        visibilityMigration, contains("latest.ended_at + interval '7 days'"));
   });
 
   test('blocked and reported pairs can never rematch', () {
@@ -22,6 +43,8 @@ void main() {
     expect(migration, contains('FROM public.reports r'));
     expect(migration, contains("m.status IN ('blocked','reported')"));
     expect(migration, contains("RAISE EXCEPTION 'profile_unavailable'"));
+    expect(visibilityMigration, contains('FROM public.blocks b'));
+    expect(visibilityMigration, contains('FROM public.reports r'));
   });
 
   test('chat deletion is participant-private and evidence preserving', () {
@@ -65,6 +88,8 @@ void main() {
 
     expect(cubit, contains("'get_prior_match_context'"));
     expect(card, contains('previousMatchLabel'));
+    expect(card, contains('interestActionLabel'));
     expect(detail, contains('Previously matched on'));
+    expect(detail, contains('rematchCooldownDays'));
   });
 }

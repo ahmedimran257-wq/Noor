@@ -208,14 +208,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final pendingSentUserIds = context.select<InterestsCubit, Set<String>>(
-      (cubit) => cubit.state.sent
-          .where(
-            (entry) => entry.effectiveStatus == InterestStatus.pending,
-          )
-          .map((entry) => entry.profile.id)
-          .toSet(),
-    );
+    final interests = context.watch<InterestsCubit>().state;
     return BlocConsumer<DiscoveryFeedCubit, DiscoveryFeedState>(
       listenWhen: (previous, current) =>
           previous.activeFilter != current.activeFilter,
@@ -272,7 +265,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
               // ── Card carousel ────────────────────────────────
               SliverFillRemaining(
                 hasScrollBody: true,
-                child: _buildCarousel(feedState, pendingSentUserIds),
+                child: _buildCarousel(feedState, interests),
               ),
             ],
           ),
@@ -283,7 +276,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
 
   Widget _buildCarousel(
     DiscoveryFeedState feedState,
-    Set<String> pendingSentUserIds,
+    InterestsState interests,
   ) {
     // Full-screen skeleton on initial load
     if (feedState.status == FeedStatus.initial ||
@@ -338,6 +331,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
 
         final fp = profiles[index];
         final p = fp.profile;
+        final action = _profileAction(index, fp, interests);
 
         return _scaledCard(
           index,
@@ -363,14 +357,13 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
                     isFocused: true, // Scale handled externally now
                     cardScale: 1,
                     isBookmarked: _bookmarked.contains(p.id),
-                    isInterestSent: pendingSentUserIds.contains(p.id),
+                    interestActionLabel: action.label,
+                    isInterestActionEnabled: action.onTap != null,
                     previousMatchLabel: p.previousMatchAt == null
                         ? null
                         : 'Previously matched on ${MaterialLocalizations.of(context).formatMediumDate(p.previousMatchAt!.toLocal())}',
                     onTap: () => _openProfile(index, fp),
-                    onSendInterest: pendingSentUserIds.contains(p.id)
-                        ? null
-                        : () => _handleSendInterest(index, fp),
+                    onSendInterest: action.onTap,
                     onBookmark: () => _handleBookmark(index, fp),
                   ),
                 ),
@@ -409,6 +402,42 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
     );
   }
 
+  _DiscoveryProfileAction _profileAction(
+    int index,
+    FeedProfile profile,
+    InterestsState interests,
+  ) {
+    final interaction = interests.interactionWith(profile.profile.id);
+    switch (interaction) {
+      case ProfileInteractionState.pendingSent:
+        return const _DiscoveryProfileAction(label: 'Interest Sent');
+      case ProfileInteractionState.pendingReceived:
+        return _DiscoveryProfileAction(
+          label: 'Review Interest',
+          onTap:
+              widget.onOpenTab == null ? null : () => widget.onOpenTab?.call(1),
+        );
+      case ProfileInteractionState.matched:
+        return _DiscoveryProfileAction(
+          label: 'Open Chat',
+          onTap:
+              widget.onOpenTab == null ? null : () => widget.onOpenTab?.call(2),
+        );
+      case ProfileInteractionState.none:
+        final cooldownDays = profile.profile.rematchCooldownDaysRemaining;
+        if (cooldownDays != null) {
+          return _DiscoveryProfileAction(
+            label:
+                'Rematch in $cooldownDays day${cooldownDays == 1 ? '' : 's'}',
+          );
+        }
+        return _DiscoveryProfileAction(
+          label: 'Send Interest',
+          onTap: () => _handleSendInterest(index, profile),
+        );
+    }
+  }
+
   Widget _scaledCard(int index, Widget child) {
     return AnimatedBuilder(
       animation: _pageCtrl,
@@ -433,6 +462,13 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
       child: child,
     );
   }
+}
+
+class _DiscoveryProfileAction {
+  const _DiscoveryProfileAction({required this.label, this.onTap});
+
+  final String label;
+  final VoidCallback? onTap;
 }
 
 class _DiscoveryError extends StatelessWidget {

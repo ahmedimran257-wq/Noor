@@ -21,6 +21,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/widgets/loaders/silarah_blur_image.dart';
 import '../../../core/models/discovery_profile.dart';
 import '../../../core/cubits/block_report/block_report_cubit.dart';
@@ -426,6 +427,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     if (widget.isMutualMatch) {
       interaction = ProfileInteractionState.matched;
     }
+    final cooldownDays = interaction == ProfileInteractionState.none
+        ? p.rematchCooldownDaysRemaining
+        : null;
 
     return Scaffold(
       backgroundColor: AppColors.obsidianNight,
@@ -680,10 +684,13 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
               child: _CtaBar(
                 firstName: p.firstName,
                 interaction: interaction,
+                rematchCooldownDays: cooldownDays,
                 isBookmarked: _bookmarked,
-                onSendInterest: interaction == ProfileInteractionState.none
+                onSendInterest: interaction == ProfileInteractionState.none &&
+                        cooldownDays == null
                     ? _handleSendInterest
                     : null,
+                onOpenInterests: () => context.go('/home?tab=1'),
                 onOpenConversation:
                     interaction == ProfileInteractionState.matched
                         ? _openMatchedConversation
@@ -2024,44 +2031,58 @@ class _CtaBar extends StatelessWidget {
   const _CtaBar({
     required this.firstName,
     required this.interaction,
+    this.rematchCooldownDays,
     required this.isBookmarked,
     this.onSendInterest,
+    this.onOpenInterests,
     this.onOpenConversation,
     required this.onBookmark,
   });
 
   final String firstName;
   final ProfileInteractionState interaction;
+  final int? rematchCooldownDays;
   final bool isBookmarked;
   final Future<void> Function()? onSendInterest;
+  final VoidCallback? onOpenInterests;
   final Future<void> Function()? onOpenConversation;
   final VoidCallback onBookmark;
 
   @override
   Widget build(BuildContext context) {
-    final isActive = interaction != ProfileInteractionState.none;
+    final isCooldown = rematchCooldownDays != null;
+    final isActive = interaction != ProfileInteractionState.none || isCooldown;
     final isMatched = interaction == ProfileInteractionState.matched;
     final normalizedName = firstName.trim();
-    final (label, icon) = switch (interaction) {
-      ProfileInteractionState.pendingSent => (
-          normalizedName.isEmpty
-              ? 'Awaiting response'
-              : 'Awaiting $normalizedName\'s response',
-          Icons.schedule_rounded,
-        ),
-      ProfileInteractionState.pendingReceived => (
-          'Respond from Interests',
-          Icons.favorite_outline_rounded,
-        ),
-      ProfileInteractionState.matched => (
-          'Open conversation',
-          Icons.chat_bubble_outline_rounded,
-        ),
-      ProfileInteractionState.none => (
-          'Send interest to $firstName',
-          Icons.favorite_outline_rounded,
-        ),
-    };
+    final (label, icon) = isCooldown
+        ? (
+            'Rematch in $rematchCooldownDays day${rematchCooldownDays == 1 ? '' : 's'}',
+            Icons.schedule_rounded,
+          )
+        : switch (interaction) {
+            ProfileInteractionState.pendingSent => (
+                normalizedName.isEmpty
+                    ? 'Interest sent · Awaiting response'
+                    : 'Interest sent · Awaiting $normalizedName',
+                Icons.schedule_rounded,
+              ),
+            ProfileInteractionState.pendingReceived => (
+                'Review interest',
+                Icons.favorite_outline_rounded,
+              ),
+            ProfileInteractionState.matched => (
+                'Open conversation',
+                Icons.chat_bubble_outline_rounded,
+              ),
+            ProfileInteractionState.none => (
+                'Send interest to $firstName',
+                Icons.favorite_outline_rounded,
+              ),
+          };
+    final canTap = !isCooldown &&
+        (interaction == ProfileInteractionState.none ||
+            interaction == ProfileInteractionState.pendingReceived ||
+            isMatched);
     return Container(
       padding: EdgeInsets.fromLTRB(
         AppDimensions.space24,
@@ -2118,12 +2139,14 @@ class _CtaBar extends StatelessWidget {
           Expanded(
             child: SilarahPressable(
               semanticLabel: label,
-              enabled: !isActive || isMatched,
+              enabled: canTap,
               onTap: isMatched
                   ? () => onOpenConversation?.call()
-                  : isActive
-                      ? null
-                      : () => onSendInterest?.call(),
+                  : interaction == ProfileInteractionState.pendingReceived
+                      ? () => onOpenInterests?.call()
+                      : canTap
+                          ? () => onSendInterest?.call()
+                          : null,
               child: AnimatedContainer(
                 duration: AppDimensions.durationTransition,
                 height: AppDimensions.buttonHeight,

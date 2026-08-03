@@ -427,6 +427,38 @@ try {
   );
   console.log("PASS: female close -> Premium gate -> read-only history");
 
+  const coolingDiscovery = await request(
+    "/rest/v1/rpc/get_discovery_feed",
+    {
+      token: maleToken,
+      method: "POST",
+      body: {
+        p_viewer_id: maleId,
+        p_cursor_score: null,
+        p_cursor_id: null,
+        p_page_size: 20,
+        p_filters: {},
+      },
+    },
+  );
+  assert(
+    coolingDiscovery.some((row) => row.user_id === femaleId),
+    "Cooling-off profile was hidden from Discovery",
+  );
+  const coolingContext = await request(
+    "/rest/v1/rpc/get_prior_match_context",
+    {
+      token: maleToken,
+      method: "POST",
+      body: { p_candidate_user_ids: [femaleId] },
+    },
+  );
+  assert(
+    coolingContext[0]?.relationship_state === "rematch_cooldown" &&
+      Boolean(coolingContext[0]?.rematch_available_at),
+    "Cooling-off profile did not expose its disabled rematch state",
+  );
+
   await expectRejected(
     () =>
       request("/rest/v1/rpc/send_interest", {
@@ -468,7 +500,9 @@ try {
   );
   assert(
     priorContext[0]?.candidate_user_id === femaleId &&
-      priorContext[0]?.prior_match_count === 1,
+      priorContext[0]?.prior_match_count === 1 &&
+      priorContext[0]?.relationship_state === "none" &&
+      priorContext[0]?.rematch_available_at === null,
     "Discovery did not disclose the previous match context",
   );
 
@@ -477,6 +511,36 @@ try {
     method: "POST",
     body: { p_receiver_id: femaleId, p_note: "Respectful rematch" },
   });
+  const pendingDiscovery = await request(
+    "/rest/v1/rpc/get_discovery_feed",
+    {
+      token: maleToken,
+      method: "POST",
+      body: {
+        p_viewer_id: maleId,
+        p_cursor_score: null,
+        p_cursor_id: null,
+        p_page_size: 20,
+        p_filters: {},
+      },
+    },
+  );
+  assert(
+    pendingDiscovery.some((row) => row.user_id === femaleId),
+    "Pending-interest profile was hidden from Discovery",
+  );
+  const pendingContext = await request(
+    "/rest/v1/rpc/get_prior_match_context",
+    {
+      token: maleToken,
+      method: "POST",
+      body: { p_candidate_user_ids: [femaleId] },
+    },
+  );
+  assert(
+    pendingContext[0]?.relationship_state === "pending_sent",
+    "Pending-interest profile did not expose the sent state",
+  );
   await request("/rest/v1/rpc/respond_to_interest", {
     token: femaleToken,
     method: "POST",
@@ -491,7 +555,27 @@ try {
     pairMatches.length === 2 && secondMatch && secondMatch.id !== firstMatchId,
     "Rematch did not create a separate active match cycle",
   );
-  console.log("PASS: cooldown -> Discovery disclosure -> separate rematch cycle");
+  const activeMatchDiscovery = await request(
+    "/rest/v1/rpc/get_discovery_feed",
+    {
+      token: maleToken,
+      method: "POST",
+      body: {
+        p_viewer_id: maleId,
+        p_cursor_score: null,
+        p_cursor_id: null,
+        p_page_size: 20,
+        p_filters: {},
+      },
+    },
+  );
+  assert(
+    !activeMatchDiscovery.some((row) => row.user_id === femaleId),
+    "Active match remained in Discovery instead of moving to Chat",
+  );
+  console.log(
+    "PASS: visible cooldown -> visible pending -> active Chat handoff -> rematch cycle",
+  );
 
   const reportMarker = await request("/rest/v1/rpc/send_chat_message", {
     token: femaleToken,
@@ -531,6 +615,24 @@ try {
   assert(
     reportedMatch[0]?.status === "reported" && profileReports.length === 1,
     "Report flow did not preserve evidence and close the active match",
+  );
+  const reportedDiscovery = await request(
+    "/rest/v1/rpc/get_discovery_feed",
+    {
+      token: maleToken,
+      method: "POST",
+      body: {
+        p_viewer_id: maleId,
+        p_cursor_score: null,
+        p_cursor_id: null,
+        p_page_size: 20,
+        p_filters: {},
+      },
+    },
+  );
+  assert(
+    !reportedDiscovery.some((row) => row.user_id === femaleId),
+    "Reported profile remained visible to its reporter",
   );
   await expectRejected(
     () =>
@@ -577,6 +679,24 @@ try {
   assert(
     blockedMatch[0]?.status === "blocked" && blocks.length === 1,
     "Block flow did not sever the active match",
+  );
+  const blockedDiscovery = await request(
+    "/rest/v1/rpc/get_discovery_feed",
+    {
+      token: maleToken,
+      method: "POST",
+      body: {
+        p_viewer_id: maleId,
+        p_cursor_score: null,
+        p_cursor_id: null,
+        p_page_size: 20,
+        p_filters: {},
+      },
+    },
+  );
+  assert(
+    !blockedDiscovery.some((row) => row.user_id === femaleId),
+    "Blocked profile remained visible in Discovery",
   );
   await expectRejected(
     () =>

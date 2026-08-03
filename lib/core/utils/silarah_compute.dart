@@ -91,6 +91,7 @@ DiscoveryProfile mapDbRowToDiscoveryProfile(Map<String, dynamic> row) {
     previousMatchAt: _optionalDateTime(row, 'previous_match_at'),
     previousMatchEndedAt: _optionalDateTime(row, 'previous_match_ended_at'),
     priorMatchCount: (row['prior_match_count'] as num?)?.toInt() ?? 0,
+    rematchAvailableAt: _optionalDateTime(row, 'rematch_available_at'),
   );
 }
 

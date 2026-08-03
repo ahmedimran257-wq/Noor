@@ -37,7 +37,8 @@ class SilarahProfileCard extends StatelessWidget {
     this.onSendInterest,
     this.onBookmark,
     this.isBookmarked = false,
-    this.isInterestSent = false,
+    this.interestActionLabel = 'Send Interest',
+    this.isInterestActionEnabled = true,
     this.lastActiveLabel,
     this.previousMatchLabel,
     this.cardScale = 1.0,
@@ -59,7 +60,8 @@ class SilarahProfileCard extends StatelessWidget {
   final VoidCallback? onSendInterest;
   final VoidCallback? onBookmark;
   final bool isBookmarked;
-  final bool isInterestSent;
+  final String interestActionLabel;
+  final bool isInterestActionEnabled;
   final String? lastActiveLabel;
   final String? previousMatchLabel;
   final double cardScale; // Continuous scale driven by scroll offset
@@ -245,10 +247,9 @@ class SilarahProfileCard extends StatelessWidget {
                                   // Send Interest — fills remaining space
                                   Expanded(
                                     child: _SendInterestButton(
-                                      isSent: isInterestSent,
-                                      onTap: isInterestSent
-                                          ? null
-                                          : onSendInterest,
+                                      label: interestActionLabel,
+                                      enabled: isInterestActionEnabled,
+                                      onTap: onSendInterest,
                                     ),
                                   ),
                                 ],
@@ -530,21 +531,27 @@ class _InfoChip extends StatelessWidget {
 }
 
 class _SendInterestButton extends StatelessWidget {
-  const _SendInterestButton({required this.isSent, this.onTap});
-  final bool isSent;
+  const _SendInterestButton({
+    required this.label,
+    required this.enabled,
+    this.onTap,
+  });
+  final String label;
+  final bool enabled;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return SilarahPressable(
       onTap: onTap,
-      enabled: !isSent,
+      enabled: enabled && onTap != null,
+      semanticLabel: label,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeOutCubic,
         height: 44,
         decoration: BoxDecoration(
-          gradient: isSent
+          gradient: !enabled
               ? LinearGradient(
                   colors: [
                     AppColors.champagneGold.withValues(alpha: 0.12),
@@ -562,10 +569,10 @@ class _SendInterestButton extends StatelessWidget {
                 ),
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
           border: Border.all(
-            color: isSent ? AppColors.goldBorder : AppColors.champagneLight,
+            color: !enabled ? AppColors.goldBorder : AppColors.champagneLight,
             width: AppDimensions.borderThin,
           ),
-          boxShadow: isSent
+          boxShadow: !enabled
               ? null
               : [
                   BoxShadow(
@@ -577,8 +584,10 @@ class _SendInterestButton extends StatelessWidget {
         ),
         child: Center(
           child: Text(
-            isSent ? 'Interest Sent' : 'Send Interest',
-            style: isSent
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: !enabled
                 ? AppTypography.button.copyWith(
                     color: AppColors.champagneLight,
                     fontSize: 14,

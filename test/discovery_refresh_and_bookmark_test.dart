@@ -71,4 +71,33 @@ void main() {
     expect(savedIcon.color, AppColors.overlayBlack87);
     expect(find.bySemanticsLabel('Remove saved profile'), findsOneWidget);
   });
+
+  testWidgets('relationship action remains visible and can be disabled',
+      (tester) async {
+    var tapped = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 360,
+              child: SilarahProfileCard(
+                displayName: 'Member',
+                age: 28,
+                cityName: 'Kurnool',
+                interestActionLabel: 'Interest Sent',
+                isInterestActionEnabled: false,
+                onSendInterest: () => tapped = true,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Interest Sent'), findsOneWidget);
+    await tester.tap(find.text('Interest Sent'));
+    await tester.pump();
+    expect(tapped, isFalse);
+  });
 }

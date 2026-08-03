@@ -113,22 +113,29 @@ void main() {
     expect(migration, contains('Message % committed without push enqueue'));
   });
 
-  test('relationship history never replaces the current empty feed result', () {
-    final migration = File(
-      'supabase/migrations/131_authoritative_global_location_discovery.sql',
+  test('relationship states remain visible without replacing empty guidance',
+      () {
+    final visibilityMigration = File(
+      'supabase/migrations/187_visible_relationship_states_in_discovery.sql',
     ).readAsStringSync();
     final screen = File(
       'lib/features/home/screens/discovery_feed_screen.dart',
     ).readAsStringSync();
     final home = File('lib/features/home/home_screen.dart').readAsStringSync();
 
-    expect(migration, contains("i.status IN ('pending', 'accepted')"));
+    expect(visibilityMigration, contains("i.status = 'accepted'"));
+    expect(
+      visibilityMigration,
+      isNot(contains("i.status IN ('pending', 'accepted')")),
+    );
     expect(screen, isNot(contains('interests.discoveryHandoff')));
     expect(screen, isNot(contains('discovery_handoff_match_title')));
     expect(screen, contains("'Refresh Profiles'"));
     expect(screen, contains('loadInitial(force: true)'));
     expect(screen, isNot(contains('_sentInterests')));
-    expect(screen, contains('pendingSentUserIds'));
+    expect(screen, contains("label: 'Interest Sent'"));
+    expect(screen, contains("label: 'Review Interest'"));
+    expect(screen, contains("'Rematch in \$cooldownDays day"));
     expect(home, contains('case 0:'));
     expect(home, contains('refreshIfChanged()'));
     expect(home, contains('AppLifecycleState.resumed'));
