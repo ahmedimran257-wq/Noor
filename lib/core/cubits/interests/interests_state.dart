@@ -25,9 +25,9 @@ enum InterestStatus {
 
 /// Explains why an otherwise healthy discovery feed may be empty.
 ///
-/// Active relationship state owns the profile once an interest is sent. This
-/// keeps a person from appearing simultaneously in Discover, Interests, and
-/// Chat while still giving the UI an authoritative handoff destination.
+/// Describes the strongest active relationship currently shown on a discovery
+/// card. Profiles remain browsable; the action changes to the appropriate
+/// Interests or Chat destination instead of offering a duplicate request.
 enum DiscoveryInteractionHandoff {
   none,
   receivedInterest,

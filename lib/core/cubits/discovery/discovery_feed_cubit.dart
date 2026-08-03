@@ -74,12 +74,15 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     final requestVersion = _nextRequestVersion();
     emit(state.copyWith(status: FeedStatus.loading));
 
-    final viewerProfile = await _getViewerProfile();
+    // Local filter restoration and the viewer projection are independent.
+    // Starting them together avoids putting device I/O behind a database read.
+    final initialData = await Future.wait<dynamic>([
+      _getViewerProfile(),
+      _loadFilterFromPrefs(),
+    ]);
     if (!_isCurrentRequest(requestVersion)) return;
-
-    // Restore saved filter
-    final savedFilter = await _loadFilterFromPrefs();
-    if (!_isCurrentRequest(requestVersion)) return;
+    final viewerProfile = initialData[0] as OnboardingData?;
+    final savedFilter = initialData[1] as DiscoveryFilter?;
     DiscoveryFilter filter = savedFilter ?? state.activeFilter;
 
     if (savedFilter == null && viewerProfile != null) {
@@ -111,15 +114,26 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       if (!_isCurrentRequest(requestVersion)) return;
       await _saveFilterToPrefs(filter);
       if (!_isCurrentRequest(requestVersion)) return;
-      // Capture the segment-aware revision after the effective filter is known.
-      // If that segment changes during the feed query, the next lightweight
-      // check will still observe a different token.
-      final revisionAtStart =
-          _pendingRevisionToken ?? await _readDiscoveryRevisionToken(filter);
+      final currentUserId = await SupabaseService.currentUserIdOrRefresh();
+      if (currentUserId == null) {
+        throw StateError('Please sign in to view discovery profiles.');
+      }
+
+      // These three server reads are independent. Keeping them concurrent cuts
+      // cold-start latency without adding requests, and readiness remains
+      // cached for pagination and subsequent filter changes.
+      final pendingRevision = _pendingRevisionToken;
+      final prerequisites = await Future.wait<dynamic>([
+        pendingRevision != null
+            ? Future<String?>.value(pendingRevision)
+            : _readDiscoveryRevisionToken(filter),
+        _loadServerViewQuota(),
+        _assertViewerDiscoveryReady(currentUserId),
+      ]);
+      final revisionAtStart = prerequisites[0] as String?;
+      final quota = prerequisites[1] as _ProfileViewQuota;
       _pendingRevisionToken = null;
       _lastRevisionCheckAt = DateTime.now();
-      if (!_isCurrentRequest(requestVersion)) return;
-      final quota = await _loadServerViewQuota();
       if (!_isCurrentRequest(requestVersion)) return;
       _resetCursors();
       final profiles =
@@ -590,6 +604,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     }
 
     try {
+      final timings = Stopwatch()..start();
       await _assertViewerDiscoveryReady(currentUserId);
       if (!_isCurrentRequest(requestVersion)) return const [];
 
@@ -614,17 +629,29 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       final rows = (response as List<dynamic>)
           .map((row) => Map<String, dynamic>.from(row as Map))
           .toList();
+      final feedMs = timings.elapsedMilliseconds;
       // Race fix: stale discovery responses must not advance the shared cursor
       // or overwrite a newer filter/load request.
       if (!_isCurrentRequest(requestVersion)) return const [];
       _updateBackendCursor(rows);
-      await _attachCompatibilityPreferences(rows);
-      if (!_isCurrentRequest(requestVersion)) return const [];
       await _attachPriorMatchContext(rows);
+      final contextMs = timings.elapsedMilliseconds - feedMs;
       if (!_isCurrentRequest(requestVersion)) return const [];
       final profiles = await compute(parseProfilesInBackground, rows);
+      final parseMs = timings.elapsedMilliseconds - feedMs - contextMs;
       if (!_isCurrentRequest(requestVersion)) return const [];
-      return _signPhotoUrls(profiles);
+      final signedProfiles = await _signPhotoUrls(profiles);
+      if (kDebugMode) {
+        final photoMs =
+            timings.elapsedMilliseconds - feedMs - contextMs - parseMs;
+        debugPrint(
+          'DiscoveryFeedCubit: ${profiles.length} profiles in '
+          '${timings.elapsedMilliseconds}ms '
+          '(feed ${feedMs}ms, context ${contextMs}ms, parse ${parseMs}ms, '
+          'photos ${photoMs}ms).',
+        );
+      }
+      return signedProfiles;
     } catch (e) {
       debugPrint('DiscoveryFeedCubit: Supabase discovery failed: $e');
       rethrow;
@@ -684,34 +711,9 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     _viewerReadyAt = DateTime.now();
   }
 
-  Future<void> _attachCompatibilityPreferences(
-    List<Map<String, dynamic>> rows,
-  ) async {
-    if (rows.isEmpty) return;
-    final profileIds = rows
-        .map((row) => row['profile_id'] as String?)
-        .whereType<String>()
-        .toList();
-    if (profileIds.isEmpty) return;
-
-    final response = await SupabaseService.client.rpc(
-      'get_discovery_compatibility_preferences',
-      params: {'p_profile_ids': profileIds},
-    );
-    final preferencesByProfile = <String, Map<String, dynamic>>{
-      for (final raw in response as List<dynamic>)
-        if ((raw as Map)['profile_id'] != null)
-          raw['profile_id'] as String: Map<String, dynamic>.from(raw),
-    };
-    for (final row in rows) {
-      final preferences = preferencesByProfile[row['profile_id']];
-      if (preferences != null) row.addAll(preferences);
-    }
-  }
-
-  /// Adds one bounded history projection for the candidates already returned
-  /// in this page. This avoids an N+1 query and lets a rematch candidate be
-  /// presented honestly without exposing blocked or reported relationships.
+  /// Adds one bounded card-context projection for candidates already returned
+  /// in this page. Relationship history and compatibility preferences share a
+  /// single RPC, avoiding both N+1 work and a second enrichment round trip.
   Future<void> _attachPriorMatchContext(
     List<Map<String, dynamic>> rows,
   ) async {

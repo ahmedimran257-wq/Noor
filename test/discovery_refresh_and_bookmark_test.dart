@@ -96,8 +96,35 @@ void main() {
     );
 
     expect(find.text('Interest Sent'), findsOneWidget);
+    expect(find.byIcon(Icons.check_circle_rounded), findsOneWidget);
     await tester.tap(find.text('Interest Sent'));
     await tester.pump();
     expect(tapped, isFalse);
+  });
+
+  testWidgets('only the card action animates while an interest is sending',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 360,
+              child: SilarahProfileCard(
+                displayName: 'Member',
+                age: 28,
+                cityName: 'Kurnool',
+                interestActionLabel: 'Sending...',
+                isInterestActionEnabled: false,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Sending...'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(LinearProgressIndicator), findsNothing);
   });
 }

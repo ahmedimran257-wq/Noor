@@ -7,7 +7,7 @@ void main() {
     'supabase/migrations/182_rematch_cycles_and_private_chat_deletion.sql',
   ).readAsStringSync();
   final visibilityMigration = File(
-    'supabase/migrations/187_visible_relationship_states_in_discovery.sql',
+    'supabase/migrations/188_relationship_aware_discovery_and_card_context.sql',
   ).readAsStringSync();
 
   test('respectful closures permit a safe new match cycle after cooldown', () {
@@ -22,18 +22,18 @@ void main() {
     expect(visibilityMigration, contains('rematch_available_at'));
     expect(
       visibilityMigration,
-      contains("rematch_guard.status IN ('active','blocked','reported')"),
+      contains("rematch_guard.status IN (''blocked'',''reported'')"),
     );
   });
 
-  test('pending interests and respectful cooldowns stay visible', () {
-    expect(visibilityMigration, contains("i.status = 'accepted'"));
+  test('pending, matched and respectful cooldown profiles stay visible', () {
     expect(
       visibilityMigration,
-      isNot(contains("i.status IN ('pending', 'accepted')")),
+      contains("active_match.match_id IS NOT NULL"),
     );
     expect(visibilityMigration, contains("'pending_sent'"));
     expect(visibilityMigration, contains("'pending_received'"));
+    expect(visibilityMigration, contains("THEN 'matched'"));
     expect(
         visibilityMigration, contains("latest.ended_at + interval '7 days'"));
   });
@@ -87,6 +87,8 @@ void main() {
     ).readAsStringSync();
 
     expect(cubit, contains("'get_prior_match_context'"));
+    expect(cubit, isNot(contains("'get_discovery_compatibility_preferences'")));
+    expect(visibilityMigration, contains('sect_preference text'));
     expect(card, contains('previousMatchLabel'));
     expect(card, contains('interestActionLabel'));
     expect(detail, contains('Previously matched on'));

@@ -116,22 +116,29 @@ void main() {
   test('relationship states remain visible without replacing empty guidance',
       () {
     final visibilityMigration = File(
-      'supabase/migrations/187_visible_relationship_states_in_discovery.sql',
+      'supabase/migrations/188_relationship_aware_discovery_and_card_context.sql',
     ).readAsStringSync();
     final screen = File(
       'lib/features/home/screens/discovery_feed_screen.dart',
     ).readAsStringSync();
     final home = File('lib/features/home/home_screen.dart').readAsStringSync();
 
-    expect(visibilityMigration, contains("i.status = 'accepted'"));
+    expect(visibilityMigration, contains("active_match.match_id IS NOT NULL"));
+    expect(visibilityMigration, contains("THEN 'matched'"));
     expect(
       visibilityMigration,
-      isNot(contains("i.status IN ('pending', 'accepted')")),
+      contains("rematch_guard.status IN (''blocked'',''reported'')"),
     );
     expect(screen, isNot(contains('interests.discoveryHandoff')));
     expect(screen, isNot(contains('discovery_handoff_match_title')));
     expect(screen, contains("'Refresh Profiles'"));
-    expect(screen, contains('loadInitial(force: true)'));
+    final sendHandler = screen.substring(
+      screen.indexOf('Future<void> _handleSendInterest'),
+      screen.indexOf('Future<void> _handleBookmark'),
+    );
+    expect(sendHandler, isNot(contains('loadInitial(force: true)')));
+    expect(sendHandler, isNot(contains('showInterestCeremony')));
+    expect(screen, contains("label: 'Sending...'"));
     expect(screen, isNot(contains('_sentInterests')));
     expect(screen, contains("label: 'Interest Sent'"));
     expect(screen, contains("label: 'Review Interest'"));

@@ -377,9 +377,24 @@ class InterestsCubit extends Cubit<InterestsState> {
   }
 
   /// Refreshes the authoritative allowance before opening a composer or note
-  /// sheet. [sendInterest] checks again immediately before the insert so this
-  /// is a UX optimization, never the security boundary.
+  /// sheet. A still-valid quota snapshot is reused; the send_interest RPC is
+  /// the authoritative security boundary and rejects stale or concurrent use.
   Future<bool> canStartInterest() async {
+    final resetsAt = state.quotaResetsAt;
+    if (!state.quotaUnavailable &&
+        state.dailyLimit > 0 &&
+        resetsAt != null &&
+        resetsAt.isAfter(DateTime.now())) {
+      final allowed = state.interestsSentToday < state.dailyLimit;
+      if (!isClosed) {
+        emit(state.copyWith(
+          limitError: !allowed,
+          clearQuotaUnavailable: true,
+        ));
+      }
+      return allowed;
+    }
+
     try {
       final quota = await _loadServerQuota();
       if (isClosed) return false;
@@ -464,25 +479,6 @@ class InterestsCubit extends Cubit<InterestsState> {
   Future<bool> sendInterest(DiscoveryProfile profile, {String? note}) async {
     if (!SupabaseService.isInitialized) return false;
 
-    late final _InterestQuota quota;
-    try {
-      quota = await _loadServerQuota();
-    } catch (_) {
-      emit(state.copyWith(quotaUnavailable: true));
-      return false;
-    }
-    if (quota.sentToday >= quota.dailyLimit) {
-      emit(state.copyWith(
-        interestsSentToday: quota.sentToday,
-        dailyLimit: quota.dailyLimit,
-        quotaResetsAt: quota.resetsAt,
-        isPremium: quota.isPremium,
-        limitError: true,
-        clearQuotaUnavailable: true,
-      ));
-      return false;
-    }
-
     // One active relationship owns this pair. Repeated interests would be
     // spam and are also rejected by the database constraint.
     if (state.interactionWith(profile.id) != ProfileInteractionState.none) {
@@ -508,14 +504,21 @@ class InterestsCubit extends Cubit<InterestsState> {
       // If the DB rejects (e.g., daily limit hit by trigger), surface the error.
       if (e.toString().contains('interest_quota_exhausted') ||
           e.toString().contains('Daily interest limit')) {
-        emit(state.copyWith(
-          interestsSentToday: quota.sentToday,
-          dailyLimit: quota.dailyLimit,
-          quotaResetsAt: quota.resetsAt,
-          isPremium: quota.isPremium,
-          limitError: true,
-          clearQuotaUnavailable: true,
-        ));
+        try {
+          final quota = await _loadServerQuota();
+          if (!isClosed) {
+            emit(state.copyWith(
+              interestsSentToday: quota.sentToday,
+              dailyLimit: quota.dailyLimit,
+              quotaResetsAt: quota.resetsAt,
+              isPremium: quota.isPremium,
+              limitError: true,
+              clearQuotaUnavailable: true,
+            ));
+          }
+        } catch (_) {
+          if (!isClosed) emit(state.copyWith(limitError: true));
+        }
         return false;
       }
       // Refresh stale UI when the server already owns this relationship. A
@@ -541,25 +544,14 @@ class InterestsCubit extends Cubit<InterestsState> {
     );
 
     final updated = [entry, ...state.sent];
-    late final _InterestQuota updatedQuota;
-    try {
-      updatedQuota = await _loadServerQuota();
-    } catch (_) {
-      emit(state.copyWith(
-        sent: updated,
-        dailyLimit: 0,
-        quotaUnavailable: true,
-      ));
-      return true;
-    }
-
+    // The server has committed the write and its quota trigger. Reflect that
+    // result immediately instead of delaying the card for another quota RPC.
+    // Multi-device drift is corrected by the next cached-quota expiry or a
+    // server rejection; it can never bypass the database limit.
     emit(state.copyWith(
       sent: updated,
-      interestsSentToday: updatedQuota.sentToday,
-      dailyLimit: updatedQuota.dailyLimit,
+      interestsSentToday: state.interestsSentToday + 1,
       lastResetDate: now,
-      quotaResetsAt: updatedQuota.resetsAt,
-      isPremium: updatedQuota.isPremium,
       clearLimitError: true,
       clearQuotaUnavailable: true,
     ));

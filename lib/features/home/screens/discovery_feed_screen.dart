@@ -32,7 +32,6 @@ import '../../../core/widgets/loaders/silarah_shimmer.dart';
 import '../../../core/widgets/silarah_empty_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../widgets/discovery_filter_bar.dart';
-import '../widgets/interest_ceremony_overlay.dart';
 import '../widgets/interest_note_sheet.dart';
 import '../widgets/notification_bell_button.dart';
 import 'paywall_gate_screen.dart';
@@ -56,6 +55,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
   // Bookmarks now use profile IDs (String) for persistence
   Set<String> _bookmarked = {};
   final Set<String> _bookmarkWritesInFlight = <String>{};
+  final Set<String> _interestWritesInFlight = <String>{};
 
   @override
   bool get wantKeepAlive => true;
@@ -102,6 +102,8 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
   }
 
   Future<void> _handleSendInterest(int index, FeedProfile fp) async {
+    final profileId = fp.profile.id;
+    if (_interestWritesInFlight.contains(profileId)) return;
     if (!await context.read<InterestsCubit>().canStartInterest() || !mounted) {
       return;
     }
@@ -112,15 +114,20 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
     );
     if (note == null || !mounted) return; // cancelled
 
-    final sent = await context.read<InterestsCubit>().sendInterest(
-          fp.profile,
-          note: note.isNotEmpty ? note : null,
-        );
+    setState(() => _interestWritesInFlight.add(profileId));
+    bool sent;
+    try {
+      sent = await context.read<InterestsCubit>().sendInterest(
+            fp.profile,
+            note: note.isNotEmpty ? note : null,
+          );
+    } finally {
+      if (mounted) {
+        setState(() => _interestWritesInFlight.remove(profileId));
+      }
+    }
     if (!mounted || !sent) return;
     HapticFeedback.mediumImpact();
-    await showInterestCeremony(context, firstName: fp.profile.firstName);
-    if (!mounted) return;
-    await context.read<DiscoveryFeedCubit>().loadInitial(force: true);
   }
 
   Future<void> _handleBookmark(int index, FeedProfile fp) async {
@@ -407,6 +414,9 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
     FeedProfile profile,
     InterestsState interests,
   ) {
+    if (_interestWritesInFlight.contains(profile.profile.id)) {
+      return const _DiscoveryProfileAction(label: 'Sending...');
+    }
     final interaction = interests.interactionWith(profile.profile.id);
     switch (interaction) {
       case ProfileInteractionState.pendingSent:

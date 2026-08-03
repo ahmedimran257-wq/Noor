@@ -355,6 +355,54 @@ try {
   const firstMatchId = pairMatches[0].id;
   console.log("PASS: interest acceptance creates an active match");
 
+  const [maleActiveDiscovery, femaleActiveDiscovery] = await Promise.all([
+    request("/rest/v1/rpc/get_discovery_feed", {
+      token: maleToken,
+      method: "POST",
+      body: {
+        p_viewer_id: maleId,
+        p_cursor_score: null,
+        p_cursor_id: null,
+        p_page_size: 20,
+        p_filters: {},
+      },
+    }),
+    request("/rest/v1/rpc/get_discovery_feed", {
+      token: femaleToken,
+      method: "POST",
+      body: {
+        p_viewer_id: femaleId,
+        p_cursor_score: null,
+        p_cursor_id: null,
+        p_page_size: 20,
+        p_filters: {},
+      },
+    }),
+  ]);
+  assert(
+    maleActiveDiscovery.some((row) => row.user_id === femaleId) &&
+      femaleActiveDiscovery.some((row) => row.user_id === maleId),
+    "Accepted match was removed from one side of Discovery",
+  );
+  const [maleActiveContext, femaleActiveContext] = await Promise.all([
+    request("/rest/v1/rpc/get_prior_match_context", {
+      token: maleToken,
+      method: "POST",
+      body: { p_candidate_user_ids: [femaleId] },
+    }),
+    request("/rest/v1/rpc/get_prior_match_context", {
+      token: femaleToken,
+      method: "POST",
+      body: { p_candidate_user_ids: [maleId] },
+    }),
+  ]);
+  assert(
+    maleActiveContext[0]?.relationship_state === "matched" &&
+      femaleActiveContext[0]?.relationship_state === "matched",
+    "Accepted match did not expose Open Chat context to both members",
+  );
+  console.log("PASS: accepted profiles stay visible with matched card state");
+
   // Keep the visible fixture text intentionally number-free so chat safety
   // filters do not mistake the run identifier for contact information.
   const marker = "Staging lifecycle verification message";
@@ -570,11 +618,23 @@ try {
     },
   );
   assert(
-    !activeMatchDiscovery.some((row) => row.user_id === femaleId),
-    "Active match remained in Discovery instead of moving to Chat",
+    activeMatchDiscovery.some((row) => row.user_id === femaleId),
+    "Active rematch profile disappeared from Discovery",
+  );
+  const activeMatchContext = await request(
+    "/rest/v1/rpc/get_prior_match_context",
+    {
+      token: maleToken,
+      method: "POST",
+      body: { p_candidate_user_ids: [femaleId] },
+    },
+  );
+  assert(
+    activeMatchContext[0]?.relationship_state === "matched",
+    "Active rematch did not expose matched card state",
   );
   console.log(
-    "PASS: visible cooldown -> visible pending -> active Chat handoff -> rematch cycle",
+    "PASS: visible cooldown -> visible pending -> visible matched -> rematch cycle",
   );
 
   const reportMarker = await request("/rest/v1/rpc/send_chat_message", {

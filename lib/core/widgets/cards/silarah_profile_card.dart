@@ -542,6 +542,10 @@ class _SendInterestButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isSending = label == 'Sending...';
+    final isConfirmed = label == 'Interest Sent';
+    final foreground =
+        enabled ? AppColors.obsidianNight : AppColors.champagneLight;
     return SilarahPressable(
       onTap: onTap,
       enabled: enabled && onTap != null,
@@ -583,20 +587,51 @@ class _SendInterestButton extends StatelessWidget {
                 ],
         ),
         child: Center(
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: !enabled
-                ? AppTypography.button.copyWith(
-                    color: AppColors.champagneLight,
-                    fontSize: 14,
-                  )
-                : AppTypography.button.copyWith(
-                    color: AppColors.obsidianNight,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 360),
+            reverseDuration: const Duration(milliseconds: 180),
+            switchInCurve: Curves.easeOutBack,
+            switchOutCurve: Curves.easeInCubic,
+            transitionBuilder: (child, animation) => FadeTransition(
+              opacity: animation,
+              child: ScaleTransition(scale: animation, child: child),
+            ),
+            child: Row(
+              key: ValueKey(label),
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isSending) ...[
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(foreground),
+                    ),
                   ),
+                  const SizedBox(width: AppDimensions.space8),
+                ] else if (isConfirmed) ...[
+                  Icon(
+                    Icons.check_circle_rounded,
+                    size: 18,
+                    color: AppColors.champagneLight,
+                  ),
+                  const SizedBox(width: AppDimensions.space8),
+                ],
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.button.copyWith(
+                      color: foreground,
+                      fontSize: 14,
+                      fontWeight: enabled ? FontWeight.w800 : FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
