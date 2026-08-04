@@ -444,6 +444,11 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
       if (item.type == 'new_message') {
         _chatCubit.scheduleInboxReconciliation();
       }
+      if (item.type == 'match_ended') {
+        unawaited(_chatCubit.refreshIfChanged(forceCheck: true));
+        unawaited(_interestsCubit.refreshIfChanged(forceCheck: true));
+        unawaited(_discoveryFeedCubit.refreshIfChanged(forceCheck: true));
+      }
     });
 
     _router =
@@ -459,14 +464,19 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
           message.data['type'] == 'account_restored') {
         unawaited(_accountStandingCubit.refresh());
       }
-      if (message.data['type'] == 'new_message') {
+      if (message.data['type'] == 'new_message' ||
+          message.data['type'] == 'match_ended') {
         _chatCubit.scheduleInboxReconciliation();
       }
       if (message.data['type'] == 'interest_received' ||
           message.data['type'] == 'interest_accepted' ||
           message.data['type'] == 'match' ||
-          message.data['type'] == 'match_accepted') {
+          message.data['type'] == 'match_accepted' ||
+          message.data['type'] == 'match_ended') {
         unawaited(_interestsCubit.refreshIfChanged(forceCheck: true));
+      }
+      if (message.data['type'] == 'match_ended') {
+        unawaited(_discoveryFeedCubit.refreshIfChanged(forceCheck: true));
       }
     };
 

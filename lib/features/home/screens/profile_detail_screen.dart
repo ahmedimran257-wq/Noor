@@ -80,6 +80,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   String? _photoAccessError;
   final Set<int> _refreshingPhotoIndexes = <int>{};
   final Set<int> _refreshedPhotoIndexes = <int>{};
+  Timer? _rematchCountdownTimer;
 
   int get _totalPhotos => _photoUrls.length;
 
@@ -107,6 +108,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     } else if (_photoUrls.whereType<String>().length < _photoUrls.length) {
       _loadAuthorizedGallery();
     }
+    _scheduleRematchCountdown();
     // Load persisted bookmark state
     BookmarkService.load().then((ids) {
       if (mounted) {
@@ -273,8 +275,31 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
   @override
   void dispose() {
+    _rematchCountdownTimer?.cancel();
     _photoController.dispose();
     super.dispose();
+  }
+
+  void _scheduleRematchCountdown() {
+    _rematchCountdownTimer?.cancel();
+    final now = DateTime.now();
+    final availableAt = widget.profile.rematchAvailableAt;
+    if (availableAt == null || !availableAt.isAfter(now)) return;
+    final remaining = availableAt.difference(now);
+    final days =
+        (remaining.inMilliseconds / const Duration(days: 1).inMilliseconds)
+            .ceil();
+    final nextTick = days <= 1
+        ? availableAt
+        : availableAt.subtract(Duration(days: days - 1));
+    _rematchCountdownTimer = Timer(
+      nextTick.difference(now) + const Duration(milliseconds: 150),
+      () {
+        if (!mounted) return;
+        setState(() {});
+        _scheduleRematchCountdown();
+      },
+    );
   }
 
   // ── Actions ────────────────────────────────────────────────
@@ -685,6 +710,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                 firstName: p.firstName,
                 interaction: interaction,
                 rematchCooldownDays: cooldownDays,
+                isRematchCandidate: p.isRematchCandidate,
                 isBookmarked: _bookmarked,
                 onSendInterest: interaction == ProfileInteractionState.none &&
                         cooldownDays == null
@@ -2032,6 +2058,7 @@ class _CtaBar extends StatelessWidget {
     required this.firstName,
     required this.interaction,
     this.rematchCooldownDays,
+    required this.isRematchCandidate,
     required this.isBookmarked,
     this.onSendInterest,
     this.onOpenInterests,
@@ -2042,6 +2069,7 @@ class _CtaBar extends StatelessWidget {
   final String firstName;
   final ProfileInteractionState interaction;
   final int? rematchCooldownDays;
+  final bool isRematchCandidate;
   final bool isBookmarked;
   final Future<void> Function()? onSendInterest;
   final VoidCallback? onOpenInterests;
@@ -2056,7 +2084,7 @@ class _CtaBar extends StatelessWidget {
     final normalizedName = firstName.trim();
     final (label, icon) = isCooldown
         ? (
-            'Rematch in $rematchCooldownDays day${rematchCooldownDays == 1 ? '' : 's'}',
+            'Rematch available in $rematchCooldownDays day${rematchCooldownDays == 1 ? '' : 's'}',
             Icons.schedule_rounded,
           )
         : switch (interaction) {
@@ -2075,7 +2103,9 @@ class _CtaBar extends StatelessWidget {
                 Icons.chat_bubble_outline_rounded,
               ),
             ProfileInteractionState.none => (
-                'Send interest to $firstName',
+                isRematchCandidate
+                    ? 'Send interest again'
+                    : 'Send interest to $firstName',
                 Icons.favorite_outline_rounded,
               ),
           };

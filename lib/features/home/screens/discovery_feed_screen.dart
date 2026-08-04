@@ -15,14 +15,19 @@
 //   • Bookmark toggle with persistence via BookmarkService
 // ============================================================
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/cubits/auth/auth_cubit.dart';
+import '../../../core/cubits/auth/auth_state.dart';
 import '../../../core/cubits/discovery/discovery_feed_cubit.dart';
 import '../../../core/cubits/discovery/discovery_feed_state.dart';
 import '../../../core/cubits/interests/interests_cubit.dart';
 import '../../../core/cubits/interests/interests_state.dart';
+import '../../../core/cubits/subscription/subscription_cubit.dart';
 import '../../../core/services/bookmark_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
@@ -56,6 +61,9 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
   Set<String> _bookmarked = {};
   final Set<String> _bookmarkWritesInFlight = <String>{};
   final Set<String> _interestWritesInFlight = <String>{};
+  Timer? _rematchCountdownTimer;
+  DateTime? _nextRematchCountdownTick;
+  DiscoveryFilter? _lastObservedFilter;
 
   @override
   bool get wantKeepAlive => true;
@@ -69,13 +77,49 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<DiscoveryFeedCubit>().loadInitial();
       _loadBookmarks();
+      _scheduleRematchCountdown(
+        context.read<DiscoveryFeedCubit>().state.profiles,
+      );
     });
   }
 
   @override
   void dispose() {
+    _rematchCountdownTimer?.cancel();
     _pageCtrl.dispose();
     super.dispose();
+  }
+
+  void _scheduleRematchCountdown(List<FeedProfile> profiles) {
+    final now = DateTime.now();
+    DateTime? nextTick;
+    for (final entry in profiles) {
+      final availableAt = entry.profile.rematchAvailableAt;
+      if (availableAt == null || !availableAt.isAfter(now)) continue;
+      final remaining = availableAt.difference(now);
+      final days =
+          (remaining.inMilliseconds / const Duration(days: 1).inMilliseconds)
+              .ceil();
+      final candidate = days <= 1
+          ? availableAt
+          : availableAt.subtract(Duration(days: days - 1));
+      if (nextTick == null || candidate.isBefore(nextTick)) {
+        nextTick = candidate;
+      }
+    }
+    if (_nextRematchCountdownTick == nextTick) return;
+    _rematchCountdownTimer?.cancel();
+    _nextRematchCountdownTick = nextTick;
+    if (nextTick == null) return;
+    final delay = nextTick.difference(now) + const Duration(milliseconds: 150);
+    _rematchCountdownTimer = Timer(delay, () {
+      if (!mounted) return;
+      setState(() {});
+      _nextRematchCountdownTick = null;
+      _scheduleRematchCountdown(
+        context.read<DiscoveryFeedCubit>().state.profiles,
+      );
+    });
   }
 
   Future<void> _loadBookmarks() async {
@@ -216,13 +260,30 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
   Widget build(BuildContext context) {
     super.build(context);
     final interests = context.watch<InterestsCubit>().state;
+    final gender = context.select<AuthCubit, String>((cubit) {
+      final auth = cubit.state;
+      return auth is AuthAuthenticated ? (auth.gender ?? '') : '';
+    });
+    final canMessage = context.select<SubscriptionCubit, bool>(
+      (cubit) => cubit.state.canMessage(gender),
+    );
     return BlocConsumer<DiscoveryFeedCubit, DiscoveryFeedState>(
       listenWhen: (previous, current) =>
-          previous.activeFilter != current.activeFilter,
+          previous.activeFilter != current.activeFilter ||
+          previous.profiles != current.profiles,
       listener: (context, state) {
-        _currentPage = 0;
-        if (_pageCtrl.positions.length == 1) {
-          _pageCtrl.jumpToPage(0);
+        if (_lastObservedFilter != state.activeFilter) {
+          _lastObservedFilter = state.activeFilter;
+          _currentPage = 0;
+        }
+        _scheduleRematchCountdown(state.profiles);
+        if (_currentPage >= state.profiles.length &&
+            state.profiles.isNotEmpty) {
+          _currentPage = state.profiles.length - 1;
+        }
+        if (_pageCtrl.positions.length == 1 &&
+            _currentPage < state.profiles.length) {
+          _pageCtrl.jumpToPage(_currentPage);
         }
       },
       builder: (context, feedState) {
@@ -272,7 +333,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
               // ── Card carousel ────────────────────────────────
               SliverFillRemaining(
                 hasScrollBody: true,
-                child: _buildCarousel(feedState, interests),
+                child: _buildCarousel(feedState, interests, canMessage),
               ),
             ],
           ),
@@ -284,6 +345,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
   Widget _buildCarousel(
     DiscoveryFeedState feedState,
     InterestsState interests,
+    bool canMessage,
   ) {
     // Full-screen skeleton on initial load
     if (feedState.status == FeedStatus.initial ||
@@ -338,7 +400,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
 
         final fp = profiles[index];
         final p = fp.profile;
-        final action = _profileAction(index, fp, interests);
+        final action = _profileAction(index, fp, interests, canMessage);
 
         return _scaledCard(
           index,
@@ -413,6 +475,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
     int index,
     FeedProfile profile,
     InterestsState interests,
+    bool canMessage,
   ) {
     if (_interestWritesInFlight.contains(profile.profile.id)) {
       return const _DiscoveryProfileAction(label: 'Sending...');
@@ -429,20 +492,25 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
         );
       case ProfileInteractionState.matched:
         return _DiscoveryProfileAction(
-          label: 'Open Chat',
-          onTap:
-              widget.onOpenTab == null ? null : () => widget.onOpenTab?.call(2),
+          label: canMessage ? 'Open Chat' : 'Unlock Chat',
+          onTap: canMessage
+              ? (widget.onOpenTab == null
+                  ? null
+                  : () => widget.onOpenTab?.call(2))
+              : () => PaywallGateSheet.show(context),
         );
       case ProfileInteractionState.none:
         final cooldownDays = profile.profile.rematchCooldownDaysRemaining;
         if (cooldownDays != null) {
           return _DiscoveryProfileAction(
             label:
-                'Rematch in $cooldownDays day${cooldownDays == 1 ? '' : 's'}',
+                'Rematch available in $cooldownDays day${cooldownDays == 1 ? '' : 's'}',
           );
         }
         return _DiscoveryProfileAction(
-          label: 'Send Interest',
+          label: profile.profile.isRematchCandidate
+              ? 'Send Interest Again'
+              : 'Send Interest',
           onTap: () => _handleSendInterest(index, profile),
         );
     }

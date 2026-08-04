@@ -450,11 +450,11 @@ class ChatCubit extends Cubit<ChatState> {
     emit(state.copyWith(conversations: updated));
   }
 
-  Future<void> closeMatch(String conversationId, String message) async {
-    if (!_isRealMode) return;
+  Future<bool> closeMatch(String conversationId, String message) async {
+    if (!_isRealMode) return false;
 
     final conv = _findConversation(conversationId);
-    if (conv == null || conv.isMatchClosed) return;
+    if (conv == null || conv.isMatchClosed) return false;
 
     try {
       await sendMessage(conversationId, message);
@@ -466,8 +466,10 @@ class ChatCubit extends Cubit<ChatState> {
         },
       );
       await loadConversations(force: true);
+      return true;
     } catch (e) {
       debugPrint('ChatCubit: Error closing match: $e');
+      return false;
     }
   }
 

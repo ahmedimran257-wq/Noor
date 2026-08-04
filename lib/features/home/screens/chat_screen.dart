@@ -15,6 +15,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/cubits/chat/chat_cubit.dart';
 import '../../../core/cubits/chat/chat_state.dart';
+import '../../../core/cubits/discovery/discovery_feed_cubit.dart';
+import '../../../core/cubits/interests/interests_cubit.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_curves.dart';
 import '../../../core/theme/app_dimensions.dart';
@@ -273,9 +275,17 @@ class _ChatScreenState extends State<ChatScreen>
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (_) => _EndMatchSheet(
-        onConfirm: (message) {
-          context.read<ChatCubit>().closeMatch(widget.conversationId, message);
+        onConfirm: (message) async {
+          final chatCubit = context.read<ChatCubit>();
+          final interestsCubit = context.read<InterestsCubit>();
+          final discoveryCubit = context.read<DiscoveryFeedCubit>();
           Navigator.pop(context);
+          final closed =
+              await chatCubit.closeMatch(widget.conversationId, message);
+          if (!mounted || !closed) return;
+          interestsCubit.markMatchClosed(widget.conversationId);
+          await discoveryCubit.refreshIfChanged(forceCheck: true);
+          if (!mounted) return;
           _scrollToBottom(animated: true);
         },
       ),

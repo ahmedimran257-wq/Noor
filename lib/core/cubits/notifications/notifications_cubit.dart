@@ -272,6 +272,11 @@ class NotificationsCubit extends Cubit<NotificationsState> {
         return ('New interest', 'Someone is interested in your profile.');
       case 'interest_accepted':
         return ('Interest accepted', 'You can now start a conversation.');
+      case 'match_ended':
+        return (
+          'Match ended',
+          'You can reconnect after the 7-day cooling-off period.'
+        );
       case 'new_message':
         return ('New message', 'You have a new message.');
       case 'profile_view':
@@ -389,6 +394,8 @@ String? notificationPathFor(NotificationItem item) {
     case 'interest_received':
     case 'interest_accepted':
       return '/home?tab=1';
+    case 'match_ended':
+      return '/home?tab=0';
     case 'admin_announcement':
       return '/notifications';
     case 'profile_live':

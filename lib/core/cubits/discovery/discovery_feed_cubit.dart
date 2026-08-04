@@ -184,9 +184,19 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     if (serverToken == null || isClosed) return;
     if (_loadedRevisionToken == serverToken) return;
 
+    final loadedToken = _loadedRevisionToken;
+    if (loadedToken != null &&
+        state.profiles.isNotEmpty &&
+        _catalogRevisionOf(loadedToken) == _catalogRevisionOf(serverToken)) {
+      await _refreshRelationshipContext(serverToken);
+      return;
+    }
+
     _pendingRevisionToken = serverToken;
     await loadInitial(force: true);
   }
+
+  String _catalogRevisionOf(String token) => token.split(':member=').first;
 
   /// Load next page (append).
   Future<void> loadMore() async {
@@ -739,6 +749,74 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       final prior = contextByUser[row['user_id']?.toString()];
       if (prior != null) row.addAll(prior);
     }
+  }
+
+  /// Reconciles only relationship metadata for cards already in memory. This
+  /// avoids re-running ranking, pagination and photo signing when a match is
+  /// opened/closed or a profile is blocked/reported.
+  Future<void> _refreshRelationshipContext(String revisionToken) async {
+    final currentProfiles = state.profiles;
+    if (currentProfiles.isEmpty) {
+      _loadedRevisionToken = revisionToken;
+      return;
+    }
+
+    try {
+      final response = await SupabaseService.client.rpc(
+        'get_prior_match_context',
+        params: {
+          'p_candidate_user_ids': currentProfiles
+              .map((entry) => entry.profile.id)
+              .toSet()
+              .toList(growable: false),
+        },
+      );
+      final contextByUser = <String, Map<String, dynamic>>{
+        for (final raw in response as List<dynamic>)
+          if ((raw as Map)['candidate_user_id'] != null)
+            raw['candidate_user_id'].toString(): Map<String, dynamic>.from(raw),
+      };
+      final updated = <FeedProfile>[];
+      for (final entry in currentProfiles) {
+        final prior = contextByUser[entry.profile.id];
+        // Missing context means this card is no longer safe/visible to this
+        // viewer (block, report, suspension or privacy change).
+        if (prior == null) continue;
+        final previousAt = _optionalTimestamp(prior['previous_match_at']);
+        final endedAt = _optionalTimestamp(prior['previous_match_ended_at']);
+        final availableAt = _optionalTimestamp(prior['rematch_available_at']);
+        updated.add(FeedProfile(
+          profile: entry.profile.copyWith(
+            previousMatchAt: previousAt,
+            previousMatchEndedAt: endedAt,
+            priorMatchCount: (prior['prior_match_count'] as num?)?.toInt() ?? 0,
+            rematchAvailableAt: availableAt,
+            clearPreviousMatchAt: previousAt == null,
+            clearPreviousMatchEndedAt: endedAt == null,
+            clearRematchAvailableAt: availableAt == null,
+          ),
+          isWildCard: entry.isWildCard,
+          lastActiveAt: entry.lastActiveAt,
+        ));
+      }
+      if (isClosed) return;
+      _loadedRevisionToken = revisionToken;
+      emit(state.copyWith(
+        status: updated.isEmpty ? FeedStatus.empty : FeedStatus.loaded,
+        profiles: updated,
+      ));
+    } catch (error) {
+      // Leave both the existing cards and old token intact so the next check
+      // retries safely instead of replacing useful content with an error page.
+      debugPrint(
+        'DiscoveryFeedCubit: relationship-only refresh unavailable: $error',
+      );
+    }
+  }
+
+  DateTime? _optionalTimestamp(Object? value) {
+    if (value is DateTime) return value;
+    return value == null ? null : DateTime.tryParse(value.toString());
   }
 
   void _emitDiscoveryError(Object error, {bool keepProfiles = false}) {

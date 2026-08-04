@@ -158,7 +158,9 @@ class InterestsCubit extends Cubit<InterestsState> {
 
       final receivedRows = results[0] as List<dynamic>;
       final sentRows = results[1] as List<dynamic>;
-      final matchRows = results[2] as List<dynamic>;
+      final matchRows = (results[2] as List<dynamic>)
+          .where((row) => (row as Map)['status'] == 'active')
+          .toList(growable: false);
       final relatedUserIds = <String>{
         for (final row in receivedRows) row['sender_id'] as String,
         for (final row in sentRows) row['receiver_id'] as String,
@@ -571,6 +573,17 @@ class InterestsCubit extends Cubit<InterestsState> {
     _lastLoadedAt = null;
     _loadedUserId = null;
     if (!isClosed) emit(const InterestsState());
+  }
+
+  /// Immediately removes a match that this device just closed. The next
+  /// relationship revision reconciliation remains the server-authoritative
+  /// fallback for other devices and background changes.
+  void markMatchClosed(String matchId) {
+    final activeMatches = state.matches
+        .where((entry) => entry.id != matchId)
+        .toList(growable: false);
+    if (activeMatches.length == state.matches.length || isClosed) return;
+    emit(state.copyWith(matches: activeMatches));
   }
 
   /// Withdraw a pending sent interest (silent — no notification to recipient).

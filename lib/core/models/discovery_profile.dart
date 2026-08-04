@@ -234,6 +234,9 @@ class DiscoveryProfile {
     int? priorMatchCount,
     DateTime? rematchAvailableAt,
     bool clearPhotoUrl = false,
+    bool clearPreviousMatchAt = false,
+    bool clearPreviousMatchEndedAt = false,
+    bool clearRematchAvailableAt = false,
   }) {
     return DiscoveryProfile(
       id: id ?? _id,
@@ -284,10 +287,16 @@ class DiscoveryProfile {
       incomeBracket: incomeBracket ?? this.incomeBracket,
       familyOriginCity: familyOriginCity ?? this.familyOriginCity,
       blurhash: blurhash ?? this.blurhash,
-      previousMatchAt: previousMatchAt ?? this.previousMatchAt,
-      previousMatchEndedAt: previousMatchEndedAt ?? this.previousMatchEndedAt,
+      previousMatchAt: clearPreviousMatchAt
+          ? null
+          : (previousMatchAt ?? this.previousMatchAt),
+      previousMatchEndedAt: clearPreviousMatchEndedAt
+          ? null
+          : (previousMatchEndedAt ?? this.previousMatchEndedAt),
       priorMatchCount: priorMatchCount ?? this.priorMatchCount,
-      rematchAvailableAt: rematchAvailableAt ?? this.rematchAvailableAt,
+      rematchAvailableAt: clearRematchAvailableAt
+          ? null
+          : (rematchAvailableAt ?? this.rematchAvailableAt),
     );
   }
 

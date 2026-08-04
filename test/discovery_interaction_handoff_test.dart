@@ -142,7 +142,10 @@ void main() {
     expect(screen, isNot(contains('_sentInterests')));
     expect(screen, contains("label: 'Interest Sent'"));
     expect(screen, contains("label: 'Review Interest'"));
-    expect(screen, contains("'Rematch in \$cooldownDays day"));
+    expect(
+      screen,
+      contains("'Rematch available in \$cooldownDays day"),
+    );
     expect(home, contains('case 0:'));
     expect(home, contains('refreshIfChanged()'));
     expect(home, contains('AppLifecycleState.resumed'));
