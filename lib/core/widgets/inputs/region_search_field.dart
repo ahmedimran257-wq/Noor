@@ -1,12 +1,8 @@
-// lib/core/widgets/inputs/region_search_field.dart
-// ============================================================
 // SILARAH - Region Search Field
 //
 // Async country-scoped region/state search backed by Supabase `regions`.
 // This is an optional narrowing step before city search; it never fabricates
 // a region, so unsupported countries still continue via verified city search.
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 

@@ -1,5 +1,3 @@
-// lib/core/utils/copy_engine.dart
-// ============================================================
 // SILARAH — Copy Engine
 // Returns the correct UI copy string based on who is creating
 // the profile (self / parent / sibling / guardian).
@@ -7,8 +5,6 @@
 // Usage:
 //   final relation = cubit.currentData.profileCreatorRelation;
 //   Text(CopyEngine.hijabQuestion(relation, 'female'))
-// ============================================================
-
 import 'package:silarah/l10n/generated/app_localizations.dart';
 
 class CopyEngine {
@@ -18,8 +14,7 @@ class CopyEngine {
   static String _getRelation(String? creatorRelation) =>
       creatorRelation ?? 'self';
 
-  // ── Islamic practice questions ──────────────────────────────
-
+  // Islamic practice questions
   /// Returns the correct hijab / dress question for the screen context.
   static String hijabQuestion(
       AppLocalizations l10n, String? creatorRelation, String? gender) {
@@ -65,8 +60,7 @@ class CopyEngine {
     }
   }
 
-  // ── Bio prompts ─────────────────────────────────────────────
-
+  // Bio prompts
   /// Returns the correct bio prompt for the screen context.
   static String bioPrompt(AppLocalizations l10n, String? creatorRelation) {
     switch (_getRelation(creatorRelation)) {
@@ -79,8 +73,7 @@ class CopyEngine {
     }
   }
 
-  // ── Identity labels ─────────────────────────────────────────
-
+  // Identity labels
   /// Returns the correct community / biradari field label.
   static String communityQuestion(
       AppLocalizations l10n, String? creatorRelation) {

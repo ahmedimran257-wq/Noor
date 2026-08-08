@@ -1,5 +1,3 @@
-// lib/core/services/country_context_service.dart
-// ============================================================
 // SILARAH — Country Context Service
 //
 // Two optional, free data providers:
@@ -12,8 +10,6 @@
 //
 // Official country languages are bundled from Wikidata (CC0), so onboarding
 // remains globally functional when external providers are unavailable.
-// ============================================================
-
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -23,8 +19,7 @@ import '../data/country_sects_data.dart';
 import 'supabase_service.dart';
 import 'operational_telemetry_service.dart';
 
-// ── Models ────────────────────────────────────────────────────
-
+// Models
 class CityResult {
   const CityResult({
     required this.city,
@@ -85,8 +80,7 @@ class CountryContext {
   final List<String> sects;
 }
 
-// ── Service ───────────────────────────────────────────────────
-
+// Service
 class CountryContextService {
   CountryContextService._();
   static final CountryContextService instance = CountryContextService._();
@@ -126,7 +120,7 @@ class CountryContextService {
     'region',
   };
 
-  // ── 1. GET LANGUAGES FOR COUNTRY ──────────────────────────
+  // 1. GET LANGUAGES FOR COUNTRY
   //
   // Returns bundled official languages for every supported country. Cached in
   // SharedPreferences for consistent behavior with location enrichment.
@@ -158,8 +152,7 @@ class CountryContextService {
     return languages;
   }
 
-  // ── 2. SEARCH CITIES (Supabase cache → authenticated proxy) ───────────
-
+  // 2. SEARCH CITIES (Supabase cache → authenticated proxy)
   Future<List<String>> getLanguagesForLocation({
     required String countryCode,
     String? stateName,
@@ -570,9 +563,8 @@ class CountryContextService {
     return cleaned.join(', ');
   }
 
-  // ── Place detail fetch (postal code, lat/lng, components) ──
-
-  // ── 3. GET COMMUNITIES FOR COUNTRY ────────────────────────
+  // Place detail fetch (postal code, lat/lng, components)
+  // 3. GET COMMUNITIES FOR COUNTRY
   //
   // No API for this exists. Uses CountryCommunityData.
   // The data file is designed to be replaceable by a Supabase query.
@@ -581,7 +573,7 @@ class CountryContextService {
     return CountryCommunityData.forCountry(iso2);
   }
 
-  // ── 4. GET SECTS FOR COUNTRY ──────────────────────────────
+  // 4. GET SECTS FOR COUNTRY
   //
   // Returns sect options adapted to the country's Muslim demographics.
   // Saudi Arabia: no main sect shown (sensitive), only deen level.
@@ -592,8 +584,7 @@ class CountryContextService {
     return CountrySectData.forCountry(iso2);
   }
 
-  // ── 5. GET FULL CONTEXT (all four) ────────────────────────
-
+  // 5. GET FULL CONTEXT (all four)
   Future<CountryContext> getContext(String iso2) async {
     final langs = await getLanguages(iso2);
     return CountryContext(
@@ -603,8 +594,7 @@ class CountryContextService {
     );
   }
 
-  // ── Language fallback ──────────────────────────────────────
-
+  // Language fallback
   static List<String> _fallbackLanguages(String iso2) {
     return _uniqueLanguages([
       ...?kCountryLanguages[iso2.toUpperCase()],

@@ -1,8 +1,5 @@
-// lib/core/cubits/block_report/block_report_cubit.dart
-// ============================================================
 // SILARAH - Block / Report Cubit (Supabase production flow)
 //
-// Blueprint (Part 9):
 //   "Blocking is silent. The blocked person is not notified.
 //    They cannot find the blocker in search, their interests
 //    disappear, and the chat is removed from both sides."
@@ -14,8 +11,6 @@
 // Real mode uses checked RPC boundaries. Blocks soft-close matches so safety
 // evidence is preserved; reports are queued for explicit staff decisions.
 //
-// ============================================================
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../services/supabase_service.dart';
@@ -143,7 +138,6 @@ class BlockReportCubit extends Cubit<BlockReportState> {
   // Block
 
   /// Silently block a user.
-  /// Blueprint: "The blocked person is not notified."
   Future<bool> blockUser({
     required String userId,
     required String name,
@@ -233,7 +227,6 @@ class BlockReportCubit extends Cubit<BlockReportState> {
   // Report
 
   /// Report a user with a predefined reason.
-  /// Blueprint: "Reporting immediately hides that profile from the reporter."
   Future<void> reportUser({
     required String reportedUserId,
     required String reportedName,
@@ -278,7 +271,6 @@ class BlockReportCubit extends Cubit<BlockReportState> {
       submittedAt: DateTime.now(),
     );
 
-    // Blueprint: "immediately hides that profile from the reporter"
     final updatedHidden = {...state.hiddenProfileIds, reportedUserId};
 
     emit(state.copyWith(

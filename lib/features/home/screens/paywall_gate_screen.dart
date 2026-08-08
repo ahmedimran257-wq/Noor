@@ -1,19 +1,14 @@
-// lib/features/home/screens/paywall_gate_screen.dart
-// ============================================================
 // SILARAH — Paywall Gate (Step 9)
 //
 // Shown as a bottom sheet when a male non-subscriber tries
 // to open a chat conversation.
 //
-// Blueprint (Part 8):
 //   "Non-subscriber men who try to open a chat see:
 //    'Subscribe to unlock messaging. Women always message
 //     free on SILARAH.' The price shown is in their local currency."
 //
 // Usage:
 //   PaywallGateSheet.show(context);
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -26,7 +21,6 @@ import 'subscription_screen.dart';
 class PaywallGateSheet {
   /// Shows the paywall as a modal bottom sheet.
   ///
-  /// Blueprint: "Women always message free on SILARAH."
   /// This method is a no-op if the current user is female —
   /// defence-in-depth on top of the call-site check in
   /// chat_list_screen.dart and chat_screen.dart.

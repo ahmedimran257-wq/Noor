@@ -1,11 +1,7 @@
-// lib/core/widgets/buttons/silarah_pressable.dart
-// ============================================================
 // Internal base widget for tactile press animation.
 // "Button Press: Scale 1.0 → 0.96 → 1.0 with bouncy overshoot.
 //  Feels like a physical button. No ripple effect."
 // All SILARAH buttons wrap this.
-// ============================================================
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../theme/app_dimensions.dart';

@@ -1,5 +1,3 @@
-// lib/features/home/screens/interests_screen.dart
-// ============================================================
 // SILARAH — Interests Inbox (Items 17, 18, 19, 21, 22, 26)
 //
 // Items implemented here:
@@ -9,8 +7,6 @@
 //   21 — Match modal: remove 48h note, show "Bismillah" CTA
 //   22 — All cooling period text removed
 //   26 — SilarahEmptyState on both tabs
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -107,8 +103,6 @@ class _InterestsScreenState extends State<InterestsScreen>
     super.dispose();
   }
 
-  // ── Mutual match ceremony modal (Item 21 + 22) ───────────
-
   void _showMutualMatchModal(DiscoveryProfile profile) {
     HapticFeedback.mediumImpact();
     showDialog(
@@ -156,7 +150,6 @@ class _InterestsScreenState extends State<InterestsScreen>
                   ),
                   const SizedBox(height: AppDimensions.space12),
 
-                  // Bismillah subtitle (Item 21 — replaces 48h note)
                   UiText(
                     context.uiCopy('Say bismillah and begin a conversation.'),
                     style: AppTypography.bodyMuted.copyWith(height: 1.6),
@@ -227,8 +220,6 @@ class _InterestsScreenState extends State<InterestsScreen>
     _showMutualMatchModal(entry.profile);
   }
 
-  // ── Withdraw confirm dialog (Item 19) ─────────────────────
-
   void _showWithdrawDialog(InterestEntry entry) {
     HapticFeedback.selectionClick();
     showDialog(
@@ -267,8 +258,7 @@ class _InterestsScreenState extends State<InterestsScreen>
     );
   }
 
-  // ── Build ────────────────────────────────────────────────
-
+  // Build
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -358,7 +348,7 @@ class _InterestsScreenState extends State<InterestsScreen>
               child: TabBarView(
                 controller: _tabCtrl,
                 children: [
-                  // ── Received tab ──────────────────────────
+                  // Received tab
                   state.displayReceived.isEmpty
                       ? const SilarahEmptyState(
                           visual: SilarahEmptyVisual.interests,
@@ -377,7 +367,7 @@ class _InterestsScreenState extends State<InterestsScreen>
                           },
                         ),
 
-                  // ── Sent tab ──────────────────────────────
+                  // Sent tab
                   Column(
                     children: [
                       // Supabase-authoritative quota for every member.
@@ -408,8 +398,6 @@ class _InterestsScreenState extends State<InterestsScreen>
     );
   }
 }
-
-// ── Daily Limit Banner (Item 17) ──────────────────────────────
 
 class _DailyLimitBanner extends StatelessWidget {
   const _DailyLimitBanner({required this.state});
@@ -474,8 +462,7 @@ class _DailyLimitBanner extends StatelessWidget {
   }
 }
 
-// ── Avatar pair widget for match modal ───────────────────────
-
+// Avatar pair widget for match modal
 class _MatchAvatarPair extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -535,8 +522,7 @@ class _Avatar extends StatelessWidget {
   }
 }
 
-// ── Received list ─────────────────────────────────────────────
-
+// Received list
 class _ReceivedList extends StatelessWidget {
   const _ReceivedList({
     required this.entries,
@@ -690,7 +676,6 @@ class _ReceivedTile extends StatelessWidget {
             ),
           ],
 
-          // Item 18: Expiry countdown — shown below buttons for pending interests
           if (isPending) _ExpiryRow(entry: entry),
 
           // Action buttons — pending only
@@ -784,8 +769,6 @@ class _ReceivedTile extends StatelessWidget {
   }
 }
 
-// ── Item 18: Expiry countdown row ─────────────────────────────
-
 class _ExpiryRow extends StatelessWidget {
   const _ExpiryRow({required this.entry});
   final InterestEntry entry;
@@ -823,8 +806,7 @@ class _ExpiryRow extends StatelessWidget {
   }
 }
 
-// ── Sent list ─────────────────────────────────────────────────
-
+// Sent list
 class _SentList extends StatelessWidget {
   const _SentList({
     required this.entries,
@@ -915,7 +897,6 @@ class _SentTile extends StatelessWidget {
               UiText(entry.timeAgo, style: AppTypography.caption),
               const SizedBox(height: AppDimensions.space6),
               if (isPending)
-                // Item 19: Withdraw text button (AppColors.softCoral)
                 GestureDetector(
                   onTap: () {
                     HapticFeedback.selectionClick();
@@ -946,8 +927,7 @@ class _SentTile extends StatelessWidget {
   }
 }
 
-// ── Shared widgets ────────────────────────────────────────────
-
+// Shared widgets
 class _CircleAvatar extends StatelessWidget {
   const _CircleAvatar({
     required this.borderColor,

@@ -1,5 +1,3 @@
-// lib/core/data/country_sects_data.dart
-// ============================================================
 // SILARAH — Country-Adaptive Sect Configuration
 //
 // What Telegram-calibre apps actually do:
@@ -13,8 +11,6 @@
 // Turkey → Hanafi + Alevi acknowledged
 // Indonesia, Malaysia → Shafi'i first
 // South Asia → Full biradari-aware list
-// ============================================================
-
 class CountrySectConfig {
   const CountrySectConfig({
     required this.showSect,
@@ -74,7 +70,7 @@ class CountrySectData {
   static CountrySectConfig forCountry(String rawIso2) {
     final iso2 = rawIso2.toUpperCase();
 
-    // ── Gulf / politically sensitive ────────────────────────
+    // Gulf / politically sensitive
     if (_sectSensitiveCountries.contains(iso2)) {
       return const CountrySectConfig(
         showSect: false,
@@ -86,7 +82,7 @@ class CountrySectData {
       );
     }
 
-    // ── Iran / Shia-majority ────────────────────────────────
+    // Iran / Shia-majority
     if (iso2 == 'IR') {
       return const CountrySectConfig(
         showSect: true,
@@ -105,7 +101,7 @@ class CountrySectData {
       );
     }
 
-    // ── Iraq / Mixed ─────────────────────────────────────────
+    // Iraq / Mixed
     if (iso2 == 'IQ') {
       return const CountrySectConfig(
         showSect: true,
@@ -134,7 +130,7 @@ class CountrySectData {
       );
     }
 
-    // ── Lebanon ──────────────────────────────────────────────
+    // Lebanon
     if (iso2 == 'LB') {
       return const CountrySectConfig(
         showSect: true,
@@ -152,7 +148,7 @@ class CountrySectData {
       );
     }
 
-    // ── Syria ────────────────────────────────────────────────
+    // Syria
     if (iso2 == 'SY') {
       return const CountrySectConfig(
         showSect: true,
@@ -170,7 +166,7 @@ class CountrySectData {
       );
     }
 
-    // ── South Asia — Full biradari-aware sect list ───────────
+    // South Asia — Full biradari-aware sect list
     if (['IN', 'PK', 'BD', 'AF', 'LK', 'NP'].contains(iso2)) {
       return const CountrySectConfig(
         showSect: true,
@@ -207,7 +203,7 @@ class CountrySectData {
       );
     }
 
-    // ── Southeast Asia — Shafi'i majority ───────────────────
+    // Southeast Asia — Shafi'i majority
     if (['ID', 'MY', 'SG', 'BN', 'TH', 'PH'].contains(iso2)) {
       return const CountrySectConfig(
         showSect: true,
@@ -233,7 +229,7 @@ class CountrySectData {
       );
     }
 
-    // ── Central Asia ─────────────────────────────────────────
+    // Central Asia
     if (['KZ', 'UZ', 'KG', 'TJ', 'TM'].contains(iso2)) {
       return const CountrySectConfig(
         showSect: true,
@@ -256,7 +252,7 @@ class CountrySectData {
       );
     }
 
-    // ── Turkey (shown but with nuance) ──────────────────────
+    // Turkey (shown but with nuance)
     if (iso2 == 'TR') {
       return const CountrySectConfig(
         showSect: true,
@@ -277,7 +273,7 @@ class CountrySectData {
       );
     }
 
-    // ── Sub-Saharan Africa ───────────────────────────────────
+    // Sub-Saharan Africa
     if ([
       'NG',
       'GH',
@@ -317,7 +313,7 @@ class CountrySectData {
       );
     }
 
-    // ── Western diaspora (UK, US, CA, AU, EU) ───────────────
+    // Western diaspora (UK, US, CA, AU, EU)
     if ([
       'GB',
       'US',
@@ -368,7 +364,7 @@ class CountrySectData {
       );
     }
 
-    // ── Balkans ──────────────────────────────────────────────
+    // Balkans
     if (['BA', 'AL', 'XK', 'MK', 'ME'].contains(iso2)) {
       return const CountrySectConfig(
         showSect: true,
@@ -386,7 +382,7 @@ class CountrySectData {
       );
     }
 
-    // ── Azerbaijani / mixed ──────────────────────────────────
+    // Azerbaijani / mixed
     if (iso2 == 'AZ') {
       return const CountrySectConfig(
         showSect: true,
@@ -404,7 +400,7 @@ class CountrySectData {
       );
     }
 
-    // ── Russia & post-Soviet ─────────────────────────────────
+    // Russia & post-Soviet
     if (iso2 == 'RU') {
       return const CountrySectConfig(
         showSect: true,
@@ -429,7 +425,7 @@ class CountrySectData {
       );
     }
 
-    // ── China ────────────────────────────────────────────────
+    // China
     if (iso2 == 'CN') {
       return const CountrySectConfig(
         showSect: true,
@@ -448,7 +444,7 @@ class CountrySectData {
       );
     }
 
-    // ── Default — generic Sunni-first world list ─────────────
+    // Default — generic Sunni-first world list
     return const CountrySectConfig(
       showSect: true,
       showSubSect: true,

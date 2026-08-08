@@ -1,9 +1,5 @@
-// lib/core/utils/silarah_compute.dart
-// ============================================================
 // SILARAH — Background Compute / Isolate Parsers
 // Offloads heavy JSON mapping/deserialization to background threads.
-// ============================================================
-
 import '../models/discovery_profile.dart';
 import '../cubits/chat/chat_state.dart';
 

@@ -1,5 +1,3 @@
-// lib/core/services/connectivity_service.dart
-// ============================================================
 // SILARAH — Connectivity Service
 // Verifies that the configured backend is reachable instead of trusting a
 // network-interface or DNS-only signal. This keeps backend outages and captive
@@ -11,8 +9,6 @@
 //   final online = await service.checkNow();
 //   service.dispose(); // when done
 //
-// ============================================================
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';

@@ -1,9 +1,5 @@
-// lib/features/onboarding/widgets/step_header.dart
-// ============================================================
 // SILARAH — Step Header
 // Decorative gold ornament + screen title (Playfair) + subtitle (Inter muted).
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';

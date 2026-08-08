@@ -1,18 +1,11 @@
-// lib/core/cubits/interests/interests_cubit.dart
-// ============================================================
 // SILARAH — Interests Cubit (Supabase production flow)
 //
-// Blueprint lifecycle:
-//   send → PENDING  (gated by daily limit — Item 17)
 //   accept → ACCEPTED + match created (DB trigger)
 //   decline → DECLINED
-//   withdraw → WITHDRAWN (silent, while PENDING) — Item 19
 //   14 days → EXPIRED (DB cron job)
 //
 // Real mode: all operations hit Supabase interests/matches tables.
 // Production mode: all operations hit Supabase.
-// ============================================================
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'interests_state.dart';
@@ -50,8 +43,7 @@ class InterestsCubit extends Cubit<InterestsState> {
   static const _revisionCheckFreshness = Duration(seconds: 90);
   static const _maxRowsPerSection = 100;
 
-  // ── Init ──────────────────────────────────────────────────
-
+  // Init
   Future<void> loadData({bool force = false}) async {
     if (!SupabaseService.isInitialized) return;
     final userId = SupabaseService.currentUserId;
@@ -310,7 +302,6 @@ class InterestsCubit extends Cubit<InterestsState> {
     }
     return result;
   }
-  // ── Daily Limit (Item 17) ─────────────────────────────────
 
   void setDailyLimitForGender({
     required String gender,
@@ -415,8 +406,7 @@ class InterestsCubit extends Cubit<InterestsState> {
     }
   }
 
-  // ── Received actions ──────────────────────────────────────
-
+  // Received actions
   /// Accept an incoming interest → creates a match (via DB trigger).
   Future<bool> acceptInterest(String id) async {
     if (!SupabaseService.isInitialized) return false;
@@ -475,8 +465,7 @@ class InterestsCubit extends Cubit<InterestsState> {
     emit(state.copyWith(received: updated));
   }
 
-  // ── Sent actions ──────────────────────────────────────────
-
+  // Sent actions
   /// Send an interest from the discovery feed or profile detail.
   Future<bool> sendInterest(DiscoveryProfile profile, {String? note}) async {
     if (!SupabaseService.isInitialized) return false;
@@ -608,10 +597,7 @@ class InterestsCubit extends Cubit<InterestsState> {
     emit(state.copyWith(sent: updated));
   }
 
-  // ── Simulation helpers ────────────────────────────────────
-
-  // ── Helpers ───────────────────────────────────────────────
-
+  // Helpers
   InterestStatus _parseStatus(String s) {
     switch (s) {
       case 'pending':

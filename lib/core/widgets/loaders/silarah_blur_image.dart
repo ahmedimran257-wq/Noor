@@ -1,9 +1,5 @@
-// lib/core/widgets/loaders/silarah_blur_image.dart
-// ============================================================
 // SILARAH — Reusable BlurHash Network Image
 // progressive loading: renders blurred placeholder → crossfades to network image
-// ============================================================
-
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:blurhash_dart/blurhash_dart.dart';

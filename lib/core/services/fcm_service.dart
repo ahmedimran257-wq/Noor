@@ -1,5 +1,3 @@
-// lib/core/services/fcm_service.dart
-// ============================================================
 // SILARAH - Firebase Cloud Messaging Service
 //
 // Handles FCM token lifecycle:
@@ -10,8 +8,6 @@
 //
 // Replaces the OneSignal integration with a free, unlimited
 // alternative using Firebase Cloud Messaging.
-// ============================================================
-
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';

@@ -1,18 +1,12 @@
-// lib/core/cubits/block_report/block_report_state.dart
-// ============================================================
 // SILARAH — Block / Report State
 //
-// Blueprint (Part 9):
 //   - Blocking is silent. The blocked person is not notified.
 //   - Report reasons are predefined (8 categories).
 //   - 3 unique reports → auto-suspension trigger (DB-side).
 //   - Reporting immediately hides profile from reporter.
-// ============================================================
-
 import 'package:equatable/equatable.dart';
 
-// ── Report Reasons — exact blueprint values ──────────────────
-
+// Report Reasons — exact blueprint values
 enum ReportReason {
   fakeProfile(
     key: 'fake_profile',
@@ -66,8 +60,7 @@ enum ReportReason {
   final String detail;
 }
 
-// ── Data models ───────────────────────────────────────────────
-
+// Data models
 class BlockedUser extends Equatable {
   final String userId;
   final String name;
@@ -106,8 +99,7 @@ class ReportEntry extends Equatable {
   List<Object?> get props => [reportId, reportedUserId, reason, submittedAt];
 }
 
-// ── State ─────────────────────────────────────────────────────
-
+// State
 class BlockReportState extends Equatable {
   final List<BlockedUser> blockedUsers;
   final List<ReportEntry> reportHistory;

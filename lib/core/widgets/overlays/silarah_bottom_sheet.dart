@@ -1,10 +1,6 @@
-// lib/core/widgets/overlays/silarah_bottom_sheet.dart
-// ============================================================
 // SILARAH Bottom Sheet
 // "NO Pop-ups: Use Bottom Sheets that slide up with spring physics."
 // All dialogs and confirmations use this.
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
@@ -13,8 +9,7 @@ import '../../theme/app_typography.dart';
 import '../buttons/silarah_primary_button.dart';
 import '../buttons/silarah_secondary_button.dart';
 
-// ── Custom Route for Frosted Glass & Spring Transition ────────
-
+// Custom Route for Frosted Glass & Spring Transition
 class SilarahBottomSheetRoute<T> extends ModalBottomSheetRoute<T> {
   SilarahBottomSheetRoute({
     required super.builder,
@@ -57,8 +52,7 @@ class SilarahBottomSheetRoute<T> extends ModalBottomSheetRoute<T> {
   }
 }
 
-// ── Show Helper ───────────────────────────────────────────────
-
+// Show Helper
 Future<T?> showSilarahBottomSheet<T>({
   required BuildContext context,
   required Widget child,
@@ -76,8 +70,7 @@ Future<T?> showSilarahBottomSheet<T>({
   );
 }
 
-// ── Pulsing Handle Bar ────────────────────────────────────────
-
+// Pulsing Handle Bar
 class SilarahPulseHandle extends StatelessWidget {
   const SilarahPulseHandle({super.key});
 
@@ -95,8 +88,7 @@ class SilarahPulseHandle extends StatelessWidget {
   }
 }
 
-// ── Standard Bottom Sheet Shell ───────────────────────────────
-
+// Standard Bottom Sheet Shell
 class SilarahBottomSheet extends StatelessWidget {
   const SilarahBottomSheet({
     super.key,
@@ -216,8 +208,7 @@ class BottomSheetAction {
   final VoidCallback onTap;
 }
 
-// ── Report Options Sheet ──────────────────────────────────────
-
+// Report Options Sheet
 class SilarahReportSheet extends StatefulWidget {
   const SilarahReportSheet({super.key, required this.onSubmit});
   final ValueChanged<String> onSubmit;

@@ -1,8 +1,5 @@
-// lib/features/home/widgets/discovery_filter_bar.dart
-// ============================================================
 // SILARAH — Discovery Filter Bar (Step 6 — Functional)
 //
-// Blueprint (Part 8, Search & Filters):
 //   "A full-height bottom sheet with all available filters.
 //    Age range with a dual slider. Sect and sub-sect.
 //    Deen level. Verified only. Family type.
@@ -11,8 +8,6 @@
 // Each chip shows an active indicator when that filter is set.
 // Tapping "All Filters" opens the comprehensive sheet.
 // Tapping any individual chip opens that filter's mini-sheet.
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -23,8 +18,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import 'discovery_filter_sheet.dart';
-
-// ─────────────────────────────────────────────────────────────
 
 class DiscoveryFilterBar extends StatelessWidget {
   const DiscoveryFilterBar({super.key});
@@ -107,8 +100,7 @@ class DiscoveryFilterBar extends StatelessWidget {
     );
   }
 
-  // ── Filter openers ────────────────────────────────────────
-
+  // Filter openers
   void _showAllFilters(BuildContext context, DiscoveryFilter filter) {
     showDiscoveryFilterSheet(context, initial: filter);
   }
@@ -144,8 +136,7 @@ class DiscoveryFilterBar extends StatelessWidget {
   }
 }
 
-// ── Chip widget ───────────────────────────────────────────────
-
+// Chip widget
 class _Chip extends StatelessWidget {
   const _Chip({
     required this.icon,
@@ -223,9 +214,7 @@ class _Chip extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
 // FILTER BOTTOM SHEETS
-// ═══════════════════════════════════════════════════════════════
 
 /// Shared sheet chrome
 class _SheetBase extends StatelessWidget {
@@ -319,8 +308,7 @@ class _SheetBase extends StatelessWidget {
   }
 }
 
-// ── Age Range Sheet ───────────────────────────────────────────
-
+// Age Range Sheet
 class _AgeRangeSheet extends StatefulWidget {
   const _AgeRangeSheet({required this.initial});
   final DiscoveryFilter initial;

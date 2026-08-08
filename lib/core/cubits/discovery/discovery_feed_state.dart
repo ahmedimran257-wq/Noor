@@ -1,8 +1,4 @@
-// lib/core/cubits/discovery/discovery_feed_state.dart
-// ============================================================
 // SILARAH — Discovery Feed State (Step 6 update)
-// ============================================================
-
 import 'package:equatable/equatable.dart';
 import '../../models/discovery_profile.dart';
 import 'discovery_filter.dart';

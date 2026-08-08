@@ -1,9 +1,5 @@
-// lib/core/cubits/subscription/subscription_cubit.dart
-// ============================================================
 // SILARAH - Subscription Cubit
 // Production RevenueCat flow only.
-// ============================================================
-
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';

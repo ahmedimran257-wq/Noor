@@ -1,8 +1,4 @@
-// lib/features/home/screens/discovery_feed_screen.dart
-// ============================================================
-// SILARAH — Discovery Feed (Step 5 — Blueprint Complete)
 //
-// Blueprint requirements (Part 8):
 //   • Horizontal paged carousel — one card at a time
 //   • viewportFraction 0.88 → adjacent cards peek at 0.95 scale
 //   • Cursor-based pagination via DiscoveryFeedCubit
@@ -13,8 +9,6 @@
 //   • Dot indicator (max 7, sliding window)
 //   • Interest ceremony → cubit + overlay
 //   • Bookmark toggle with persistence via BookmarkService
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 
@@ -255,8 +249,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
     return allowed;
   }
 
-  // ── Build ─────────────────────────────────────────────────
-
+  // Build
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -326,12 +319,12 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
                 ),
               ),
 
-              // ── Filter bar ──────────────────────────────────
+              // Filter bar
               const SliverToBoxAdapter(child: DiscoveryFilterBar()),
               const SliverToBoxAdapter(
                   child: SizedBox(height: AppDimensions.space16)),
 
-              // ── Card carousel ────────────────────────────────
+              // Card carousel
               SliverFillRemaining(
                 hasScrollBody: true,
                 child: _buildCarousel(feedState, interests, canMessage),
@@ -581,8 +574,7 @@ class _DiscoveryError extends StatelessWidget {
   }
 }
 
-// ── Wild-card Label ───────────────────────────────────────────
-
+// Wild-card Label
 class _WildCardLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -610,8 +602,7 @@ class _WildCardLabel extends StatelessWidget {
   }
 }
 
-// ── Free-Tier Counter Badge ───────────────────────────────────
-
+// Free-Tier Counter Badge
 class _FreeTierCounter extends StatelessWidget {
   const _FreeTierCounter({required this.remaining});
   final int remaining;
@@ -645,8 +636,7 @@ class _FreeTierCounter extends StatelessWidget {
   }
 }
 
-// ── Notification Button ───────────────────────────────────────
-
+// Notification Button
 class _NotificationButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -663,8 +653,7 @@ class _NotificationButton extends StatelessWidget {
   }
 }
 
-// ── Initial Shimmer (3-card stack) ────────────────────────────
-
+// Initial Shimmer (3-card stack)
 class _InitialShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -678,8 +667,7 @@ class _InitialShimmer extends StatelessWidget {
   }
 }
 
-// ── Empty Feed State ──────────────────────────────────────────
-
+// Empty Feed State
 class _EmptyFeed extends StatelessWidget {
   const _EmptyFeed({
     required this.hasActiveFilters,
@@ -704,7 +692,7 @@ class _EmptyFeed extends StatelessWidget {
   }
 }
 
-// ── M9: Free-Tier Browse Limit ────────────────────────────────
+// M9: Free-Tier Browse Limit
 class _FreeTierLimitReached extends StatelessWidget {
   const _FreeTierLimitReached({required this.onUpgrade});
   final VoidCallback onUpgrade;

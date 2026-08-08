@@ -1,12 +1,8 @@
-// lib/core/services/referral_service.dart
-// ============================================================
 // SILARAH — Referral Service
 //
 // Fixes Audit Finding 7.1 (High):
 //   No viral or ambassador mechanics. Handles referral code
 //   generation, application, and sharing.
-// ============================================================
-
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_service.dart';

@@ -1,13 +1,8 @@
-// lib/core/cubits/subscription/subscription_state.dart
-// ============================================================
 // SILARAH — Subscription State
 //
-// Blueprint (Part 2 & Part 14):
 //   • Gender-split: women always free, men must subscribe to message
 //   • status: none | active | grace
 //   • grace: 24h window on billing_issue (DB trigger enforces this too)
-// ============================================================
-
 import 'package:equatable/equatable.dart';
 
 enum SubscriptionStatus { none, active, grace }
@@ -27,7 +22,6 @@ class SubscriptionState extends Equatable {
     this.successMessage,
   });
 
-  // ── Blueprint Part 14: assert_messaging_allowed logic ─────
   // Women always message free.
   // Men need active or grace (within 24h) to message.
   bool canMessage(String gender) {

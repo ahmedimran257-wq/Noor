@@ -1,12 +1,7 @@
-// lib/features/home/screens/chat_screen.dart
-// ============================================================
 // SILARAH — Individual Chat Screen
-// Phase 2: Respectful Closure ("End Match") feature added.
 //   • Three-dot menu → "End Match" option
 //   • _EndMatchSheet: 5 pre-written Islamic closure messages
 //   • Closed conversation shows banner + disables input
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:math' as math;
 
@@ -594,8 +589,7 @@ class _ChatScreenState extends State<ChatScreen>
   }
 }
 
-// ── Closed Banner ─────────────────────────────────────────────
-
+// Closed Banner
 class _ClosedBanner extends StatelessWidget {
   const _ClosedBanner({required this.name, required this.closedByMe});
   final String name;
@@ -627,8 +621,7 @@ class _ClosedBanner extends StatelessWidget {
   }
 }
 
-// ── Closed Input Replacement ──────────────────────────────────
-
+// Closed Input Replacement
 class _ClosedInputBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -652,8 +645,7 @@ class _ClosedInputBar extends StatelessWidget {
   }
 }
 
-// ── Suspended Banner ──────────────────────────────────────────
-
+// Suspended Banner
 class _SuspendedBanner extends StatelessWidget {
   const _SuspendedBanner({required this.suspendedUntil});
   final DateTime? suspendedUntil;
@@ -689,8 +681,7 @@ class _SuspendedBanner extends StatelessWidget {
   }
 }
 
-// ── Suspended Input Replacement ──────────────────────────────
-
+// Suspended Input Replacement
 class _SuspendedInputBar extends StatelessWidget {
   const _SuspendedInputBar({required this.suspendedUntil});
   final DateTime? suspendedUntil;
@@ -717,8 +708,7 @@ class _SuspendedInputBar extends StatelessWidget {
   }
 }
 
-// ── End Match Bottom Sheet ────────────────────────────────────
-
+// End Match Bottom Sheet
 class _EndMatchSheet extends StatefulWidget {
   const _EndMatchSheet({required this.onConfirm});
   final ValueChanged<String> onConfirm;
@@ -850,8 +840,7 @@ class _EndMatchSheetState extends State<_EndMatchSheet> {
   }
 }
 
-// ── Suggested Openers Area ────────────────────────────────────
-
+// Suggested Openers Area
 class _ReportMessageSheet extends StatelessWidget {
   const _ReportMessageSheet({required this.onReport});
   final ValueChanged<String> onReport;
@@ -976,8 +965,7 @@ class _SuggestedOpenersArea extends StatelessWidget {
   }
 }
 
-// ── AppBar ────────────────────────────────────────────────────
-
+// AppBar
 class _ChatAccessGate extends StatelessWidget {
   const _ChatAccessGate({
     required this.decision,
@@ -1299,8 +1287,7 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-// ── Opener Card ───────────────────────────────────────────────
-
+// Opener Card
 class _OpenerCard extends StatelessWidget {
   const _OpenerCard({required this.text, required this.onSelect});
   final String text;
@@ -1330,8 +1317,7 @@ class _OpenerCard extends StatelessWidget {
   }
 }
 
-// ── Live message motion & typing presence ────────────────────
-
+// Live message motion & typing presence
 class _MessageArrival extends StatelessWidget {
   const _MessageArrival({
     super.key,
@@ -1500,8 +1486,7 @@ class _TypingPresenceBarState extends State<_TypingPresenceBar>
   }
 }
 
-// ── Message bubble ────────────────────────────────────────────
-
+// Message bubble
 class _MessageBubble extends StatelessWidget {
   const _MessageBubble({
     required this.message,
@@ -1695,8 +1680,7 @@ class _MessageBubble extends StatelessWidget {
   }
 }
 
-// ── Message status icon ───────────────────────────────────────
-
+// Message status icon
 class _StatusIcon extends StatelessWidget {
   const _StatusIcon({required this.status, this.onRetry});
   final MessageStatus status;
@@ -1734,8 +1718,7 @@ class _StatusIcon extends StatelessWidget {
   }
 }
 
-// ── Input bar ─────────────────────────────────────────────────
-// Blueprint: "Minimalist field. No 'Send' button — only a Gold
+// Input bar
 // arrow icon that appears when typing starts."
 
 class _InputBar extends StatefulWidget {

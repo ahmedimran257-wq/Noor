@@ -1,4 +1,3 @@
-// lib/core/data/country_languages_data.dart
 // Generated from Wikidata official-language statements (CC0), 2026-06-22.
 // Covers every ISO-2 country supported by kAllCountries for offline use.
 

@@ -2598,145 +2598,144 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String legacy_openProfile(String name) {
+  String ui_openProfile(String name) {
     return 'Open $name profile';
   }
 
   @override
-  String legacy_typing(String name) {
+  String ui_typing(String name) {
     return '$name is typing';
   }
 
   @override
-  String legacy_deleteFailed(String error) {
+  String ui_deleteFailed(String error) {
     return 'Failed to delete account: $error';
   }
 
   @override
-  String legacy_changeCountry(String country) {
+  String ui_changeCountry(String country) {
     return 'Change country, currently $country';
   }
 
   @override
-  String legacy_emailCopied(String email) {
+  String ui_emailCopied(String email) {
     return 'No email app found. $email was copied.';
   }
 
   @override
-  String legacy_messagePerson(String name) {
+  String ui_messagePerson(String name) {
     return 'Message $name';
   }
 
   @override
-  String legacy_renewsDate(String date) {
+  String ui_renewsDate(String date) {
     return 'Renews $date';
   }
 
   @override
-  String legacy_ageYears(int age) {
+  String ui_ageYears(int age) {
     return '$age yrs';
   }
 
   @override
-  String legacy_photoNumber(int number) {
+  String ui_photoNumber(int number) {
     return 'Photo $number';
   }
 
   @override
-  String legacy_photoCount(int count) {
+  String ui_photoCount(int count) {
     return '$count of 4 photos';
   }
 
   @override
-  String legacy_removeLabel(String label) {
+  String ui_removeLabel(String label) {
     return 'Remove $label';
   }
 
   @override
-  String legacy_selectedLabel(String label) {
+  String ui_selectedLabel(String label) {
     return '$label selected';
   }
 
   @override
-  String legacy_addLabel(String label) {
+  String ui_addLabel(String label) {
     return 'Add $label';
   }
 
   @override
-  String legacy_kycStatusSemantics(String status) {
+  String ui_kycStatusSemantics(String status) {
     return 'Identity verification status: $status';
   }
 
   @override
-  String legacy_photoRequestSent(String name) {
+  String ui_photoRequestSent(String name) {
     return 'Photo request sent to $name.';
   }
 
   @override
-  String legacy_yesterdayTime(String time) {
+  String ui_yesterdayTime(String time) {
     return 'Yesterday $time';
   }
 
   @override
-  String legacy_minutesAgo(int count) {
+  String ui_minutesAgo(int count) {
     return '$count min ago';
   }
 
   @override
-  String legacy_hoursAgo(int count) {
+  String ui_hoursAgo(int count) {
     return '$count hr ago';
   }
 
   @override
-  String legacy_daysAgo(int count) {
+  String ui_daysAgo(int count) {
     return '$count days ago';
   }
 
   @override
-  String legacy_renewsAt(String time) {
+  String ui_renewsAt(String time) {
     return 'Renews at $time';
   }
 
   @override
-  String legacy_photoReadyReview(int number) {
+  String ui_photoReadyReview(int number) {
     return 'Photo $number is ready for protected review';
   }
 
   @override
-  String get legacy_onePhotoUnlock =>
+  String get ui_onePhotoUnlock =>
       '1 photo will unlock automatically once you both express interest.';
 
   @override
-  String legacy_manyPhotosUnlock(int count) {
+  String ui_manyPhotosUnlock(int count) {
     return '$count photos will unlock automatically once you both express interest.';
   }
 
   @override
-  String get legacy_askOnePhoto =>
-      'Ask the owner for permission to view 1 photo.';
+  String get ui_askOnePhoto => 'Ask the owner for permission to view 1 photo.';
 
   @override
-  String legacy_askManyPhotos(int count) {
+  String ui_askManyPhotos(int count) {
     return 'Ask the owner for permission to view $count photos.';
   }
 
   @override
-  String legacy_heightImperial(int feet, int inches) {
+  String ui_heightImperial(int feet, int inches) {
     return '$feet ft $inches in';
   }
 
   @override
-  String legacy_minutesShort(int count) {
+  String ui_minutesShort(int count) {
     return '${count}m';
   }
 
   @override
-  String legacy_hoursShort(int count) {
+  String ui_hoursShort(int count) {
     return '${count}h';
   }
 
   @override
-  String legacy_daysShort(int count) {
+  String ui_daysShort(int count) {
     return '${count}d';
   }
 }

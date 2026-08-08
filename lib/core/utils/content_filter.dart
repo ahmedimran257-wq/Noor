@@ -1,5 +1,3 @@
-// lib/core/utils/content_filter.dart
-// ============================================================
 // SILARAH — Content Filter (Shared)
 // Detects and redacts contact information, social media handles,
 // external links, and phone numbers from user-generated text.
@@ -8,13 +6,10 @@
 //   - Profile/edit surfaces - bio validation
 //   • ChatCubit — real-time message filtering (T2)
 //   • InterestsCubit — interest note validation (D1)
-// ============================================================
-
 class ContentFilter {
   ContentFilter._();
 
-  // ── Patterns ──────────────────────────────────────────────
-
+  // Patterns
   static final _phone = RegExp(r'(\+?\d[\d\s\-\.]{6,}\d)');
   static final _email = RegExp(r'[\w.+-]+@[\w-]+\.[\w.]+');
   static final _url = RegExp(r'(https?://|www\.)\S+');
@@ -24,8 +19,7 @@ class ContentFilter {
     caseSensitive: false,
   );
 
-  // ── Validation (returns error message or null) ────────────
-
+  // Validation (returns error message or null)
   /// Returns a human-readable error message if [text] contains
   /// prohibited contact info, or null if the text is clean.
   static String? validate(String text) {
@@ -47,8 +41,7 @@ class ContentFilter {
   /// Returns true if [text] contains any prohibited content.
   static bool hasViolation(String text) => validate(text) != null;
 
-  // ── Redaction (replaces violations inline) ────────────────
-
+  // Redaction (replaces violations inline)
   /// Replaces all detected contact info with `[removed]`.
   /// Safe to call on clean text (no-op).
   static String redact(String text) {

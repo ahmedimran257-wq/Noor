@@ -1,9 +1,5 @@
-// lib/features/onboarding/screens/email_verification_screen.dart
-// ============================================================
 // SILARAH - Email Verification Screen
 // Supabase email OTP with the existing six-box spring OTP UI.
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 

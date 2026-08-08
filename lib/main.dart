@@ -1,11 +1,7 @@
-// lib/main.dart
-// ============================================================
 // Silarah — Entry Point
 // "Begin with bismillah"
 // Step 4: GoRouter + MultiBlocProvider wired up.
 //         Auth-gated routing with Supabase email OTP.
-// ============================================================
-
 import 'dart:async';
 import 'dart:io' show Platform;
 import 'dart:ui' as ui;
@@ -78,7 +74,7 @@ void main() async {
     ),
   );
 
-  // ── Firebase Initialization ─────────────────────────────────
+  // Firebase Initialization
   try {
     final startupDependencies = await Future.wait<Object>([
       SharedPreferences.getInstance(),
@@ -99,7 +95,7 @@ void main() async {
       );
     }
 
-    // ── Supabase Initialization ─────────────────────────────────
+    // Supabase Initialization
     // Initialize Supabase client
     await SupabaseService.initialize();
     await AuthCallbackService.instance.initialize();
@@ -109,8 +105,7 @@ void main() async {
     return;
   }
 
-  // ── Global Error Handling + Crashlytics ────────────────────
-
+  // Global Error Handling + Crashlytics
   // Catch Flutter framework errors → forward to Crashlytics
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
@@ -200,7 +195,6 @@ void main() async {
     systemNavigationBarContrastEnforced: false,
   ));
 
-  // Portrait-only for Phase 1. Do not block the first frame on this.
   unawaited(SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]));
@@ -658,7 +652,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
     unawaited(_connectivitySubscription?.cancel());
     unawaited(_notificationRefreshSubscription?.cancel());
     PresenceService.instance.stop();
-    // ── Dispose Cubits ─────────────────────────────────────────
+    // Dispose Cubits
     _authCubit.close();
     _onboardingCubit.close();
     _interestsCubit.close();
@@ -672,7 +666,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
     _themeCubit.close();
     _accountStandingCubit.close();
 
-    // ── Dispose Services ───────────────────────────────────────
+    // Dispose Services
     _connectivityService?.dispose();
     SubscriptionService.instance.dispose();
     WaliModeService.instance.dispose();
@@ -764,10 +758,10 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
                   themeAnimationCurve: Curves.easeOutCubic,
                   locale: locale,
 
-                  // ── Router ───────────────────────────────────
+                  // Router
                   routerConfig: _router,
 
-                  // ── Localizations ─────────────────────────────
+                  // Localizations
                   supportedLocales: AppLocalizations.supportedLocales,
                   localizationsDelegates: const [
                     AppLocalizations.delegate,
@@ -785,7 +779,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
                     return const Locale('en');
                   },
 
-                  // ── RTL-aware directionality ──────────────────
+                  // RTL-aware directionality
                   builder: (context, child) {
                     final loc = Localizations.localeOf(context);
                     final isRtl = _rtlLocales.contains(loc.languageCode);

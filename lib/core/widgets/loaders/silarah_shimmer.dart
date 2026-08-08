@@ -1,10 +1,6 @@
-// lib/core/widgets/loaders/silarah_shimmer.dart
-// ============================================================
 // SILARAH Loading States
 // "No spinning wheels. Use Shimmer Effects
 //  (Slate Mist → Obsidian Night gradient moving left to right)."
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
@@ -162,8 +158,7 @@ class _SilarahPulseLoaderState extends State<SilarahPulseLoader>
   }
 }
 
-// ── Base Shimmer Widget ───────────────────────────────────────
-
+// Base Shimmer Widget
 class SilarahShimmer extends StatefulWidget {
   const SilarahShimmer({
     super.key,
@@ -234,8 +229,7 @@ class _SilarahShimmerState extends State<SilarahShimmer>
   }
 }
 
-// ── Shimmer Box (building block) ─────────────────────────────
-
+// Shimmer Box (building block)
 class ShimmerBox extends StatelessWidget {
   const ShimmerBox({
     super.key,
@@ -263,8 +257,7 @@ class ShimmerBox extends StatelessWidget {
   }
 }
 
-// ── Profile Card Shimmer ──────────────────────────────────────
-
+// Profile Card Shimmer
 /// A restrained discovery placeholder.
 ///
 /// Profile cards occupy most of the viewport, so the generic full-surface
@@ -517,8 +510,7 @@ class _ProfileLoaderPill extends StatelessWidget {
       );
 }
 
-// ── Conversation List Item Shimmer ────────────────────────────
-
+// Conversation List Item Shimmer
 class SilarahConversationShimmer extends StatelessWidget {
   const SilarahConversationShimmer({super.key});
 
@@ -557,8 +549,7 @@ class SilarahConversationShimmer extends StatelessWidget {
   }
 }
 
-// ── Interest Card Shimmer ─────────────────────────────────────
-
+// Interest Card Shimmer
 class SilarahInterestShimmer extends StatelessWidget {
   const SilarahInterestShimmer({super.key});
 

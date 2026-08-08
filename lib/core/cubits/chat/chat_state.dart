@@ -1,24 +1,17 @@
-// lib/core/cubits/chat/chat_state.dart
-// ============================================================
 // SILARAH — Chat State
 //
-// Blueprint (Part 8, Conversations):
 //   • Conversations list sorted by newest message
 //   • Unread count per conversation
 //   • Messages: sent (gold-tinted right) / received (surface left)
 //   • Message status: queued | sent | delivered | read
 //   • Timestamps hidden by default; revealed on tap
 //   • Respectful closure: isMatchClosed + closureMessage per conversation
-// ============================================================
-
 import 'package:equatable/equatable.dart';
 
-// ── Message status ─────────────────────────────────────────────
-
+// Message status
 enum MessageStatus { queued, sent, delivered, read, failed }
 
-// ── Message ───────────────────────────────────────────────────
-
+// Message
 class ChatMessage extends Equatable {
   const ChatMessage({
     required this.id,
@@ -71,8 +64,7 @@ class ChatMessage extends Equatable {
       ];
 }
 
-// ── Conversation ──────────────────────────────────────────────
-
+// Conversation
 class Conversation extends Equatable {
   const Conversation({
     required this.id,
@@ -168,8 +160,7 @@ class Conversation extends Equatable {
       ];
 }
 
-// ── Chat State ────────────────────────────────────────────────
-
+// Chat State
 class ChatState extends Equatable {
   const ChatState({
     this.conversations = const [],

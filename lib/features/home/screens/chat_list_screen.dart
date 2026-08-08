@@ -1,14 +1,9 @@
-// lib/features/home/screens/chat_list_screen.dart
-// ============================================================
 // SILARAH — Chat List (Step 8 — Complete)
 //
-// Blueprint (Part 8, Conversations):
 //   • Sorted by most recent message
 //   • Unread → gold left border + heavier name weight + gold badge
 //   • Avatar placeholder + name + last message preview + time
 //   • Empty state with encouraging message
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 
@@ -126,7 +121,7 @@ class _ChatListScreenState extends State<ChatListScreen>
 
         return Column(
           children: [
-            // ── Header ──────────────────────────────────────
+            // Header
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppDimensions.space24,
@@ -393,8 +388,7 @@ class _ConversationEntranceState extends State<_ConversationEntrance> {
   }
 }
 
-// ── Conversation tile ─────────────────────────────────────────
-
+// Conversation tile
 class _ConversationTile extends StatelessWidget {
   const _ConversationTile({
     required this.conversation,
@@ -596,8 +590,7 @@ class _ConversationTile extends StatelessWidget {
   }
 }
 
-// ── Empty State ────────────────────────────────────────────────
-
+// Empty State
 class _ChatEmptyState extends StatelessWidget {
   const _ChatEmptyState({required this.hasSearchQuery});
 

@@ -16,16 +16,14 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-// ── Viewer row model ─────────────────────────────────────────
-
+// Viewer row model
 class _Viewer {
   const _Viewer({required this.profile, required this.viewedAt});
   final DiscoveryProfile profile;
   final DateTime viewedAt;
 }
 
-// ── Screen ────────────────────────────────────────────────────
-
+// Screen
 class ProfileViewsScreen extends StatefulWidget {
   const ProfileViewsScreen({super.key});
 
@@ -351,8 +349,7 @@ class _PremiumViewerGate extends StatelessWidget {
   }
 }
 
-// ── Shimmer loader ───────────────────────────────────────────
-
+// Shimmer loader
 class _ShimmerLoader extends StatelessWidget {
   const _ShimmerLoader();
 
@@ -415,8 +412,7 @@ class _ShimmerLoader extends StatelessWidget {
   }
 }
 
-// ── Empty State ──────────────────────────────────────────────
-
+// Empty State
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
 
@@ -461,8 +457,7 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-// ── Viewer tile ───────────────────────────────────────────────
-
+// Viewer tile
 class _ViewerTile extends StatelessWidget {
   const _ViewerTile({
     required this.displayName,

@@ -1,5 +1,3 @@
-// lib/core/data/country_communities_data.dart
-// ============================================================
 // SILARAH — Muslim Communities by Country
 //
 // Covers all 198 supported countries through curated, regional, or
@@ -11,8 +9,6 @@
 //   • Diaspora community blends for Western countries
 //   • "Prefer not to say" + "Other" always at end
 //   • No offensive or derogatory community labels
-// ============================================================
-
 import 'country_data.dart';
 
 class CountryCommunityData {
@@ -55,7 +51,7 @@ class CountryCommunityData {
     return [label, 'Convert / Revert', 'Other', 'Prefer not to say'];
   }
 
-  // ── Tier 2: Regional clusters for uncurated countries ─────
+  // Tier 2: Regional clusters for uncurated countries
   static const _regionalClusters = <List<String>, List<String>>{
     // Pacific Islands
     [
@@ -156,10 +152,9 @@ class CountryCommunityData {
     ]: ['KP', 'LA'],
   };
 
-  // ── Community map ─────────────────────────────────────────
+  // Community map
   static const Map<String, List<String>> _data = {
-    // ═══════════════ SOUTH ASIA ══════════════════════════════
-
+    // SOUTH ASIA
     'IN': [
       // North Indian / UP / Bihar
       'Syed', 'Sheikh', 'Qureshi', 'Ansari', 'Khan',
@@ -269,8 +264,7 @@ class CountryCommunityData {
       'Prefer not to say',
     ],
 
-    // ═══════════════ MENA ════════════════════════════════════
-
+    // MENA
     'SA': [
       'Hejazi Arab',
       'Najdi Arab',
@@ -482,8 +476,7 @@ class CountryCommunityData {
       'Prefer not to say',
     ],
 
-    // ═══════════════ CENTRAL / INNER ASIA ════════════════════
-
+    // CENTRAL / INNER ASIA
     'TR': [
       'Turkish',
       'Kurdish',
@@ -554,8 +547,7 @@ class CountryCommunityData {
       'Prefer not to say',
     ],
 
-    // ═══════════════ SOUTHEAST ASIA ══════════════════════════
-
+    // SOUTHEAST ASIA
     'ID': [
       'Javanese',
       'Sundanese',
@@ -628,8 +620,7 @@ class CountryCommunityData {
       'Prefer not to say',
     ],
 
-    // ═══════════════ SUB-SAHARAN AFRICA ══════════════════════
-
+    // SUB-SAHARAN AFRICA
     'NG': [
       'Hausa',
       'Fulani / Fula',
@@ -760,8 +751,7 @@ class CountryCommunityData {
       'Prefer not to say',
     ],
 
-    // ═══════════════ WESTERN EUROPE ══════════════════════════
-
+    // WESTERN EUROPE
     'GB': [
       // South Asian diaspora (largest Muslim group in UK)
       'Pakistani British', 'Bangladeshi British',
@@ -868,8 +858,7 @@ class CountryCommunityData {
       'Prefer not to say',
     ],
 
-    // ═══════════════ NORTH AMERICA ═══════════════════════════
-
+    // NORTH AMERICA
     'US': [
       // South Asian
       'Pakistani American', 'Indian Muslim American',
@@ -908,8 +897,7 @@ class CountryCommunityData {
       'Prefer not to say',
     ],
 
-    // ═══════════════ OCEANIA ═════════════════════════════════
-
+    // OCEANIA
     'AU': [
       'Lebanese Australian',
       'Pakistani Australian',
@@ -936,8 +924,7 @@ class CountryCommunityData {
       'Prefer not to say',
     ],
 
-    // ═══════════════ BALKANS / EASTERN EUROPE ════════════════
-
+    // BALKANS / EASTERN EUROPE
     'BA': [
       'Bosniak',
       'Bosanski',
@@ -975,8 +962,7 @@ class CountryCommunityData {
       'Prefer not to say',
     ],
 
-    // ═══════════════ OTHER ════════════════════════════════════
-
+    // OTHER
     'RU': [
       'Tatar',
       'Bashkir',
@@ -1009,8 +995,7 @@ class CountryCommunityData {
       'Prefer not to say',
     ],
 
-    // ═══════════════ PHASE 2.5 — NEW CURATED ENTRIES ══════════
-
+    // PHASE 2.5 — NEW CURATED ENTRIES
     // Suriname — large Javanese/Indian Muslim population
     'SR': [
       'Javanese Surinamese',

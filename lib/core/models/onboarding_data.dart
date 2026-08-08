@@ -1,10 +1,6 @@
-// lib/core/models/onboarding_data.dart
-// ============================================================
 // SILARAH — Onboarding Data Accumulator
 // An immutable value object that accumulates all onboarding
 // field values across all steps using copyWith().
-// ============================================================
-
 /// Who the profile is being created for.
 enum ProfileFor { myself, guardian }
 
@@ -146,7 +142,6 @@ class OnboardingData {
     this.guardianAuthorityScope, // 'full','advisory','limited'
     this.guardianMode, // 'passive','active'
 
-    // Phase 1 additions
     this.isRevert, // 'yes','no','prefer_not_to_say'
     this.polygamyStatus, // male: 'first_marriage','currently_married','prefer_not_to_say'
     this.polygamyAcceptance, // female: 'yes','no','open_to_discussion','prefer_not_to_say'
@@ -276,7 +271,6 @@ class OnboardingData {
   final String? guardianAuthorityScope;
   final String? guardianMode; // 'passive' or 'active'
 
-  // Phase 1 additions
   final String? isRevert;
   final String? polygamyStatus;
   final String? polygamyAcceptance;

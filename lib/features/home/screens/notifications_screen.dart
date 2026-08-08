@@ -1,12 +1,8 @@
-// lib/features/home/screens/notifications_screen.dart
-// ============================================================
 // SILARAH — Notifications Screen (Feature 11)
 // Shows all notifications with read/unread state.
 // AppBar: "Mark all read" text button.
 // Each row: type icon in colored circle + title + body + time.
 // Unread rows: gold 3px left border.
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -155,8 +151,7 @@ class NotificationsScreen extends StatelessWidget {
   }
 }
 
-// ── Notification tile ─────────────────────────────────────────
-
+// Notification tile
 enum _NotificationMenuAction { markAllRead, clearAll }
 
 Future<bool> _confirmDeleteOne(BuildContext context) async {
@@ -400,8 +395,7 @@ class _NotificationTile extends StatelessWidget {
   }
 }
 
-// ── Empty state ───────────────────────────────────────────────
-
+// Empty state
 class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

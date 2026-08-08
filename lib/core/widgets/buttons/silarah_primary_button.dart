@@ -1,12 +1,8 @@
-// lib/core/widgets/buttons/silarah_primary_button.dart
-// ============================================================
 // Primary Button — "The Action"
 // BG: Champagne Gold | Text: Obsidian Night
 // Radius: 12px | Height: 56px
 // Effect: Subtle scale down (0.97) on press. No ripple.
 // NO Gradients in buttons. Solid Champagne Gold only.
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';

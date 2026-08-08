@@ -1,5 +1,3 @@
-// lib/core/data/country_data.dart
-// ============================================================
 // SILARAH — Complete Country Database
 //
 // • All 198 supported countries
@@ -11,12 +9,9 @@
 // statically inside the app — same as this file. The "dynamic"
 // part is auto-detecting the device country and live-formatting
 // the number. There is no API call for country data.
-// ============================================================
-
 import 'package:flutter/widgets.dart';
 
-// ── Model ─────────────────────────────────────────────────────
-
+// Model
 class CountryInfo {
   const CountryInfo({
     required this.iso2,
@@ -65,7 +60,7 @@ class CountryInfo {
   }
 }
 
-// ── Auto-detect device country ────────────────────────────────
+// Auto-detect device country
 //
 // Reads the device locale's country code (e.g. 'IN', 'GB').
 // Works on iOS and Android without any permissions.
@@ -83,7 +78,7 @@ CountryInfo deviceCountry() {
   return kAllCountries.firstWhere((c) => c.iso2 == 'US');
 }
 
-// ── Lookup by typed dial prefix ───────────────────────────────
+// Lookup by typed dial prefix
 //
 // When user types '+9178...' we try:
 //   4 digits: +9178 → no match
@@ -104,7 +99,7 @@ CountryInfo? countryByDialPrefix(String digitsAfterPlus) {
   return null;
 }
 
-// ── Complete country list — 198 entries ───────────────────────
+// Complete country list — 198 entries
 //
 // Priority field:
 //   10 = Muslim-majority top markets (shown first in Popular section)
@@ -118,7 +113,7 @@ CountryInfo? countryByDialPrefix(String digitsAfterPlus) {
 //   '(' ')' = parentheses
 
 const List<CountryInfo> kAllCountries = [
-  // ── Popular — Muslim-majority markets ──────────────────────
+  // Popular — Muslim-majority markets
   CountryInfo(
       iso2: 'IN',
       dialCode: '+91',
@@ -204,7 +199,7 @@ const List<CountryInfo> kAllCountries = [
       format: '#### ####',
       priority: 10),
 
-  // ── Popular — Major diaspora destinations ──────────────────
+  // Popular — Major diaspora destinations
   CountryInfo(
       iso2: 'GB',
       dialCode: '+44',
@@ -272,7 +267,7 @@ const List<CountryInfo> kAllCountries = [
       format: '## ### ####',
       priority: 5),
 
-  // ── A ──────────────────────────────────────────────────────
+  // A
   CountryInfo(
       iso2: 'AF', dialCode: '+93', name: 'Afghanistan', format: '## ### ####'),
   CountryInfo(
@@ -292,7 +287,7 @@ const List<CountryInfo> kAllCountries = [
   CountryInfo(
       iso2: 'AZ', dialCode: '+994', name: 'Azerbaijan', format: '## ### ## ##'),
 
-  // ── B ──────────────────────────────────────────────────────
+  // B
   CountryInfo(iso2: 'BS', dialCode: '+1', name: 'Bahamas'),
   CountryInfo(iso2: 'BB', dialCode: '+1', name: 'Barbados'),
   CountryInfo(
@@ -326,7 +321,7 @@ const List<CountryInfo> kAllCountries = [
   CountryInfo(
       iso2: 'BI', dialCode: '+257', name: 'Burundi', format: '## ## ## ##'),
 
-  // ── C ──────────────────────────────────────────────────────
+  // C
   CountryInfo(
       iso2: 'CV', dialCode: '+238', name: 'Cabo Verde', format: '### ## ##'),
   CountryInfo(
@@ -370,7 +365,7 @@ const List<CountryInfo> kAllCountries = [
       name: 'Czech Republic',
       format: '### ### ###'),
 
-  // ── D ──────────────────────────────────────────────────────
+  // D
   CountryInfo(
       iso2: 'DK', dialCode: '+45', name: 'Denmark', format: '## ## ## ##'),
   CountryInfo(
@@ -378,7 +373,7 @@ const List<CountryInfo> kAllCountries = [
   CountryInfo(iso2: 'DM', dialCode: '+1', name: 'Dominica'),
   CountryInfo(iso2: 'DO', dialCode: '+1', name: 'Dominican Republic'),
 
-  // ── E ──────────────────────────────────────────────────────
+  // E
   CountryInfo(
       iso2: 'EC', dialCode: '+593', name: 'Ecuador', format: '## ### ####'),
   CountryInfo(
@@ -397,12 +392,12 @@ const List<CountryInfo> kAllCountries = [
   CountryInfo(
       iso2: 'ET', dialCode: '+251', name: 'Ethiopia', format: '## ### ####'),
 
-  // ── F ──────────────────────────────────────────────────────
+  // F
   CountryInfo(iso2: 'FJ', dialCode: '+679', name: 'Fiji', format: '### ####'),
   CountryInfo(
       iso2: 'FI', dialCode: '+358', name: 'Finland', format: '## ### ####'),
 
-  // ── G ──────────────────────────────────────────────────────
+  // G
   CountryInfo(
       iso2: 'GA', dialCode: '+241', name: 'Gabon', format: '# ## ## ##'),
   CountryInfo(iso2: 'GM', dialCode: '+220', name: 'Gambia', format: '### ####'),
@@ -421,7 +416,7 @@ const List<CountryInfo> kAllCountries = [
       iso2: 'GW', dialCode: '+245', name: 'Guinea-Bissau', format: '# ## ####'),
   CountryInfo(iso2: 'GY', dialCode: '+592', name: 'Guyana', format: '### ####'),
 
-  // ── H ──────────────────────────────────────────────────────
+  // H
   CountryInfo(
       iso2: 'HT', dialCode: '+509', name: 'Haiti', format: '## ## ####'),
   CountryInfo(
@@ -431,7 +426,7 @@ const List<CountryInfo> kAllCountries = [
   CountryInfo(
       iso2: 'HU', dialCode: '+36', name: 'Hungary', format: '## ### ####'),
 
-  // ── I ──────────────────────────────────────────────────────
+  // I
   CountryInfo(
       iso2: 'IS', dialCode: '+354', name: 'Iceland', format: '### ####'),
   CountryInfo(
@@ -445,14 +440,14 @@ const List<CountryInfo> kAllCountries = [
   CountryInfo(
       iso2: 'IT', dialCode: '+39', name: 'Italy', format: '### ### ####'),
 
-  // ── J ──────────────────────────────────────────────────────
+  // J
   CountryInfo(iso2: 'JM', dialCode: '+1', name: 'Jamaica'),
   CountryInfo(
       iso2: 'JP', dialCode: '+81', name: 'Japan', format: '## #### ####'),
   CountryInfo(
       iso2: 'JO', dialCode: '+962', name: 'Jordan', format: '# #### ####'),
 
-  // ── K ──────────────────────────────────────────────────────
+  // K
   CountryInfo(
       iso2: 'KZ', dialCode: '+7', name: 'Kazakhstan', format: '### ###-##-##'),
   CountryInfo(
@@ -470,7 +465,7 @@ const List<CountryInfo> kAllCountries = [
   CountryInfo(
       iso2: 'KR', dialCode: '+82', name: 'South Korea', format: '##-####-####'),
 
-  // ── L ──────────────────────────────────────────────────────
+  // L
   CountryInfo(
       iso2: 'LA', dialCode: '+856', name: 'Laos', format: '## ## ### ###'),
   CountryInfo(
@@ -490,7 +485,7 @@ const List<CountryInfo> kAllCountries = [
   CountryInfo(
       iso2: 'LU', dialCode: '+352', name: 'Luxembourg', format: '## ## ##'),
 
-  // ── M ──────────────────────────────────────────────────────
+  // M
   CountryInfo(iso2: 'MO', dialCode: '+853', name: 'Macau', format: '#### ####'),
   CountryInfo(
       iso2: 'MG', dialCode: '+261', name: 'Madagascar', format: '## ## ### ##'),
@@ -529,7 +524,7 @@ const List<CountryInfo> kAllCountries = [
   CountryInfo(
       iso2: 'MM', dialCode: '+95', name: 'Myanmar', format: '## ### ####'),
 
-  // ── N ──────────────────────────────────────────────────────
+  // N
   CountryInfo(
       iso2: 'NA', dialCode: '+264', name: 'Namibia', format: '## ### ####'),
   CountryInfo(iso2: 'NR', dialCode: '+674', name: 'Nauru', format: '### ####'),
@@ -547,10 +542,10 @@ const List<CountryInfo> kAllCountries = [
       name: 'North Macedonia',
       format: '## ### ###'),
 
-  // ── O ──────────────────────────────────────────────────────
+  // O
   // Oman already in popular
 
-  // ── P ──────────────────────────────────────────────────────
+  // P
   CountryInfo(iso2: 'PW', dialCode: '+680', name: 'Palau', format: '### ####'),
   CountryInfo(
       iso2: 'PS', dialCode: '+970', name: 'Palestine', format: '### ### ###'),
@@ -570,10 +565,10 @@ const List<CountryInfo> kAllCountries = [
   CountryInfo(
       iso2: 'PT', dialCode: '+351', name: 'Portugal', format: '### ### ###'),
 
-  // ── Q ──────────────────────────────────────────────────────
+  // Q
   // Qatar already in popular
 
-  // ── R ──────────────────────────────────────────────────────
+  // R
   CountryInfo(
       iso2: 'RO', dialCode: '+40', name: 'Romania', format: '## ### ####'),
   CountryInfo(
@@ -581,7 +576,7 @@ const List<CountryInfo> kAllCountries = [
   CountryInfo(
       iso2: 'RW', dialCode: '+250', name: 'Rwanda', format: '### ### ###'),
 
-  // ── S ──────────────────────────────────────────────────────
+  // S
   CountryInfo(iso2: 'KN', dialCode: '+1', name: 'Saint Kitts & Nevis'),
   CountryInfo(iso2: 'LC', dialCode: '+1', name: 'Saint Lucia'),
   CountryInfo(iso2: 'VC', dialCode: '+1', name: 'Saint Vincent & Grenadines'),
@@ -624,7 +619,7 @@ const List<CountryInfo> kAllCountries = [
   CountryInfo(
       iso2: 'SY', dialCode: '+963', name: 'Syria', format: '### ### ###'),
 
-  // ── T ──────────────────────────────────────────────────────
+  // T
   CountryInfo(
       iso2: 'TW', dialCode: '+886', name: 'Taiwan', format: '#### ### ###'),
   CountryInfo(
@@ -645,7 +640,7 @@ const List<CountryInfo> kAllCountries = [
       iso2: 'TM', dialCode: '+993', name: 'Turkmenistan', format: '## ######'),
   CountryInfo(iso2: 'TV', dialCode: '+688', name: 'Tuvalu', format: '## ###'),
 
-  // ── U ──────────────────────────────────────────────────────
+  // U
   CountryInfo(
       iso2: 'UG', dialCode: '+256', name: 'Uganda', format: '### ######'),
   CountryInfo(
@@ -655,7 +650,7 @@ const List<CountryInfo> kAllCountries = [
   CountryInfo(
       iso2: 'UZ', dialCode: '+998', name: 'Uzbekistan', format: '## ### ## ##'),
 
-  // ── V ──────────────────────────────────────────────────────
+  // V
   CountryInfo(
       iso2: 'VU', dialCode: '+678', name: 'Vanuatu', format: '### ####'),
   CountryInfo(
@@ -663,11 +658,11 @@ const List<CountryInfo> kAllCountries = [
   CountryInfo(
       iso2: 'VN', dialCode: '+84', name: 'Vietnam', format: '### ### ####'),
 
-  // ── Y ──────────────────────────────────────────────────────
+  // Y
   CountryInfo(
       iso2: 'YE', dialCode: '+967', name: 'Yemen', format: '### ### ###'),
 
-  // ── Z ──────────────────────────────────────────────────────
+  // Z
   CountryInfo(
       iso2: 'ZM', dialCode: '+260', name: 'Zambia', format: '## ### ####'),
   CountryInfo(

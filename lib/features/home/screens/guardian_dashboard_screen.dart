@@ -1,5 +1,3 @@
-// lib/features/home/screens/guardian_dashboard_screen.dart
-// ============================================================
 // SILARAH — Guardian (Wali) Dashboard Screen
 //
 // Full in-app chat mirror for guardians. This is the guardian's
@@ -11,8 +9,6 @@
 //   • Read-only or interactive chat access
 //
 // This is SILARAH's biggest competitive moat against Muzz/Salams.
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -193,8 +189,7 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
   }
 }
 
-// ── Realtime Connection Indicator ─────────────────────────────
-
+// Realtime Connection Indicator
 class _RealtimeIndicator extends StatelessWidget {
   const _RealtimeIndicator({required this.isConnected});
   final bool isConnected;
@@ -234,8 +229,7 @@ class _RealtimeIndicator extends StatelessWidget {
   }
 }
 
-// ── Chat Tile ─────────────────────────────────────────────────
-
+// Chat Tile
 class _ChatTile extends StatelessWidget {
   const _ChatTile({
     required this.chat,
@@ -493,8 +487,7 @@ class _ChatTile extends StatelessWidget {
   }
 }
 
-// ── Avatar ────────────────────────────────────────────────────
-
+// Avatar
 class _Avatar extends StatelessWidget {
   const _Avatar({this.photoUrl, required this.hasUnread});
   final String? photoUrl;
@@ -532,8 +525,7 @@ class _Avatar extends StatelessWidget {
   }
 }
 
-// ── Empty Dashboard ───────────────────────────────────────────
-
+// Empty Dashboard
 class _EmptyDashboard extends StatelessWidget {
   const _EmptyDashboard();
 
@@ -581,8 +573,7 @@ class _EmptyDashboard extends StatelessWidget {
   }
 }
 
-// ── Dashboard Shimmer ─────────────────────────────────────────
-
+// Dashboard Shimmer
 class _DashboardShimmer extends StatelessWidget {
   const _DashboardShimmer();
 

@@ -1,9 +1,5 @@
-// lib/core/utils/validation_snackbar.dart
-// ============================================================
 // SILARAH — Validation Snackbar Helper
 // Shows a themed snackbar listing missing mandatory fields.
-// ============================================================
-
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_dimensions.dart';

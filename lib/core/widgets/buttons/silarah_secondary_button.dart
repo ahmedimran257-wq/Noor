@@ -1,10 +1,6 @@
-// lib/core/widgets/buttons/silarah_secondary_button.dart
-// ============================================================
 // Secondary Button — "The Alternative"
 // BG: Transparent | Border: 1px solid Champagne Gold
 // Text: Champagne Gold
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
@@ -114,11 +110,8 @@ class SilarahSecondaryButton extends StatelessWidget {
   }
 }
 
-// ============================================================
 // Ghost Button — "The Quiet Action"
 // BG: Transparent | Border: None | Text: Pearl White
-// ============================================================
-
 class SilarahGhostButton extends StatelessWidget {
   const SilarahGhostButton({
     super.key,

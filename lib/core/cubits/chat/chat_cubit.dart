@@ -1,8 +1,4 @@
-// lib/core/cubits/chat/chat_cubit.dart
-// ============================================================
 // SILARAH — Chat Cubit (RPC-backed production flow)
-// ============================================================
-
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';

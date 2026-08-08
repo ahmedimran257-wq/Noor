@@ -1,9 +1,5 @@
-// lib/core/services/bookmark_service.dart
-// ============================================================
 // SILARAH - Bookmark Service
 // Persists saved profile IDs in Supabase.
-// ============================================================
-
 import 'supabase_service.dart';
 
 class BookmarkService {

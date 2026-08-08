@@ -1,9 +1,5 @@
-// lib/core/services/presence_service.dart
-// ============================================================
 // SILARAH - Presence Service
 // Records authenticated app heartbeats for real admin live traffic.
-// ============================================================
-
 import 'dart:async';
 import 'dart:io' show Platform;
 

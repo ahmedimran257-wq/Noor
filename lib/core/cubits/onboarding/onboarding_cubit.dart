@@ -1,5 +1,3 @@
-// lib/core/cubits/onboarding/onboarding_cubit.dart
-// ============================================================
 // SILARAH — Onboarding Cubit
 // Manages the five-step fast-start onboarding flow.
 // Each step: locally validates → emits OnboardingLoading →
@@ -9,8 +7,6 @@
 // Completion thresholds:
 //   Myself   → completeAt 5
 //   Guardian → completeAt 5
-// ============================================================
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/onboarding_data.dart';
@@ -33,8 +29,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   DateTime? _lastProfileLoadAt;
   static const _profileFreshness = Duration(minutes: 5);
 
-  // ── Initialization ────────────────────────────────────────
-
+  // Initialization
   /// Called after auth succeeds. Loads the saved step from backend.
   /// Also restores saved data from Supabase/SharedPreferences to preserve state.
   Future<void> initialize({int startStep = 0}) async {
@@ -83,8 +78,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     emit(OnboardingActive(step: resolvedStep, data: data));
   }
 
-  // ── Step Advance ──────────────────────────────────────────
-
+  // Step Advance
   /// Saves the partial data for the current step and advances to next.
   /// In production: writes to Supabase profiles table via ProfileWriteService.
   /// Requires Supabase persistence.
@@ -319,8 +313,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     }
   }
 
-  // ── Cache Persistence Helper ──────────────────────────────
-
+  // Cache Persistence Helper
   Future<void> _persistLocalCache(OnboardingData data) async {
     // Deliberately memory-only. Supabase is the resume source and callers keep
     // [data] in Cubit state for the current process.
@@ -343,8 +336,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     } catch (_) {}
   }
 
-  // ── Helpers ───────────────────────────────────────────────
-
+  // Helpers
   String? get _authenticatedUserId {
     final authState = _authCubit.state;
     if (authState is AuthAuthenticated) {

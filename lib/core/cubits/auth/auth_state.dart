@@ -1,9 +1,5 @@
-// lib/core/cubits/auth/auth_state.dart
-// ============================================================
 // SILARAH — Auth Cubit States
 // Auth state for Supabase email OTP.
-// ============================================================
-
 import 'package:equatable/equatable.dart';
 
 abstract class AuthState extends Equatable {

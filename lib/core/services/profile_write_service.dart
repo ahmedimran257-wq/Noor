@@ -1,13 +1,9 @@
-// lib/core/services/profile_write_service.dart
-// ============================================================
 // SILARAH — Profile Write Service
 // Maps OnboardingData fields → Supabase column names and
 // performs partial upserts per onboarding step.
 //
 // Used by OnboardingCubit.saveAndAdvance() to persist data
 // with no local success fallback.
-// ============================================================
-
 import 'package:flutter/foundation.dart';
 
 import '../models/onboarding_data.dart';
@@ -56,8 +52,7 @@ class ProfileWriteService {
     onboarding_lat, onboarding_lng
   ''';
 
-  // ── Step-based partial upsert ─────────────────────────────
-
+  // Step-based partial upsert
   /// Persists the fields modified in [step] to Supabase.
   /// Returns true on success, false on error.
   static Future<bool> saveStep({
@@ -488,8 +483,7 @@ class ProfileWriteService {
     }
   }
 
-  // ── Field mapping per step ────────────────────────────────
-
+  // Field mapping per step
   /// Returns a map of DB column → value for the given onboarding step.
   /// Only includes fields that were actually set (non-null).
   static Map<String, dynamic> _fieldsForStep(
@@ -1333,8 +1327,7 @@ class ProfileWriteService {
     }
   }
 
-  // ── Enum → String converters ──────────────────────────────
-
+  // Enum → String converters
   static String? _genderToString(Gender? g) {
     if (g == null) return null;
     switch (g) {
@@ -1491,8 +1484,7 @@ class ProfileWriteService {
     return trimmed.toLowerCase();
   }
 
-  // ── Helpers ───────────────────────────────────────────────
-
+  // Helpers
   /// Removes null values from a map to enable partial upserts.
   static Map<String, dynamic> _compactMap(Map<String, dynamic> input) {
     return Map.fromEntries(

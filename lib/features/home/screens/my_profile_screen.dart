@@ -1,10 +1,6 @@
-// lib/features/home/screens/my_profile_screen.dart
-// ============================================================
 // SILARAH — My Profile Screen
 // Self-view: completeness bar, boost section, profile views
 // row, saved profiles, settings sections, sign out.
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -45,8 +41,7 @@ import '../../../core/utils/silarah_compute.dart';
 import '../../onboarding/screens/photo_upload_screen.dart';
 import '../widgets/notification_bell_button.dart';
 
-// ── Completeness score ────────────────────────────────────────
-
+// Completeness score
 ({int score, String? nudge}) _calcCompleteness(
   OnboardingData d, {
   required int approvedPhotoCount,
@@ -97,8 +92,7 @@ import '../widgets/notification_bell_button.dart';
   return (score: score.clamp(0, 100), nudge: nudge);
 }
 
-// ── Screen ────────────────────────────────────────────────────
-
+// Screen
 class MyProfileScreen extends StatefulWidget {
   const MyProfileScreen({super.key, this.refreshToken = 0});
 
@@ -521,7 +515,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     return SingleChildScrollView(
       child: Column(
         children: [
-          // ── Header row ──────────────────────────────────────
+          // Header row
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
             child: Row(
@@ -789,7 +783,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
 
           const SizedBox(height: AppDimensions.space16),
 
-          // ── Boost Section ────────────────────────────────────
+          // Boost Section
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: _BoostSection(),
@@ -844,8 +838,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   }
 }
 
-// ── Boost Section ─────────────────────────────────────────────
-
+// Boost Section
 class _ProfilePrimaryActions extends StatelessWidget {
   const _ProfilePrimaryActions({
     required this.onEdit,
@@ -1687,8 +1680,7 @@ class _BoostLocked extends StatelessWidget {
   }
 }
 
-// ── Subscription Card ─────────────────────────────────────────
-
+// Subscription Card
 class _SubscriptionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -1838,8 +1830,6 @@ class _CardShell extends StatelessWidget {
     );
   }
 }
-
-// ── Badge Card (Phase 2.5) ────────────────────────────────────
 
 class _ProfileAvatar extends StatelessWidget {
   const _ProfileAvatar({
@@ -2065,8 +2055,7 @@ class _ProfilePreviewCard extends StatelessWidget {
   }
 }
 
-// ── Saved Profiles ────────────────────────────────────────────
-
+// Saved Profiles
 class _VerificationIdentityStatus extends StatelessWidget {
   const _VerificationIdentityStatus({
     required this.isVerified,
@@ -2252,8 +2241,7 @@ class _SavedProfilesSection extends StatelessWidget {
   }
 }
 
-// ── Found a match ─────────────────────────────────────────────
-
+// Found a match
 class _IFoundMyMatchButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

@@ -1,12 +1,8 @@
-// lib/core/router/app_router.dart
-// ============================================================
 // SILARAH — GoRouter Configuration
 // Auth-gated routing:
 //   • Unauthenticated → /splash
 //   • Authenticated, onboarding incomplete → /onboarding/:step
 //   • Authenticated, onboarding complete   → /home
-// ============================================================
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -44,8 +40,7 @@ import '../../features/verification/screens/badge_verification_screen.dart';
 import '../../features/verification/screens/kyc_verification_screen.dart';
 import '../widgets/loaders/silarah_shimmer.dart';
 
-// ── Route names ───────────────────────────────────────────────
-
+// Route names
 abstract final class AppRoutes {
   static const boot = '/boot';
   static const authCallback = '/auth/callback';
@@ -69,8 +64,7 @@ abstract final class AppRoutes {
   static const photoRequests = '/photo-requests';
 }
 
-// ── Screen index → route path mapping ────────────────────────
-
+// Screen index → route path mapping
 String onboardingPathForStep(int step) {
   return '${AppRoutes.onboarding}/$step';
 }
@@ -80,8 +74,7 @@ int _safeOnboardingStep(AuthAuthenticated state) {
   return state.onboardingStep.clamp(0, completeAt - 1).toInt();
 }
 
-// ── Router factory ────────────────────────────────────────────
-
+// Router factory
 GoRouter buildAppRouter(
   AuthCubit authCubit, {
   String initialLocation = AppRoutes.splash,
@@ -174,7 +167,7 @@ GoRouter buildAppRouter(
       return null;
     },
     routes: [
-      // ── Pre-auth screens ────────────────────────────────
+      // Pre-auth screens
       GoRoute(
         path: AppRoutes.boot,
         pageBuilder: (context, state) => _fadePage(
@@ -223,7 +216,7 @@ GoRouter buildAppRouter(
         },
       ),
 
-      // ── Onboarding steps 0–4 ───────────────────────────
+      // Onboarding steps 0–4
       GoRoute(
         path: '${AppRoutes.onboarding}/:step',
         pageBuilder: (context, state) {
@@ -238,7 +231,7 @@ GoRouter buildAppRouter(
         },
       ),
 
-      // ── Home (post-onboarding) ───────────────────────────
+      // Home (post-onboarding)
       GoRoute(
         path: AppRoutes.home,
         pageBuilder: (context, state) {
@@ -252,7 +245,7 @@ GoRouter buildAppRouter(
         },
       ),
 
-      // ── Full-screen sub-screens ──────────────────────────
+      // Full-screen sub-screens
       GoRoute(
         path: AppRoutes.editProfile,
         pageBuilder: (context, state) => _slidePage(
@@ -377,8 +370,7 @@ Widget _screenForStep(int step) {
   }
 }
 
-// ── Custom page transition ("Unfold" — slides from right) ─────
-
+// Custom page transition ("Unfold" — slides from right)
 class _OnboardingRouteStepBinder extends StatefulWidget {
   const _OnboardingRouteStepBinder({
     required this.step,
@@ -463,8 +455,7 @@ CustomTransitionPage<void> _slidePage({
   );
 }
 
-// ── Auth Listenable (triggers router refresh on auth change) ──
-
+// Auth Listenable (triggers router refresh on auth change)
 Page<void> _fadePage({required LocalKey key, required Widget child}) {
   return CustomTransitionPage<void>(
     key: key,

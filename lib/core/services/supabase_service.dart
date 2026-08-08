@@ -1,9 +1,5 @@
-// lib/core/services/supabase_service.dart
-// ============================================================
 // SILARAH — Supabase Service
 // Provides singleton Supabase client throughout the app.
-// ============================================================
-
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/app_config.dart';

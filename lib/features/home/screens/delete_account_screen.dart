@@ -1,12 +1,8 @@
-// lib/features/home/screens/delete_account_screen.dart
-// ============================================================
 // SILARAH — Delete Account Screen (Feature 15)
 // Multi-step AnimatedSwitcher flow:
 //   Step 1: Warning + 30-day grace info
 //   Step 2: Reason selection
 //   Step 3: Type "DELETE" confirmation field
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -159,8 +155,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
   }
 }
 
-// ── Step 1 — Warning ──────────────────────────────────────────
-
+// Step 1 — Warning
 class _Step1 extends StatelessWidget {
   const _Step1(
       {super.key, required this.onKeepAccount, required this.onContinue});
@@ -268,8 +263,7 @@ class _Step1 extends StatelessWidget {
   }
 }
 
-// ── Step 2 — Reason ───────────────────────────────────────────
-
+// Step 2 — Reason
 class _Step2 extends StatelessWidget {
   const _Step2({
     super.key,
@@ -389,8 +383,7 @@ class _Step2 extends StatelessWidget {
   }
 }
 
-// ── Step 3 — Confirmation ─────────────────────────────────────
-
+// Step 3 — Confirmation
 class _Step3 extends StatelessWidget {
   const _Step3({
     super.key,
@@ -508,8 +501,7 @@ class _Step3 extends StatelessWidget {
   }
 }
 
-// ── Info card for step 1 ──────────────────────────────────────
-
+// Info card for step 1
 class _InfoCard extends StatelessWidget {
   const _InfoCard({
     required this.icon,

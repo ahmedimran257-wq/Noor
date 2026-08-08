@@ -1,10 +1,6 @@
-// lib/features/onboarding/widgets/onboarding_progress_bar.dart
-// ============================================================
 // SILARAH — Onboarding Progress Bar
 // Thin segmented bar + "Step X of Y" counter.
 // Filled segments animate in Champagne Gold.
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';

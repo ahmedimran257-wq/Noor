@@ -1,5 +1,3 @@
-// lib/features/home/screens/edit_profile_screen.dart
-// ============================================================
 // SILARAH — Edit Profile Screen
 //
 // Full editable profile with sections matching OnboardingData:
@@ -9,8 +7,6 @@
 // Reads current values from OnboardingCubit.
 // Save triggers OnboardingCubit.saveAndAdvance and shows
 // a success SnackBar before popping.
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 
@@ -37,7 +33,7 @@ import '../../../core/widgets/inputs/silarah_field_frame.dart';
 import '../../../core/widgets/loaders/silarah_shimmer.dart';
 import '../../onboarding/screens/photo_upload_screen.dart';
 
-// ── City data import — reuse same list from basic_identity_screen ──
+// City data import — reuse same list from basic_identity_screen
 // (Inline minimal wrapper to avoid cross-file private access)
 
 class EditProfileScreen extends StatefulWidget {
@@ -48,8 +44,7 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  // ── Local mutable copies of OnboardingData fields ─────────
-
+  // Local mutable copies of OnboardingData fields
   late TextEditingController _firstNameCtrl;
   late TextEditingController _lastNameCtrl;
   late TextEditingController _professionCtrl;
@@ -416,7 +411,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               children: [
                 const _EditorIntro(),
                 const SizedBox(height: AppDimensions.space24),
-                // ── Photos ──────────────────────────────────
+                // Photos
                 const _SectionHeader(label: 'Photos'),
                 const SizedBox(height: AppDimensions.space12),
                 _PhotoGrid(
@@ -437,7 +432,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
                 const SizedBox(height: AppDimensions.space28),
 
-                // ── Basic Info ───────────────────────────────
+                // Basic Info
                 const _SectionHeader(label: 'Basic Info'),
                 const SizedBox(height: AppDimensions.space12),
                 _SilarahTextField(
@@ -482,7 +477,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
                 const SizedBox(height: AppDimensions.space28),
 
-                // ── Islamic Identity ─────────────────────────
+                // Islamic Identity
                 const _SectionHeader(label: 'Islamic Identity'),
                 const SizedBox(height: AppDimensions.space12),
                 _DropdownField(
@@ -544,7 +539,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ],
                 const SizedBox(height: AppDimensions.space28),
 
-                // ── About ────────────────────────────────────
+                // About
                 const _SectionHeader(label: 'About'),
                 const SizedBox(height: AppDimensions.space12),
                 _SilarahTextField(
@@ -562,7 +557,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
                 const SizedBox(height: AppDimensions.space28),
 
-                // ── Education & Career ───────────────────────
+                // Education & Career
                 const _SectionHeader(label: 'Education & Career'),
                 const SizedBox(height: AppDimensions.space12),
                 _DropdownField(
@@ -588,7 +583,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
                 const SizedBox(height: AppDimensions.space28),
 
-                // ── Family ───────────────────────────────────
+                // Family
                 const _SectionHeader(label: 'Family'),
                 const SizedBox(height: AppDimensions.space12),
                 _DropdownField(
@@ -649,7 +644,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
                 const SizedBox(height: AppDimensions.space28),
 
-                // ── Partner Preferences ──────────────────────
+                // Partner Preferences
                 const _SectionHeader(label: 'Partner Preferences'),
                 const SizedBox(height: AppDimensions.space12),
                 _AgeRangeField(
@@ -694,8 +689,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  // ── Enum helpers ───────────────────────────────────────────
-
+  // Enum helpers
   String _sectValue(Sect? s) {
     switch (s) {
       case Sect.sunni:
@@ -769,8 +763,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 }
 
-// ── Photo Grid (4-slot) ───────────────────────────────────────
-
+// Photo Grid (4-slot)
 class _PhotoGrid extends StatefulWidget {
   const _PhotoGrid({required this.onTap});
   final VoidCallback onTap;
@@ -849,8 +842,7 @@ class _PhotoGridState extends State<_PhotoGrid> {
   }
 }
 
-// ── Section Header ────────────────────────────────────────────
-
+// Section Header
 class _EditorIntro extends StatelessWidget {
   const _EditorIntro();
 
@@ -1108,8 +1100,7 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-// ── SILARAH Text Field ───────────────────────────────────────────
-
+// SILARAH Text Field
 class _SilarahTextField extends StatefulWidget {
   const _SilarahTextField({
     required this.label,
@@ -1178,8 +1169,7 @@ class _SilarahTextFieldState extends State<_SilarahTextField> {
   }
 }
 
-// ── Dropdown Field ────────────────────────────────────────────
-
+// Dropdown Field
 class _DropdownField extends StatelessWidget {
   const _DropdownField({
     required this.label,
@@ -1253,8 +1243,7 @@ class _DropdownField extends StatelessWidget {
   }
 }
 
-// ── Toggle Row ────────────────────────────────────────────────
-
+// Toggle Row
 class _ToggleRow extends StatelessWidget {
   const _ToggleRow({
     required this.label,
@@ -1294,8 +1283,7 @@ class _ToggleRow extends StatelessWidget {
   }
 }
 
-// ── Stepper Row ───────────────────────────────────────────────
-
+// Stepper Row
 class _StepperRow extends StatelessWidget {
   const _StepperRow({
     required this.label,
@@ -1388,8 +1376,7 @@ class _StepperRow extends StatelessWidget {
   }
 }
 
-// ── Age Range Slider ──────────────────────────────────────────
-
+// Age Range Slider
 class _AgeRangeField extends StatelessWidget {
   const _AgeRangeField({
     required this.min,
@@ -1453,8 +1440,7 @@ class _AgeRangeField extends StatelessWidget {
   }
 }
 
-// ── Interest Chips ────────────────────────────────────────────
-
+// Interest Chips
 const _kAllInterests = <String>[
   'Reading',
   'Travel',

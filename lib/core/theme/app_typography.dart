@@ -1,5 +1,3 @@
-// lib/core/theme/app_typography.dart
-// ============================================================
 // SILARAH Design DNA — Typography System
 //
 // DUAL FONT-PAIRING STRATEGY (high-end magazine / editorial feel):
@@ -17,18 +15,15 @@
 // This contrast between serif headings and sans-serif body creates
 // the "private gallery" editorial DNA that separates SILARAH from
 // generic apps.
-// ============================================================
-
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
 abstract final class AppTypography {
-  // ── Font Family Constants ─────────────────────────────────
+  // Font Family Constants
   static const String _heading = 'PlayfairDisplay';
   static const String _body = 'Inter';
 
-  // ── Titles (Playfair Display — Serif) ─────────────────────
-
+  // Titles (Playfair Display — Serif)
   /// Screen Title — Playfair Display 28px Bold, 0.5px spacing, Pearl White
   static TextStyle get screenTitle => TextStyle(
         fontFamily: _heading,
@@ -81,8 +76,7 @@ abstract final class AppTypography {
         color: AppColors.champagneGold,
       );
 
-  // ── Body Font: Inter ──────────────────────────────────────
-
+  // Body Font: Inter
   /// Section Label — Inter 11px Medium, 1.5px UPPER tracking, Slate Mist
   static TextStyle get sectionLabel => TextStyle(
         fontFamily: _body,
@@ -233,7 +227,7 @@ abstract final class AppTypography {
         height: 1,
       );
 
-  // ── Arabic / Urdu Overrides ───────────────────────────────
+  // Arabic / Urdu Overrides
   // When locale is ar/ur, switch to a system serif that supports
   // Arabic script. Playfair Display does not support Arabic.
 
@@ -245,8 +239,7 @@ abstract final class AppTypography {
         height: 1.4,
       );
 
-  // ── TextTheme Builder ─────────────────────────────────────
-
+  // TextTheme Builder
   /// Builds a Material TextTheme mapped to SILARAH's type scale.
   /// Used by every palette created through [AppTheme.forMode].
   static TextTheme get textTheme => TextTheme(

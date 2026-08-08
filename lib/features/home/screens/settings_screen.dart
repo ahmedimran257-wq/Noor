@@ -1,5 +1,3 @@
-// lib/features/home/screens/settings_screen.dart
-// ============================================================
 // SILARAH — Settings Screen
 // Sections:
 //   1. ACCOUNT   — phone, photo privacy
@@ -10,8 +8,6 @@
 //   6. SAFETY    — block list, report history
 //   7. LEGAL     — ToS, Privacy Policy
 //   8. DANGER ZONE — account deletion
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -57,13 +53,11 @@ String _themeDescription(AppLocalizations l10n, SilarahThemeMode mode) =>
       SilarahThemeMode.prismLuxe => l10n.settings_theme_prismDesc,
     };
 
-// ── Guardian prefs keys ───────────────────────────────────────
-
+// Guardian prefs keys
 const _kGuardianPhoneUnavailable =
     'Saved securely. Re-enter only if you need to change it.';
 
-// ── Privacy prefs keys ────────────────────────────────────────
-
+// Privacy prefs keys
 const _kPhotoVisibility = 'privacy_photo_visibility';
 const _kProfilePaused = 'privacy_profile_paused';
 
@@ -80,9 +74,7 @@ IconData _legalIcon(String slug) => switch (slug) {
       _ => Icons.policy_outlined,
     };
 
-// ═══════════════════════════════════════════════════════════════
 // MAIN SCREEN
-// ═══════════════════════════════════════════════════════════════
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key, this.initialSection});
@@ -164,7 +156,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
         children: [
-          // ── 1. ACCOUNT ────────────────────────────────────
+          // 1. ACCOUNT
           _SectionHeader(l10n.settings_section_account, key: _accountKey),
           _SettingsCard(children: [
             Builder(
@@ -183,7 +175,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ]),
 
-          // ── 2. NOTIFICATIONS ─────────────────────────────
+          // 2. NOTIFICATIONS
           _SectionHeader(l10n.settings_section_notifications,
               key: _notificationsKey),
           BlocBuilder<NotificationPrefsCubit, NotificationPrefsState>(
@@ -270,15 +262,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ]),
           ),
 
-          // ── 3. GUARDIAN ───────────────────────────────────
+          // 3. GUARDIAN
           _SectionHeader(l10n.settings_section_guardian),
           const _GuardianSection(),
 
-          // ── 4. PRIVACY ────────────────────────────────────
+          // 4. PRIVACY
           _SectionHeader(l10n.settings_section_privacy, key: _privacyKey),
           const _PrivacySection(),
 
-          // ── 5. APP ────────────────────────────────────────
+          // 5. APP
           _SectionHeader(l10n.settings_section_app),
           _SettingsCard(children: [
             BlocBuilder<ThemeCubit, ThemeSelectionState>(
@@ -311,7 +303,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ]),
 
-          // ── 6. SAFETY ─────────────────────────────────────
+          // 6. SAFETY
           _SectionHeader(l10n.settings_section_safety),
           BlocBuilder<BlockReportCubit, BlockReportState>(
             builder: (context, brs) => _SettingsCard(children: [
@@ -337,7 +329,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ]),
           ),
 
-          // ── 7. LEGAL ──────────────────────────────────────
+          // 7. LEGAL
           _SectionHeader(l10n.settings_helpSupport, key: _helpKey),
           _SettingsCard(children: [
             _NavTile(
@@ -375,7 +367,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
 
-          // ── 8. DANGER ZONE ────────────────────────────────
+          // 8. DANGER ZONE
           _SectionHeader(l10n.settings_section_dangerZone),
           _SettingsCard(
             borderColor: AppColors.softCoral.withValues(alpha: 0.3),
@@ -403,7 +395,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ── Grievance Officer (India IT Act 2021) ───────────────────
+  // Grievance Officer (India IT Act 2021)
   static void _showGrievanceInfo(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     showDialog(
@@ -475,8 +467,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ── Photo privacy ──────────────────────────────────────────
-  // ── Language sheet ─────────────────────────────────────────
+  // Photo privacy
+  // Language sheet
   void _showThemeSheet(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
@@ -540,8 +532,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
   }
 
-  // ── Helper snackbar ─────────────────────────────────────────
-  // ── Phone masking helper ───────────────────────────────────
+  // Helper snackbar
+  // Phone masking helper
   static String _maskEmail(String? email) {
     if (email == null || email.isEmpty) return 'Add email';
     final parts = email.split('@');
@@ -563,12 +555,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return '$masked$last4';
   }
 
-  // ── Support dialog ──────────────────────────────────────────
+  // Support dialog
 }
 
-// ═══════════════════════════════════════════════════════════════
 // GUARDIAN SECTION
-// ═══════════════════════════════════════════════════════════════
 
 class _GuardianSection extends StatefulWidget {
   const _GuardianSection();
@@ -901,9 +891,7 @@ class _GuardianSectionState extends State<_GuardianSection> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
 // PRIVACY SECTION
-// ═══════════════════════════════════════════════════════════════
 
 class _PrivacySection extends StatefulWidget {
   const _PrivacySection();
@@ -1117,7 +1105,7 @@ class _PrivacySectionState extends State<_PrivacySection> {
     final pauseWarning =
         _visibilityBlockReason ?? l10n.settings_privacy_pause_warning;
     return Column(children: [
-      // ── Photo Visibility ───────────────────────────────────
+      // Photo Visibility
       _PrivacyCard(
         label: l10n.settings_privacy_photo_label,
         subtitle: l10n.settings_privacy_photo_sub,
@@ -1215,7 +1203,7 @@ class _PrivacySectionState extends State<_PrivacySection> {
       ),
       const SizedBox(height: AppDimensions.space8),
 
-      // ── Profile Pause ──────────────────────────────────────
+      // Profile Pause
       _PrivacyCard(
         label: l10n.settings_privacy_pause_label,
         subtitle: l10n.settings_privacy_pause_sub,
@@ -1274,7 +1262,7 @@ class _PrivacySectionState extends State<_PrivacySection> {
       ),
       const SizedBox(height: AppDimensions.space8),
 
-      // ── Download My Data (GDPR) ────────────────────────────
+      // Download My Data (GDPR)
     ]);
   }
 }
@@ -1398,7 +1386,6 @@ class _RadioRow extends StatelessWidget {
 }
 
 // THEME PICKER SHEET
-// ═══════════════════════════════════════════════════════════════
 
 class _ThemePickerSheet extends StatelessWidget {
   const _ThemePickerSheet();
@@ -1795,9 +1782,7 @@ class _LanguagePickerSheet extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
 // SHARED TILE & CARD WIDGETS
-// ═══════════════════════════════════════════════════════════════
 
 class _SectionHeader extends StatelessWidget {
   final String label;
@@ -1979,8 +1964,7 @@ class _TextFieldTile extends StatelessWidget {
       );
 }
 
-// ── Report History Sheet ──────────────────────────────────────
-
+// Report History Sheet
 class _ReportHistorySheet extends StatelessWidget {
   final List<ReportEntry> reports;
   const _ReportHistorySheet({required this.reports});

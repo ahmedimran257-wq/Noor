@@ -1,5 +1,3 @@
-// lib/core/widgets/cards/silarah_profile_card.dart
-// ============================================================
 // The SILARAH Card — "The Discovery Engine"
 // "The most critical component. It must look like a
 //  luxury portfolio cover."
@@ -10,8 +8,6 @@
 // Name: Playfair Display 24px, bottom-left
 // Location: Inter 14px, below name
 // Focus effect: center card scale 1.0, adjacent cards scale 0.95
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
@@ -109,7 +105,7 @@ class SilarahProfileCard extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // ── Photo Layer ──────────────────────────────
+                // Photo Layer
                 if (photoUrl != null && !isPhotoPrivate)
                   _PhotoLayer(url: photoUrl!, blurhash: blurhash)
                 else
@@ -121,7 +117,7 @@ class SilarahProfileCard extends StatelessWidget {
                 // ── Gradient Overlay (always on top of photo)
                 const _GradientOverlay(),
 
-                // ── Content Layer ────────────────────────────
+                // Content Layer
                 Positioned.fill(
                   child: Padding(
                     padding: const EdgeInsets.all(AppDimensions.space20),
@@ -263,7 +259,6 @@ class SilarahProfileCard extends StatelessWidget {
                   ),
                 ),
 
-                // Item 20: frosted lock pill — private photos, bottom-center
                 if (isPhotoPrivate && photoCount > 0)
                   Positioned(
                     bottom: 90, // above the action row
@@ -295,8 +290,7 @@ class SilarahProfileCard extends StatelessWidget {
   }
 }
 
-// ── Sub-widgets ───────────────────────────────────────────────
-
+// Sub-widgets
 class _PhotoLayer extends StatelessWidget {
   const _PhotoLayer({required this.url, this.blurhash});
   final String url;
@@ -429,7 +423,6 @@ class _VerifiedBadge extends StatelessWidget {
   }
 }
 
-// Item 20: Frosted lock pill — private photos, bottom-centre of card
 class _FrostedPhotoPill extends StatelessWidget {
   const _FrostedPhotoPill({required this.photoCount});
   final int photoCount;
@@ -464,7 +457,6 @@ class _FrostedPhotoPill extends StatelessWidget {
   }
 }
 
-// Item 20: Camera count pill — public profiles with multiple photos
 class _PhotoCountPill extends StatelessWidget {
   const _PhotoCountPill({required this.count});
   final int count;

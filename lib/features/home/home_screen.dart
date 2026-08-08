@@ -1,10 +1,6 @@
-// lib/features/home/home_screen.dart
-// ============================================================
 // SILARAH — Home Screen Shell
 // IndexedStack with 4 tabs + SilarahBottomNav.
 // Preserves scroll state across tab switches.
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

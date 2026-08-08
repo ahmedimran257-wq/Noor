@@ -1,8 +1,4 @@
-// lib/features/home/widgets/report_bottom_sheet.dart
-// ============================================================
-// SILARAH — Report Bottom Sheet (Item 28 — 3-Step Multi-Flow)
 //
-// Blueprint (Part 9 — Report Reasons):
 //   fake_profile, inappropriate_photos, harassment, scam,
 //   underage, already_married, offensive_bio, other
 //
@@ -13,8 +9,6 @@
 // On submit:
 //   - blockReportCubit.reportUser(reason, description)
 //   - blockReportCubit.hideProfile(profileId)  [auto-hidden]
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -157,8 +151,7 @@ class _ReportContentState extends State<_ReportContent> {
   }
 }
 
-// ── Step 1: Select Reason ─────────────────────────────────────
-
+// Step 1: Select Reason
 class _Step1 extends StatelessWidget {
   final String reportedName;
   final ReportReason? selected;
@@ -249,8 +242,7 @@ class _Step1 extends StatelessWidget {
   }
 }
 
-// ── Step 2: Other — free text ─────────────────────────────────
-
+// Step 2: Other — free text
 class _Step2 extends StatelessWidget {
   final TextEditingController controller;
   final bool isLoading;
@@ -355,8 +347,7 @@ class _Step2 extends StatelessWidget {
   }
 }
 
-// ── Step 3: Confirmation ──────────────────────────────────────
-
+// Step 3: Confirmation
 class _Step3 extends StatelessWidget {
   final String reportedName;
   final VoidCallback onDone;
@@ -426,8 +417,7 @@ class _Step3 extends StatelessWidget {
   }
 }
 
-// ── Reason Tile ───────────────────────────────────────────────
-
+// Reason Tile
 class _ReasonTile extends StatelessWidget {
   final ReportReason reason;
   final bool isSelected;

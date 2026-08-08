@@ -1,13 +1,8 @@
-// lib/features/home/screens/block_list_screen.dart
-// ============================================================
-// SILARAH — Block List Screen (Item 29)
 //
 // Shows all blocked profiles from BlockReportCubit.
 // Each row: avatar, name, age, city, Unblock button.
 // Empty state: SilarahEmptyState with block icon.
 // Navigate from Settings → Safety → "Blocked Profiles".
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -110,8 +105,7 @@ class _BlockListScreenState extends State<BlockListScreen> {
   }
 }
 
-// ── AppBar ────────────────────────────────────────────────────
-
+// AppBar
 class _BlockListAppBar extends StatelessWidget implements PreferredSizeWidget {
   const _BlockListAppBar({required this.count});
   final int count;
@@ -168,8 +162,7 @@ class _BlockListAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-// ── Blocked Tile ──────────────────────────────────────────────
-
+// Blocked Tile
 class _BlockedTile extends StatelessWidget {
   const _BlockedTile({
     required this.blockedUser,

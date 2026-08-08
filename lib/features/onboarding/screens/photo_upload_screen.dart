@@ -1,13 +1,9 @@
-// lib/features/onboarding/screens/photo_upload_screen.dart
-// ============================================================
 // SILARAH - Photo Upload Screen (fast-start step 5)
 // 4-slot grid. Slot 0 = primary photo (required to proceed).
 // Real image picking via image_picker (Camera / Gallery).
 // Compression via flutter_image_compress (bounded JPEG for mobile delivery).
 // On-device explicit-content moderation; identity checks live separately.
 // Photo privacy toggle for women.
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:io';
 import 'dart:async';
@@ -42,10 +38,8 @@ import '../widgets/step_header.dart';
 const int profilePhotoUploadMinDimension = 720;
 const int profilePhotoUploadJpegQuality = 82;
 
-// ── Face detection ─────────────────────────────────────────
-
-// ── Screen ────────────────────────────────────────────────────
-
+// Face detection
+// Screen
 class PhotoUploadScreen extends StatefulWidget {
   const PhotoUploadScreen({
     super.key,
@@ -831,8 +825,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
   }
 }
 
-// ── Photo slot ────────────────────────────────────────────────
-
+// Photo slot
 class _GallerySummary extends StatelessWidget {
   const _GallerySummary({required this.photoCount});
 
@@ -1301,8 +1294,7 @@ class _EmptySlot extends StatelessWidget {
   }
 }
 
-// ── Privacy toggle ────────────────────────────────────────────
-
+// Privacy toggle
 class _PrivacyToggle extends StatelessWidget {
   const _PrivacyToggle({required this.current, required this.onChanged});
   final PhotoPrivacy current;

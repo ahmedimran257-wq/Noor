@@ -1,11 +1,7 @@
-// ============================================================
 // EDGE FUNCTION: translate-message
-// supabase/functions/translate-message/index.ts
 //
 // Performs server-side translation for messages in Silarah.
 // Keyless translation using MyMemory API.
-// ============================================================
-
 import { createClient } from "@supabase/supabase-js";
 import { corsHeaders, handleCors } from "../_shared/cors.ts";
 import { readResponseJson } from "../_shared/bounded_response.ts";

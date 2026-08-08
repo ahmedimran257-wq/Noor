@@ -1,11 +1,7 @@
-// lib/features/home/widgets/interest_note_sheet.dart
-// ============================================================
 // SILARAH — Interest Note Sheet (D1)
 //
 // Shows a compact bottom sheet where the user can optionally
 // attach a personal note to their interest before sending.
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

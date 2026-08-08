@@ -4,10 +4,10 @@ import 'package:silarah/l10n/generated/app_localizations_en.dart';
 
 final AppLocalizations _englishUiCopy = AppLocalizationsEn();
 
-/// Centralized compatibility catalog for legacy UI literals.
+/// Centralized catalog for localized UI copy not yet exposed as typed getters.
 ///
-/// New product copy should be added to the ARB localization files. This
-/// catalog closes the historical gap without network translation at runtime.
+/// New product copy belongs in the ARB localization files. This catalog keeps
+/// existing dynamic copy synchronous and available offline.
 class UiCopy {
   UiCopy._();
 
@@ -10100,25 +10100,23 @@ extension UiCopyBuildContext on BuildContext {
 
   String uiCopy(String source) => UiCopy.localize(this, source);
 
-  String uiOpenProfile(String name) => _uiL10n.legacy_openProfile(name);
-  String uiTyping(String name) => _uiL10n.legacy_typing(name);
+  String uiOpenProfile(String name) => _uiL10n.ui_openProfile(name);
+  String uiTyping(String name) => _uiL10n.ui_typing(name);
   String uiDeleteFailed(Object error) =>
-      _uiL10n.legacy_deleteFailed(error.toString());
-  String uiChangeCountry(String country) =>
-      _uiL10n.legacy_changeCountry(country);
-  String uiEmailCopied(String email) => _uiL10n.legacy_emailCopied(email);
-  String uiMessagePerson(String name) => _uiL10n.legacy_messagePerson(name);
-  String uiRenewsDate(String date) => _uiL10n.legacy_renewsDate(date);
-  String uiAgeYears(int age) => _uiL10n.legacy_ageYears(age);
-  String uiPhotoNumber(int number) => _uiL10n.legacy_photoNumber(number);
-  String uiPhotoCount(int count) => _uiL10n.legacy_photoCount(count);
-  String uiRemoveLabel(String label) => _uiL10n.legacy_removeLabel(label);
-  String uiSelectedLabel(String label) => _uiL10n.legacy_selectedLabel(label);
-  String uiAddLabel(String label) => _uiL10n.legacy_addLabel(label);
+      _uiL10n.ui_deleteFailed(error.toString());
+  String uiChangeCountry(String country) => _uiL10n.ui_changeCountry(country);
+  String uiEmailCopied(String email) => _uiL10n.ui_emailCopied(email);
+  String uiMessagePerson(String name) => _uiL10n.ui_messagePerson(name);
+  String uiRenewsDate(String date) => _uiL10n.ui_renewsDate(date);
+  String uiAgeYears(int age) => _uiL10n.ui_ageYears(age);
+  String uiPhotoNumber(int number) => _uiL10n.ui_photoNumber(number);
+  String uiPhotoCount(int count) => _uiL10n.ui_photoCount(count);
+  String uiRemoveLabel(String label) => _uiL10n.ui_removeLabel(label);
+  String uiSelectedLabel(String label) => _uiL10n.ui_selectedLabel(label);
+  String uiAddLabel(String label) => _uiL10n.ui_addLabel(label);
   String uiKycStatusSemantics(String status) =>
-      _uiL10n.legacy_kycStatusSemantics(status);
-  String uiPhotoRequestSent(String name) =>
-      _uiL10n.legacy_photoRequestSent(name);
+      _uiL10n.ui_kycStatusSemantics(status);
+  String uiPhotoRequestSent(String name) => _uiL10n.ui_photoRequestSent(name);
   String uiBlockedCount(Object count) =>
       _uiL10n.settings_label_blocked_count(count);
   String uiBlockTitle(String name) => _uiL10n.safety_blockTitle(name);
@@ -10126,30 +10124,28 @@ extension UiCopyBuildContext on BuildContext {
       _uiL10n.profile_label_completeness(percent);
   String uiAgeRange(Object minimum, Object maximum) =>
       _uiL10n.preferences_label_age_range(minimum, maximum);
-  String uiYesterdayTime(String time) => _uiL10n.legacy_yesterdayTime(time);
-  String uiMinutesAgo(int count) => _uiL10n.legacy_minutesAgo(count);
-  String uiHoursAgo(int count) => _uiL10n.legacy_hoursAgo(count);
-  String uiDaysAgo(int count) => _uiL10n.legacy_daysAgo(count);
-  String uiRenewsAt(String time) => _uiL10n.legacy_renewsAt(time);
-  String uiPhotoReadyReview(int number) =>
-      _uiL10n.legacy_photoReadyReview(number);
+  String uiYesterdayTime(String time) => _uiL10n.ui_yesterdayTime(time);
+  String uiMinutesAgo(int count) => _uiL10n.ui_minutesAgo(count);
+  String uiHoursAgo(int count) => _uiL10n.ui_hoursAgo(count);
+  String uiDaysAgo(int count) => _uiL10n.ui_daysAgo(count);
+  String uiRenewsAt(String time) => _uiL10n.ui_renewsAt(time);
+  String uiPhotoReadyReview(int number) => _uiL10n.ui_photoReadyReview(number);
   String uiPhotoUnlock(int count) => count == 1
-      ? _uiL10n.legacy_onePhotoUnlock
-      : _uiL10n.legacy_manyPhotosUnlock(count);
-  String uiAskPhotoPermission(int count) => count == 1
-      ? _uiL10n.legacy_askOnePhoto
-      : _uiL10n.legacy_askManyPhotos(count);
+      ? _uiL10n.ui_onePhotoUnlock
+      : _uiL10n.ui_manyPhotosUnlock(count);
+  String uiAskPhotoPermission(int count) =>
+      count == 1 ? _uiL10n.ui_askOnePhoto : _uiL10n.ui_askManyPhotos(count);
   String uiHeightImperial(int feet, int inches) =>
-      _uiL10n.legacy_heightImperial(feet, inches);
-  String uiMinutesShort(int count) => _uiL10n.legacy_minutesShort(count);
-  String uiHoursShort(int count) => _uiL10n.legacy_hoursShort(count);
-  String uiDaysShort(int count) => _uiL10n.legacy_daysShort(count);
+      _uiL10n.ui_heightImperial(feet, inches);
+  String uiMinutesShort(int count) => _uiL10n.ui_minutesShort(count);
+  String uiHoursShort(int count) => _uiL10n.ui_hoursShort(count);
+  String uiDaysShort(int count) => _uiL10n.ui_daysShort(count);
 }
 
-/// Compatibility text widget that localizes legacy string data at render time.
+/// Text widget that localizes catalog-backed string data at render time.
 ///
-/// It mirrors Flutter's [Text] constructor so existing screens can migrate
-/// without changing their layout, semantics, or typography.
+/// It mirrors Flutter's [Text] constructor without changing layout, semantics,
+/// or typography.
 class UiText extends StatelessWidget {
   const UiText(
     this.data, {

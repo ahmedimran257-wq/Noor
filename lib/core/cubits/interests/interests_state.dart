@@ -1,17 +1,10 @@
-// lib/core/cubits/interests/interests_state.dart
-// ============================================================
 // SILARAH — Interests State (Items 17 + 18)
 //
-// Blueprint (Part 8, Interest Lifecycle State Machine):
 //   PENDING → ACCEPTED → MATCH_CREATED (chat unlocked)
 //   PENDING → DECLINED
 //   PENDING → EXPIRED (14 days)
 //   PENDING → WITHDRAWN (sender, silent)
 //
-// Item 17: daily send limit tracking
-// Item 18: createdAt + expiresAt on InterestEntry for expiry countdown
-// ============================================================
-
 import 'package:equatable/equatable.dart';
 import '../../models/discovery_profile.dart';
 
@@ -51,7 +44,7 @@ class InterestEntry extends Equatable {
     required this.profile,
     required this.timeAgo,
     required this.sentAt,
-    required this.createdAt, // Item 18: expiry tracking
+    required this.createdAt,
     this.status = InterestStatus.pending,
     this.note, // D1: optional interest note
   });
@@ -60,14 +53,12 @@ class InterestEntry extends Equatable {
   final DiscoveryProfile profile;
   final String timeAgo;
   final DateTime sentAt;
-  final DateTime createdAt; // Item 18
+  final DateTime createdAt;
   final InterestStatus status;
   final String? note; // D1: personal interest note
 
-  /// Item 18: Interest expires 14 days after creation.
   DateTime get expiresAt => createdAt.add(const Duration(days: 14));
 
-  /// Blueprint: "Pending interests expire after 14 days."
   bool get isExpired =>
       status == InterestStatus.pending &&
       DateTime.now().difference(createdAt).inDays >= 14;
@@ -76,14 +67,12 @@ class InterestEntry extends Equatable {
   InterestStatus get effectiveStatus =>
       isExpired ? InterestStatus.expired : status;
 
-  /// Item 18: Days remaining before expiry. Returns null if not pending.
   int? get daysRemaining {
     if (effectiveStatus != InterestStatus.pending) return null;
     final remaining = expiresAt.difference(DateTime.now());
     return remaining.inDays.clamp(0, 14);
   }
 
-  /// Item 18: Hours remaining (for same-day expiry warning).
   int? get hoursRemaining {
     if (effectiveStatus != InterestStatus.pending) return null;
     final remaining = expiresAt.difference(DateTime.now());
@@ -129,7 +118,6 @@ class InterestsState extends Equatable {
   final List<InterestEntry> sent;
   final List<InterestEntry> matches;
 
-  // Item 17: daily limit tracking
   final int interestsSentToday;
   final int dailyLimit;
   final DateTime? lastResetDate;
@@ -138,8 +126,7 @@ class InterestsState extends Equatable {
   final bool limitError; // true only after hitting the daily cap
   final bool quotaUnavailable;
 
-  // ── Computed getters ─────────────────────────────────────
-
+  // Computed getters
   /// Pending received interests (shown with action buttons)
   List<InterestEntry> get pendingReceived => received
       .where((e) => e.effectiveStatus == InterestStatus.pending)
@@ -159,11 +146,9 @@ class InterestsState extends Equatable {
   /// Unread pending received count (for nav badge)
   int get unreadCount => pendingReceived.length;
 
-  /// Item 17: Whether the daily limit has been reached
   bool get isDailyLimitReached =>
       dailyLimit > 0 && interestsSentToday >= dailyLimit;
 
-  /// Item 17: Interests remaining today
   int get remainingToday =>
       (dailyLimit - interestsSentToday).clamp(0, dailyLimit);
 

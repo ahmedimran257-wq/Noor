@@ -4848,179 +4848,179 @@ abstract class AppLocalizations {
   /// **'{name} blocked.'**
   String safety_blocked(String name);
 
-  /// No description provided for @legacy_openProfile.
+  /// No description provided for @ui_openProfile.
   ///
   /// In en, this message translates to:
   /// **'Open {name} profile'**
-  String legacy_openProfile(String name);
+  String ui_openProfile(String name);
 
-  /// No description provided for @legacy_typing.
+  /// No description provided for @ui_typing.
   ///
   /// In en, this message translates to:
   /// **'{name} is typing'**
-  String legacy_typing(String name);
+  String ui_typing(String name);
 
-  /// No description provided for @legacy_deleteFailed.
+  /// No description provided for @ui_deleteFailed.
   ///
   /// In en, this message translates to:
   /// **'Failed to delete account: {error}'**
-  String legacy_deleteFailed(String error);
+  String ui_deleteFailed(String error);
 
-  /// No description provided for @legacy_changeCountry.
+  /// No description provided for @ui_changeCountry.
   ///
   /// In en, this message translates to:
   /// **'Change country, currently {country}'**
-  String legacy_changeCountry(String country);
+  String ui_changeCountry(String country);
 
-  /// No description provided for @legacy_emailCopied.
+  /// No description provided for @ui_emailCopied.
   ///
   /// In en, this message translates to:
   /// **'No email app found. {email} was copied.'**
-  String legacy_emailCopied(String email);
+  String ui_emailCopied(String email);
 
-  /// No description provided for @legacy_messagePerson.
+  /// No description provided for @ui_messagePerson.
   ///
   /// In en, this message translates to:
   /// **'Message {name}'**
-  String legacy_messagePerson(String name);
+  String ui_messagePerson(String name);
 
-  /// No description provided for @legacy_renewsDate.
+  /// No description provided for @ui_renewsDate.
   ///
   /// In en, this message translates to:
   /// **'Renews {date}'**
-  String legacy_renewsDate(String date);
+  String ui_renewsDate(String date);
 
-  /// No description provided for @legacy_ageYears.
+  /// No description provided for @ui_ageYears.
   ///
   /// In en, this message translates to:
   /// **'{age} yrs'**
-  String legacy_ageYears(int age);
+  String ui_ageYears(int age);
 
-  /// No description provided for @legacy_photoNumber.
+  /// No description provided for @ui_photoNumber.
   ///
   /// In en, this message translates to:
   /// **'Photo {number}'**
-  String legacy_photoNumber(int number);
+  String ui_photoNumber(int number);
 
-  /// No description provided for @legacy_photoCount.
+  /// No description provided for @ui_photoCount.
   ///
   /// In en, this message translates to:
   /// **'{count} of 4 photos'**
-  String legacy_photoCount(int count);
+  String ui_photoCount(int count);
 
-  /// No description provided for @legacy_removeLabel.
+  /// No description provided for @ui_removeLabel.
   ///
   /// In en, this message translates to:
   /// **'Remove {label}'**
-  String legacy_removeLabel(String label);
+  String ui_removeLabel(String label);
 
-  /// No description provided for @legacy_selectedLabel.
+  /// No description provided for @ui_selectedLabel.
   ///
   /// In en, this message translates to:
   /// **'{label} selected'**
-  String legacy_selectedLabel(String label);
+  String ui_selectedLabel(String label);
 
-  /// No description provided for @legacy_addLabel.
+  /// No description provided for @ui_addLabel.
   ///
   /// In en, this message translates to:
   /// **'Add {label}'**
-  String legacy_addLabel(String label);
+  String ui_addLabel(String label);
 
-  /// No description provided for @legacy_kycStatusSemantics.
+  /// No description provided for @ui_kycStatusSemantics.
   ///
   /// In en, this message translates to:
   /// **'Identity verification status: {status}'**
-  String legacy_kycStatusSemantics(String status);
+  String ui_kycStatusSemantics(String status);
 
-  /// No description provided for @legacy_photoRequestSent.
+  /// No description provided for @ui_photoRequestSent.
   ///
   /// In en, this message translates to:
   /// **'Photo request sent to {name}.'**
-  String legacy_photoRequestSent(String name);
+  String ui_photoRequestSent(String name);
 
-  /// No description provided for @legacy_yesterdayTime.
+  /// No description provided for @ui_yesterdayTime.
   ///
   /// In en, this message translates to:
   /// **'Yesterday {time}'**
-  String legacy_yesterdayTime(String time);
+  String ui_yesterdayTime(String time);
 
-  /// No description provided for @legacy_minutesAgo.
+  /// No description provided for @ui_minutesAgo.
   ///
   /// In en, this message translates to:
   /// **'{count} min ago'**
-  String legacy_minutesAgo(int count);
+  String ui_minutesAgo(int count);
 
-  /// No description provided for @legacy_hoursAgo.
+  /// No description provided for @ui_hoursAgo.
   ///
   /// In en, this message translates to:
   /// **'{count} hr ago'**
-  String legacy_hoursAgo(int count);
+  String ui_hoursAgo(int count);
 
-  /// No description provided for @legacy_daysAgo.
+  /// No description provided for @ui_daysAgo.
   ///
   /// In en, this message translates to:
   /// **'{count} days ago'**
-  String legacy_daysAgo(int count);
+  String ui_daysAgo(int count);
 
-  /// No description provided for @legacy_renewsAt.
+  /// No description provided for @ui_renewsAt.
   ///
   /// In en, this message translates to:
   /// **'Renews at {time}'**
-  String legacy_renewsAt(String time);
+  String ui_renewsAt(String time);
 
-  /// No description provided for @legacy_photoReadyReview.
+  /// No description provided for @ui_photoReadyReview.
   ///
   /// In en, this message translates to:
   /// **'Photo {number} is ready for protected review'**
-  String legacy_photoReadyReview(int number);
+  String ui_photoReadyReview(int number);
 
-  /// No description provided for @legacy_onePhotoUnlock.
+  /// No description provided for @ui_onePhotoUnlock.
   ///
   /// In en, this message translates to:
   /// **'1 photo will unlock automatically once you both express interest.'**
-  String get legacy_onePhotoUnlock;
+  String get ui_onePhotoUnlock;
 
-  /// No description provided for @legacy_manyPhotosUnlock.
+  /// No description provided for @ui_manyPhotosUnlock.
   ///
   /// In en, this message translates to:
   /// **'{count} photos will unlock automatically once you both express interest.'**
-  String legacy_manyPhotosUnlock(int count);
+  String ui_manyPhotosUnlock(int count);
 
-  /// No description provided for @legacy_askOnePhoto.
+  /// No description provided for @ui_askOnePhoto.
   ///
   /// In en, this message translates to:
   /// **'Ask the owner for permission to view 1 photo.'**
-  String get legacy_askOnePhoto;
+  String get ui_askOnePhoto;
 
-  /// No description provided for @legacy_askManyPhotos.
+  /// No description provided for @ui_askManyPhotos.
   ///
   /// In en, this message translates to:
   /// **'Ask the owner for permission to view {count} photos.'**
-  String legacy_askManyPhotos(int count);
+  String ui_askManyPhotos(int count);
 
-  /// No description provided for @legacy_heightImperial.
+  /// No description provided for @ui_heightImperial.
   ///
   /// In en, this message translates to:
   /// **'{feet} ft {inches} in'**
-  String legacy_heightImperial(int feet, int inches);
+  String ui_heightImperial(int feet, int inches);
 
-  /// No description provided for @legacy_minutesShort.
+  /// No description provided for @ui_minutesShort.
   ///
   /// In en, this message translates to:
   /// **'{count}m'**
-  String legacy_minutesShort(int count);
+  String ui_minutesShort(int count);
 
-  /// No description provided for @legacy_hoursShort.
+  /// No description provided for @ui_hoursShort.
   ///
   /// In en, this message translates to:
   /// **'{count}h'**
-  String legacy_hoursShort(int count);
+  String ui_hoursShort(int count);
 
-  /// No description provided for @legacy_daysShort.
+  /// No description provided for @ui_daysShort.
   ///
   /// In en, this message translates to:
   /// **'{count}d'**
-  String legacy_daysShort(int count);
+  String ui_daysShort(int count);
 }
 
 class _AppLocalizationsDelegate

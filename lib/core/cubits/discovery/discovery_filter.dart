@@ -1,15 +1,10 @@
-// lib/core/cubits/discovery/discovery_filter.dart
-// ============================================================
 // SILARAH — Discovery Filter Model
 // Active filter selections, serialisation helpers, and
 // label generation for the chip bar.
 //
-// Phase 2 additions:
 //   • motherTongue  — filter by mother tongue
 //   • community     — filter by community / biradari
 //   • livingExpectation — filter by post-marriage living preference
-// ============================================================
-
 class DiscoveryFilter {
   const DiscoveryFilter({
     this.ageMin,
@@ -27,11 +22,9 @@ class DiscoveryFilter {
     this.hasChildren,
     this.educationMin,
     this.distanceLabel,
-    // Phase 2
     this.motherTongue,
     this.community,
     this.livingExpectation,
-    // Phase 7
     this.quranMemorization,
     this.marriageTimeline,
     this.willingToRelocate,
@@ -56,14 +49,10 @@ class DiscoveryFilter {
   final String? hasChildren;
   final String? educationMin;
   final String? distanceLabel;
-
-  // Phase 2
   final String? motherTongue; // e.g. 'Urdu', 'Arabic', 'Bengali'
   final String? community; // e.g. 'Syed', 'Pathan', 'Arab'
   final String?
       livingExpectation; // 'with_inlaws' | 'separate' | 'open_to_discussion'
-
-  // Phase 7
   final String? quranMemorization; // 'none','some_surahs','partial','hafiz'
   final String?
       marriageTimeline; // 'asap','6_months','1_year','2_plus_years','not_sure'

@@ -1,9 +1,5 @@
-// lib/core/widgets/inputs/silarah_text_field.dart
-// ============================================================
 // SILARAH Input System
 // Single-shell glass fields with animated focus, no nested theme outline.
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -250,11 +246,8 @@ class _SilarahTextFieldState extends State<SilarahTextField> {
   }
 }
 
-// ============================================================
 // OTP Input Field
 // Six individual boxes with auto-advance.
-// ============================================================
-
 class SilarahOtpField extends StatefulWidget {
   const SilarahOtpField({
     super.key,

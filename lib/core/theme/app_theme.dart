@@ -1,10 +1,6 @@
-// lib/core/theme/app_theme.dart
-// ============================================================
 // SILARAH Design DNA — ThemeData
 // Complete palette identities. Zero Material widgets allowed to
 // show through — every component uses SILARAH's design language.
-// ============================================================
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'app_colors.dart';
@@ -13,8 +9,7 @@ import 'app_typography.dart';
 import 'silarah_spring.dart';
 
 abstract final class AppTheme {
-  // ── Identity builder ─────────────────────────────────────────
-
+  // Identity builder
   static ThemeData forMode(SilarahThemeMode mode) {
     AppColors.activate(mode);
     final brightness = mode.isDark ? Brightness.dark : Brightness.light;
@@ -22,7 +17,7 @@ abstract final class AppTheme {
       useMaterial3: true,
       brightness: brightness,
 
-      // ── Color Scheme ────────────────────────────────────
+      // Color Scheme
       colorScheme: ColorScheme(
         brightness: brightness,
         primary: AppColors.champagneGold,
@@ -39,14 +34,14 @@ abstract final class AppTheme {
         onTertiary: AppColors.pearlWhite,
       ),
 
-      // ── Scaffold ─────────────────────────────────────────
+      // Scaffold
       scaffoldBackgroundColor: AppColors.obsidianNight,
 
-      // ── Typography ───────────────────────────────────────
+      // Typography
       textTheme: AppTypography.textTheme,
       fontFamily: 'Inter',
 
-      // ── App Bar ──────────────────────────────────────────
+      // App Bar
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.obsidianNight,
         foregroundColor: AppColors.pearlWhite,
@@ -71,7 +66,7 @@ abstract final class AppTheme {
         ),
       ),
 
-      // ── Eliminate ALL Material ripple/ink effects ─────────
+      // Eliminate ALL Material ripple/ink effects
       // SILARAH uses scale-based press animations instead.
       splashFactory: NoSplash.splashFactory,
       highlightColor: Colors.transparent,
@@ -79,7 +74,7 @@ abstract final class AppTheme {
       hoverColor: Colors.transparent,
       focusColor: AppColors.goldGlow,
 
-      // ── Icon Theme ───────────────────────────────────────
+      // Icon Theme
       iconTheme: IconThemeData(
         color: AppColors.pearlWhite,
         size: AppDimensions.iconSizeLarge,
@@ -105,7 +100,7 @@ abstract final class AppTheme {
         ),
       ),
 
-      // ── Text Button Theme ────────────────────────────────
+      // Text Button Theme
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.champagneGold,
@@ -114,7 +109,7 @@ abstract final class AppTheme {
         ),
       ),
 
-      // ── Input Decoration Theme ───────────────────────────
+      // Input Decoration Theme
       // Premium: near-transparent fill + crisp outline border.
       // The fill is barely there — just enough to define the field
       // against the background. Borders provide the real definition.
@@ -170,7 +165,7 @@ abstract final class AppTheme {
         ),
       ),
 
-      // ── Card Theme ───────────────────────────────────────
+      // Card Theme
       cardTheme: CardThemeData(
         color: AppColors.surfaceGlass,
         elevation: 0,
@@ -184,7 +179,7 @@ abstract final class AppTheme {
         margin: EdgeInsets.zero,
       ),
 
-      // ── Chip Theme ───────────────────────────────────────
+      // Chip Theme
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surfaceGlass,
         selectedColor: AppColors.goldGlow,
@@ -203,7 +198,7 @@ abstract final class AppTheme {
         showCheckmark: false,
       ),
 
-      // ── Bottom Sheet Theme ───────────────────────────────
+      // Bottom Sheet Theme
       // "NO Pop-ups: Use Bottom Sheets that slide up with easeOutCubic."
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: AppColors.obsidianNight,
@@ -217,7 +212,7 @@ abstract final class AppTheme {
         showDragHandle: false,
       ),
 
-      // ── Navigation Bar Theme (bottom nav) ────────────────
+      // Navigation Bar Theme (bottom nav)
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.obsidianNight,
         indicatorColor: AppColors.goldGlow,
@@ -239,20 +234,20 @@ abstract final class AppTheme {
         }),
       ),
 
-      // ── Divider Theme ────────────────────────────────────
+      // Divider Theme
       dividerTheme: DividerThemeData(
         color: AppColors.divider,
         thickness: AppDimensions.borderThin,
         space: 0,
       ),
 
-      // ── Progress Indicator ───────────────────────────────
+      // Progress Indicator
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: AppColors.champagneGold,
         linearTrackColor: AppColors.progressBarBase,
       ),
 
-      // ── Snack Bar — replaced by bottom sheets in SILARAH ────
+      // Snack Bar — replaced by bottom sheets in SILARAH
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.snackbarSurface,
         contentTextStyle: AppTypography.body.copyWith(
@@ -264,7 +259,7 @@ abstract final class AppTheme {
         behavior: SnackBarBehavior.floating,
       ),
 
-      // ── Dialog → use SilarahBottomSheet instead ─────────────
+      // Dialog → use SilarahBottomSheet instead
       dialogTheme: DialogThemeData(
         backgroundColor: AppColors.obsidianNight,
         shape: RoundedRectangleBorder(
@@ -274,7 +269,7 @@ abstract final class AppTheme {
         contentTextStyle: AppTypography.body,
       ),
 
-      // ── Page Transitions ─────────────────────────────────
+      // Page Transitions
       // Overridden globally via GoRouter — kept here as fallback.
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
@@ -286,7 +281,7 @@ abstract final class AppTheme {
   }
 }
 
-// ── Custom Page Transition Builder ───────────────────────────
+// Custom Page Transition Builder
 // "The Unfolding Effect: fade in + shift upward 20px → 0px."
 
 class SilarahPageTransition extends PageTransitionsBuilder {

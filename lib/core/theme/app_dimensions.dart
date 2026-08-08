@@ -1,20 +1,14 @@
-// lib/core/theme/app_dimensions.dart
-// ============================================================
 // SILARAH Design DNA — Spacing, Radius & Layout Constants
 // "Premium apps use whitespace as a feature."
-// ============================================================
-
 abstract final class AppDimensions {
-  // ── Grid & Margins ────────────────────────────────────────
-
+  // Grid & Margins
   /// Standard horizontal margin. "The Grid: 24px horizontal margin."
   static const double horizontalMargin = 24.0;
 
   /// Minimum touch target size (accessibility).
   static const double minTouchTarget = 48.0;
 
-  // ── Corner Radii ──────────────────────────────────────────
-
+  // Corner Radii
   /// For large cards (profile cards, section panels).
   /// "Large Cards: 24px (Soft, modern)."
   static const double radiusCard = 24.0;
@@ -29,36 +23,31 @@ abstract final class AppDimensions {
   /// For tiny indicators (badges, dots).
   static const double radiusTiny = 4.0;
 
-  // ── Button Dimensions ─────────────────────────────────────
-
+  // Button Dimensions
   /// Standard button height. "Height: 56px."
   static const double buttonHeight = 56.0;
 
   /// Small button height (secondary actions).
   static const double buttonHeightSmall = 44.0;
 
-  // ── Input Dimensions ──────────────────────────────────────
-
+  // Input Dimensions
   /// Text field height.
   static const double inputHeight = 56.0;
 
-  // ── Icon Sizes ────────────────────────────────────────────
-
+  // Icon Sizes
   static const double iconSizeSmall = 16.0;
   static const double iconSizeMedium = 20.0;
   static const double iconSizeLarge = 24.0;
   static const double iconSizeXLarge = 32.0;
 
-  // ── Border Widths ─────────────────────────────────────────
-
+  // Border Widths
   /// Standard card border. "1px border of rgba(255,255,255,0.1)."
   static const double borderThin = 1.0;
 
   /// Input focus border. "2px Champagne Gold."
   static const double borderFocus = 2.0;
 
-  // ── Spacing Scale (8pt grid) ──────────────────────────────
-
+  // Spacing Scale (8pt grid)
   static const double space2 = 2.0;
   static const double space4 = 4.0;
   static const double space6 = 6.0;
@@ -77,13 +66,11 @@ abstract final class AppDimensions {
   static const double space64 = 64.0;
   static const double space80 = 80.0;
 
-  // ── Discovery Card ────────────────────────────────────────
-
+  // Discovery Card
   /// Card aspect ratio: 3:4 portrait.
   static const double cardAspectRatio = 3 / 4;
 
-  // ── Animation Durations ───────────────────────────────────
-
+  // Animation Durations
   /// "The Reveal" — elements entering the screen (300–500ms).
   static const Duration durationReveal = Duration(milliseconds: 250);
 
@@ -102,8 +89,7 @@ abstract final class AppDimensions {
   /// Shimmer sweep duration.
   static const Duration durationShimmer = Duration(milliseconds: 1500);
 
-  // ── Interest Ceremony Timeline ────────────────────────────
-
+  // Interest Ceremony Timeline
   static const Duration ceremonyCooldown = Duration(milliseconds: 2100);
   static const Duration ceremonyRingExpand = Duration(milliseconds: 400);
   static const Duration ceremonyRingFade = Duration(milliseconds: 300);

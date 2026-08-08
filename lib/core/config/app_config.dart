@@ -1,10 +1,5 @@
-// lib/core/config/app_config.dart
-// ============================================================
-// Silarah - App Configuration
 // Values are injected at build time with --dart-define or
-// --dart-define-from-file. Never commit live project config here.
-// ============================================================
-
+// --dart-define-from-file. Live project config is never committed here.
 abstract final class AppConfig {
   static const String supabaseUrl = String.fromEnvironment('SUPABASE_URL');
   static const String supabaseAnonKey =
@@ -16,6 +11,4 @@ abstract final class AppConfig {
       String.fromEnvironment('REVENUECAT_IOS_KEY');
   static const String revenueCatTestKey =
       String.fromEnvironment('REVENUECAT_TEST_KEY');
-
-  static const String appVersion = '1.0.0';
 }

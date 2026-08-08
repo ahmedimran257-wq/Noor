@@ -1,15 +1,10 @@
-// lib/features/home/screens/subscription_screen.dart
-// ============================================================
 // SILARAH — Subscription Screen (RevenueCat Dynamic Pricing)
 //
-// Blueprint (Part 8):
 //   "The price in local currency."
 //
 // Pricing is fetched exclusively from RevenueCat Offerings.
 // No hardcoded fallback — shows error state if unavailable.
 // Dynamic "Best value — save X%" on annual card.
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -94,7 +89,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Blueprint Part 2: detect gender for differentiated messaging.
     final authState = context.watch<AuthCubit>().state;
     final gender =
         authState is AuthAuthenticated ? (authState.gender ?? 'male') : 'male';
@@ -136,7 +130,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // ── Header ──────────────────────────────────
+                // Header
                 SlideTransition(
                   position: _headerSlide,
                   child: FadeTransition(
@@ -148,7 +142,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
 
                 SizedBox(height: spaceLarge),
 
-                // ── Plan Cards ──────────────────────────────
+                // Plan Cards
                 if (_pricing.source == PricingSource.loading)
                   _PricingStatusCard(
                     isLoading: true,
@@ -171,13 +165,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
 
                 SizedBox(height: spaceMedium),
 
-                // ── What's included ─────────────────────────
+                // What's included
                 _IncludedFeatures(
                     isFemale: isFemale, isSmallScreen: isSmallScreen),
 
                 SizedBox(height: spaceLarge),
 
-                // ── CTA Button ──────────────────────────────
+                // CTA Button
                 if (_pricing.isAvailable)
                   _CtaButton(
                     selectedPlan: _selectedPlan,
@@ -189,7 +183,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
 
                 SizedBox(height: spaceSmall),
 
-                // ── Secondary links ─────────────────────────
+                // Secondary links
                 _SecondaryLinks(
                   isLoading: state.isLoading,
                   isSmallScreen: isSmallScreen,
@@ -263,8 +257,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   }
 }
 
-// ── Header ────────────────────────────────────────────────────
-
+// Header
 Future<bool?> _showPhoneVerificationSheet(
   BuildContext context, {
   String? countryCode,
@@ -723,8 +716,7 @@ class _Header extends StatelessWidget {
   }
 }
 
-// ── Plan Cards ────────────────────────────────────────────────
-
+// Plan Cards
 class _PricingStatusCard extends StatelessWidget {
   const _PricingStatusCard({
     required this.isLoading,
@@ -986,8 +978,7 @@ class _PlanCard extends StatelessWidget {
   }
 }
 
-// ── Included Features ─────────────────────────────────────────
-
+// Included Features
 class _IncludedFeatures extends StatelessWidget {
   const _IncludedFeatures({this.isFemale = false, this.isSmallScreen = false});
   final bool isFemale;
@@ -1075,8 +1066,7 @@ class _FeatureRow extends StatelessWidget {
   }
 }
 
-// ── CTA Button ────────────────────────────────────────────────
-
+// CTA Button
 class _CtaButton extends StatelessWidget {
   final String selectedPlan;
   final DisplayPricing pricing;
@@ -1128,8 +1118,7 @@ class _CtaButton extends StatelessWidget {
   }
 }
 
-// ── Secondary Links ───────────────────────────────────────────
-
+// Secondary Links
 class _SecondaryLinks extends StatelessWidget {
   final bool isLoading;
   final bool isSmallScreen;
@@ -1209,7 +1198,6 @@ class _SecondaryLinks extends StatelessWidget {
   }
 }
 
-// ── Free For Women Screen ─────────────────────────────────────
-
+// Free For Women Screen
 // _FreeForWomenScreen removed — women now see the main subscription
 // screen with differentiated messaging (isFemale: true).

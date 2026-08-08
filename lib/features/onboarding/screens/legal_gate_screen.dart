@@ -1,11 +1,7 @@
-// lib/features/onboarding/screens/legal_gate_screen.dart
-// ============================================================
 // SILARAH — Legal Gate Screen
 // Two mandatory checkboxes (age + terms).
 // Cannot proceed without both checked.
 // Consent is cached pre-auth and flushed to user_consents after email OTP auth.
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -79,7 +75,7 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // ── Header ─────────────────────────────────────
+              // Header
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                   AppDimensions.space24,
@@ -121,7 +117,7 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
                 ),
               ),
 
-              // ── Scrollable body ────────────────────────────
+              // Scrollable body
               Expanded(
                 child: SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
@@ -135,7 +131,7 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
                       _TermsSummaryCard(),
                       const SizedBox(height: AppDimensions.space24),
 
-                      // ── Checkboxes ─────────────────────────
+                      // Checkboxes
                       _SilarahCheckbox(
                         value: _ageConfirmed,
                         onChanged: (v) =>
@@ -208,7 +204,7 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
                 ),
               ),
 
-              // ── Bottom CTA ─────────────────────────────────
+              // Bottom CTA
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                   AppDimensions.space24,
@@ -247,8 +243,7 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
   }
 }
 
-// ── Terms Summary Card ────────────────────────────────────────
-
+// Terms Summary Card
 class _LegalSaveError extends StatelessWidget {
   const _LegalSaveError({
     required this.message,
@@ -380,8 +375,7 @@ class _TermsSummaryCard extends StatelessWidget {
   }
 }
 
-// ── Silarah Checkbox ─────────────────────────────────────────────
-
+// Silarah Checkbox
 class _SilarahCheckbox extends StatelessWidget {
   const _SilarahCheckbox({
     required this.value,

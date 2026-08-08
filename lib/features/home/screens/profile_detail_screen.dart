@@ -1,8 +1,4 @@
-// lib/features/home/screens/profile_detail_screen.dart
-// ============================================================
-// SILARAH — Profile Detail Screen (Step 5 — Blueprint Complete)
 //
-// Blueprint requirements (Part 8):
 //   • Full-screen hero photo: 55% of screen height
 //   • Stretch + parallax via SliverAppBar stretchModes
 //   • Multiple photos swipeable horizontally with dot indicators
@@ -13,8 +9,6 @@
 //   • Interests as outlined GOLD chips
 //   • Compatibility indicator: "You match N of their M preferences"
 //   • Sticky bottom bar: bookmark + gold "Send Interest"
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 import 'dart:math' as math;
@@ -307,8 +301,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     );
   }
 
-  // ── Actions ────────────────────────────────────────────────
-
+  // Actions
   Future<void> _handleSendInterest() async {
     if (!await context.read<InterestsCubit>().canStartInterest() || !mounted) {
       return;
@@ -435,8 +428,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     );
   }
 
-  // ── Build ──────────────────────────────────────────────────
-
+  // Build
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -455,10 +447,10 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
       backgroundColor: AppColors.obsidianNight,
       body: Stack(
         children: [
-          // ── Scrollable content ──────────────────────────────
+          // Scrollable content
           CustomScrollView(
             slivers: [
-              // ── Photo hero with parallax + carousel ──────────
+              // Photo hero with parallax + carousel
               SliverAppBar(
                 expandedHeight: MediaQuery.of(context).size.height * 0.55,
                 pinned: true,
@@ -520,7 +512,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                 ),
               ),
 
-              // ── Profile content ───────────────────────────────
+              // Profile content
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(
                   AppDimensions.space24,
@@ -699,7 +691,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
             ],
           ),
 
-          // ── Sticky bottom bar ─────────────────────────────────
+          // Sticky bottom bar
           if (!widget.isOwnProfile)
             Positioned(
               left: 0,
@@ -827,8 +819,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   }
 }
 
-// ── Photo Carousel ────────────────────────────────────────────
-
+// Photo Carousel
 class _PhotoCarousel extends StatelessWidget {
   const _PhotoCarousel({
     required this.profile,
@@ -1379,8 +1370,7 @@ class _PersonPlaceholder extends StatelessWidget {
   }
 }
 
-// ── Full-Screen Photo Viewer ──────────────────────────────────
-
+// Full-Screen Photo Viewer
 class _FullScreenPhotoViewer extends StatefulWidget {
   const _FullScreenPhotoViewer({
     required this.profile,
@@ -1525,8 +1515,7 @@ class _FullScreenPhotoViewerState extends State<_FullScreenPhotoViewer> {
   }
 }
 
-// ── Header Icon Button ────────────────────────────────────────
-
+// Header Icon Button
 class _HeaderButton extends StatelessWidget {
   const _HeaderButton({
     required this.icon,
@@ -1561,8 +1550,7 @@ class _HeaderButton extends StatelessWidget {
   }
 }
 
-// ── Name Block ────────────────────────────────────────────────
-
+// Name Block
 class _NameBlock extends StatelessWidget {
   const _NameBlock({required this.profile});
   final DiscoveryProfile profile;
@@ -1664,8 +1652,7 @@ class _VerifiedPill extends StatelessWidget {
   }
 }
 
-// ── Compatibility Indicator ───────────────────────────────────
-// Blueprint: "A compatibility indicator shows how many of the profile
+// Compatibility Indicator
 // owner's stated preferences match the viewer's profile —
 // 'You match 4 of their 5 preferences.'"
 //
@@ -1941,8 +1928,7 @@ class _CompatibilityIndicator extends StatelessWidget {
   }
 }
 
-// ── Section Header ────────────────────────────────────────────
-
+// Section Header
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader({required this.label});
   final String label;
@@ -1960,8 +1946,7 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-// ── Detail Grid ───────────────────────────────────────────────
-
+// Detail Grid
 class _DetailItem {
   const _DetailItem({required this.label, required this.value});
   final String label;
@@ -2011,8 +1996,7 @@ class _DetailTile extends StatelessWidget {
   }
 }
 
-// ── Gold Chip (Interests — blueprint-specified gold outline) ──
-
+// Gold Chip (Interests — blueprint-specified gold outline)
 class _GoldChip extends StatelessWidget {
   const _GoldChip({required this.label});
   final String label;
@@ -2038,8 +2022,7 @@ class _GoldChip extends StatelessWidget {
   }
 }
 
-// ── Plain Chip (Languages etc.) ───────────────────────────────
-
+// Plain Chip (Languages etc.)
 class _DetailChip extends StatelessWidget {
   const _DetailChip({required this.label});
   final String label;
@@ -2061,8 +2044,7 @@ class _DetailChip extends StatelessWidget {
   }
 }
 
-// ── CTA Bar (sticky bottom) ───────────────────────────────────
-
+// CTA Bar (sticky bottom)
 class _CtaBar extends StatelessWidget {
   const _CtaBar({
     required this.firstName,
@@ -2233,7 +2215,7 @@ class _CtaBar extends StatelessWidget {
   }
 }
 
-// ── Report / Block Bottom Sheet ───────────────────────────────
+// Report / Block Bottom Sheet
 // Upgraded to use BlockReportCubit + ReportBottomSheet (Step 10)
 
 class _ReportBlockSheet extends StatelessWidget {

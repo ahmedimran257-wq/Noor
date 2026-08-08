@@ -73,12 +73,13 @@ select extensions.ok(
   'members cannot read raw matches'
 );
 select extensions.ok(
-  not has_table_privilege('authenticated', 'public.discovery_pool', 'SELECT'),
-  'members cannot bypass discovery RPCs'
+  to_regclass('public.discovery_pool') is null
+  and to_regclass('public.recommendations') is null,
+  'superseded discovery storage is absent'
 );
 select extensions.ok(
-  not has_table_privilege('authenticated', 'public.recommendations', 'SELECT,INSERT,UPDATE,DELETE'),
-  'recommendations are server-owned'
+  to_regclass('public.user_devices') is null,
+  'retired Firebase device registry is absent'
 );
 select extensions.ok(
   not has_function_privilege(
@@ -221,17 +222,14 @@ select extensions.ok(
   'ranking and maintenance routines are unavailable to API members'
 );
 select extensions.ok(
-  not has_function_privilege(
-    'anon',
-    'public.get_new_arrivals(text,uuid)',
-    'EXECUTE'
-  )
-  and not has_function_privilege(
-    'authenticated',
-    'public.get_new_arrivals(text,uuid)',
-    'EXECUTE'
-  ),
-  'new-arrivals projection is not anonymous'
+  to_regprocedure('public.get_new_arrivals(text,uuid)') is null
+  and to_regprocedure(
+    'public.get_nearby_matches(numeric,numeric,numeric)'
+  ) is null
+  and to_regprocedure(
+    'public.submit_selfie_verification(text,text)'
+  ) is null,
+  'retired discovery and client-trusted verification RPCs are absent'
 );
 select extensions.ok(
   not has_table_privilege(

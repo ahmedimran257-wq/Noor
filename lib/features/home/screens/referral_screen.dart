@@ -1,11 +1,7 @@
-// lib/features/home/screens/referral_screen.dart
-// ============================================================
 // SILARAH — Referral & Ambassador Screen
 // Allows users to view their referral code, copy/share it,
 // and track their rewards (7 days of free premium per opposite
 // gender referral).
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

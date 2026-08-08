@@ -1,7 +1,7 @@
 name: silarah
 description: "Silarah - Premium Muslim Matrimony App"
 publish_to: 'none'
-version: 1.0.0+8005
+version: 1.0.0+12007
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -13,28 +13,28 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
-  # ── Design ────────────────────────────────────────────────
+  # Design
   cupertino_icons: ^1.0.8
 
-  # ── State Management ──────────────────────────────────────
+  # State management
   flutter_bloc: ^8.1.6
   equatable: ^2.0.5
 
-  # ── Navigation ────────────────────────────────────────────
+  # Navigation
   go_router: ^14.2.7
 
-  # ── Backend ───────────────────────────────────────────────
+  # Backend
   supabase_flutter: ^2.9.0
   firebase_core: ^3.8.0           # Firebase initialization
   firebase_crashlytics: ^4.3.2   # Production crash reporting (free)
-  purchases_flutter: ^8.9.0     # RevenueCat subscriptions (v8 — Flutter v2 embedding)
+  purchases_flutter: ^8.9.0     # RevenueCat subscriptions (Flutter v2 embedding)
   firebase_messaging: ^15.2.0    # Push notifications via FCM (free & unlimited)
   uuid: ^4.5.1                   # Device ID generation
 
-  # ── Localization ──────────────────────────────────────────
+  # Localization
   intl: ^0.20.2
 
-  # ── Utilities ─────────────────────────────────────────────
+  # Utilities
   shared_preferences: ^2.3.3      # Locale + theme persistence
   flutter_secure_storage: ^10.3.1 # OAuth verifier/state survives process death securely
   image_picker: ^1.1.2            # Camera / Gallery photo picking
@@ -47,10 +47,10 @@ dependencies:
   url_launcher: ^6.3.2                  # Legal and support links
   path_provider: ^2.1.4                 # Temp dir for face detection
 
-  # ── Networking ──────────────────────────────────────────────
+  # Networking
   http: ^1.2.2                    # Photon + Wikidata requests
 
-  # ── Animations & Images ───────────────────────────────────
+  # Media and motion
   flutter_animate: ^4.5.2         # City search dropdown animations
   cached_network_image: ^3.4.1    # Network image caching
   blurhash_dart: ^1.2.1          # BlurHash decode for photo placeholders
@@ -83,8 +83,7 @@ flutter:
         - asset: assets/fonts/PlayfairDisplay-Italic.ttf
           style: italic
 
-  # ── Assets ───────────────────────────────────────────────────
-  # Add local asset paths here when needed, e.g.:\n  # assets:
+  # Assets
   assets:
     - assets/icon/
     - assets/models/mobilefacenet.tflite

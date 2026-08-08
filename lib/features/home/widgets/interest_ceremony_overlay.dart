@@ -1,7 +1,4 @@
-// lib/features/home/widgets/interest_ceremony_overlay.dart
-// ============================================================
 // SILARAH — The Interest Ceremony Overlay
-// Blueprint-exact animation sequence when "Send Interest" fires.
 //
 // Timeline:
 //   0ms:    Overlay + blur appears
@@ -10,8 +7,6 @@
 //   800ms:  Gold checkmark draws in (300ms)
 //   1100ms: "Interest Sent" + name text fades in (300ms)
 //   2100ms: Overlay fades out
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -252,8 +247,7 @@ class _CeremonyOverlayState extends State<_CeremonyOverlay>
   }
 }
 
-// ── Particle Painter ─────────────────────────────────────────
-
+// Particle Painter
 class _ParticlePainter extends CustomPainter {
   _ParticlePainter({required this.progress});
   final double progress;
@@ -295,8 +289,7 @@ class _ParticlePainter extends CustomPainter {
   bool shouldRepaint(_ParticlePainter old) => old.progress != progress;
 }
 
-// ── Checkmark Painter ─────────────────────────────────────────
-
+// Checkmark Painter
 class _CheckmarkPainter extends CustomPainter {
   _CheckmarkPainter({required this.progress});
   final double progress;

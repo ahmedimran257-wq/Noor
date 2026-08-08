@@ -1,9 +1,5 @@
-// lib/core/theme/silarah_spring.dart
-// ============================================================
 // SILARAH Design DNA — Spring Physics Core
 // "Everything behaves like physical objects with mass and momentum."
-// ============================================================
-
 import 'package:flutter/physics.dart';
 import 'package:flutter/widgets.dart';
 

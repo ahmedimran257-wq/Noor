@@ -1,8 +1,5 @@
-// lib/core/cubits/discovery/discovery_feed_cubit.dart
-// ============================================================
 // SILARAH — Discovery Feed Cubit (Step 6 — Filter-aware)
 //
-// Blueprint (Part 8):
 //   • Cursor-based pagination — no offset drift, no duplicates
 //   • Every 10th profile: "Someone you might connect with"
 //   • Free-tier counter
@@ -10,8 +7,6 @@
 //
 // Filter persistence: active filter is saved to SharedPreferences
 // so it survives app restarts.
-// ============================================================
-
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -53,8 +48,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   static const _viewerReadinessFreshness = Duration(minutes: 10);
   static const _revisionCheckFreshness = Duration(seconds: 90);
 
-  // ── Public API ────────────────────────────────────────────
-
+  // Public API
   Future<OnboardingData?> _getViewerProfile() async {
     try {
       if (SupabaseService.isInitialized) {
@@ -401,8 +395,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     );
   }
 
-  // ── Filter Persistence ────────────────────────────────────
-
+  // Filter Persistence
   Future<DiscoveryFilter?> _loadFilterFromPrefs() async {
     try {
       final prefs = await SharedPreferences.getInstance();

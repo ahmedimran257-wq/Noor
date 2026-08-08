@@ -1,5 +1,3 @@
-// lib/features/home/widgets/discovery_filter_sheet.dart
-// ============================================================
 // SILARAH — Full Filter Bottom Sheet (Feature 8 + 9)
 //
 // Sections (scrollable):
@@ -14,8 +12,6 @@
 //
 // Bottom: "Clear All" + "Apply Filters" buttons.
 // Show via showModalBottomSheet from DiscoveryFilterBar chips.
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -34,8 +30,7 @@ import '../../../core/widgets/buttons/silarah_pressable.dart';
 import '../screens/subscription_screen.dart';
 import '../../../core/data/country_data.dart';
 
-// ── Sheet entry point (called from DiscoveryFilterBar) ────────
-
+// Sheet entry point (called from DiscoveryFilterBar)
 Future<void> showDiscoveryFilterSheet(
   BuildContext context, {
   DiscoveryFilter? initial,
@@ -57,8 +52,7 @@ Future<void> showDiscoveryFilterSheet(
   );
 }
 
-// ── Main widget ───────────────────────────────────────────────
-
+// Main widget
 class DiscoveryFilterSheet extends StatefulWidget {
   const DiscoveryFilterSheet({
     super.key,
@@ -94,7 +88,6 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
   final _childrenKey = GlobalKey();
   final _verifiedKey = GlobalKey();
   final _distanceKey = GlobalKey();
-  // Phase 2
   final _tongueKey = GlobalKey();
   final _communityKey = GlobalKey();
   final _livingKey = GlobalKey();
@@ -487,7 +480,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                 child: Builder(
                   builder: (context) {
                     final sections = <Widget>[
-                      // ── GENDER PREFERENCE ──────────────────────
+                      // GENDER PREFERENCE
                       _SectionLabel(
                           key: _genderKey, label: 'GENDER PREFERENCE'),
                       const SizedBox(height: 8),
@@ -501,7 +494,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                       ),
                       const SizedBox(height: 20),
 
-                      // ── AGE RANGE ──────────────────────────────
+                      // AGE RANGE
                       _SectionLabel(key: _ageKey, label: 'AGE RANGE'),
                       const SizedBox(height: 8),
                       _AgeRangeField(
@@ -515,7 +508,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                       ),
                       const SizedBox(height: 20),
 
-                      // ── SECT ───────────────────────────────────
+                      // SECT
                       _SectionLabel(key: _sectKey, label: 'SECT'),
                       const SizedBox(height: 8),
                       _MultiChipGroup(
@@ -527,7 +520,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                       ),
                       const SizedBox(height: 20),
 
-                      // ── DEEN LEVEL ─────────────────────────────
+                      // DEEN LEVEL
                       _SectionLabel(key: _deenKey, label: 'DEEN LEVEL'),
                       const SizedBox(height: 8),
                       _MultiChipGroup(
@@ -539,7 +532,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                       ),
                       const SizedBox(height: 20),
 
-                      // ── EDUCATION MINIMUM ──────────────────────
+                      // EDUCATION MINIMUM
                       _SectionLabel(key: _eduKey, label: 'EDUCATION MINIMUM'),
                       const SizedBox(height: 8),
                       _DropdownRow(
@@ -553,7 +546,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                       ),
                       const SizedBox(height: 20),
 
-                      // ── FAMILY TYPE ────────────────────────────
+                      // FAMILY TYPE
                       _SectionLabel(key: _familyKey, label: 'FAMILY TYPE'),
                       const SizedBox(height: 8),
                       _MultiChipGroup(
@@ -568,7 +561,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                       ),
                       const SizedBox(height: 20),
 
-                      // ── MARITAL STATUS ─────────────────────────
+                      // MARITAL STATUS
                       _SectionLabel(key: _maritalKey, label: 'MARITAL STATUS'),
                       const SizedBox(height: 8),
                       _MultiChipGroup(
@@ -583,7 +576,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                       ),
                       const SizedBox(height: 20),
 
-                      // ── HAS CHILDREN ───────────────────────────
+                      // HAS CHILDREN
                       _SectionLabel(key: _childrenKey, label: 'HAS CHILDREN'),
                       const SizedBox(height: 8),
                       _RadioGroup<String?>(
@@ -598,7 +591,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                       ),
                       const SizedBox(height: 20),
 
-                      // ── VERIFIED ONLY (Premium) ─────────────
+                      // VERIFIED ONLY (Premium)
                       _SectionLabel(key: _verifiedKey, label: 'VERIFIED ONLY'),
                       const SizedBox(height: 8),
                       _SubscriberGate(
@@ -611,7 +604,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                       ),
                       const SizedBox(height: 20),
 
-                      // ── DISTANCE (Premium) ──────────────────────
+                      // DISTANCE (Premium)
                       _SectionLabel(key: _distanceKey, label: 'DISTANCE'),
                       const SizedBox(height: 8),
                       _SubscriberGate(
@@ -669,7 +662,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                       ],
                       const SizedBox(height: 20),
 
-                      // ── DIASPORA MODE (Premium) ──────────────────
+                      // DIASPORA MODE (Premium)
                       const _SectionLabel(label: 'BROWSE COUNTRIES'),
                       const SizedBox(height: 8),
                       _SubscriberGate(
@@ -832,7 +825,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                       ),
                       const SizedBox(height: 20),
 
-                      // ── MOTHER TONGUE (Premium) ─────────────
+                      // MOTHER TONGUE (Premium)
                       _SectionLabel(key: _tongueKey, label: 'MOTHER TONGUE'),
                       const SizedBox(height: 8),
                       _SubscriberGate(
@@ -848,7 +841,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                       ),
                       const SizedBox(height: 20),
 
-                      // ── COMMUNITY / BIRADARI (Premium) ──────
+                      // COMMUNITY / BIRADARI (Premium)
                       _SectionLabel(
                           key: _communityKey, label: 'COMMUNITY / BIRADARI'),
                       const SizedBox(height: 8),
@@ -865,7 +858,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                       ),
                       const SizedBox(height: 20),
 
-                      // ── LIVING EXPECTATION (Premium) ────────
+                      // LIVING EXPECTATION (Premium)
                       _SectionLabel(
                           key: _livingKey, label: 'POST-MARRIAGE LIVING'),
                       const SizedBox(height: 8),
@@ -1115,8 +1108,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
   }
 }
 
-// ── Sub-widgets ───────────────────────────────────────────────
-
+// Sub-widgets
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel({super.key, required this.label});
   final String label;
@@ -1499,7 +1491,7 @@ class _SheetTextField extends StatelessWidget {
   }
 }
 
-// ── Subscriber Gate ───────────────────────────────────────────
+// Subscriber Gate
 // Shows a lock overlay on premium filter sections (Distance)
 // for non-subscribers. Tapping navigates to SubscriptionScreen.
 

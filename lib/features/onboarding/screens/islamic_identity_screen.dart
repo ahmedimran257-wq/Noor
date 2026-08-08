@@ -1,9 +1,5 @@
-// lib/features/onboarding/screens/islamic_identity_screen.dart
-// ============================================================
 // SILARAH - Islamic Identity Screen (fast-start step 4)
 // Saves required Islamic identity and lifestyle signals for matching.
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -38,7 +34,7 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
   String? _smokingHabit;
   String? _vapingHabit;
   String? _hookahHabit;
-  String? _isRevert; // Phase 1 addition
+  String? _isRevert;
 
   @override
   void initState() {
@@ -64,7 +60,7 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
     // Common madhabs — universal across all Sunni regions
     const common = ['Hanafi', 'Shafi\'i', 'Maliki', 'Hanbali'];
 
-    // ── Regional Sunni movements / schools ──────────────────
+    // Regional Sunni movements / schools
     const southAsia = [
       'Deobandi',
       'Barelvi',
@@ -168,7 +164,7 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
       'Traditional Sunni',
     ];
 
-    // ── Shia sub-sects ──────────────────────────────────────
+    // Shia sub-sects
     const shia = [
       'Ithna Ashari (Twelver)',
       'Usuli',
@@ -470,7 +466,7 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
                 const SizedBox(height: AppDimensions.space20),
               ],
 
-              // ── REVERT / CONVERT STATUS ──────────────────
+              // REVERT / CONVERT STATUS
               _SectionTitle(l10n.onboarding_label_revert.toUpperCase()),
               const SizedBox(height: AppDimensions.space4),
               UiText(l10n.onboarding_label_revertQuestion,
@@ -597,7 +593,7 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
                 ),
               ],
 
-              // ── LIFESTYLE & DIET ─────────────────────────
+              // LIFESTYLE & DIET
               const SizedBox(height: AppDimensions.space28),
               _SectionTitle(l10n.onboarding_label_lifestyleDiet.toUpperCase()),
               const SizedBox(height: AppDimensions.space6),
@@ -620,7 +616,7 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
               ),
               const SizedBox(height: AppDimensions.space20),
 
-              // ── SUBSTANCE USE ─────────────────────────────
+              // SUBSTANCE USE
               const SizedBox(height: AppDimensions.space20),
               _SectionTitle(l10n.onboarding_label_substanceUse.toUpperCase()),
               const SizedBox(height: AppDimensions.space12),
@@ -692,8 +688,7 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
   }
 }
 
-// ── Shared sub-widgets ────────────────────────────────────────
-
+// Shared sub-widgets
 class _SectionTitle extends StatelessWidget {
   const _SectionTitle(this.text);
   final String text;
@@ -861,4 +856,4 @@ class _TogglePill extends StatelessWidget {
   }
 }
 
-// ── Expose _SelectChip and _TogglePill for reuse ─────────────
+// Expose _SelectChip and _TogglePill for reuse

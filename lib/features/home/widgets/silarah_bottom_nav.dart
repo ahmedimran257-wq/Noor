@@ -1,13 +1,9 @@
-// lib/features/home/widgets/silarah_bottom_nav.dart
-// ============================================================
 // SILARAH — Bottom Navigation Bar
 // 4 tabs: Discover / Interests / Chat / Profile
 // Active: Champagne Gold icon + thin gold underline
 // Inactive: Slate Mist
 // Badges: Gold bubble on Interests (pending received count)
 //         and Chat (total unread count)
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -113,8 +109,7 @@ class SilarahBottomNav extends StatelessWidget {
   }
 }
 
-// ── Nav Item data ─────────────────────────────────────────────
-
+// Nav Item data
 class _NavItem {
   const _NavItem({
     required this.icon,
@@ -126,8 +121,7 @@ class _NavItem {
   final String label;
 }
 
-// ── Nav Tab ───────────────────────────────────────────────────
-
+// Nav Tab
 class _NavTab extends StatelessWidget {
   const _NavTab({
     required this.item,
@@ -256,8 +250,7 @@ class _NavTab extends StatelessWidget {
   }
 }
 
-// ── Badge bubble ──────────────────────────────────────────────
-
+// Badge bubble
 class _Badge extends StatelessWidget {
   const _Badge({required this.count, required this.accent});
   final int count;

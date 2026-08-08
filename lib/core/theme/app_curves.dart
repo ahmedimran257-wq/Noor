@@ -1,9 +1,5 @@
-// lib/core/theme/app_curves.dart
-// ============================================================
 // SILARAH Design DNA — Motion Manifesto
 // "No linear animations. Everything must have weight and momentum."
-// ============================================================
-
 import 'package:flutter/material.dart';
 
 abstract final class AppCurves {

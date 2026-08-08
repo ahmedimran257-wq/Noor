@@ -1,8 +1,4 @@
-// lib/core/cubits/onboarding/onboarding_state.dart
-// ============================================================
 // SILARAH — Onboarding Cubit States
-// ============================================================
-
 import 'package:equatable/equatable.dart';
 import '../../models/onboarding_data.dart';
 

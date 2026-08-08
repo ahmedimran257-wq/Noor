@@ -1,9 +1,5 @@
-// lib/core/cubits/auth/auth_cubit.dart
-// ============================================================
 // SILARAH - Auth Cubit
 // Production auth uses Supabase email OTP. No local sign-in path.
-// ============================================================
-
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';

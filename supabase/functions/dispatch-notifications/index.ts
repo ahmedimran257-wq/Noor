@@ -1,6 +1,4 @@
-// ============================================================
 // EDGE FUNCTION: dispatch-notifications
-// supabase/functions/dispatch-notifications/index.ts
 //
 // Runs every minute via cron (or invoked on demand).
 // Fetches due notifications from the queue and sends them
@@ -10,8 +8,6 @@
 //
 // FCM targeting: by device FCM token stored in user_fcm_tokens
 // table, saved from Flutter via FirebaseMessaging.instance.getToken().
-// ============================================================
-
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { corsHeaders } from "../_shared/cors.ts";
 import { isAuthorizedCronRequest } from "../_shared/cron_auth.ts";
@@ -47,7 +43,7 @@ interface DirectProfileLivePayload {
   body: string;
 }
 
-// ── Google OAuth2 Access Token (cached) ─────────────────────
+// Google OAuth2 Access Token (cached)
 let _cachedAccessToken: string | null = null;
 let _tokenExpiresAt = 0;
 
@@ -108,8 +104,7 @@ async function getAccessToken(): Promise<string> {
   return _cachedAccessToken!;
 }
 
-// ── Main handler ────────────────────────────────────────────
-
+// Main handler
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -202,7 +197,7 @@ Deno.serve(async (req: Request) => {
     return new Response("Internal Server Error", { status: 500 });
   }
 
-  // ── Checkout a batch of due notifications ──────────────────
+  // Checkout a batch of due notifications
   const { data: notifications, error: checkoutError } = await supabase
     .rpc("checkout_notifications", { batch_size: BATCH_SIZE });
 
@@ -227,7 +222,7 @@ Deno.serve(async (req: Request) => {
     `[dispatch-notifications] Dispatching ${notifications.length} notifications...`,
   );
 
-  // ── Get Google access token ────────────────────────────────
+  // Get Google access token
   let accessToken: string;
   try {
     accessToken = await getAccessToken();
@@ -250,7 +245,7 @@ Deno.serve(async (req: Request) => {
     return new Response("Internal Server Error", { status: 500 });
   }
 
-  // ── Resolve FCM tokens for all target users ────────────────
+  // Resolve FCM tokens for all target users
   const userIds = [
     ...new Set(notifications.map((n: NotificationRow) => n.user_id)),
   ];
@@ -282,7 +277,7 @@ Deno.serve(async (req: Request) => {
     tokenMap.set(row.user_id, list);
   }
 
-  // ── Dispatch each notification via FCM ─────────────────────
+  // Dispatch each notification via FCM
   const outcomes = await mapWithConcurrency(
     notifications as NotificationRow[],
     MAX_CONCURRENCY,
@@ -426,8 +421,7 @@ async function authenticatedProfileLivePayload(
   };
 }
 
-// ── Send a single notification via FCM HTTP v1 API ────────────
-
+// Send a single notification via FCM HTTP v1 API
 async function sendFCM(
   accessToken: string,
   fcmToken: string,
@@ -560,8 +554,7 @@ async function finishCheckedOutNotifications(
   );
 }
 
-// ── Crypto helpers for JWT signing ────────────────────────────
-
+// Crypto helpers for JWT signing
 async function mapWithConcurrency<T, R>(
   items: T[],
   concurrency: number,
@@ -654,8 +647,7 @@ async function importPKCS8Key(pem: string): Promise<CryptoKey> {
   );
 }
 
-// ── Type definitions ───────────────────────────────────────────
-
+// Type definitions
 interface NotificationRow {
   id: string;
   user_id: string;

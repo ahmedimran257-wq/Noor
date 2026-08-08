@@ -1,5 +1,3 @@
-// lib/core/services/wali_mode_service.dart
-// ============================================================
 // SILARAH — Wali (Guardian) Mode Service
 //
 // Fixes Audit Finding 3.1 (Critical):
@@ -10,8 +8,6 @@
 // The guardian gets their own login to the app with a dedicated
 // dashboard showing all active chats their ward is engaged in.
 // Messages appear live via Supabase Realtime.
-// ============================================================
-
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -39,7 +35,7 @@ class WaliModeService {
     return SupabaseService.client;
   }
 
-  // ── Realtime ────────────────────────────────────────────────
+  // Realtime
   RealtimeChannel? _realtimeChannel;
   final _messageController = StreamController<Map<String, dynamic>>.broadcast();
 
@@ -83,8 +79,7 @@ class WaliModeService {
     }
   }
 
-  // ── Dashboard ───────────────────────────────────────────────
-
+  // Dashboard
   /// Fetches the full guardian dashboard data via the
   /// `get_guardian_dashboard()` RPC.
   ///
@@ -129,8 +124,7 @@ class WaliModeService {
     }
   }
 
-  // ── Realtime Subscription ───────────────────────────────────
-
+  // Realtime Subscription
   /// Subscribes to Supabase Realtime for live message updates
   /// in all mirrored chats.
   ///
@@ -352,8 +346,7 @@ String _requiredText(Map<String, dynamic> row, String key) {
   return value;
 }
 
-// ── Data Models ───────────────────────────────────────────────
-
+// Data Models
 /// Dashboard item returned by [WaliModeService.getDashboard].
 class GuardianDashboardItem {
   const GuardianDashboardItem({

@@ -1,5 +1,3 @@
-// lib/core/widgets/inputs/city_search_field.dart
-// ============================================================
 // SILARAH — City Search Field
 //
 // Uses the Supabase city cache with Photon as the global fallback.
@@ -20,8 +18,6 @@
 //       });
 //     },
 //   )
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -252,13 +248,13 @@ class _CitySearchFieldState extends State<CitySearchField> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // ── Label ──────────────────────────────────────────
+        // Label
         if (widget.label != null) ...[
           UiText(widget.label!, style: AppTypography.sectionLabel),
           const SizedBox(height: 8),
         ],
 
-        // ── Input field wrapped in composited transform target ──
+        // Input field wrapped in composited transform target
         CompositedTransformTarget(
           link: _layerLink,
           child: _buildInput(),
@@ -379,8 +375,7 @@ class _CitySearchFieldState extends State<CitySearchField> {
   }
 }
 
-// ── City result tile ──────────────────────────────────────────
-
+// City result tile
 class _CityTile extends StatelessWidget {
   const _CityTile({required this.result, required this.onTap});
 

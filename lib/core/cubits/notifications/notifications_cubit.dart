@@ -1,9 +1,5 @@
-// lib/core/cubits/notifications/notifications_cubit.dart
-// ============================================================
 // SILARAH - Notifications Cubit
 // Production Supabase realtime only.
-// ============================================================
-
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';

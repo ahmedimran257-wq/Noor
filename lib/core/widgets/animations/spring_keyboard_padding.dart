@@ -1,10 +1,6 @@
-// lib/core/widgets/animations/spring_keyboard_padding.dart
-// ============================================================
 // SILARAH — Spring Keyboard Padding
 // Animates bottom padding to match keyboard height changes using spring physics.
 // Replaces default Scaffold resizing for a premium Telegram-like experience.
-// ============================================================
-
 import 'package:flutter/widgets.dart';
 import '../../theme/silarah_spring.dart';
 

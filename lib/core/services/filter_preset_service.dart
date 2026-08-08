@@ -1,10 +1,6 @@
-// lib/core/services/filter_preset_service.dart
-// ============================================================
 // SILARAH — Filter Preset Service (Feature 9)
 // Persists up to 3 named DiscoveryFilter presets via
 // shared_preferences as JSON.
-// ============================================================
-
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../cubits/discovery/discovery_filter.dart';

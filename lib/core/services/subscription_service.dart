@@ -1,10 +1,6 @@
-// lib/core/services/subscription_service.dart
-// ============================================================
 // SILARAH - RevenueCat Subscription Service
 // Pricing comes from RevenueCat, with country/tier offering selection.
 // No hardcoded prices.
-// ============================================================
-
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';

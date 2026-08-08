@@ -1,5 +1,3 @@
-// lib/core/cubits/notification_prefs/notification_prefs_cubit.dart
-// ============================================================
 // SILARAH — Notification Preferences Cubit (Supabase production flow)
 //
 // Each toggle maps directly to a column in the notification_prefs
@@ -10,8 +8,6 @@
 //   - On login:    FCM token saved to user_fcm_tokens table in Supabase
 //   - On delete:   FCM token row deleted from user_fcm_tokens (ghost push prevention)
 //   - On refresh:  FirebaseMessaging.instance.onTokenRefresh saves new token to DB
-// ============================================================
-
 import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -25,8 +21,7 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
   Timer? _persistDebounce;
   int _persistVersion = 0;
 
-  // ── Load prefs from DB on login ───────────────────────────
-
+  // Load prefs from DB on login
   /// Load notification preferences from Supabase for the current user.
   Future<void> loadPrefs() async {
     if (!_isRealMode) return;
@@ -64,8 +59,7 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
     }
   }
 
-  // ── Toggle methods — one per DB column ────────────────────
-
+  // Toggle methods — one per DB column
   void toggleNewInterest(bool value) {
     emit(state.copyWith(newInterest: value));
     _schedulePersist();
@@ -106,8 +100,7 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
     _schedulePersist();
   }
 
-  // ── Quiet hours ───────────────────────────────────────────
-
+  // Quiet hours
   void setQuietHours({required int startHour, required int endHour}) {
     emit(state.copyWith(
       quietStartHour: startHour,
@@ -116,8 +109,7 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
     _schedulePersist();
   }
 
-  // ── Reset all to defaults ─────────────────────────────────
-
+  // Reset all to defaults
   void resetToDefaults() {
     emit(const NotificationPrefsState());
     _schedulePersist();
@@ -129,8 +121,7 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
     if (!isClosed) emit(const NotificationPrefsState());
   }
 
-  // ── Persistence helper ────────────────────────────────────
-
+  // Persistence helper
   void _schedulePersist() {
     final version = ++_persistVersion;
     _persistDebounce?.cancel();
@@ -172,8 +163,7 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
     }
   }
 
-  // ── Helpers ───────────────────────────────────────────────
-
+  // Helpers
   /// Parse a time string like "23:00:00" → 23
   int _timeToHour(String? timeStr) {
     if (timeStr == null || timeStr.isEmpty) return 23;

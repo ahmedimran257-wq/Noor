@@ -1,11 +1,7 @@
-// lib/features/onboarding/screens/profile_for_whom_screen.dart
-// ============================================================
 // SILARAH - Profile For Whom Screen (fast-start step 1)
 // Two primary options: Myself / Guardian.
 // Selecting Guardian expands to show relationship sub-options:
 //   Son, Daughter, Brother, Sister.
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -244,7 +240,7 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
                   ),
                   const SizedBox(height: AppDimensions.space32),
 
-                  // ── Option 1: Myself ─────────────────────────
+                  // Option 1: Myself
                   _SelectionCard(
                     icon: Icons.person_outline_rounded,
                     title: l10n.onboarding_profileForWhom_myself,
@@ -254,7 +250,7 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
                   ),
                   const SizedBox(height: AppDimensions.space16),
 
-                  // ── Option 2: Guardian ───────────────────────
+                  // Option 2: Guardian
                   _SelectionCard(
                     icon: Icons.copy_rounded, // or any icon from design
                     title: l10n.onboarding_profileForWhom_guardianCardTitle,
@@ -265,7 +261,7 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
                     isExpanded: _selectedCategory == 'guardian',
                   ),
 
-                  // ── Guardian sub-options (animated expand) ───
+                  // Guardian sub-options (animated expand)
                   SilarahSizeReveal(
                     factor: _expandAnim,
                     child: Padding(
@@ -444,8 +440,7 @@ class _ProfileForWhomSaveError extends StatelessWidget {
   }
 }
 
-// ── Selection Card (primary option) ───────────────────────────
-
+// Selection Card (primary option)
 class _SelectionCard extends StatelessWidget {
   const _SelectionCard({
     required this.icon,
@@ -563,8 +558,7 @@ class _SelectionCard extends StatelessWidget {
   }
 }
 
-// ── Relation Chip (guardian sub-option) ───────────────────────
-
+// Relation Chip (guardian sub-option)
 class _RelationChip extends StatelessWidget {
   const _RelationChip({
     required this.icon,

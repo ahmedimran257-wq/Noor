@@ -1,10 +1,6 @@
-// lib/core/models/discovery_profile.dart
-// ============================================================
 // SILARAH — Profile Transport Model
 // Legacy profile transport model used for real Supabase rows.
 // Each entry maps to the SilarahProfileCard constructor params.
-// ============================================================
-
 class DiscoveryProfile {
   const DiscoveryProfile({
     String? id,
@@ -41,16 +37,13 @@ class DiscoveryProfile {
     this.vapingHabit,
     this.hookahHabit,
     this.isGuardianProfile = false,
-    // Phase 2 fields
     this.community,
     this.dietType,
     this.livingExpectation,
-    // Phase 7 fields — Islamic marriage details
     this.quranMemorization,
     this.religiousEducation,
     this.marriageTimeline,
     this.willingToRelocate,
-    // Phase 9 audit fields — filter support
     this.gender,
     this.hasChildren = false,
     // D3: Last active timestamp for recency display
@@ -117,7 +110,6 @@ class DiscoveryProfile {
   final String? vapingHabit;
   final String? hookahHabit;
   final bool isGuardianProfile;
-  // Phase 2 fields
   final String? community;
   final String? dietType;
   final String? livingExpectation;
@@ -127,7 +119,6 @@ class DiscoveryProfile {
   final String?
       marriageTimeline; // 'asap','6_months','1_year','2_plus_years','not_sure'
   final String? willingToRelocate; // 'yes','no','open_to_discussion'
-  // Phase 9 audit fields
   final String? gender; // 'male','female'
   final bool hasChildren;
   // D3: Last active timestamp

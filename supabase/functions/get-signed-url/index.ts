@@ -1,10 +1,7 @@
-// ============================================================
 // EDGE FUNCTION: get-signed-url
-// supabase/functions/get-signed-url/index.ts
 //
 // Issues a short-lived pre-signed upload URL for profile photos.
 //
-// Security architecture (from Blueprint Part 15):
 //   1. Check photo quota (max 4) — 403 if exceeded
 //   2. Rate-limit: max 100 URL requests/hour per user (anti-scraping)
 //   3. Insert 'pending_upload' placeholder in photos table
@@ -16,8 +13,6 @@
 //
 // Storage SELECT RLS is disabled on the bucket — all reads
 // served via signed URLs from this function only.
-// ============================================================
-
 import { createClient } from "@supabase/supabase-js";
 import { corsHeaders, handleCors } from "../_shared/cors.ts";
 import {
@@ -48,7 +43,7 @@ Deno.serve(async (req: Request) => {
   if (corsResponse) return corsResponse;
 
   try {
-    // ── Authenticate caller ────────────────────────────────────
+    // Authenticate caller
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return errorResponse(401, "Missing or invalid Authorization header.");
@@ -113,7 +108,7 @@ Deno.serve(async (req: Request) => {
       ? "kyc"
       : "upload";
 
-    // ── Rate limiting (anti-scraping) ──────────────────────────
+    // Rate limiting (anti-scraping)
     const rateLimit = await consumeDistributedRateLimit(adminClient, {
       scope: `signed_url_${purposeScope}`,
       subject: userId,
@@ -136,7 +131,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // ── Parse request ──────────────────────────────────────────
+    // Parse request
     const {
       order_index,
       file_extension,
@@ -191,7 +186,7 @@ Deno.serve(async (req: Request) => {
       return errorResponse(400, "order_index must be 0, 1, 2, or 3.");
     }
 
-    // ── Get user's profile ID ──────────────────────────────────
+    // Get user's profile ID
     const { data: profile, error: profileError } = await adminClient
       .from("profiles")
       .select("id")
@@ -246,7 +241,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // ── Check photo quota (BEFORE generating URL) ──────────────
+    // Check photo quota (BEFORE generating URL)
     const { count: existingCount, error: countError } = await adminClient
       .from("photos")
       .select("id", { count: "exact", head: true })
@@ -264,11 +259,11 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // ── Generate unique storage path ───────────────────────────
+    // Generate unique storage path
     const fileName = `${crypto.randomUUID()}.${ext}`;
     const storagePath = `${userId}/${fileName}`;
 
-    // ── Insert 'pending_upload' placeholder (atomic gate) ──────
+    // Insert 'pending_upload' placeholder (atomic gate)
     // This row is inserted BEFORE the URL is returned.
     // If the upload never completes, a cleanup job removes stale pending_upload rows.
     const { data: reservationRows, error: reservationError } = await adminClient
@@ -288,7 +283,7 @@ Deno.serve(async (req: Request) => {
       return errorResponse(409, "The photo slot could not be reserved.");
     }
 
-    // ── Generate the pre-signed upload URL ─────────────────────
+    // Generate the pre-signed upload URL
     const { data: signedUrlData, error: urlError } = await adminClient
       .storage
       .from(BUCKET_NAME)

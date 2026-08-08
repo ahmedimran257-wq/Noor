@@ -1,10 +1,6 @@
-// lib/features/onboarding/screens/basic_identity_screen.dart
-// ============================================================
 // SILARAH - Basic Identity Screen (fast-start step 3)
 // Saves required profile identity after gender is mirrored to public.users.
 // Location is read from Quick Location and shown as confirmed context.
-// ============================================================
-
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -26,8 +22,7 @@ import '../../../core/widgets/inputs/silarah_text_field.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
 
-// ── Complexion options ─────────────────────────────────────────
-
+// Complexion options
 const _kComplexions = <String>[
   'Fair',
   'Medium',
@@ -36,8 +31,7 @@ const _kComplexions = <String>[
   'Prefer not to say',
 ];
 
-// ── Residency status options ──────────────────────────────────
-
+// Residency status options
 const _kResidencyOptions = <String>[
   'Citizen',
   'Permanent Resident',
@@ -47,8 +41,7 @@ const _kResidencyOptions = <String>[
   'Prefer not to say',
 ];
 
-// ── Special needs options ─────────────────────────────────────
-
+// Special needs options
 const _kSpecialNeedsOptions = <String>[
   'None',
   'Physical disability',
@@ -58,8 +51,7 @@ const _kSpecialNeedsOptions = <String>[
   'Prefer not to say',
 ];
 
-// ── Screen ────────────────────────────────────────────────────
-
+// Screen
 class BasicIdentityScreen extends StatefulWidget {
   const BasicIdentityScreen({super.key});
 
@@ -92,9 +84,9 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
   int _heightCm = 165;
   String? _complexion;
   String? _motherTongue;
-  String? _community; // Phase 2 — optional
-  String? _residencyStatus; // Phase 1 — optional
-  String? _specialNeeds; // Phase 1 — optional
+  String? _community;
+  String? _residencyStatus;
+  String? _specialNeeds;
 
   // Guardian mode — derived from previous screens
   bool _isGuardianMode = false;
@@ -504,7 +496,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       specialNeeds: _specialNeeds,
     );
 
-    // ── Gender & Country propagation ──────────────────────────
+    // Gender & Country propagation
     // Persist gender before profile writes so DB triggers use the same value.
     if (_gender != null) {
       try {
@@ -830,7 +822,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
 
               const SizedBox(height: AppDimensions.space28),
 
-              // ── COMMUNITY / BIRADARI (Optional) ────────────────────
+              // COMMUNITY / BIRADARI (Optional)
               Builder(builder: (ctx) {
                 final l10nBuild = AppLocalizations.of(ctx);
                 final rel = ctx
@@ -883,7 +875,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
 
               const SizedBox(height: AppDimensions.space28),
 
-              // ── HEIGHT ─────────────────────────────────────────────
+              // HEIGHT
               UiText(
                   _isGuardianMode
                       ? l10n.onboarding_label_height_guardian.toUpperCase()
@@ -900,7 +892,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
 
               const SizedBox(height: AppDimensions.space24),
 
-              // ── COMPLEXION (Optional) ──────────────────────────────
+              // COMPLEXION (Optional)
               UiText(l10n.onboarding_label_complexion.toUpperCase(),
                   style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
@@ -919,7 +911,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
 
               const SizedBox(height: AppDimensions.space24),
 
-              // ── MOTHER TONGUE (Required) ───────────────────────────
+              // MOTHER TONGUE (Required)
               UiText(l10n.onboarding_label_motherTongue.toUpperCase(),
                   style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
@@ -968,7 +960,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
 
               const SizedBox(height: AppDimensions.space28),
 
-              // ── RESIDENCY STATUS (Optional) ─────────────────────────
+              // RESIDENCY STATUS (Optional)
               UiText(l10n.onboarding_label_residencyStatus.toUpperCase(),
                   style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
@@ -987,7 +979,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
 
               const SizedBox(height: AppDimensions.space28),
 
-              // ── SPECIAL NEEDS (Optional) ─────────────────────────────
+              // SPECIAL NEEDS (Optional)
               UiText(l10n.onboarding_label_specialNeeds.toUpperCase(),
                   style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space4),
@@ -1035,8 +1027,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
   }
 }
 
-// ── Gender pill button ────────────────────────────────────────
-
+// Gender pill button
 class _MissingLocationCard extends StatelessWidget {
   const _MissingLocationCard({
     required this.countryName,
@@ -1152,8 +1143,7 @@ class _GenderPill extends StatelessWidget {
   }
 }
 
-// ── Height Stepper ────────────────────────────────────────────
-
+// Height Stepper
 class _HeightStepper extends StatelessWidget {
   const _HeightStepper({
     required this.heightCm,
@@ -1263,8 +1253,7 @@ class _StepperButton extends StatelessWidget {
   }
 }
 
-// ── Select Chip ───────────────────────────────────────────────
-
+// Select Chip
 class _SelectChip extends StatelessWidget {
   const _SelectChip({
     required this.label,
@@ -1309,7 +1298,7 @@ class _SelectChip extends StatelessWidget {
   }
 }
 
-// ── Generic List Picker sheet (replaces _MotherTonguePicker) ──
+// Generic List Picker sheet (replaces _MotherTonguePicker)
 // Used for both Mother Tongue and Community pickers.
 // Accepts any List<String> as options.
 
