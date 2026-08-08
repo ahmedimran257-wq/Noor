@@ -7,6 +7,7 @@
 // a region, so unsupported countries still continue via verified city search.
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -282,16 +283,17 @@ class _RegionSearchFieldState extends State<RegionSearchField> {
         child: _loading
             ? Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text(
-                  'Searching regions...',
+                child: UiText(
+                  context.uiCopy('Searching regions...'),
                   style: AppTypography.bodyMuted,
                 ),
               )
             : _results.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Text(
-                      'No matching region found. You can search city or area below.',
+                    child: UiText(
+                      context.uiCopy(
+                          'No matching region found. You can search city or area below.'),
                       style: AppTypography.bodyMuted,
                     ),
                   )
@@ -331,7 +333,7 @@ class _RegionSearchFieldState extends State<RegionSearchField> {
                               ),
                               const SizedBox(width: 12),
                               Expanded(
-                                child: Text(
+                                child: UiText(
                                   region.name,
                                   style: AppTypography.body.copyWith(
                                     fontWeight: FontWeight.w500,

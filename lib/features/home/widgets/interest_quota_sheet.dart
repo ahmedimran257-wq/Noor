@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:silarah/l10n/ui_copy.dart';
+import 'package:flutter/material.dart';
 
 import '../../../core/cubits/interests/interests_state.dart';
 import '../../../core/theme/app_colors.dart';
@@ -42,7 +43,7 @@ class _InterestQuotaContent extends StatelessWidget {
       TimeOfDay.fromDateTime(local),
       alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context),
     );
-    return 'Renews at $time';
+    return context.uiRenewsAt(time);
   }
 
   @override
@@ -118,15 +119,15 @@ class _InterestQuotaContent extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'DAILY INTRODUCTIONS',
+                      UiText(
+                        context.uiCopy('DAILY INTRODUCTIONS'),
                         style: AppTypography.sectionLabel.copyWith(
                           color: AppColors.champagneGold,
                           letterSpacing: 1.5,
                         ),
                       ),
                       const SizedBox(height: AppDimensions.space6),
-                      Text(
+                      UiText(
                         premium
                             ? "You've reached today's allowance"
                             : "You've used today's interests",
@@ -138,7 +139,7 @@ class _InterestQuotaContent extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AppDimensions.space14),
-            Text(
+            UiText(
               premium
                   ? 'Your 25 daily interests help keep introductions considered and respectful.'
                   : 'You can wait for your allowance to renew, or use Premium for 25 considered introductions each day.',
@@ -157,12 +158,12 @@ class _InterestQuotaContent extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Text(
+                      UiText(
                         '${quota.dailyLimit} of ${quota.dailyLimit} sent',
                         style: AppTypography.bodyMedium,
                       ),
                       const Spacer(),
-                      Text(
+                      UiText(
                         _resetLabel(context),
                         style: AppTypography.caption.copyWith(
                           color: AppColors.champagneGold,
@@ -212,7 +213,7 @@ class _InterestQuotaContent extends StatelessWidget {
                   borderRadius:
                       BorderRadius.circular(AppDimensions.radiusButton),
                 ),
-                child: Text(
+                child: UiText(
                   premium ? 'Got it' : 'Explore Premium',
                   style: AppTypography.button,
                 ),
@@ -223,8 +224,8 @@ class _InterestQuotaContent extends StatelessWidget {
               Center(
                 child: TextButton(
                   onPressed: navigator.pop,
-                  child: Text(
-                    "I'll wait until tomorrow",
+                  child: UiText(
+                    context.uiCopy("I'll wait until tomorrow"),
                     style: AppTypography.bodyMuted,
                   ),
                 ),

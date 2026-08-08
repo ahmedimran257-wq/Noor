@@ -12,6 +12,7 @@
 // Focus effect: center card scale 1.0, adjacent cards scale 0.95
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimensions.dart';
@@ -157,7 +158,7 @@ class SilarahProfileCard extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // Name
-                              Text(
+                              UiText(
                                 displayName,
                                 style: AppTypography.userName,
                                 maxLines: 1,
@@ -166,7 +167,7 @@ class SilarahProfileCard extends StatelessWidget {
                               const SizedBox(height: AppDimensions.space4),
 
                               // Age · City
-                              Text(
+                              UiText(
                                 '$age · $cityName',
                                 style: AppTypography.cardLocation,
                                 maxLines: 1,
@@ -184,7 +185,7 @@ class SilarahProfileCard extends StatelessWidget {
                                     ),
                                     const SizedBox(width: AppDimensions.space6),
                                     Expanded(
-                                      child: Text(
+                                      child: UiText(
                                         previousMatchLabel!,
                                         style: AppTypography.caption.copyWith(
                                           color: AppColors.champagneLight,
@@ -201,7 +202,7 @@ class SilarahProfileCard extends StatelessWidget {
                               // Profession line
                               if (profession != null) ...[
                                 const SizedBox(height: AppDimensions.space4),
-                                Text(
+                                UiText(
                                   profession!,
                                   style: AppTypography.caption.copyWith(
                                     color: AppColors.pearlWhite
@@ -346,7 +347,7 @@ class _PrivatePhotoPlaceholder extends StatelessWidget {
             ),
             if (isPrivate && photoCount > 0) ...[
               const SizedBox(height: AppDimensions.space12),
-              Text(
+              UiText(
                 '$photoCount photo${photoCount > 1 ? 's' : ''} · visible after acceptance',
                 style: AppTypography.caption,
                 textAlign: TextAlign.center,
@@ -414,8 +415,8 @@ class _VerifiedBadge extends StatelessWidget {
             size: 12,
           ),
           const SizedBox(width: AppDimensions.space4),
-          Text(
-            'Verified',
+          UiText(
+            context.uiCopy('Verified'),
             style: AppTypography.caption.copyWith(
               color: AppColors.verifiedTeal,
               fontSize: 11,
@@ -450,7 +451,7 @@ class _FrostedPhotoPill extends StatelessWidget {
           const Icon(Icons.lock_outline_rounded,
               color: AppColors.onMedia, size: 14),
           const SizedBox(width: AppDimensions.space6),
-          Text(
+          UiText(
             '$photoCount photo${photoCount > 1 ? 's' : ''} · visible after acceptance',
             style: AppTypography.caption.copyWith(
               color: AppColors.onMedia,
@@ -485,7 +486,7 @@ class _PhotoCountPill extends StatelessWidget {
           const Icon(Icons.camera_alt_outlined,
               color: AppColors.onMedia, size: 12),
           const SizedBox(width: AppDimensions.space4),
-          Text(
+          UiText(
             '$count',
             style: AppTypography.caption.copyWith(
               color: AppColors.onMedia,
@@ -525,7 +526,7 @@ class _InfoChip extends StatelessWidget {
           width: AppDimensions.borderThin,
         ),
       ),
-      child: Text(label, style: AppTypography.chipLabel),
+      child: UiText(label, style: AppTypography.chipLabel),
     );
   }
 }
@@ -619,7 +620,7 @@ class _SendInterestButton extends StatelessWidget {
                   const SizedBox(width: AppDimensions.space8),
                 ],
                 Flexible(
-                  child: Text(
+                  child: UiText(
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -727,7 +728,7 @@ class _LastActivePill extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppDimensions.space4),
-          Text(
+          UiText(
             label,
             style: AppTypography.caption.copyWith(
               color: AppColors.onMedia,

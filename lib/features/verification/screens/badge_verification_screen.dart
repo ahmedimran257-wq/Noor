@@ -1,3 +1,4 @@
+import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
@@ -335,7 +336,7 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
                           color: AppColors.pearlWhite),
                     ),
                     Expanded(
-                      child: Text('Passive face scan',
+                      child: UiText(context.uiCopy('Passive face scan'),
                           textAlign: TextAlign.center,
                           style: AppTypography.bodyMedium),
                     ),
@@ -365,7 +366,7 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
                           duration: AppDimensions.durationTransition,
                           child: _countdown == null
                               ? const SizedBox.shrink()
-                              : Text(
+                              : UiText(
                                   '$_countdown',
                                   key: ValueKey(_countdown),
                                   style: AppTypography.screenTitle.copyWith(
@@ -394,7 +395,7 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
                   children: [
                     AnimatedSwitcher(
                       duration: AppDimensions.durationTransition,
-                      child: Text(
+                      child: UiText(
                         _guidance,
                         key: ValueKey(_guidance),
                         style: AppTypography.bodyMedium.copyWith(
@@ -405,7 +406,7 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
+                    UiText(
                       _state == _PassiveScanState.capturing
                           ? 'Keep the app open while we verify this frame'
                           : 'Capture is automatic when your face is ready',
@@ -447,10 +448,10 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
                   color: AppColors.softCoral, size: 28),
             ),
             const SizedBox(height: AppDimensions.space24),
-            Text('Scan not completed',
+            UiText(context.uiCopy('Scan not completed'),
                 style: AppTypography.screenTitle, textAlign: TextAlign.center),
             const SizedBox(height: AppDimensions.space10),
-            Text(_failureReason ?? 'Move to better lighting',
+            UiText(_failureReason ?? 'Move to better lighting',
                 style: AppTypography.bodyMuted, textAlign: TextAlign.center),
             const Spacer(),
             SilarahPressable(
@@ -464,7 +465,8 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
                   borderRadius:
                       BorderRadius.circular(AppDimensions.radiusButton),
                 ),
-                child: Text('Retry scan', style: AppTypography.button),
+                child: UiText(context.uiCopy('Retry scan'),
+                    style: AppTypography.button),
               ),
             ),
           ],
@@ -491,10 +493,12 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
                   color: AppColors.champagneGold, size: 34),
             ),
             const SizedBox(height: AppDimensions.space24),
-            Text('Photo check complete', style: AppTypography.screenTitle),
+            UiText(context.uiCopy('Photo check complete'),
+                style: AppTypography.screenTitle),
             const SizedBox(height: AppDimensions.space10),
-            Text(
-              'Your passive face scan passed. This on-device photo check is separate from government identity verification.',
+            UiText(
+              context.uiCopy(
+                  'Your passive face scan passed. This on-device photo check is separate from government identity verification.'),
               style: AppTypography.bodyMuted,
               textAlign: TextAlign.center,
             ),
@@ -510,7 +514,8 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
                   borderRadius:
                       BorderRadius.circular(AppDimensions.radiusButton),
                 ),
-                child: Text('Done', style: AppTypography.button),
+                child:
+                    UiText(context.uiCopy('Done'), style: AppTypography.button),
               ),
             ),
           ],

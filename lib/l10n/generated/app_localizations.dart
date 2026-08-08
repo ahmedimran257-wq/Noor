@@ -4847,6 +4847,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{name} blocked.'**
   String safety_blocked(String name);
+
+  /// No description provided for @legacy_openProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Open {name} profile'**
+  String legacy_openProfile(String name);
+
+  /// No description provided for @legacy_typing.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is typing'**
+  String legacy_typing(String name);
+
+  /// No description provided for @legacy_deleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete account: {error}'**
+  String legacy_deleteFailed(String error);
+
+  /// No description provided for @legacy_changeCountry.
+  ///
+  /// In en, this message translates to:
+  /// **'Change country, currently {country}'**
+  String legacy_changeCountry(String country);
+
+  /// No description provided for @legacy_emailCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'No email app found. {email} was copied.'**
+  String legacy_emailCopied(String email);
+
+  /// No description provided for @legacy_messagePerson.
+  ///
+  /// In en, this message translates to:
+  /// **'Message {name}'**
+  String legacy_messagePerson(String name);
+
+  /// No description provided for @legacy_renewsDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Renews {date}'**
+  String legacy_renewsDate(String date);
+
+  /// No description provided for @legacy_ageYears.
+  ///
+  /// In en, this message translates to:
+  /// **'{age} yrs'**
+  String legacy_ageYears(int age);
+
+  /// No description provided for @legacy_photoNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo {number}'**
+  String legacy_photoNumber(int number);
+
+  /// No description provided for @legacy_photoCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} of 4 photos'**
+  String legacy_photoCount(int count);
+
+  /// No description provided for @legacy_removeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {label}'**
+  String legacy_removeLabel(String label);
+
+  /// No description provided for @legacy_selectedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{label} selected'**
+  String legacy_selectedLabel(String label);
+
+  /// No description provided for @legacy_addLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Add {label}'**
+  String legacy_addLabel(String label);
+
+  /// No description provided for @legacy_kycStatusSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Identity verification status: {status}'**
+  String legacy_kycStatusSemantics(String status);
+
+  /// No description provided for @legacy_photoRequestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo request sent to {name}.'**
+  String legacy_photoRequestSent(String name);
+
+  /// No description provided for @legacy_yesterdayTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday {time}'**
+  String legacy_yesterdayTime(String time);
+
+  /// No description provided for @legacy_minutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} min ago'**
+  String legacy_minutesAgo(int count);
+
+  /// No description provided for @legacy_hoursAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} hr ago'**
+  String legacy_hoursAgo(int count);
+
+  /// No description provided for @legacy_daysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days ago'**
+  String legacy_daysAgo(int count);
+
+  /// No description provided for @legacy_renewsAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Renews at {time}'**
+  String legacy_renewsAt(String time);
+
+  /// No description provided for @legacy_photoReadyReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo {number} is ready for protected review'**
+  String legacy_photoReadyReview(int number);
+
+  /// No description provided for @legacy_onePhotoUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'1 photo will unlock automatically once you both express interest.'**
+  String get legacy_onePhotoUnlock;
+
+  /// No description provided for @legacy_manyPhotosUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} photos will unlock automatically once you both express interest.'**
+  String legacy_manyPhotosUnlock(int count);
+
+  /// No description provided for @legacy_askOnePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the owner for permission to view 1 photo.'**
+  String get legacy_askOnePhoto;
+
+  /// No description provided for @legacy_askManyPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the owner for permission to view {count} photos.'**
+  String legacy_askManyPhotos(int count);
+
+  /// No description provided for @legacy_heightImperial.
+  ///
+  /// In en, this message translates to:
+  /// **'{feet} ft {inches} in'**
+  String legacy_heightImperial(int feet, int inches);
+
+  /// No description provided for @legacy_minutesShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}m'**
+  String legacy_minutesShort(int count);
+
+  /// No description provided for @legacy_hoursShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}h'**
+  String legacy_hoursShort(int count);
+
+  /// No description provided for @legacy_daysShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}d'**
+  String legacy_daysShort(int count);
 }
 
 class _AppLocalizationsDelegate

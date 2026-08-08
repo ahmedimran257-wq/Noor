@@ -15,6 +15,7 @@
 //   • Bookmark toggle with persistence via BookmarkService
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -206,7 +207,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
       ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
-          content: Text(
+          content: UiText(
             _bookmarked.contains(id)
                 ? l10n.discovery_bookmark_saved(fp.profile.firstName)
                 : l10n.discovery_bookmark_removed(fp.profile.firstName),
@@ -307,10 +308,10 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
                   ),
                   child: Row(
                     children: [
-                      Text('سيلارا',
+                      UiText('سيلارا',
                           style: AppTypography.wordmark.copyWith(fontSize: 26)),
                       const SizedBox(width: AppDimensions.space8),
-                      Text('SILARAH', style: AppTypography.wordmark),
+                      UiText('SILARAH', style: AppTypography.wordmark),
                       const Spacer(),
                       // Free-tier counter badge
                       if ((feedState.status == FeedStatus.loaded ||
@@ -597,7 +598,7 @@ class _WildCardLabel extends StatelessWidget {
         border:
             Border.all(color: AppColors.champagneGold.withValues(alpha: 0.5)),
       ),
-      child: Text(
+      child: UiText(
         l10n.discovery_wildcard_label,
         style: AppTypography.caption.copyWith(
           color: AppColors.champagneGold,
@@ -633,7 +634,7 @@ class _FreeTierCounter extends StatelessWidget {
           color: remaining <= 3 ? AppColors.errorRed : AppColors.cardBorder,
         ),
       ),
-      child: Text(
+      child: UiText(
         l10n.discovery_remaining_profiles(remaining.toString()),
         style: AppTypography.caption.copyWith(
           color: remaining <= 3 ? AppColors.errorRed : AppColors.slateMist,
@@ -739,12 +740,12 @@ class _FreeTierLimitReached extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppDimensions.space28),
-            Text(
+            UiText(
               l10n.discovery_limit_title,
               style: AppTypography.screenTitle.copyWith(fontSize: 22),
             ),
             const SizedBox(height: AppDimensions.space12),
-            Text(
+            UiText(
               l10n.discovery_limit_subtitle,
               style: AppTypography.bodyMuted,
               textAlign: TextAlign.center,
@@ -762,7 +763,7 @@ class _FreeTierLimitReached extends StatelessWidget {
                   borderRadius:
                       BorderRadius.circular(AppDimensions.radiusButton),
                 ),
-                child: Text(l10n.discovery_limit_button,
+                child: UiText(l10n.discovery_limit_button,
                     style: AppTypography.button),
               ),
             ),

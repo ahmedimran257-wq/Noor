@@ -1,3 +1,4 @@
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/models/discovery_profile.dart';
@@ -125,7 +126,7 @@ class _ProfileRouteScreenState extends State<ProfileRouteScreen> {
                     Icon(Icons.person_off_outlined,
                         color: AppColors.slateMist, size: 46),
                     const SizedBox(height: AppDimensions.space16),
-                    Text(_error!,
+                    UiText(_error!,
                         style: AppTypography.bodyMuted,
                         textAlign: TextAlign.center),
                     const SizedBox(height: AppDimensions.space16),
@@ -135,7 +136,7 @@ class _ProfileRouteScreenState extends State<ProfileRouteScreen> {
                         _load();
                       },
                       icon: const Icon(Icons.refresh_rounded),
-                      label: Text(
+                      label: UiText(
                           AppLocalizations.of(context).common_button_retry),
                     ),
                   ],

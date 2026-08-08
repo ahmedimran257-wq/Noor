@@ -1,4 +1,5 @@
-﻿import 'dart:async';
+﻿import 'package:silarah/l10n/ui_copy.dart';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 
@@ -159,7 +160,7 @@ class _InAppNotificationBannerHostState
                                   mainAxisSize: MainAxisSize.min,
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
+                                    UiText(
                                       item.title,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -168,7 +169,7 @@ class _InAppNotificationBannerHostState
                                     const SizedBox(
                                       height: AppDimensions.space4,
                                     ),
-                                    Text(
+                                    UiText(
                                       item.body,
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,

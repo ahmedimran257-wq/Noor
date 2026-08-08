@@ -1,3 +1,4 @@
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -128,12 +129,12 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
     }
   }
 
-  String _timeLabel(DateTime dt) {
+  String _timeLabel(BuildContext context, DateTime dt) {
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays == 1) return 'Yesterday';
-    return '${diff.inDays} days ago';
+    if (diff.inMinutes < 60) return context.uiMinutesAgo(diff.inMinutes);
+    if (diff.inHours < 24) return context.uiHoursAgo(diff.inHours);
+    if (diff.inDays == 1) return context.uiCopy('Yesterday');
+    return context.uiDaysAgo(diff.inDays);
   }
 
   int _ageFromDob(DateTime dob) {
@@ -177,7 +178,7 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
               ),
             ),
           ),
-          title: Text('Profile Views',
+          title: UiText(context.uiCopy('Profile Views'),
               style: AppTypography.screenTitle.copyWith(fontSize: 20)),
         ),
         body: subscription.isLoading && !subscription.isSubscribed
@@ -196,7 +197,7 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
                               Padding(
                                 padding:
                                     const EdgeInsets.fromLTRB(24, 8, 24, 16),
-                                child: Text(
+                                child: UiText(
                                   '${_loadedViewers.length} people viewed your profile this week',
                                   style: AppTypography.screenTitle
                                       .copyWith(fontSize: 18),
@@ -219,7 +220,8 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
                                       displayName: p.displayName,
                                       age: p.age,
                                       city: p.cityName,
-                                      timeLabel: _timeLabel(viewer.viewedAt),
+                                      timeLabel:
+                                          _timeLabel(context, viewer.viewedAt),
                                       isVerified: p.isVerified,
                                       isInterestSent: sent,
                                       onSendInterest: sent
@@ -234,9 +236,10 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
                                                 ScaffoldMessenger.of(context)
                                                   ..clearSnackBars()
                                                   ..showSnackBar(
-                                                    const SnackBar(
-                                                      content: Text(
-                                                        'Interest could not be sent. Check your limit and try again.',
+                                                    SnackBar(
+                                                      content: UiText(
+                                                        context.uiCopy(
+                                                            'Interest could not be sent. Check your limit and try again.'),
                                                       ),
                                                     ),
                                                   );
@@ -254,7 +257,7 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
                                                               .champagneGold,
                                                           size: 16),
                                                       const SizedBox(width: 8),
-                                                      Text(
+                                                      UiText(
                                                           'Interest sent to ${p.firstName}',
                                                           style: AppTypography
                                                               .body
@@ -321,13 +324,13 @@ class _PremiumViewerGate extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppDimensions.space24),
-            Text(
-              'Your weekly count stays visible',
+            UiText(
+              context.uiCopy('Your weekly count stays visible'),
               style: AppTypography.screenTitle.copyWith(fontSize: 22),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppDimensions.space10),
-            Text(
+            UiText(
               'Premium reveals the people behind those views. Silarah never calls interests “likes” or creates a second, confusing action.',
               style: AppTypography.bodyMuted.copyWith(height: 1.5),
               textAlign: TextAlign.center,
@@ -338,7 +341,7 @@ class _PremiumViewerGate extends StatelessWidget {
               child: FilledButton.icon(
                 onPressed: onUpgrade,
                 icon: const Icon(Icons.workspace_premium_outlined),
-                label: const Text('Explore Premium'),
+                label: UiText(context.uiCopy('Explore Premium')),
               ),
             ),
           ],
@@ -439,14 +442,15 @@ class _EmptyState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppDimensions.space24),
-            Text(
-              'No Views Yet',
+            UiText(
+              context.uiCopy('No Views Yet'),
               style: AppTypography.screenTitle.copyWith(fontSize: 20),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppDimensions.space12),
-            Text(
-              'Keep editing and improving your profile\nto get discovered by matches.',
+            UiText(
+              context.uiCopy(
+                  'Keep editing and improving your profile\nto get discovered by matches.'),
               style: AppTypography.bodyMuted,
               textAlign: TextAlign.center,
             ),
@@ -533,12 +537,12 @@ class _ViewerTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                UiText(
                   displayName,
                   style: AppTypography.bodyMedium,
                 ),
                 const SizedBox(height: AppDimensions.space4),
-                Text(
+                UiText(
                   '$age · $city',
                   style: AppTypography.caption,
                 ),
@@ -548,7 +552,7 @@ class _ViewerTile extends StatelessWidget {
                     Icon(Icons.remove_red_eye_outlined,
                         size: 12, color: AppColors.slateMist),
                     const SizedBox(width: 4),
-                    Text(timeLabel, style: AppTypography.caption),
+                    UiText(timeLabel, style: AppTypography.caption),
                   ],
                 ),
               ],

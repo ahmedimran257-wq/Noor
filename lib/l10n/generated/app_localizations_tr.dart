@@ -2600,4 +2600,147 @@ class AppLocalizationsTr extends AppLocalizations {
   String safety_blocked(String name) {
     return '$name engellendi.';
   }
+
+  @override
+  String legacy_openProfile(String name) {
+    return '$name profilini aç';
+  }
+
+  @override
+  String legacy_typing(String name) {
+    return '$name yazıyor';
+  }
+
+  @override
+  String legacy_deleteFailed(String error) {
+    return 'Hesap silinemedi: $error';
+  }
+
+  @override
+  String legacy_changeCountry(String country) {
+    return 'Ülkeyi değiştir, şu anda $country';
+  }
+
+  @override
+  String legacy_emailCopied(String email) {
+    return 'E-posta uygulaması bulunamadı. $email kopyalandı.';
+  }
+
+  @override
+  String legacy_messagePerson(String name) {
+    return 'Mesaj $name';
+  }
+
+  @override
+  String legacy_renewsDate(String date) {
+    return '$date yenilenir';
+  }
+
+  @override
+  String legacy_ageYears(int age) {
+    return '$age yıl';
+  }
+
+  @override
+  String legacy_photoNumber(int number) {
+    return 'Fotoğraf $number';
+  }
+
+  @override
+  String legacy_photoCount(int count) {
+    return '$count / 4 fotoğraf';
+  }
+
+  @override
+  String legacy_removeLabel(String label) {
+    return '$label öğesini kaldır';
+  }
+
+  @override
+  String legacy_selectedLabel(String label) {
+    return '$label seçildi';
+  }
+
+  @override
+  String legacy_addLabel(String label) {
+    return '$label ekle';
+  }
+
+  @override
+  String legacy_kycStatusSemantics(String status) {
+    return 'Kimlik doğrulama durumu: $status';
+  }
+
+  @override
+  String legacy_photoRequestSent(String name) {
+    return 'Fotoğraf isteği $name adresine gönderildi.';
+  }
+
+  @override
+  String legacy_yesterdayTime(String time) {
+    return 'Dün $time';
+  }
+
+  @override
+  String legacy_minutesAgo(int count) {
+    return '$count dakika önce';
+  }
+
+  @override
+  String legacy_hoursAgo(int count) {
+    return '$count saat önce';
+  }
+
+  @override
+  String legacy_daysAgo(int count) {
+    return '$count gün önce';
+  }
+
+  @override
+  String legacy_renewsAt(String time) {
+    return '$time tarihinde yenilenir';
+  }
+
+  @override
+  String legacy_photoReadyReview(int number) {
+    return 'Fotoğraf $number korumalı incelemeye hazır';
+  }
+
+  @override
+  String get legacy_onePhotoUnlock =>
+      'İkiniz de ilgilendiğinizi ifade ettiğinizde 1 fotoğrafın kilidi otomatik olarak açılacaktır.';
+
+  @override
+  String legacy_manyPhotosUnlock(int count) {
+    return '$count fotoğrafların kilidi, ikiniz de ilgilendiğinizi belirttiğinizde otomatik olarak açılacaktır.';
+  }
+
+  @override
+  String get legacy_askOnePhoto =>
+      '1 fotoğrafı görüntülemek için sahibinden izin isteyin.';
+
+  @override
+  String legacy_askManyPhotos(int count) {
+    return '$count fotoğraflarını görüntülemek için sahibinden izin isteyin.';
+  }
+
+  @override
+  String legacy_heightImperial(int feet, int inches) {
+    return '$feet ft $inches inç';
+  }
+
+  @override
+  String legacy_minutesShort(int count) {
+    return '${count}m';
+  }
+
+  @override
+  String legacy_hoursShort(int count) {
+    return '${count}h';
+  }
+
+  @override
+  String legacy_daysShort(int count) {
+    return '${count}d';
+  }
 }

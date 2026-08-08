@@ -5,6 +5,7 @@
 // Text: Champagne Gold
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimensions.dart';
@@ -92,7 +93,7 @@ class SilarahSecondaryButton extends StatelessWidget {
                         const SizedBox(width: AppDimensions.space8),
                       ],
                       Flexible(
-                        child: Text(
+                        child: UiText(
                           label,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -162,7 +163,7 @@ class SilarahGhostButton extends StatelessWidget {
                 const SizedBox(width: AppDimensions.space8),
               ],
               Flexible(
-                child: Text(
+                child: UiText(
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

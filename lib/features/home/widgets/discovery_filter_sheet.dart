@@ -16,6 +16,7 @@
 // Show via showModalBottomSheet from DiscoveryFilterBar chips.
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -190,7 +191,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: UiText(
             'Preset "$name" saved',
             style: AppTypography.body.copyWith(
               color: AppColors.readableOn(AppColors.surfaceGlassHover),
@@ -214,20 +215,20 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surfaceMid,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Delete preset?',
+        title: UiText(context.uiCopy('Delete preset?'),
             style: AppTypography.screenTitle.copyWith(fontSize: 18)),
-        content: Text(
+        content: UiText(
           'Remove "${preset.name}"?',
           style: AppTypography.bodyMuted,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancel', style: AppTypography.body),
+            child: UiText(context.uiCopy('Cancel'), style: AppTypography.body),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Delete',
+            child: UiText(context.uiCopy('Delete'),
                 style: AppTypography.body.copyWith(color: AppColors.softCoral)),
           ),
         ],
@@ -362,13 +363,13 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Refine discovery',
+                        UiText(context.uiCopy('Refine discovery'),
                             style: AppTypography.screenTitle
                                 .copyWith(fontSize: 20)),
                         const SizedBox(height: 2),
                         AnimatedSwitcher(
                           duration: AppDimensions.durationTransition,
-                          child: Text(
+                          child: UiText(
                             _draft.activeCount == 0
                                 ? 'Showing the broadest pool'
                                 : '${_draft.activeCount} preferences selected',
@@ -382,7 +383,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                     TextButton(
                       onPressed: () =>
                           setState(() => _showSaveField = !_showSaveField),
-                      child: Text('Save preset',
+                      child: UiText(context.uiCopy('Save preset'),
                           style: AppTypography.caption
                               .copyWith(color: AppColors.champagneGold)),
                     ),
@@ -450,7 +451,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                                 Icon(Icons.bookmark_rounded,
                                     color: AppColors.champagneGold, size: 14),
                                 const SizedBox(width: 4),
-                                Text(p.name,
+                                UiText(p.name,
                                     style: AppTypography.chipLabel.copyWith(
                                         color: AppColors.champagneGold)),
                               ],
@@ -472,8 +473,9 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
               if (_optionsLoadFailed)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
-                  child: Text(
-                    'Live filter options could not be loaded. Broad filters remain available.',
+                  child: UiText(
+                    context.uiCopy(
+                        'Live filter options could not be loaded. Broad filters remain available.'),
                     style: AppTypography.caption.copyWith(
                       color: AppColors.softCoral,
                     ),
@@ -643,7 +645,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                       ),
                       if (_draft.effectiveMaxDistanceKm case final km?) ...[
                         const SizedBox(height: 8),
-                        Text(
+                        UiText(
                           'Within $km km',
                           style: AppTypography.caption.copyWith(
                             color: AppColors.champagneGold,
@@ -674,8 +676,9 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Explore members currently living in selected countries.',
+                            UiText(
+                              context.uiCopy(
+                                  'Explore members currently living in selected countries.'),
                               style: AppTypography.caption.copyWith(
                                 color: AppColors.slateMist,
                               ),
@@ -700,7 +703,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                                     side: BorderSide(
                                       color: AppColors.goldBorder,
                                     ),
-                                    label: Text(
+                                    label: UiText(
                                       '${country.flag} ${country.name}',
                                       style: AppTypography.chipLabel.copyWith(
                                         color: AppColors.champagneGold,
@@ -730,7 +733,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                                     color: AppColors.slateMist,
                                     size: 16,
                                   ),
-                                  label: Text(
+                                  label: UiText(
                                     (_draft.browseCountries ?? []).isEmpty
                                         ? 'Choose countries'
                                         : 'Change countries',
@@ -769,8 +772,8 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                             ),
                             if (_draft.diasporaMode) ...[
                               const SizedBox(height: 12),
-                              Text(
-                                'Target Home Countries',
+                              UiText(
+                                context.uiCopy('Target Home Countries'),
                                 style: AppTypography.caption,
                               ),
                               const SizedBox(height: 8),
@@ -790,7 +793,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                                           .withValues(alpha: 0.12),
                                       side: BorderSide(
                                           color: AppColors.goldBorder),
-                                      label: Text(
+                                      label: UiText(
                                         '${country.flag} ${country.name}',
                                         style: AppTypography.chipLabel.copyWith(
                                             color: AppColors.champagneGold),
@@ -816,7 +819,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                                         BorderSide(color: AppColors.cardBorder),
                                     avatar: Icon(Icons.add,
                                         color: AppColors.slateMist, size: 16),
-                                    label: Text('Add Country',
+                                    label: UiText(context.uiCopy('Add Country'),
                                         style: AppTypography.chipLabel),
                                     onPressed: () =>
                                         _showCountrySelector(diaspora: true),
@@ -908,7 +911,8 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                                 AppDimensions.radiusButton),
                             border: Border.all(color: AppColors.cardBorder),
                           ),
-                          child: Text('Clear All', style: AppTypography.body),
+                          child: UiText(context.uiCopy('Clear All'),
+                              style: AppTypography.body),
                         ),
                       ),
                     ),
@@ -928,7 +932,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                           ),
                           child: AnimatedSwitcher(
                             duration: AppDimensions.durationTransition,
-                            child: Text(
+                            child: UiText(
                               _draft.activeCount == 0
                                   ? 'Show all profiles'
                                   : 'Apply ${_draft.activeCount} filters',
@@ -981,7 +985,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
+                      UiText(
                         diaspora ? 'Select Home Countries' : 'Choose Countries',
                         style: AppTypography.screenTitle.copyWith(fontSize: 18),
                       ),
@@ -996,7 +1000,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                     controller: searchCtrl,
                     style: AppTypography.body,
                     decoration: InputDecoration(
-                      hintText: 'Search countries...',
+                      hintText: context.uiCopy('Search countries...'),
                       hintStyle: AppTypography.bodyMuted,
                       prefixIcon:
                           Icon(Icons.search, color: AppColors.slateMist),
@@ -1028,11 +1032,11 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                         final isSel = tempSelected.contains(country.iso2);
                         return ListTile(
                           contentPadding: EdgeInsets.zero,
-                          leading: Text(
+                          leading: UiText(
                             country.flag,
                             style: const TextStyle(fontSize: 24),
                           ),
-                          title: Text(
+                          title: UiText(
                             country.name,
                             style: AppTypography.body.copyWith(
                               color: isSel
@@ -1095,7 +1099,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                         });
                         Navigator.pop(sheetCtx);
                       },
-                      child: Text(
+                      child: UiText(
                         'Apply (${tempSelected.length})',
                         style: AppTypography.button,
                       ),
@@ -1119,7 +1123,7 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
+    return UiText(
       label,
       style: AppTypography.sectionLabel.copyWith(
         color: AppColors.slateMist,
@@ -1183,7 +1187,7 @@ class _RadioGroup<T> extends StatelessWidget {
                   ),
                 ),
               ),
-              Text(labels[i],
+              UiText(labels[i],
                   style: AppTypography.chipLabel.copyWith(
                     color: isSelected
                         ? AppColors.champagneGold
@@ -1253,7 +1257,7 @@ class _MultiChipGroup extends StatelessWidget {
                   ),
                 ),
               ),
-              Text(label,
+              UiText(label,
                   style: AppTypography.chipLabel.copyWith(
                     color: isSelected
                         ? AppColors.champagneGold
@@ -1336,8 +1340,8 @@ class _AgeRangeFieldState extends State<_AgeRangeField> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('18', style: AppTypography.caption),
-            Text('65', style: AppTypography.caption),
+            UiText('18', style: AppTypography.caption),
+            UiText('65', style: AppTypography.caption),
           ],
         ),
       ],
@@ -1359,7 +1363,7 @@ class _AgeLabel extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
         border: Border.all(color: AppColors.goldBorder),
       ),
-      child: Text('$age yrs',
+      child: UiText(context.uiAgeYears(age),
           style: AppTypography.bodyMedium
               .copyWith(color: AppColors.champagneGold)),
     );
@@ -1406,7 +1410,7 @@ class _DropdownRow extends StatelessWidget {
         items: options
             .map((o) => DropdownMenuItem(
                   value: o,
-                  child: Text(o, style: AppTypography.body),
+                  child: UiText(o, style: AppTypography.body),
                 ))
             .toList(),
         onChanged: onChanged,
@@ -1442,7 +1446,7 @@ class _ToggleRow extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Expanded(child: Text(label, style: AppTypography.body)),
+            Expanded(child: UiText(label, style: AppTypography.body)),
             Switch(
               value: value,
               onChanged: onChanged,
@@ -1544,11 +1548,11 @@ class _SubscriberGate extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Premium preference',
+                  UiText(context.uiCopy('Premium preference'),
                       style: AppTypography.bodyMedium
                           .copyWith(color: AppColors.pearlWhite)),
                   const SizedBox(height: 2),
-                  Text('Upgrade to refine this criterion',
+                  UiText(context.uiCopy('Upgrade to refine this criterion'),
                       style: AppTypography.caption),
                 ],
               ),

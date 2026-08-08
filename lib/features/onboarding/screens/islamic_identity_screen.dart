@@ -4,6 +4,7 @@
 // Saves required Islamic identity and lifestyle signals for matching.
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:silarah/l10n/generated/app_localizations.dart';
@@ -472,7 +473,7 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
               // ── REVERT / CONVERT STATUS ──────────────────
               _SectionTitle(l10n.onboarding_label_revert.toUpperCase()),
               const SizedBox(height: AppDimensions.space4),
-              Text(l10n.onboarding_label_revertQuestion,
+              UiText(l10n.onboarding_label_revertQuestion,
                   style: AppTypography.caption),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
@@ -573,7 +574,7 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
                 const SizedBox(height: AppDimensions.space20),
                 _SectionTitle(l10n.onboarding_label_leadership.toUpperCase()),
                 const SizedBox(height: AppDimensions.space4),
-                Text(l10n.onboarding_label_leadershipQuestion,
+                UiText(l10n.onboarding_label_leadershipQuestion,
                     style: AppTypography.caption),
                 const SizedBox(height: AppDimensions.space12),
                 Wrap(
@@ -600,7 +601,7 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
               const SizedBox(height: AppDimensions.space28),
               _SectionTitle(l10n.onboarding_label_lifestyleDiet.toUpperCase()),
               const SizedBox(height: AppDimensions.space6),
-              Text(l10n.onboarding_label_lifestyleDietSub,
+              UiText(l10n.onboarding_label_lifestyleDietSub,
                   style: AppTypography.caption),
               const SizedBox(height: AppDimensions.space16),
 
@@ -624,7 +625,8 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
               _SectionTitle(l10n.onboarding_label_substanceUse.toUpperCase()),
               const SizedBox(height: AppDimensions.space12),
 
-              Text(l10n.onboarding_label_smoking, style: AppTypography.caption),
+              UiText(l10n.onboarding_label_smoking,
+                  style: AppTypography.caption),
               const SizedBox(height: AppDimensions.space8),
               Wrap(
                 spacing: AppDimensions.space8,
@@ -639,7 +641,8 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
               ),
               const SizedBox(height: AppDimensions.space16),
 
-              Text(l10n.onboarding_label_vaping, style: AppTypography.caption),
+              UiText(l10n.onboarding_label_vaping,
+                  style: AppTypography.caption),
               const SizedBox(height: AppDimensions.space8),
               Wrap(
                 spacing: AppDimensions.space8,
@@ -654,7 +657,8 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
               ),
               const SizedBox(height: AppDimensions.space16),
 
-              Text(l10n.onboarding_label_hookah, style: AppTypography.caption),
+              UiText(l10n.onboarding_label_hookah,
+                  style: AppTypography.caption),
               const SizedBox(height: AppDimensions.space8),
               Wrap(
                 spacing: AppDimensions.space8,
@@ -695,7 +699,7 @@ class _SectionTitle extends StatelessWidget {
   final String text;
   @override
   Widget build(BuildContext context) =>
-      Text(text, style: AppTypography.sectionLabel);
+      UiText(text, style: AppTypography.sectionLabel);
 }
 
 class _ChipGroup<T> extends StatelessWidget {
@@ -751,7 +755,7 @@ class _SelectChip extends StatelessWidget {
             width: AppDimensions.borderThin,
           ),
         ),
-        child: Text(label,
+        child: UiText(label,
             style: AppTypography.chipLabel.copyWith(
               color:
                   isSelected ? AppColors.champagneGold : AppColors.pearlWhite,
@@ -796,13 +800,13 @@ class _DeenCard extends StatelessWidget {
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                Text(label,
+                UiText(label,
                     style: AppTypography.bodyMedium.copyWith(
                         color: isSelected
                             ? AppColors.champagneGold
                             : AppColors.pearlWhite)),
                 const SizedBox(height: AppDimensions.space4),
-                Text(tooltip, style: AppTypography.caption),
+                UiText(tooltip, style: AppTypography.caption),
               ])),
           if (isSelected)
             Container(
@@ -846,7 +850,7 @@ class _TogglePill extends StatelessWidget {
           ),
         ),
         child: Center(
-            child: Text(label,
+            child: UiText(label,
                 style: AppTypography.bodyMedium.copyWith(
                   color: isSelected
                       ? AppColors.champagneGold

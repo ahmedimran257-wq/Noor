@@ -6,6 +6,7 @@
 // attach a personal note to their interest before sending.
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_colors.dart';
@@ -82,15 +83,15 @@ class _InterestNoteSheetState extends State<_InterestNoteSheet> {
             const SizedBox(height: AppDimensions.space20),
 
             // Title
-            Text(
+            UiText(
               'Add a note for ${widget.firstName}',
               style: AppTypography.bodyMedium.copyWith(
                 color: AppColors.pearlWhite,
               ),
             ),
             const SizedBox(height: AppDimensions.space6),
-            Text(
-              'A personal note makes your interest stand out.',
+            UiText(
+              context.uiCopy('A personal note makes your interest stand out.'),
               style: AppTypography.caption,
             ),
             const SizedBox(height: AppDimensions.space16),
@@ -114,7 +115,8 @@ class _InterestNoteSheetState extends State<_InterestNoteSheet> {
                 style: AppTypography.body,
                 textInputAction: TextInputAction.done,
                 decoration: InputDecoration(
-                  hintText: 'Assalamu Alaikum! I was really impressed by…',
+                  hintText: context
+                      .uiCopy('Assalamu Alaikum! I was really impressed by…'),
                   hintStyle: AppTypography.inputLabel,
                   filled: false,
                   fillColor: Colors.transparent,
@@ -131,7 +133,7 @@ class _InterestNoteSheetState extends State<_InterestNoteSheet> {
             ),
             if (_error.isNotEmpty) ...[
               const SizedBox(height: AppDimensions.space6),
-              Text(
+              UiText(
                 _error,
                 style:
                     AppTypography.caption.copyWith(color: AppColors.softCoral),
@@ -160,8 +162,8 @@ class _InterestNoteSheetState extends State<_InterestNoteSheet> {
                   ),
                   elevation: 0,
                 ),
-                child: Text(
-                  'Send with Note',
+                child: UiText(
+                  context.uiCopy('Send with Note'),
                   style: AppTypography.button.copyWith(
                     color: _error.isEmpty && _ctrl.text.trim().isNotEmpty
                         ? AppColors.obsidianNight
@@ -188,8 +190,8 @@ class _InterestNoteSheetState extends State<_InterestNoteSheet> {
                         BorderRadius.circular(AppDimensions.radiusButton),
                   ),
                 ),
-                child: Text(
-                  'Send without note',
+                child: UiText(
+                  context.uiCopy('Send without note'),
                   style:
                       AppTypography.button.copyWith(color: AppColors.slateMist),
                 ),

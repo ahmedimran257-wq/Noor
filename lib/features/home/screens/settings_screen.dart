@@ -12,6 +12,7 @@
 //   8. DANGER ZONE — account deletion
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -157,7 +158,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: Icon(Icons.arrow_back_ios_new_rounded,
               color: AppColors.pearlWhite, size: 20),
         ),
-        title: Text(l10n.settings_title,
+        title: UiText(l10n.settings_title,
             style: AppTypography.screenTitle.copyWith(fontSize: 20)),
       ),
       body: ListView(
@@ -391,7 +392,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           const SizedBox(height: 20),
           Center(
-            child: Text(
+            child: UiText(
               l10n.settings_brand_credit,
               style: AppTypography.caption.copyWith(fontSize: 11),
               textAlign: TextAlign.center,
@@ -418,7 +419,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Icon(Icons.gavel_outlined,
                 color: AppColors.champagneGold, size: 20),
             const SizedBox(width: 10),
-            Text(l10n.settings_grievanceOfficer,
+            UiText(l10n.settings_grievanceOfficer,
                 style: AppTypography.bodyMedium),
           ],
         ),
@@ -442,13 +443,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Icon(Icons.email_outlined,
                           color: AppColors.champagneGold, size: 16),
                       const SizedBox(width: 8),
-                      Text('grievance@silarah.com',
+                      UiText('grievance@silarah.com',
                           style: AppTypography.bodyMedium
                               .copyWith(color: AppColors.champagneGold)),
                     ],
                   ),
                   const SizedBox(height: AppDimensions.space12),
-                  Text(
+                  UiText(
                     l10n.settings_grievanceResponse,
                     style: AppTypography.caption,
                   ),
@@ -456,7 +457,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             const SizedBox(height: AppDimensions.space16),
-            Text(
+            UiText(
               l10n.settings_grievanceIndiaNotice,
               style: AppTypography.caption.copyWith(height: 1.5),
             ),
@@ -465,7 +466,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.settings_support_btn_close,
+            child: UiText(l10n.settings_support_btn_close,
                 style: AppTypography.caption
                     .copyWith(color: AppColors.champagneGold)),
           ),
@@ -631,7 +632,7 @@ class _GuardianSectionState extends State<_GuardianSection> {
             (!_hasGuardianPhoneOnServer && _phoneCtrl.text.trim().isEmpty))) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: UiText(
             '${l10n.settings_guardian_name_hint} and ${l10n.settings_guardian_phone_hint} are required.',
           ),
         ),
@@ -642,7 +643,7 @@ class _GuardianSectionState extends State<_GuardianSection> {
     if (!SupabaseService.isInitialized) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.settings_guardian_backendRequired),
+          content: UiText(l10n.settings_guardian_backendRequired),
         ),
       );
       return;
@@ -662,7 +663,7 @@ class _GuardianSectionState extends State<_GuardianSection> {
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.settings_guardian_saveError),
+          content: UiText(l10n.settings_guardian_saveError),
         ),
       );
       return;
@@ -717,9 +718,9 @@ class _GuardianSectionState extends State<_GuardianSection> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
         leading: Icon(Icons.supervisor_account_outlined,
             color: AppColors.champagneGold, size: 20),
-        title: Text(l10n.settings_guardian_title, style: AppTypography.body),
+        title: UiText(l10n.settings_guardian_title, style: AppTypography.body),
         subtitle:
-            Text(l10n.settings_guardian_sub, style: AppTypography.caption),
+            UiText(l10n.settings_guardian_sub, style: AppTypography.caption),
         trailing: Switch(
           value: _enabled,
           onChanged: (v) => setState(() {
@@ -761,7 +762,7 @@ class _GuardianSectionState extends State<_GuardianSection> {
                 if (_hasGuardianPhoneOnServer && _phoneCtrl.text.isEmpty)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(56, 0, 16, 8),
-                    child: Text(
+                    child: UiText(
                       _kGuardianPhoneUnavailable,
                       style: AppTypography.caption.copyWith(
                         color: AppColors.slateMist,
@@ -775,7 +776,7 @@ class _GuardianSectionState extends State<_GuardianSection> {
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                   leading: Icon(Icons.family_restroom_outlined,
                       color: AppColors.slateMist, size: 20),
-                  title: Text(l10n.settings_guardian_relationship,
+                  title: UiText(l10n.settings_guardian_relationship,
                       style: AppTypography.body),
                   trailing: DropdownButton<String>(
                     value: _relationship,
@@ -788,7 +789,7 @@ class _GuardianSectionState extends State<_GuardianSection> {
                     items: _relationships
                         .map((r) => DropdownMenuItem(
                               value: r,
-                              child: Text(_relationLabel(l10n, r),
+                              child: UiText(_relationLabel(l10n, r),
                                   style: AppTypography.body),
                             ))
                         .toList(),
@@ -804,9 +805,9 @@ class _GuardianSectionState extends State<_GuardianSection> {
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                   leading: Icon(Icons.content_copy_outlined,
                       color: AppColors.slateMist, size: 20),
-                  title: Text(l10n.settings_guardian_mirror,
+                  title: UiText(l10n.settings_guardian_mirror,
                       style: AppTypography.body),
-                  subtitle: Text(l10n.settings_guardian_mirror_sub,
+                  subtitle: UiText(l10n.settings_guardian_mirror_sub,
                       style: AppTypography.caption),
                   trailing: Switch(
                     value: _mirror,
@@ -827,9 +828,9 @@ class _GuardianSectionState extends State<_GuardianSection> {
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                   leading: Icon(Icons.reply_outlined,
                       color: AppColors.slateMist, size: 20),
-                  title: Text(l10n.settings_guardian_reply,
+                  title: UiText(l10n.settings_guardian_reply,
                       style: AppTypography.body),
-                  subtitle: Text(l10n.settings_guardian_reply_sub,
+                  subtitle: UiText(l10n.settings_guardian_reply_sub,
                       style: AppTypography.caption),
                   trailing: Switch(
                     value: _canReply,
@@ -882,11 +883,11 @@ class _GuardianSectionState extends State<_GuardianSection> {
                                           color: AppColors.obsidianNight,
                                           size: 16),
                                       const SizedBox(width: 6),
-                                      Text(l10n.settings_guardian_saved,
+                                      UiText(l10n.settings_guardian_saved,
                                           style: AppTypography.button),
                                     ],
                                   )
-                                : Text(l10n.settings_guardian_save,
+                                : UiText(l10n.settings_guardian_save,
                                     key: const ValueKey('save'),
                                     style: AppTypography.button),
                       ),
@@ -967,7 +968,7 @@ class _PrivacySectionState extends State<_PrivacySection> {
         }
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(backendError)),
+        SnackBar(content: UiText(backendError)),
       );
       return;
     }
@@ -1187,14 +1188,14 @@ class _PrivacySectionState extends State<_PrivacySection> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          UiText(
                             l10n.settings_managePhotoRequests,
                             style: AppTypography.bodyMedium.copyWith(
                               color: AppColors.pearlWhite,
                             ),
                           ),
                           const SizedBox(height: 2),
-                          Text(
+                          UiText(
                             l10n.settings_managePhotoRequestsSub,
                             style: AppTypography.caption,
                           ),
@@ -1259,7 +1260,7 @@ class _PrivacySectionState extends State<_PrivacySection> {
                       color: AppColors.premiumGold, size: 18),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(
+                    child: UiText(
                       pauseWarning,
                       style: AppTypography.caption
                           .copyWith(color: AppColors.premiumGold),
@@ -1304,7 +1305,7 @@ class _PrivacyCard extends StatelessWidget {
         children: [
           Row(children: [
             Expanded(
-              child: Text(label, style: AppTypography.sectionLabel),
+              child: UiText(label, style: AppTypography.sectionLabel),
             ),
             AnimatedSwitcher(
               duration: AppDimensions.durationTransition,
@@ -1316,7 +1317,7 @@ class _PrivacyCard extends StatelessWidget {
                         Icon(Icons.check_rounded,
                             color: AppColors.verifiedTeal, size: 14),
                         const SizedBox(width: 3),
-                        Text(
+                        UiText(
                             AppLocalizations.of(context)
                                 .settings_guardian_saved,
                             style: AppTypography.caption.copyWith(
@@ -1327,7 +1328,7 @@ class _PrivacyCard extends StatelessWidget {
             ),
           ]),
           const SizedBox(height: 2),
-          Text(subtitle, style: AppTypography.caption),
+          UiText(subtitle, style: AppTypography.caption),
           child,
         ],
       ),
@@ -1389,7 +1390,7 @@ class _RadioRow extends StatelessWidget {
                 : null,
           ),
           const SizedBox(width: AppDimensions.space12),
-          Text(label, style: AppTypography.body),
+          UiText(label, style: AppTypography.body),
         ]),
       ),
     );
@@ -1441,12 +1442,12 @@ class _ThemePickerSheet extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              Text(
+              UiText(
                 l10n.settings_theme_chooseTitle,
                 style: AppTypography.screenTitle.copyWith(fontSize: 24),
               ),
               const SizedBox(height: 6),
-              Text(
+              UiText(
                 l10n.settings_theme_chooseSubtitle,
                 style: AppTypography.bodyMuted,
               ),
@@ -1474,7 +1475,7 @@ class _ThemePickerSheet extends StatelessWidget {
                     size: 16,
                   ),
                   const SizedBox(width: 8),
-                  Text(
+                  UiText(
                     l10n.settings_theme_applied,
                     style: AppTypography.caption.copyWith(fontSize: 12),
                   ),
@@ -1508,7 +1509,7 @@ class _ThemePreviewCard extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: '$label. $description',
+      label: '${context.uiCopy(label)}. ${context.uiCopy(description)}',
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
@@ -1532,7 +1533,7 @@ class _ThemePreviewCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    UiText(
                       label,
                       style: AppTypography.bodyMedium.copyWith(
                         fontSize: 16,
@@ -1542,7 +1543,7 @@ class _ThemePreviewCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 3),
-                    Text(description, style: AppTypography.caption),
+                    UiText(description, style: AppTypography.caption),
                   ],
                 ),
               ),
@@ -1704,7 +1705,7 @@ class _LanguagePickerSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          Text(l10n.settings_label_language,
+          UiText(l10n.settings_label_language,
               style: AppTypography.screenTitle.copyWith(fontSize: 20)),
           const SizedBox(height: 16),
           ..._kLanguages.map((lang) {
@@ -1716,7 +1717,7 @@ class _LanguagePickerSheet extends StatelessWidget {
                   Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(
+                      content: UiText(
                         'Language · ${lang.nativeName}',
                         style: AppTypography.body.copyWith(
                           color:
@@ -1756,19 +1757,19 @@ class _LanguagePickerSheet extends StatelessWidget {
                         ? Directionality(
                             textDirection: TextDirection.rtl,
                             child: Row(children: [
-                              Text(lang.nativeName,
+                              UiText(lang.nativeName,
                                   style: AppTypography.bodyMedium.copyWith(
                                     color: isSelected
                                         ? AppColors.champagneGold
                                         : AppColors.pearlWhite,
                                   )),
                               const SizedBox(width: 8),
-                              Text('(${lang.englishName})',
+                              UiText('(${lang.englishName})',
                                   style: AppTypography.caption),
                             ]),
                           )
                         : Row(children: [
-                            Text(lang.nativeName,
+                            UiText(lang.nativeName,
                                 style: AppTypography.bodyMedium.copyWith(
                                   color: isSelected
                                       ? AppColors.champagneGold
@@ -1776,7 +1777,7 @@ class _LanguagePickerSheet extends StatelessWidget {
                                 )),
                             if (lang.nativeName != lang.englishName) ...[
                               const SizedBox(width: 8),
-                              Text('(${lang.englishName})',
+                              UiText('(${lang.englishName})',
                                   style: AppTypography.caption),
                             ],
                           ]),
@@ -1805,7 +1806,7 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.fromLTRB(4, 24, 0, 8),
-        child: Text(label, style: AppTypography.sectionLabel),
+        child: UiText(label, style: AppTypography.sectionLabel),
       );
 }
 
@@ -1864,13 +1865,13 @@ class _NavTile extends StatelessWidget {
         onTap: onTap,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
         leading: Icon(icon, color: iconColor ?? AppColors.slateMist, size: 20),
-        title:
-            Text(label, style: AppTypography.body.copyWith(color: labelColor)),
+        title: UiText(label,
+            style: AppTypography.body.copyWith(color: labelColor)),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (value != null)
-              Text(value!,
+              UiText(value!,
                   style: AppTypography.caption.copyWith(
                     color: labelColor != null
                         ? labelColor!.withValues(alpha: 0.7)
@@ -1903,9 +1904,9 @@ class _ToggleTile extends StatelessWidget {
   Widget build(BuildContext context) => ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
         leading: Icon(icon, color: AppColors.slateMist, size: 20),
-        title: Text(label, style: AppTypography.body),
+        title: UiText(label, style: AppTypography.body),
         subtitle: caption != null
-            ? Text(caption!, style: AppTypography.caption)
+            ? UiText(caption!, style: AppTypography.caption)
             : null,
         trailing: Semantics(
           label: label,
@@ -1933,9 +1934,9 @@ class _InfoTile extends StatelessWidget {
   Widget build(BuildContext context) => ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
         leading: Icon(icon, color: AppColors.slateMist, size: 20),
-        title: Text(label, style: AppTypography.body),
+        title: UiText(label, style: AppTypography.body),
         trailing:
-            value != null ? Text(value!, style: AppTypography.caption) : null,
+            value != null ? UiText(value!, style: AppTypography.caption) : null,
       );
 }
 
@@ -2007,14 +2008,14 @@ class _ReportHistorySheet extends StatelessWidget {
                       color: AppColors.cardBorder,
                       borderRadius: BorderRadius.circular(2)))),
           const SizedBox(height: 20),
-          Text(l10n.settings_label_reports,
+          UiText(l10n.settings_label_reports,
               style: AppTypography.screenTitle.copyWith(fontSize: 20)),
           const SizedBox(height: 16),
           if (reports.isEmpty)
             Center(
                 child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 24),
-              child: Text(l10n.settings_label_reports_none,
+              child: UiText(l10n.settings_label_reports_none,
                   style: AppTypography.bodyMuted),
             ))
           else
@@ -2035,8 +2036,9 @@ class _ReportHistorySheet extends StatelessWidget {
                           child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(r.reportedName, style: AppTypography.bodyMedium),
-                          Text(r.reason.label, style: AppTypography.caption),
+                          UiText(r.reportedName,
+                              style: AppTypography.bodyMedium),
+                          UiText(r.reason.label, style: AppTypography.caption),
                         ],
                       )),
                       Container(
@@ -2046,7 +2048,7 @@ class _ReportHistorySheet extends StatelessWidget {
                           borderRadius: BorderRadius.circular(6),
                           color: AppColors.surfaceGlassHover,
                         ),
-                        child: Text(l10n.settings_reportPending,
+                        child: UiText(l10n.settings_reportPending,
                             style:
                                 AppTypography.caption.copyWith(fontSize: 10)),
                       ),

@@ -1,3 +1,4 @@
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -24,7 +25,7 @@ class LegalDocScreen extends StatelessWidget {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          tooltip: 'Back',
+          tooltip: context.uiCopy('Back'),
           onPressed: () => Navigator.of(context).pop(),
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
@@ -32,7 +33,7 @@ class LegalDocScreen extends StatelessWidget {
             size: 20,
           ),
         ),
-        title: Text(
+        title: UiText(
           document.title,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -40,7 +41,7 @@ class LegalDocScreen extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            tooltip: 'Open official web version',
+            tooltip: context.uiCopy('Open official web version'),
             onPressed: () => _openOfficialWebVersion(context, document),
             icon: Icon(
               Icons.open_in_new_rounded,
@@ -83,8 +84,8 @@ class LegalDocScreen extends StatelessWidget {
       ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
-          content: Text(
-            'Web address copied to your clipboard.',
+          content: UiText(
+            context.uiCopy('Web address copied to your clipboard.'),
             style: TextStyle(
               color: AppColors.readableOn(AppColors.surfaceGlassHover),
             ),
@@ -123,7 +124,7 @@ class _DocumentHeader extends StatelessWidget {
               ),
               const SizedBox(width: AppDimensions.space10),
               Expanded(
-                child: Text(
+                child: UiText(
                   document.title,
                   style: AppTypography.bodyMedium.copyWith(
                     color: AppColors.champagneGold,
@@ -133,12 +134,12 @@ class _DocumentHeader extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppDimensions.space12),
-          Text(
+          UiText(
             document.summary,
             style: AppTypography.bodyMuted.copyWith(height: 1.55),
           ),
           const SizedBox(height: AppDimensions.space14),
-          Text(
+          UiText(
             'Effective ${LegalDocuments.effectiveDate}  •  Version ${LegalDocuments.version}',
             style: AppTypography.caption,
           ),
@@ -160,11 +161,11 @@ class _PolicySection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(section.title, style: AppTypography.bodyMedium),
+          UiText(section.title, style: AppTypography.bodyMedium),
           const SizedBox(height: AppDimensions.space8),
           Divider(color: AppColors.divider, height: 1),
           const SizedBox(height: AppDimensions.space12),
-          Text(
+          UiText(
             section.body,
             style: AppTypography.body.copyWith(height: 1.7),
           ),
@@ -189,7 +190,7 @@ class _ContactFooter extends StatelessWidget {
           color: AppColors.champagneGold.withValues(alpha: 0.24),
         ),
       ),
-      child: Text(
+      child: UiText(
         'Questions: ${LegalDocuments.supportEmail}\n'
         'Privacy requests: ${LegalDocuments.privacyEmail}\n'
         'Formal grievances: ${LegalDocuments.grievanceEmail}',

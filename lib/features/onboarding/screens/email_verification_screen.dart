@@ -4,6 +4,7 @@
 // Supabase email OTP with the existing six-box spring OTP UI.
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -178,7 +179,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
           }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
+              content: UiText(
                 state.message,
                 style: TextStyle(
                   color: AppColors.readableOn(AppColors.softCoral),
@@ -380,7 +381,7 @@ class _EmailView extends StatelessWidget {
               children: [
                 SilarahEntrance(
                   child: SilarahContentSwap(
-                    child: Text(
+                    child: UiText(
                       title,
                       key: ValueKey('email-title-$title'),
                       style: AppTypography.screenTitle,
@@ -391,7 +392,7 @@ class _EmailView extends StatelessWidget {
                 SilarahEntrance(
                   delay: const Duration(milliseconds: 45),
                   child: SilarahContentSwap(
-                    child: Text(
+                    child: UiText(
                       subtitle,
                       key: ValueKey('email-subtitle-$subtitle'),
                       style: AppTypography.bodyMuted,
@@ -457,7 +458,7 @@ class _EmailView extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Flexible(
-                              child: Text(
+                              child: UiText(
                                 switchLabel,
                                 textAlign: TextAlign.center,
                                 maxLines: 2,
@@ -577,7 +578,7 @@ class _AuthPivotNoticeCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  UiText(
                     title,
                     style: AppTypography.body.copyWith(
                       color: AppColors.pearlWhite,
@@ -585,11 +586,11 @@ class _AuthPivotNoticeCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(message, style: AppTypography.caption),
+                  UiText(message, style: AppTypography.caption),
                   const SizedBox(height: 10),
                   SilarahPressable(
                     onTap: onTap,
-                    child: Text(
+                    child: UiText(
                       actionLabel,
                       style: AppTypography.caption.copyWith(
                         color: AppColors.champagneGold,
@@ -710,7 +711,7 @@ class _OtpViewState extends State<_OtpView>
                   position: _titleSlide,
                   child: FadeTransition(
                     opacity: _titleFade,
-                    child: Text(
+                    child: UiText(
                       l10n.auth_title_enterCode,
                       style: AppTypography.screenTitle,
                     ),
@@ -764,7 +765,7 @@ class _OtpViewState extends State<_OtpView>
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
-                child: Text(
+                child: UiText(
                   key: ValueKey(widget.resendSecs == 0 ? 'active' : 'waiting'),
                   widget.resendSecs > 0
                       ? l10n.auth_label_resendCodeIn(widget.resendSecs)
@@ -786,8 +787,8 @@ class _OtpViewState extends State<_OtpView>
             onTap: widget.onChangeEmail,
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
-              child: Text(
-                'Change email',
+              child: UiText(
+                context.uiCopy('Change email'),
                 style: AppTypography.caption.copyWith(
                   color: AppColors.slateMist,
                   decoration: TextDecoration.none,
@@ -1125,7 +1126,7 @@ class _DigitText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
+    return UiText(
       digit,
       style: TextStyle(
         fontSize: 22,

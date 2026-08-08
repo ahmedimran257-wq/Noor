@@ -1,3 +1,4 @@
+import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -144,13 +145,13 @@ class _StartupOfflineScreenState extends State<StartupOfflineScreen>
                     ),
                   ),
                   const SizedBox(height: AppDimensions.space40),
-                  Text(
+                  UiText(
                     l10n.startup_connectivity_offline_title,
                     textAlign: TextAlign.center,
                     style: AppTypography.screenTitle,
                   ),
                   const SizedBox(height: AppDimensions.space12),
-                  Text(
+                  UiText(
                     l10n.startup_connectivity_offline_body,
                     textAlign: TextAlign.center,
                     style: AppTypography.bodyMuted.copyWith(height: 1.55),
@@ -210,7 +211,7 @@ class _StartupOfflineScreenState extends State<StartupOfflineScreen>
                               color: AppColors.champagneGold,
                             ),
                           const SizedBox(width: AppDimensions.space10),
-                          Text(
+                          UiText(
                             _retrying
                                 ? l10n.startup_connectivity_checking
                                 : l10n.startup_connectivity_check,
@@ -221,7 +222,7 @@ class _StartupOfflineScreenState extends State<StartupOfflineScreen>
                     ),
                   ),
                   const SizedBox(height: AppDimensions.space16),
-                  Text(
+                  UiText(
                     l10n.startup_connectivity_auto,
                     textAlign: TextAlign.center,
                     style: AppTypography.caption,
@@ -246,7 +247,7 @@ class _OfflineWordmark extends StatelessWidget {
       children: [
         SizedBox(width: 24, child: Divider(color: AppColors.goldBorder)),
         const SizedBox(width: AppDimensions.space12),
-        Text('SILARAH', style: AppTypography.wordmark),
+        UiText('SILARAH', style: AppTypography.wordmark),
         const SizedBox(width: AppDimensions.space12),
         SizedBox(width: 24, child: Divider(color: AppColors.goldBorder)),
       ],
@@ -306,7 +307,7 @@ class _ConnectionStatus extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppDimensions.space8),
-            Text(label, style: AppTypography.sectionLabel),
+            UiText(label, style: AppTypography.sectionLabel),
           ],
         ),
       ),

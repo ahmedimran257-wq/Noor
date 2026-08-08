@@ -1,3 +1,4 @@
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
@@ -238,7 +239,7 @@ class _SilarahWordmark extends StatelessWidget {
           ],
           stops: const [0, .34, .5, .66, 1],
         ).createShader(bounds),
-        child: Text(
+        child: UiText(
           'Silarah',
           maxLines: 1,
           style: TextStyle(

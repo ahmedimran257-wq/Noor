@@ -15,6 +15,7 @@
 //   • Sticky bottom bar: bookmark + gold "Send Interest"
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -168,7 +169,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
       });
       ScaffoldMessenger.of(this.context).showSnackBar(
         SnackBar(
-          content: Text('Photo request sent to ${widget.profile.firstName}.'),
+          content: UiText(
+            this.context.uiPhotoRequestSent(widget.profile.firstName),
+          ),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -177,7 +180,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
       setState(() => _photoRequestUpdating = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(error.toString().replaceFirst('Bad state: ', '')),
+          content: UiText(error.toString().replaceFirst('Bad state: ', '')),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -201,7 +204,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
       setState(() => _photoRequestUpdating = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(error.toString().replaceFirst('Bad state: ', '')),
+          content: UiText(error.toString().replaceFirst('Bad state: ', '')),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -346,9 +349,10 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
         setState(() => _bookmarked = previous);
         ScaffoldMessenger.of(context)
           ..clearSnackBars()
-          ..showSnackBar(const SnackBar(
+          ..showSnackBar(SnackBar(
             behavior: SnackBarBehavior.floating,
-            content: Text('Saved profiles could not be updated. Try again.'),
+            content: UiText(context
+                .uiCopy('Saved profiles could not be updated. Try again.')),
           ));
       }
     } finally {
@@ -365,9 +369,10 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     );
     if (!mounted) return;
     if (conversationId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
-        content: Text('Your conversation is still being prepared. Try again.'),
+        content: UiText(context
+            .uiCopy('Your conversation is still being prepared. Try again.')),
       ));
       return;
     }
@@ -378,9 +383,10 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
       return;
     }
     if (!access.allowed) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
-        content: Text('This conversation is not available right now.'),
+        content: UiText(
+            context.uiCopy('This conversation is not available right now.')),
       ));
       return;
     }
@@ -539,7 +545,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                     if (p.bio != null) ...[
                       const _SectionHeader(label: 'About'),
                       const SizedBox(height: AppDimensions.space12),
-                      Text(p.bio!, style: AppTypography.bio),
+                      UiText(p.bio!, style: AppTypography.bio),
                       const SizedBox(height: AppDimensions.space28),
                     ],
 
@@ -927,7 +933,7 @@ class _PhotoCarousel extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: AppColors.cardBorder),
                 ),
-                child: Text(
+                child: UiText(
                   '${currentPage + 1} / $totalPhotos',
                   style: AppTypography.caption.copyWith(
                     color: AppColors.onMedia,
@@ -944,7 +950,7 @@ class _PhotoCarousel extends StatelessWidget {
               bottom: 0,
               child: _GalleryNavButton(
                 icon: Icons.chevron_left_rounded,
-                semanticLabel: 'Previous photo',
+                semanticLabel: context.uiCopy('Previous photo'),
                 onTap: () => controller.previousPage(
                   duration: AppDimensions.durationTransition,
                   curve: Curves.easeOutCubic,
@@ -958,7 +964,7 @@ class _PhotoCarousel extends StatelessWidget {
               bottom: 0,
               child: _GalleryNavButton(
                 icon: Icons.chevron_right_rounded,
-                semanticLabel: 'Next photo',
+                semanticLabel: context.uiCopy('Next photo'),
                 onTap: () => controller.nextPage(
                   duration: AppDimensions.durationTransition,
                   curve: Curves.easeOutCubic,
@@ -1133,7 +1139,7 @@ class _PublicSlide extends StatelessWidget {
         child: TextButton.icon(
           onPressed: onRetry,
           icon: const Icon(Icons.refresh_rounded),
-          label: const Text('Reload photo'),
+          label: UiText(context.uiCopy('Reload photo')),
         ),
       );
     }
@@ -1232,7 +1238,7 @@ class _PrivateSlide extends StatelessWidget {
                   ),
           ),
           const SizedBox(height: AppDimensions.space16),
-          Text(
+          UiText(
             _title,
             style: AppTypography.userName.copyWith(
               color: AppColors.pearlWhite,
@@ -1243,8 +1249,8 @@ class _PrivateSlide extends StatelessWidget {
           const SizedBox(height: AppDimensions.space6),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 36),
-            child: Text(
-              accessError ?? _description,
+            child: UiText(
+              accessError ?? _description(context),
               style: AppTypography.bodyMuted,
               textAlign: TextAlign.center,
             ),
@@ -1271,16 +1277,15 @@ class _PrivateSlide extends StatelessWidget {
     };
   }
 
-  String get _description {
-    final count = '$photoCount photo${photoCount == 1 ? '' : 's'}';
+  String _description(BuildContext context) {
     if (privacy == ProfilePhotoPrivacy.mutualOnly) {
-      return '$count will unlock automatically once you both express interest.';
+      return context.uiPhotoUnlock(photoCount);
     }
     return switch (requestStatus) {
       'pending' => 'You will be notified as soon as access is approved.',
       'denied' => 'You can send another respectful request when appropriate.',
       'revoked' => 'The owner controls who can view their private photos.',
-      _ => 'Ask the owner for permission to view $count.',
+      _ => context.uiAskPhotoPermission(photoCount),
     };
   }
 
@@ -1347,7 +1352,7 @@ class _PrivacyActionButton extends StatelessWidget {
                   outlined ? AppColors.champagneGold : AppColors.obsidianNight,
             ),
             const SizedBox(width: 8),
-            Text(
+            UiText(
               label,
               style: AppTypography.button.copyWith(
                 color: outlined
@@ -1454,7 +1459,8 @@ class _FullScreenPhotoViewerState extends State<_FullScreenPhotoViewer> {
                               Icon(Icons.lock_outline_rounded,
                                   color: AppColors.slateMist, size: 60),
                               const SizedBox(height: 12),
-                              Text('Locked', style: AppTypography.bodyMuted),
+                              UiText(context.uiCopy('Locked'),
+                                  style: AppTypography.bodyMuted),
                             ],
                           ),
                         )
@@ -1505,7 +1511,7 @@ class _FullScreenPhotoViewerState extends State<_FullScreenPhotoViewer> {
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: AppColors.cardBorder),
                 ),
-                child: Text(
+                child: UiText(
                   '${_page + 1} / $totalPhotos',
                   style: AppTypography.caption.copyWith(
                     color: AppColors.onMedia,
@@ -1581,7 +1587,7 @@ class _NameBlock extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: Text(
+              child: UiText(
                 displayName,
                 style: AppTypography.screenTitle.copyWith(fontSize: 30),
               ),
@@ -1590,7 +1596,7 @@ class _NameBlock extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppDimensions.space8),
-        Text(
+        UiText(
           [
             '${profile.age}',
             profile.cityName,
@@ -1609,7 +1615,7 @@ class _NameBlock extends StatelessWidget {
               ),
               const SizedBox(width: AppDimensions.space8),
               Expanded(
-                child: Text(
+                child: UiText(
                   profile.priorMatchCount > 1
                       ? 'Previously matched ${profile.priorMatchCount} times · most recently ${MaterialLocalizations.of(context).formatMediumDate(profile.previousMatchAt!.toLocal())}'
                       : 'Previously matched on ${MaterialLocalizations.of(context).formatMediumDate(profile.previousMatchAt!.toLocal())}',
@@ -1645,8 +1651,8 @@ class _VerifiedPill extends StatelessWidget {
         children: [
           Icon(Icons.verified_rounded, color: AppColors.verifiedTeal, size: 12),
           const SizedBox(width: AppDimensions.space4),
-          Text(
-            'Verified',
+          UiText(
+            context.uiCopy('Verified'),
             style: AppTypography.caption.copyWith(
               color: AppColors.verifiedTeal,
               fontWeight: FontWeight.w600,
@@ -1704,9 +1710,10 @@ class _OwnProfilePreviewNotice extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Member preview', style: AppTypography.bodyMedium),
+                UiText(context.uiCopy('Member preview'),
+                    style: AppTypography.bodyMedium),
                 const SizedBox(height: AppDimensions.space4),
-                Text(
+                UiText(
                   'This is the profile members see in discovery. Swipe through all $photoCount ${photoCount == 1 ? 'photo' : 'photos'} to review the full experience.',
                   style: AppTypography.caption.copyWith(
                     color: AppColors.slateMist,
@@ -1737,8 +1744,8 @@ class _PreviewModeTitle extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
         border: Border.all(color: AppColors.cardBorder),
       ),
-      child: Text(
-        'YOUR PROFILE',
+      child: UiText(
+        context.uiCopy('YOUR PROFILE'),
         style: AppTypography.sectionLabel.copyWith(
           color: AppColors.champagneLight,
           fontSize: 10,
@@ -1839,7 +1846,7 @@ class _OwnProfileAction extends StatelessWidget {
                 size: 19),
             const SizedBox(width: AppDimensions.space8),
             Flexible(
-              child: Text(
+              child: UiText(
                 label,
                 overflow: TextOverflow.ellipsis,
                 style: AppTypography.button.copyWith(
@@ -1896,7 +1903,7 @@ class _CompatibilityIndicator extends StatelessWidget {
                   color: AppColors.champagneGold,
                   strokeWidth: 3,
                 ),
-                Text(
+                UiText(
                   '${(fraction * 100).round()}%',
                   style: AppTypography.caption.copyWith(
                     color: AppColors.champagneGold,
@@ -1912,7 +1919,7 @@ class _CompatibilityIndicator extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                UiText(
                   'You match $matched of their $totalPrefs preferences',
                   style: AppTypography.bodyMedium.copyWith(
                     color: AppColors.champagneGold,
@@ -1920,8 +1927,9 @@ class _CompatibilityIndicator extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: AppDimensions.space4),
-                Text(
-                  'Based on sect, deen, education & age preferences',
+                UiText(
+                  context.uiCopy(
+                      'Based on sect, deen, education & age preferences'),
                   style: AppTypography.caption,
                 ),
               ],
@@ -1944,7 +1952,7 @@ class _SectionHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label.toUpperCase(), style: AppTypography.sectionLabel),
+        UiText(label.toUpperCase(), style: AppTypography.sectionLabel),
         const SizedBox(height: AppDimensions.space8),
         Divider(color: AppColors.divider, height: 1),
       ],
@@ -1994,9 +2002,9 @@ class _DetailTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(item.label, style: AppTypography.sectionLabel),
+          UiText(item.label, style: AppTypography.sectionLabel),
           const SizedBox(height: AppDimensions.space4),
-          Text(item.value, style: AppTypography.bodyMedium),
+          UiText(item.value, style: AppTypography.bodyMedium),
         ],
       ),
     );
@@ -2022,7 +2030,7 @@ class _GoldChip extends StatelessWidget {
         border:
             Border.all(color: AppColors.champagneGold.withValues(alpha: 0.5)),
       ),
-      child: Text(
+      child: UiText(
         label,
         style: AppTypography.chipLabel.copyWith(color: AppColors.champagneGold),
       ),
@@ -2048,7 +2056,7 @@ class _DetailChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
         border: Border.all(color: AppColors.cardBorder),
       ),
-      child: Text(label, style: AppTypography.chipLabel),
+      child: UiText(label, style: AppTypography.chipLabel),
     );
   }
 }
@@ -2204,7 +2212,7 @@ class _CtaBar extends StatelessWidget {
                     ),
                     const SizedBox(width: AppDimensions.space8),
                     Flexible(
-                      child: Text(
+                      child: UiText(
                         label,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -2289,16 +2297,16 @@ class _ReportBlockSheet extends StatelessWidget {
               final confirmed = await showDialog<bool>(
                     context: context,
                     builder: (dialogContext) => AlertDialog(
-                      title: Text(l10n.safety_blockTitle(profile.firstName)),
-                      content: Text(l10n.safety_blockBody(profile.firstName)),
+                      title: UiText(l10n.safety_blockTitle(profile.firstName)),
+                      content: UiText(l10n.safety_blockBody(profile.firstName)),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(dialogContext, false),
-                          child: Text(l10n.common_button_cancel),
+                          child: UiText(l10n.common_button_cancel),
                         ),
                         FilledButton(
                           onPressed: () => Navigator.pop(dialogContext, true),
-                          child: Text(l10n.safety_blockAction),
+                          child: UiText(l10n.safety_blockAction),
                         ),
                       ],
                     ),
@@ -2309,7 +2317,7 @@ class _ReportBlockSheet extends StatelessWidget {
               if (!blocked || !context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(
+                  content: UiText(
                     l10n.safety_blocked(profile.firstName),
                     style: AppTypography.body.copyWith(
                       color: AppColors.readableOn(AppColors.surfaceGlassHover),
@@ -2336,7 +2344,7 @@ class _ReportBlockSheet extends StatelessWidget {
                 ),
               ),
               onPressed: () => Navigator.pop(context),
-              child: Text(l10n.common_button_cancel,
+              child: UiText(l10n.common_button_cancel,
                   style: AppTypography.button
                       .copyWith(color: AppColors.slateMist)),
             ),
@@ -2379,7 +2387,8 @@ class _SheetAction extends StatelessWidget {
           children: [
             Icon(icon, color: color, size: AppDimensions.iconSizeLarge),
             const SizedBox(width: AppDimensions.space12),
-            Text(label, style: AppTypography.bodyMedium.copyWith(color: color)),
+            UiText(label,
+                style: AppTypography.bodyMedium.copyWith(color: color)),
           ],
         ),
       ),

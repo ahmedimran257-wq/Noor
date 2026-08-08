@@ -13,6 +13,7 @@
 // This is SILARAH's biggest competitive moat against Muzz/Salams.
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -103,7 +104,7 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
+            content: UiText(
               'Match approved — ${chat.wardName} can now message ${chat.otherPartyName}',
               style: AppTypography.body.copyWith(
                 color: AppColors.readableOn(AppColors.verifiedTeal),
@@ -121,7 +122,7 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
+            content: UiText(
               'Failed to approve match: $e',
               style: AppTypography.body.copyWith(
                 color: AppColors.readableOn(AppColors.errorRed),
@@ -148,10 +149,10 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
         elevation: 0,
         title: Row(
           children: [
-            Text('سيلارا',
+            UiText('سيلارا',
                 style: AppTypography.wordmark.copyWith(fontSize: 22)),
             const SizedBox(width: AppDimensions.space6),
-            Text('GUARDIAN',
+            UiText(context.uiCopy('GUARDIAN'),
                 style: AppTypography.wordmark.copyWith(fontSize: 16)),
             const Spacer(),
             // Realtime connection indicator
@@ -221,7 +222,7 @@ class _RealtimeIndicator extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 6),
-        Text(
+        UiText(
           isConnected ? 'Live' : 'Offline',
           style: AppTypography.caption.copyWith(
             color: isConnected ? AppColors.verifiedTeal : AppColors.slateMist,
@@ -282,14 +283,14 @@ class _ChatTile extends StatelessWidget {
                         // Ward name & other party
                         Row(
                           children: [
-                            Text(
+                            UiText(
                               chat.wardName,
                               style: AppTypography.captionMedium.copyWith(
                                 color: AppColors.champagneGold,
                                 fontSize: 11,
                               ),
                             ),
-                            Text(
+                            UiText(
                               '  ↔  ',
                               style: AppTypography.caption.copyWith(
                                 color: AppColors.slateMist,
@@ -297,7 +298,7 @@ class _ChatTile extends StatelessWidget {
                               ),
                             ),
                             Expanded(
-                              child: Text(
+                              child: UiText(
                                 chat.otherPartyName,
                                 style: AppTypography.captionMedium.copyWith(
                                   color: AppColors.pearlWhite,
@@ -309,7 +310,7 @@ class _ChatTile extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         // Last message preview
-                        Text(
+                        UiText(
                           chat.lastMessage ?? 'No messages yet',
                           style: AppTypography.caption.copyWith(
                             color: chat.hasUnread
@@ -331,8 +332,8 @@ class _ChatTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       if (chat.lastMessageAt != null)
-                        Text(
-                          _formatTime(chat.lastMessageAt!),
+                        UiText(
+                          _formatTime(context, chat.lastMessageAt!),
                           style: AppTypography.caption.copyWith(
                             fontSize: 10,
                             color: chat.hasUnread
@@ -351,7 +352,7 @@ class _ChatTile extends StatelessWidget {
                             color: AppColors.champagneGold,
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Text(
+                          child: UiText(
                             '${chat.unreadCount}',
                             style: AppTypography.caption.copyWith(
                               color: AppColors.obsidianNight,
@@ -390,8 +391,8 @@ class _ChatTile extends StatelessWidget {
                     ),
                     const SizedBox(width: AppDimensions.space8),
                     Expanded(
-                      child: Text(
-                        'Awaiting your approval',
+                      child: UiText(
+                        context.uiCopy('Awaiting your approval'),
                         style: AppTypography.caption.copyWith(
                           color: AppColors.champagneGold,
                           fontWeight: FontWeight.w500,
@@ -410,8 +411,8 @@ class _ChatTile extends StatelessWidget {
                           borderRadius:
                               BorderRadius.circular(AppDimensions.radiusChip),
                         ),
-                        child: Text(
-                          'Approve',
+                        child: UiText(
+                          context.uiCopy('Approve'),
                           style: AppTypography.caption.copyWith(
                             color: AppColors.obsidianNight,
                             fontWeight: FontWeight.w700,
@@ -450,7 +451,7 @@ class _ChatTile extends StatelessWidget {
                             : AppColors.cardBorder,
                       ),
                     ),
-                    child: Text(
+                    child: UiText(
                       chat.guardianMode == 'active' ? 'ACTIVE' : 'VIEWING',
                       style: AppTypography.caption.copyWith(
                         fontSize: 9,
@@ -463,7 +464,7 @@ class _ChatTile extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  Text(
+                  UiText(
                     chat.matchStatus.toUpperCase(),
                     style: AppTypography.caption.copyWith(
                       fontSize: 9,
@@ -480,14 +481,14 @@ class _ChatTile extends StatelessWidget {
     );
   }
 
-  String _formatTime(DateTime time) {
+  String _formatTime(BuildContext context, DateTime time) {
     final now = DateTime.now();
     final diff = now.difference(time);
 
-    if (diff.inMinutes < 1) return 'now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
-    if (diff.inHours < 24) return '${diff.inHours}h';
-    if (diff.inDays < 7) return '${diff.inDays}d';
+    if (diff.inMinutes < 1) return context.uiCopy('now');
+    if (diff.inMinutes < 60) return context.uiMinutesShort(diff.inMinutes);
+    if (diff.inHours < 24) return context.uiHoursShort(diff.inHours);
+    if (diff.inDays < 7) return context.uiDaysShort(diff.inDays);
     return '${time.day}/${time.month}';
   }
 }
@@ -559,15 +560,17 @@ class _EmptyDashboard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppDimensions.space24),
-            Text(
-              'No Active Conversations',
+            UiText(
+              context.uiCopy('No Active Conversations'),
               style: AppTypography.screenTitle.copyWith(fontSize: 20),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppDimensions.space12),
-            Text(
-              'Your ward hasn\'t started any conversations yet.\n'
-              'You\'ll see their chats here when they do.',
+            UiText(
+              context.uiCopy(
+                'Your ward hasn\'t started any conversations yet.\n'
+                'You\'ll see their chats here when they do.',
+              ),
               style: AppTypography.bodyMuted,
               textAlign: TextAlign.center,
             ),

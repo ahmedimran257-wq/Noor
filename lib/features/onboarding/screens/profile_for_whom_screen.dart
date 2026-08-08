@@ -6,6 +6,7 @@
 //   Son, Daughter, Brother, Sister.
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -190,7 +191,7 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
           });
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
+              content: UiText(
                 state.message,
                 style: TextStyle(
                   color: AppColors.readableOn(AppColors.softCoral),
@@ -280,7 +281,7 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
                               left: AppDimensions.space12,
                               bottom: AppDimensions.space10,
                             ),
-                            child: Text(
+                            child: UiText(
                               l10n.onboarding_profileForWhom_creatingFor,
                               style: AppTypography.caption.copyWith(
                                 color: AppColors.champagneGold,
@@ -368,7 +369,7 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
                               key: ValueKey('profile-for-whom-loading'),
                               size: 24,
                             )
-                          : Text(
+                          : UiText(
                               key: const ValueKey('profile-for-whom-hint'),
                               _selectedCategory == 'guardian' &&
                                       _selectedRelation == null
@@ -422,7 +423,7 @@ class _ProfileForWhomSaveError extends StatelessWidget {
           ),
           const SizedBox(width: AppDimensions.space8),
           Expanded(
-            child: Text(
+            child: UiText(
               message,
               style: AppTypography.bodyMedium.copyWith(
                 color: AppColors.pearlWhite,
@@ -432,7 +433,7 @@ class _ProfileForWhomSaveError extends StatelessWidget {
           TextButton.icon(
             onPressed: isLoading ? null : onRetry,
             icon: const Icon(Icons.refresh_rounded, size: 18),
-            label: const Text('Retry'),
+            label: UiText(context.uiCopy('Retry')),
             style: TextButton.styleFrom(
               foregroundColor: AppColors.champagneGold,
             ),
@@ -511,7 +512,7 @@ class _SelectionCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  UiText(
                     title,
                     style: AppTypography.bodyMedium.copyWith(
                       color: isSelected
@@ -520,7 +521,7 @@ class _SelectionCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: AppDimensions.space4),
-                  Text(subtitle, style: AppTypography.caption),
+                  UiText(subtitle, style: AppTypography.caption),
                 ],
               ),
             ),
@@ -613,7 +614,7 @@ class _RelationChip extends StatelessWidget {
               size: 20,
             ),
             const SizedBox(width: AppDimensions.space8),
-            Text(
+            UiText(
               label,
               style: AppTypography.bodyMedium.copyWith(
                 color:

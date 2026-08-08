@@ -4,6 +4,7 @@
 // Single-shell glass fields with animated focus, no nested theme outline.
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -235,7 +236,7 @@ class _SilarahTextFieldState extends State<SilarahTextField> {
                     start: AppDimensions.space4,
                     top: AppDimensions.space6,
                   ),
-                  child: Text(
+                  child: UiText(
                     supportText,
                     style: AppTypography.caption.copyWith(
                       color:

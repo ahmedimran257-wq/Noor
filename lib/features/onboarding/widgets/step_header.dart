@@ -4,6 +4,7 @@
 // Decorative gold ornament + screen title (Playfair) + subtitle (Inter muted).
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
@@ -30,10 +31,10 @@ class StepHeader extends StatelessWidget {
           _GoldOrnament(),
           const SizedBox(height: AppDimensions.space16),
         ],
-        Text(title, style: AppTypography.screenTitle),
+        UiText(title, style: AppTypography.screenTitle),
         if (subtitle != null) ...[
           const SizedBox(height: AppDimensions.space8),
-          Text(subtitle!, style: AppTypography.bodyMuted),
+          UiText(subtitle!, style: AppTypography.bodyMuted),
         ],
       ],
     );

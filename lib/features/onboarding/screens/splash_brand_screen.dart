@@ -1,3 +1,4 @@
+import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -174,13 +175,13 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: AppDimensions.space8),
-                  Text(
+                  UiText(
                     l10n.splash_referral_title,
                     style: AppTypography.screenTitle.copyWith(fontSize: 20),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppDimensions.space12),
-                  Text(
+                  UiText(
                     l10n.splash_referral_subtitle,
                     style: AppTypography.bodyMuted,
                     textAlign: TextAlign.center,
@@ -251,7 +252,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                             if (code.length != 6) {
                               ScaffoldMessenger.of(sheetContext).showSnackBar(
                                 SnackBar(
-                                  content: Text(
+                                  content: UiText(
                                     l10n.splash_referral_invalid,
                                     style: TextStyle(
                                       color: AppColors.readableOn(
@@ -272,7 +273,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                                 setSheetState(() => isSaving = false);
                                 ScaffoldMessenger.of(sheetContext).showSnackBar(
                                   SnackBar(
-                                    content: Text(
+                                    content: UiText(
                                       l10n.splash_referral_invalid,
                                       style: TextStyle(
                                         color: AppColors.readableOn(
@@ -296,7 +297,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                               setSheetState(() => isSaving = false);
                               ScaffoldMessenger.of(sheetContext).showSnackBar(
                                 SnackBar(
-                                  content: Text(l10n.common_error_generic),
+                                  content: UiText(l10n.common_error_generic),
                                   backgroundColor: AppColors.errorRed,
                                 ),
                               );
@@ -311,7 +312,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                               color: AppColors.obsidianNight,
                             ),
                           )
-                        : Text(
+                        : UiText(
                             l10n.splash_referral_button,
                             style: AppTypography.button,
                           ),
@@ -332,7 +333,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
     if (saved != true || !mounted || !context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
+        content: UiText(
           l10n.splash_referral_saved,
           style: AppTypography.body.copyWith(
             color: AppColors.readableOn(AppColors.surfaceGlassHover),
@@ -481,7 +482,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                             onPressed: () => _lightTap(
                               () => _showReferralSheet(context),
                             ),
-                            child: Text(
+                            child: UiText(
                               l10n.splash_referral_question,
                               style: AppTypography.captionMedium.copyWith(
                                 color: AppColors.champagneGold,
@@ -542,7 +543,7 @@ class _IntentionalUnionHero extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
+                  UiText(
                     title,
                     textAlign: TextAlign.center,
                     style: AppTypography.screenTitle.copyWith(
@@ -555,7 +556,7 @@ class _IntentionalUnionHero extends StatelessWidget {
                   SizedBox(height: compact ? 12 : 16),
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 360),
-                    child: Text(
+                    child: UiText(
                       subtitle,
                       textAlign: TextAlign.center,
                       style: AppTypography.bodyMuted.copyWith(

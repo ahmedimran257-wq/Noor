@@ -11,6 +11,7 @@
 // a success SnackBar before popping.
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -221,7 +222,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void _showSaveError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
+        content: UiText(
           message,
           style: AppTypography.body.copyWith(
             color: AppColors.readableOn(AppColors.softCoral),
@@ -313,8 +314,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           Icon(Icons.check_circle_rounded,
               color: AppColors.champagneGold, size: 18),
           const SizedBox(width: AppDimensions.space8),
-          Text(
-            'Profile saved',
+          UiText(
+            context.uiCopy('Profile saved'),
             style: AppTypography.body.copyWith(
               color: AppColors.readableOn(AppColors.surfaceGlassHover),
             ),
@@ -358,7 +359,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
               ),
             ),
-            title: Text('Edit Profile',
+            title: UiText(context.uiCopy('Edit Profile'),
                 style: AppTypography.screenTitle.copyWith(fontSize: 20)),
           ),
           bottomNavigationBar: SafeArea(
@@ -371,7 +372,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
               child: SilarahPressable(
                 onTap: _isSaving ? null : _saveProfile,
-                semanticLabel: 'Save profile changes',
+                semanticLabel: context.uiCopy('Save profile changes'),
                 child: AnimatedContainer(
                   duration: AppDimensions.durationTransition,
                   height: 54,
@@ -395,7 +396,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             Icon(Icons.check_rounded,
                                 color: AppColors.obsidianNight, size: 20),
                             const SizedBox(width: AppDimensions.space8),
-                            Text('Save changes', style: AppTypography.button),
+                            UiText(context.uiCopy('Save changes'),
+                                style: AppTypography.button),
                           ],
                         ),
                 ),
@@ -819,16 +821,18 @@ class _PhotoGridState extends State<_PhotoGrid> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Manage your photos', style: AppTypography.bodyMedium),
+                  UiText(context.uiCopy('Manage your photos'),
+                      style: AppTypography.bodyMedium),
                   const SizedBox(height: AppDimensions.space6),
-                  Text(
-                    'Reorder, replace or add photos. Every new upload runs through the safety scan.',
+                  UiText(
+                    context.uiCopy(
+                        'Reorder, replace or add photos. Every new upload runs through the safety scan.'),
                     style: AppTypography.caption,
                   ),
                   const SizedBox(height: AppDimensions.space12),
                   Row(
                     children: [
-                      Text('Open photo manager',
+                      UiText(context.uiCopy('Open photo manager'),
                           style: AppTypography.buttonSecondary),
                       const SizedBox(width: AppDimensions.space4),
                       Icon(Icons.arrow_forward_rounded,
@@ -873,11 +877,12 @@ class _EditorIntro extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Shape your first impression',
+                UiText(context.uiCopy('Shape your first impression'),
                     style: AppTypography.bodyMedium),
                 const SizedBox(height: AppDimensions.space4),
-                Text(
-                  'Changes are saved securely and reflected in discovery immediately.',
+                UiText(
+                  context.uiCopy(
+                      'Changes are saved securely and reflected in discovery immediately.'),
                   style: AppTypography.caption,
                 ),
               ],
@@ -956,15 +961,16 @@ class _LocationEditor extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Discovery location',
+                    UiText(
+                      context.uiCopy('Discovery location'),
                       style: AppTypography.bodyMedium.copyWith(
                         color: AppColors.pearlWhite,
                       ),
                     ),
                     const SizedBox(height: 3),
-                    Text(
-                      'Used for nearby matches. Your exact address is never shown.',
+                    UiText(
+                      context.uiCopy(
+                          'Used for nearby matches. Your exact address is never shown.'),
                       style: AppTypography.caption.copyWith(height: 1.4),
                     ),
                   ],
@@ -973,11 +979,11 @@ class _LocationEditor extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppDimensions.space20),
-          Text('COUNTRY', style: AppTypography.sectionLabel),
+          UiText(context.uiCopy('COUNTRY'), style: AppTypography.sectionLabel),
           const SizedBox(height: AppDimensions.space8),
           Semantics(
             button: true,
-            label: 'Change country, currently ${country.name}',
+            label: context.uiChangeCountry(country.name),
             child: InkWell(
               onTap: onCountryTap,
               borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
@@ -985,10 +991,10 @@ class _LocationEditor extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 child: Row(
                   children: [
-                    Text(country.flag, style: const TextStyle(fontSize: 24)),
+                    UiText(country.flag, style: const TextStyle(fontSize: 24)),
                     const SizedBox(width: AppDimensions.space12),
                     Expanded(
-                      child: Text(country.name, style: AppTypography.body),
+                      child: UiText(country.name, style: AppTypography.body),
                     ),
                     Icon(
                       Icons.chevron_right_rounded,
@@ -1000,7 +1006,8 @@ class _LocationEditor extends StatelessWidget {
             ),
           ),
           const Divider(height: AppDimensions.space24),
-          Text('STATE / REGION', style: AppTypography.sectionLabel),
+          UiText(context.uiCopy('STATE / REGION'),
+              style: AppTypography.sectionLabel),
           const SizedBox(height: AppDimensions.space8),
           RegionSearchField(
             key: ValueKey('edit_region_${country.iso2}'),
@@ -1011,7 +1018,7 @@ class _LocationEditor extends StatelessWidget {
             onCleared: onRegionCleared,
           ),
           const SizedBox(height: AppDimensions.space16),
-          Text('CITY', style: AppTypography.sectionLabel),
+          UiText(context.uiCopy('CITY'), style: AppTypography.sectionLabel),
           const SizedBox(height: AppDimensions.space8),
           CitySearchField(
             key: ValueKey('edit_city_${country.iso2}_${region?.name ?? ''}'),
@@ -1030,8 +1037,9 @@ class _LocationEditor extends StatelessWidget {
                 ? Padding(
                     key: const ValueKey('location-guidance'),
                     padding: const EdgeInsets.only(top: AppDimensions.space10),
-                    child: Text(
-                      'Choose a verified result so distance matching stays accurate.',
+                    child: UiText(
+                      context.uiCopy(
+                          'Choose a verified result so distance matching stays accurate.'),
                       style: AppTypography.caption,
                     ),
                   )
@@ -1047,7 +1055,7 @@ class _LocationEditor extends StatelessWidget {
                         ),
                         const SizedBox(width: AppDimensions.space8),
                         Expanded(
-                          child: Text(
+                          child: UiText(
                             'Matching from $locationLabel',
                             style: AppTypography.caption.copyWith(
                               color: AppColors.verifiedTeal,
@@ -1092,7 +1100,7 @@ class _SectionHeader extends StatelessWidget {
           child: Icon(icon, color: AppColors.champagneGold, size: 18),
         ),
         const SizedBox(width: AppDimensions.space10),
-        Text(label, style: AppTypography.bodyMedium),
+        UiText(label, style: AppTypography.bodyMedium),
         const SizedBox(width: AppDimensions.space12),
         Expanded(child: Divider(color: AppColors.divider, height: 1)),
       ],
@@ -1130,7 +1138,7 @@ class _SilarahTextFieldState extends State<_SilarahTextField> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(widget.label, style: AppTypography.inputLabel),
+        UiText(widget.label, style: AppTypography.inputLabel),
         const SizedBox(height: AppDimensions.space6),
         Focus(
           onFocusChange: (f) => setState(() => _focused = f),
@@ -1192,7 +1200,7 @@ class _DropdownField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppTypography.inputLabel),
+        UiText(label, style: AppTypography.inputLabel),
         const SizedBox(height: AppDimensions.space6),
         Container(
           padding: const EdgeInsets.symmetric(
@@ -1229,7 +1237,7 @@ class _DropdownField extends StatelessWidget {
               final lbl = optionLabels?[i] ?? val;
               return DropdownMenuItem(
                 value: val,
-                child: Text(
+                child: UiText(
                   lbl,
                   style: AppTypography.body,
                   overflow: TextOverflow.ellipsis,
@@ -1271,7 +1279,7 @@ class _ToggleRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(child: Text(label, style: AppTypography.body)),
+          Expanded(child: UiText(label, style: AppTypography.body)),
           Switch(
             value: value,
             onChanged: onChanged,
@@ -1316,7 +1324,7 @@ class _StepperRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(child: Text(label, style: AppTypography.body)),
+          Expanded(child: UiText(label, style: AppTypography.body)),
           GestureDetector(
             onTap: value > min ? () => onChanged(value - 1) : null,
             child: Container(
@@ -1343,7 +1351,7 @@ class _StepperRow extends StatelessWidget {
           Padding(
             padding:
                 const EdgeInsets.symmetric(horizontal: AppDimensions.space12),
-            child: Text(
+            child: UiText(
               '$value',
               style: AppTypography.bodyMedium.copyWith(
                 color: AppColors.pearlWhite,
@@ -1411,10 +1419,11 @@ class _AgeRangeField extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text('Partner age range', style: AppTypography.body),
+              UiText(context.uiCopy('Partner age range'),
+                  style: AppTypography.body),
               const Spacer(),
-              Text(
-                '${min.round()} – ${max.round()} yrs',
+              UiText(
+                context.uiAgeRange(min.round(), max.round()),
                 style: AppTypography.bodyMedium.copyWith(
                   color: AppColors.champagneGold,
                 ),
@@ -1482,7 +1491,8 @@ class _InterestChips extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Interests (up to 6)', style: AppTypography.sectionLabel),
+        UiText(context.uiCopy('Interests (up to 6)'),
+            style: AppTypography.sectionLabel),
         const SizedBox(height: AppDimensions.space8),
         Wrap(
           spacing: AppDimensions.space8,
@@ -1519,7 +1529,7 @@ class _InterestChips extends StatelessWidget {
                         : AppDimensions.borderThin,
                   ),
                 ),
-                child: Text(
+                child: UiText(
                   interest,
                   style: AppTypography.caption.copyWith(
                     color:
@@ -1534,8 +1544,8 @@ class _InterestChips extends StatelessWidget {
         if (selected.length >= 6)
           Padding(
             padding: const EdgeInsets.only(top: AppDimensions.space8),
-            child: Text(
-              'Maximum 6 interests selected.',
+            child: UiText(
+              context.uiCopy('Maximum 6 interests selected.'),
               style: AppTypography.caption.copyWith(
                 color: AppColors.champagneGold,
               ),

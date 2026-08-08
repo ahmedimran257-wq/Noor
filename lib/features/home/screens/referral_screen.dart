@@ -6,6 +6,7 @@
 // gender referral).
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/services/supabase_service.dart';
@@ -85,7 +86,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
+        content: UiText(
           message,
           style: AppTypography.body.copyWith(
             color: AppColors.readableOn(AppColors.surfaceGlassHover),
@@ -116,7 +117,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
               color: AppColors.pearlWhite),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(l10n.referral_title,
+        title: UiText(l10n.referral_title,
             style: AppTypography.screenTitle.copyWith(fontSize: 20)),
       ),
       body: _isLoading
@@ -143,13 +144,13 @@ class _ReferralScreenState extends State<ReferralScreen> {
                     ),
                   ),
                   const SizedBox(height: AppDimensions.space24),
-                  Text(
+                  UiText(
                     l10n.referral_heading,
                     style: AppTypography.screenTitle,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppDimensions.space12),
-                  Text(
+                  UiText(
                     l10n.referral_body,
                     style: AppTypography.bodyMuted,
                     textAlign: TextAlign.center,
@@ -176,7 +177,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                     ),
                     child: Column(
                       children: [
-                        Text(
+                        UiText(
                           l10n.referral_codeLabel,
                           style: AppTypography.captionMedium,
                         ),
@@ -197,7 +198,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(
+                                UiText(
                                   _code,
                                   style: AppTypography.screenTitle.copyWith(
                                     color: AppColors.champagneGold,
@@ -213,7 +214,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                           ),
                         ),
                         const SizedBox(height: AppDimensions.space12),
-                        Text(
+                        UiText(
                           l10n.referral_tapToCopy,
                           style: AppTypography.caption,
                         ),
@@ -267,7 +268,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                         elevation: 0,
                       ),
                       icon: const Icon(Icons.share_rounded, size: 20),
-                      label: Text(l10n.referral_shareButton,
+                      label: UiText(l10n.referral_shareButton,
                           style: AppTypography.button),
                       onPressed: _shareReferral,
                     ),
@@ -307,10 +308,10 @@ class _StatCard extends StatelessWidget {
             ? CrossAxisAlignment.center
             : CrossAxisAlignment.start,
         children: [
-          Text(label,
+          UiText(label,
               style: AppTypography.captionMedium.copyWith(fontSize: 11)),
           const SizedBox(height: 8),
-          Text(
+          UiText(
             value,
             style: AppTypography.screenTitle.copyWith(
               fontSize: 24,
@@ -319,7 +320,7 @@ class _StatCard extends StatelessWidget {
           ),
           if (subtitle != null) ...[
             const SizedBox(height: 2),
-            Text(
+            UiText(
               subtitle!,
               style: AppTypography.caption
                   .copyWith(color: AppColors.champagneGold, fontSize: 10),

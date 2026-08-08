@@ -7,6 +7,7 @@
 //   Step 3: Type "DELETE" confirmation field
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -78,7 +79,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to delete account: $e',
+              content: UiText(context.uiDeleteFailed(e),
                   style: AppTypography.body.copyWith(
                     color: AppColors.readableOn(AppColors.errorRed),
                   )),
@@ -119,7 +120,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
             ),
           ),
         ),
-        title: Text(
+        title: UiText(
           AppLocalizations.of(context).deleteAccount_title,
           style: AppTypography.screenTitle
               .copyWith(fontSize: 20, color: AppColors.softCoral),
@@ -189,14 +190,15 @@ class _Step1 extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppDimensions.space32),
-          Text(
-            'Delete your account?',
+          UiText(
+            context.uiCopy('Delete your account?'),
             style: AppTypography.screenTitle.copyWith(fontSize: 24),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppDimensions.space16),
-          Text(
-            'We\'d hate to see you go. Before you proceed, here\'s what will happen:',
+          UiText(
+            context.uiCopy(
+                'We\'d hate to see you go. Before you proceed, here\'s what will happen:'),
             style: AppTypography.bodyMuted,
             textAlign: TextAlign.center,
           ),
@@ -237,7 +239,8 @@ class _Step1 extends StatelessWidget {
                 ),
               ),
               onPressed: onKeepAccount,
-              child: Text('Keep My Account', style: AppTypography.button),
+              child: UiText(context.uiCopy('Keep My Account'),
+                  style: AppTypography.button),
             ),
           ),
           const SizedBox(height: AppDimensions.space12),
@@ -253,7 +256,7 @@ class _Step1 extends StatelessWidget {
                 ),
               ),
               onPressed: onContinue,
-              child: Text('Continue',
+              child: UiText(context.uiCopy('Continue'),
                   style:
                       AppTypography.body.copyWith(color: AppColors.softCoral)),
             ),
@@ -295,10 +298,10 @@ class _Step2 extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: AppDimensions.space16),
-          Text('Why are you leaving?',
+          UiText(context.uiCopy('Why are you leaving?'),
               style: AppTypography.screenTitle.copyWith(fontSize: 22)),
           const SizedBox(height: AppDimensions.space8),
-          Text('This helps us improve SILARAH for others.',
+          UiText('This helps us improve SILARAH for others.',
               style: AppTypography.bodyMuted),
           const SizedBox(height: AppDimensions.space24),
           Container(
@@ -345,7 +348,7 @@ class _Step2 extends StatelessWidget {
                             ),
                             const SizedBox(width: 16),
                             Expanded(
-                              child: Text(r, style: AppTypography.body),
+                              child: UiText(r, style: AppTypography.body),
                             ),
                           ],
                         ),
@@ -373,7 +376,7 @@ class _Step2 extends StatelessWidget {
                 ),
               ),
               onPressed: reason != null ? onContinue : null,
-              child: Text('Continue',
+              child: UiText(context.uiCopy('Continue'),
                   style: AppTypography.button.copyWith(
                     color: reason != null ? Colors.white : AppColors.slateMist,
                   )),
@@ -408,10 +411,12 @@ class _Step3 extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: AppDimensions.space16),
-          Text('Last step',
+          UiText(context.uiCopy('Last step'),
               style: AppTypography.screenTitle.copyWith(fontSize: 22)),
           const SizedBox(height: AppDimensions.space8),
-          Text('Type DELETE to confirm you want to delete your account.',
+          UiText(
+              context.uiCopy(
+                  'Type DELETE to confirm you want to delete your account.'),
               style: AppTypography.bodyMuted),
           const SizedBox(height: AppDimensions.space24),
 
@@ -424,8 +429,9 @@ class _Step3 extends StatelessWidget {
               border:
                   Border.all(color: AppColors.softCoral.withValues(alpha: 0.3)),
             ),
-            child: Text(
-              'Your account will be deleted in 30 days. You can log back in anytime before then to cancel.',
+            child: UiText(
+              context.uiCopy(
+                  'Your account will be deleted in 30 days. You can log back in anytime before then to cancel.'),
               style: AppTypography.body
                   .copyWith(color: AppColors.softCoral.withValues(alpha: 0.9)),
             ),
@@ -453,8 +459,8 @@ class _Step3 extends StatelessWidget {
               ),
               textCapitalization: TextCapitalization.characters,
               decoration: InputDecoration(
-                labelText: 'DELETE',
-                hintText: 'Type DELETE here',
+                labelText: context.uiCopy('DELETE'),
+                hintText: context.uiCopy('Type DELETE here'),
                 hintStyle: AppTypography.inputText
                     .copyWith(color: AppColors.slateMist),
                 filled: false,
@@ -487,8 +493,8 @@ class _Step3 extends StatelessWidget {
                 ),
               ),
               onPressed: canConfirm ? onConfirm : null,
-              child: Text(
-                'Delete Account',
+              child: UiText(
+                context.uiCopy('Delete Account'),
                 style: AppTypography.button.copyWith(
                   color: canConfirm ? Colors.white : AppColors.slateMist,
                 ),
@@ -534,10 +540,10 @@ class _InfoCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
+                UiText(title,
                     style: AppTypography.bodyMedium.copyWith(color: color)),
                 const SizedBox(height: AppDimensions.space4),
-                Text(body, style: AppTypography.caption),
+                UiText(body, style: AppTypography.caption),
               ],
             ),
           ),

@@ -11,6 +11,7 @@
 //   26 — SilarahEmptyState on both tabs
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -40,8 +41,9 @@ Future<void> _openChatForProfile(
   );
   if (!context.mounted) return;
   if (convId.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('Your conversation is still being prepared. Try again.'),
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: UiText(context
+          .uiCopy('Your conversation is still being prepared. Try again.')),
       behavior: SnackBarBehavior.floating,
     ));
     return;
@@ -61,7 +63,7 @@ Future<void> _openChatForProfile(
       _ => 'We could not open this conversation. Please try again.',
     };
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message),
+      content: UiText(message),
       behavior: SnackBarBehavior.floating,
     ));
     return;
@@ -141,22 +143,22 @@ class _InterestsScreenState extends State<InterestsScreen>
                   const SizedBox(height: AppDimensions.space24),
 
                   // Gold title
-                  Text(
-                    'Mabrook!',
+                  UiText(
+                    context.uiCopy('Mabrook!'),
                     style: AppTypography.screenTitle
                         .copyWith(color: AppColors.champagneGold, fontSize: 28),
                   ),
                   const SizedBox(height: AppDimensions.space4),
-                  Text(
-                    'You have a mutual interest.',
+                  UiText(
+                    context.uiCopy('You have a mutual interest.'),
                     style: AppTypography.screenTitle
                         .copyWith(color: AppColors.pearlWhite, fontSize: 18),
                   ),
                   const SizedBox(height: AppDimensions.space12),
 
                   // Bismillah subtitle (Item 21 — replaces 48h note)
-                  Text(
-                    'Say bismillah and begin a conversation.',
+                  UiText(
+                    context.uiCopy('Say bismillah and begin a conversation.'),
                     style: AppTypography.bodyMuted.copyWith(height: 1.6),
                     textAlign: TextAlign.center,
                   ),
@@ -181,7 +183,8 @@ class _InterestsScreenState extends State<InterestsScreen>
                         Navigator.of(context).pop();
                         await _openChatForProfile(this.context, profile);
                       },
-                      child: Text('Message Now', style: AppTypography.button),
+                      child: UiText(context.uiCopy('Message Now'),
+                          style: AppTypography.button),
                     ),
                   ),
                   const SizedBox(height: AppDimensions.space12),
@@ -189,8 +192,8 @@ class _InterestsScreenState extends State<InterestsScreen>
                   // Maybe later
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: Text(
-                      'Maybe later',
+                    child: UiText(
+                      context.uiCopy('Maybe later'),
                       style: AppTypography.caption
                           .copyWith(color: AppColors.slateMist),
                     ),
@@ -214,9 +217,10 @@ class _InterestsScreenState extends State<InterestsScreen>
     if (!accepted) {
       ScaffoldMessenger.of(context)
         ..clearSnackBars()
-        ..showSnackBar(const SnackBar(
+        ..showSnackBar(SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text('The interest could not be accepted. Please retry.'),
+          content: UiText(context
+              .uiCopy('The interest could not be accepted. Please retry.')),
         ));
       return;
     }
@@ -235,17 +239,17 @@ class _InterestsScreenState extends State<InterestsScreen>
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
           side: BorderSide(color: AppColors.cardBorder),
         ),
-        title: Text('Withdraw interest?',
+        title: UiText(context.uiCopy('Withdraw interest?'),
             style: AppTypography.bodyMedium
                 .copyWith(color: AppColors.pearlWhite, fontSize: 17)),
-        content: Text(
-          "They won't be notified.",
+        content: UiText(
+          context.uiCopy("They won't be notified."),
           style: AppTypography.bodyMuted,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel',
+            child: UiText(context.uiCopy('Cancel'),
                 style:
                     AppTypography.caption.copyWith(color: AppColors.slateMist)),
           ),
@@ -254,7 +258,7 @@ class _InterestsScreenState extends State<InterestsScreen>
               Navigator.pop(ctx);
               context.read<InterestsCubit>().withdrawInterest(entry.id);
             },
-            child: Text('Withdraw',
+            child: UiText(context.uiCopy('Withdraw'),
                 style: AppTypography.bodyMedium
                     .copyWith(color: AppColors.softCoral, fontSize: 14)),
           ),
@@ -282,7 +286,7 @@ class _InterestsScreenState extends State<InterestsScreen>
               ),
               child: Align(
                 alignment: AlignmentDirectional.centerStart,
-                child: Text(AppLocalizations.of(context).interests_title,
+                child: UiText(AppLocalizations.of(context).interests_title,
                     style: AppTypography.screenTitle),
               ),
             ),
@@ -319,7 +323,7 @@ class _InterestsScreenState extends State<InterestsScreen>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(AppLocalizations.of(context)
+                          UiText(AppLocalizations.of(context)
                               .interests_tab_received),
                           if (state.pendingReceived.isNotEmpty) ...[
                             const SizedBox(width: AppDimensions.space6),
@@ -332,7 +336,8 @@ class _InterestsScreenState extends State<InterestsScreen>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(AppLocalizations.of(context).interests_tab_sent),
+                          UiText(
+                              AppLocalizations.of(context).interests_tab_sent),
                           if (state.sent.any((e) =>
                               e.effectiveStatus ==
                               InterestStatus.accepted)) ...[
@@ -434,7 +439,7 @@ class _DailyLimitBanner extends StatelessWidget {
               ),
               const SizedBox(width: AppDimensions.space6),
               Expanded(
-                child: Text(
+                child: UiText(
                   '${state.isPremium ? 'Premium' : 'Free'} · $sent of $limit sent today',
                   style: AppTypography.caption.copyWith(
                     color:
@@ -444,7 +449,7 @@ class _DailyLimitBanner extends StatelessWidget {
                 ),
               ),
               if (!atLimit)
-                Text(
+                UiText(
                   '${state.remainingToday} remaining',
                   style: AppTypography.caption,
                 ),
@@ -618,7 +623,7 @@ class _ReceivedTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    UiText(
                       p.displayName,
                       style: AppTypography.bodyMedium.copyWith(
                         color: isDeclined
@@ -627,19 +632,19 @@ class _ReceivedTile extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: AppDimensions.space2),
-                    Text(
+                    UiText(
                       '${p.age} · ${p.cityName}',
                       style: AppTypography.caption,
                     ),
                     if (p.occupation != null)
-                      Text(p.occupation!, style: AppTypography.caption),
+                      UiText(p.occupation!, style: AppTypography.caption),
                   ],
                 ),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(entry.timeAgo, style: AppTypography.caption),
+                  UiText(entry.timeAgo, style: AppTypography.caption),
                   const SizedBox(height: AppDimensions.space4),
                   if (isAccepted)
                     _StatusPill(
@@ -672,7 +677,7 @@ class _ReceivedTile extends StatelessWidget {
                       size: 16),
                   const SizedBox(width: AppDimensions.space8),
                   Expanded(
-                    child: Text(
+                    child: UiText(
                       entry.note!,
                       style: AppTypography.caption.copyWith(
                         color: AppColors.pearlWhite.withValues(alpha: 0.85),
@@ -707,7 +712,7 @@ class _ReceivedTile extends StatelessWidget {
                       HapticFeedback.selectionClick();
                       onDecline();
                     },
-                    child: Text(
+                    child: UiText(
                         AppLocalizations.of(context).interests_button_decline,
                         style: AppTypography.bodyMuted),
                   ),
@@ -739,7 +744,7 @@ class _ReceivedTile extends StatelessWidget {
                               color: AppColors.obsidianNight,
                             ),
                           )
-                        : Text(
+                        : UiText(
                             AppLocalizations.of(context)
                                 .interests_button_accept,
                             style: AppTypography.button),
@@ -764,7 +769,7 @@ class _ReceivedTile extends StatelessWidget {
                   ),
                 ),
                 icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
-                label: Text('Message ${p.firstName}',
+                label: UiText(context.uiMessagePerson(p.firstName),
                     style: AppTypography.buttonSecondary),
                 onPressed: () async {
                   HapticFeedback.selectionClick();
@@ -804,7 +809,7 @@ class _ExpiryRow extends StatelessWidget {
         children: [
           Icon(icon, color: color, size: 13),
           const SizedBox(width: AppDimensions.space4),
-          Text(
+          UiText(
             text,
             style: AppTypography.caption.copyWith(
               color: color,
@@ -888,7 +893,7 @@ class _SentTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                UiText(
                   p.displayName,
                   style: AppTypography.bodyMedium.copyWith(
                     color: (isWithdrawn || isExpired)
@@ -897,7 +902,8 @@ class _SentTile extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: AppDimensions.space2),
-                Text('${p.age} · ${p.cityName}', style: AppTypography.caption),
+                UiText('${p.age} · ${p.cityName}',
+                    style: AppTypography.caption),
               ],
             ),
           ),
@@ -906,7 +912,7 @@ class _SentTile extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(entry.timeAgo, style: AppTypography.caption),
+              UiText(entry.timeAgo, style: AppTypography.caption),
               const SizedBox(height: AppDimensions.space6),
               if (isPending)
                 // Item 19: Withdraw text button (AppColors.softCoral)
@@ -915,8 +921,8 @@ class _SentTile extends StatelessWidget {
                     HapticFeedback.selectionClick();
                     onWithdraw();
                   },
-                  child: Text(
-                    'Withdraw',
+                  child: UiText(
+                    context.uiCopy('Withdraw'),
                     style: AppTypography.caption.copyWith(
                       color: AppColors.softCoral,
                       fontSize: 12,
@@ -999,7 +1005,7 @@ class _StatusPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radiusTiny),
         border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
-      child: Text(
+      child: UiText(
         label,
         style: AppTypography.caption.copyWith(
           color: color,
@@ -1022,7 +1028,8 @@ class _NewBadge extends StatelessWidget {
         color: AppColors.champagneGold,
         borderRadius: BorderRadius.circular(AppDimensions.radiusTiny),
       ),
-      child: Text('new', style: AppTypography.badge.copyWith(fontSize: 10)),
+      child: UiText(context.uiCopy('new'),
+          style: AppTypography.badge.copyWith(fontSize: 10)),
     );
   }
 }
@@ -1040,7 +1047,7 @@ class _CountBadge extends StatelessWidget {
         color: AppColors.champagneGold,
         borderRadius: BorderRadius.circular(AppDimensions.radiusTiny),
       ),
-      child: Text('$count', style: AppTypography.badge),
+      child: UiText('$count', style: AppTypography.badge),
     );
   }
 }

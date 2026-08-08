@@ -15,6 +15,7 @@
 //   - blockReportCubit.hideProfile(profileId)  [auto-hidden]
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/cubits/block_report/block_report_cubit.dart';
@@ -178,13 +179,14 @@ class _Step1 extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
+        UiText(
           'Report $reportedName',
           style: AppTypography.screenTitle.copyWith(fontSize: 20),
         ),
         const SizedBox(height: AppDimensions.space6),
-        Text(
-          'Help keep the community safe. Your report is anonymous.',
+        UiText(
+          context.uiCopy(
+              'Help keep the community safe. Your report is anonymous.'),
           style: AppTypography.bodyMuted,
         ),
         const SizedBox(height: AppDimensions.space20),
@@ -223,7 +225,7 @@ class _Step1 extends StatelessWidget {
                   : AppColors.softCoral,
             ),
             alignment: Alignment.center,
-            child: Text(
+            child: UiText(
               selected == ReportReason.other ? 'Next' : 'Submit Report',
               style: AppTypography.button.copyWith(
                 color: selected == null
@@ -238,7 +240,8 @@ class _Step1 extends StatelessWidget {
         Center(
           child: TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancel', style: AppTypography.bodyMuted),
+            child: UiText(context.uiCopy('Cancel'),
+                style: AppTypography.bodyMuted),
           ),
         ),
       ],
@@ -277,7 +280,7 @@ class _Step2 extends StatelessWidget {
               Icon(Icons.arrow_back_rounded,
                   color: AppColors.slateMist, size: 16),
               const SizedBox(width: AppDimensions.space4),
-              Text('Back',
+              UiText(context.uiCopy('Back'),
                   style: AppTypography.caption
                       .copyWith(color: AppColors.slateMist)),
             ],
@@ -285,10 +288,10 @@ class _Step2 extends StatelessWidget {
         ),
         const SizedBox(height: AppDimensions.space16),
 
-        Text('Tell us more',
+        UiText(context.uiCopy('Tell us more'),
             style: AppTypography.bodyMedium.copyWith(fontSize: 18)),
         const SizedBox(height: AppDimensions.space6),
-        Text('Optional — helps our team review faster.',
+        UiText(context.uiCopy('Optional — helps our team review faster.'),
             style: AppTypography.bodyMuted),
         const SizedBox(height: AppDimensions.space16),
 
@@ -298,7 +301,7 @@ class _Step2 extends StatelessWidget {
           maxLength: 300,
           style: AppTypography.body,
           decoration: InputDecoration(
-            hintText: 'Describe the issue…',
+            hintText: context.uiCopy('Describe the issue…'),
             hintStyle: AppTypography.bodyMuted,
             fillColor: AppColors.surfaceGlass,
             filled: true,
@@ -342,7 +345,7 @@ class _Step2 extends StatelessWidget {
                       AppColors.pearlWhite,
                     ],
                   )
-                : Text('Submit Report',
+                : UiText(context.uiCopy('Submit Report'),
                     style: AppTypography.button
                         .copyWith(color: AppColors.pearlWhite)),
           ),
@@ -386,15 +389,17 @@ class _Step3 extends StatelessWidget {
         ),
         const SizedBox(height: AppDimensions.space20),
 
-        Text('Thank you for reporting.',
+        UiText(context.uiCopy('Thank you for reporting.'),
             style: AppTypography.bodyMedium
                 .copyWith(color: AppColors.pearlWhite, fontSize: 18),
             textAlign: TextAlign.center),
         const SizedBox(height: AppDimensions.space12),
 
-        Text(
-          'We review every report within 48 hours.\n'
-          'This profile has been hidden from your feed.',
+        UiText(
+          context.uiCopy(
+            'We review every report within 48 hours.\n'
+            'This profile has been hidden from your feed.',
+          ),
           style: AppTypography.bodyMuted.copyWith(height: 1.7),
           textAlign: TextAlign.center,
         ),
@@ -413,7 +418,7 @@ class _Step3 extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 16),
               elevation: 0,
             ),
-            child: Text('Done', style: AppTypography.button),
+            child: UiText(context.uiCopy('Done'), style: AppTypography.button),
           ),
         ),
       ],
@@ -459,8 +464,8 @@ class _ReasonTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(reason.label, style: AppTypography.body),
-                  Text(reason.detail,
+                  UiText(reason.label, style: AppTypography.body),
+                  UiText(reason.detail,
                       style: AppTypography.caption,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis),

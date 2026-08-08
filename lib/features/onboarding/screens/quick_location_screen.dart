@@ -1,3 +1,4 @@
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -120,7 +121,7 @@ class _QuickLocationScreenState extends State<QuickLocationScreen> {
     if (!resolution.isSuccess) {
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(resolution.errorMessage!)),
+        SnackBar(content: UiText(resolution.errorMessage!)),
       );
       return;
     }
@@ -135,7 +136,9 @@ class _QuickLocationScreenState extends State<QuickLocationScreen> {
     if (!countrySaved) {
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not save. Please try again.')),
+        SnackBar(
+            content:
+                UiText(context.uiCopy('Could not save. Please try again.'))),
       );
       return;
     }
@@ -162,7 +165,7 @@ class _QuickLocationScreenState extends State<QuickLocationScreen> {
             subtitle: 'This helps us show you relevant matches nearby.',
           ),
           const SizedBox(height: AppDimensions.space32),
-          Text('Country', style: AppTypography.sectionLabel),
+          UiText(context.uiCopy('Country'), style: AppTypography.sectionLabel),
           const SizedBox(height: AppDimensions.space8),
           InkWell(
             borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
@@ -184,16 +187,18 @@ class _QuickLocationScreenState extends State<QuickLocationScreen> {
                 border: Border.all(color: AppColors.cardBorder),
               ),
               child: Row(children: [
-                Text(_country.flag, style: const TextStyle(fontSize: 24)),
+                UiText(_country.flag, style: const TextStyle(fontSize: 24)),
                 const SizedBox(width: 12),
-                Expanded(child: Text(_country.name, style: AppTypography.body)),
+                Expanded(
+                    child: UiText(_country.name, style: AppTypography.body)),
                 Icon(Icons.keyboard_arrow_down_rounded,
                     color: AppColors.slateMist),
               ]),
             ),
           ),
           const SizedBox(height: AppDimensions.space24),
-          Text('State / Region (optional)', style: AppTypography.sectionLabel),
+          UiText(context.uiCopy('State / Region (optional)'),
+              style: AppTypography.sectionLabel),
           const SizedBox(height: AppDimensions.space8),
           RegionSearchField(
             key: ValueKey('region_${_country.iso2}'),
@@ -209,12 +214,13 @@ class _QuickLocationScreenState extends State<QuickLocationScreen> {
             }),
           ),
           const SizedBox(height: AppDimensions.space8),
-          Text(
-            'Optional, but helps narrow city results in large countries.',
+          UiText(
+            context.uiCopy(
+                'Optional, but helps narrow city results in large countries.'),
             style: AppTypography.bodyMuted,
           ),
           const SizedBox(height: AppDimensions.space24),
-          Text('City', style: AppTypography.sectionLabel),
+          UiText(context.uiCopy('City'), style: AppTypography.sectionLabel),
           const SizedBox(height: AppDimensions.space8),
           CitySearchField(
             key: ValueKey('${_country.iso2}_${_region?.name ?? ''}'),
@@ -237,8 +243,8 @@ class _QuickLocationScreenState extends State<QuickLocationScreen> {
             }),
           ),
           const SizedBox(height: AppDimensions.space16),
-          Text(
-            'Select a city from the results to continue.',
+          UiText(
+            context.uiCopy('Select a city from the results to continue.'),
             style: AppTypography.bodyMuted,
           ),
         ],

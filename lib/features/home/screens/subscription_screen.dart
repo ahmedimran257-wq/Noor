@@ -10,6 +10,7 @@
 // Dynamic "Best value — save X%" on annual card.
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -231,7 +232,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   void _showSuccess(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
+        content: UiText(
           message,
           style: AppTypography.body.copyWith(
             color: AppColors.readableOn(AppColors.verifiedTeal),
@@ -248,7 +249,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   void _showError(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
+        content: UiText(
           message,
           style: AppTypography.body.copyWith(
             color: AppColors.readableOn(AppColors.softCoral),
@@ -405,8 +406,8 @@ class _PremiumPhoneVerificationSheetState
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text(
-                    'Verify phone to continue',
+                  child: UiText(
+                    context.uiCopy('Verify phone to continue'),
                     style: AppTypography.bodyMedium,
                   ),
                 ),
@@ -421,8 +422,9 @@ class _PremiumPhoneVerificationSheetState
               ],
             ),
             const SizedBox(height: 10),
-            Text(
-              'This is only required before subscription purchase.',
+            UiText(
+              context.uiCopy(
+                  'This is only required before subscription purchase.'),
               style: AppTypography.caption.copyWith(color: AppColors.slateMist),
             ),
             const SizedBox(height: 18),
@@ -480,7 +482,7 @@ class _PremiumPhoneVerificationSheetState
             ],
             if (_error != null) ...[
               const SizedBox(height: 10),
-              Text(
+              UiText(
                 _error!,
                 style: AppTypography.caption.copyWith(
                   color: AppColors.softCoral,
@@ -574,7 +576,7 @@ class _PhoneEntryRowState extends State<_PhoneEntryRow> {
                     .map(
                       (c) => Align(
                         alignment: Alignment.centerLeft,
-                        child: Text(
+                        child: UiText(
                           '${c.flag} ${c.dialCode}',
                           overflow: TextOverflow.ellipsis,
                           style: AppTypography.body.copyWith(
@@ -588,7 +590,7 @@ class _PhoneEntryRowState extends State<_PhoneEntryRow> {
                     .map(
                       (c) => DropdownMenuItem(
                         value: c,
-                        child: Text(
+                        child: UiText(
                           '${c.flag} ${c.name} ${c.dialCode}',
                           overflow: TextOverflow.ellipsis,
                           style: AppTypography.body,
@@ -612,7 +614,7 @@ class _PhoneEntryRowState extends State<_PhoneEntryRow> {
               keyboardType: TextInputType.phone,
               style: AppTypography.body.copyWith(color: AppColors.pearlWhite),
               decoration: InputDecoration(
-                hintText: 'Phone number',
+                hintText: context.uiCopy('Phone number'),
                 hintStyle: AppTypography.bodyMuted,
                 filled: false,
                 fillColor: Colors.transparent,
@@ -671,7 +673,7 @@ class _SheetPrimaryButton extends StatelessWidget {
                   AppColors.obsidianDeep,
                 ],
               )
-            : Text(label, style: AppTypography.button),
+            : UiText(label, style: AppTypography.button),
       ),
     );
   }
@@ -700,14 +702,14 @@ class _Header extends StatelessWidget {
               color: AppColors.champagneGold, size: isSmallScreen ? 22 : 28),
         ),
         SizedBox(height: isSmallScreen ? 12 : 20),
-        Text(
+        UiText(
           isFemale ? 'Unlock Premium' : 'Unlock SILARAH',
           style: AppTypography.screenTitle.copyWith(
             fontSize: isSmallScreen ? 22 : 28,
           ),
         ),
         const SizedBox(height: 8),
-        Text(
+        UiText(
           isFemale
               ? 'You already message free.\nUnlock advanced features.'
               : 'Women message free.\nMen subscribe to connect.',
@@ -778,7 +780,7 @@ class _PricingStatusCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  UiText(
                     isLoading ? 'Loading plans' : 'Plans couldn’t load',
                     style: AppTypography.body.copyWith(
                       color: AppColors.pearlWhite,
@@ -786,7 +788,7 @@ class _PricingStatusCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 3),
-                  Text(
+                  UiText(
                     isLoading
                         ? 'Getting secure pricing from the store…'
                         : 'Check your connection, then try again.',
@@ -798,7 +800,7 @@ class _PricingStatusCard extends StatelessWidget {
             if (!isLoading)
               TextButton(
                 onPressed: onRetry,
-                child: const Text('Try again'),
+                child: UiText(context.uiCopy('Try again')),
               ),
           ],
         ),
@@ -910,7 +912,7 @@ class _PlanCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                   color: AppColors.champagneGold,
                 ),
-                child: Text(
+                child: UiText(
                   savings != null && savings! > 0
                       ? 'SAVE $savings%'
                       : 'BEST VALUE',
@@ -926,12 +928,12 @@ class _PlanCard extends StatelessWidget {
             ] else
               SizedBox(height: isSmallScreen ? 20 : 23), // align with badge row
 
-            Text(label,
+            UiText(label,
                 style: AppTypography.captionMedium.copyWith(
                     color: AppColors.slateMist,
                     fontSize: isSmallScreen ? 12 : 14)),
             const SizedBox(height: 6),
-            Text(
+            UiText(
               price,
               style: AppTypography.screenTitle.copyWith(
                 fontSize: isSmallScreen ? 18 : 22,
@@ -940,10 +942,10 @@ class _PlanCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 2),
-            Text(period, style: AppTypography.caption.copyWith(fontSize: 10)),
+            UiText(period, style: AppTypography.caption.copyWith(fontSize: 10)),
             const SizedBox(height: 4),
             // Billing note (Billed annually / monthly)
-            Text(
+            UiText(
               billing,
               style: AppTypography.caption.copyWith(
                 fontSize: 9,
@@ -1022,8 +1024,8 @@ class _IncludedFeatures extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "WHAT'S INCLUDED",
+          UiText(
+            context.uiCopy("WHAT'S INCLUDED"),
             style: AppTypography.sectionLabel.copyWith(
               fontSize: isSmallScreen ? 10 : 12,
             ),
@@ -1063,7 +1065,7 @@ class _FeatureRow extends StatelessWidget {
           ),
           SizedBox(width: isSmallScreen ? 8 : 12),
           Expanded(
-            child: Text(label,
+            child: UiText(label,
                 style: AppTypography.body
                     .copyWith(fontSize: isSmallScreen ? 12 : 14)),
           ),
@@ -1118,7 +1120,7 @@ class _CtaButton extends StatelessWidget {
                   AppColors.obsidianDeep,
                 ],
               )
-            : Text(label,
+            : UiText(label,
                 style: AppTypography.button
                     .copyWith(fontSize: isSmallScreen ? 14 : 16)),
       ),
@@ -1150,8 +1152,8 @@ class _SecondaryLinks extends StatelessWidget {
             minimumSize: Size.zero,
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-          child: Text(
-            'Restore Purchase',
+          child: UiText(
+            context.uiCopy('Restore Purchase'),
             style: AppTypography.caption.copyWith(
                 color: AppColors.champagneGold,
                 fontSize: isSmallScreen ? 12 : 14),
@@ -1168,11 +1170,11 @@ class _SecondaryLinks extends StatelessWidget {
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              child: Text('Privacy Policy',
+              child: UiText(context.uiCopy('Privacy Policy'),
                   style: AppTypography.caption
                       .copyWith(fontSize: isSmallScreen ? 11 : 12)),
             ),
-            Text('·',
+            UiText('·',
                 style:
                     AppTypography.caption.copyWith(color: AppColors.slateMist)),
             TextButton(
@@ -1182,14 +1184,14 @@ class _SecondaryLinks extends StatelessWidget {
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              child: Text('Terms of Service',
+              child: UiText(context.uiCopy('Terms of Service'),
                   style: AppTypography.caption
                       .copyWith(fontSize: isSmallScreen ? 11 : 12)),
             ),
           ],
         ),
         SizedBox(height: isSmallScreen ? 4 : 8),
-        Text(
+        UiText(
           'Subscription auto-renews unless cancelled 24h before renewal.\nWomen always message free on SILARAH.',
           style: AppTypography.caption
               .copyWith(fontSize: isSmallScreen ? 10 : 11, height: 1.5),

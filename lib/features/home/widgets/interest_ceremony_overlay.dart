@@ -12,6 +12,7 @@
 //   2100ms: Overlay fades out
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
@@ -217,21 +218,21 @@ class _CeremonyOverlayState extends State<_CeremonyOverlay>
                 opacity: _textOpacity,
                 child: Column(
                   children: [
-                    Text(
-                      'Interest Sent',
+                    UiText(
+                      context.uiCopy('Interest Sent'),
                       style: AppTypography.screenTitle.copyWith(
                         color: AppColors.champagneGold,
                         fontSize: 26,
                       ),
                     ),
                     const SizedBox(height: AppDimensions.space8),
-                    Text(
+                    UiText(
                       'to ${widget.firstName}',
                       style: AppTypography.bodyMuted,
                     ),
                     const SizedBox(height: AppDimensions.space8),
-                    Text(
-                      'May Allah bless this with goodness',
+                    UiText(
+                      context.uiCopy('May Allah bless this with goodness'),
                       style: AppTypography.caption.copyWith(
                         color: AppColors.champagneGold.withValues(alpha: 0.7),
                         fontSize: 13,

@@ -1,3 +1,4 @@
+import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -122,7 +123,7 @@ class _SilarahEmptyStateState extends State<SilarahEmptyState>
                 ),
               ),
               const SizedBox(height: AppDimensions.space24),
-              Text(
+              UiText(
                 widget.title,
                 style: AppTypography.screenTitle.copyWith(fontSize: 21),
                 textAlign: TextAlign.center,
@@ -130,7 +131,7 @@ class _SilarahEmptyStateState extends State<SilarahEmptyState>
               const SizedBox(height: AppDimensions.space10),
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 360),
-                child: Text(
+                child: UiText(
                   widget.subtitle,
                   style: AppTypography.bodyMuted.copyWith(height: 1.55),
                   textAlign: TextAlign.center,
@@ -153,7 +154,7 @@ class _SilarahEmptyStateState extends State<SilarahEmptyState>
                           BorderRadius.circular(AppDimensions.radiusButton),
                       border: Border.all(color: AppColors.goldBorder),
                     ),
-                    child: Text(
+                    child: UiText(
                       widget.ctaLabel!,
                       style: AppTypography.buttonSecondary.copyWith(
                         color: AppColors.champagneLight,

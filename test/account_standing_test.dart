@@ -29,7 +29,7 @@ void main() {
     expect(settings, isNot(contains('settings_label_editProfile')));
     expect(settings, isNot(contains('AppRoutes.editProfile')));
     expect(profile, contains('_ProfilePrimaryActions('));
-    expect(profile, contains("Text('Edit profile'"));
+    expect(profile, contains("UiText(context.uiCopy('Edit profile')"));
   });
 
   test(

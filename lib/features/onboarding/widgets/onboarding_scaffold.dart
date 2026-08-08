@@ -1,3 +1,4 @@
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -85,7 +86,7 @@ class OnboardingScaffold extends StatelessWidget {
                         )
                       else
                         Expanded(
-                          child: Text(
+                          child: UiText(
                             headerTitle ?? '',
                             textAlign: TextAlign.center,
                             style: AppTypography.bodyMedium.copyWith(
@@ -165,7 +166,7 @@ class OnboardingScaffold extends StatelessWidget {
                                 vertical: AppDimensions.space8,
                                 horizontal: AppDimensions.space12,
                               ),
-                              child: Text(
+                              child: UiText(
                                 skipLabel!,
                                 style: AppTypography.buttonGhost.copyWith(
                                   color: AppColors.slateMist,
@@ -222,7 +223,7 @@ class _SaveErrorNotice extends StatelessWidget {
               ),
               const SizedBox(width: AppDimensions.space8),
               Expanded(
-                child: Text(
+                child: UiText(
                   message,
                   style: AppTypography.bodyMedium.copyWith(
                     color: AppColors.pearlWhite,

@@ -14,6 +14,7 @@
 //   PaywallGateSheet.show(context);
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
@@ -95,14 +96,14 @@ class _PaywallGateContent extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          Text(
-            'Subscribe to Unlock Messaging',
+          UiText(
+            context.uiCopy('Subscribe to Unlock Messaging'),
             style: AppTypography.screenTitle.copyWith(fontSize: 22),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 10),
 
-          Text(
+          UiText(
             'Women can message their matches at no cost.\nMen unlock conversations with Silarah Premium.',
             style: AppTypography.bodyMuted.copyWith(height: 1.6),
             textAlign: TextAlign.center,
@@ -117,8 +118,8 @@ class _PaywallGateContent extends StatelessWidget {
               color: AppColors.goldGlow,
               border: Border.all(color: AppColors.goldBorder),
             ),
-            child: Text(
-              'Plans are shown in your local currency',
+            child: UiText(
+              context.uiCopy('Plans are shown in your local currency'),
               style: AppTypography.bodyMedium
                   .copyWith(color: AppColors.champagneGold),
             ),
@@ -144,7 +145,8 @@ class _PaywallGateContent extends StatelessWidget {
                 color: AppColors.champagneGold,
               ),
               alignment: Alignment.center,
-              child: Text('See Plans', style: AppTypography.button),
+              child: UiText(context.uiCopy('See Plans'),
+                  style: AppTypography.button),
             ),
           ),
 
@@ -153,8 +155,8 @@ class _PaywallGateContent extends StatelessWidget {
           // Not Now
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'Not Now',
+            child: UiText(
+              context.uiCopy('Not Now'),
               style: AppTypography.bodyMuted,
             ),
           ),

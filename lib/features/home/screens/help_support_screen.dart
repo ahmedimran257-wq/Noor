@@ -1,3 +1,4 @@
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -23,8 +24,8 @@ class HelpSupportScreen extends StatelessWidget {
           icon: Icon(Icons.arrow_back_ios_new_rounded,
               color: AppColors.pearlWhite, size: 20),
         ),
-        title: Text(
-          'Help & Support',
+        title: UiText(
+          context.uiCopy('Help & Support'),
           style: AppTypography.screenTitle.copyWith(fontSize: 20),
         ),
       ),
@@ -60,7 +61,8 @@ class HelpSupportScreen extends StatelessWidget {
             onTap: () => _contactEmail(context, 'grievance@silarah.com'),
           ),
           const SizedBox(height: AppDimensions.space20),
-          Text('Common Help', style: AppTypography.sectionLabel),
+          UiText(context.uiCopy('Common Help'),
+              style: AppTypography.sectionLabel),
           const SizedBox(height: AppDimensions.space8),
           const _FaqTile(
             question: 'Why are my photos not visible?',
@@ -78,7 +80,8 @@ class HelpSupportScreen extends StatelessWidget {
                 'Profile photo verification uses a passive face and liveness scan. Identity verification separately matches a government ID with your selfie. Both are available in Profile under Trust & identity.',
           ),
           const SizedBox(height: AppDimensions.space20),
-          Text('Official online resources', style: AppTypography.sectionLabel),
+          UiText(context.uiCopy('Official online resources'),
+              style: AppTypography.sectionLabel),
           const SizedBox(height: AppDimensions.space8),
           _WebResourceTile(
             icon: Icons.help_center_outlined,
@@ -128,7 +131,7 @@ class HelpSupportScreen extends StatelessWidget {
       ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
-          content: Text('No email app found. $email was copied.',
+          content: UiText(context.uiEmailCopied(email),
               style: AppTypography.body.copyWith(
                 color: AppColors.readableOn(AppColors.surfaceGlassHover),
               )),
@@ -150,8 +153,8 @@ class HelpSupportScreen extends StatelessWidget {
       ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
-          content: Text(
-            'Web address copied to your clipboard.',
+          content: UiText(
+            context.uiCopy('Web address copied to your clipboard.'),
             style: TextStyle(
               color: AppColors.readableOn(AppColors.surfaceGlassHover),
             ),
@@ -200,9 +203,9 @@ class _WebResourceTile extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title, style: AppTypography.bodyMedium),
+                      UiText(title, style: AppTypography.bodyMedium),
                       const SizedBox(height: AppDimensions.space2),
-                      Text(
+                      UiText(
                         uri.host + uri.path,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -256,11 +259,11 @@ class _SupportCard extends StatelessWidget {
             children: [
               Icon(icon, color: AppColors.champagneGold, size: 22),
               const SizedBox(width: AppDimensions.space8),
-              Expanded(child: Text(title, style: AppTypography.bodyMedium)),
+              Expanded(child: UiText(title, style: AppTypography.bodyMedium)),
             ],
           ),
           const SizedBox(height: AppDimensions.space8),
-          Text(body, style: AppTypography.caption.copyWith(height: 1.5)),
+          UiText(body, style: AppTypography.caption.copyWith(height: 1.5)),
           const SizedBox(height: AppDimensions.space12),
           SizedBox(
             width: double.infinity,
@@ -268,7 +271,7 @@ class _SupportCard extends StatelessWidget {
             child: OutlinedButton.icon(
               onPressed: onTap,
               icon: const Icon(Icons.open_in_new_rounded, size: 16),
-              label: Text(actionLabel),
+              label: UiText(actionLabel),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.champagneGold,
                 side: BorderSide(color: AppColors.goldBorder),
@@ -307,10 +310,10 @@ class _EmailTrustNotice extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Recognize official Silarah email',
+                UiText('Recognize official Silarah email',
                     style: AppTypography.bodyMedium),
                 const SizedBox(height: AppDimensions.space4),
-                Text(
+                UiText(
                   'Account and security messages use @mail.silarah.com. Product updates use @news.silarah.com. We never ask for passwords or verification codes.',
                   style: AppTypography.caption,
                 ),
@@ -344,12 +347,12 @@ class _FaqTile extends StatelessWidget {
       child: ExpansionTile(
         collapsedIconColor: AppColors.slateMist,
         iconColor: AppColors.champagneGold,
-        title: Text(question, style: AppTypography.body),
+        title: UiText(question, style: AppTypography.body),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         children: [
           Align(
             alignment: AlignmentDirectional.centerStart,
-            child: Text(answer,
+            child: UiText(answer,
                 style: AppTypography.caption.copyWith(height: 1.5)),
           ),
         ],

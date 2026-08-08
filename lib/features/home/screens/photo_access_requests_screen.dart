@@ -1,3 +1,4 @@
+import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -115,20 +116,20 @@ class _PhotoAccessRequestsScreenState extends State<PhotoAccessRequestsScreen> {
           context: context,
           builder: (dialogContext) => AlertDialog(
             backgroundColor: AppColors.surfaceElevated,
-            title:
-                Text('Revoke photo access?', style: AppTypography.bodyMedium),
-            content: Text(
+            title: UiText(context.uiCopy('Revoke photo access?'),
+                style: AppTypography.bodyMedium),
+            content: UiText(
               '${request.displayName} will no longer be able to open your private photos.',
               style: AppTypography.bodyMuted,
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Keep access'),
+                child: UiText(context.uiCopy('Keep access')),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, true),
-                child: Text('Revoke',
+                child: UiText(context.uiCopy('Revoke'),
                     style: TextStyle(color: AppColors.softCoral)),
               ),
             ],
@@ -161,7 +162,7 @@ class _PhotoAccessRequestsScreenState extends State<PhotoAccessRequestsScreen> {
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(SnackBar(
-        content: Text(message),
+        content: UiText(message),
         behavior: SnackBarBehavior.floating,
         backgroundColor: AppColors.snackbarSurface,
       ));
@@ -190,11 +191,12 @@ class _PhotoAccessRequestsScreenState extends State<PhotoAccessRequestsScreen> {
         backgroundColor: AppColors.obsidianNight,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          tooltip: 'Back',
+          tooltip: context.uiCopy('Back'),
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back_rounded),
         ),
-        title: Text('Photo access', style: AppTypography.bodyMedium),
+        title: UiText(context.uiCopy('Photo access'),
+            style: AppTypography.bodyMedium),
       ),
       body: RefreshIndicator(
         color: AppColors.champagneGold,
@@ -277,13 +279,14 @@ class _AccessHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'You decide who sees you',
+        UiText(
+          context.uiCopy('You decide who sees you'),
           style: AppTypography.screenTitle,
         ),
         const SizedBox(height: AppDimensions.space10),
-        Text(
-          'Review every request individually. Access can be revoked whenever you choose.',
+        UiText(
+          context.uiCopy(
+              'Review every request individually. Access can be revoked whenever you choose.'),
           style: AppTypography.bodyMuted.copyWith(height: 1.5),
         ),
       ],
@@ -300,9 +303,9 @@ class _AccessSectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Text(label, style: AppTypography.sectionLabel),
+        UiText(label, style: AppTypography.sectionLabel),
         const SizedBox(width: AppDimensions.space8),
-        Text('$count',
+        UiText('$count',
             style:
                 AppTypography.caption.copyWith(color: AppColors.champagneGold)),
       ],
@@ -355,7 +358,7 @@ class _AccessRequestCard extends StatelessWidget {
                   color: AppColors.goldGlow,
                   borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
                 ),
-                child: Text(initial,
+                child: UiText(initial,
                     style: AppTypography.bodyMedium
                         .copyWith(color: AppColors.champagneLight)),
               ),
@@ -364,9 +367,10 @@ class _AccessRequestCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(request.displayName, style: AppTypography.bodyMedium),
+                    UiText(request.displayName,
+                        style: AppTypography.bodyMedium),
                     const SizedBox(height: AppDimensions.space2),
-                    Text(_statusLabel(request.status),
+                    UiText(_statusLabel(request.status),
                         style: AppTypography.caption
                             .copyWith(color: _statusColor(request.status))),
                   ],
@@ -467,7 +471,7 @@ class _AccessButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
           border: Border.all(color: primary ? AppColors.champagneGold : accent),
         ),
-        child: Text(
+        child: UiText(
           label,
           style: AppTypography.captionMedium.copyWith(
             color: primary ? AppColors.obsidianNight : accent,
@@ -490,10 +494,11 @@ class _NoRequests extends StatelessWidget {
           Icon(Icons.lock_person_outlined,
               color: AppColors.champagneGold, size: 48),
           const SizedBox(height: AppDimensions.space16),
-          Text('No photo requests', style: AppTypography.bodyMedium),
+          UiText(context.uiCopy('No photo requests'),
+              style: AppTypography.bodyMedium),
           const SizedBox(height: AppDimensions.space6),
-          Text(
-            'New requests will appear here instantly.',
+          UiText(
+            context.uiCopy('New requests will appear here instantly.'),
             style: AppTypography.bodyMuted,
             textAlign: TextAlign.center,
           ),
@@ -516,7 +521,7 @@ class _AccessError extends StatelessWidget {
         children: [
           Icon(Icons.cloud_off_outlined, color: AppColors.slateMist, size: 42),
           const SizedBox(height: AppDimensions.space12),
-          Text(message,
+          UiText(message,
               style: AppTypography.bodyMuted, textAlign: TextAlign.center),
           const SizedBox(height: AppDimensions.space16),
           _AccessButton(label: 'Try again', onTap: onRetry, primary: false),

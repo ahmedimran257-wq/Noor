@@ -22,6 +22,7 @@
 //   )
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -253,7 +254,7 @@ class _CitySearchFieldState extends State<CitySearchField> {
       children: [
         // ── Label ──────────────────────────────────────────
         if (widget.label != null) ...[
-          Text(widget.label!, style: AppTypography.sectionLabel),
+          UiText(widget.label!, style: AppTypography.sectionLabel),
           const SizedBox(height: 8),
         ],
 
@@ -338,16 +339,17 @@ class _CitySearchFieldState extends State<CitySearchField> {
         child: _loading
             ? Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text(
-                  'Searching cities...',
+                child: UiText(
+                  context.uiCopy('Searching cities...'),
                   style: AppTypography.bodyMuted,
                 ),
               )
             : _results.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Text(
-                      'No matching city or area found. Try a different spelling.',
+                    child: UiText(
+                      context.uiCopy(
+                          'No matching city or area found. Try a different spelling.'),
                       style: AppTypography.bodyMuted,
                     ),
                   )
@@ -420,7 +422,7 @@ class _CityTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
+                  UiText(
                     result.city.isNotEmpty ? result.city : result.fullAddress,
                     style: AppTypography.body.copyWith(
                       fontWeight: FontWeight.w500,
@@ -430,7 +432,7 @@ class _CityTile extends StatelessWidget {
                   ),
                   if (subtitle.isNotEmpty) ...[
                     const SizedBox(height: 2),
-                    Text(
+                    UiText(
                       subtitle,
                       style: AppTypography.caption.copyWith(
                         color: AppColors.slateMist,
@@ -456,7 +458,7 @@ class _CityTile extends StatelessWidget {
                     color: AppColors.champagneGold.withValues(alpha: 0.2),
                   ),
                 ),
-                child: Text(
+                child: UiText(
                   result.postalCode,
                   style: AppTypography.caption.copyWith(
                     color: AppColors.champagneGold,

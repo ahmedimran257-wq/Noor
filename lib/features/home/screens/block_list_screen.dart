@@ -8,6 +8,7 @@
 // Navigate from Settings → Safety → "Blocked Profiles".
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -80,17 +81,17 @@ class _BlockListScreenState extends State<BlockListScreen> {
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
           side: BorderSide(color: AppColors.cardBorder),
         ),
-        title: Text('Unblock this person?',
+        title: UiText(context.uiCopy('Unblock this person?'),
             style: AppTypography.bodyMedium
                 .copyWith(color: AppColors.pearlWhite, fontSize: 17)),
-        content: Text(
+        content: UiText(
           '${user.name} ${user.lastInitial}. will be able to find your profile again.',
           style: AppTypography.bodyMuted,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel',
+            child: UiText(context.uiCopy('Cancel'),
                 style:
                     AppTypography.caption.copyWith(color: AppColors.slateMist)),
           ),
@@ -99,7 +100,7 @@ class _BlockListScreenState extends State<BlockListScreen> {
               Navigator.pop(ctx);
               context.read<BlockReportCubit>().unblockUser(user.userId);
             },
-            child: Text('Unblock',
+            child: UiText(context.uiCopy('Unblock'),
                 style: AppTypography.bodyMedium
                     .copyWith(color: AppColors.champagneGold, fontSize: 14)),
           ),
@@ -153,9 +154,10 @@ class _BlockListAppBar extends StatelessWidget implements PreferredSizeWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Blocked Profiles', style: AppTypography.bodyMedium),
+                UiText(context.uiCopy('Blocked Profiles'),
+                    style: AppTypography.bodyMedium),
                 if (count > 0)
-                  Text('$count blocked',
+                  UiText(context.uiBlockedCount(count),
                       style: AppTypography.caption.copyWith(fontSize: 12)),
               ],
             ),
@@ -210,9 +212,10 @@ class _BlockedTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: AppTypography.bodyMedium),
+                UiText(name, style: AppTypography.bodyMedium),
                 const SizedBox(height: AppDimensions.space2),
-                Text('Blocked profile', style: AppTypography.caption),
+                UiText(context.uiCopy('Blocked profile'),
+                    style: AppTypography.caption),
               ],
             ),
           ),
@@ -232,7 +235,7 @@ class _BlockedTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
               ),
             ),
-            child: Text('Unblock',
+            child: UiText(context.uiCopy('Unblock'),
                 style: AppTypography.caption
                     .copyWith(color: AppColors.pearlWhite, fontSize: 13)),
           ),

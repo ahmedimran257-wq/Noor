@@ -7,6 +7,7 @@
 // Unread rows: gold 3px left border.
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -43,14 +44,14 @@ class NotificationsScreen extends StatelessWidget {
             ),
           ),
         ),
-        title: Text(AppLocalizations.of(context).notifications_title,
+        title: UiText(AppLocalizations.of(context).notifications_title,
             style: AppTypography.screenTitle.copyWith(fontSize: 20)),
         actions: [
           BlocBuilder<NotificationsCubit, NotificationsState>(
             builder: (context, state) {
               if (state.items.isEmpty) return const SizedBox.shrink();
               return PopupMenuButton<_NotificationMenuAction>(
-                tooltip: 'Notification options',
+                tooltip: context.uiCopy('Notification options'),
                 color: AppColors.surfaceElevated,
                 icon:
                     Icon(Icons.more_horiz_rounded, color: AppColors.slateMist),
@@ -76,7 +77,7 @@ class NotificationsScreen extends StatelessWidget {
                           Icon(Icons.done_all_rounded,
                               color: AppColors.verifiedTeal, size: 19),
                           const SizedBox(width: AppDimensions.space10),
-                          Text(
+                          UiText(
                             AppLocalizations.of(context)
                                 .notifications_markAllRead,
                             style: AppTypography.body,
@@ -91,7 +92,7 @@ class NotificationsScreen extends StatelessWidget {
                         Icon(Icons.delete_sweep_outlined,
                             color: AppColors.softCoral, size: 19),
                         const SizedBox(width: AppDimensions.space10),
-                        Text('Clear all notifications',
+                        UiText(context.uiCopy('Clear all notifications'),
                             style: AppTypography.body),
                       ],
                     ),
@@ -163,20 +164,22 @@ Future<bool> _confirmDeleteOne(BuildContext context) async {
         context: context,
         builder: (dialogContext) => AlertDialog(
           backgroundColor: AppColors.surfaceElevated,
-          title: Text('Remove notification?', style: AppTypography.bodyMedium),
-          content: Text(
-            'This notification will be permanently removed from your account.',
+          title: UiText(context.uiCopy('Remove notification?'),
+              style: AppTypography.bodyMedium),
+          content: UiText(
+            context.uiCopy(
+                'This notification will be permanently removed from your account.'),
             style: AppTypography.bodyMuted,
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Keep'),
+              child: UiText(context.uiCopy('Keep')),
             ),
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child:
-                  Text('Remove', style: TextStyle(color: AppColors.softCoral)),
+              child: UiText(context.uiCopy('Remove'),
+                  style: TextStyle(color: AppColors.softCoral)),
             ),
           ],
         ),
@@ -189,20 +192,21 @@ Future<bool> _confirmClearAll(BuildContext context) async {
         context: context,
         builder: (dialogContext) => AlertDialog(
           backgroundColor: AppColors.surfaceElevated,
-          title: Text('Clear notification history?',
+          title: UiText(context.uiCopy('Clear notification history?'),
               style: AppTypography.bodyMedium),
-          content: Text(
-            'Every notification will be permanently removed. New notifications will continue to arrive normally.',
+          content: UiText(
+            context.uiCopy(
+                'Every notification will be permanently removed. New notifications will continue to arrive normally.'),
             style: AppTypography.bodyMuted,
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Cancel'),
+              child: UiText(context.uiCopy('Cancel')),
             ),
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: Text('Clear all',
+              child: UiText(context.uiCopy('Clear all'),
                   style: TextStyle(color: AppColors.softCoral)),
             ),
           ],
@@ -213,8 +217,9 @@ Future<bool> _confirmClearAll(BuildContext context) async {
 
 void _showDeleteError(BuildContext context) {
   ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Could not remove notifications. Please try again.'),
+    SnackBar(
+      content: UiText(
+          context.uiCopy('Could not remove notifications. Please try again.')),
       behavior: SnackBarBehavior.floating,
     ),
   );
@@ -277,7 +282,7 @@ class _NotificationTile extends StatelessWidget {
                       Row(
                         children: [
                           Expanded(
-                            child: Text(
+                            child: UiText(
                               title,
                               style: item.isRead
                                   ? AppTypography.body
@@ -285,8 +290,8 @@ class _NotificationTile extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: AppDimensions.space8),
-                          Text(
-                            _timeLabel(item.time),
+                          UiText(
+                            _timeLabel(context, item.time),
                             style: AppTypography.caption,
                           ),
                           if (!item.isRead) ...[
@@ -303,7 +308,7 @@ class _NotificationTile extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: AppDimensions.space4),
-                      Text(
+                      UiText(
                         body,
                         style: AppTypography.caption,
                         maxLines: 2,
@@ -386,12 +391,12 @@ class _NotificationTile extends StatelessWidget {
     }
   }
 
-  String _timeLabel(DateTime dt) {
+  String _timeLabel(BuildContext context, DateTime dt) {
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays == 1) return 'Yesterday';
-    return '${diff.inDays}d ago';
+    if (diff.inMinutes < 60) return context.uiMinutesAgo(diff.inMinutes);
+    if (diff.inHours < 24) return context.uiHoursAgo(diff.inHours);
+    if (diff.inDays == 1) return context.uiCopy('Yesterday');
+    return context.uiDaysAgo(diff.inDays);
   }
 }
 
@@ -417,12 +422,12 @@ class _EmptyState extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppDimensions.space24),
-          Text(
+          UiText(
             AppLocalizations.of(context).notifications_empty_title,
             style: AppTypography.screenTitle.copyWith(fontSize: 20),
           ),
           const SizedBox(height: AppDimensions.space8),
-          Text(
+          UiText(
             AppLocalizations.of(context).notifications_empty_subtitle,
             style: AppTypography.bodyMuted,
           ),

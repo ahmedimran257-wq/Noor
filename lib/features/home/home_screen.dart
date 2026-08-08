@@ -5,6 +5,7 @@
 // Preserves scroll state across tab switches.
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -136,9 +137,10 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         }
         ScaffoldMessenger.of(context)
           ..clearSnackBars()
-          ..showSnackBar(const SnackBar(
-            content: Text(
-              'We could not verify your daily allowance. Check your connection and try again.',
+          ..showSnackBar(SnackBar(
+            content: UiText(
+              context.uiCopy(
+                  'We could not verify your daily allowance. Check your connection and try again.'),
             ),
             behavior: SnackBarBehavior.floating,
           ));
@@ -235,7 +237,7 @@ class _PersistentStandingBanner extends StatelessWidget {
     return Semantics(
       liveRegion: true,
       container: true,
-      label: '$title. $message',
+      label: '${context.uiCopy(title)}. ${context.uiCopy(message)}',
       child: Container(
         width: double.infinity,
         margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
@@ -261,12 +263,12 @@ class _PersistentStandingBanner extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  UiText(
                     title,
                     style: AppTypography.captionMedium.copyWith(color: accent),
                   ),
                   const SizedBox(height: 2),
-                  Text(
+                  UiText(
                     standing.errorMessage ?? message,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -305,7 +307,7 @@ class _PersistentStandingBanner extends StatelessWidget {
                           color: restricted ? accent : AppColors.obsidianNight,
                         ),
                       )
-                    : Text(
+                    : UiText(
                         restricted ? 'Get help' : 'Resume',
                         style: AppTypography.captionMedium.copyWith(
                           color: restricted ? accent : AppColors.obsidianNight,

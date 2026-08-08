@@ -2619,4 +2619,147 @@ class AppLocalizationsDe extends AppLocalizations {
   String safety_blocked(String name) {
     return '$name wurde blockiert.';
   }
+
+  @override
+  String legacy_openProfile(String name) {
+    return 'Öffnen Sie das Profil $name';
+  }
+
+  @override
+  String legacy_typing(String name) {
+    return '$name tippt';
+  }
+
+  @override
+  String legacy_deleteFailed(String error) {
+    return 'Konto konnte nicht gelöscht werden: $error';
+  }
+
+  @override
+  String legacy_changeCountry(String country) {
+    return 'Land ändern, derzeit $country';
+  }
+
+  @override
+  String legacy_emailCopied(String email) {
+    return 'Keine E-Mail-App gefunden. $email wurde kopiert.';
+  }
+
+  @override
+  String legacy_messagePerson(String name) {
+    return 'Nachricht $name';
+  }
+
+  @override
+  String legacy_renewsDate(String date) {
+    return 'Erneuert $date';
+  }
+
+  @override
+  String legacy_ageYears(int age) {
+    return '$age Jahre';
+  }
+
+  @override
+  String legacy_photoNumber(int number) {
+    return 'Foto $number';
+  }
+
+  @override
+  String legacy_photoCount(int count) {
+    return '$count von 4 Fotos';
+  }
+
+  @override
+  String legacy_removeLabel(String label) {
+    return '$label entfernen';
+  }
+
+  @override
+  String legacy_selectedLabel(String label) {
+    return '$label ausgewählt';
+  }
+
+  @override
+  String legacy_addLabel(String label) {
+    return '$label hinzufügen';
+  }
+
+  @override
+  String legacy_kycStatusSemantics(String status) {
+    return 'Status der Identitätsüberprüfung: $status';
+  }
+
+  @override
+  String legacy_photoRequestSent(String name) {
+    return 'Fotoanfrage gesendet an $name.';
+  }
+
+  @override
+  String legacy_yesterdayTime(String time) {
+    return 'Gestern $time';
+  }
+
+  @override
+  String legacy_minutesAgo(int count) {
+    return 'Vor $count Minuten';
+  }
+
+  @override
+  String legacy_hoursAgo(int count) {
+    return 'Vor $count Stunden';
+  }
+
+  @override
+  String legacy_daysAgo(int count) {
+    return 'Vor $count Tagen';
+  }
+
+  @override
+  String legacy_renewsAt(String time) {
+    return 'Verlängert um $time';
+  }
+
+  @override
+  String legacy_photoReadyReview(int number) {
+    return 'Foto $number ist zur geschützten Überprüfung bereit';
+  }
+
+  @override
+  String get legacy_onePhotoUnlock =>
+      '1 Foto wird automatisch freigeschaltet, sobald Sie beide Interesse bekunden.';
+
+  @override
+  String legacy_manyPhotosUnlock(int count) {
+    return '$count-Fotos werden automatisch freigeschaltet, sobald Sie beide Interesse bekunden.';
+  }
+
+  @override
+  String get legacy_askOnePhoto =>
+      'Bitten Sie den Eigentümer um Erlaubnis, 1 Foto anzusehen.';
+
+  @override
+  String legacy_askManyPhotos(int count) {
+    return 'Bitten Sie den Eigentümer um Erlaubnis, $count-Fotos anzusehen.';
+  }
+
+  @override
+  String legacy_heightImperial(int feet, int inches) {
+    return '$feet ft $inches in';
+  }
+
+  @override
+  String legacy_minutesShort(int count) {
+    return '${count}m';
+  }
+
+  @override
+  String legacy_hoursShort(int count) {
+    return '${count}h';
+  }
+
+  @override
+  String legacy_daysShort(int count) {
+    return '${count}d';
+  }
 }

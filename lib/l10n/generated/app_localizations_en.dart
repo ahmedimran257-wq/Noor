@@ -2596,4 +2596,147 @@ class AppLocalizationsEn extends AppLocalizations {
   String safety_blocked(String name) {
     return '$name blocked.';
   }
+
+  @override
+  String legacy_openProfile(String name) {
+    return 'Open $name profile';
+  }
+
+  @override
+  String legacy_typing(String name) {
+    return '$name is typing';
+  }
+
+  @override
+  String legacy_deleteFailed(String error) {
+    return 'Failed to delete account: $error';
+  }
+
+  @override
+  String legacy_changeCountry(String country) {
+    return 'Change country, currently $country';
+  }
+
+  @override
+  String legacy_emailCopied(String email) {
+    return 'No email app found. $email was copied.';
+  }
+
+  @override
+  String legacy_messagePerson(String name) {
+    return 'Message $name';
+  }
+
+  @override
+  String legacy_renewsDate(String date) {
+    return 'Renews $date';
+  }
+
+  @override
+  String legacy_ageYears(int age) {
+    return '$age yrs';
+  }
+
+  @override
+  String legacy_photoNumber(int number) {
+    return 'Photo $number';
+  }
+
+  @override
+  String legacy_photoCount(int count) {
+    return '$count of 4 photos';
+  }
+
+  @override
+  String legacy_removeLabel(String label) {
+    return 'Remove $label';
+  }
+
+  @override
+  String legacy_selectedLabel(String label) {
+    return '$label selected';
+  }
+
+  @override
+  String legacy_addLabel(String label) {
+    return 'Add $label';
+  }
+
+  @override
+  String legacy_kycStatusSemantics(String status) {
+    return 'Identity verification status: $status';
+  }
+
+  @override
+  String legacy_photoRequestSent(String name) {
+    return 'Photo request sent to $name.';
+  }
+
+  @override
+  String legacy_yesterdayTime(String time) {
+    return 'Yesterday $time';
+  }
+
+  @override
+  String legacy_minutesAgo(int count) {
+    return '$count min ago';
+  }
+
+  @override
+  String legacy_hoursAgo(int count) {
+    return '$count hr ago';
+  }
+
+  @override
+  String legacy_daysAgo(int count) {
+    return '$count days ago';
+  }
+
+  @override
+  String legacy_renewsAt(String time) {
+    return 'Renews at $time';
+  }
+
+  @override
+  String legacy_photoReadyReview(int number) {
+    return 'Photo $number is ready for protected review';
+  }
+
+  @override
+  String get legacy_onePhotoUnlock =>
+      '1 photo will unlock automatically once you both express interest.';
+
+  @override
+  String legacy_manyPhotosUnlock(int count) {
+    return '$count photos will unlock automatically once you both express interest.';
+  }
+
+  @override
+  String get legacy_askOnePhoto =>
+      'Ask the owner for permission to view 1 photo.';
+
+  @override
+  String legacy_askManyPhotos(int count) {
+    return 'Ask the owner for permission to view $count photos.';
+  }
+
+  @override
+  String legacy_heightImperial(int feet, int inches) {
+    return '$feet ft $inches in';
+  }
+
+  @override
+  String legacy_minutesShort(int count) {
+    return '${count}m';
+  }
+
+  @override
+  String legacy_hoursShort(int count) {
+    return '${count}h';
+  }
+
+  @override
+  String legacy_daysShort(int count) {
+    return '${count}d';
+  }
 }

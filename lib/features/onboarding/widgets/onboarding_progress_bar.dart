@@ -5,6 +5,7 @@
 // Filled segments animate in Champagne Gold.
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
@@ -35,7 +36,7 @@ class OnboardingProgressBar extends StatelessWidget {
             fontWeight: FontWeight.w700,
             letterSpacing: 0,
           ),
-          child: Text(
+          child: UiText(
             'Step ${(currentStep + 1).clamp(1, totalSteps)} of $totalSteps',
           ),
         ),

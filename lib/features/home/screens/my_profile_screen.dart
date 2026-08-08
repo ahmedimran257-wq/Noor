@@ -5,6 +5,7 @@
 // row, saved profiles, settings sections, sign out.
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -318,8 +319,9 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Your photo gallery could not be opened. Try again.'),
+        SnackBar(
+          content: UiText(context
+              .uiCopy('Your photo gallery could not be opened. Try again.')),
         ),
       );
       return;
@@ -527,9 +529,10 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Profile', style: AppTypography.screenTitle),
+                    UiText(context.uiCopy('Profile'),
+                        style: AppTypography.screenTitle),
                     const SizedBox(height: 2),
-                    Text('Your presence on Silarah',
+                    UiText('Your presence on Silarah',
                         style: AppTypography.caption),
                   ],
                 ),
@@ -686,9 +689,10 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Profile Views',
+                          UiText(context.uiCopy('Profile Views'),
                               style: AppTypography.bodyMedium),
-                          Text('This week', style: AppTypography.caption),
+                          UiText(context.uiCopy('This week'),
+                              style: AppTypography.caption),
                         ],
                       ),
                     ),
@@ -699,7 +703,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                         color: AppColors.champagneGold,
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Text(
+                      child: UiText(
                         '$_viewCount',
                         style: AppTypography.captionMedium
                             .copyWith(color: AppColors.obsidianNight),
@@ -766,9 +770,10 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Refer a Friend',
+                          UiText(context.uiCopy('Refer a Friend'),
                               style: AppTypography.bodyMedium),
-                          Text('Get 7 days of Premium for free',
+                          UiText(
+                              context.uiCopy('Get 7 days of Premium for free'),
                               style: AppTypography.caption),
                         ],
                       ),
@@ -825,7 +830,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                 icon: Icon(Icons.logout_rounded,
                     color: AppColors.softCoral,
                     size: AppDimensions.iconSizeMedium),
-                label: Text('Sign Out',
+                label: UiText(context.uiCopy('Sign Out'),
                     style: AppTypography.buttonSecondary
                         .copyWith(color: AppColors.softCoral)),
                 onPressed: () => context.read<AuthCubit>().signOut(),
@@ -859,7 +864,7 @@ class _ProfilePrimaryActions extends StatelessWidget {
         Expanded(
           flex: 6,
           child: SilarahPressable(
-            semanticLabel: 'Edit your profile',
+            semanticLabel: context.uiCopy('Edit your profile'),
             onTap: onEdit,
             child: Container(
               height: 54,
@@ -882,7 +887,8 @@ class _ProfilePrimaryActions extends StatelessWidget {
                   Icon(Icons.edit_rounded,
                       size: 19, color: AppColors.obsidianNight),
                   const SizedBox(width: AppDimensions.space8),
-                  Text('Edit profile', style: AppTypography.button),
+                  UiText(context.uiCopy('Edit profile'),
+                      style: AppTypography.button),
                 ],
               ),
             ),
@@ -892,7 +898,7 @@ class _ProfilePrimaryActions extends StatelessWidget {
         Expanded(
           flex: 5,
           child: SilarahPressable(
-            semanticLabel: 'View your public profile',
+            semanticLabel: context.uiCopy('View your public profile'),
             onTap: previewOpening ? null : onPreview,
             child: Container(
               height: 54,
@@ -921,7 +927,7 @@ class _ProfilePrimaryActions extends StatelessWidget {
                     ),
                   const SizedBox(width: AppDimensions.space8),
                   Flexible(
-                    child: Text('View profile',
+                    child: UiText(context.uiCopy('View profile'),
                         overflow: TextOverflow.ellipsis,
                         style: AppTypography.buttonSecondary),
                   ),
@@ -1018,7 +1024,7 @@ class _ProfileLifecycleCard extends StatelessWidget {
 
     return Semantics(
       liveRegion: true,
-      label: '$title. $body',
+      label: '${context.uiCopy(title)}. ${context.uiCopy(body)}',
       child: AnimatedContainer(
         duration: AppDimensions.durationReveal,
         padding: const EdgeInsets.all(AppDimensions.space16),
@@ -1032,8 +1038,8 @@ class _ProfileLifecycleCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Text(
-                  'ACCOUNT STANDING',
+                UiText(
+                  context.uiCopy('ACCOUNT STANDING'),
                   style: AppTypography.sectionLabel,
                 ),
                 const Spacer(),
@@ -1044,7 +1050,7 @@ class _ProfileLifecycleCard extends StatelessWidget {
                     color: color.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text(
+                  child: UiText(
                     isRestricted
                         ? 'RESTRICTED'
                         : isActive && !needsPhoto
@@ -1074,12 +1080,12 @@ class _ProfileLifecycleCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      UiText(
                         title,
                         style: AppTypography.bodyMedium.copyWith(color: color),
                       ),
                       const SizedBox(height: AppDimensions.space4),
-                      Text(
+                      UiText(
                         standing.errorMessage ?? body,
                         style: AppTypography.caption.copyWith(height: 1.45),
                       ),
@@ -1118,7 +1124,7 @@ class _ProfileLifecycleCard extends StatelessWidget {
                                   : AppColors.obsidianNight,
                             ),
                           )
-                        : Text(
+                        : UiText(
                             actionLabel,
                             style: AppTypography.captionMedium.copyWith(
                               color: isRestricted
@@ -1218,9 +1224,12 @@ class _TrustCenterCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Trust & identity', style: AppTypography.bodyMedium),
+                      UiText(context.uiCopy('Trust & identity'),
+                          style: AppTypography.bodyMedium),
                       const SizedBox(height: 2),
-                      Text('Independent checks that strengthen your profile',
+                      UiText(
+                          context.uiCopy(
+                              'Independent checks that strengthen your profile'),
                           style: AppTypography.caption),
                     ],
                   ),
@@ -1278,7 +1287,7 @@ class _TrustCenterCard extends StatelessWidget {
                     color: AppColors.slateMist, size: 16),
                 const SizedBox(width: AppDimensions.space8),
                 Expanded(
-                  child: Text(
+                  child: UiText(
                     'Official sign-in emails are sent from noreply@mail.silarah.com. Silarah will never ask for your verification code.',
                     style: AppTypography.caption,
                   ),
@@ -1321,9 +1330,9 @@ class _TrustRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: AppTypography.body),
+                UiText(title, style: AppTypography.body),
                 const SizedBox(height: 2),
-                Text(subtitle,
+                UiText(subtitle,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: AppTypography.caption),
@@ -1331,7 +1340,7 @@ class _TrustRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppDimensions.space8),
-          Text(status,
+          UiText(status,
               style: AppTypography.captionMedium.copyWith(color: statusColor)),
           if (onTap != null) ...[
             const SizedBox(width: AppDimensions.space4),
@@ -1438,8 +1447,9 @@ class _BoostSectionState extends State<_BoostSection> {
     if (!mounted) return;
     if (!SupabaseService.isInitialized || userId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Profile boost requires a backend connection.')),
+        SnackBar(
+            content: UiText(context
+                .uiCopy('Profile boost requires a backend connection.'))),
       );
       return;
     }
@@ -1468,7 +1478,7 @@ class _BoostSectionState extends State<_BoostSection> {
       if (!mounted) return;
       setState(() => _boosting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_profileActionError(error))),
+        SnackBar(content: UiText(_profileActionError(error))),
       );
       return;
     }
@@ -1481,7 +1491,7 @@ class _BoostSectionState extends State<_BoostSection> {
             Icon(Icons.rocket_launch_rounded,
                 color: AppColors.champagneGold, size: 16),
             const SizedBox(width: 8),
-            Text('Your profile is boosted for 2 hours!',
+            UiText(context.uiCopy('Your profile is boosted for 2 hours!'),
                 style: AppTypography.body.copyWith(
                   color: AppColors.readableOn(AppColors.surfaceGlassHover),
                 )),
@@ -1585,7 +1595,7 @@ class _BoostActiveOrAvailable extends StatelessWidget {
             Icon(Icons.rocket_launch_rounded,
                 color: AppColors.champagneGold, size: 22),
             const SizedBox(width: AppDimensions.space8),
-            Text('Boost Profile',
+            UiText(context.uiCopy('Boost Profile'),
                 style: AppTypography.bodyMedium
                     .copyWith(color: AppColors.champagneGold)),
             const Spacer(),
@@ -1597,7 +1607,7 @@ class _BoostActiveOrAvailable extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: AppColors.goldBorder),
                 ),
-                child: Text('ACTIVE',
+                child: UiText(context.uiCopy('ACTIVE'),
                     style: AppTypography.caption.copyWith(
                       color: AppColors.champagneGold,
                       fontSize: 9,
@@ -1608,7 +1618,7 @@ class _BoostActiveOrAvailable extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppDimensions.space8),
-        Text(
+        UiText(
           isActive
               ? 'Your profile is at the top of searches.'
               : 'Appear at the top of searches for 2 hours.',
@@ -1628,7 +1638,7 @@ class _BoostActiveOrAvailable extends StatelessWidget {
               ),
             ),
             onPressed: isActive ? null : onActivate,
-            child: Text(
+            child: UiText(
               isActive ? countdown : 'Activate Boost',
               style: AppTypography.button.copyWith(
                 color: isActive ? AppColors.slateMist : AppColors.obsidianNight,
@@ -1660,11 +1670,11 @@ class _BoostLocked extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Profile Boost',
+                UiText(context.uiCopy('Profile Boost'),
                     style: AppTypography.bodyMedium
                         .copyWith(color: AppColors.slateMist)),
                 const SizedBox(height: AppDimensions.space4),
-                Text('Subscribe to unlock profile boosts.',
+                UiText(context.uiCopy('Subscribe to unlock profile boosts.'),
                     style: AppTypography.caption),
               ],
             ),
@@ -1711,11 +1721,12 @@ class _SubscriptionCard extends StatelessWidget {
             child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('SILARAH Premium · Active',
+            UiText('SILARAH Premium · Active',
                 style: AppTypography.bodyMedium
                     .copyWith(color: AppColors.verifiedTeal)),
             if (expiry != null)
-              Text('Renews ${_fmtDate(expiry)}', style: AppTypography.caption),
+              UiText(context.uiRenewsDate(_fmtDate(expiry)),
+                  style: AppTypography.caption),
           ],
         )),
       ]),
@@ -1731,12 +1742,13 @@ class _SubscriptionCard extends StatelessWidget {
             color: AppColors.premiumGold, size: 22),
         const SizedBox(width: 10),
         Expanded(
-            child: Text('Payment issue — subscription in grace period.',
+            child: UiText(
+                context.uiCopy('Payment issue — subscription in grace period.'),
                 style: AppTypography.caption)),
         TextButton(
           onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
               builder: (_) => const SubscriptionScreen())),
-          child: Text('Fix',
+          child: UiText(context.uiCopy('Fix'),
               style: AppTypography.captionMedium
                   .copyWith(color: AppColors.premiumGold)),
         ),
@@ -1759,10 +1771,10 @@ class _SubscriptionCard extends StatelessWidget {
               child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Upgrade to SILARAH Premium',
+              UiText('Upgrade to SILARAH Premium',
                   style: AppTypography.bodyMedium
                       .copyWith(color: AppColors.champagneGold)),
-              Text('Unlock messaging and profile boosts',
+              UiText(context.uiCopy('Unlock messaging and profile boosts'),
                   style: AppTypography.caption),
             ],
           )),
@@ -1772,7 +1784,7 @@ class _SubscriptionCard extends StatelessWidget {
               color: AppColors.champagneGold,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text('Plans',
+            child: UiText(context.uiCopy('Plans'),
                 style: AppTypography.caption.copyWith(
                     color: AppColors.obsidianNight,
                     fontWeight: FontWeight.w600)),
@@ -1931,11 +1943,11 @@ class _ProfilePreviewCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppDimensions.space8),
-              Text('Profile quality',
+              UiText(context.uiCopy('Profile quality'),
                   style: AppTypography.captionMedium
                       .copyWith(color: AppColors.pearlWhite)),
               const Spacer(),
-              Text('$score%',
+              UiText('$score%',
                   style: AppTypography.captionMedium
                       .copyWith(color: AppColors.champagneGold)),
             ],
@@ -1954,7 +1966,7 @@ class _ProfilePreviewCard extends StatelessWidget {
                 children: [
                   Row(children: [
                     Flexible(
-                      child: Text(
+                      child: UiText(
                         displayName.isEmpty ? 'Your Name' : displayName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -1972,7 +1984,7 @@ class _ProfilePreviewCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(color: AppColors.goldBorder),
                         ),
-                        child: Text('Guardian Mode',
+                        child: UiText(context.uiCopy('Guardian Mode'),
                             style: AppTypography.caption.copyWith(
                               color: AppColors.champagneGold,
                               fontSize: 10,
@@ -1981,7 +1993,8 @@ class _ProfilePreviewCard extends StatelessWidget {
                     ],
                   ]),
                   const SizedBox(height: AppDimensions.space4),
-                  Text(_buildSubtitle(age), style: AppTypography.caption),
+                  UiText(_buildSubtitle(context, age),
+                      style: AppTypography.caption),
                   if (!verificationLoading) ...[
                     const SizedBox(height: AppDimensions.space10),
                     _VerificationIdentityStatus(
@@ -1999,11 +2012,11 @@ class _ProfilePreviewCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(children: [
-                  Text('$score% complete',
+                  UiText(context.uiProfileCompleteness(score),
                       style: AppTypography.captionMedium
                           .copyWith(color: AppColors.champagneGold)),
                   const Spacer(),
-                  Text(score >= 80 ? '✓ Great profile!' : 'Keep going!',
+                  UiText(score >= 80 ? '✓ Great profile!' : 'Keep going!',
                       style: AppTypography.caption
                           .copyWith(color: AppColors.champagneGold)),
                 ]),
@@ -2031,7 +2044,7 @@ class _ProfilePreviewCard extends StatelessWidget {
                         color: AppColors.champagneGold, size: 13),
                     const SizedBox(width: 4),
                     Expanded(
-                        child: Text(nudge!,
+                        child: UiText(nudge!,
                             style: AppTypography.caption.copyWith(
                                 color: AppColors.champagneGold, fontSize: 11))),
                   ]),
@@ -2044,9 +2057,9 @@ class _ProfilePreviewCard extends StatelessWidget {
     );
   }
 
-  String _buildSubtitle(int? age) {
+  String _buildSubtitle(BuildContext context, int? age) {
     final parts = <String>[];
-    if (age != null) parts.add('$age yrs');
+    if (age != null) parts.add(context.uiAgeYears(age));
     if (data.cityName?.isNotEmpty == true) parts.add(data.cityName!);
     return parts.isEmpty ? 'Complete your profile below' : parts.join(' · ');
   }
@@ -2074,8 +2087,8 @@ class _VerificationIdentityStatus extends StatelessWidget {
             Icon(Icons.verified_rounded,
                 color: AppColors.verifiedTeal, size: 16),
             const SizedBox(width: AppDimensions.space4),
-            Text(
-              'Photo verified',
+            UiText(
+              context.uiCopy('Photo verified'),
               style: AppTypography.captionMedium.copyWith(
                 color: AppColors.verifiedTeal,
               ),
@@ -2106,8 +2119,8 @@ class _VerificationIdentityStatus extends StatelessWidget {
               Icon(Icons.verified_user_outlined,
                   color: AppColors.champagneGold, size: 16),
               const SizedBox(width: AppDimensions.space8),
-              Text(
-                'Verify photo',
+              UiText(
+                context.uiCopy('Verify photo'),
                 style: AppTypography.captionMedium.copyWith(
                   color: AppColors.champagneGold,
                 ),
@@ -2136,7 +2149,8 @@ class _SavedProfilesSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('SAVED PROFILES', style: AppTypography.sectionLabel),
+        UiText(context.uiCopy('SAVED PROFILES'),
+            style: AppTypography.sectionLabel),
         const SizedBox(height: AppDimensions.space12),
         if (savedProfiles.isEmpty)
           const SilarahEmptyState(
@@ -2206,7 +2220,7 @@ class _SavedProfilesSection extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
                         // Name
-                        Text(
+                        UiText(
                           p.firstName,
                           style: AppTypography.caption.copyWith(
                             color: AppColors.pearlWhite,
@@ -2218,7 +2232,7 @@ class _SavedProfilesSection extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         // City
-                        Text(
+                        UiText(
                           p.cityName,
                           style: AppTypography.caption.copyWith(
                             fontSize: 10,
@@ -2280,15 +2294,15 @@ class _IFoundMyMatchButton extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'I Found My Match',
+                  UiText(
+                    context.uiCopy('I Found My Match'),
                     style: AppTypography.bodyMedium.copyWith(
                       color: AppColors.champagneGold,
                     ),
                   ),
                   const SizedBox(height: AppDimensions.space4),
-                  Text(
-                    'Pause your profile and sign out.',
+                  UiText(
+                    context.uiCopy('Pause your profile and sign out.'),
                     style: AppTypography.caption,
                   ),
                 ],
@@ -2331,22 +2345,24 @@ class _IFoundMyMatchButton extends StatelessWidget {
             Icon(Icons.favorite_rounded,
                 color: AppColors.champagneGold, size: 48),
             const SizedBox(height: AppDimensions.space16),
-            Text(
-              'Alhamdulillah!',
+            UiText(
+              context.uiCopy('Alhamdulillah!'),
               style: AppTypography.screenTitle.copyWith(
                 color: AppColors.champagneGold,
                 fontSize: 24,
               ),
             ),
             const SizedBox(height: AppDimensions.space8),
-            Text(
-              'May Allah bless your union with\nlove, mercy, and barakah.',
+            UiText(
+              context.uiCopy(
+                  'May Allah bless your union with\nlove, mercy, and barakah.'),
               style: AppTypography.bodyMuted,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppDimensions.space6),
-            Text(
-              'Your profile will be hidden from searches.\nYou can reactivate anytime.',
+            UiText(
+              context.uiCopy(
+                  'Your profile will be hidden from searches.\nYou can reactivate anytime.'),
               style: AppTypography.caption,
               textAlign: TextAlign.center,
             ),
@@ -2377,11 +2393,11 @@ class _IFoundMyMatchButton extends StatelessWidget {
                     ScaffoldMessenger.of(context)
                       ..clearSnackBars()
                       ..showSnackBar(
-                        SnackBar(content: Text(_profileActionError(error))),
+                        SnackBar(content: UiText(_profileActionError(error))),
                       );
                   }
                 },
-                child: Text('Confirm & Pause Profile',
+                child: UiText(context.uiCopy('Confirm & Pause Profile'),
                     style: AppTypography.button),
               ),
             ),
@@ -2398,7 +2414,7 @@ class _IFoundMyMatchButton extends StatelessWidget {
                   ),
                 ),
                 onPressed: () => Navigator.pop(context),
-                child: Text('Cancel',
+                child: UiText(context.uiCopy('Cancel'),
                     style: AppTypography.button
                         .copyWith(color: AppColors.slateMist)),
               ),

@@ -9,6 +9,7 @@
 //   • Empty state with encouraging message
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -66,20 +67,22 @@ class _ChatListScreenState extends State<ChatListScreen>
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: AppColors.surfaceElevated,
-        title: Text('Delete this chat?', style: AppTypography.bodyMedium),
-        content: Text(
-          'This removes the conversation only from your inbox. The other person keeps their copy, and safety records are retained.',
+        title: UiText(context.uiCopy('Delete this chat?'),
+            style: AppTypography.bodyMedium),
+        content: UiText(
+          context.uiCopy(
+              'This removes the conversation only from your inbox. The other person keeps their copy, and safety records are retained.'),
           style: AppTypography.bodyMuted,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
+            child: UiText(context.uiCopy('Cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(
-              'Delete chat',
+            child: UiText(
+              context.uiCopy('Delete chat'),
               style: AppTypography.button.copyWith(color: AppColors.softCoral),
             ),
           ),
@@ -94,7 +97,7 @@ class _ChatListScreenState extends State<ChatListScreen>
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(SnackBar(
-        content: Text(hidden
+        content: UiText(hidden
             ? 'Chat removed from your inbox.'
             : 'Unable to delete this chat. Please try again.'),
         behavior: SnackBarBehavior.floating,
@@ -185,8 +188,8 @@ class _ChatListScreenState extends State<ChatListScreen>
                           : Align(
                               key: const ValueKey('messages_title'),
                               alignment: Alignment.centerLeft,
-                              child: Text(
-                                'Messages',
+                              child: UiText(
+                                context.uiCopy('Messages'),
                                 style: AppTypography.screenTitle,
                               ),
                             ),
@@ -208,7 +211,7 @@ class _ChatListScreenState extends State<ChatListScreen>
                         borderRadius:
                             BorderRadius.circular(AppDimensions.radiusTiny),
                       ),
-                      child: Text(
+                      child: UiText(
                         '${state.totalUnread} unread',
                         style: AppTypography.badge.copyWith(fontSize: 11),
                       ),
@@ -296,7 +299,7 @@ class _ChatListScreenState extends State<ChatListScreen>
                                 ScaffoldMessenger.of(context)
                                   ..clearSnackBars()
                                   ..showSnackBar(SnackBar(
-                                    content: Text(message),
+                                    content: UiText(message),
                                     behavior: SnackBarBehavior.floating,
                                   ));
                                 return;
@@ -483,7 +486,7 @@ class _ConversationTile extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
+                          UiText(
                             conversation.displayName,
                             style: hasUnread
                                 ? AppTypography.bodyMedium
@@ -492,7 +495,7 @@ class _ConversationTile extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: AppDimensions.space4),
-                          Text(
+                          UiText(
                             conversation.lastMessagePreview,
                             style: AppTypography.caption.copyWith(
                               fontWeight:
@@ -514,7 +517,7 @@ class _ConversationTile extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
+                        UiText(
                           conversation.lastMessageTime,
                           style: AppTypography.caption.copyWith(
                             color: hasUnread
@@ -533,7 +536,7 @@ class _ConversationTile extends StatelessWidget {
                               shape: BoxShape.circle,
                             ),
                             child: Center(
-                              child: Text(
+                              child: UiText(
                                 '${conversation.unreadCount}',
                                 style:
                                     AppTypography.badge.copyWith(fontSize: 11),
@@ -546,7 +549,7 @@ class _ConversationTile extends StatelessWidget {
                             height: 22,
                             child: PopupMenuButton<String>(
                               padding: EdgeInsets.zero,
-                              tooltip: 'Chat options',
+                              tooltip: context.uiCopy('Chat options'),
                               color: AppColors.surfaceElevated,
                               icon: Icon(
                                 Icons.more_horiz_rounded,
@@ -565,8 +568,8 @@ class _ConversationTile extends StatelessWidget {
                                       ),
                                       const SizedBox(
                                           width: AppDimensions.space8),
-                                      Text(
-                                        'Delete chat',
+                                      UiText(
+                                        context.uiCopy('Delete chat'),
                                         style: AppTypography.body.copyWith(
                                           color: AppColors.softCoral,
                                         ),

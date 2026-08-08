@@ -5,6 +5,7 @@
 // All dialogs and confirmations use this.
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimensions.dart';
@@ -148,7 +149,7 @@ class SilarahBottomSheet extends StatelessWidget {
                 AppDimensions.horizontalMargin,
                 subtitle != null ? AppDimensions.space4 : AppDimensions.space20,
               ),
-              child: Text(title!, style: AppTypography.userName),
+              child: UiText(title!, style: AppTypography.userName),
             ),
 
           // Subtitle
@@ -160,7 +161,7 @@ class SilarahBottomSheet extends StatelessWidget {
                 AppDimensions.horizontalMargin,
                 AppDimensions.space20,
               ),
-              child: Text(subtitle!, style: AppTypography.bodyMuted),
+              child: UiText(subtitle!, style: AppTypography.bodyMuted),
             ),
 
           // Content
@@ -302,7 +303,7 @@ class _ReportOption extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: Text(
+              child: UiText(
                 label,
                 style: AppTypography.body.copyWith(
                   color: isSelected

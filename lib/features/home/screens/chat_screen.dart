@@ -7,6 +7,7 @@
 //   • Closed conversation shows banner + disables input
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -191,8 +192,8 @@ class _ChatScreenState extends State<ChatScreen>
     if (profileId == null || profileId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'This profile is unavailable right now.',
+          content: UiText(
+            context.uiCopy('This profile is unavailable right now.'),
             style: TextStyle(
               color: AppColors.readableOn(AppColors.surfaceGlassHover),
             ),
@@ -247,8 +248,9 @@ class _ChatScreenState extends State<ChatScreen>
                   color: AppColors.softCoral, size: 20),
               const SizedBox(width: AppDimensions.space10),
               Expanded(
-                child: Text(
-                  'Message not sent. Tap the alert beside it to retry.',
+                child: UiText(
+                  context.uiCopy(
+                      'Message not sent. Tap the alert beside it to retry.'),
                   style: AppTypography.captionMedium.copyWith(
                     color: AppColors.readableOn(AppColors.surfaceElevated),
                   ),
@@ -302,15 +304,17 @@ class _ChatScreenState extends State<ChatScreen>
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
           side: BorderSide(color: AppColors.cardBorder),
         ),
-        title: Text('Block $name?', style: AppTypography.bodyMedium),
-        content: Text(
-          'This closes the match and prevents further messages.',
+        title:
+            UiText(context.uiBlockTitle(name), style: AppTypography.bodyMedium),
+        content: UiText(
+          context
+              .uiCopy('This closes the match and prevents further messages.'),
           style: AppTypography.bodyMuted,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: UiText(context.uiCopy('Cancel')),
           ),
           TextButton(
             onPressed: () async {
@@ -322,8 +326,8 @@ class _ChatScreenState extends State<ChatScreen>
               if (!context.mounted) return;
               Navigator.maybePop(context);
             },
-            child: Text(
-              'Block',
+            child: UiText(
+              context.uiCopy('Block'),
               style: AppTypography.button.copyWith(color: AppColors.softCoral),
             ),
           ),
@@ -337,20 +341,22 @@ class _ChatScreenState extends State<ChatScreen>
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: AppColors.surfaceElevated,
-        title: Text('Delete this chat?', style: AppTypography.bodyMedium),
-        content: Text(
-          'This removes the conversation only from your inbox. The other person keeps their copy, and safety records are retained.',
+        title: UiText(context.uiCopy('Delete this chat?'),
+            style: AppTypography.bodyMedium),
+        content: UiText(
+          context.uiCopy(
+              'This removes the conversation only from your inbox. The other person keeps their copy, and safety records are retained.'),
           style: AppTypography.bodyMuted,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
+            child: UiText(context.uiCopy('Cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(
-              'Delete chat',
+            child: UiText(
+              context.uiCopy('Delete chat'),
               style: AppTypography.button.copyWith(color: AppColors.softCoral),
             ),
           ),
@@ -368,7 +374,7 @@ class _ChatScreenState extends State<ChatScreen>
     messenger
       ..clearSnackBars()
       ..showSnackBar(SnackBar(
-        content: Text(hidden
+        content: UiText(hidden
             ? 'Chat removed from your inbox.'
             : 'Unable to delete this chat. Please try again.'),
         behavior: SnackBarBehavior.floating,
@@ -391,7 +397,9 @@ class _ChatScreenState extends State<ChatScreen>
               );
           if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Message reported for review.')),
+            SnackBar(
+                content:
+                    UiText(context.uiCopy('Message reported for review.'))),
           );
         },
       ),
@@ -606,7 +614,7 @@ class _ClosedBanner extends StatelessWidget {
         Icon(Icons.lock_outline_rounded, color: AppColors.softCoral, size: 16),
         const SizedBox(width: AppDimensions.space8),
         Expanded(
-            child: Text(
+            child: UiText(
           switch (closedByMe) {
             true => 'You ended this match.',
             false => '$name ended this match.',
@@ -636,8 +644,8 @@ class _ClosedInputBar extends StatelessWidget {
         border: Border(top: BorderSide(color: AppColors.cardBorder)),
       ),
       child: Center(
-          child: Text(
-        'This conversation is closed',
+          child: UiText(
+        context.uiCopy('This conversation is closed'),
         style: AppTypography.caption,
       )),
     );
@@ -672,7 +680,7 @@ class _SuspendedBanner extends StatelessWidget {
         Icon(Icons.warning_amber_rounded, color: AppColors.softCoral, size: 16),
         const SizedBox(width: AppDimensions.space8),
         Expanded(
-            child: Text(
+            child: UiText(
           'Messaging suspended for violating community guidelines. Unlocks in $remainingStr.',
           style: AppTypography.caption.copyWith(color: AppColors.softCoral),
         )),
@@ -701,8 +709,8 @@ class _SuspendedInputBar extends StatelessWidget {
         border: Border(top: BorderSide(color: AppColors.cardBorder)),
       ),
       child: Center(
-          child: Text(
-        'Messaging is temporarily suspended',
+          child: UiText(
+        context.uiCopy('Messaging is temporarily suspended'),
         style: AppTypography.caption,
       )),
     );
@@ -745,12 +753,13 @@ class _EndMatchSheetState extends State<_EndMatchSheet> {
                 borderRadius: BorderRadius.circular(2)),
           )),
           const SizedBox(height: AppDimensions.space20),
-          Text('End this match',
+          UiText(context.uiCopy('End this match'),
               style: AppTypography.bodyMedium
                   .copyWith(color: AppColors.pearlWhite)),
           const SizedBox(height: AppDimensions.space6),
-          Text(
-            'Choose a respectful message to close this conversation. The other person will be notified.',
+          UiText(
+            context.uiCopy(
+                'Choose a respectful message to close this conversation. The other person will be notified.'),
             style: AppTypography.caption,
           ),
           const SizedBox(height: AppDimensions.space16),
@@ -779,7 +788,7 @@ class _EndMatchSheetState extends State<_EndMatchSheet> {
                           : AppDimensions.borderThin,
                     ),
                   ),
-                  child: Text(
+                  child: UiText(
                     msg,
                     style: AppTypography.caption.copyWith(
                       color: sel ? AppColors.pearlWhite : AppColors.slateMist,
@@ -808,8 +817,8 @@ class _EndMatchSheetState extends State<_EndMatchSheet> {
                         BorderRadius.circular(AppDimensions.radiusButton)),
                 elevation: 0,
               ),
-              child: Text(
-                'Send & End Match',
+              child: UiText(
+                context.uiCopy('Send & End Match'),
                 style: AppTypography.button.copyWith(
                   color: _selected != null
                       ? AppColors.pearlWhite
@@ -830,7 +839,7 @@ class _EndMatchSheetState extends State<_EndMatchSheet> {
                         BorderRadius.circular(AppDimensions.radiusButton)),
               ),
               onPressed: () => Navigator.pop(context),
-              child: Text('Cancel',
+              child: UiText(context.uiCopy('Cancel'),
                   style: AppTypography.button
                       .copyWith(color: AppColors.slateMist)),
             ),
@@ -869,9 +878,10 @@ class _ReportMessageSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Report message', style: AppTypography.bodyMedium),
+          UiText(context.uiCopy('Report message'),
+              style: AppTypography.bodyMedium),
           const SizedBox(height: AppDimensions.space6),
-          Text(
+          UiText(
             'Reports are reviewed by Silarah safety staff.',
             style: AppTypography.caption,
           ),
@@ -893,7 +903,7 @@ class _ReportMessageSheet extends StatelessWidget {
                         BorderRadius.circular(AppDimensions.radiusButton),
                     border: Border.all(color: AppColors.cardBorder),
                   ),
-                  child: Text(reason.$2, style: AppTypography.body),
+                  child: UiText(reason.$2, style: AppTypography.body),
                 ),
               ),
             ),
@@ -909,8 +919,8 @@ class _ReportMessageSheet extends StatelessWidget {
                 ),
               ),
               onPressed: () => Navigator.pop(context),
-              child: Text(
-                'Cancel',
+              child: UiText(
+                context.uiCopy('Cancel'),
                 style:
                     AppTypography.button.copyWith(color: AppColors.slateMist),
               ),
@@ -940,7 +950,8 @@ class _SuggestedOpenersArea extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text('Begin with Bismillah', style: AppTypography.tagline),
+        UiText(context.uiCopy('Begin with Bismillah'),
+            style: AppTypography.tagline),
         const SizedBox(height: AppDimensions.space20),
         SilarahSizeReveal(
           factor: sizeAnim,
@@ -1034,13 +1045,13 @@ class _ChatAccessGate extends StatelessWidget {
                     child: Icon(icon, color: AppColors.champagneGold, size: 26),
                   ),
                   const SizedBox(height: AppDimensions.space20),
-                  Text(
+                  UiText(
                     title,
                     textAlign: TextAlign.center,
                     style: AppTypography.screenTitle.copyWith(fontSize: 23),
                   ),
                   const SizedBox(height: AppDimensions.space10),
-                  Text(
+                  UiText(
                     body,
                     textAlign: TextAlign.center,
                     style: AppTypography.bodyMuted.copyWith(height: 1.55),
@@ -1058,7 +1069,7 @@ class _ChatAccessGate extends StatelessWidget {
                         borderRadius:
                             BorderRadius.circular(AppDimensions.radiusButton),
                       ),
-                      child: Text(
+                      child: UiText(
                         needsPremium ? 'View Premium' : 'Try again',
                         style: AppTypography.button,
                       ),
@@ -1068,8 +1079,8 @@ class _ChatAccessGate extends StatelessWidget {
                     const SizedBox(height: AppDimensions.space8),
                     TextButton(
                       onPressed: onRetry,
-                      child: Text(
-                        'Refresh access',
+                      child: UiText(
+                        context.uiCopy('Refresh access'),
                         style: AppTypography.bodyMuted,
                       ),
                     ),
@@ -1139,7 +1150,7 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
         Expanded(
           child: Semantics(
             button: true,
-            label: 'Open $displayName profile',
+            label: context.uiOpenProfile(displayName),
             child: SilarahPressable(
               onTap: onOpenProfile,
               child: Padding(
@@ -1175,7 +1186,7 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(displayName,
+                        UiText(displayName,
                             style: AppTypography.bodyMedium, maxLines: 1),
                         AnimatedSwitcher(
                           duration: reduceMotion
@@ -1197,11 +1208,11 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                               child: child,
                             ),
                           ),
-                          child: Text(
+                          child: UiText(
                             isClosed
                                 ? 'Match closed'
                                 : isTyping
-                                    ? '$firstName is typing'
+                                    ? context.uiTyping(firstName)
                                     : 'Private conversation',
                             key: ValueKey('${isClosed}_$isTyping'),
                             style: AppTypography.caption.copyWith(
@@ -1247,7 +1258,7 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                   Icon(Icons.delete_outline_rounded,
                       color: AppColors.softCoral, size: 18),
                   const SizedBox(width: AppDimensions.space8),
-                  Text('Delete chat',
+                  UiText(context.uiCopy('Delete chat'),
                       style: AppTypography.body
                           .copyWith(color: AppColors.softCoral)),
                 ]),
@@ -1259,7 +1270,7 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                   Icon(Icons.block_rounded,
                       color: AppColors.softCoral, size: 18),
                   const SizedBox(width: AppDimensions.space8),
-                  Text('Block user',
+                  UiText(context.uiCopy('Block user'),
                       style: AppTypography.body
                           .copyWith(color: AppColors.softCoral)),
                 ]),
@@ -1270,7 +1281,7 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                   Icon(Icons.do_not_disturb_on_outlined,
                       color: AppColors.softCoral, size: 18),
                   const SizedBox(width: AppDimensions.space8),
-                  Text('End Match',
+                  UiText(context.uiCopy('End Match'),
                       style: AppTypography.body
                           .copyWith(color: AppColors.softCoral)),
                 ]),
@@ -1310,7 +1321,7 @@ class _OpenerCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
           border: Border.all(color: AppColors.goldBorder),
         ),
-        child: Text(text,
+        child: UiText(text,
             style: AppTypography.bio.copyWith(fontSize: 13),
             maxLines: 4,
             overflow: TextOverflow.ellipsis),
@@ -1410,7 +1421,7 @@ class _TypingPresenceBarState extends State<_TypingPresenceBar>
   Widget build(BuildContext context) {
     return Semantics(
       liveRegion: true,
-      label: widget.visible ? '${widget.name} is typing' : null,
+      label: widget.visible ? context.uiTyping(widget.name) : null,
       child: AnimatedSwitcher(
         duration:
             _reduceMotion ? Duration.zero : const Duration(milliseconds: 280),
@@ -1474,8 +1485,8 @@ class _TypingPresenceBarState extends State<_TypingPresenceBar>
                       ),
                     ),
                     const SizedBox(width: AppDimensions.space8),
-                    Text(
-                      '${widget.name} is typing',
+                    UiText(
+                      context.uiTyping(widget.name),
                       style: AppTypography.chatTimestamp.copyWith(
                         color: AppColors.champagneGold,
                       ),
@@ -1539,7 +1550,7 @@ class _MessageBubble extends StatelessWidget {
                       color: AppColors.champagneGold.withValues(alpha: 0.7),
                       size: 12),
                   const SizedBox(width: 3),
-                  Text('Sent by Guardian',
+                  UiText(context.uiCopy('Sent by Guardian'),
                       style: AppTypography.chatTimestamp.copyWith(
                         color: AppColors.champagneGold.withValues(alpha: 0.7),
                         fontSize: 10,
@@ -1578,7 +1589,7 @@ class _MessageBubble extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(message.text,
+                              UiText(message.text,
                                   style: AppTypography.chatMessage),
                               Padding(
                                 padding:
@@ -1603,7 +1614,7 @@ class _MessageBubble extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 6),
                                   Expanded(
-                                    child: Text(
+                                    child: UiText(
                                       message.translations[locale]!,
                                       style: AppTypography.chatMessage.copyWith(
                                         color: AppColors.pearlWhite
@@ -1616,7 +1627,8 @@ class _MessageBubble extends StatelessWidget {
                               ),
                             ],
                           )
-                        : Text(message.text, style: AppTypography.chatMessage),
+                        : UiText(message.text,
+                            style: AppTypography.chatMessage),
                   ),
                 ),
                 if (isMe) ...[
@@ -1643,8 +1655,8 @@ class _MessageBubble extends StatelessWidget {
                       size: 12,
                     ),
                     const SizedBox(width: 4),
-                    Text(
-                      'Translate',
+                    UiText(
+                      context.uiCopy('Translate'),
                       style: AppTypography.chatTimestamp.copyWith(
                         color: AppColors.champagneGold,
                         fontWeight: FontWeight.w500,
@@ -1662,7 +1674,7 @@ class _MessageBubble extends StatelessWidget {
                         top: AppDimensions.space4,
                         left: AppDimensions.space4,
                         right: AppDimensions.space4),
-                    child: Text(_formatTime(message.sentAt),
+                    child: UiText(_formatTime(context, message.sentAt),
                         style: AppTypography.chatTimestamp),
                   )
                 : const SizedBox.shrink(),
@@ -1672,13 +1684,13 @@ class _MessageBubble extends StatelessWidget {
     );
   }
 
-  String _formatTime(DateTime dt) {
+  String _formatTime(BuildContext context, DateTime dt) {
     final h = dt.hour.toString().padLeft(2, '0');
     final m = dt.minute.toString().padLeft(2, '0');
     final now = DateTime.now();
     final diff = now.difference(dt);
     if (diff.inDays == 0) return '$h:$m';
-    if (diff.inDays == 1) return 'Yesterday $h:$m';
+    if (diff.inDays == 1) return context.uiYesterdayTime('$h:$m');
     return '${dt.day}/${dt.month} $h:$m';
   }
 }
@@ -1809,7 +1821,7 @@ class _InputBarState extends State<_InputBar> {
               textInputAction: TextInputAction.newline,
               onTapOutside: (_) => _focusNode.unfocus(),
               decoration: InputDecoration(
-                hintText: 'Type a message…',
+                hintText: context.uiCopy('Type a message…'),
                 hintStyle: AppTypography.inputLabel,
                 filled: false,
                 fillColor: Colors.transparent,
@@ -1835,7 +1847,7 @@ class _InputBarState extends State<_InputBar> {
               ? Padding(
                   padding: const EdgeInsets.only(left: AppDimensions.space10),
                   child: SilarahPressable(
-                    semanticLabel: 'Send message',
+                    semanticLabel: context.uiCopy('Send message'),
                     onTap: widget.onSend,
                     pressedScale: 0.92,
                     child: Container(

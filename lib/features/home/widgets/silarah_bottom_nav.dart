@@ -8,6 +8,7 @@
 //         and Chat (total unread count)
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -240,7 +241,7 @@ class _NavTab extends StatelessWidget {
               ),
               child: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text(
+                child: UiText(
                   item.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -290,7 +291,7 @@ class _Badge extends StatelessWidget {
         ],
       ),
       child: Center(
-        child: Text(
+        child: UiText(
           label,
           style: AppTypography.badge.copyWith(
             fontSize: 9,

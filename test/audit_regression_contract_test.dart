@@ -75,4 +75,24 @@ void main() {
     expect(migration, contains("AND status = 'active'"));
     expect(migration, isNot(contains("AND status <> 'blocked'")));
   });
+
+  test('legacy feature text renders through the localization boundary', () {
+    final roots = <Directory>[
+      Directory('lib/features'),
+      Directory('lib/core/widgets'),
+    ];
+    final rawTextConstructor = RegExp(r'\bText\(');
+    final findings = <String>[];
+
+    for (final root in roots) {
+      for (final entity in root.listSync(recursive: true)) {
+        if (entity is! File || !entity.path.endsWith('.dart')) continue;
+        if (entity.path.endsWith('language_selection_screen.dart')) continue;
+        final source = entity.readAsStringSync();
+        if (rawTextConstructor.hasMatch(source)) findings.add(entity.path);
+      }
+    }
+
+    expect(findings, isEmpty, reason: findings.join('\n'));
+  });
 }

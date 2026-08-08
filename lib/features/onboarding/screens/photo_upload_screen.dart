@@ -8,6 +8,7 @@
 // Photo privacy toggle for women.
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:io';
 import 'dart:async';
 import 'dart:typed_data';
@@ -206,19 +207,19 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
           await showDialog<void>(
             context: context,
             builder: (dialogContext) => AlertDialog(
-              title: Text(permissionL10n.media_photoAccessOff),
-              content: Text(permissionL10n.media_photoAccessBody),
+              title: UiText(permissionL10n.media_photoAccessOff),
+              content: UiText(permissionL10n.media_photoAccessBody),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext),
-                  child: Text(permissionL10n.common_button_cancel),
+                  child: UiText(permissionL10n.common_button_cancel),
                 ),
                 FilledButton(
                   onPressed: () async {
                     Navigator.pop(dialogContext);
                     await PlatformActionService.instance.openAppSettings();
                   },
-                  child: Text(permissionL10n.common_openSettings),
+                  child: UiText(permissionL10n.common_openSettings),
                 ),
               ],
             ),
@@ -227,7 +228,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(l10n.photo_error_pick_failed(e.toString()),
+            content: UiText(l10n.photo_error_pick_failed(e.toString()),
                 style: AppTypography.body.copyWith(
                   color: AppColors.readableOn(AppColors.softCoral),
                 )),
@@ -285,8 +286,9 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         ..clearSnackBars()
         ..showSnackBar(
           SnackBar(
-            content: Text(
-              'Explicit content was detected. This photo will be reviewed and will not appear publicly.',
+            content: UiText(
+              context.uiCopy(
+                  'Explicit content was detected. This photo will be reviewed and will not appear publicly.'),
               style: AppTypography.body.copyWith(
                 color: AppColors.readableOn(AppColors.surfaceGlassHover),
               ),
@@ -309,7 +311,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       _remoteUrls[index] = null;
       _removedRemoteSlots.remove(index);
       _operationTitle = 'Ready to upload';
-      _operationDetail = 'Photo ${index + 1} is ready for protected review';
+      _operationDetail = context.uiPhotoReadyReview(index + 1);
       _operationProgress = 1;
       _operationComplete = true;
     });
@@ -416,18 +418,19 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
               ),
             ),
             const SizedBox(height: AppDimensions.space20),
-            Text(l10n.photo_add_photo, style: AppTypography.bodyMedium),
+            UiText(l10n.photo_add_photo, style: AppTypography.bodyMedium),
             const SizedBox(height: AppDimensions.space16),
             ListTile(
               leading: Icon(Icons.camera_alt_outlined,
                   color: AppColors.champagneGold),
-              title: Text(l10n.photo_sheet_camera, style: AppTypography.body),
+              title: UiText(l10n.photo_sheet_camera, style: AppTypography.body),
               onTap: () => Navigator.pop(sheetCtx, ImageSource.camera),
             ),
             ListTile(
               leading: Icon(Icons.photo_library_outlined,
                   color: AppColors.champagneGold),
-              title: Text(l10n.photo_sheet_gallery, style: AppTypography.body),
+              title:
+                  UiText(l10n.photo_sheet_gallery, style: AppTypography.body),
               onTap: () => Navigator.pop(sheetCtx, ImageSource.gallery),
             ),
             const SizedBox(height: AppDimensions.space16),
@@ -513,8 +516,8 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         await Future<void>.delayed(const Duration(milliseconds: 700));
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Photos saved.'),
+          SnackBar(
+            content: UiText(context.uiCopy('Photos saved.')),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -533,7 +536,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         ..clearSnackBars()
         ..showSnackBar(
           SnackBar(
-            content: Text(
+            content: UiText(
               message,
               style: AppTypography.body.copyWith(
                 color: AppColors.readableOn(AppColors.surfaceGlassHover),
@@ -580,7 +583,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
-          content: Text(
+          content: UiText(
             message,
             style: AppTypography.body.copyWith(
               color: AppColors.readableOn(AppColors.surfaceGlassHover),
@@ -611,7 +614,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
   void _showPhotoSafetyError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
+        content: UiText(
           message,
           style: AppTypography.body.copyWith(
             color: AppColors.readableOn(AppColors.softCoral),
@@ -738,7 +741,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
                           color: AppColors.softCoral, size: 20),
                       const SizedBox(width: AppDimensions.space10),
                       Expanded(
-                        child: Text(
+                        child: UiText(
                           _existingLoadError!,
                           style: AppTypography.caption.copyWith(
                             color: AppColors.pearlWhite,
@@ -753,7 +756,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
                           });
                           unawaited(_loadExistingPhotos());
                         },
-                        child: const Text('Retry'),
+                        child: UiText(context.uiCopy('Retry')),
                       ),
                     ],
                   ),
@@ -772,7 +775,10 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
                     Expanded(
                       child: AspectRatio(
                         aspectRatio: 0.78,
-                        child: _buildPhotoSlot(i, label: 'Photo ${i + 1}'),
+                        child: _buildPhotoSlot(
+                          i,
+                          label: context.uiPhotoNumber(i + 1),
+                        ),
                       ),
                     ),
                   ],
@@ -784,7 +790,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
               // Privacy toggle for women
               if (_gender == Gender.female) ...[
                 const SizedBox(height: AppDimensions.space24),
-                Text(l10n.photo_privacy_label,
+                UiText(l10n.photo_privacy_label,
                     style: AppTypography.sectionLabel),
                 const SizedBox(height: AppDimensions.space12),
                 _PrivacyToggle(
@@ -858,10 +864,10 @@ class _GallerySummary extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('$photoCount of 4 photos',
+                UiText(context.uiPhotoCount(photoCount),
                     style: AppTypography.bodyMedium),
                 const SizedBox(height: AppDimensions.space2),
-                Text(
+                UiText(
                   photoCount < 3
                       ? 'Add variety to give members a fuller picture of you'
                       : 'Your gallery gives members a well-rounded introduction',
@@ -895,7 +901,7 @@ class _PhotoOperationPanel extends StatelessWidget {
     final accent = complete ? AppColors.verifiedTeal : AppColors.champagneGold;
     return Semantics(
       liveRegion: true,
-      label: '$title. $detail',
+      label: '${context.uiCopy(title)}. ${context.uiCopy(detail)}',
       value: '${(progress * 100).round()} percent',
       child: Container(
         padding: const EdgeInsets.all(AppDimensions.space14),
@@ -926,18 +932,18 @@ class _PhotoOperationPanel extends StatelessWidget {
                     children: [
                       AnimatedSwitcher(
                         duration: AppDimensions.durationTransition,
-                        child: Text(title,
+                        child: UiText(title,
                             key: ValueKey(title),
                             style: AppTypography.bodyMedium),
                       ),
                       const SizedBox(height: AppDimensions.space2),
-                      Text(detail,
+                      UiText(detail,
                           style: AppTypography.caption
                               .copyWith(color: AppColors.slateMist)),
                     ],
                   ),
                 ),
-                Text('${(progress * 100).round()}%',
+                UiText('${(progress * 100).round()}%',
                     style: AppTypography.captionMedium.copyWith(color: accent)),
               ],
             ),
@@ -974,8 +980,9 @@ class _SafetyPolicyNote extends StatelessWidget {
         Icon(Icons.shield_outlined, color: AppColors.slateMist, size: 18),
         const SizedBox(width: AppDimensions.space8),
         Expanded(
-          child: Text(
-            'Photos are checked privately before they become visible. Explicit content is not permitted.',
+          child: UiText(
+            context.uiCopy(
+                'Photos are checked privately before they become visible. Explicit content is not permitted.'),
             style: AppTypography.caption.copyWith(color: AppColors.slateMist),
           ),
         ),
@@ -1070,7 +1077,8 @@ class _PhotoSlot extends StatelessWidget {
     final isFilled = bytes != null || isRemote;
     return SilarahPressable(
       enabled: !isFilled && !active,
-      semanticLabel: isFilled ? '$label selected' : 'Add $label',
+      semanticLabel:
+          isFilled ? context.uiSelectedLabel(label) : context.uiAddLabel(label),
       onTap: isFilled
           ? null
           : () {
@@ -1163,7 +1171,7 @@ class _PhotoSlot extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppDimensions.radiusTiny),
                   border: Border.all(color: AppColors.cardBorder),
                 ),
-                child: Text(
+                child: UiText(
                   label,
                   style: AppTypography.caption.copyWith(
                     color: isPrimary
@@ -1206,7 +1214,7 @@ class _PhotoSlot extends StatelessWidget {
                         size: 12,
                       ),
                       const SizedBox(width: 4),
-                      Text(
+                      UiText(
                         moderation?.decision == PhotoModerationDecision.flagged
                             ? 'Review required'
                             : 'Content checked',
@@ -1226,7 +1234,7 @@ class _PhotoSlot extends StatelessWidget {
                 top: 8,
                 right: 8,
                 child: SilarahPressable(
-                  semanticLabel: 'Remove $label',
+                  semanticLabel: context.uiRemoveLabel(label),
                   onTap: () {
                     FocusManager.instance.primaryFocus?.unfocus();
                     onRemove();
@@ -1280,7 +1288,7 @@ class _EmptySlot extends StatelessWidget {
         Padding(
           padding:
               const EdgeInsets.symmetric(horizontal: AppDimensions.space12),
-          child: Text(
+          child: UiText(
             isPrimary ? 'Add your main photo' : 'Add',
             style: AppTypography.caption.copyWith(
               color: isPrimary ? AppColors.champagneGold : AppColors.slateMist,
@@ -1378,14 +1386,14 @@ class _PrivacyTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label,
+                  UiText(label,
                       style: AppTypography.bodyMedium.copyWith(
                         color: isSelected
                             ? AppColors.champagneGold
                             : AppColors.pearlWhite,
                       )),
                   const SizedBox(height: AppDimensions.space4),
-                  Text(subtitle, style: AppTypography.caption),
+                  UiText(subtitle, style: AppTypography.caption),
                 ],
               ),
             ),

@@ -2602,4 +2602,147 @@ class AppLocalizationsBn extends AppLocalizations {
   String safety_blocked(String name) {
     return '$name-কে ব্লক করা হয়েছে।';
   }
+
+  @override
+  String legacy_openProfile(String name) {
+    return '$name প্রোফাইল খুলুন';
+  }
+
+  @override
+  String legacy_typing(String name) {
+    return '$name টাইপ করছে';
+  }
+
+  @override
+  String legacy_deleteFailed(String error) {
+    return 'অ্যাকাউন্ট মুছে ফেলতে ব্যর্থ হয়েছে: $error';
+  }
+
+  @override
+  String legacy_changeCountry(String country) {
+    return 'দেশ পরিবর্তন করুন, বর্তমানে $country';
+  }
+
+  @override
+  String legacy_emailCopied(String email) {
+    return 'কোনো ইমেল অ্যাপ পাওয়া যায়নি। $email কপি করা হয়েছে।';
+  }
+
+  @override
+  String legacy_messagePerson(String name) {
+    return 'বার্তা $name';
+  }
+
+  @override
+  String legacy_renewsDate(String date) {
+    return 'পুনর্নবীকরণ $date';
+  }
+
+  @override
+  String legacy_ageYears(int age) {
+    return '$age বছর';
+  }
+
+  @override
+  String legacy_photoNumber(int number) {
+    return 'ছবি $number';
+  }
+
+  @override
+  String legacy_photoCount(int count) {
+    return '4টি ছবির মধ্যে $count';
+  }
+
+  @override
+  String legacy_removeLabel(String label) {
+    return '$label সরান';
+  }
+
+  @override
+  String legacy_selectedLabel(String label) {
+    return '$label নির্বাচিত';
+  }
+
+  @override
+  String legacy_addLabel(String label) {
+    return '$label যোগ করুন';
+  }
+
+  @override
+  String legacy_kycStatusSemantics(String status) {
+    return 'পরিচয় যাচাইকরণের স্থিতি: $status';
+  }
+
+  @override
+  String legacy_photoRequestSent(String name) {
+    return 'ছবির অনুরোধ $name এ পাঠানো হয়েছে।';
+  }
+
+  @override
+  String legacy_yesterdayTime(String time) {
+    return 'গতকাল $time';
+  }
+
+  @override
+  String legacy_minutesAgo(int count) {
+    return '$count মিনিট আগে';
+  }
+
+  @override
+  String legacy_hoursAgo(int count) {
+    return '$count ঘন্টা আগে';
+  }
+
+  @override
+  String legacy_daysAgo(int count) {
+    return '$count দিন আগে';
+  }
+
+  @override
+  String legacy_renewsAt(String time) {
+    return '$time এ রিনিউ হবে';
+  }
+
+  @override
+  String legacy_photoReadyReview(int number) {
+    return 'ছবি $number সুরক্ষিত পর্যালোচনার জন্য প্রস্তুত';
+  }
+
+  @override
+  String get legacy_onePhotoUnlock =>
+      'একবার আপনি দুজনেই আগ্রহ প্রকাশ করলে 1টি ফটো স্বয়ংক্রিয়ভাবে আনলক হয়ে যাবে।';
+
+  @override
+  String legacy_manyPhotosUnlock(int count) {
+    return '$count ফটোগুলি স্বয়ংক্রিয়ভাবে আনলক হয়ে যাবে যখন আপনি উভয়ে আগ্রহ প্রকাশ করবেন।';
+  }
+
+  @override
+  String get legacy_askOnePhoto =>
+      '1টি ছবি দেখার অনুমতির জন্য মালিককে জিজ্ঞাসা করুন৷';
+
+  @override
+  String legacy_askManyPhotos(int count) {
+    return '$count ফটো দেখার অনুমতির জন্য মালিককে জিজ্ঞাসা করুন৷';
+  }
+
+  @override
+  String legacy_heightImperial(int feet, int inches) {
+    return '$feet ফুট $inches ইঞ্চি';
+  }
+
+  @override
+  String legacy_minutesShort(int count) {
+    return '$countমি';
+  }
+
+  @override
+  String legacy_hoursShort(int count) {
+    return '$countঘণ্টা';
+  }
+
+  @override
+  String legacy_daysShort(int count) {
+    return '$countদিন';
+  }
 }

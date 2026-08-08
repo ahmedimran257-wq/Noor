@@ -5,6 +5,7 @@
 // Location is read from Quick Location and shown as confirmed context.
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:silarah/l10n/generated/app_localizations.dart';
@@ -424,8 +425,9 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
     }
     if (_isLoadingLanguages || _loadedLanguages.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Loading languages for the selected location...'),
+        SnackBar(
+          content: UiText(
+              context.uiCopy('Loading languages for the selected location...')),
         ),
       );
       return;
@@ -512,8 +514,9 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       } catch (_) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not save gender. Please try again.'),
+          SnackBar(
+            content: UiText(
+                context.uiCopy('Could not save gender. Please try again.')),
           ),
         );
         return;
@@ -560,7 +563,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                           color: AppColors.champagneGold, size: 16),
                       const SizedBox(width: AppDimensions.space10),
                       Expanded(
-                        child: Text(
+                        child: UiText(
                           l10n.onboarding_basicIdentity_guardianBanner(
                               localizedRelation),
                           style: AppTypography.caption.copyWith(
@@ -586,7 +589,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space32),
 
               if (_isGuardianMode) ...[
-                Text('GUARDIAN CONTACT INFO',
+                UiText(context.uiCopy('GUARDIAN CONTACT INFO'),
                     style: AppTypography.sectionLabel),
                 const SizedBox(height: AppDimensions.space8),
                 SilarahTextField(
@@ -639,7 +642,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space20),
 
               // Date of birth
-              Text(l10n.onboarding_label_dateOfBirth.toUpperCase(),
+              UiText(l10n.onboarding_label_dateOfBirth.toUpperCase(),
                   style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space8),
               GestureDetector(
@@ -660,7 +663,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                           color: AppColors.slateMist,
                           size: AppDimensions.iconSizeMedium),
                       const SizedBox(width: AppDimensions.space12),
-                      Text(
+                      UiText(
                         _dob != null
                             ? _formatDob(_dob!)
                             : l10n.onboarding_hint_selectDateOfBirth,
@@ -675,7 +678,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               ),
               if (_dobError.isNotEmpty) ...[
                 const SizedBox(height: AppDimensions.space8),
-                Text(_dobError,
+                UiText(_dobError,
                     style: AppTypography.caption
                         .copyWith(color: AppColors.softCoral)),
               ],
@@ -684,7 +687,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                 const SizedBox(height: AppDimensions.space20),
 
                 // Gender
-                Text(
+                UiText(
                   l10n.onboarding_label_gender_self.toUpperCase(),
                   style: AppTypography.sectionLabel,
                 ),
@@ -748,7 +751,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                           Icon(Icons.check_circle_rounded,
                               color: AppColors.champagneGold, size: 18),
                           const SizedBox(width: AppDimensions.space8),
-                          Text(l10n.onboarding_location_confirmed,
+                          UiText(l10n.onboarding_location_confirmed,
                               style: AppTypography.captionMedium
                                   .copyWith(color: AppColors.champagneGold)),
                         ],
@@ -760,10 +763,11 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                           Icon(Icons.location_city_rounded,
                               color: AppColors.slateMist, size: 18),
                           const SizedBox(width: AppDimensions.space12),
-                          Text(l10n.onboarding_label_city,
+                          UiText(l10n.onboarding_label_city,
                               style: AppTypography.inputLabel),
                           const Spacer(),
-                          Text(_selectedCity!, style: AppTypography.bodyMedium),
+                          UiText(_selectedCity!,
+                              style: AppTypography.bodyMedium),
                         ],
                       ),
                       // State
@@ -779,10 +783,10 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                             Icon(Icons.map_outlined,
                                 color: AppColors.slateMist, size: 18),
                             const SizedBox(width: AppDimensions.space12),
-                            Text(l10n.onboarding_label_stateRegion,
+                            UiText(l10n.onboarding_label_stateRegion,
                                 style: AppTypography.inputLabel),
                             const Spacer(),
-                            Text(_selectedStateName!,
+                            UiText(_selectedStateName!,
                                 style: AppTypography.bodyMedium),
                           ],
                         ),
@@ -799,13 +803,13 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                             Icon(Icons.public,
                                 color: AppColors.slateMist, size: 18),
                             const SizedBox(width: AppDimensions.space12),
-                            Text(
+                            UiText(
                                 _isGuardianMode
                                     ? l10n.onboarding_label_country_guardian
                                     : l10n.onboarding_label_country_self,
                                 style: AppTypography.inputLabel),
                             const Spacer(),
-                            Text(_selectedCountryName!,
+                            UiText(_selectedCountryName!,
                                 style: AppTypography.bodyMedium),
                           ],
                         ),
@@ -834,7 +838,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                         .currentData
                         .profileCreatorRelation ??
                     'self';
-                return Text(
+                return UiText(
                     '${CopyEngine.communityQuestion(l10nBuild, rel).toUpperCase()}  (${l10nBuild.common_label_optional})',
                     style: AppTypography.sectionLabel);
               }),
@@ -864,7 +868,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                         size: AppDimensions.iconSizeMedium),
                     const SizedBox(width: AppDimensions.space12),
                     Expanded(
-                        child: Text(
+                        child: UiText(
                       _community ?? l10n.onboarding_hint_selectCommunity,
                       style: AppTypography.inputText.copyWith(
                         color: _community != null
@@ -880,7 +884,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space28),
 
               // ── HEIGHT ─────────────────────────────────────────────
-              Text(
+              UiText(
                   _isGuardianMode
                       ? l10n.onboarding_label_height_guardian.toUpperCase()
                       : l10n.onboarding_label_height_self.toUpperCase(),
@@ -897,7 +901,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space24),
 
               // ── COMPLEXION (Optional) ──────────────────────────────
-              Text(l10n.onboarding_label_complexion.toUpperCase(),
+              UiText(l10n.onboarding_label_complexion.toUpperCase(),
                   style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
@@ -916,7 +920,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space24),
 
               // ── MOTHER TONGUE (Required) ───────────────────────────
-              Text(l10n.onboarding_label_motherTongue.toUpperCase(),
+              UiText(l10n.onboarding_label_motherTongue.toUpperCase(),
                   style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
               GestureDetector(
@@ -946,7 +950,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                           size: AppDimensions.iconSizeMedium),
                       const SizedBox(width: AppDimensions.space12),
                       Expanded(
-                        child: Text(
+                        child: UiText(
                           _motherTongue ?? l10n.onboarding_hint_selectLanguage,
                           style: AppTypography.inputText.copyWith(
                             color: _motherTongue != null
@@ -965,7 +969,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space28),
 
               // ── RESIDENCY STATUS (Optional) ─────────────────────────
-              Text(l10n.onboarding_label_residencyStatus.toUpperCase(),
+              UiText(l10n.onboarding_label_residencyStatus.toUpperCase(),
                   style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
@@ -984,7 +988,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space28),
 
               // ── SPECIAL NEEDS (Optional) ─────────────────────────────
-              Text(l10n.onboarding_label_specialNeeds.toUpperCase(),
+              UiText(l10n.onboarding_label_specialNeeds.toUpperCase(),
                   style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space4),
               Container(
@@ -1000,7 +1004,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                         color: AppColors.slateMist, size: 14),
                     const SizedBox(width: AppDimensions.space8),
                     Expanded(
-                      child: Text(
+                      child: UiText(
                         l10n.onboarding_specialNeeds_privacy,
                         style: AppTypography.caption,
                       ),
@@ -1061,14 +1065,14 @@ class _MissingLocationCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Complete confirmed location',
+                UiText(
+                  context.uiCopy('Complete confirmed location'),
                   style: AppTypography.bodyMedium.copyWith(
                     color: AppColors.pearlWhite,
                   ),
                 ),
                 const SizedBox(height: AppDimensions.space4),
-                Text(
+                UiText(
                   countryName == null
                       ? 'Choose your country and city before continuing.'
                       : 'Choose a city in $countryName before continuing.',
@@ -1077,8 +1081,8 @@ class _MissingLocationCard extends StatelessWidget {
                 const SizedBox(height: AppDimensions.space10),
                 GestureDetector(
                   onTap: onTap,
-                  child: Text(
-                    'Go to location step',
+                  child: UiText(
+                    context.uiCopy('Go to location step'),
                     style: AppTypography.captionMedium.copyWith(
                       color: AppColors.champagneGold,
                       decoration: TextDecoration.none,
@@ -1135,7 +1139,7 @@ class _GenderPill extends StatelessWidget {
                     isSelected ? AppColors.champagneGold : AppColors.slateMist,
                 size: AppDimensions.iconSizeMedium),
             const SizedBox(width: AppDimensions.space8),
-            Text(label,
+            UiText(label,
                 style: AppTypography.bodyMedium.copyWith(
                   color: isSelected
                       ? AppColors.champagneGold
@@ -1184,7 +1188,7 @@ class _HeightStepper extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
+                UiText(
                   '$heightCm cm',
                   style: AppTypography.bodyMedium.copyWith(
                     color: AppColors.champagneGold,
@@ -1194,8 +1198,8 @@ class _HeightStepper extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  _feetInchDisplay(heightCm),
+                UiText(
+                  _feetInchDisplay(context, heightCm),
                   style: AppTypography.caption,
                   textAlign: TextAlign.center,
                 ),
@@ -1214,11 +1218,11 @@ class _HeightStepper extends StatelessWidget {
     );
   }
 
-  String _feetInchDisplay(int cm) {
+  String _feetInchDisplay(BuildContext context, int cm) {
     final totalInches = cm / 2.54;
     final feet = totalInches ~/ 12;
     final inches = totalInches.round() % 12;
-    return '$feet ft $inches in';
+    return context.uiHeightImperial(feet, inches);
   }
 }
 
@@ -1294,7 +1298,7 @@ class _SelectChip extends StatelessWidget {
             width: AppDimensions.borderThin,
           ),
         ),
-        child: Text(
+        child: UiText(
           label,
           style: AppTypography.chipLabel.copyWith(
             color: isSelected ? AppColors.champagneGold : AppColors.pearlWhite,
@@ -1371,7 +1375,7 @@ class _GenericListPickerState extends State<_GenericListPicker> {
               ),
             ),
             const SizedBox(height: AppDimensions.space16),
-            Text(widget.title, style: AppTypography.bodyMedium),
+            UiText(widget.title, style: AppTypography.bodyMedium),
             const SizedBox(height: AppDimensions.space12),
             Padding(
               padding:
@@ -1383,7 +1387,7 @@ class _GenericListPickerState extends State<_GenericListPicker> {
                     FocusManager.instance.primaryFocus?.unfocus(),
                 style: AppTypography.inputText,
                 decoration: InputDecoration(
-                  hintText: 'Search…',
+                  hintText: context.uiCopy('Search…'),
                   hintStyle: AppTypography.inputLabel,
                   prefixIcon: Icon(Icons.search_rounded,
                       color: AppColors.slateMist, size: 20),
@@ -1414,7 +1418,7 @@ class _GenericListPickerState extends State<_GenericListPicker> {
               child: _filtered.isEmpty
                   ? Padding(
                       padding: const EdgeInsets.all(AppDimensions.space24),
-                      child: Text('Nothing found.',
+                      child: UiText(context.uiCopy('Nothing found.'),
                           style: AppTypography.bodyMuted,
                           textAlign: TextAlign.center),
                     )
@@ -1426,7 +1430,7 @@ class _GenericListPickerState extends State<_GenericListPicker> {
                         final item = _filtered[i];
                         final isSel = item == widget.selected;
                         return ListTile(
-                          title: Text(item, style: AppTypography.body),
+                          title: UiText(item, style: AppTypography.body),
                           trailing: isSel
                               ? Icon(Icons.check_rounded,
                                   color: AppColors.champagneGold, size: 20)

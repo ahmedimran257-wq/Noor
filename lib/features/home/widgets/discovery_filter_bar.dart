@@ -13,6 +13,7 @@
 // Tapping any individual chip opens that filter's mini-sheet.
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -206,7 +207,7 @@ class _Chip extends StatelessWidget {
             ),
             const SizedBox(width: AppDimensions.space6),
             Flexible(
-              child: Text(
+              child: UiText(
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -271,7 +272,7 @@ class _SheetBase extends StatelessWidget {
           // Header row
           Row(
             children: [
-              Text(title,
+              UiText(title,
                   style: AppTypography.screenTitle.copyWith(fontSize: 20)),
               const Spacer(),
               if (onReset != null)
@@ -280,7 +281,7 @@ class _SheetBase extends StatelessWidget {
                     onReset!();
                     Navigator.pop(context);
                   },
-                  child: Text('Reset',
+                  child: UiText(context.uiCopy('Reset'),
                       style: AppTypography.caption
                           .copyWith(color: AppColors.champagneGold)),
                 ),
@@ -307,7 +308,8 @@ class _SheetBase extends StatelessWidget {
                   onApply!();
                   Navigator.pop(context);
                 },
-                child: Text('Apply', style: AppTypography.button),
+                child: UiText(context.uiCopy('Apply'),
+                    style: AppTypography.button),
               ),
             ),
           const SizedBox(height: AppDimensions.space8),
@@ -388,8 +390,8 @@ class _AgeRangeSheetState extends State<_AgeRangeSheet> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('18', style: AppTypography.caption),
-            Text('60', style: AppTypography.caption),
+            UiText('18', style: AppTypography.caption),
+            UiText('60', style: AppTypography.caption),
           ],
         ),
       ],
@@ -411,8 +413,8 @@ class _AgeLabel extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
         border: Border.all(color: AppColors.goldBorder),
       ),
-      child: Text(
-        '$age yrs',
+      child: UiText(
+        context.uiAgeYears(age),
         style:
             AppTypography.bodyMedium.copyWith(color: AppColors.champagneGold),
       ),

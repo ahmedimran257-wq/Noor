@@ -5,6 +5,7 @@
 //  (Slate Mist → Obsidian Night gradient moving left to right)."
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimensions.dart';
@@ -148,7 +149,7 @@ class _SilarahPulseLoaderState extends State<SilarahPulseLoader>
         ),
         if (widget.label != null) ...[
           const SizedBox(height: AppDimensions.space12),
-          Text(
+          UiText(
             widget.label!,
             style: AppTypography.caption.copyWith(
               color: AppColors.slateMist,

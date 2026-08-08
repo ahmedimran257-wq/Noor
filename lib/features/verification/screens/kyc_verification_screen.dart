@@ -1,3 +1,4 @@
+import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -115,9 +116,9 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(
+        title: UiText(
             denied ? l10n.media_cameraAccessOff : l10n.media_cameraUnavailable),
-        content: Text(
+        content: UiText(
           denied
               ? l10n.media_cameraAccessBody
               : l10n.media_cameraUnavailableBody,
@@ -125,7 +126,7 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: Text(l10n.common_button_cancel),
+            child: UiText(l10n.common_button_cancel),
           ),
           if (denied)
             FilledButton(
@@ -133,7 +134,7 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
                 Navigator.pop(dialogContext);
                 await PlatformActionService.instance.openAppSettings();
               },
-              child: Text(l10n.common_openSettings),
+              child: UiText(l10n.common_openSettings),
             ),
         ],
       ),
@@ -188,15 +189,15 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.obsidianNight,
         foregroundColor: AppColors.pearlWhite,
-        title: Text(l10n.kyc_title),
+        title: UiText(l10n.kyc_title),
       ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(AppDimensions.space24),
           children: [
-            Text(l10n.kyc_heading, style: AppTypography.screenTitle),
+            UiText(l10n.kyc_heading, style: AppTypography.screenTitle),
             const SizedBox(height: AppDimensions.space8),
-            Text(
+            UiText(
               l10n.kyc_intro,
               style: AppTypography.bodyMuted,
             ),
@@ -234,12 +235,12 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
                 items: [
                   DropdownMenuItem(
                       value: 'government_id',
-                      child: Text(l10n.kyc_governmentId)),
+                      child: UiText(l10n.kyc_governmentId)),
                   DropdownMenuItem(
-                      value: 'passport', child: Text(l10n.kyc_passport)),
+                      value: 'passport', child: UiText(l10n.kyc_passport)),
                   DropdownMenuItem(
                       value: 'driving_license',
-                      child: Text(l10n.kyc_drivingLicence)),
+                      child: UiText(l10n.kyc_drivingLicence)),
                 ],
                 onChanged: (value) =>
                     setState(() => _idType = value ?? _idType),
@@ -260,7 +261,7 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
                           width: 22,
                           height: 22,
                           child: CircularProgressIndicator(strokeWidth: 2))
-                      : Text(
+                      : UiText(
                           _status.status == KycVerificationStatus.notStarted
                               ? l10n.kyc_submitReview
                               : l10n.kyc_submitNewEvidence,
@@ -308,7 +309,7 @@ class _KycStatusPanel extends StatelessWidget {
     final detail = snapshot.reason ?? presentation.message;
     return Semantics(
       container: true,
-      label: 'Identity verification status: ${presentation.label}',
+      label: context.uiKycStatusSemantics(presentation.label),
       child: Container(
         padding: const EdgeInsets.all(AppDimensions.space16),
         decoration: BoxDecoration(
@@ -337,17 +338,17 @@ class _KycStatusPanel extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  UiText(
                     presentation.label,
                     style: AppTypography.bodyMedium.copyWith(
                       color: presentation.color,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(detail, style: AppTypography.caption),
+                  UiText(detail, style: AppTypography.caption),
                   if (snapshot.submittedAt != null) ...[
                     const SizedBox(height: 6),
-                    Text(
+                    UiText(
                       l10n.kyc_submitted(
                         MaterialLocalizations.of(context)
                             .formatShortDate(snapshot.submittedAt!.toLocal()),
@@ -392,8 +393,8 @@ class _CaptureTile extends StatelessWidget {
         ),
         leading: Icon(icon,
             color: complete ? AppColors.verifiedTeal : AppColors.champagneGold),
-        title: Text(title, style: AppTypography.bodyMedium),
-        subtitle: Text(subtitle, style: AppTypography.caption),
+        title: UiText(title, style: AppTypography.bodyMedium),
+        subtitle: UiText(subtitle, style: AppTypography.caption),
         trailing: Icon(
             complete ? Icons.check_circle_rounded : Icons.camera_alt_outlined,
             color: complete ? AppColors.verifiedTeal : AppColors.slateMist),
@@ -415,7 +416,7 @@ class _ResultPanel extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
         border: Border.all(color: presentation.color.withValues(alpha: 0.5)),
       ),
-      child: Text(result.message,
+      child: UiText(result.message,
           style: AppTypography.body.copyWith(color: presentation.color)),
     );
   }

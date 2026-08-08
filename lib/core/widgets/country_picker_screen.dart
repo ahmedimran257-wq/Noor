@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:silarah/l10n/ui_copy.dart';
+import 'package:flutter/material.dart';
 
 import '../data/country_data.dart';
 import '../theme/app_colors.dart';
@@ -35,7 +36,7 @@ class _CountryPickerScreenState extends State<CountryPickerScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.obsidianNight,
         foregroundColor: AppColors.pearlWhite,
-        title: const Text('Select country'),
+        title: UiText(context.uiCopy('Select country')),
       ),
       body: Column(
         children: [
@@ -46,9 +47,9 @@ class _CountryPickerScreenState extends State<CountryPickerScreen> {
               onTapOutside: (_) =>
                   FocusManager.instance.primaryFocus?.unfocus(),
               style: AppTypography.body,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.search_rounded),
-                hintText: 'Search country',
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.search_rounded),
+                hintText: context.uiCopy('Search country'),
               ),
             ),
           ),
@@ -59,9 +60,9 @@ class _CountryPickerScreenState extends State<CountryPickerScreen> {
                 final country = countries[index];
                 final selected = country.iso2 == widget.selected.iso2;
                 return ListTile(
-                  leading:
-                      Text(country.flag, style: const TextStyle(fontSize: 22)),
-                  title: Text(country.name, style: AppTypography.body),
+                  leading: UiText(country.flag,
+                      style: const TextStyle(fontSize: 22)),
+                  title: UiText(country.name, style: AppTypography.body),
                   trailing: selected
                       ? Icon(Icons.check_rounded,
                           color: AppColors.champagneGold)

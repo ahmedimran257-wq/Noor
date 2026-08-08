@@ -6,6 +6,7 @@
 // Consent is cached pre-auth and flushed to user_consents after email OTP auth.
 // ============================================================
 
+import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -110,9 +111,9 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
                       ),
                     ),
                     const SizedBox(height: AppDimensions.space32),
-                    Text(l10n.legal_title, style: AppTypography.screenTitle),
+                    UiText(l10n.legal_title, style: AppTypography.screenTitle),
                     const SizedBox(height: AppDimensions.space8),
-                    Text(
+                    UiText(
                       l10n.legal_subtitle,
                       style: AppTypography.bodyMuted,
                     ),
@@ -285,7 +286,7 @@ class _LegalSaveError extends StatelessWidget {
               ),
               const SizedBox(width: AppDimensions.space8),
               Expanded(
-                child: Text(
+                child: UiText(
                   message,
                   style: AppTypography.bodyMedium.copyWith(
                     color: AppColors.pearlWhite,
@@ -351,7 +352,7 @@ class _TermsSummaryCard extends StatelessWidget {
                 Icon(item.icon, color: AppColors.champagneGold, size: 20),
                 const SizedBox(width: AppDimensions.space12),
                 Expanded(
-                  child: Text(item.text, style: AppTypography.body),
+                  child: UiText(item.text, style: AppTypography.body),
                 ),
               ],
             ),
@@ -366,7 +367,7 @@ class _TermsSummaryCard extends StatelessWidget {
                     color: AppColors.champagneGold, size: 20),
                 const SizedBox(width: AppDimensions.space12),
                 Expanded(
-                  child: Text(
+                  child: UiText(
                     l10n.legal_summary_5,
                     style: AppTypography.body,
                   ),
@@ -425,7 +426,7 @@ class _SilarahCheckbox extends StatelessWidget {
           Expanded(
             child: richLabel != null
                 ? RichText(text: richLabel!)
-                : Text(label, style: AppTypography.body),
+                : UiText(label, style: AppTypography.body),
           ),
         ],
       ),
