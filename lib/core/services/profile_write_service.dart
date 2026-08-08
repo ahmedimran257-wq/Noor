@@ -673,26 +673,12 @@ class ProfileWriteService {
   }
 
   static Map<String, dynamic> _fullProfileFields(OnboardingData data) {
-    final isGuardian = _isGuardianData(data);
+    // Edit Profile only owns ordinary member attributes. Ownership, guardian
+    // settings and photo privacy each have dedicated RPCs with their own
+    // validation/audit rules. Including those values here makes the secured
+    // patch_my_profile allowlist reject the entire otherwise-valid edit.
     final fields = <String, dynamic>{
       ..._locationFields(data),
-      'profile_owner_type': _profileOwnerTypeForDb(data),
-      'profile_creator_relation': _creatorRelationForDb(data),
-      'ward_relationship': _wardRelationshipForDb(data),
-      'guardian_mode': isGuardian ? data.guardianMode ?? 'passive' : 'none',
-      'guardian_user_id': isGuardian ? _userId : null,
-      'guardian_name': isGuardian ? data.guardianName : null,
-      'guardian_relationship': isGuardian
-          ? _guardianRelationshipForDb(data.guardianRelationship)
-          : null,
-      'relationship_to_ward': isGuardian
-          ? _relationshipToWardForDb(data.guardianRelationship)
-          : null,
-      'guardian_email': isGuardian ? data.guardianEmail : null,
-      'guardian_authority_scope':
-          isGuardian ? data.guardianAuthorityScope : null,
-      'guardian_phone_country_code':
-          isGuardian ? data.guardianPhoneCountryCode : null,
       'first_name': data.firstName,
       'last_name': data.lastName,
       'date_of_birth': data.dateOfBirth?.toIso8601String().split('T')[0],
@@ -730,7 +716,6 @@ class ProfileWriteService {
       'bio': data.bio,
       'interests': data.interests,
       'languages': data.languages,
-      'photo_privacy': _photoPrivacyToString(data.photoPrivacy),
       'quran_memorization': data.quranMemorization,
       'religious_education': data.religiousEducation,
       'is_revert': data.isRevert,
@@ -758,6 +743,15 @@ class ProfileWriteService {
 
     return _compactMap(fields);
   }
+
+  /// Exposes the Edit Profile payload only to contract tests. Keeping this
+  /// test at the mapper boundary prevents a UI refactor from reintroducing
+  /// fields owned by security-sensitive dedicated RPCs.
+  @visibleForTesting
+  static Map<String, dynamic> buildEditProfileFieldsForTest(
+    OnboardingData data,
+  ) =>
+      _fullProfileFields(data);
 
   static Map<String, dynamic> _locationFields(OnboardingData data) {
     return _compactMap({
@@ -1400,18 +1394,6 @@ class ProfileWriteService {
         return 'student';
       case EmploymentStatus.notWorking:
         return 'not_working';
-    }
-  }
-
-  static String? _photoPrivacyToString(PhotoPrivacy? p) {
-    if (p == null) return null;
-    switch (p) {
-      case PhotoPrivacy.publicAll:
-        return 'public';
-      case PhotoPrivacy.mutualOnly:
-        return 'mutual_only';
-      case PhotoPrivacy.requestOnly:
-        return 'request_only';
     }
   }
 
