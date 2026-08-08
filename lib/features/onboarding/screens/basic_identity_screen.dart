@@ -313,59 +313,53 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
   }
 
   String _getLocalizedComplexion(AppLocalizations l10n, String raw) {
-    if (l10n.localeName == 'ar') {
-      switch (raw) {
-        case 'Fair':
-          return 'فاتحة';
-        case 'Medium':
-          return 'قمحية';
-        case 'Olive':
-          return 'زيتونية';
-        case 'Dark':
-          return 'سمراء';
-        case 'Prefer not to say':
-          return 'أفضل عدم الإجابة';
-      }
+    switch (raw) {
+      case 'Fair':
+        return l10n.onboarding_complexion_fair;
+      case 'Medium':
+        return l10n.onboarding_complexion_medium;
+      case 'Olive':
+        return l10n.onboarding_complexion_olive;
+      case 'Dark':
+        return l10n.onboarding_complexion_dark;
+      case 'Prefer not to say':
+        return l10n.onboarding_label_preferNotToSay;
     }
     return raw;
   }
 
   String _getLocalizedResidency(AppLocalizations l10n, String raw) {
-    if (l10n.localeName == 'ar') {
-      switch (raw) {
-        case 'Citizen':
-          return 'مواطن';
-        case 'Permanent Resident':
-          return 'مقيم دائم';
-        case 'Work Visa':
-          return 'تأشيرة عمل';
-        case 'Student Visa':
-          return 'تأشيرة طالب';
-        case 'Other':
-          return 'أخرى';
-        case 'Prefer not to say':
-          return 'أفضل عدم الإجابة';
-      }
+    switch (raw) {
+      case 'Citizen':
+        return l10n.onboarding_residency_citizen;
+      case 'Permanent Resident':
+        return l10n.onboarding_residency_permanentResident;
+      case 'Work Visa':
+        return l10n.onboarding_residency_workVisa;
+      case 'Student Visa':
+        return l10n.onboarding_residency_studentVisa;
+      case 'Other':
+        return l10n.lang_other;
+      case 'Prefer not to say':
+        return l10n.onboarding_label_preferNotToSay;
     }
     return raw;
   }
 
   String _getLocalizedSpecialNeeds(AppLocalizations l10n, String raw) {
-    if (l10n.localeName == 'ar') {
-      switch (raw) {
-        case 'None':
-          return 'لا يوجد';
-        case 'Physical disability':
-          return 'إعاقة جسدية';
-        case 'Hearing impairment':
-          return 'ضعف السمع';
-        case 'Visual impairment':
-          return 'ضعف البصر';
-        case 'Other':
-          return 'أخرى';
-        case 'Prefer not to say':
-          return 'أفضل عدم الإجابة';
-      }
+    switch (raw) {
+      case 'None':
+        return l10n.onboarding_specialNeeds_none;
+      case 'Physical disability':
+        return l10n.onboarding_specialNeeds_physical;
+      case 'Hearing impairment':
+        return l10n.onboarding_specialNeeds_hearing;
+      case 'Visual impairment':
+        return l10n.onboarding_specialNeeds_visual;
+      case 'Other':
+        return l10n.lang_other;
+      case 'Prefer not to say':
+        return l10n.onboarding_label_preferNotToSay;
     }
     return raw;
   }
@@ -785,10 +779,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                             Icon(Icons.map_outlined,
                                 color: AppColors.slateMist, size: 18),
                             const SizedBox(width: AppDimensions.space12),
-                            Text(
-                                l10n.localeName == 'ar'
-                                    ? 'المنطقة'
-                                    : 'State / Region',
+                            Text(l10n.onboarding_label_stateRegion,
                                 style: AppTypography.inputLabel),
                             const Spacer(),
                             Text(_selectedStateName!,
@@ -808,7 +799,10 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                             Icon(Icons.public,
                                 color: AppColors.slateMist, size: 18),
                             const SizedBox(width: AppDimensions.space12),
-                            Text(l10n.localeName == 'ar' ? 'البلد' : 'Country',
+                            Text(
+                                _isGuardianMode
+                                    ? l10n.onboarding_label_country_guardian
+                                    : l10n.onboarding_label_country_self,
                                 style: AppTypography.inputLabel),
                             const Spacer(),
                             Text(_selectedCountryName!,
@@ -841,7 +835,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                         .profileCreatorRelation ??
                     'self';
                 return Text(
-                    '${CopyEngine.communityQuestion(l10nBuild, rel).toUpperCase()}  (Optional)',
+                    '${CopyEngine.communityQuestion(l10nBuild, rel).toUpperCase()}  (${l10nBuild.common_label_optional})',
                     style: AppTypography.sectionLabel);
               }),
               const SizedBox(height: AppDimensions.space12),
@@ -903,10 +897,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space24),
 
               // ── COMPLEXION (Optional) ──────────────────────────────
-              Text(
-                  l10n.localeName == 'ar'
-                      ? 'البشرة (اختياري)'.toUpperCase()
-                      : 'COMPLEXION  (Optional)',
+              Text(l10n.onboarding_label_complexion.toUpperCase(),
                   style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
@@ -974,10 +965,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space28),
 
               // ── RESIDENCY STATUS (Optional) ─────────────────────────
-              Text(
-                  l10n.localeName == 'ar'
-                      ? 'حالة الإقامة (اختياري)'.toUpperCase()
-                      : 'RESIDENCY STATUS  (Optional)',
+              Text(l10n.onboarding_label_residencyStatus.toUpperCase(),
                   style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
               Wrap(
@@ -996,10 +984,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
               const SizedBox(height: AppDimensions.space28),
 
               // ── SPECIAL NEEDS (Optional) ─────────────────────────────
-              Text(
-                  l10n.localeName == 'ar'
-                      ? 'ذوو الاحتياجات الخاصة (اختياري)'.toUpperCase()
-                      : 'SPECIAL NEEDS  (Optional)',
+              Text(l10n.onboarding_label_specialNeeds.toUpperCase(),
                   style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space4),
               Container(
@@ -1016,9 +1001,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                     const SizedBox(width: AppDimensions.space8),
                     Expanded(
                       child: Text(
-                        l10n.localeName == 'ar'
-                            ? 'يتم مشاركة هذا فقط بعد الاهتمام المتبادل.'
-                            : 'This is only shared after mutual interest.',
+                        l10n.onboarding_specialNeeds_privacy,
                         style: AppTypography.caption,
                       ),
                     ),

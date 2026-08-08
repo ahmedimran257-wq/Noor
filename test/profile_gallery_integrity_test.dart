@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:silarah/core/cubits/interests/interests_cubit.dart';
 import 'package:silarah/core/models/discovery_profile.dart';
 import 'package:silarah/features/home/screens/profile_detail_screen.dart';
+import 'package:silarah/l10n/generated/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -84,6 +85,8 @@ void main() {
       BlocProvider(
         create: (_) => InterestsCubit(),
         child: const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: ProfileDetailScreen(
             profile: profile,
             heroTag: 'gallery-test',

@@ -144,19 +144,19 @@ class BlockReportCubit extends Cubit<BlockReportState> {
 
   /// Silently block a user.
   /// Blueprint: "The blocked person is not notified."
-  Future<void> blockUser({
+  Future<bool> blockUser({
     required String userId,
     required String name,
     required String lastInitial,
   }) async {
-    if (state.isBlocked(userId)) return;
-    if (!_isRealMode) return;
+    if (state.isBlocked(userId)) return true;
+    if (!_isRealMode) return false;
 
     emit(state.copyWith(isSubmitting: true));
     final activeUserId = SupabaseService.currentUserId;
     if (activeUserId == null) {
       emit(state.copyWith(isSubmitting: false));
-      return;
+      return false;
     }
 
     if (_isRealMode) {
@@ -168,11 +168,11 @@ class BlockReportCubit extends Cubit<BlockReportState> {
       } catch (e) {
         debugPrint('[BlockReportCubit] Error blocking user: $e');
         emit(state.copyWith(isSubmitting: false));
-        return;
+        return false;
       }
     }
 
-    if (isClosed) return;
+    if (isClosed) return false;
 
     final blocked = BlockedUser(
       userId: userId,
@@ -190,6 +190,7 @@ class BlockReportCubit extends Cubit<BlockReportState> {
       hiddenProfileIds: updatedHidden,
       successMessage: 'User blocked. They can no longer contact you.',
     ));
+    return true;
   }
 
   /// Unblock a previously blocked user.

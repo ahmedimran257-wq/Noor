@@ -70,10 +70,6 @@ npx supabase secrets set FIREBASE_PROJECT_ID=your_firebase_project_id
 npx supabase secrets set FIREBASE_SERVICE_ACCOUNT_B64=base64_encoded_service_account_json
 npx supabase secrets set REVENUECAT_WEBHOOK_SECRET=your_revenuecat_webhook_secret
 npx supabase secrets set BREVO_API_KEY=your_server_side_brevo_api_key
-npx supabase secrets set DIGILOCKER_CLIENT_ID=your_requester_client_id
-npx supabase secrets set DIGILOCKER_CLIENT_SECRET=your_requester_client_secret
-npx supabase secrets set DIGILOCKER_REDIRECT_URI=silarah://digilocker/callback
-npx supabase secrets set DIGILOCKER_EVIDENCE_HMAC_SECRET=a_separate_random_32_byte_or_longer_secret
 ```
 
 Do not pass Firebase service-account JSON directly on a command line. Shell
@@ -102,12 +98,6 @@ Never place the service-role key in Flutter, browser JavaScript, or any `NEXT_PU
 transactional mail. Keep it in Supabase Edge Function secrets; never ship it in
 the Flutter application.
 
-The DigiLocker client secret and evidence HMAC secret are server-only. The
-mobile build contains only the requester client id and registered redirect URI.
-The evidence secret must be separate from the DigiLocker client secret. The
-verification function stores only keyed identifiers, match booleans and a
-payload digest; it never stores OAuth tokens, Aadhaar numbers or raw XML.
-
 ## Edge Functions
 
 Deploy after migrations:
@@ -117,7 +107,6 @@ npx supabase functions deploy admin-purge-deleted-users
 npx supabase functions deploy auth-before-user-created
 npx supabase functions deploy brevo-key-keepalive
 npx supabase functions deploy dispatch-notifications
-npx supabase functions deploy digilocker-verify
 npx supabase functions deploy get-signed-url
 npx supabase functions deploy process-kyc
 npx supabase functions deploy purge-kyc-documents --no-verify-jwt

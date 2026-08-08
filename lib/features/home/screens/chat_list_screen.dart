@@ -22,6 +22,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
 import '../../../core/widgets/loaders/silarah_blur_image.dart';
 import '../../../core/widgets/silarah_empty_state.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import 'chat_screen.dart';
 import 'paywall_gate_screen.dart';
 
@@ -111,6 +112,7 @@ class _ChatListScreenState extends State<ChatListScreen>
     super.build(context);
     return BlocBuilder<ChatCubit, ChatState>(
       builder: (context, state) {
+        final l10n = AppLocalizations.of(context);
         final query = _searchQuery.trim().toLowerCase();
         final conversations = state.sortedConversations.where((conversation) {
           if (query.isEmpty) return true;
@@ -155,7 +157,7 @@ class _ChatListScreenState extends State<ChatListScreen>
                               style: AppTypography.body,
                               cursorColor: AppColors.champagneGold,
                               decoration: InputDecoration(
-                                hintText: 'Search messages',
+                                hintText: l10n.chat_searchHint,
                                 hintStyle: AppTypography.body.copyWith(
                                   color: AppColors.slateMist,
                                 ),
@@ -250,7 +252,7 @@ class _ChatListScreenState extends State<ChatListScreen>
 
             Expanded(
               child: conversations.isEmpty
-                  ? const _ChatEmptyState()
+                  ? _ChatEmptyState(hasSearchQuery: query.isNotEmpty)
                   : ListView.separated(
                       padding: const EdgeInsets.symmetric(
                         horizontal: AppDimensions.space24,
@@ -594,15 +596,21 @@ class _ConversationTile extends StatelessWidget {
 // ── Empty State ────────────────────────────────────────────────
 
 class _ChatEmptyState extends StatelessWidget {
-  const _ChatEmptyState();
+  const _ChatEmptyState({required this.hasSearchQuery});
+
+  final bool hasSearchQuery;
 
   @override
   Widget build(BuildContext context) {
-    return const SilarahEmptyState(
+    final l10n = AppLocalizations.of(context);
+    return SilarahEmptyState(
       visual: SilarahEmptyVisual.conversations,
-      title: 'No conversations yet',
-      subtitle:
-          'Accept an interest or have yours accepted to begin a conversation.',
+      title: hasSearchQuery
+          ? l10n.chat_noConversationsFound
+          : l10n.chat_noConversationsYet,
+      subtitle: hasSearchQuery
+          ? l10n.chat_noConversationsFoundBody
+          : l10n.chat_noConversationsYetBody,
     );
   }
 }

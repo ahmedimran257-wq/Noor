@@ -1,11 +1,25 @@
 [CmdletBinding()]
 param(
     [string]$ProjectRef,
-    [string]$OutputRoot = (Join-Path $PSScriptRoot '..\supabase\backups'),
-    [string]$PgDumpPath = (Join-Path $env:LOCALAPPDATA 'Silarah\postgresql-17.10\pgsql\bin\pg_dump.exe')
+    [string]$OutputRoot = '',
+    [string]$PgDumpPath = (Join-Path $env:LOCALAPPDATA 'Silarah\postgresql-17.10\pgsql\bin\pg_dump.exe'),
+    [string]$SupabaseCliPath = (Join-Path $env:LOCALAPPDATA 'Silarah\supabase\supabase.exe')
 )
 
 $ErrorActionPreference = 'Stop'
+if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
+    $OutputRoot = Join-Path $PSScriptRoot '..\supabase\backups'
+}
+$runLogDirectory = Join-Path $PSScriptRoot '..\supabase\backups\logs'
+$runLogPath = Join-Path $runLogDirectory 'weekly-task.log'
+New-Item -ItemType Directory -Force -Path $runLogDirectory | Out-Null
+"[$((Get-Date).ToUniversalTime().ToString('o'))] Backup started." |
+    Set-Content -LiteralPath $runLogPath -Encoding UTF8
+trap {
+    "[$((Get-Date).ToUniversalTime().ToString('o'))] Backup failed: $($_.Exception.Message)" |
+        Add-Content -LiteralPath $runLogPath -Encoding UTF8
+    exit 1
+}
 
 function Get-DryRunSetting {
     param(
@@ -43,6 +57,15 @@ function Invoke-PgDump {
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $linkedRefPath = Join-Path $repoRoot 'supabase\.temp\project-ref'
 
+if (-not (Test-Path -LiteralPath $SupabaseCliPath -PathType Leaf)) {
+    $supabaseCommand = Get-Command supabase.exe -ErrorAction SilentlyContinue
+    if (-not $supabaseCommand) {
+        throw 'supabase.exe was not found. Install the standalone Supabase CLI or pass -SupabaseCliPath.'
+    }
+    $SupabaseCliPath = $supabaseCommand.Source
+}
+$resolvedSupabaseCli = (Resolve-Path -LiteralPath $SupabaseCliPath).Path
+
 Push-Location $repoRoot
 try {
     if ($ProjectRef) {
@@ -52,7 +75,7 @@ try {
             ''
         }
         if ($linkedRef -ne $ProjectRef) {
-            & npx --yes supabase link --project-ref $ProjectRef
+            & $resolvedSupabaseCli link --project-ref $ProjectRef
             if ($LASTEXITCODE -ne 0) {
                 throw "Could not link Supabase project $ProjectRef."
             }
@@ -79,7 +102,7 @@ try {
     # command by its exit code and still retain the generated connection line.
     $previousErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
-    $dryRunOutput = (& npx --yes supabase db dump --linked --dry-run 2>&1 | Out-String)
+    $dryRunOutput = (& $resolvedSupabaseCli db dump --linked --dry-run 2>&1 | Out-String)
     $dryRunExitCode = $LASTEXITCODE
     $ErrorActionPreference = $previousErrorActionPreference
     if ($dryRunExitCode -ne 0) {
@@ -143,6 +166,8 @@ try {
 
         Write-Output "Backup completed: $backupDirectory"
         Write-Output "Manifest: $manifestPath"
+        "[$((Get-Date).ToUniversalTime().ToString('o'))] Backup completed: $backupDirectory" |
+            Add-Content -LiteralPath $runLogPath -Encoding UTF8
     } finally {
         foreach ($name in $connectionNames) {
             [Environment]::SetEnvironmentVariable($name, $previousEnvironment[$name], 'Process')

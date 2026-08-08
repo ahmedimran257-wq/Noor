@@ -10,10 +10,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/services/referral_service.dart';
+import '../../../core/services/platform_action_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/loaders/silarah_shimmer.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 class ReferralScreen extends StatefulWidget {
   const ReferralScreen({super.key});
@@ -63,16 +65,20 @@ class _ReferralScreenState extends State<ReferralScreen> {
 
   Future<void> _copyToClipboard() async {
     HapticFeedback.mediumImpact();
+    final message = AppLocalizations.of(context).referral_copied;
     await Clipboard.setData(ClipboardData(text: _code));
-    _showSnackBar('Referral code copied to clipboard!');
+    _showSnackBar(message);
   }
 
   Future<void> _shareReferral() async {
     HapticFeedback.mediumImpact();
     if (!SupabaseService.isInitialized) return;
-    final shareText = await _service.getShareText();
-    await Clipboard.setData(ClipboardData(text: shareText));
-    _showSnackBar('Referral link & code copied! Paste it to share.');
+    final l10n = AppLocalizations.of(context);
+    final code = await _service.getOrCreateCode();
+    await PlatformActionService.instance.shareText(
+      text: l10n.referral_shareText(code),
+      subject: l10n.referral_shareSubject,
+    );
   }
 
   void _showSnackBar(String message) {
@@ -98,21 +104,23 @@ class _ReferralScreenState extends State<ReferralScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.obsidianNight,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
+          tooltip: l10n.common_button_back,
           icon: Icon(Icons.arrow_back_ios_new_rounded,
               color: AppColors.pearlWhite),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('Refer a Friend',
+        title: Text(l10n.referral_title,
             style: AppTypography.screenTitle.copyWith(fontSize: 20)),
       ),
       body: _isLoading
-          ? const Center(child: SilarahPulseLoader(label: 'Loading rewards'))
+          ? Center(child: SilarahPulseLoader(label: l10n.referral_loading))
           : SingleChildScrollView(
               padding: const EdgeInsets.all(AppDimensions.space24),
               child: Column(
@@ -136,13 +144,13 @@ class _ReferralScreenState extends State<ReferralScreen> {
                   ),
                   const SizedBox(height: AppDimensions.space24),
                   Text(
-                    'Spread the word, earn Premium!',
+                    l10n.referral_heading,
                     style: AppTypography.screenTitle,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppDimensions.space12),
                   Text(
-                    'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 7 days of FREE Premium!',
+                    l10n.referral_body,
                     style: AppTypography.bodyMuted,
                     textAlign: TextAlign.center,
                   ),
@@ -169,7 +177,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                     child: Column(
                       children: [
                         Text(
-                          'YOUR REFERRAL CODE',
+                          l10n.referral_codeLabel,
                           style: AppTypography.captionMedium,
                         ),
                         const SizedBox(height: AppDimensions.space16),
@@ -206,7 +214,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                         ),
                         const SizedBox(height: AppDimensions.space12),
                         Text(
-                          'Tap code to copy',
+                          l10n.referral_tapToCopy,
                           style: AppTypography.caption,
                         ),
                       ],
@@ -220,23 +228,24 @@ class _ReferralScreenState extends State<ReferralScreen> {
                     children: [
                       Expanded(
                         child: _StatCard(
-                          label: 'Total Invited',
+                          label: l10n.referral_totalInvited,
                           value: '${_stats.totalReferrals}',
                         ),
                       ),
                       const SizedBox(width: AppDimensions.space12),
                       Expanded(
                         child: _StatCard(
-                          label: 'Rewards Earned',
+                          label: l10n.referral_rewardsEarned,
                           value: '${_stats.rewardsEarned}',
-                          subtitle: '${_stats.premiumDaysEarned} premium days',
+                          subtitle: l10n
+                              .referral_premiumDays(_stats.premiumDaysEarned),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: AppDimensions.space12),
                   _StatCard(
-                    label: 'Pending Registrations',
+                    label: l10n.referral_pending,
                     value: '${_stats.pendingReferrals}',
                     alignment: Alignment.center,
                   ),
@@ -258,7 +267,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                         elevation: 0,
                       ),
                       icon: const Icon(Icons.share_rounded, size: 20),
-                      label: Text('Share Code with Friends',
+                      label: Text(l10n.referral_shareButton,
                           style: AppTypography.button),
                       onPressed: _shareReferral,
                     ),

@@ -455,7 +455,11 @@ void main() {
     ).readAsStringSync();
     expect(settings, isNot(contains("Text('Restart now')")));
     expect(settings, contains('applyMode(mode)'));
-    expect(settings, contains('Applied instantly'));
+    expect(settings, contains('settings_theme_applied'));
+    expect(
+      File('lib/l10n/app_en.arb').readAsStringSync(),
+      contains('Applied instantly'),
+    );
     expect(nativeHost, contains('Intent.FLAG_ACTIVITY_CLEAR_TASK'));
     expect(nativeHost, contains('finishAffinity()'));
     expect(nativeHost, contains('setOnExitAnimationListener'));

@@ -2267,4 +2267,359 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get startup_connectivity_protected => 'Koneksi terlindungi';
+
+  @override
+  String get settings_label_email => 'Email';
+
+  @override
+  String get settings_notify_profileViews => 'Kunjungan profil';
+
+  @override
+  String get settings_notify_profileViewsSub =>
+      'Pemberitahuan pribadi saat seseorang membuka profil Anda';
+
+  @override
+  String get settings_notify_profileLive => 'Profil mulai tayang';
+
+  @override
+  String get settings_notify_profileLiveSub =>
+      'Konfirmasi saat profil Anda mulai terlihat';
+
+  @override
+  String get settings_appearance => 'Tampilan';
+
+  @override
+  String get settings_helpSupport => 'Bantuan & Dukungan';
+
+  @override
+  String get settings_helpCenter => 'Pusat Bantuan';
+
+  @override
+  String get settings_grievanceOfficer => 'Petugas Pengaduan';
+
+  @override
+  String get settings_grievanceResponse =>
+      'Waktu respons: Dalam 48 jam setelah diterima';
+
+  @override
+  String get settings_grievanceIndiaNotice =>
+      'Untuk pengguna di India: Kami mematuhi Peraturan Teknologi Informasi (Pedoman Perantara dan Kode Etik Media Digital) 2021.';
+
+  @override
+  String get settings_managePhotoRequests => 'Kelola permintaan foto';
+
+  @override
+  String get settings_managePhotoRequestsSub =>
+      'Setujui akses, tolak permintaan, atau cabut berbagi';
+
+  @override
+  String get settings_theme_chooseTitle => 'Pilih suasana Anda';
+
+  @override
+  String get settings_theme_chooseSubtitle =>
+      'Identitas visual yang menyeluruh, bukan sekadar filter warna. Semua permukaan, kolom, dan kontrol sistem berubah bersama.';
+
+  @override
+  String get settings_theme_applied =>
+      'Langsung diterapkan · disimpan di perangkat ini';
+
+  @override
+  String get settings_reportPending => 'Menunggu tinjauan';
+
+  @override
+  String get legal_document_terms => 'Ketentuan Layanan';
+
+  @override
+  String get legal_document_privacy => 'Kebijakan Privasi';
+
+  @override
+  String get legal_document_community => 'Pedoman Komunitas';
+
+  @override
+  String get legal_specialCategoryConsent =>
+      'Saya secara tegas menyetujui SILARAH memproses informasi agama saya (mazhab, praktik salat, dan identitas Islam) untuk pencocokan kompatibilitas. Penyedia layanan yang dikontrak hanya menggunakannya untuk mengoperasikan Silarah, bukan untuk iklan berbasis perilaku.';
+
+  @override
+  String get onboarding_complexion_fair => 'Cerah';
+
+  @override
+  String get onboarding_complexion_medium => 'Sedang';
+
+  @override
+  String get onboarding_complexion_olive => 'Zaitun';
+
+  @override
+  String get onboarding_complexion_dark => 'Gelap';
+
+  @override
+  String get onboarding_residency_citizen => 'Warga negara';
+
+  @override
+  String get onboarding_residency_permanentResident => 'Penduduk tetap';
+
+  @override
+  String get onboarding_residency_workVisa => 'Visa kerja';
+
+  @override
+  String get onboarding_residency_studentVisa => 'Visa pelajar';
+
+  @override
+  String get onboarding_specialNeeds_none => 'Tidak ada';
+
+  @override
+  String get onboarding_specialNeeds_physical => 'Disabilitas fisik';
+
+  @override
+  String get onboarding_specialNeeds_hearing => 'Gangguan pendengaran';
+
+  @override
+  String get onboarding_specialNeeds_visual => 'Gangguan penglihatan';
+
+  @override
+  String get onboarding_label_stateRegion => 'Provinsi / Wilayah';
+
+  @override
+  String get onboarding_specialNeeds_privacy =>
+      'Hanya dibagikan setelah ada minat bersama.';
+
+  @override
+  String get settings_theme_blackWhite => 'Hitam & Putih';
+
+  @override
+  String get settings_theme_blackWhiteDesc =>
+      'Putih murni, hitam pekat, tanpa warna';
+
+  @override
+  String get settings_theme_oled => 'Malam OLED';
+
+  @override
+  String get settings_theme_oledDesc =>
+      'Hitam sejati yang disesuaikan untuk layar OLED';
+
+  @override
+  String get settings_theme_prism => 'Prism Luxe';
+
+  @override
+  String get settings_theme_prismDesc =>
+      'Kedalaman malam dengan warna permata bercahaya';
+
+  @override
+  String get settings_guardian_backendRequired =>
+      'Pengaturan wali memerlukan koneksi aman.';
+
+  @override
+  String get settings_guardian_saveError =>
+      'Pengaturan wali tidak dapat disimpan. Coba lagi.';
+
+  @override
+  String get common_openSettings => 'Buka Pengaturan';
+
+  @override
+  String get media_cameraAccessOff => 'Akses kamera dinonaktifkan';
+
+  @override
+  String get media_cameraUnavailable => 'Kamera tidak tersedia';
+
+  @override
+  String get media_cameraAccessBody =>
+      'Izinkan akses kamera di Pengaturan, lalu kembali untuk mengambil foto yang jelas.';
+
+  @override
+  String get media_cameraUnavailableBody =>
+      'Kamera tidak dapat dibuka. Coba lagi.';
+
+  @override
+  String get media_photoAccessOff => 'Akses foto dinonaktifkan';
+
+  @override
+  String get media_photoAccessBody =>
+      'Izinkan akses kamera atau foto di Pengaturan, lalu kembali untuk menambahkan foto.';
+
+  @override
+  String get chat_searchHint => 'Cari pesan';
+
+  @override
+  String get chat_noConversationsFound => 'Percakapan tidak ditemukan';
+
+  @override
+  String get chat_noConversationsFoundBody =>
+      'Coba nama lain atau hapus pencarian.';
+
+  @override
+  String get chat_noConversationsYet => 'Belum ada percakapan';
+
+  @override
+  String get chat_noConversationsYetBody =>
+      'Terima minat atau tunggu minat Anda diterima untuk memulai percakapan.';
+
+  @override
+  String get kyc_title => 'Verifikasi identitas Anda';
+
+  @override
+  String get kyc_heading => 'Verifikasi profil Anda';
+
+  @override
+  String get kyc_intro =>
+      'Kualitas pengambilan diperiksa di perangkat ini. Dokumen pribadi dan swafoto Anda kemudian ditinjau oleh Silarah. Skor perangkat tidak pernah menyetujui identitas.';
+
+  @override
+  String get kyc_selfieTitle => '1. Ambil swafoto yang jelas';
+
+  @override
+  String get kyc_selfieHint => 'Satu wajah, pencahayaan baik';
+
+  @override
+  String get kyc_selfieCaptured => 'Swafoto diambil';
+
+  @override
+  String get kyc_idTitle => '2. Foto identitas Anda';
+
+  @override
+  String get kyc_idHint => 'Nama, foto, dan tanggal lahir harus terlihat';
+
+  @override
+  String get kyc_idCaptured => 'Identitas diambil';
+
+  @override
+  String get kyc_documentType => 'Jenis dokumen';
+
+  @override
+  String get kyc_governmentId => 'Identitas pemerintah';
+
+  @override
+  String get kyc_passport => 'Paspor';
+
+  @override
+  String get kyc_drivingLicence => 'SIM';
+
+  @override
+  String get kyc_submitReview => 'Kirim untuk tinjauan pribadi';
+
+  @override
+  String get kyc_submitNewEvidence => 'Kirim bukti baru';
+
+  @override
+  String kyc_submitted(String date) {
+    return 'Dikirim $date';
+  }
+
+  @override
+  String get kyc_statusApproved => 'Identitas disetujui';
+
+  @override
+  String get kyc_statusApprovedBody =>
+      'Bukti identitas pemerintah Anda telah diverifikasi dengan aman.';
+
+  @override
+  String get kyc_statusPending => 'Tinjauan pribadi berlangsung';
+
+  @override
+  String get kyc_statusPendingBody =>
+      'Bukti Anda menunggu tinjauan manusia. Anda tidak perlu mengirimkannya lagi.';
+
+  @override
+  String get kyc_statusRejected => 'Pemeriksaan identitas tidak disetujui';
+
+  @override
+  String get kyc_statusRejectedBody =>
+      'Tinjau alasan di bawah dan kirim bukti baru bila perlu.';
+
+  @override
+  String get kyc_statusResubmit => 'Bukti baru diperlukan';
+
+  @override
+  String get kyc_statusResubmitBody =>
+      'Ambil bukti identitas terkini yang lebih jelas lalu kirim lagi.';
+
+  @override
+  String get kyc_statusExpired => 'Bukti identitas kedaluwarsa';
+
+  @override
+  String get kyc_statusExpiredBody =>
+      'Kirim dokumen pemerintah yang masih berlaku.';
+
+  @override
+  String get kyc_statusNotStarted => 'Pemeriksaan identitas belum dimulai';
+
+  @override
+  String get kyc_statusNotStartedBody =>
+      'Kirim identitas pemerintah dan swafoto untuk tinjauan pribadi.';
+
+  @override
+  String get referral_title => 'Ajak Teman';
+
+  @override
+  String get referral_loading => 'Memuat hadiah';
+
+  @override
+  String get referral_heading => 'Sebarkan kabar, dapatkan Premium!';
+
+  @override
+  String get referral_body =>
+      'Ajak teman ke SILARAH. Saat seseorang dari gender berbeda menyelesaikan orientasi dengan kode Anda, kalian berdua mendapat Premium GRATIS selama 7 hari!';
+
+  @override
+  String get referral_codeLabel => 'KODE REFERAL ANDA';
+
+  @override
+  String get referral_tapToCopy => 'Ketuk kode untuk menyalin';
+
+  @override
+  String get referral_totalInvited => 'Total Diundang';
+
+  @override
+  String get referral_rewardsEarned => 'Hadiah Diperoleh';
+
+  @override
+  String referral_premiumDays(int count) {
+    return '$count hari premium';
+  }
+
+  @override
+  String get referral_pending => 'Pendaftaran Tertunda';
+
+  @override
+  String get referral_shareButton => 'Bagikan Kode kepada Teman';
+
+  @override
+  String get referral_copied => 'Kode referal disalin!';
+
+  @override
+  String get referral_shareSubject => 'Bergabung dengan SILARAH';
+
+  @override
+  String referral_shareText(String code) {
+    return 'Bergabunglah dengan SILARAH, aplikasi pernikahan Muslim tepercaya. Gunakan kode referal saya: $code\n\nUnduh: https://silarah.com/r/$code';
+  }
+
+  @override
+  String get profile_share => 'Bagikan profil';
+
+  @override
+  String safety_reportMember(String name) {
+    return 'Laporkan $name';
+  }
+
+  @override
+  String safety_blockMember(String name) {
+    return 'Blokir $name';
+  }
+
+  @override
+  String safety_blockTitle(String name) {
+    return 'Blokir $name?';
+  }
+
+  @override
+  String safety_blockBody(String name) {
+    return '$name akan disembunyikan dari Discovery dan tidak dapat menghubungi Anda. Riwayat chat tetap disimpan demi keamanan. Membuka blokir tidak akan membuka kembali percakapan.';
+  }
+
+  @override
+  String get safety_blockAction => 'Blokir';
+
+  @override
+  String safety_blocked(String name) {
+    return '$name diblokir.';
+  }
 }

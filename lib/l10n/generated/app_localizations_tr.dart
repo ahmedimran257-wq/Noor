@@ -2246,4 +2246,358 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get startup_connectivity_protected => 'Korumalı bağlantı';
+
+  @override
+  String get settings_label_email => 'E-posta';
+
+  @override
+  String get settings_notify_profileViews => 'Profil görüntülemeleri';
+
+  @override
+  String get settings_notify_profileViewsSub =>
+      'Birisi profilinizi açtığında özel bildirim';
+
+  @override
+  String get settings_notify_profileLive => 'Profil yayına alındı';
+
+  @override
+  String get settings_notify_profileLiveSub =>
+      'Profiliniz görünür olduğunda onay';
+
+  @override
+  String get settings_appearance => 'Görünüm';
+
+  @override
+  String get settings_helpSupport => 'Yardım ve Destek';
+
+  @override
+  String get settings_helpCenter => 'Yardım Merkezi';
+
+  @override
+  String get settings_grievanceOfficer => 'Şikâyet Sorumlusu';
+
+  @override
+  String get settings_grievanceResponse =>
+      'Yanıt süresi: Teslim alındıktan sonra 48 saat içinde';
+
+  @override
+  String get settings_grievanceIndiaNotice =>
+      'Hindistan’daki kullanıcılar için: 2021 Bilgi Teknolojileri (Aracı Kuruluş Yönergeleri ve Dijital Medya Etik Kodu) Kurallarına uyuyoruz.';
+
+  @override
+  String get settings_managePhotoRequests => 'Fotoğraf isteklerini yönet';
+
+  @override
+  String get settings_managePhotoRequestsSub =>
+      'Erişimi onaylayın, istekleri reddedin veya paylaşımı kaldırın';
+
+  @override
+  String get settings_theme_chooseTitle => 'Atmosferini seç';
+
+  @override
+  String get settings_theme_chooseSubtitle =>
+      'Yalnızca bir renk filtresi değil, eksiksiz bir görsel kimlik. Tüm yüzeyler, alanlar ve sistem kontrolleri birlikte değişir.';
+
+  @override
+  String get settings_theme_applied =>
+      'Anında uygulandı · bu cihaza kaydedildi';
+
+  @override
+  String get settings_reportPending => 'İnceleme bekliyor';
+
+  @override
+  String get legal_document_terms => 'Hizmet Şartları';
+
+  @override
+  String get legal_document_privacy => 'Gizlilik Politikası';
+
+  @override
+  String get legal_document_community => 'Topluluk Kuralları';
+
+  @override
+  String get legal_specialCategoryConsent =>
+      'Uyumluluk eşleştirmesi için SILARAH’ın dini bilgilerimi (mezhep, namaz uygulaması ve İslami kimlik) işlemesine açıkça izin veriyorum. Sözleşmeli hizmet sağlayıcılar bu bilgileri yalnızca Silarah’ı işletmek için kullanır; davranışsal reklamcılık için kullanmaz.';
+
+  @override
+  String get onboarding_complexion_fair => 'Açık';
+
+  @override
+  String get onboarding_complexion_medium => 'Orta';
+
+  @override
+  String get onboarding_complexion_olive => 'Buğday';
+
+  @override
+  String get onboarding_complexion_dark => 'Koyu';
+
+  @override
+  String get onboarding_residency_citizen => 'Vatandaş';
+
+  @override
+  String get onboarding_residency_permanentResident => 'Daimî ikamet sahibi';
+
+  @override
+  String get onboarding_residency_workVisa => 'Çalışma vizesi';
+
+  @override
+  String get onboarding_residency_studentVisa => 'Öğrenci vizesi';
+
+  @override
+  String get onboarding_specialNeeds_none => 'Yok';
+
+  @override
+  String get onboarding_specialNeeds_physical => 'Fiziksel engel';
+
+  @override
+  String get onboarding_specialNeeds_hearing => 'İşitme engeli';
+
+  @override
+  String get onboarding_specialNeeds_visual => 'Görme engeli';
+
+  @override
+  String get onboarding_label_stateRegion => 'Eyalet / Bölge';
+
+  @override
+  String get onboarding_specialNeeds_privacy =>
+      'Yalnızca karşılıklı ilgi sonrasında paylaşılır.';
+
+  @override
+  String get settings_theme_blackWhite => 'Siyah ve Beyaz';
+
+  @override
+  String get settings_theme_blackWhiteDesc =>
+      'Saf beyaz, mutlak siyah, renksiz';
+
+  @override
+  String get settings_theme_oled => 'OLED Gece';
+
+  @override
+  String get settings_theme_oledDesc =>
+      'OLED ekranlar için ayarlanmış gerçek siyah';
+
+  @override
+  String get settings_theme_prism => 'Prism Luxe';
+
+  @override
+  String get settings_theme_prismDesc =>
+      'Işıltılı mücevher renkleriyle gece yarısı derinliği';
+
+  @override
+  String get settings_guardian_backendRequired =>
+      'Veli ayarları için güvenli bağlantı gerekir.';
+
+  @override
+  String get settings_guardian_saveError =>
+      'Veli ayarları kaydedilemedi. Lütfen tekrar deneyin.';
+
+  @override
+  String get common_openSettings => 'Ayarları Aç';
+
+  @override
+  String get media_cameraAccessOff => 'Kamera erişimi kapalı';
+
+  @override
+  String get media_cameraUnavailable => 'Kamera kullanılamıyor';
+
+  @override
+  String get media_cameraAccessBody =>
+      'Ayarlardan kamera erişimine izin verin, ardından net bir fotoğraf çekmek için geri dönün.';
+
+  @override
+  String get media_cameraUnavailableBody =>
+      'Kamera açılamadı. Lütfen tekrar deneyin.';
+
+  @override
+  String get media_photoAccessOff => 'Fotoğraf erişimi kapalı';
+
+  @override
+  String get media_photoAccessBody =>
+      'Ayarlardan kamera veya fotoğraf erişimine izin verin, ardından fotoğraf eklemek için geri dönün.';
+
+  @override
+  String get chat_searchHint => 'Mesajlarda ara';
+
+  @override
+  String get chat_noConversationsFound => 'Konuşma bulunamadı';
+
+  @override
+  String get chat_noConversationsFoundBody =>
+      'Başka bir ad deneyin veya aramayı temizleyin.';
+
+  @override
+  String get chat_noConversationsYet => 'Henüz konuşma yok';
+
+  @override
+  String get chat_noConversationsYetBody =>
+      'Bir konuşma başlatmak için bir ilgiyi kabul edin veya ilginizin kabul edilmesini bekleyin.';
+
+  @override
+  String get kyc_title => 'Kimliğini doğrula';
+
+  @override
+  String get kyc_heading => 'Profilini doğrula';
+
+  @override
+  String get kyc_intro =>
+      'Çekim kalitesi bu cihazda kontrol edilir. Özel belgeniz ve özçekiminiz daha sonra Silarah tarafından incelenir. Cihaz puanları kimliğinizi asla onaylamaz.';
+
+  @override
+  String get kyc_selfieTitle => '1. Net bir özçekim yap';
+
+  @override
+  String get kyc_selfieHint => 'Tek yüz, iyi aydınlatma';
+
+  @override
+  String get kyc_selfieCaptured => 'Özçekim yapıldı';
+
+  @override
+  String get kyc_idTitle => '2. Kimliğinin fotoğrafını çek';
+
+  @override
+  String get kyc_idHint => 'Adın, fotoğrafın ve doğum tarihin görünür olmalı';
+
+  @override
+  String get kyc_idCaptured => 'Kimlik çekildi';
+
+  @override
+  String get kyc_documentType => 'Belge türü';
+
+  @override
+  String get kyc_governmentId => 'Resmî kimlik';
+
+  @override
+  String get kyc_passport => 'Pasaport';
+
+  @override
+  String get kyc_drivingLicence => 'Sürücü belgesi';
+
+  @override
+  String get kyc_submitReview => 'Özel incelemeye gönder';
+
+  @override
+  String get kyc_submitNewEvidence => 'Yeni kanıt gönder';
+
+  @override
+  String kyc_submitted(String date) {
+    return '$date tarihinde gönderildi';
+  }
+
+  @override
+  String get kyc_statusApproved => 'Kimlik onaylandı';
+
+  @override
+  String get kyc_statusApprovedBody =>
+      'Resmî kimlik kanıtınız güvenli biçimde doğrulandı.';
+
+  @override
+  String get kyc_statusPending => 'Özel inceleme sürüyor';
+
+  @override
+  String get kyc_statusPendingBody =>
+      'Kanıtınız insan incelemesi sırasında. Yeniden göndermeniz gerekmez.';
+
+  @override
+  String get kyc_statusRejected => 'Kimlik kontrolü onaylanmadı';
+
+  @override
+  String get kyc_statusRejectedBody =>
+      'Aşağıdaki nedeni inceleyin ve gerekirse yeni kanıt gönderin.';
+
+  @override
+  String get kyc_statusResubmit => 'Yeni kanıt gerekli';
+
+  @override
+  String get kyc_statusResubmitBody =>
+      'Daha net, güncel kimlik kanıtı çekip yeniden gönderin.';
+
+  @override
+  String get kyc_statusExpired => 'Kimlik kanıtının süresi doldu';
+
+  @override
+  String get kyc_statusExpiredBody => 'Güncel bir resmî belge gönderin.';
+
+  @override
+  String get kyc_statusNotStarted => 'Kimlik kontrolü başlamadı';
+
+  @override
+  String get kyc_statusNotStartedBody =>
+      'Özel inceleme için resmî kimlik ve özçekim gönderin.';
+
+  @override
+  String get referral_title => 'Arkadaşını Davet Et';
+
+  @override
+  String get referral_loading => 'Ödüller yükleniyor';
+
+  @override
+  String get referral_heading => 'Haberi yay, Premium kazan!';
+
+  @override
+  String get referral_body =>
+      'Arkadaşlarını SILARAH’a davet et. Karşı cinsten biri kodunla katılımı tamamladığında ikiniz de 7 gün ÜCRETSİZ Premium kazanırsınız!';
+
+  @override
+  String get referral_codeLabel => 'DAVET KODUN';
+
+  @override
+  String get referral_tapToCopy => 'Kopyalamak için koda dokun';
+
+  @override
+  String get referral_totalInvited => 'Toplam Davet';
+
+  @override
+  String get referral_rewardsEarned => 'Kazanılan Ödüller';
+
+  @override
+  String referral_premiumDays(int count) {
+    return '$count Premium gün';
+  }
+
+  @override
+  String get referral_pending => 'Bekleyen Kayıtlar';
+
+  @override
+  String get referral_shareButton => 'Kodu Arkadaşlarınla Paylaş';
+
+  @override
+  String get referral_copied => 'Davet kodu kopyalandı!';
+
+  @override
+  String get referral_shareSubject => 'SILARAH’a Katıl';
+
+  @override
+  String referral_shareText(String code) {
+    return 'Güvenilir Müslüman evlilik uygulaması SILARAH’a katıl. Davet kodumu kullan: $code\n\nİndir: https://silarah.com/r/$code';
+  }
+
+  @override
+  String get profile_share => 'Profili paylaş';
+
+  @override
+  String safety_reportMember(String name) {
+    return '$name adlı kişiyi bildir';
+  }
+
+  @override
+  String safety_blockMember(String name) {
+    return '$name adlı kişiyi engelle';
+  }
+
+  @override
+  String safety_blockTitle(String name) {
+    return '$name engellensin mi?';
+  }
+
+  @override
+  String safety_blockBody(String name) {
+    return '$name Discovery’de gizlenir ve sizinle iletişim kuramaz. Sohbet geçmişi güvenlik için korunur. Engeli kaldırmak konuşmayı yeniden açmaz.';
+  }
+
+  @override
+  String get safety_blockAction => 'Engelle';
+
+  @override
+  String safety_blocked(String name) {
+    return '$name engellendi.';
+  }
 }

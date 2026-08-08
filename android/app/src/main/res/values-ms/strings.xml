@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_channel_alerts">Mesej dan amaran akaun</string>
+    <string name="notification_channel_alerts_description">Minat, mesej, padanan dan kemas kini akaun penting</string>
+    <string name="notification_channel_activity">Aktiviti profil</string>
+    <string name="notification_channel_activity_description">Paparan profil dan aktiviti tidak mendesak yang lain</string>
+</resources>

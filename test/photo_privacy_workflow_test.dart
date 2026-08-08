@@ -16,6 +16,7 @@ void main() {
   final photoManager = File(
     'lib/features/onboarding/screens/photo_upload_screen.dart',
   ).readAsStringSync();
+  final english = File('lib/l10n/app_en.arb').readAsStringSync();
   final signedUrl = File(
     'supabase/functions/get-signed-url/index.ts',
   ).readAsStringSync();
@@ -70,7 +71,8 @@ void main() {
     expect(settings, contains('syncPhotoPrivacy(privacy)'));
     expect(settings, contains('invalidateAllPhotoUrls()'));
     expect(photoManager, contains('getMyPhotoPrivacy()'));
-    expect(settings, contains('Manage photo requests'));
+    expect(settings, contains('settings_managePhotoRequests'));
+    expect(english, contains('Manage photo requests'));
   });
 
   test('private signed URLs expire within five minutes', () {

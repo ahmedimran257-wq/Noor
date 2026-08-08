@@ -593,8 +593,11 @@ class AuthCubit extends Cubit<AuthState> {
     if (pendingCode == null || pendingCode.isEmpty) return;
 
     try {
-      await ReferralService.instance.applyCode(pendingCode);
-      await prefs.remove('pending_referral_code');
+      final status = await ReferralService.instance.applyCode(pendingCode);
+      await prefs.setString('referral_application_status', status);
+      if (status == 'applied' || status == 'already_referred') {
+        await prefs.remove('pending_referral_code');
+      }
     } catch (e) {
       debugPrint('Failed to apply pending referral code: $e');
     }

@@ -33,7 +33,7 @@ import 'core/services/presence_service.dart';
 import 'core/services/bookmark_service.dart';
 import 'core/services/filter_preset_service.dart';
 import 'core/services/legal_consent_service.dart';
-import 'core/services/digilocker_service.dart';
+import 'core/services/auth_callback_service.dart';
 import 'core/cubits/auth/auth_cubit.dart';
 import 'core/cubits/auth/auth_state.dart';
 import 'core/cubits/onboarding/onboarding_cubit.dart';
@@ -102,7 +102,7 @@ void main() async {
     // ── Supabase Initialization ─────────────────────────────────
     // Initialize Supabase client
     await SupabaseService.initialize();
-    await DigiLockerService.instance.initialize();
+    await AuthCallbackService.instance.initialize();
   } catch (error, stack) {
     debugPrint('[main] Critical startup configuration error: $error\n$stack');
     _bootstrapStage.value = _BootstrapStage.failed;

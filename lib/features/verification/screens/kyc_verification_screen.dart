@@ -8,11 +8,13 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/cubits/auth/auth_state.dart';
 import '../../../core/services/kyc_verification_service.dart';
-import '../../../core/services/digilocker_service.dart';
+import '../../../core/services/media_permission_error.dart';
+import '../../../core/services/platform_action_service.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 class KycVerificationScreen extends StatefulWidget {
   const KycVerificationScreen({super.key});
@@ -78,25 +80,64 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
   }
 
   Future<void> _pickSelfie() async {
-    final image = await _picker.pickImage(
-      source: ImageSource.camera,
-      preferredCameraDevice: CameraDevice.front,
-      imageQuality: 92,
-      maxWidth: 1400,
-      maxHeight: 1400,
-    );
-    if (image != null && mounted) setState(() => _selfie = File(image.path));
+    try {
+      final image = await _picker.pickImage(
+        source: ImageSource.camera,
+        preferredCameraDevice: CameraDevice.front,
+        imageQuality: 92,
+        maxWidth: 1400,
+        maxHeight: 1400,
+      );
+      if (image != null && mounted) setState(() => _selfie = File(image.path));
+    } catch (error) {
+      if (mounted) await _showCaptureError(error);
+    }
   }
 
   Future<void> _pickId() async {
-    final image = await _picker.pickImage(
-      source: ImageSource.camera,
-      preferredCameraDevice: CameraDevice.rear,
-      imageQuality: 95,
-      maxWidth: 2200,
-      maxHeight: 2200,
+    try {
+      final image = await _picker.pickImage(
+        source: ImageSource.camera,
+        preferredCameraDevice: CameraDevice.rear,
+        imageQuality: 95,
+        maxWidth: 2200,
+        maxHeight: 2200,
+      );
+      if (image != null && mounted) setState(() => _idPhoto = File(image.path));
+    } catch (error) {
+      if (mounted) await _showCaptureError(error);
+    }
+  }
+
+  Future<void> _showCaptureError(Object error) async {
+    final denied = MediaPermissionError.isPermissionDenied(error);
+    final l10n = AppLocalizations.of(context);
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+            denied ? l10n.media_cameraAccessOff : l10n.media_cameraUnavailable),
+        content: Text(
+          denied
+              ? l10n.media_cameraAccessBody
+              : l10n.media_cameraUnavailableBody,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(l10n.common_button_cancel),
+          ),
+          if (denied)
+            FilledButton(
+              onPressed: () async {
+                Navigator.pop(dialogContext);
+                await PlatformActionService.instance.openAppSettings();
+              },
+              child: Text(l10n.common_openSettings),
+            ),
+        ],
+      ),
     );
-    if (image != null && mounted) setState(() => _idPhoto = File(image.path));
   }
 
   Future<void> _submit() async {
@@ -136,49 +177,9 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
     }
   }
 
-  Future<void> _verifyWithDigiLocker() async {
-    final service = DigiLockerService.instance;
-    if (!service.isConfigured) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'DigiLocker verification is not configured on this build. Standard verification remains available.',
-          ),
-        ),
-      );
-      return;
-    }
-    setState(() => _submitting = true);
-    final digilockerResult = await service.verifyIdentity();
-    if (!mounted) return;
-    KycStatusSnapshot? status;
-    try {
-      status = await _service.fetchStatus();
-    } catch (_) {
-      // The provider result below remains accurate for this attempt. A later
-      // screen refresh will load the durable server status.
-    }
-    if (!mounted) return;
-    setState(() {
-      _submitting = false;
-      if (status != null) _status = status;
-      _result = KycVerificationResult(
-        status: switch (digilockerResult.status) {
-          DigiLockerVerificationStatus.verified =>
-            KycVerificationStatus.approved,
-          DigiLockerVerificationStatus.insufficientEvidence =>
-            KycVerificationStatus.resubmitRequired,
-          DigiLockerVerificationStatus.identityMismatch =>
-            KycVerificationStatus.rejected,
-          _ => KycVerificationStatus.notStarted,
-        },
-        message: digilockerResult.message,
-      );
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final ready =
         _selfie != null && _idPhoto != null && _countryCode.isNotEmpty;
     final submissionLocked = _status.isApproved || _status.isPending;
@@ -187,16 +188,16 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.obsidianNight,
         foregroundColor: AppColors.pearlWhite,
-        title: const Text('Verify your identity'),
+        title: Text(l10n.kyc_title),
       ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(AppDimensions.space24),
           children: [
-            Text('Verify your profile', style: AppTypography.screenTitle),
+            Text(l10n.kyc_heading, style: AppTypography.screenTitle),
             const SizedBox(height: AppDimensions.space8),
             Text(
-              'Capture-quality checks run on this device. Your private document and selfie are then reviewed by Silarah. Device scores never approve your identity.',
+              l10n.kyc_intro,
               style: AppTypography.bodyMuted,
             ),
             const SizedBox(height: AppDimensions.space20),
@@ -207,20 +208,19 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
             if (!submissionLocked) ...[
               const SizedBox(height: AppDimensions.space28),
               _CaptureTile(
-                title: '1. Take a clear selfie',
+                title: l10n.kyc_selfieTitle,
                 subtitle: _selfie == null
-                    ? 'One face, good lighting'
-                    : 'Selfie captured',
+                    ? l10n.kyc_selfieHint
+                    : l10n.kyc_selfieCaptured,
                 icon: Icons.face_retouching_natural_outlined,
                 complete: _selfie != null,
                 onTap: _pickSelfie,
               ),
               const SizedBox(height: AppDimensions.space12),
               _CaptureTile(
-                title: '2. Photograph your ID',
-                subtitle: _idPhoto == null
-                    ? 'Your name, photo and date of birth must be visible'
-                    : 'ID captured',
+                title: l10n.kyc_idTitle,
+                subtitle:
+                    _idPhoto == null ? l10n.kyc_idHint : l10n.kyc_idCaptured,
                 icon: Icons.badge_outlined,
                 complete: _idPhoto != null,
                 onTap: _pickId,
@@ -230,30 +230,20 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
                 initialValue: _idType,
                 dropdownColor: AppColors.surfaceMid,
                 style: AppTypography.body,
-                decoration: const InputDecoration(labelText: 'Document type'),
-                items: const [
+                decoration: InputDecoration(labelText: l10n.kyc_documentType),
+                items: [
                   DropdownMenuItem(
-                      value: 'government_id', child: Text('Government ID')),
-                  DropdownMenuItem(value: 'passport', child: Text('Passport')),
+                      value: 'government_id',
+                      child: Text(l10n.kyc_governmentId)),
                   DropdownMenuItem(
-                      value: 'driving_license', child: Text('Driving licence')),
+                      value: 'passport', child: Text(l10n.kyc_passport)),
+                  DropdownMenuItem(
+                      value: 'driving_license',
+                      child: Text(l10n.kyc_drivingLicence)),
                 ],
                 onChanged: (value) =>
                     setState(() => _idType = value ?? _idType),
               ),
-              if (_countryCode == 'IN') ...[
-                const SizedBox(height: AppDimensions.space16),
-                OutlinedButton.icon(
-                  onPressed: _submitting ? null : _verifyWithDigiLocker,
-                  icon: const Icon(Icons.account_balance_outlined),
-                  label: const Text('Verify with DigiLocker'),
-                ),
-                const SizedBox(height: AppDimensions.space8),
-                Text(
-                  'A badge is granted only when your DigiLocker account and an authenticated issued identity document match your profile name and date of birth. Authorization alone is not verification.',
-                  style: AppTypography.caption,
-                ),
-              ],
             ],
             if (_result != null) ...[
               const SizedBox(height: AppDimensions.space20),
@@ -272,8 +262,8 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2))
                       : Text(
                           _status.status == KycVerificationStatus.notStarted
-                              ? 'Submit for private review'
-                              : 'Submit new evidence',
+                              ? l10n.kyc_submitReview
+                              : l10n.kyc_submitNewEvidence,
                         ),
                 ),
               ),
@@ -313,7 +303,8 @@ class _KycStatusPanel extends StatelessWidget {
       );
     }
 
-    final presentation = _statusPresentation(snapshot.status);
+    final l10n = AppLocalizations.of(context);
+    final presentation = _statusPresentation(l10n, snapshot.status);
     final detail = snapshot.reason ?? presentation.message;
     return Semantics(
       container: true,
@@ -357,7 +348,10 @@ class _KycStatusPanel extends StatelessWidget {
                   if (snapshot.submittedAt != null) ...[
                     const SizedBox(height: 6),
                     Text(
-                      'Submitted ${_formatStatusDate(snapshot.submittedAt!)}',
+                      l10n.kyc_submitted(
+                        MaterialLocalizations.of(context)
+                            .formatShortDate(snapshot.submittedAt!.toLocal()),
+                      ),
                       style: AppTypography.caption.copyWith(
                         color: AppColors.slateMist,
                       ),
@@ -412,7 +406,8 @@ class _ResultPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final presentation = _statusPresentation(result.status);
+    final presentation =
+        _statusPresentation(AppLocalizations.of(context), result.status);
     return Container(
       padding: const EdgeInsets.all(AppDimensions.space16),
       decoration: BoxDecoration(
@@ -426,69 +421,46 @@ class _ResultPanel extends StatelessWidget {
   }
 }
 
-({
-  String label,
-  String message,
-  Color color,
-  IconData icon
-}) _statusPresentation(KycVerificationStatus status) => switch (status) {
-      KycVerificationStatus.approved => (
-          label: 'Identity approved',
-          message: 'Your government-ID evidence has been verified securely.',
-          color: AppColors.verifiedTeal,
-          icon: Icons.verified_user_outlined,
-        ),
-      KycVerificationStatus.pendingReview => (
-          label: 'Private review in progress',
-          message:
-              'Your evidence is queued for human review. You do not need to submit it again.',
-          color: AppColors.champagneGold,
-          icon: Icons.hourglass_top_rounded,
-        ),
-      KycVerificationStatus.rejected => (
-          label: 'Identity check not approved',
-          message:
-              'Review the reason below and submit new evidence if appropriate.',
-          color: AppColors.softCoral,
-          icon: Icons.gpp_bad_outlined,
-        ),
-      KycVerificationStatus.resubmitRequired => (
-          label: 'New evidence required',
-          message:
-              'Capture clearer, current identity evidence and submit it again.',
-          color: AppColors.softCoral,
-          icon: Icons.refresh_rounded,
-        ),
-      KycVerificationStatus.expired => (
-          label: 'Identity evidence expired',
-          message: 'Submit a current government-issued document.',
-          color: AppColors.champagneGold,
-          icon: Icons.event_busy_outlined,
-        ),
-      KycVerificationStatus.notStarted => (
-          label: 'Identity check not started',
-          message:
-              'Submit a government ID and selfie for a private evidence review.',
-          color: AppColors.slateMist,
-          icon: Icons.shield_outlined,
-        ),
-    };
-
-String _formatStatusDate(DateTime value) {
-  final local = value.toLocal();
-  const months = <String>[
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-  return '${local.day} ${months[local.month - 1]} ${local.year}';
-}
+({String label, String message, Color color, IconData icon})
+    _statusPresentation(
+  AppLocalizations l10n,
+  KycVerificationStatus status,
+) =>
+        switch (status) {
+          KycVerificationStatus.approved => (
+              label: l10n.kyc_statusApproved,
+              message: l10n.kyc_statusApprovedBody,
+              color: AppColors.verifiedTeal,
+              icon: Icons.verified_user_outlined,
+            ),
+          KycVerificationStatus.pendingReview => (
+              label: l10n.kyc_statusPending,
+              message: l10n.kyc_statusPendingBody,
+              color: AppColors.champagneGold,
+              icon: Icons.hourglass_top_rounded,
+            ),
+          KycVerificationStatus.rejected => (
+              label: l10n.kyc_statusRejected,
+              message: l10n.kyc_statusRejectedBody,
+              color: AppColors.softCoral,
+              icon: Icons.gpp_bad_outlined,
+            ),
+          KycVerificationStatus.resubmitRequired => (
+              label: l10n.kyc_statusResubmit,
+              message: l10n.kyc_statusResubmitBody,
+              color: AppColors.softCoral,
+              icon: Icons.refresh_rounded,
+            ),
+          KycVerificationStatus.expired => (
+              label: l10n.kyc_statusExpired,
+              message: l10n.kyc_statusExpiredBody,
+              color: AppColors.champagneGold,
+              icon: Icons.event_busy_outlined,
+            ),
+          KycVerificationStatus.notStarted => (
+              label: l10n.kyc_statusNotStarted,
+              message: l10n.kyc_statusNotStartedBody,
+              color: AppColors.slateMist,
+              icon: Icons.shield_outlined,
+            ),
+        };

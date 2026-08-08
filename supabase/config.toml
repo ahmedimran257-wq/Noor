@@ -40,7 +40,6 @@ enabled = false
 site_url = "https://silarah.com"
 additional_redirect_urls = [
   "https://silarah.com/auth/callback",
-  "https://silarah.com/auth/digilocker/callback",
   "https://app.silarah.com/auth/callback"
 ]
 jwt_expiry = 3600
@@ -125,6 +124,7 @@ verify_jwt = false
 # Private pg_cron calls authenticate with the Vault-backed x-cron-secret;
 # direct member calls are independently verified inside the function.
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.revenuecat-webhook]
 # RevenueCat signs requests with REVENUECAT_WEBHOOK_SECRET; Supabase JWT

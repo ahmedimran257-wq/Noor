@@ -34,10 +34,12 @@ import '../../../core/services/bookmark_service.dart';
 import '../../../core/services/photo_access_service.dart';
 import '../../../core/services/profile_photo_service.dart';
 import '../../../core/services/profile_view_service.dart';
+import '../../../core/services/platform_action_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../widgets/interest_ceremony_overlay.dart';
 import '../widgets/interest_note_sheet.dart';
 import '../widgets/report_bottom_sheet.dart';
@@ -389,28 +391,14 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     );
   }
 
-  void _handleShare() {
+  Future<void> _handleShare() async {
     HapticFeedback.selectionClick();
     // TD4: Copy a share link to clipboard
     final shareText = 'Check out ${widget.profile.firstName} on SILARAH — '
         'silarah.com/profile/${widget.profile.id}';
-    Clipboard.setData(ClipboardData(text: shareText));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Profile link copied to clipboard',
-          style: TextStyle(
-            color: AppColors.readableOn(AppColors.surfaceGlassHover),
-          ),
-        ),
-        backgroundColor: AppColors.surfaceGlassHover,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          side: BorderSide(color: AppColors.cardBorder),
-        ),
-      ),
+    await PlatformActionService.instance.shareText(
+      text: shareText,
+      subject: 'SILARAH profile',
     );
   }
 
@@ -424,8 +412,8 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
         value: context.read<BlockReportCubit>(),
         child: _ReportBlockSheet(
           profile: widget.profile,
-          onBlock: () {
-            context.read<BlockReportCubit>().blockUser(
+          onBlock: () async {
+            return context.read<BlockReportCubit>().blockUser(
                   userId: widget.profile.id,
                   name: widget.profile.firstName,
                   lastInitial: widget.profile.lastNameInitial,
@@ -445,6 +433,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final p = widget.profile;
     var interaction = context.select<InterestsCubit, ProfileInteractionState>(
       (cubit) => cubit.state.interactionWith(p.id),
@@ -473,17 +462,21 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                 centerTitle: true,
                 leading: _HeaderButton(
                   icon: Icons.arrow_back_rounded,
+                  semanticLabel: l10n.common_button_back,
                   onTap: () => Navigator.pop(context),
                 ),
                 actions: [
                   _HeaderButton(
                     icon: Icons.ios_share_rounded,
+                    semanticLabel: l10n.profile_share,
                     onTap: _handleShare,
                   ),
                   if (!widget.isOwnProfile) ...[
                     const SizedBox(width: AppDimensions.space4),
                     _HeaderButton(
                       icon: Icons.more_vert_rounded,
+                      semanticLabel:
+                          MaterialLocalizations.of(context).showMenuTooltip,
                       onTap: _showMoreMenu,
                     ),
                   ],
@@ -1529,25 +1522,34 @@ class _FullScreenPhotoViewerState extends State<_FullScreenPhotoViewer> {
 // ── Header Icon Button ────────────────────────────────────────
 
 class _HeaderButton extends StatelessWidget {
-  const _HeaderButton({required this.icon, required this.onTap});
+  const _HeaderButton({
+    required this.icon,
+    required this.semanticLabel,
+    required this.onTap,
+  });
   final IconData icon;
+  final String semanticLabel;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.all(AppDimensions.space4),
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: AppColors.surfaceGlass,
-          shape: BoxShape.circle,
-          border: Border.all(color: AppColors.cardBorder),
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          margin: const EdgeInsets.all(AppDimensions.space4),
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceGlass,
+            shape: BoxShape.circle,
+            border: Border.all(color: AppColors.cardBorder),
+          ),
+          child: Icon(icon,
+              color: AppColors.pearlWhite, size: AppDimensions.iconSizeMedium),
         ),
-        child: Icon(icon,
-            color: AppColors.pearlWhite, size: AppDimensions.iconSizeMedium),
       ),
     );
   }
@@ -2234,11 +2236,12 @@ class _ReportBlockSheet extends StatelessWidget {
   });
 
   final DiscoveryProfile profile;
-  final VoidCallback onBlock;
+  final Future<bool> Function() onBlock;
   final VoidCallback onReport;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       margin: const EdgeInsets.all(AppDimensions.space16),
       padding: const EdgeInsets.all(AppDimensions.space24),
@@ -2266,7 +2269,7 @@ class _ReportBlockSheet extends StatelessWidget {
 
           _SheetAction(
             icon: Icons.flag_outlined,
-            label: 'Report ${profile.firstName}',
+            label: l10n.safety_reportMember(profile.firstName),
             color: AppColors.softCoral,
             onTap: () {
               Navigator.pop(context);
@@ -2279,15 +2282,35 @@ class _ReportBlockSheet extends StatelessWidget {
           const SizedBox(height: AppDimensions.space4),
           _SheetAction(
             icon: Icons.block_rounded,
-            label: 'Block ${profile.firstName}',
+            label: l10n.safety_blockMember(profile.firstName),
             color: AppColors.softCoral,
-            onTap: () {
+            onTap: () async {
               Navigator.pop(context);
-              onBlock();
+              final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (dialogContext) => AlertDialog(
+                      title: Text(l10n.safety_blockTitle(profile.firstName)),
+                      content: Text(l10n.safety_blockBody(profile.firstName)),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialogContext, false),
+                          child: Text(l10n.common_button_cancel),
+                        ),
+                        FilledButton(
+                          onPressed: () => Navigator.pop(dialogContext, true),
+                          child: Text(l10n.safety_blockAction),
+                        ),
+                      ],
+                    ),
+                  ) ??
+                  false;
+              if (!confirmed || !context.mounted) return;
+              final blocked = await onBlock();
+              if (!blocked || !context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    '${profile.firstName} blocked.',
+                    l10n.safety_blocked(profile.firstName),
                     style: AppTypography.body.copyWith(
                       color: AppColors.readableOn(AppColors.surfaceGlassHover),
                     ),
@@ -2313,7 +2336,7 @@ class _ReportBlockSheet extends StatelessWidget {
                 ),
               ),
               onPressed: () => Navigator.pop(context),
-              child: Text('Cancel',
+              child: Text(l10n.common_button_cancel,
                   style: AppTypography.button
                       .copyWith(color: AppColors.slateMist)),
             ),

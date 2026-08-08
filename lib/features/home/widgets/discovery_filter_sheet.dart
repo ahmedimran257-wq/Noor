@@ -173,6 +173,13 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
   Future<void> _savePreset() async {
     final name = _presetNameCtrl.text.trim();
     if (name.isEmpty) return;
+    final subscription = context.read<SubscriptionCubit>().state;
+    if (_presets.isNotEmpty && !subscription.canSaveMultipleFilterPresets('')) {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(builder: (_) => const SubscriptionScreen()),
+      );
+      return;
+    }
     final updated = [..._presets, FilterPreset(name: name, filter: _draft)];
     await FilterPresetService.save(updated);
     if (mounted) {

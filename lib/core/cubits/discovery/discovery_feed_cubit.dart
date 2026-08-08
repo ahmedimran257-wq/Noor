@@ -644,24 +644,51 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       // or overwrite a newer filter/load request.
       if (!_isCurrentRequest(requestVersion)) return const [];
       _updateBackendCursor(rows);
-      await _attachPriorMatchContext(rows);
+      final publicPhotoOwners = rows
+          .where((row) {
+            final privacy = row['photo_privacy']?.toString();
+            return ((row['photo_count'] as num?)?.toInt() ?? 0) > 0 &&
+                privacy != 'mutual_only' &&
+                privacy != 'request_only';
+          })
+          .map((row) => row['user_id']?.toString())
+          .whereType<String>()
+          .where((id) => id.isNotEmpty)
+          .toList(growable: false);
+
+      // Relationship context and the one batched photo-signing call are
+      // independent. Running them together removes a full network round-trip
+      // from cold Discovery without increasing request count or egress.
+      final enrichment = await Future.wait<dynamic>([
+        _attachPriorMatchContext(rows),
+        publicPhotoOwners.isEmpty
+            ? Future<Map<String, String>>.value(const {})
+            : _loadPublicPhotoUrls(publicPhotoOwners),
+      ]);
+      final signedUrls = enrichment[1] as Map<String, String>;
+      for (final row in rows) {
+        // Feed rows must never expose private Storage paths as image URLs.
+        row.remove('photo_url');
+        row.remove('photo_urls');
+        final signedUrl = signedUrls[row['user_id']?.toString()];
+        if (signedUrl != null && signedUrl.isNotEmpty) {
+          row['photo_url'] = signedUrl;
+        }
+      }
       final contextMs = timings.elapsedMilliseconds - feedMs;
       if (!_isCurrentRequest(requestVersion)) return const [];
       final profiles = await compute(parseProfilesInBackground, rows);
       final parseMs = timings.elapsedMilliseconds - feedMs - contextMs;
       if (!_isCurrentRequest(requestVersion)) return const [];
-      final signedProfiles = await _signPhotoUrls(profiles);
       if (kDebugMode) {
-        final photoMs =
-            timings.elapsedMilliseconds - feedMs - contextMs - parseMs;
         debugPrint(
           'DiscoveryFeedCubit: ${profiles.length} profiles in '
           '${timings.elapsedMilliseconds}ms '
-          '(feed ${feedMs}ms, context ${contextMs}ms, parse ${parseMs}ms, '
-          'photos ${photoMs}ms).',
+          '(feed ${feedMs}ms, parallel enrichment ${contextMs}ms, '
+          'parse ${parseMs}ms).',
         );
       }
-      return signedProfiles;
+      return profiles;
     } catch (e) {
       debugPrint('DiscoveryFeedCubit: Supabase discovery failed: $e');
       rethrow;
@@ -748,6 +775,21 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     for (final row in rows) {
       final prior = contextByUser[row['user_id']?.toString()];
       if (prior != null) row.addAll(prior);
+    }
+  }
+
+  Future<Map<String, String>> _loadPublicPhotoUrls(
+    List<String> ownerUserIds,
+  ) async {
+    try {
+      return await ProfilePhotoService.instance.getAuthorizedPhotoUrls(
+        ownerUserIds: ownerUserIds,
+      );
+    } catch (error) {
+      // Profiles remain browsable with a privacy-safe placeholder while a
+      // transient signing service failure recovers.
+      debugPrint('DiscoveryFeedCubit: failed to batch sign photo URLs: $error');
+      return const {};
     }
   }
 
@@ -850,34 +892,5 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       default:
         return null;
     }
-  }
-
-  Future<List<DiscoveryProfile>> _signPhotoUrls(
-      List<DiscoveryProfile> profiles) async {
-    final publicPhotoOwners = profiles
-        .where((profile) => profile.photoCount > 0 && !profile.isPhotoPrivate)
-        .map((profile) => profile.id)
-        .toList(growable: false);
-
-    Map<String, String> signedUrls = const {};
-    if (publicPhotoOwners.isNotEmpty) {
-      try {
-        signedUrls = await ProfilePhotoService.instance.getAuthorizedPhotoUrls(
-          ownerUserIds: publicPhotoOwners,
-        );
-      } catch (e) {
-        debugPrint('DiscoveryFeedCubit: failed to batch sign photo URLs: $e');
-      }
-    }
-
-    return profiles.map((profile) {
-      if (profile.photoCount <= 0 || profile.isPhotoPrivate) {
-        return profile.copyWith(clearPhotoUrl: true);
-      }
-      final signedUrl = signedUrls[profile.id];
-      return signedUrl == null || signedUrl.isEmpty
-          ? profile.copyWith(clearPhotoUrl: true)
-          : profile.copyWith(photoUrl: signedUrl);
-    }).toList(growable: false);
   }
 }

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_channel_alerts">Mesajlar ve hesap uyarıları</string>
+    <string name="notification_channel_alerts_description">İlgiler, mesajlar, eşleşmeler ve önemli hesap güncellemeleri</string>
+    <string name="notification_channel_activity">Profil etkinliği</string>
+    <string name="notification_channel_activity_description">Profil görüntülemeleri ve acil olmayan diğer etkinlikler</string>
+</resources>

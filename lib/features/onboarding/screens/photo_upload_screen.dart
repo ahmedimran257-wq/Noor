@@ -23,6 +23,8 @@ import '../../../core/cubits/onboarding/onboarding_state.dart';
 import '../../../core/models/onboarding_data.dart';
 import '../../../core/services/profile_photo_service.dart';
 import '../../../core/services/photo_moderation_service.dart';
+import '../../../core/services/media_permission_error.dart';
+import '../../../core/services/platform_action_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
@@ -199,6 +201,30 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       if (mounted) {
         _clearOperation();
         final l10n = AppLocalizations.of(context);
+        if (MediaPermissionError.isPermissionDenied(e)) {
+          final permissionL10n = AppLocalizations.of(context);
+          await showDialog<void>(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              title: Text(permissionL10n.media_photoAccessOff),
+              content: Text(permissionL10n.media_photoAccessBody),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: Text(permissionL10n.common_button_cancel),
+                ),
+                FilledButton(
+                  onPressed: () async {
+                    Navigator.pop(dialogContext);
+                    await PlatformActionService.instance.openAppSettings();
+                  },
+                  child: Text(permissionL10n.common_openSettings),
+                ),
+              ],
+            ),
+          );
+          return;
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(l10n.photo_error_pick_failed(e.toString()),

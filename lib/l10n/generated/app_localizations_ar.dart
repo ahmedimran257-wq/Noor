@@ -2220,4 +2220,351 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get startup_connectivity_protected => 'اتصال محمي';
+
+  @override
+  String get settings_label_email => 'البريد الإلكتروني';
+
+  @override
+  String get settings_notify_profileViews => 'مشاهدات الملف الشخصي';
+
+  @override
+  String get settings_notify_profileViewsSub =>
+      'تنبيه خاص عندما يفتح شخص ملفك الشخصي';
+
+  @override
+  String get settings_notify_profileLive => 'نشر الملف الشخصي';
+
+  @override
+  String get settings_notify_profileLiveSub =>
+      'تأكيد عندما يصبح ملفك الشخصي مرئيًا';
+
+  @override
+  String get settings_appearance => 'المظهر';
+
+  @override
+  String get settings_helpSupport => 'المساعدة والدعم';
+
+  @override
+  String get settings_helpCenter => 'مركز المساعدة';
+
+  @override
+  String get settings_grievanceOfficer => 'مسؤول الشكاوى';
+
+  @override
+  String get settings_grievanceResponse => 'مدة الرد: خلال 48 ساعة من الاستلام';
+
+  @override
+  String get settings_grievanceIndiaNotice =>
+      'للمستخدمين في الهند: نلتزم بقواعد تقنية المعلومات (إرشادات الوسطاء ومدونة أخلاقيات الوسائط الرقمية) لعام 2021.';
+
+  @override
+  String get settings_managePhotoRequests => 'إدارة طلبات الصور';
+
+  @override
+  String get settings_managePhotoRequestsSub =>
+      'الموافقة على الوصول أو رفض الطلبات أو إلغاء المشاركة';
+
+  @override
+  String get settings_theme_chooseTitle => 'اختر أجواءك';
+
+  @override
+  String get settings_theme_chooseSubtitle =>
+      'هوية بصرية متكاملة وليست مجرد مرشح ألوان. تتغير جميع الأسطح والحقول وعناصر النظام معًا.';
+
+  @override
+  String get settings_theme_applied => 'يُطبّق فورًا · محفوظ على هذا الجهاز';
+
+  @override
+  String get settings_reportPending => 'قيد المراجعة';
+
+  @override
+  String get legal_document_terms => 'شروط الخدمة';
+
+  @override
+  String get legal_document_privacy => 'سياسة الخصوصية';
+
+  @override
+  String get legal_document_community => 'إرشادات المجتمع';
+
+  @override
+  String get legal_specialCategoryConsent =>
+      'أوافق صراحةً على معالجة SILARAH لمعلوماتي الدينية (المذهب والصلاة والهوية الإسلامية) لمطابقة التوافق. يستخدمها مزودو الخدمة المتعاقدون فقط لتشغيل سيلارا، وليس للإعلانات السلوكية.';
+
+  @override
+  String get onboarding_complexion_fair => 'فاتحة';
+
+  @override
+  String get onboarding_complexion_medium => 'قمحية';
+
+  @override
+  String get onboarding_complexion_olive => 'زيتونية';
+
+  @override
+  String get onboarding_complexion_dark => 'داكنة';
+
+  @override
+  String get onboarding_residency_citizen => 'مواطن';
+
+  @override
+  String get onboarding_residency_permanentResident => 'مقيم دائم';
+
+  @override
+  String get onboarding_residency_workVisa => 'تأشيرة عمل';
+
+  @override
+  String get onboarding_residency_studentVisa => 'تأشيرة طالب';
+
+  @override
+  String get onboarding_specialNeeds_none => 'لا يوجد';
+
+  @override
+  String get onboarding_specialNeeds_physical => 'إعاقة جسدية';
+
+  @override
+  String get onboarding_specialNeeds_hearing => 'ضعف السمع';
+
+  @override
+  String get onboarding_specialNeeds_visual => 'ضعف البصر';
+
+  @override
+  String get onboarding_label_stateRegion => 'الولاية / المنطقة';
+
+  @override
+  String get onboarding_specialNeeds_privacy =>
+      'تتم مشاركة هذه المعلومة فقط بعد الاهتمام المتبادل.';
+
+  @override
+  String get settings_theme_blackWhite => 'أبيض وأسود';
+
+  @override
+  String get settings_theme_blackWhiteDesc => 'أبيض نقي وأسود مطلق بلا ألوان';
+
+  @override
+  String get settings_theme_oled => 'ليل OLED';
+
+  @override
+  String get settings_theme_oledDesc => 'أسود حقيقي مضبوط لشاشات OLED';
+
+  @override
+  String get settings_theme_prism => 'بريزم لوكس';
+
+  @override
+  String get settings_theme_prismDesc => 'عمق ليلي بألوان جوهرية مضيئة';
+
+  @override
+  String get settings_guardian_backendRequired =>
+      'تتطلب إعدادات الولي اتصالًا آمنًا.';
+
+  @override
+  String get settings_guardian_saveError =>
+      'تعذر حفظ إعدادات الولي. حاول مرة أخرى.';
+
+  @override
+  String get common_openSettings => 'فتح الإعدادات';
+
+  @override
+  String get media_cameraAccessOff => 'الوصول إلى الكاميرا متوقف';
+
+  @override
+  String get media_cameraUnavailable => 'الكاميرا غير متاحة';
+
+  @override
+  String get media_cameraAccessBody =>
+      'اسمح بالوصول إلى الكاميرا من الإعدادات، ثم عد لالتقاط صورة واضحة.';
+
+  @override
+  String get media_cameraUnavailableBody => 'تعذر فتح الكاميرا. حاول مرة أخرى.';
+
+  @override
+  String get media_photoAccessOff => 'الوصول إلى الصور متوقف';
+
+  @override
+  String get media_photoAccessBody =>
+      'اسمح بالوصول إلى الكاميرا أو الصور من الإعدادات، ثم عد لإضافة صورتك.';
+
+  @override
+  String get chat_searchHint => 'البحث في الرسائل';
+
+  @override
+  String get chat_noConversationsFound => 'لم يتم العثور على محادثات';
+
+  @override
+  String get chat_noConversationsFoundBody => 'جرّب اسمًا آخر أو امسح البحث.';
+
+  @override
+  String get chat_noConversationsYet => 'لا توجد محادثات بعد';
+
+  @override
+  String get chat_noConversationsYetBody =>
+      'اقبل اهتمامًا أو انتظر قبول اهتمامك لبدء محادثة.';
+
+  @override
+  String get kyc_title => 'تحقق من هويتك';
+
+  @override
+  String get kyc_heading => 'تحقق من ملفك الشخصي';
+
+  @override
+  String get kyc_intro =>
+      'تُجرى فحوصات جودة الالتقاط على هذا الجهاز، ثم تراجع سيلاراه مستندك الخاص وصورتك الذاتية. لا تعتمد درجات الجهاز هويتك مطلقًا.';
+
+  @override
+  String get kyc_selfieTitle => '1. التقط صورة ذاتية واضحة';
+
+  @override
+  String get kyc_selfieHint => 'وجه واحد وإضاءة جيدة';
+
+  @override
+  String get kyc_selfieCaptured => 'تم التقاط الصورة الذاتية';
+
+  @override
+  String get kyc_idTitle => '2. صوّر وثيقة هويتك';
+
+  @override
+  String get kyc_idHint => 'يجب أن يظهر اسمك وصورتك وتاريخ ميلادك';
+
+  @override
+  String get kyc_idCaptured => 'تم التقاط وثيقة الهوية';
+
+  @override
+  String get kyc_documentType => 'نوع المستند';
+
+  @override
+  String get kyc_governmentId => 'هوية حكومية';
+
+  @override
+  String get kyc_passport => 'جواز سفر';
+
+  @override
+  String get kyc_drivingLicence => 'رخصة قيادة';
+
+  @override
+  String get kyc_submitReview => 'إرسال للمراجعة الخاصة';
+
+  @override
+  String get kyc_submitNewEvidence => 'إرسال أدلة جديدة';
+
+  @override
+  String kyc_submitted(String date) {
+    return 'أُرسل في $date';
+  }
+
+  @override
+  String get kyc_statusApproved => 'تم اعتماد الهوية';
+
+  @override
+  String get kyc_statusApprovedBody =>
+      'تم التحقق من دليل هويتك الحكومية بأمان.';
+
+  @override
+  String get kyc_statusPending => 'المراجعة الخاصة جارية';
+
+  @override
+  String get kyc_statusPendingBody =>
+      'دليلك في قائمة المراجعة البشرية، ولا حاجة لإرساله مجددًا.';
+
+  @override
+  String get kyc_statusRejected => 'لم تتم الموافقة على التحقق';
+
+  @override
+  String get kyc_statusRejectedBody =>
+      'راجع السبب أدناه وأرسل دليلًا جديدًا عند الحاجة.';
+
+  @override
+  String get kyc_statusResubmit => 'مطلوب دليل جديد';
+
+  @override
+  String get kyc_statusResubmitBody =>
+      'التقط دليل هوية أوضح وحديثًا ثم أرسله مجددًا.';
+
+  @override
+  String get kyc_statusExpired => 'انتهت صلاحية دليل الهوية';
+
+  @override
+  String get kyc_statusExpiredBody => 'أرسل مستندًا حكوميًا ساريًا.';
+
+  @override
+  String get kyc_statusNotStarted => 'لم يبدأ التحقق من الهوية';
+
+  @override
+  String get kyc_statusNotStartedBody =>
+      'أرسل هوية حكومية وصورة ذاتية لمراجعة خاصة.';
+
+  @override
+  String get referral_title => 'ادعُ صديقًا';
+
+  @override
+  String get referral_loading => 'جارٍ تحميل المكافآت';
+
+  @override
+  String get referral_heading => 'انشر الخبر واربح المزايا المميزة!';
+
+  @override
+  String get referral_body =>
+      'ادعُ أصدقاءك إلى سيلاراه. عندما يُكمل شخص من الجنس الآخر التسجيل باستخدام رمزك، تحصلان على 7 أيام مجانية من المزايا المميزة!';
+
+  @override
+  String get referral_codeLabel => 'رمز الإحالة الخاص بك';
+
+  @override
+  String get referral_tapToCopy => 'اضغط على الرمز لنسخه';
+
+  @override
+  String get referral_totalInvited => 'إجمالي المدعوين';
+
+  @override
+  String get referral_rewardsEarned => 'المكافآت المكتسبة';
+
+  @override
+  String referral_premiumDays(int count) {
+    return '$count أيام مميزة';
+  }
+
+  @override
+  String get referral_pending => 'التسجيلات المعلقة';
+
+  @override
+  String get referral_shareButton => 'مشاركة الرمز مع الأصدقاء';
+
+  @override
+  String get referral_copied => 'تم نسخ رمز الإحالة!';
+
+  @override
+  String get referral_shareSubject => 'انضم إلى سيلاراه';
+
+  @override
+  String referral_shareText(String code) {
+    return 'انضم إلى سيلاراه، تطبيق الزواج الإسلامي الموثوق. استخدم رمز إحالتي: $code\n\nالتنزيل: https://silarah.com/r/$code';
+  }
+
+  @override
+  String get profile_share => 'مشاركة الملف الشخصي';
+
+  @override
+  String safety_reportMember(String name) {
+    return 'الإبلاغ عن $name';
+  }
+
+  @override
+  String safety_blockMember(String name) {
+    return 'حظر $name';
+  }
+
+  @override
+  String safety_blockTitle(String name) {
+    return 'حظر $name؟';
+  }
+
+  @override
+  String safety_blockBody(String name) {
+    return 'سيُخفى $name من الاكتشاف ولن يتمكن من التواصل معك. يُحفظ سجل الدردشة لأغراض السلامة، ولن يعيد إلغاء الحظر فتح المحادثة.';
+  }
+
+  @override
+  String get safety_blockAction => 'حظر';
+
+  @override
+  String safety_blocked(String name) {
+    return 'تم حظر $name.';
+  }
 }

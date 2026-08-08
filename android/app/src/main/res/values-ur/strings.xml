@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_channel_alerts">پیغامات اور اکاؤنٹ انتباہات</string>
+    <string name="notification_channel_alerts_description">دلچسپیاں، پیغامات، میچز اور اہم اکاؤنٹ اپ ڈیٹس</string>
+    <string name="notification_channel_activity">پروفائل سرگرمی</string>
+    <string name="notification_channel_activity_description">پروفائل دیکھے جانے اور دیگر غیر فوری سرگرمیاں</string>
+</resources>

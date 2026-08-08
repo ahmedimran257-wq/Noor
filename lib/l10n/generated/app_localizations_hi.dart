@@ -2255,4 +2255,356 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get startup_connectivity_protected => 'सुरक्षित कनेक्शन';
+
+  @override
+  String get settings_label_email => 'ईमेल';
+
+  @override
+  String get settings_notify_profileViews => 'प्रोफ़ाइल देखे जाने की सूचना';
+
+  @override
+  String get settings_notify_profileViewsSub =>
+      'जब कोई आपकी प्रोफ़ाइल खोले तो निजी सूचना';
+
+  @override
+  String get settings_notify_profileLive => 'प्रोफ़ाइल लाइव हुई';
+
+  @override
+  String get settings_notify_profileLiveSub =>
+      'आपकी प्रोफ़ाइल दिखाई देने पर पुष्टि';
+
+  @override
+  String get settings_appearance => 'दिखावट';
+
+  @override
+  String get settings_helpSupport => 'सहायता और समर्थन';
+
+  @override
+  String get settings_helpCenter => 'सहायता केंद्र';
+
+  @override
+  String get settings_grievanceOfficer => 'शिकायत अधिकारी';
+
+  @override
+  String get settings_grievanceResponse =>
+      'उत्तर का समय: प्राप्ति के 48 घंटों के भीतर';
+
+  @override
+  String get settings_grievanceIndiaNotice =>
+      'भारत के उपयोगकर्ताओं के लिए: हम सूचना प्रौद्योगिकी (मध्यस्थ दिशानिर्देश और डिजिटल मीडिया आचार संहिता) नियम, 2021 का पालन करते हैं।';
+
+  @override
+  String get settings_managePhotoRequests => 'फ़ोटो अनुरोध प्रबंधित करें';
+
+  @override
+  String get settings_managePhotoRequestsSub =>
+      'पहुँच मंज़ूर करें, अनुरोध अस्वीकार करें या साझा करना रद्द करें';
+
+  @override
+  String get settings_theme_chooseTitle => 'अपना माहौल चुनें';
+
+  @override
+  String get settings_theme_chooseSubtitle =>
+      'यह केवल रंग फ़िल्टर नहीं, पूरी दृश्य पहचान है। हर सतह, फ़ील्ड और सिस्टम नियंत्रण साथ बदलता है।';
+
+  @override
+  String get settings_theme_applied => 'तुरंत लागू · इस डिवाइस पर सहेजा गया';
+
+  @override
+  String get settings_reportPending => 'समीक्षा लंबित';
+
+  @override
+  String get legal_document_terms => 'सेवा की शर्तें';
+
+  @override
+  String get legal_document_privacy => 'गोपनीयता नीति';
+
+  @override
+  String get legal_document_community => 'समुदाय दिशानिर्देश';
+
+  @override
+  String get legal_specialCategoryConsent =>
+      'अनुकूल मिलान के लिए SILARAH द्वारा मेरी धार्मिक जानकारी (मज़हब, नमाज़ का अभ्यास और इस्लामी पहचान) संसाधित किए जाने पर मैं स्पष्ट सहमति देता/देती हूँ। अनुबंधित सेवा प्रदाता इसे केवल सिलाराह चलाने के लिए उपयोग करते हैं, व्यवहार-आधारित विज्ञापन के लिए कभी नहीं।';
+
+  @override
+  String get onboarding_complexion_fair => 'गोरा';
+
+  @override
+  String get onboarding_complexion_medium => 'मध्यम';
+
+  @override
+  String get onboarding_complexion_olive => 'गेहुँआ';
+
+  @override
+  String get onboarding_complexion_dark => 'साँवला';
+
+  @override
+  String get onboarding_residency_citizen => 'नागरिक';
+
+  @override
+  String get onboarding_residency_permanentResident => 'स्थायी निवासी';
+
+  @override
+  String get onboarding_residency_workVisa => 'कार्य वीज़ा';
+
+  @override
+  String get onboarding_residency_studentVisa => 'छात्र वीज़ा';
+
+  @override
+  String get onboarding_specialNeeds_none => 'कोई नहीं';
+
+  @override
+  String get onboarding_specialNeeds_physical => 'शारीरिक दिव्यांगता';
+
+  @override
+  String get onboarding_specialNeeds_hearing => 'श्रवण बाधा';
+
+  @override
+  String get onboarding_specialNeeds_visual => 'दृष्टि बाधा';
+
+  @override
+  String get onboarding_label_stateRegion => 'राज्य / क्षेत्र';
+
+  @override
+  String get onboarding_specialNeeds_privacy =>
+      'यह केवल परस्पर रुचि के बाद साझा किया जाता है।';
+
+  @override
+  String get settings_theme_blackWhite => 'काला और सफ़ेद';
+
+  @override
+  String get settings_theme_blackWhiteDesc =>
+      'शुद्ध सफ़ेद, पूर्ण काला, बिना रंग';
+
+  @override
+  String get settings_theme_oled => 'OLED नाइट';
+
+  @override
+  String get settings_theme_oledDesc => 'OLED स्क्रीन के लिए असली काला';
+
+  @override
+  String get settings_theme_prism => 'प्रिज़्म लक्स';
+
+  @override
+  String get settings_theme_prismDesc =>
+      'चमकदार रत्न रंगों के साथ आधी रात की गहराई';
+
+  @override
+  String get settings_guardian_backendRequired =>
+      'अभिभावक सेटिंग के लिए सुरक्षित कनेक्शन आवश्यक है।';
+
+  @override
+  String get settings_guardian_saveError =>
+      'अभिभावक सेटिंग सहेजी नहीं जा सकीं। फिर कोशिश करें।';
+
+  @override
+  String get common_openSettings => 'सेटिंग खोलें';
+
+  @override
+  String get media_cameraAccessOff => 'कैमरा अनुमति बंद है';
+
+  @override
+  String get media_cameraUnavailable => 'कैमरा उपलब्ध नहीं है';
+
+  @override
+  String get media_cameraAccessBody =>
+      'सेटिंग में कैमरा अनुमति दें, फिर साफ़ फ़ोटो लेने के लिए लौटें।';
+
+  @override
+  String get media_cameraUnavailableBody =>
+      'कैमरा नहीं खुल सका। फिर कोशिश करें।';
+
+  @override
+  String get media_photoAccessOff => 'फ़ोटो अनुमति बंद है';
+
+  @override
+  String get media_photoAccessBody =>
+      'सेटिंग में कैमरा या फ़ोटो अनुमति दें, फिर फ़ोटो जोड़ने के लिए लौटें।';
+
+  @override
+  String get chat_searchHint => 'संदेश खोजें';
+
+  @override
+  String get chat_noConversationsFound => 'कोई बातचीत नहीं मिली';
+
+  @override
+  String get chat_noConversationsFoundBody =>
+      'दूसरा नाम आज़माएँ या खोज साफ़ करें।';
+
+  @override
+  String get chat_noConversationsYet => 'अभी कोई बातचीत नहीं';
+
+  @override
+  String get chat_noConversationsYetBody =>
+      'बातचीत शुरू करने के लिए रुचि स्वीकार करें या अपनी रुचि स्वीकार होने दें।';
+
+  @override
+  String get kyc_title => 'अपनी पहचान सत्यापित करें';
+
+  @override
+  String get kyc_heading => 'अपनी प्रोफ़ाइल सत्यापित करें';
+
+  @override
+  String get kyc_intro =>
+      'कैप्चर की गुणवत्ता इस डिवाइस पर जाँची जाती है। फिर सिलाराह आपके निजी दस्तावेज़ और सेल्फ़ी की समीक्षा करता है। डिवाइस स्कोर कभी आपकी पहचान मंज़ूर नहीं करते।';
+
+  @override
+  String get kyc_selfieTitle => '1. साफ़ सेल्फ़ी लें';
+
+  @override
+  String get kyc_selfieHint => 'एक चेहरा, अच्छी रोशनी';
+
+  @override
+  String get kyc_selfieCaptured => 'सेल्फ़ी ली गई';
+
+  @override
+  String get kyc_idTitle => '2. पहचान पत्र की फ़ोटो लें';
+
+  @override
+  String get kyc_idHint => 'आपका नाम, फ़ोटो और जन्मतिथि दिखाई देनी चाहिए';
+
+  @override
+  String get kyc_idCaptured => 'पहचान पत्र लिया गया';
+
+  @override
+  String get kyc_documentType => 'दस्तावेज़ का प्रकार';
+
+  @override
+  String get kyc_governmentId => 'सरकारी पहचान पत्र';
+
+  @override
+  String get kyc_passport => 'पासपोर्ट';
+
+  @override
+  String get kyc_drivingLicence => 'ड्राइविंग लाइसेंस';
+
+  @override
+  String get kyc_submitReview => 'निजी समीक्षा के लिए भेजें';
+
+  @override
+  String get kyc_submitNewEvidence => 'नया प्रमाण भेजें';
+
+  @override
+  String kyc_submitted(String date) {
+    return '$date को भेजा गया';
+  }
+
+  @override
+  String get kyc_statusApproved => 'पहचान स्वीकृत';
+
+  @override
+  String get kyc_statusApprovedBody =>
+      'आपके सरकारी पहचान प्रमाण को सुरक्षित रूप से सत्यापित किया गया है।';
+
+  @override
+  String get kyc_statusPending => 'निजी समीक्षा जारी है';
+
+  @override
+  String get kyc_statusPendingBody =>
+      'आपका प्रमाण मानवीय समीक्षा की कतार में है। इसे दोबारा भेजने की आवश्यकता नहीं है।';
+
+  @override
+  String get kyc_statusRejected => 'पहचान जाँच स्वीकृत नहीं हुई';
+
+  @override
+  String get kyc_statusRejectedBody =>
+      'नीचे कारण देखें और उचित हो तो नया प्रमाण भेजें।';
+
+  @override
+  String get kyc_statusResubmit => 'नया प्रमाण आवश्यक है';
+
+  @override
+  String get kyc_statusResubmitBody =>
+      'अधिक साफ़ और वर्तमान पहचान प्रमाण लेकर फिर भेजें।';
+
+  @override
+  String get kyc_statusExpired => 'पहचान प्रमाण की अवधि समाप्त';
+
+  @override
+  String get kyc_statusExpiredBody => 'वर्तमान सरकारी दस्तावेज़ भेजें।';
+
+  @override
+  String get kyc_statusNotStarted => 'पहचान जाँच शुरू नहीं हुई';
+
+  @override
+  String get kyc_statusNotStartedBody =>
+      'निजी समीक्षा के लिए सरकारी पहचान पत्र और सेल्फ़ी भेजें।';
+
+  @override
+  String get referral_title => 'मित्र को आमंत्रित करें';
+
+  @override
+  String get referral_loading => 'पुरस्कार लोड हो रहे हैं';
+
+  @override
+  String get referral_heading => 'खबर फैलाएँ, प्रीमियम पाएँ!';
+
+  @override
+  String get referral_body =>
+      'मित्रों को SILARAH पर बुलाएँ। विपरीत लिंग का कोई व्यक्ति आपके कोड से ऑनबोर्डिंग पूरी करे तो आप दोनों को 7 दिन का मुफ़्त प्रीमियम मिलेगा!';
+
+  @override
+  String get referral_codeLabel => 'आपका रेफ़रल कोड';
+
+  @override
+  String get referral_tapToCopy => 'कॉपी करने के लिए कोड टैप करें';
+
+  @override
+  String get referral_totalInvited => 'कुल आमंत्रित';
+
+  @override
+  String get referral_rewardsEarned => 'मिले पुरस्कार';
+
+  @override
+  String referral_premiumDays(int count) {
+    return '$count प्रीमियम दिन';
+  }
+
+  @override
+  String get referral_pending => 'लंबित पंजीकरण';
+
+  @override
+  String get referral_shareButton => 'मित्रों के साथ कोड साझा करें';
+
+  @override
+  String get referral_copied => 'रेफ़रल कोड कॉपी हो गया!';
+
+  @override
+  String get referral_shareSubject => 'SILARAH से जुड़ें';
+
+  @override
+  String referral_shareText(String code) {
+    return 'विश्वसनीय मुस्लिम विवाह ऐप SILARAH से जुड़ें। मेरा रेफ़रल कोड इस्तेमाल करें: $code\n\nडाउनलोड: https://silarah.com/r/$code';
+  }
+
+  @override
+  String get profile_share => 'प्रोफ़ाइल साझा करें';
+
+  @override
+  String safety_reportMember(String name) {
+    return '$name की रिपोर्ट करें';
+  }
+
+  @override
+  String safety_blockMember(String name) {
+    return '$name को ब्लॉक करें';
+  }
+
+  @override
+  String safety_blockTitle(String name) {
+    return '$name को ब्लॉक करें?';
+  }
+
+  @override
+  String safety_blockBody(String name) {
+    return '$name डिस्कवरी से छिप जाएगा और आपसे संपर्क नहीं कर सकेगा। सुरक्षा के लिए चैट इतिहास सुरक्षित रहेगा। अनब्लॉक करने से बातचीत दोबारा नहीं खुलेगी।';
+  }
+
+  @override
+  String get safety_blockAction => 'ब्लॉक करें';
+
+  @override
+  String safety_blocked(String name) {
+    return '$name को ब्लॉक किया गया।';
+  }
 }

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_channel_alerts">বার্তা ও অ্যাকাউন্ট সতর্কতা</string>
+    <string name="notification_channel_alerts_description">আগ্রহ, বার্তা, ম্যাচ এবং গুরুত্বপূর্ণ অ্যাকাউন্ট আপডেট</string>
+    <string name="notification_channel_activity">প্রোফাইল কার্যকলাপ</string>
+    <string name="notification_channel_activity_description">প্রোফাইল দেখা এবং অন্যান্য অ-জরুরি কার্যকলাপ</string>
+</resources>

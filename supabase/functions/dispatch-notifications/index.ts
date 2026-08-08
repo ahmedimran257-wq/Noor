@@ -433,6 +433,9 @@ async function sendFCM(
   fcmToken: string,
   notif: NotificationRow,
 ): Promise<FcmResult> {
+  const androidChannelId = notif.type === "profile_view"
+    ? "silarah_activity"
+    : "silarah_alerts";
   const message: Record<string, unknown> = {
     message: {
       token: fcmToken,
@@ -448,6 +451,10 @@ async function sendFCM(
       // Android-specific: high priority for timely delivery
       android: {
         priority: "high",
+        notification: {
+          channel_id: androidChannelId,
+          sound: "default",
+        },
       },
       // iOS-specific: use content-available for background delivery
       apns: {

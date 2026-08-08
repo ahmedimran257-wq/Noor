@@ -48,6 +48,7 @@ import '../widgets/loaders/silarah_shimmer.dart';
 
 abstract final class AppRoutes {
   static const boot = '/boot';
+  static const authCallback = '/auth/callback';
   static const splash = '/';
   static const languageSelect = '/language';
   static const legal = '/legal';
@@ -91,6 +92,11 @@ GoRouter buildAppRouter(
     redirect: (context, state) {
       final authState = authCubit.state;
       final location = state.matchedLocation;
+
+      // AuthCallbackService consumes callback credentials outside the widget
+      // tree. Route only to this credential-free internal gate so a token can
+      // never appear in an error page or accessibility snapshot.
+      if (location == AppRoutes.authCallback) return AppRoutes.boot;
 
       // Loading can be either app boot session hydration or an in-place
       // pre-auth action such as sending an email OTP. Keep the user on the
@@ -171,6 +177,13 @@ GoRouter buildAppRouter(
       // ── Pre-auth screens ────────────────────────────────
       GoRoute(
         path: AppRoutes.boot,
+        pageBuilder: (context, state) => _fadePage(
+          key: state.pageKey,
+          child: const _BootGateScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.authCallback,
         pageBuilder: (context, state) => _fadePage(
           key: state.pageKey,
           child: const _BootGateScreen(),

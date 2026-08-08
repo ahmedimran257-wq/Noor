@@ -37,6 +37,7 @@ void main() {
     final service = source('lib/core/services/kyc_verification_service.dart');
     final screen = source(
         'lib/features/verification/screens/kyc_verification_screen.dart');
+    final english = source('lib/l10n/app_en.arb');
 
     for (final state in [
       'notStarted',
@@ -50,6 +51,7 @@ void main() {
       expect(screen, contains('KycVerificationStatus.$state'));
     }
     expect(service, contains("rpc('get_my_kyc_status')"));
-    expect(screen, contains('You do not need to submit it again.'));
+    expect(screen, contains('kyc_statusPendingBody'));
+    expect(english, contains('You do not need to submit it again.'));
   });
 }

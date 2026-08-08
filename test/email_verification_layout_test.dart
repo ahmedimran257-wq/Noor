@@ -5,6 +5,7 @@ import 'package:silarah/core/cubits/auth/auth_cubit.dart';
 import 'package:silarah/core/cubits/auth/auth_state.dart';
 import 'package:silarah/core/cubits/onboarding/onboarding_cubit.dart';
 import 'package:silarah/features/onboarding/screens/email_verification_screen.dart';
+import 'package:silarah/l10n/generated/app_localizations.dart';
 
 class _DuplicateAccountAuthCubit extends AuthCubit {
   @override
@@ -41,6 +42,8 @@ void main() {
             ),
           ],
           child: const MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
             home: EmailVerificationScreen(mode: EmailAuthMode.signUp),
           ),
         ),

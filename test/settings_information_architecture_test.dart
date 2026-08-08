@@ -87,7 +87,9 @@ void main() {
 
     test('uses profile-live notification language instead of approval copy',
         () {
-      expect(settings, contains('Profile goes live'));
+      final english = File('lib/l10n/app_en.arb').readAsStringSync();
+      expect(settings, contains('settings_notify_profileLive'));
+      expect(english, contains('Profile goes live'));
       expect(settings, isNot(contains('settings_notify_profileApproved')));
       expect(settings, isNot(contains('toggleProfileApproved')));
       expect(

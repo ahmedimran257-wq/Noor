@@ -4223,6 +4223,630 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Protected connection'**
   String get startup_connectivity_protected;
+
+  /// No description provided for @settings_label_email.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get settings_label_email;
+
+  /// No description provided for @settings_notify_profileViews.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile views'**
+  String get settings_notify_profileViews;
+
+  /// No description provided for @settings_notify_profileViewsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'A private alert when someone opens your profile'**
+  String get settings_notify_profileViewsSub;
+
+  /// No description provided for @settings_notify_profileLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile goes live'**
+  String get settings_notify_profileLive;
+
+  /// No description provided for @settings_notify_profileLiveSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmation when your profile becomes visible'**
+  String get settings_notify_profileLiveSub;
+
+  /// No description provided for @settings_appearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get settings_appearance;
+
+  /// No description provided for @settings_helpSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Help & Support'**
+  String get settings_helpSupport;
+
+  /// No description provided for @settings_helpCenter.
+  ///
+  /// In en, this message translates to:
+  /// **'Help Center'**
+  String get settings_helpCenter;
+
+  /// No description provided for @settings_grievanceOfficer.
+  ///
+  /// In en, this message translates to:
+  /// **'Grievance Officer'**
+  String get settings_grievanceOfficer;
+
+  /// No description provided for @settings_grievanceResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'Response time: Within 48 hours of receipt'**
+  String get settings_grievanceResponse;
+
+  /// No description provided for @settings_grievanceIndiaNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'For users in India: We comply with the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021.'**
+  String get settings_grievanceIndiaNotice;
+
+  /// No description provided for @settings_managePhotoRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage photo requests'**
+  String get settings_managePhotoRequests;
+
+  /// No description provided for @settings_managePhotoRequestsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve access, decline requests, or revoke sharing'**
+  String get settings_managePhotoRequestsSub;
+
+  /// No description provided for @settings_theme_chooseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your atmosphere'**
+  String get settings_theme_chooseTitle;
+
+  /// No description provided for @settings_theme_chooseSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A complete visual identity—not a color filter. Every surface, field and system control changes together.'**
+  String get settings_theme_chooseSubtitle;
+
+  /// No description provided for @settings_theme_applied.
+  ///
+  /// In en, this message translates to:
+  /// **'Applied instantly · saved on this device'**
+  String get settings_theme_applied;
+
+  /// No description provided for @settings_reportPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get settings_reportPending;
+
+  /// No description provided for @legal_document_terms.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service'**
+  String get legal_document_terms;
+
+  /// No description provided for @legal_document_privacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get legal_document_privacy;
+
+  /// No description provided for @legal_document_community.
+  ///
+  /// In en, this message translates to:
+  /// **'Community Guidelines'**
+  String get legal_document_community;
+
+  /// No description provided for @legal_specialCategoryConsent.
+  ///
+  /// In en, this message translates to:
+  /// **'I explicitly consent to SILARAH processing my religious information (sect, prayer practice and Islamic identity) for compatibility matching. Contracted processors use it only to operate Silarah, never for behavioural advertising.'**
+  String get legal_specialCategoryConsent;
+
+  /// No description provided for @onboarding_complexion_fair.
+  ///
+  /// In en, this message translates to:
+  /// **'Fair'**
+  String get onboarding_complexion_fair;
+
+  /// No description provided for @onboarding_complexion_medium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get onboarding_complexion_medium;
+
+  /// No description provided for @onboarding_complexion_olive.
+  ///
+  /// In en, this message translates to:
+  /// **'Olive'**
+  String get onboarding_complexion_olive;
+
+  /// No description provided for @onboarding_complexion_dark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get onboarding_complexion_dark;
+
+  /// No description provided for @onboarding_residency_citizen.
+  ///
+  /// In en, this message translates to:
+  /// **'Citizen'**
+  String get onboarding_residency_citizen;
+
+  /// No description provided for @onboarding_residency_permanentResident.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanent resident'**
+  String get onboarding_residency_permanentResident;
+
+  /// No description provided for @onboarding_residency_workVisa.
+  ///
+  /// In en, this message translates to:
+  /// **'Work visa'**
+  String get onboarding_residency_workVisa;
+
+  /// No description provided for @onboarding_residency_studentVisa.
+  ///
+  /// In en, this message translates to:
+  /// **'Student visa'**
+  String get onboarding_residency_studentVisa;
+
+  /// No description provided for @onboarding_specialNeeds_none.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get onboarding_specialNeeds_none;
+
+  /// No description provided for @onboarding_specialNeeds_physical.
+  ///
+  /// In en, this message translates to:
+  /// **'Physical disability'**
+  String get onboarding_specialNeeds_physical;
+
+  /// No description provided for @onboarding_specialNeeds_hearing.
+  ///
+  /// In en, this message translates to:
+  /// **'Hearing impairment'**
+  String get onboarding_specialNeeds_hearing;
+
+  /// No description provided for @onboarding_specialNeeds_visual.
+  ///
+  /// In en, this message translates to:
+  /// **'Visual impairment'**
+  String get onboarding_specialNeeds_visual;
+
+  /// No description provided for @onboarding_label_stateRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'State / Region'**
+  String get onboarding_label_stateRegion;
+
+  /// No description provided for @onboarding_specialNeeds_privacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared only after mutual interest.'**
+  String get onboarding_specialNeeds_privacy;
+
+  /// No description provided for @settings_theme_blackWhite.
+  ///
+  /// In en, this message translates to:
+  /// **'Black & White'**
+  String get settings_theme_blackWhite;
+
+  /// No description provided for @settings_theme_blackWhiteDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Pure white, absolute black, no colour'**
+  String get settings_theme_blackWhiteDesc;
+
+  /// No description provided for @settings_theme_oled.
+  ///
+  /// In en, this message translates to:
+  /// **'OLED Night'**
+  String get settings_theme_oled;
+
+  /// No description provided for @settings_theme_oledDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'True black tuned for OLED displays'**
+  String get settings_theme_oledDesc;
+
+  /// No description provided for @settings_theme_prism.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism Luxe'**
+  String get settings_theme_prism;
+
+  /// No description provided for @settings_theme_prismDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Midnight depth with luminous jewel colour'**
+  String get settings_theme_prismDesc;
+
+  /// No description provided for @settings_guardian_backendRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Guardian settings require a secure connection.'**
+  String get settings_guardian_backendRequired;
+
+  /// No description provided for @settings_guardian_saveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save guardian settings. Please try again.'**
+  String get settings_guardian_saveError;
+
+  /// No description provided for @common_openSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Settings'**
+  String get common_openSettings;
+
+  /// No description provided for @media_cameraAccessOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera access is off'**
+  String get media_cameraAccessOff;
+
+  /// No description provided for @media_cameraUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera unavailable'**
+  String get media_cameraUnavailable;
+
+  /// No description provided for @media_cameraAccessBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow camera access in Settings, then return to take a clear photo.'**
+  String get media_cameraAccessBody;
+
+  /// No description provided for @media_cameraUnavailableBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The camera could not be opened. Please try again.'**
+  String get media_cameraUnavailableBody;
+
+  /// No description provided for @media_photoAccessOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo access is off'**
+  String get media_photoAccessOff;
+
+  /// No description provided for @media_photoAccessBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow camera or photo access in Settings, then return to add your photo.'**
+  String get media_photoAccessBody;
+
+  /// No description provided for @chat_searchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search messages'**
+  String get chat_searchHint;
+
+  /// No description provided for @chat_noConversationsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No conversations found'**
+  String get chat_noConversationsFound;
+
+  /// No description provided for @chat_noConversationsFoundBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Try a different name or clear your search.'**
+  String get chat_noConversationsFoundBody;
+
+  /// No description provided for @chat_noConversationsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No conversations yet'**
+  String get chat_noConversationsYet;
+
+  /// No description provided for @chat_noConversationsYetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept an interest or have yours accepted to begin a conversation.'**
+  String get chat_noConversationsYetBody;
+
+  /// No description provided for @kyc_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your identity'**
+  String get kyc_title;
+
+  /// No description provided for @kyc_heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your profile'**
+  String get kyc_heading;
+
+  /// No description provided for @kyc_intro.
+  ///
+  /// In en, this message translates to:
+  /// **'Capture-quality checks run on this device. Your private document and selfie are then reviewed by Silarah. Device scores never approve your identity.'**
+  String get kyc_intro;
+
+  /// No description provided for @kyc_selfieTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'1. Take a clear selfie'**
+  String get kyc_selfieTitle;
+
+  /// No description provided for @kyc_selfieHint.
+  ///
+  /// In en, this message translates to:
+  /// **'One face, good lighting'**
+  String get kyc_selfieHint;
+
+  /// No description provided for @kyc_selfieCaptured.
+  ///
+  /// In en, this message translates to:
+  /// **'Selfie captured'**
+  String get kyc_selfieCaptured;
+
+  /// No description provided for @kyc_idTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'2. Photograph your ID'**
+  String get kyc_idTitle;
+
+  /// No description provided for @kyc_idHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name, photo and date of birth must be visible'**
+  String get kyc_idHint;
+
+  /// No description provided for @kyc_idCaptured.
+  ///
+  /// In en, this message translates to:
+  /// **'ID captured'**
+  String get kyc_idCaptured;
+
+  /// No description provided for @kyc_documentType.
+  ///
+  /// In en, this message translates to:
+  /// **'Document type'**
+  String get kyc_documentType;
+
+  /// No description provided for @kyc_governmentId.
+  ///
+  /// In en, this message translates to:
+  /// **'Government ID'**
+  String get kyc_governmentId;
+
+  /// No description provided for @kyc_passport.
+  ///
+  /// In en, this message translates to:
+  /// **'Passport'**
+  String get kyc_passport;
+
+  /// No description provided for @kyc_drivingLicence.
+  ///
+  /// In en, this message translates to:
+  /// **'Driving licence'**
+  String get kyc_drivingLicence;
+
+  /// No description provided for @kyc_submitReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit for private review'**
+  String get kyc_submitReview;
+
+  /// No description provided for @kyc_submitNewEvidence.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit new evidence'**
+  String get kyc_submitNewEvidence;
+
+  /// No description provided for @kyc_submitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted {date}'**
+  String kyc_submitted(String date);
+
+  /// No description provided for @kyc_statusApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Identity approved'**
+  String get kyc_statusApproved;
+
+  /// No description provided for @kyc_statusApprovedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your government-ID evidence has been verified securely.'**
+  String get kyc_statusApprovedBody;
+
+  /// No description provided for @kyc_statusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Private review in progress'**
+  String get kyc_statusPending;
+
+  /// No description provided for @kyc_statusPendingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your evidence is queued for human review. You do not need to submit it again.'**
+  String get kyc_statusPendingBody;
+
+  /// No description provided for @kyc_statusRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Identity check not approved'**
+  String get kyc_statusRejected;
+
+  /// No description provided for @kyc_statusRejectedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Review the reason below and submit new evidence if appropriate.'**
+  String get kyc_statusRejectedBody;
+
+  /// No description provided for @kyc_statusResubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'New evidence required'**
+  String get kyc_statusResubmit;
+
+  /// No description provided for @kyc_statusResubmitBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Capture clearer, current identity evidence and submit it again.'**
+  String get kyc_statusResubmitBody;
+
+  /// No description provided for @kyc_statusExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Identity evidence expired'**
+  String get kyc_statusExpired;
+
+  /// No description provided for @kyc_statusExpiredBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit a current government-issued document.'**
+  String get kyc_statusExpiredBody;
+
+  /// No description provided for @kyc_statusNotStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Identity check not started'**
+  String get kyc_statusNotStarted;
+
+  /// No description provided for @kyc_statusNotStartedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit a government ID and selfie for a private evidence review.'**
+  String get kyc_statusNotStartedBody;
+
+  /// No description provided for @referral_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Refer a Friend'**
+  String get referral_title;
+
+  /// No description provided for @referral_loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading rewards'**
+  String get referral_loading;
+
+  /// No description provided for @referral_heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Spread the word, earn Premium!'**
+  String get referral_heading;
+
+  /// No description provided for @referral_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 7 days of FREE Premium!'**
+  String get referral_body;
+
+  /// No description provided for @referral_codeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'YOUR REFERRAL CODE'**
+  String get referral_codeLabel;
+
+  /// No description provided for @referral_tapToCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap code to copy'**
+  String get referral_tapToCopy;
+
+  /// No description provided for @referral_totalInvited.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Invited'**
+  String get referral_totalInvited;
+
+  /// No description provided for @referral_rewardsEarned.
+  ///
+  /// In en, this message translates to:
+  /// **'Rewards Earned'**
+  String get referral_rewardsEarned;
+
+  /// No description provided for @referral_premiumDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} premium days'**
+  String referral_premiumDays(int count);
+
+  /// No description provided for @referral_pending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending Registrations'**
+  String get referral_pending;
+
+  /// No description provided for @referral_shareButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Share Code with Friends'**
+  String get referral_shareButton;
+
+  /// No description provided for @referral_copied.
+  ///
+  /// In en, this message translates to:
+  /// **'Referral code copied to clipboard!'**
+  String get referral_copied;
+
+  /// No description provided for @referral_shareSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Join SILARAH'**
+  String get referral_shareSubject;
+
+  /// No description provided for @referral_shareText.
+  ///
+  /// In en, this message translates to:
+  /// **'Join SILARAH—the trusted Muslim matrimony app. Use my referral code: {code}\n\nDownload: https://silarah.com/r/{code}'**
+  String referral_shareText(String code);
+
+  /// No description provided for @profile_share.
+  ///
+  /// In en, this message translates to:
+  /// **'Share profile'**
+  String get profile_share;
+
+  /// No description provided for @safety_reportMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Report {name}'**
+  String safety_reportMember(String name);
+
+  /// No description provided for @safety_blockMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Block {name}'**
+  String safety_blockMember(String name);
+
+  /// No description provided for @safety_blockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Block {name}?'**
+  String safety_blockTitle(String name);
+
+  /// No description provided for @safety_blockBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} will be hidden from Discovery and cannot contact you. Existing chat history is preserved for safety. Unblocking will not reopen a conversation.'**
+  String safety_blockBody(String name);
+
+  /// No description provided for @safety_blockAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get safety_blockAction;
+
+  /// No description provided for @safety_blocked.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} blocked.'**
+  String safety_blocked(String name);
 }
 
 class _AppLocalizationsDelegate

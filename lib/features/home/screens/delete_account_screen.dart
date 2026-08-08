@@ -453,6 +453,7 @@ class _Step3 extends StatelessWidget {
               ),
               textCapitalization: TextCapitalization.characters,
               decoration: InputDecoration(
+                labelText: 'DELETE',
                 hintText: 'Type DELETE here',
                 hintStyle: AppTypography.inputText
                     .copyWith(color: AppColors.slateMist),

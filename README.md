@@ -352,8 +352,9 @@ Minimum production backup posture:
 The backup command creates `public.dump`, `public_schema.sql`,
 `public_data.sql`, and a SHA-256 `manifest.json` under the Git-ignored
 `supabase/backups/` directory. The custom archive is the primary restore
-artifact. PostgreSQL 17 client tools are required; pass `-PgDumpPath` when
-they are not installed in the default local tools directory.
+artifact. PostgreSQL 17 client tools and a standalone Supabase CLI are
+required; pass `-PgDumpPath` or `-SupabaseCliPath` when they are not installed
+in the default local tools directory.
 
 - Enable managed Supabase daily backups/PITR before the production risk or
   recovery objective requires it; local logical backups are supplemental.

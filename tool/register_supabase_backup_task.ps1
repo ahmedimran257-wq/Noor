@@ -10,18 +10,19 @@ $ErrorActionPreference = 'Stop'
 
 $backupScript = (Resolve-Path (Join-Path $PSScriptRoot 'backup_supabase.ps1')).Path
 $powerShell = (Get-Command powershell.exe).Source
-$arguments = '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "{0}" -ProjectRef "{1}"' -f `
+$arguments = '-NoProfile -ExecutionPolicy Bypass -File "{0}" -ProjectRef "{1}"' -f `
     $backupScript,
     $ProjectRef
 
 $action = New-ScheduledTaskAction `
     -Execute $powerShell `
-    -Argument $arguments `
-    -WorkingDirectory (Split-Path $backupScript -Parent)
+    -Argument $arguments
 $trigger = New-ScheduledTaskTrigger -Weekly -WeeksInterval 1 -DaysOfWeek $DayOfWeek -At $At
 $settings = New-ScheduledTaskSettingsSet `
     -StartWhenAvailable `
     -MultipleInstances IgnoreNew `
+    -AllowStartIfOnBatteries `
+    -DontStopIfGoingOnBatteries `
     -ExecutionTimeLimit (New-TimeSpan -Hours 2)
 
 Register-ScheduledTask `

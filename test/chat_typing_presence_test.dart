@@ -5,6 +5,7 @@ import 'package:silarah/core/cubits/chat/chat_cubit.dart';
 import 'package:silarah/core/cubits/chat/chat_state.dart';
 import 'package:silarah/core/widgets/loaders/silarah_blur_image.dart';
 import 'package:silarah/features/home/screens/chat_screen.dart';
+import 'package:silarah/l10n/generated/app_localizations.dart';
 
 class _RecordingNavigatorObserver extends NavigatorObserver {
   final List<Route<dynamic>> pushes = <Route<dynamic>>[];
@@ -113,6 +114,8 @@ void main() {
       BlocProvider<ChatCubit>.value(
         value: cubit,
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           navigatorObservers: [observer],
           home: const MediaQuery(
             data: MediaQueryData(disableAnimations: true),

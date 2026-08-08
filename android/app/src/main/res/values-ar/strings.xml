@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_channel_alerts">الرسائل وتنبيهات الحساب</string>
+    <string name="notification_channel_alerts_description">الاهتمامات والرسائل والمطابقات وتحديثات الحساب المهمة</string>
+    <string name="notification_channel_activity">نشاط الملف الشخصي</string>
+    <string name="notification_channel_activity_description">مشاهدات الملف الشخصي والأنشطة الأخرى غير العاجلة</string>
+</resources>

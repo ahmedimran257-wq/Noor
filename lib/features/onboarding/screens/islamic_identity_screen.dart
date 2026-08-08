@@ -342,40 +342,13 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
   }
 
   String _getLocalizedSubSect(AppLocalizations l10n, String raw) {
-    if (l10n.localeName == 'ar') {
-      switch (raw) {
-        case 'Hanafi':
-          return 'حنفي';
-        case 'Shafi\'i':
-          return 'شافعي';
-        case 'Maliki':
-          return 'مالكي';
-        case 'Hanbali':
-          return 'حنبلي';
-        case 'Deobandi':
-          return 'ديوبندي';
-        case 'Barelvi':
-          return 'بريلوي';
-        case 'Ahle Hadith':
-          return 'أهل الحديث';
-        case 'Salafi':
-          return 'سلفي';
-        case 'Sufi':
-          return 'صوفي';
-        case 'Other':
-          return 'أخرى';
-        case 'Prefer not to say':
-          return 'أفضل عدم الإجابة';
-        case 'Ithna Ashari (Twelver)':
-          return 'إثنا عشري (جعفري)';
-        case 'Ismaili (Nizari)':
-          return 'إسماعيلي (نزاري)';
-        case 'Zaydi':
-          return 'زيدي';
-        case 'Jafari':
-          return 'جعفري';
-      }
+    switch (raw) {
+      case 'Other':
+        return l10n.lang_other;
+      case 'Prefer not to say':
+        return l10n.onboarding_label_preferNotToSay;
     }
+    // Madhhab names are proper names and retain their canonical spelling.
     return raw;
   }
 
@@ -469,7 +442,7 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
                     case Sect.preferNotToSay:
                       return l10n.onboarding_label_preferNotToSay;
                     case Sect.other:
-                      return l10n.localeName == 'ar' ? 'أخرى' : 'Other';
+                      return l10n.lang_other;
                   }
                 },
                 onSelected: (s) => setState(() {
@@ -506,8 +479,8 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
                 spacing: AppDimensions.space8,
                 runSpacing: AppDimensions.space8,
                 children: {
-                  'yes': l10n.localeName == 'ar' ? 'نعم' : 'Yes',
-                  'no': l10n.localeName == 'ar' ? 'لا' : 'No',
+                  'yes': l10n.family_children_yes,
+                  'no': l10n.family_children_no,
                   'prefer_not_to_say': l10n.onboarding_label_preferNotToSay,
                 }
                     .entries
@@ -545,13 +518,13 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
               Row(children: [
                 Expanded(
                     child: _TogglePill(
-                        label: l10n.localeName == 'ar' ? 'نعم' : 'Yes',
+                        label: l10n.family_children_yes,
                         isSelected: _praysFive == true,
                         onTap: () => setState(() => _praysFive = true))),
                 const SizedBox(width: AppDimensions.space12),
                 Expanded(
                     child: _TogglePill(
-                        label: l10n.localeName == 'ar' ? 'لا' : 'No',
+                        label: l10n.family_children_no,
                         isSelected: _praysFive == false,
                         onTap: () => setState(() => _praysFive = false))),
               ]),
@@ -585,8 +558,8 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
                   spacing: AppDimensions.space8,
                   runSpacing: AppDimensions.space8,
                   children: {
-                    'yes': l10n.localeName == 'ar' ? 'نعم' : 'Yes',
-                    'no': l10n.localeName == 'ar' ? 'لا' : 'No',
+                    'yes': l10n.family_children_yes,
+                    'no': l10n.family_children_no,
                     'prefer_not_to_say': l10n.onboarding_label_preferNotToSay,
                   }
                       .entries

@@ -4,11 +4,13 @@ import '../../../core/models/discovery_profile.dart';
 import '../../../core/services/photo_access_service.dart';
 import '../../../core/services/profile_photo_service.dart';
 import '../../../core/services/authorized_profile_service.dart';
+import '../../../core/services/supabase_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/silarah_compute.dart';
 import '../../../core/widgets/loaders/silarah_shimmer.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import 'profile_detail_screen.dart';
 
 class ProfileRouteScreen extends StatefulWidget {
@@ -40,11 +42,27 @@ class _ProfileRouteScreenState extends State<ProfileRouteScreen> {
       return;
     }
     try {
-      final context = await PhotoAccessService.instance.getContext(id);
-      final authorized = await AuthorizedProfileService.load([id]);
+      final results = await Future.wait<dynamic>([
+        PhotoAccessService.instance.getContext(id),
+        AuthorizedProfileService.load([id]),
+        SupabaseService.client.rpc(
+          'get_prior_match_context',
+          params: {
+            'p_candidate_user_ids': [id],
+          },
+        ),
+      ]);
+      final context = results[0] as PhotoAccessContext;
+      final authorized = results[1] as List<Map<String, dynamic>>;
       final raw = authorized.isEmpty ? null : authorized.first;
       if (raw == null) throw StateError('This profile is unavailable.');
       final row = Map<String, dynamic>.from(raw);
+      final relationshipRows = results[2] as List<dynamic>;
+      if (relationshipRows.isNotEmpty) {
+        row.addAll(
+          Map<String, dynamic>.from(relationshipRows.first as Map),
+        );
+      }
       row['photo_count'] = context.photoCount;
       row['photo_privacy'] = switch (context.privacy) {
         ProfilePhotoPrivacy.mutualOnly => 'mutual_only',
@@ -91,6 +109,7 @@ class _ProfileRouteScreenState extends State<ProfileRouteScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.obsidianNight,
         leading: IconButton(
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
           onPressed: () => Navigator.maybePop(context),
           icon: const Icon(Icons.arrow_back_rounded),
         ),
@@ -116,7 +135,8 @@ class _ProfileRouteScreenState extends State<ProfileRouteScreen> {
                         _load();
                       },
                       icon: const Icon(Icons.refresh_rounded),
-                      label: const Text('Try again'),
+                      label: Text(
+                          AppLocalizations.of(context).common_button_retry),
                     ),
                   ],
                 ),

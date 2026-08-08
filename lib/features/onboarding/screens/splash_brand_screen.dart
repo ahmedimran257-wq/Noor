@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/router/app_router.dart';
+import '../../../core/services/referral_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
@@ -198,6 +199,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                       ),
                     ],
                     decoration: InputDecoration(
+                      labelText: l10n.splash_referral_title,
                       hintText: l10n.splash_referral_hint,
                       hintStyle: AppTypography.inputLabel,
                       filled: true,
@@ -263,6 +265,26 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                             }
                             setSheetState(() => isSaving = true);
                             try {
+                              final isValid = await ReferralService.instance
+                                  .validateCode(code);
+                              if (!sheetContext.mounted) return;
+                              if (!isValid) {
+                                setSheetState(() => isSaving = false);
+                                ScaffoldMessenger.of(sheetContext).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      l10n.splash_referral_invalid,
+                                      style: TextStyle(
+                                        color: AppColors.readableOn(
+                                          AppColors.errorRed,
+                                        ),
+                                      ),
+                                    ),
+                                    backgroundColor: AppColors.errorRed,
+                                  ),
+                                );
+                                return;
+                              }
                               final prefs =
                                   await SharedPreferences.getInstance();
                               await prefs.setString(

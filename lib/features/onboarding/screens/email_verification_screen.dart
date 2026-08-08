@@ -620,6 +620,7 @@ class _EmailInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return SilarahTextField(
       controller: controller,
       focusNode: focusNode,
@@ -631,6 +632,7 @@ class _EmailInput extends StatelessWidget {
       textCapitalization: TextCapitalization.none,
       onSubmitted: (_) => onSubmitted?.call(),
       hint: 'name@example.com',
+      semanticLabel: l10n.settings_label_email,
       prefixIcon: Icons.alternate_email_rounded,
     );
   }

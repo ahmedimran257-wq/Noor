@@ -1,4 +1,4 @@
-﻿// lib/core/widgets/inputs/silarah_text_field.dart
+// lib/core/widgets/inputs/silarah_text_field.dart
 // ============================================================
 // SILARAH Input System
 // Single-shell glass fields with animated focus, no nested theme outline.
@@ -18,6 +18,7 @@ class SilarahTextField extends StatefulWidget {
     this.controller,
     this.focusNode,
     this.label,
+    this.semanticLabel,
     this.hint,
     this.helperText,
     this.errorText,
@@ -45,6 +46,7 @@ class SilarahTextField extends StatefulWidget {
   final TextEditingController? controller;
   final FocusNode? focusNode;
   final String? label;
+  final String? semanticLabel;
   final String? hint;
   final String? helperText;
   final String? errorText;
@@ -141,77 +143,81 @@ class _SilarahTextFieldState extends State<SilarahTextField> {
           enabled: widget.enabled,
           hasError: hasError,
           minHeight: minHeight,
-          child: TextField(
-            controller: widget.controller,
-            focusNode: _focusNode,
-            obscureText: widget.obscureText,
-            keyboardType: widget.keyboardType,
-            textInputAction: widget.textInputAction,
-            onChanged: widget.onChanged,
-            onSubmitted: widget.onSubmitted,
-            onTap: widget.onTap,
-            onTapOutside: (_) => _focusNode.unfocus(),
-            maxLength: widget.maxLength,
-            maxLines: widget.maxLines,
-            minLines: widget.minLines,
-            enabled: widget.enabled,
-            readOnly: widget.readOnly,
-            autofocus: widget.autofocus,
-            inputFormatters: widget.inputFormatters,
-            textCapitalization: widget.textCapitalization,
-            autocorrect: widget.autocorrect,
-            enableSuggestions: widget.enableSuggestions,
-            keyboardAppearance: Brightness.dark,
-            style: AppTypography.inputText.copyWith(
-              color: widget.enabled
-                  ? AppColors.pearlWhite
-                  : AppColors.pearlWhite.withValues(alpha: 0.42),
-            ),
-            cursorColor: AppColors.champagneGold,
-            cursorWidth: 1.5,
-            buildCounter: widget.showCounter
-                ? null
-                : (_,
-                        {required currentLength,
-                        required isFocused,
-                        maxLength}) =>
-                    null,
-            decoration: InputDecoration(
-              hintText: widget.hint ?? widget.label,
-              hintStyle: AppTypography.inputLabel.copyWith(
-                color: AppColors.slateMist.withValues(
-                  alpha: isInteractive ? 0.78 : 0.42,
+          child: Semantics(
+            textField: true,
+            label: widget.semanticLabel ?? widget.label ?? widget.hint,
+            child: TextField(
+              controller: widget.controller,
+              focusNode: _focusNode,
+              obscureText: widget.obscureText,
+              keyboardType: widget.keyboardType,
+              textInputAction: widget.textInputAction,
+              onChanged: widget.onChanged,
+              onSubmitted: widget.onSubmitted,
+              onTap: widget.onTap,
+              onTapOutside: (_) => _focusNode.unfocus(),
+              maxLength: widget.maxLength,
+              maxLines: widget.maxLines,
+              minLines: widget.minLines,
+              enabled: widget.enabled,
+              readOnly: widget.readOnly,
+              autofocus: widget.autofocus,
+              inputFormatters: widget.inputFormatters,
+              textCapitalization: widget.textCapitalization,
+              autocorrect: widget.autocorrect,
+              enableSuggestions: widget.enableSuggestions,
+              keyboardAppearance: Brightness.dark,
+              style: AppTypography.inputText.copyWith(
+                color: widget.enabled
+                    ? AppColors.pearlWhite
+                    : AppColors.pearlWhite.withValues(alpha: 0.42),
+              ),
+              cursorColor: AppColors.champagneGold,
+              cursorWidth: 1.5,
+              buildCounter: widget.showCounter
+                  ? null
+                  : (_,
+                          {required currentLength,
+                          required isFocused,
+                          maxLength}) =>
+                      null,
+              decoration: InputDecoration(
+                hintText: widget.hint ?? widget.label,
+                hintStyle: AppTypography.inputLabel.copyWith(
+                  color: AppColors.slateMist.withValues(
+                    alpha: isInteractive ? 0.78 : 0.42,
+                  ),
                 ),
-              ),
-              filled: false,
-              fillColor: Colors.transparent,
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              disabledBorder: InputBorder.none,
-              errorBorder: InputBorder.none,
-              focusedErrorBorder: InputBorder.none,
-              prefixIcon: widget.prefixIcon != null
-                  ? Icon(
-                      widget.prefixIcon,
-                      color: isActive
-                          ? AppColors.champagneGold
-                          : AppColors.slateMist,
-                      size: AppDimensions.iconSizeMedium,
-                    )
-                  : null,
-              prefixIconConstraints: const BoxConstraints(
-                minWidth: 34,
-                minHeight: AppDimensions.inputHeight,
-              ),
-              suffixIcon: widget.suffixIcon,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: widget.prefixIcon == null
-                    ? AppDimensions.space16
-                    : AppDimensions.space8,
-                vertical: widget.maxLines != null && widget.maxLines! > 1
-                    ? AppDimensions.space16
-                    : 18.0,
+                filled: false,
+                fillColor: Colors.transparent,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+                prefixIcon: widget.prefixIcon != null
+                    ? Icon(
+                        widget.prefixIcon,
+                        color: isActive
+                            ? AppColors.champagneGold
+                            : AppColors.slateMist,
+                        size: AppDimensions.iconSizeMedium,
+                      )
+                    : null,
+                prefixIconConstraints: const BoxConstraints(
+                  minWidth: 34,
+                  minHeight: AppDimensions.inputHeight,
+                ),
+                suffixIcon: widget.suffixIcon,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: widget.prefixIcon == null
+                      ? AppDimensions.space16
+                      : AppDimensions.space8,
+                  vertical: widget.maxLines != null && widget.maxLines! > 1
+                      ? AppDimensions.space16
+                      : 18.0,
+                ),
               ),
             ),
           ),

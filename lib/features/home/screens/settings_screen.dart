@@ -42,6 +42,20 @@ import 'legal_doc_screen.dart';
 
 const _kLanguages = LocaleCubit.supportedLanguages;
 
+String _themeLabel(AppLocalizations l10n, SilarahThemeMode mode) =>
+    switch (mode) {
+      SilarahThemeMode.blackWhite => l10n.settings_theme_blackWhite,
+      SilarahThemeMode.oled => l10n.settings_theme_oled,
+      SilarahThemeMode.prismLuxe => l10n.settings_theme_prism,
+    };
+
+String _themeDescription(AppLocalizations l10n, SilarahThemeMode mode) =>
+    switch (mode) {
+      SilarahThemeMode.blackWhite => l10n.settings_theme_blackWhiteDesc,
+      SilarahThemeMode.oled => l10n.settings_theme_oledDesc,
+      SilarahThemeMode.prismLuxe => l10n.settings_theme_prismDesc,
+    };
+
 // ── Guardian prefs keys ───────────────────────────────────────
 
 const _kGuardianPhoneUnavailable =
@@ -138,6 +152,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
+          tooltip: l10n.common_button_back,
           onPressed: () => Navigator.of(context).pop(),
           icon: Icon(Icons.arrow_back_ios_new_rounded,
               color: AppColors.pearlWhite, size: 20),
@@ -160,7 +175,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         : null);
                 return _InfoTile(
                   icon: Icons.alternate_email_rounded,
-                  label: 'Email',
+                  label: l10n.settings_label_email,
                   value: _maskEmail(email),
                 );
               },
@@ -199,8 +214,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _Divider(),
               _ToggleTile(
                 icon: Icons.visibility_outlined,
-                label: 'Profile views',
-                caption: 'A private alert when someone opens your profile',
+                label: l10n.settings_notify_profileViews,
+                caption: l10n.settings_notify_profileViewsSub,
                 value: prefs.profileView,
                 onChanged: (v) =>
                     context.read<NotificationPrefsCubit>().toggleProfileView(v),
@@ -208,8 +223,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _Divider(),
               _ToggleTile(
                 icon: Icons.public_rounded,
-                label: 'Profile goes live',
-                caption: 'Confirmation when your profile becomes visible',
+                label: l10n.settings_notify_profileLive,
+                caption: l10n.settings_notify_profileLiveSub,
                 value: prefs.profileLive,
                 onChanged: (v) =>
                     context.read<NotificationPrefsCubit>().toggleProfileLive(v),
@@ -268,8 +283,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             BlocBuilder<ThemeCubit, ThemeSelectionState>(
               builder: (context, themeState) => _NavTile(
                 icon: Icons.palette_outlined,
-                label: 'Appearance',
-                value: themeState.activeMode.label,
+                label: l10n.settings_appearance,
+                value: _themeLabel(l10n, themeState.activeMode),
                 onTap: () => _showThemeSheet(context),
               ),
             ),
@@ -322,19 +337,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
 
           // ── 7. LEGAL ──────────────────────────────────────
-          _SectionHeader('Help & Support', key: _helpKey),
+          _SectionHeader(l10n.settings_helpSupport, key: _helpKey),
           _SettingsCard(children: [
             _NavTile(
               icon: Icons.help_outline_rounded,
-              label: 'Help Center',
+              label: l10n.settings_helpCenter,
               onTap: () => context.push(AppRoutes.helpSupport),
             ),
             _Divider(),
             _NavTile(
               icon: Icons.gavel_outlined,
-              label: l10n.localeName == 'ar'
-                  ? 'مسؤول الشكاوى'
-                  : 'Grievance Officer',
+              label: l10n.settings_grievanceOfficer,
               onTap: () => _showGrievanceInfo(context),
             ),
           ]),
@@ -391,6 +404,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // ── Grievance Officer (India IT Act 2021) ───────────────────
   static void _showGrievanceInfo(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -404,7 +418,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Icon(Icons.gavel_outlined,
                 color: AppColors.champagneGold, size: 20),
             const SizedBox(width: 10),
-            Text('Grievance Officer', style: AppTypography.bodyMedium),
+            Text(l10n.settings_grievanceOfficer,
+                style: AppTypography.bodyMedium),
           ],
         ),
         content: Column(
@@ -434,7 +449,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: AppDimensions.space12),
                   Text(
-                    'Response time: Within 48 hours of receipt',
+                    l10n.settings_grievanceResponse,
                     style: AppTypography.caption,
                   ),
                 ],
@@ -442,8 +457,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: AppDimensions.space16),
             Text(
-              'For users in India: We comply with the Information Technology '
-              '(Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021.',
+              l10n.settings_grievanceIndiaNotice,
               style: AppTypography.caption.copyWith(height: 1.5),
             ),
           ],
@@ -451,7 +465,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Close',
+            child: Text(l10n.settings_support_btn_close,
                 style: AppTypography.caption
                     .copyWith(color: AppColors.champagneGold)),
           ),
@@ -627,8 +641,8 @@ class _GuardianSectionState extends State<_GuardianSection> {
 
     if (!SupabaseService.isInitialized) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Guardian settings require a backend connection.'),
+        SnackBar(
+          content: Text(l10n.settings_guardian_backendRequired),
         ),
       );
       return;
@@ -647,8 +661,8 @@ class _GuardianSectionState extends State<_GuardianSection> {
       if (!mounted) return;
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not save guardian settings. Please try again.'),
+        SnackBar(
+          content: Text(l10n.settings_guardian_saveError),
         ),
       );
       return;
@@ -1147,7 +1161,7 @@ class _PrivacySectionState extends State<_PrivacySection> {
           Divider(color: AppColors.cardBorder, height: 24),
           Semantics(
             button: true,
-            label: 'Manage photo access requests',
+            label: l10n.settings_managePhotoRequests,
             child: InkWell(
               borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
               onTap: () => context.push(AppRoutes.photoRequests),
@@ -1174,14 +1188,14 @@ class _PrivacySectionState extends State<_PrivacySection> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Manage photo requests',
+                            l10n.settings_managePhotoRequests,
                             style: AppTypography.bodyMedium.copyWith(
                               color: AppColors.pearlWhite,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Approve access, decline requests, or revoke sharing',
+                            l10n.settings_managePhotoRequestsSub,
                             style: AppTypography.caption,
                           ),
                         ],
@@ -1390,6 +1404,7 @@ class _ThemePickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
     return BlocBuilder<ThemeCubit, ThemeSelectionState>(
       builder: (context, themeState) => AnimatedContainer(
@@ -1427,13 +1442,12 @@ class _ThemePickerSheet extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                'Choose your atmosphere',
+                l10n.settings_theme_chooseTitle,
                 style: AppTypography.screenTitle.copyWith(fontSize: 24),
               ),
               const SizedBox(height: 6),
               Text(
-                'A complete visual identity—not a color filter. Every surface, '
-                'field and system control changes together.',
+                l10n.settings_theme_chooseSubtitle,
                 style: AppTypography.bodyMuted,
               ),
               const SizedBox(height: 24),
@@ -1461,7 +1475,7 @@ class _ThemePickerSheet extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Applied instantly · saved on this device',
+                    l10n.settings_theme_applied,
                     style: AppTypography.caption.copyWith(fontSize: 12),
                   ),
                 ],
@@ -1487,11 +1501,14 @@ class _ThemePreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final palette = SilarahPalette.forMode(mode);
+    final label = _themeLabel(l10n, mode);
+    final description = _themeDescription(l10n, mode);
     return Semantics(
       button: true,
       selected: selected,
-      label: '${mode.label} theme. ${mode.description}',
+      label: '$label. $description',
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
@@ -1516,7 +1533,7 @@ class _ThemePreviewCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      mode.label,
+                      label,
                       style: AppTypography.bodyMedium.copyWith(
                         fontSize: 16,
                         color: selected
@@ -1525,7 +1542,7 @@ class _ThemePreviewCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 3),
-                    Text(mode.description, style: AppTypography.caption),
+                    Text(description, style: AppTypography.caption),
                   ],
                 ),
               ),
@@ -1890,13 +1907,17 @@ class _ToggleTile extends StatelessWidget {
         subtitle: caption != null
             ? Text(caption!, style: AppTypography.caption)
             : null,
-        trailing: Switch(
-          value: value,
-          onChanged: onChanged,
-          activeThumbColor: AppColors.obsidianNight,
-          activeTrackColor: AppColors.champagneGold,
-          inactiveThumbColor: AppColors.slateMist,
-          inactiveTrackColor: AppColors.surfaceGlassHover,
+        trailing: Semantics(
+          label: label,
+          toggled: value,
+          child: Switch(
+            value: value,
+            onChanged: onChanged,
+            activeThumbColor: AppColors.obsidianNight,
+            activeTrackColor: AppColors.champagneGold,
+            inactiveThumbColor: AppColors.slateMist,
+            inactiveTrackColor: AppColors.surfaceGlassHover,
+          ),
         ),
       );
 }
@@ -1939,6 +1960,7 @@ class _TextFieldTile extends StatelessWidget {
           keyboardType: keyboardType,
           style: AppTypography.body,
           decoration: InputDecoration(
+            labelText: hint,
             hintText: hint,
             hintStyle: AppTypography.bodyMuted,
             filled: false,
@@ -2024,10 +2046,7 @@ class _ReportHistorySheet extends StatelessWidget {
                           borderRadius: BorderRadius.circular(6),
                           color: AppColors.surfaceGlassHover,
                         ),
-                        child: Text(
-                            l10n.localeName == 'ar'
-                                ? 'قيد المراجعة'
-                                : 'Pending',
+                        child: Text(l10n.settings_reportPending,
                             style:
                                 AppTypography.caption.copyWith(fontSize: 10)),
                       ),

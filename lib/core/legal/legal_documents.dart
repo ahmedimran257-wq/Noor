@@ -298,7 +298,7 @@ abstract final class LegalDocuments {
       LegalSection('2. What we collect',
           'Depending on the check, we process camera frames or a captured selfie, government-ID image, document type and issuing country, extracted date of birth, face-match similarity, anti-spoofing or quality signals, submission timestamps, decision status and reviewer notes. Do not submit another person’s document.'),
       LegalSection('3. Automated and manual processing',
-          'Text extraction and face similarity may run on the device as capture and reviewer hints. For global KYC, every valid submission is decided by an authorized human reviewer using the original private document and selfie; a client score can never approve or reject identity. India DigiLocker verification is separate and requires a matched authenticated government document, not merely a successful authorization.'),
+          'Text extraction and face similarity may run on the device as capture and reviewer hints. Every valid submission is decided by an authorized human reviewer using the original private document and selfie; a client score can never approve or reject identity.'),
       LegalSection('4. Fair-use requirements',
           'Use a genuine, unaltered document that belongs to you and a current live selfie. Do not use filters, screens, masks intended to deceive, forged documents or another person. Poor lighting, unreadable text, age under 18, mismatch, suspected manipulation or unsupported documents may cause rejection or resubmission.'),
       LegalSection('5. Badge meaning and limitations',
@@ -307,8 +307,8 @@ abstract final class LegalDocuments {
           'Identity documents are stored privately, shown only through short-lived staff previews, and are not displayed to members or guardians. Raw global-KYC images are scheduled for deletion 30 days after submission or decision. The decision checklist, timestamps and cryptographic file digests may remain for audit, fraud prevention, appeals and legal obligations without retaining the raw images. Account deletion follows the Data Deletion and Privacy Policies, subject to limited lawful retention.'),
       LegalSection('7. Decision and appeal',
           'The app provides a reason or next step when possible. You may retry after correcting quality issues or appeal through safety@silarah.com. Include your account email and decision date, but do not email identity documents. Staff may request a new secure submission. Appeals do not guarantee approval.'),
-      LegalSection('8. Regional methods and DigiLocker',
-          'Available document types and trusted digital-document methods may vary by country. If DigiLocker or another government-authorized method is offered, that provider’s terms and privacy notice also apply. We do not ask for your government-service password or OTP outside the provider’s official authorization flow.'),
+      LegalSection('8. Regional document support',
+          'Available government-issued document types may vary by country. Silarah will never ask for a government-service password or OTP. Submit identity evidence only through the private in-app verification flow.'),
     ],
   );
 

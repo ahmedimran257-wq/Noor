@@ -2250,4 +2250,356 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get startup_connectivity_protected => 'সুরক্ষিত সংযোগ';
+
+  @override
+  String get settings_label_email => 'ইমেইল';
+
+  @override
+  String get settings_notify_profileViews => 'প্রোফাইল দেখা';
+
+  @override
+  String get settings_notify_profileViewsSub =>
+      'কেউ আপনার প্রোফাইল খুললে ব্যক্তিগত সতর্কতা';
+
+  @override
+  String get settings_notify_profileLive => 'প্রোফাইল প্রকাশিত হয়েছে';
+
+  @override
+  String get settings_notify_profileLiveSub =>
+      'আপনার প্রোফাইল দৃশ্যমান হলে নিশ্চিতকরণ';
+
+  @override
+  String get settings_appearance => 'চেহারা';
+
+  @override
+  String get settings_helpSupport => 'সহায়তা ও সমর্থন';
+
+  @override
+  String get settings_helpCenter => 'সহায়তা কেন্দ্র';
+
+  @override
+  String get settings_grievanceOfficer => 'অভিযোগ কর্মকর্তা';
+
+  @override
+  String get settings_grievanceResponse =>
+      'প্রতিক্রিয়ার সময়: প্রাপ্তির ৪৮ ঘণ্টার মধ্যে';
+
+  @override
+  String get settings_grievanceIndiaNotice =>
+      'ভারতের ব্যবহারকারীদের জন্য: আমরা তথ্য প্রযুক্তি (মধ্যস্থতাকারী নির্দেশিকা ও ডিজিটাল মিডিয়া নৈতিকতা বিধি) ২০২১ মেনে চলি।';
+
+  @override
+  String get settings_managePhotoRequests => 'ছবির অনুরোধ পরিচালনা করুন';
+
+  @override
+  String get settings_managePhotoRequestsSub =>
+      'অ্যাক্সেস অনুমোদন, অনুরোধ প্রত্যাখ্যান বা শেয়ার বাতিল করুন';
+
+  @override
+  String get settings_theme_chooseTitle => 'আপনার পরিবেশ বেছে নিন';
+
+  @override
+  String get settings_theme_chooseSubtitle =>
+      'শুধু রঙের ফিল্টার নয়—একটি সম্পূর্ণ ভিজ্যুয়াল পরিচয়। সব পৃষ্ঠ, ক্ষেত্র ও সিস্টেম কন্ট্রোল একসঙ্গে বদলায়।';
+
+  @override
+  String get settings_theme_applied =>
+      'সঙ্গে সঙ্গে প্রয়োগ · এই ডিভাইসে সংরক্ষিত';
+
+  @override
+  String get settings_reportPending => 'পর্যালোচনাধীন';
+
+  @override
+  String get legal_document_terms => 'পরিষেবার শর্তাবলী';
+
+  @override
+  String get legal_document_privacy => 'গোপনীয়তা নীতি';
+
+  @override
+  String get legal_document_community => 'কমিউনিটি নির্দেশিকা';
+
+  @override
+  String get legal_specialCategoryConsent =>
+      'সামঞ্জস্যপূর্ণ মিল খোঁজার জন্য SILARAH আমার ধর্মীয় তথ্য (মাযহাব, নামাজের অনুশীলন ও ইসলামি পরিচয়) প্রক্রিয়া করুক—এতে আমি স্পষ্ট সম্মতি দিচ্ছি। চুক্তিবদ্ধ সেবাদাতারা শুধু সিলারাহ পরিচালনার জন্য এটি ব্যবহার করে, আচরণভিত্তিক বিজ্ঞাপনের জন্য নয়।';
+
+  @override
+  String get onboarding_complexion_fair => 'ফর্সা';
+
+  @override
+  String get onboarding_complexion_medium => 'মাঝারি';
+
+  @override
+  String get onboarding_complexion_olive => 'জলপাই বর্ণ';
+
+  @override
+  String get onboarding_complexion_dark => 'গাঢ়';
+
+  @override
+  String get onboarding_residency_citizen => 'নাগরিক';
+
+  @override
+  String get onboarding_residency_permanentResident => 'স্থায়ী বাসিন্দা';
+
+  @override
+  String get onboarding_residency_workVisa => 'কর্ম ভিসা';
+
+  @override
+  String get onboarding_residency_studentVisa => 'শিক্ষার্থী ভিসা';
+
+  @override
+  String get onboarding_specialNeeds_none => 'কোনোটিই নয়';
+
+  @override
+  String get onboarding_specialNeeds_physical => 'শারীরিক প্রতিবন্ধকতা';
+
+  @override
+  String get onboarding_specialNeeds_hearing => 'শ্রবণ প্রতিবন্ধকতা';
+
+  @override
+  String get onboarding_specialNeeds_visual => 'দৃষ্টি প্রতিবন্ধকতা';
+
+  @override
+  String get onboarding_label_stateRegion => 'রাজ্য / অঞ্চল';
+
+  @override
+  String get onboarding_specialNeeds_privacy =>
+      'এটি শুধু পারস্পরিক আগ্রহের পরে শেয়ার করা হয়।';
+
+  @override
+  String get settings_theme_blackWhite => 'সাদা ও কালো';
+
+  @override
+  String get settings_theme_blackWhiteDesc =>
+      'বিশুদ্ধ সাদা, সম্পূর্ণ কালো, কোনো রঙ নয়';
+
+  @override
+  String get settings_theme_oled => 'OLED রাত';
+
+  @override
+  String get settings_theme_oledDesc => 'OLED পর্দার জন্য প্রকৃত কালো';
+
+  @override
+  String get settings_theme_prism => 'প্রিজম লাক্স';
+
+  @override
+  String get settings_theme_prismDesc => 'উজ্জ্বল রত্নরঙে মধ্যরাতের গভীরতা';
+
+  @override
+  String get settings_guardian_backendRequired =>
+      'অভিভাবক সেটিংসের জন্য নিরাপদ সংযোগ প্রয়োজন।';
+
+  @override
+  String get settings_guardian_saveError =>
+      'অভিভাবক সেটিংস সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।';
+
+  @override
+  String get common_openSettings => 'সেটিংস খুলুন';
+
+  @override
+  String get media_cameraAccessOff => 'ক্যামেরা অ্যাক্সেস বন্ধ';
+
+  @override
+  String get media_cameraUnavailable => 'ক্যামেরা পাওয়া যাচ্ছে না';
+
+  @override
+  String get media_cameraAccessBody =>
+      'সেটিংসে ক্যামেরা অ্যাক্সেস দিন, তারপর পরিষ্কার ছবি তুলতে ফিরে আসুন।';
+
+  @override
+  String get media_cameraUnavailableBody =>
+      'ক্যামেরা খোলা যায়নি। আবার চেষ্টা করুন।';
+
+  @override
+  String get media_photoAccessOff => 'ছবির অ্যাক্সেস বন্ধ';
+
+  @override
+  String get media_photoAccessBody =>
+      'সেটিংসে ক্যামেরা বা ছবির অ্যাক্সেস দিন, তারপর ছবি যোগ করতে ফিরে আসুন।';
+
+  @override
+  String get chat_searchHint => 'বার্তা খুঁজুন';
+
+  @override
+  String get chat_noConversationsFound => 'কোনো কথোপকথন পাওয়া যায়নি';
+
+  @override
+  String get chat_noConversationsFoundBody =>
+      'অন্য নাম চেষ্টা করুন বা অনুসন্ধান মুছুন।';
+
+  @override
+  String get chat_noConversationsYet => 'এখনও কোনো কথোপকথন নেই';
+
+  @override
+  String get chat_noConversationsYetBody =>
+      'কথোপকথন শুরু করতে আগ্রহ গ্রহণ করুন বা আপনার আগ্রহ গৃহীত হওয়ার অপেক্ষা করুন।';
+
+  @override
+  String get kyc_title => 'আপনার পরিচয় যাচাই করুন';
+
+  @override
+  String get kyc_heading => 'আপনার প্রোফাইল যাচাই করুন';
+
+  @override
+  String get kyc_intro =>
+      'ছবি তোলার মান এই ডিভাইসে পরীক্ষা করা হয়। এরপর সিলারাহ আপনার ব্যক্তিগত নথি ও সেলফি পর্যালোচনা করে। ডিভাইসের স্কোর কখনও পরিচয় অনুমোদন করে না।';
+
+  @override
+  String get kyc_selfieTitle => '১. পরিষ্কার সেলফি তুলুন';
+
+  @override
+  String get kyc_selfieHint => 'একটি মুখ, ভালো আলো';
+
+  @override
+  String get kyc_selfieCaptured => 'সেলফি তোলা হয়েছে';
+
+  @override
+  String get kyc_idTitle => '২. পরিচয়পত্রের ছবি তুলুন';
+
+  @override
+  String get kyc_idHint => 'আপনার নাম, ছবি ও জন্মতারিখ দৃশ্যমান হতে হবে';
+
+  @override
+  String get kyc_idCaptured => 'পরিচয়পত্র তোলা হয়েছে';
+
+  @override
+  String get kyc_documentType => 'নথির ধরন';
+
+  @override
+  String get kyc_governmentId => 'সরকারি পরিচয়পত্র';
+
+  @override
+  String get kyc_passport => 'পাসপোর্ট';
+
+  @override
+  String get kyc_drivingLicence => 'ড্রাইভিং লাইসেন্স';
+
+  @override
+  String get kyc_submitReview => 'ব্যক্তিগত পর্যালোচনার জন্য পাঠান';
+
+  @override
+  String get kyc_submitNewEvidence => 'নতুন প্রমাণ পাঠান';
+
+  @override
+  String kyc_submitted(String date) {
+    return 'জমা দেওয়া হয়েছে $date';
+  }
+
+  @override
+  String get kyc_statusApproved => 'পরিচয় অনুমোদিত';
+
+  @override
+  String get kyc_statusApprovedBody =>
+      'আপনার সরকারি পরিচয়পত্রের প্রমাণ নিরাপদে যাচাই হয়েছে।';
+
+  @override
+  String get kyc_statusPending => 'ব্যক্তিগত পর্যালোচনা চলছে';
+
+  @override
+  String get kyc_statusPendingBody =>
+      'আপনার প্রমাণ মানব পর্যালোচনার অপেক্ষায় আছে। আবার জমা দিতে হবে না।';
+
+  @override
+  String get kyc_statusRejected => 'পরিচয় যাচাই অনুমোদিত হয়নি';
+
+  @override
+  String get kyc_statusRejectedBody =>
+      'নিচের কারণ দেখুন এবং প্রয়োজন হলে নতুন প্রমাণ দিন।';
+
+  @override
+  String get kyc_statusResubmit => 'নতুন প্রমাণ প্রয়োজন';
+
+  @override
+  String get kyc_statusResubmitBody =>
+      'আরও পরিষ্কার ও বর্তমান পরিচয় প্রমাণ তুলে আবার পাঠান।';
+
+  @override
+  String get kyc_statusExpired => 'পরিচয় প্রমাণের মেয়াদ শেষ';
+
+  @override
+  String get kyc_statusExpiredBody => 'বর্তমান সরকারি নথি জমা দিন।';
+
+  @override
+  String get kyc_statusNotStarted => 'পরিচয় যাচাই শুরু হয়নি';
+
+  @override
+  String get kyc_statusNotStartedBody =>
+      'ব্যক্তিগত পর্যালোচনার জন্য সরকারি পরিচয়পত্র ও সেলফি দিন।';
+
+  @override
+  String get referral_title => 'বন্ধুকে আমন্ত্রণ জানান';
+
+  @override
+  String get referral_loading => 'পুরস্কার লোড হচ্ছে';
+
+  @override
+  String get referral_heading => 'খবর ছড়ান, প্রিমিয়াম অর্জন করুন!';
+
+  @override
+  String get referral_body =>
+      'বন্ধুদের SILARAH-এ আমন্ত্রণ জানান। বিপরীত লিঙ্গের কেউ আপনার কোড দিয়ে অনবোর্ডিং শেষ করলে আপনারা দুজনেই ৭ দিনের বিনামূল্যের প্রিমিয়াম পাবেন!';
+
+  @override
+  String get referral_codeLabel => 'আপনার রেফারেল কোড';
+
+  @override
+  String get referral_tapToCopy => 'কপি করতে কোডে চাপুন';
+
+  @override
+  String get referral_totalInvited => 'মোট আমন্ত্রিত';
+
+  @override
+  String get referral_rewardsEarned => 'অর্জিত পুরস্কার';
+
+  @override
+  String referral_premiumDays(int count) {
+    return '$count প্রিমিয়াম দিন';
+  }
+
+  @override
+  String get referral_pending => 'অপেক্ষমাণ নিবন্ধন';
+
+  @override
+  String get referral_shareButton => 'বন্ধুদের সঙ্গে কোড শেয়ার করুন';
+
+  @override
+  String get referral_copied => 'রেফারেল কোড কপি হয়েছে!';
+
+  @override
+  String get referral_shareSubject => 'SILARAH-এ যোগ দিন';
+
+  @override
+  String referral_shareText(String code) {
+    return 'বিশ্বস্ত মুসলিম বিবাহ অ্যাপ SILARAH-এ যোগ দিন। আমার রেফারেল কোড ব্যবহার করুন: $code\n\nডাউনলোড: https://silarah.com/r/$code';
+  }
+
+  @override
+  String get profile_share => 'প্রোফাইল শেয়ার করুন';
+
+  @override
+  String safety_reportMember(String name) {
+    return '$name-কে রিপোর্ট করুন';
+  }
+
+  @override
+  String safety_blockMember(String name) {
+    return '$name-কে ব্লক করুন';
+  }
+
+  @override
+  String safety_blockTitle(String name) {
+    return '$name-কে ব্লক করবেন?';
+  }
+
+  @override
+  String safety_blockBody(String name) {
+    return '$name ডিসকভারি থেকে লুকানো থাকবে এবং আপনার সঙ্গে যোগাযোগ করতে পারবে না। নিরাপত্তার জন্য চ্যাট ইতিহাস রাখা হবে। আনব্লক করলে কথোপকথন আবার খুলবে না।';
+  }
+
+  @override
+  String get safety_blockAction => 'ব্লক করুন';
+
+  @override
+  String safety_blocked(String name) {
+    return '$name-কে ব্লক করা হয়েছে।';
+  }
 }

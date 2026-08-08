@@ -2266,4 +2266,361 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get startup_connectivity_protected => 'Connexion protégée';
+
+  @override
+  String get settings_label_email => 'E-mail';
+
+  @override
+  String get settings_notify_profileViews => 'Vues du profil';
+
+  @override
+  String get settings_notify_profileViewsSub =>
+      'Alerte privée lorsqu’une personne ouvre votre profil';
+
+  @override
+  String get settings_notify_profileLive => 'Mise en ligne du profil';
+
+  @override
+  String get settings_notify_profileLiveSub =>
+      'Confirmation lorsque votre profil devient visible';
+
+  @override
+  String get settings_appearance => 'Apparence';
+
+  @override
+  String get settings_helpSupport => 'Aide et assistance';
+
+  @override
+  String get settings_helpCenter => 'Centre d’aide';
+
+  @override
+  String get settings_grievanceOfficer => 'Responsable des réclamations';
+
+  @override
+  String get settings_grievanceResponse =>
+      'Délai de réponse : sous 48 heures après réception';
+
+  @override
+  String get settings_grievanceIndiaNotice =>
+      'Pour les utilisateurs en Inde : nous respectons les règles de 2021 sur les technologies de l’information (directives aux intermédiaires et code d’éthique des médias numériques).';
+
+  @override
+  String get settings_managePhotoRequests => 'Gérer les demandes de photos';
+
+  @override
+  String get settings_managePhotoRequestsSub =>
+      'Approuver l’accès, refuser les demandes ou révoquer le partage';
+
+  @override
+  String get settings_theme_chooseTitle => 'Choisissez votre ambiance';
+
+  @override
+  String get settings_theme_chooseSubtitle =>
+      'Une identité visuelle complète, pas un simple filtre de couleur. Toutes les surfaces, tous les champs et contrôles changent ensemble.';
+
+  @override
+  String get settings_theme_applied =>
+      'Appliqué instantanément · enregistré sur cet appareil';
+
+  @override
+  String get settings_reportPending => 'En attente';
+
+  @override
+  String get legal_document_terms => 'Conditions d’utilisation';
+
+  @override
+  String get legal_document_privacy => 'Politique de confidentialité';
+
+  @override
+  String get legal_document_community => 'Règles de la communauté';
+
+  @override
+  String get legal_specialCategoryConsent =>
+      'Je consens explicitement au traitement par SILARAH de mes informations religieuses (école, pratique de la prière et identité islamique) pour la mise en relation. Les prestataires sous contrat les utilisent uniquement pour exploiter Silarah, jamais pour la publicité comportementale.';
+
+  @override
+  String get onboarding_complexion_fair => 'Clair';
+
+  @override
+  String get onboarding_complexion_medium => 'Moyen';
+
+  @override
+  String get onboarding_complexion_olive => 'Olive';
+
+  @override
+  String get onboarding_complexion_dark => 'Foncé';
+
+  @override
+  String get onboarding_residency_citizen => 'Citoyen(ne)';
+
+  @override
+  String get onboarding_residency_permanentResident =>
+      'Résident(e) permanent(e)';
+
+  @override
+  String get onboarding_residency_workVisa => 'Visa de travail';
+
+  @override
+  String get onboarding_residency_studentVisa => 'Visa étudiant';
+
+  @override
+  String get onboarding_specialNeeds_none => 'Aucun';
+
+  @override
+  String get onboarding_specialNeeds_physical => 'Handicap physique';
+
+  @override
+  String get onboarding_specialNeeds_hearing => 'Déficience auditive';
+
+  @override
+  String get onboarding_specialNeeds_visual => 'Déficience visuelle';
+
+  @override
+  String get onboarding_label_stateRegion => 'État / Région';
+
+  @override
+  String get onboarding_specialNeeds_privacy =>
+      'Partagé uniquement après un intérêt mutuel.';
+
+  @override
+  String get settings_theme_blackWhite => 'Noir et blanc';
+
+  @override
+  String get settings_theme_blackWhiteDesc =>
+      'Blanc pur, noir absolu, sans couleur';
+
+  @override
+  String get settings_theme_oled => 'Nuit OLED';
+
+  @override
+  String get settings_theme_oledDesc =>
+      'Noir véritable optimisé pour les écrans OLED';
+
+  @override
+  String get settings_theme_prism => 'Prism Luxe';
+
+  @override
+  String get settings_theme_prismDesc =>
+      'Profondeur nocturne aux couleurs de joyaux lumineux';
+
+  @override
+  String get settings_guardian_backendRequired =>
+      'Les paramètres du tuteur nécessitent une connexion sécurisée.';
+
+  @override
+  String get settings_guardian_saveError =>
+      'Impossible d’enregistrer les paramètres du tuteur. Réessayez.';
+
+  @override
+  String get common_openSettings => 'Ouvrir les paramètres';
+
+  @override
+  String get media_cameraAccessOff => 'L’accès à la caméra est désactivé';
+
+  @override
+  String get media_cameraUnavailable => 'Caméra indisponible';
+
+  @override
+  String get media_cameraAccessBody =>
+      'Autorisez l’accès à la caméra dans les paramètres, puis revenez prendre une photo nette.';
+
+  @override
+  String get media_cameraUnavailableBody =>
+      'Impossible d’ouvrir la caméra. Réessayez.';
+
+  @override
+  String get media_photoAccessOff => 'L’accès aux photos est désactivé';
+
+  @override
+  String get media_photoAccessBody =>
+      'Autorisez l’accès à la caméra ou aux photos dans les paramètres, puis revenez ajouter votre photo.';
+
+  @override
+  String get chat_searchHint => 'Rechercher des messages';
+
+  @override
+  String get chat_noConversationsFound => 'Aucune conversation trouvée';
+
+  @override
+  String get chat_noConversationsFoundBody =>
+      'Essayez un autre nom ou effacez la recherche.';
+
+  @override
+  String get chat_noConversationsYet => 'Aucune conversation pour le moment';
+
+  @override
+  String get chat_noConversationsYetBody =>
+      'Acceptez un intérêt ou attendez que le vôtre soit accepté pour commencer une conversation.';
+
+  @override
+  String get kyc_title => 'Vérifier votre identité';
+
+  @override
+  String get kyc_heading => 'Vérifier votre profil';
+
+  @override
+  String get kyc_intro =>
+      'La qualité de capture est contrôlée sur cet appareil. Silarah examine ensuite votre document privé et votre selfie. Les scores de l’appareil n’approuvent jamais votre identité.';
+
+  @override
+  String get kyc_selfieTitle => '1. Prenez un selfie net';
+
+  @override
+  String get kyc_selfieHint => 'Un seul visage, bon éclairage';
+
+  @override
+  String get kyc_selfieCaptured => 'Selfie capturé';
+
+  @override
+  String get kyc_idTitle => '2. Photographiez votre pièce d’identité';
+
+  @override
+  String get kyc_idHint =>
+      'Votre nom, photo et date de naissance doivent être visibles';
+
+  @override
+  String get kyc_idCaptured => 'Pièce d’identité capturée';
+
+  @override
+  String get kyc_documentType => 'Type de document';
+
+  @override
+  String get kyc_governmentId => 'Pièce d’identité officielle';
+
+  @override
+  String get kyc_passport => 'Passeport';
+
+  @override
+  String get kyc_drivingLicence => 'Permis de conduire';
+
+  @override
+  String get kyc_submitReview => 'Envoyer pour examen privé';
+
+  @override
+  String get kyc_submitNewEvidence => 'Envoyer de nouvelles preuves';
+
+  @override
+  String kyc_submitted(String date) {
+    return 'Envoyé le $date';
+  }
+
+  @override
+  String get kyc_statusApproved => 'Identité approuvée';
+
+  @override
+  String get kyc_statusApprovedBody =>
+      'Votre preuve d’identité officielle a été vérifiée en toute sécurité.';
+
+  @override
+  String get kyc_statusPending => 'Examen privé en cours';
+
+  @override
+  String get kyc_statusPendingBody =>
+      'Votre preuve attend un examen humain. Vous n’avez pas besoin de la renvoyer.';
+
+  @override
+  String get kyc_statusRejected => 'Vérification d’identité non approuvée';
+
+  @override
+  String get kyc_statusRejectedBody =>
+      'Consultez le motif ci-dessous et envoyez de nouvelles preuves si nécessaire.';
+
+  @override
+  String get kyc_statusResubmit => 'Nouvelle preuve requise';
+
+  @override
+  String get kyc_statusResubmitBody =>
+      'Capturez une preuve d’identité actuelle et plus nette, puis renvoyez-la.';
+
+  @override
+  String get kyc_statusExpired => 'Preuve d’identité expirée';
+
+  @override
+  String get kyc_statusExpiredBody =>
+      'Envoyez un document officiel en cours de validité.';
+
+  @override
+  String get kyc_statusNotStarted => 'Vérification d’identité non commencée';
+
+  @override
+  String get kyc_statusNotStartedBody =>
+      'Envoyez une pièce d’identité officielle et un selfie pour un examen privé.';
+
+  @override
+  String get referral_title => 'Inviter un ami';
+
+  @override
+  String get referral_loading => 'Chargement des récompenses';
+
+  @override
+  String get referral_heading => 'Faites passer le mot et gagnez Premium !';
+
+  @override
+  String get referral_body =>
+      'Invitez vos amis sur SILARAH. Lorsqu’une personne du sexe opposé termine son inscription avec votre code, vous recevez tous les deux 7 jours de Premium gratuits !';
+
+  @override
+  String get referral_codeLabel => 'VOTRE CODE DE PARRAINAGE';
+
+  @override
+  String get referral_tapToCopy => 'Touchez le code pour le copier';
+
+  @override
+  String get referral_totalInvited => 'Total invité';
+
+  @override
+  String get referral_rewardsEarned => 'Récompenses gagnées';
+
+  @override
+  String referral_premiumDays(int count) {
+    return '$count jours Premium';
+  }
+
+  @override
+  String get referral_pending => 'Inscriptions en attente';
+
+  @override
+  String get referral_shareButton => 'Partager le code avec des amis';
+
+  @override
+  String get referral_copied => 'Code de parrainage copié !';
+
+  @override
+  String get referral_shareSubject => 'Rejoignez SILARAH';
+
+  @override
+  String referral_shareText(String code) {
+    return 'Rejoignez SILARAH, l’application matrimoniale musulmane de confiance. Utilisez mon code : $code\n\nTéléchargement : https://silarah.com/r/$code';
+  }
+
+  @override
+  String get profile_share => 'Partager le profil';
+
+  @override
+  String safety_reportMember(String name) {
+    return 'Signaler $name';
+  }
+
+  @override
+  String safety_blockMember(String name) {
+    return 'Bloquer $name';
+  }
+
+  @override
+  String safety_blockTitle(String name) {
+    return 'Bloquer $name ?';
+  }
+
+  @override
+  String safety_blockBody(String name) {
+    return '$name sera masqué de Discovery et ne pourra plus vous contacter. L’historique reste conservé pour votre sécurité. Le déblocage ne rouvrira pas la conversation.';
+  }
+
+  @override
+  String get safety_blockAction => 'Bloquer';
+
+  @override
+  String safety_blocked(String name) {
+    return '$name a été bloqué.';
+  }
 }

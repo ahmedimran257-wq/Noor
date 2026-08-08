@@ -148,104 +148,50 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
                             setState(() => _termsConfirmed = v ?? false),
                         richLabel: TextSpan(
                           style: AppTypography.body,
-                          children: l10n.localeName == 'ar'
-                              ? [
-                                  const TextSpan(text: 'أوافق على'),
-                                  TextSpan(
-                                    text: ' شروط الخدمة',
-                                    style: AppTypography.body.copyWith(
-                                        color: AppColors.champagneGold),
-                                    recognizer: TapGestureRecognizer()
-                                      ..onTap = () {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                              builder: (_) =>
-                                                  const LegalDocScreen(
-                                                      type: 'tos')),
-                                        );
-                                      },
-                                  ),
-                                  const TextSpan(text: ' و '),
-                                  TextSpan(
-                                    text: 'سياسة الخصوصية',
-                                    style: AppTypography.body.copyWith(
-                                        color: AppColors.champagneGold),
-                                    recognizer: TapGestureRecognizer()
-                                      ..onTap = () {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                              builder: (_) =>
-                                                  const LegalDocScreen(
-                                                      type: 'privacy')),
-                                        );
-                                      },
-                                  ),
-                                  const TextSpan(text: ' و '),
-                                  TextSpan(
-                                    text: 'إرشادات المجتمع',
-                                    style: AppTypography.body.copyWith(
-                                        color: AppColors.champagneGold),
-                                    recognizer: TapGestureRecognizer()
-                                      ..onTap = () {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                              builder: (_) => const LegalDocScreen(
-                                                  type:
-                                                      'community-guidelines')),
-                                        );
-                                      },
-                                  ),
-                                  const TextSpan(text: '.'),
-                                ]
-                              : [
-                                  const TextSpan(
-                                      text: 'I have read and agree to the'),
-                                  TextSpan(
-                                    text: ' Terms of Service',
-                                    style: AppTypography.body.copyWith(
-                                        color: AppColors.champagneGold),
-                                    recognizer: TapGestureRecognizer()
-                                      ..onTap = () {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                              builder: (_) =>
-                                                  const LegalDocScreen(
-                                                      type: 'tos')),
-                                        );
-                                      },
-                                  ),
-                                  const TextSpan(text: ' and '),
-                                  TextSpan(
-                                    text: 'Privacy Policy',
-                                    style: AppTypography.body.copyWith(
-                                        color: AppColors.champagneGold),
-                                    recognizer: TapGestureRecognizer()
-                                      ..onTap = () {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                              builder: (_) =>
-                                                  const LegalDocScreen(
-                                                      type: 'privacy')),
-                                        );
-                                      },
-                                  ),
-                                  const TextSpan(text: ' and the '),
-                                  TextSpan(
-                                    text: 'Community Guidelines',
-                                    style: AppTypography.body.copyWith(
-                                        color: AppColors.champagneGold),
-                                    recognizer: TapGestureRecognizer()
-                                      ..onTap = () {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                              builder: (_) => const LegalDocScreen(
-                                                  type:
-                                                      'community-guidelines')),
-                                        );
-                                      },
-                                  ),
-                                  const TextSpan(text: '.'),
-                                ],
+                          children: [
+                            TextSpan(text: '${l10n.legal_checkbox_terms}\n'),
+                            TextSpan(
+                              text: l10n.legal_document_terms,
+                              style: AppTypography.body
+                                  .copyWith(color: AppColors.champagneGold),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () => Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => const LegalDocScreen(
+                                          type: 'tos',
+                                        ),
+                                      ),
+                                    ),
+                            ),
+                            const TextSpan(text: ' · '),
+                            TextSpan(
+                              text: l10n.legal_document_privacy,
+                              style: AppTypography.body
+                                  .copyWith(color: AppColors.champagneGold),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () => Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => const LegalDocScreen(
+                                          type: 'privacy',
+                                        ),
+                                      ),
+                                    ),
+                            ),
+                            const TextSpan(text: ' · '),
+                            TextSpan(
+                              text: l10n.legal_document_community,
+                              style: AppTypography.body
+                                  .copyWith(color: AppColors.champagneGold),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () => Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => const LegalDocScreen(
+                                          type: 'community-guidelines',
+                                        ),
+                                      ),
+                                    ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: AppDimensions.space16),
@@ -253,42 +199,7 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
                         value: _specialCategoryConsent,
                         onChanged: (v) => setState(
                             () => _specialCategoryConsent = v ?? false),
-                        richLabel: TextSpan(
-                          style: AppTypography.body,
-                          children: l10n.localeName == 'ar'
-                              ? [
-                                  const TextSpan(
-                                      text: 'أوافق صراحةً على معالجة SILARAH '),
-                                  TextSpan(
-                                    text: 'معلوماتي الدينية',
-                                    style: AppTypography.body.copyWith(
-                                        color: AppColors.champagneGold),
-                                  ),
-                                  const TextSpan(
-                                    text:
-                                        ' (المذهب، الممارسة الدينية، الهوية الإسلامية) '
-                                        'لتوفير مطابقة التوافق. يعالجها مزودو الخدمة المتعاقدون عند '
-                                        'الضرورة لتشغيل سيلارا، ولا تُستخدم للإعلانات السلوكية.',
-                                  ),
-                                ]
-                              : [
-                                  const TextSpan(
-                                      text:
-                                          'I explicitly consent to SILARAH processing my '),
-                                  TextSpan(
-                                    text: 'religious information',
-                                    style: AppTypography.body.copyWith(
-                                        color: AppColors.champagneGold),
-                                  ),
-                                  const TextSpan(
-                                    text:
-                                        ' (sect, prayer practice, Islamic identity) to provide '
-                                        'compatibility matching. Contracted processors handle it '
-                                        'only as needed to operate Silarah; it is not used for '
-                                        'behavioural advertising.',
-                                  ),
-                                ],
-                        ),
+                        label: l10n.legal_specialCategoryConsent,
                       ),
                       const SizedBox(height: AppDimensions.space48),
                     ],
@@ -350,6 +261,7 @@ class _LegalSaveError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppDimensions.space14),
@@ -384,7 +296,7 @@ class _LegalSaveError extends StatelessWidget {
           ),
           const SizedBox(height: AppDimensions.space10),
           SilarahSecondaryButton(
-            label: 'Retry',
+            label: l10n.common_button_retry,
             icon: Icons.refresh_rounded,
             isLoading: isLoading,
             onTap: onRetry,

@@ -1162,16 +1162,13 @@ class _TrustCenterCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final identityVerified = kycStatus == KycVerificationStatus.approved;
     final identityPending = kycStatus == KycVerificationStatus.pendingReview;
-    final isDigiLocker = kycAssuranceLevel == 'government_document_match';
     final isManualReview = kycAssuranceLevel == 'manual_document_review';
     final identityPresentation = switch (kycStatus) {
       KycVerificationStatus.approved => (
-          status: isDigiLocker ? 'DigiLocker verified' : 'ID reviewed',
-          subtitle: isDigiLocker
-              ? 'Government document matched through DigiLocker'
-              : isManualReview
-                  ? 'Document and selfie reviewed by Silarah'
-                  : 'Identity evidence reviewed',
+          status: 'ID reviewed',
+          subtitle: isManualReview
+              ? 'Document and selfie reviewed by Silarah'
+              : 'Identity evidence reviewed',
           color: AppColors.verifiedTeal,
         ),
       KycVerificationStatus.pendingReview => (

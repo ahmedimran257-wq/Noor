@@ -70,6 +70,19 @@ class ReferralService {
     }
   }
 
+  /// Checks that a six-character code exists without exposing its owner.
+  /// This RPC is intentionally usable before sign-in so the welcome screen
+  /// never promises that an invalid code was saved.
+  Future<bool> validateCode(String code) async {
+    final normalized = code.toUpperCase().trim();
+    if (!RegExp(r'^[A-Z0-9]{6}$').hasMatch(normalized)) return false;
+    final response = await _supabase.rpc(
+      'validate_referral_code',
+      params: {'p_code': normalized},
+    );
+    return response == true;
+  }
+
   /// Gets the referral share text with the user's code.
   Future<String> getShareText() async {
     final code = await getOrCreateCode();

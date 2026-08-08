@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_channel_alerts">Messages and account alerts</string>
+    <string name="notification_channel_alerts_description">Interests, messages, matches, and important account updates</string>
+    <string name="notification_channel_activity">Profile activity</string>
+    <string name="notification_channel_activity_description">Profile views and other non-urgent activity</string>
+</resources>

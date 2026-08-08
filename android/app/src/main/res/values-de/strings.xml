@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_channel_alerts">Nachrichten und Kontohinweise</string>
+    <string name="notification_channel_alerts_description">Interessen, Nachrichten, Matches und wichtige Kontoaktualisierungen</string>
+    <string name="notification_channel_activity">Profilaktivität</string>
+    <string name="notification_channel_activity_description">Profilaufrufe und andere nicht dringende Aktivitäten</string>
+</resources>
