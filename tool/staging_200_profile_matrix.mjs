@@ -123,7 +123,7 @@ async function request(
   return data;
 }
 
-async function test(name, action, { continueOnFailure = false } = {}) {
+async function test(name, action, { continueOnFailure = true } = {}) {
   const started = performance.now();
   try {
     const details = (await action()) ?? {};
@@ -394,11 +394,18 @@ try {
     };
   });
 
-  await test("create exactly 200 isolated Auth accounts", async () => {
-    members = await mapConcurrent(seeds, 8, createAuthUser);
-    assert(members.length === PROFILE_COUNT, "Auth population is not exactly 200");
-    return { count: members.length };
-  });
+  await test(
+    "create exactly 200 isolated Auth accounts",
+    async () => {
+      members = await mapConcurrent(seeds, 8, createAuthUser);
+      assert(
+        members.length === PROFILE_COUNT,
+        "Auth population is not exactly 200",
+      );
+      return { count: members.length };
+    },
+    { continueOnFailure: false },
+  );
 
   const now = new Date();
   const users = members.map((member) => ({
