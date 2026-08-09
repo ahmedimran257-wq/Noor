@@ -3,7 +3,7 @@
 //  luxury portfolio cover."
 //
 // Ratio: 7:10 editorial portrait
-// Border: 1px solid rgba(255,255,255,0.1)
+// Frame: one uninterrupted, theme-aware perimeter above the media.
 // Gradient: Transparent (top) → 30% Obsidian (mid) → 100% Obsidian (bottom)
 // Name: Playfair Display 24px, bottom-left
 // Location: Inter 14px, below name
@@ -66,6 +66,10 @@ class SilarahProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final frameColor = AppColors.active.mode == SilarahThemeMode.blackWhite
+        ? AppColors.champagneLight.withValues(alpha: 0.9)
+        : AppColors.champagneLight.withValues(alpha: 0.82);
+
     return Transform.scale(
       scale: cardScale,
       child: SilarahPressable(
@@ -73,12 +77,9 @@ class SilarahProfileCard extends StatelessWidget {
         child: AspectRatio(
           aspectRatio: AppDimensions.cardAspectRatio,
           child: Container(
+            key: const Key('discovery_profile_card_frame'),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-              border: Border.all(
-                color: isFocused ? AppColors.goldBorder : AppColors.cardBorder,
-                width: AppDimensions.borderThin,
-              ),
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -102,6 +103,15 @@ class SilarahProfileCard extends StatelessWidget {
                       ),
                     ]
                   : null,
+            ),
+            foregroundDecoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+              border: Border.all(
+                color: isFocused
+                    ? frameColor
+                    : AppColors.onMedia.withValues(alpha: 0.28),
+                width: 1.5,
+              ),
             ),
             clipBehavior: Clip.antiAlias,
             child: Stack(
@@ -300,21 +310,6 @@ class SilarahProfileCard extends StatelessWidget {
                       child: _FrostedPhotoPill(photoCount: photoCount),
                     ),
                   ),
-
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(
-                          AppDimensions.radiusCard,
-                        ),
-                        border: Border.all(
-                          color: AppColors.onMedia.withValues(alpha: 0.12),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
@@ -681,19 +676,32 @@ class _SendInterestButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isSending = label == 'Sending...';
     final isConfirmed = label == 'Interest Sent';
-    final foreground = enabled
-        ? AppColors.readableOn(AppColors.champagneGold)
-        : AppColors.onMedia.withValues(alpha: 0.78);
+    final isInteractive = enabled && onTap != null;
+    final enabledColors = AppColors.active.mode == SilarahThemeMode.blackWhite
+        ? const [Color(0xFFFFFFFF), Color(0xFFE7E7E7)]
+        : [
+            AppColors.champagneLight,
+            AppColors.champagneGold,
+            AppColors.antiqueGold,
+          ];
+    final foreground = isInteractive
+        ? AppColors.readableOn(enabledColors[1])
+        : AppColors.onMedia.withValues(alpha: 0.64);
+    final glowColor = AppColors.active.mode == SilarahThemeMode.blackWhite
+        ? AppColors.onMedia.withValues(alpha: 0.24)
+        : AppColors.champagneGold.withValues(alpha: 0.38);
+
     return SilarahPressable(
       onTap: onTap,
-      enabled: enabled && onTap != null,
+      enabled: isInteractive,
       semanticLabel: label,
       child: AnimatedContainer(
+        key: const Key('discovery_interest_action'),
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeOutCubic,
-        height: 48,
+        height: 52,
         decoration: BoxDecoration(
-          gradient: !enabled
+          gradient: !isInteractive
               ? const LinearGradient(
                   colors: [
                     AppColors.overlayBlack55,
@@ -703,26 +711,30 @@ class _SendInterestButton extends StatelessWidget {
               : LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.champagneLight,
-                    AppColors.champagneGold,
-                    AppColors.antiqueGold,
-                  ],
+                  colors: enabledColors,
                 ),
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
           border: Border.all(
-            color: !enabled
+            color: !isInteractive
                 ? AppColors.onMedia.withValues(alpha: 0.22)
-                : AppColors.champagneLight,
-            width: AppDimensions.borderThin,
+                : AppColors.active.mode == SilarahThemeMode.blackWhite
+                    ? AppColors.onMedia
+                    : AppColors.champagneLight.withValues(alpha: 0.92),
+            width: 1.25,
           ),
-          boxShadow: !enabled
+          boxShadow: !isInteractive
               ? null
               : [
                   BoxShadow(
-                    color: AppColors.champagneGold.withValues(alpha: 0.22),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8),
+                    color: glowColor,
+                    blurRadius: 22,
+                    spreadRadius: -5,
+                    offset: const Offset(0, 10),
+                  ),
+                  const BoxShadow(
+                    color: AppColors.overlayBlack45,
+                    blurRadius: 12,
+                    offset: Offset(0, 6),
                   ),
                 ],
         ),
@@ -757,6 +769,13 @@ class _SendInterestButton extends StatelessWidget {
                     color: foreground,
                   ),
                   const SizedBox(width: AppDimensions.space8),
+                ] else ...[
+                  Icon(
+                    Icons.favorite_rounded,
+                    size: 18,
+                    color: foreground,
+                  ),
+                  const SizedBox(width: AppDimensions.space8),
                 ],
                 Flexible(
                   child: UiText(
@@ -765,8 +784,10 @@ class _SendInterestButton extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: AppTypography.button.copyWith(
                       color: foreground,
-                      fontSize: 14,
-                      fontWeight: enabled ? FontWeight.w800 : FontWeight.w700,
+                      fontSize: 14.5,
+                      fontWeight:
+                          isInteractive ? FontWeight.w800 : FontWeight.w700,
+                      letterSpacing: isInteractive ? 0.1 : 0,
                     ),
                   ),
                 ),
@@ -797,8 +818,8 @@ class _IconActionButton extends StatelessWidget {
       onTap: onTap,
       semanticLabel: tooltip,
       child: Container(
-        width: 48,
-        height: 48,
+        width: 52,
+        height: 52,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,

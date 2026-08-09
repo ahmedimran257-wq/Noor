@@ -173,4 +173,70 @@ void main() {
     expect(displayName.style?.color, AppColors.onMedia);
     expect(tester.takeException(), isNull);
   });
+
+  for (final mode in SilarahThemeMode.values) {
+    testWidgets(
+        '${mode.storageValue} keeps the enabled CTA prominent and frame complete',
+        (tester) async {
+      AppColors.activate(mode);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          key: ValueKey(mode),
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 360,
+                child: SilarahProfileCard(
+                  displayName: 'Member',
+                  age: 28,
+                  cityName: 'Kurnool',
+                  previousMatchLabel: 'Previously matched on Jul 18',
+                  interestActionLabel: 'Send Interest Again',
+                  onSendInterest: () {},
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final frame = tester.widget<Container>(
+        find.byKey(const Key('discovery_profile_card_frame')),
+      );
+      final frameDecoration = frame.foregroundDecoration! as BoxDecoration;
+      final frameBorder = frameDecoration.border! as Border;
+      for (final side in [
+        frameBorder.top,
+        frameBorder.right,
+        frameBorder.bottom,
+        frameBorder.left,
+      ]) {
+        expect(side.style, BorderStyle.solid);
+        expect(side.width, 1.5);
+      }
+
+      final action = tester.widget<AnimatedContainer>(
+        find.byKey(const Key('discovery_interest_action')),
+      );
+      final actionDecoration = action.decoration! as BoxDecoration;
+      final actionGradient = actionDecoration.gradient! as LinearGradient;
+      expect(actionGradient.colors, isNot(contains(AppColors.overlayBlack87)));
+      expect(actionDecoration.boxShadow, isNotEmpty);
+      expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
+
+      final label = tester.widget<Text>(find.text('Send Interest Again'));
+      expect(
+        label.style?.color,
+        AppColors.readableOn(actionGradient.colors[1]),
+      );
+      if (mode == SilarahThemeMode.blackWhite) {
+        expect(actionGradient.colors.first, Colors.white);
+      } else {
+        expect(actionGradient.colors.first, AppColors.champagneLight);
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
 }
