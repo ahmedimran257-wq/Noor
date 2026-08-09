@@ -1,0 +1,45 @@
+name: Staging 200-profile feature matrix
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: staging-200-profile-matrix
+  cancel-in-progress: false
+
+jobs:
+  matrix:
+    name: Verify discovery, quotas, Premium, matching and safety
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "20.19.5"
+      - name: Create, verify and remove the 200-profile matrix
+        env:
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          STAGING_PROJECT_REF: ${{ secrets.STAGING_PROJECT_REF }}
+          PRODUCTION_PROJECT_REF: ${{ secrets.PRODUCTION_PROJECT_REF }}
+          STAGING_REPORT_PATH: build/staging-200-profile-report.json
+        run: node tool/staging_200_profile_matrix.mjs
+      - name: Verify matching, chat, Premium, ending, reporting, blocking and rematching
+        env:
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          STAGING_PROJECT_REF: ${{ secrets.STAGING_PROJECT_REF }}
+          PRODUCTION_PROJECT_REF: ${{ secrets.PRODUCTION_PROJECT_REF }}
+        run: node tool/staging_conversation_lifecycle.mjs
+      - name: Upload staging evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: staging-200-profile-report
+          path: build/staging-200-profile-report.json
+          if-no-files-found: warn
+          retention-days: 14

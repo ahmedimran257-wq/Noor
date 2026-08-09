@@ -19,10 +19,17 @@ for (const name of required) {
 }
 
 const env = process.env;
-if (env.STAGING_PROJECT_REF === env.PRODUCTION_PROJECT_REF) {
+const knownProductionRef = "jukpscfxzwttgtxvrbmj";
+if (
+  env.STAGING_PROJECT_REF === env.PRODUCTION_PROJECT_REF ||
+  env.STAGING_PROJECT_REF === knownProductionRef
+) {
   throw new Error("Refusing to run lifecycle automation against production");
 }
 const baseUrl = env.STAGING_SUPABASE_URL.replace(/\/$/, "");
+if (new URL(baseUrl).hostname.startsWith(`${knownProductionRef}.`)) {
+  throw new Error("Refusing to run lifecycle automation against production");
+}
 if (!new URL(baseUrl).hostname.startsWith(`${env.STAGING_PROJECT_REF}.`)) {
   throw new Error("STAGING_SUPABASE_URL does not match STAGING_PROJECT_REF");
 }
