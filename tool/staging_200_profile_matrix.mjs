@@ -63,6 +63,7 @@ const report = {
   tests: [],
   cleanup: { attempted: false, completed: false },
 };
+const continuingFailures = [];
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -122,7 +123,7 @@ async function request(
   return data;
 }
 
-async function test(name, action) {
+async function test(name, action, { continueOnFailure = false } = {}) {
   const started = performance.now();
   try {
     const details = (await action()) ?? {};
@@ -139,6 +140,10 @@ async function test(name, action) {
       error: errorMessage(error),
     });
     console.error(`FAIL: ${name} (${durationMs} ms): ${errorMessage(error)}`);
+    if (continueOnFailure) {
+      continuingFailures.push({ name, error: errorMessage(error) });
+      return {};
+    }
     throw error;
   }
 }
@@ -677,24 +682,31 @@ try {
     return { countriesVerified: countryCodes.length };
   });
 
-  await test("every Premium preference is enforced by the database", async () => {
-    const premiumPreferences = [
-      { verified_only: true },
-      { mother_tongue: "English" },
-      { community: "South Asian" },
-      { living_expectation: "separate" },
-    ];
-    for (const filters of premiumPreferences) {
-      await expectRejected(
-        () => feed(freeMale, filters),
-        "premium_filter_required",
-        `Free member bypassed Premium filters: ${JSON.stringify(filters)}`,
-      );
-      const rows = await feed(premiumMale, filters);
-      assert(rows.length > 0, `Premium filter returned no rows: ${JSON.stringify(filters)}`);
-    }
-    return { premiumPreferencesVerified: premiumPreferences.length };
-  });
+  await test(
+    "every Premium preference is enforced by the database",
+    async () => {
+      const premiumPreferences = [
+        { verified_only: true },
+        { mother_tongue: "English" },
+        { community: "South Asian" },
+        { living_expectation: "separate" },
+      ];
+      for (const filters of premiumPreferences) {
+        await expectRejected(
+          () => feed(freeMale, filters),
+          "premium_filter_required",
+          `Free member bypassed Premium filters: ${JSON.stringify(filters)}`,
+        );
+        const rows = await feed(premiumMale, filters);
+        assert(
+          rows.length > 0,
+          `Premium filter returned no rows: ${JSON.stringify(filters)}`,
+        );
+      }
+      return { premiumPreferencesVerified: premiumPreferences.length };
+    },
+    { continueOnFailure: true },
+  );
 
   await test("name and city search returns eligible opposite profiles", async () => {
     const rows = await rpc(premiumMale, "search_profiles_by_name_city", {
@@ -898,6 +910,12 @@ try {
     p95Ms: percentile(0.95),
     maxMs: durations.at(-1) ?? 0,
   };
+  if (continuingFailures.length > 0) {
+    report.continuingFailures = continuingFailures;
+    throw new Error(
+      `${continuingFailures.length} independent feature assertion(s) failed`,
+    );
+  }
   report.status = "passed";
   console.log("PASS: complete disposable 200-profile staging matrix");
 } catch (error) {
