@@ -43,8 +43,8 @@ const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 const reportPath = resolve(
   process.env.STAGING_REPORT_PATH ?? "build/staging-200-profile-report.json",
 );
-const pngBytes = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+const fixtureImageBytes = Buffer.from(
+  "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////2wBDAf//////////////////////////////////////////////////////////////////////////////////////wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAX/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAF//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABBQJ//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAwEBPwF//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAgEBPwF//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQAGPwJ//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPyF//9oADAMBAAIAAwAAABAf/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAwEBPxB//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAgEBPxB//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxB//9k=",
   "base64",
 );
 
@@ -247,8 +247,8 @@ async function uploadFixture(path) {
   await request(`/storage/v1/object/profile-photos/${path}`, {
     apiKey: service,
     method: "POST",
-    body: pngBytes,
-    contentType: "image/png",
+    body: fixtureImageBytes,
+    contentType: "image/jpeg",
   });
   created.storagePaths.push(path);
 }
@@ -513,7 +513,7 @@ try {
 
   const photoRows = members.map((member) => ({
     profile_id: member.profileId,
-    storage_path: `${member.id}/matrix-${runId}.png`,
+    storage_path: `${member.id}/matrix-${runId}.jpg`,
     status: "active",
     order_index: 0,
     admin_approved: true,
