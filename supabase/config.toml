@@ -142,3 +142,7 @@ verify_jwt = false
 [functions.storage-lifecycle-worker]
 # Private pg_cron request authenticated by the Vault-backed cron credential.
 verify_jwt = false
+
+[functions.admin-purge-deleted-users]
+# Private pg_cron request authenticated by the Vault-backed cron credential.
+verify_jwt = false

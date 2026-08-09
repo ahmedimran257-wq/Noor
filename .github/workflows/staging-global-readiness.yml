@@ -1,0 +1,39 @@
+name: Staging global readiness
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "41 2 * * 1"
+
+concurrency:
+  group: staging-global-readiness
+  cancel-in-progress: false
+
+jobs:
+  readiness:
+    name: Verify global metadata, functions, locations and push queue
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "20.19.5"
+      - name: Run live staging global-readiness checks
+        env:
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          STAGING_PROJECT_REF: ${{ secrets.STAGING_PROJECT_REF }}
+          PRODUCTION_PROJECT_REF: ${{ secrets.PRODUCTION_PROJECT_REF }}
+          STAGING_GLOBAL_REPORT_PATH: build/staging-global-readiness.json
+        run: node tool/staging_global_readiness.mjs
+      - name: Upload readiness evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: staging-global-readiness
+          path: build/staging-global-readiness.json
+          if-no-files-found: error
+          retention-days: 30

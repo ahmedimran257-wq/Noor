@@ -182,21 +182,6 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  if (
-    (!FIREBASE_SERVICE_ACCOUNT_B64 && !FIREBASE_SERVICE_ACCOUNT_JSON) ||
-    !FIREBASE_PROJECT_ID
-  ) {
-    console.error(
-      "[dispatch-notifications] Missing Firebase service account/project secrets.",
-    );
-    await recordDispatchResult(
-      supabase,
-      false,
-      "Firebase configuration missing",
-    );
-    return new Response("Internal Server Error", { status: 500 });
-  }
-
   // Checkout a batch of due notifications
   const { data: notifications, error: checkoutError } = await supabase
     .rpc("checkout_notifications", { batch_size: BATCH_SIZE });
@@ -221,29 +206,6 @@ Deno.serve(async (req: Request) => {
   console.log(
     `[dispatch-notifications] Dispatching ${notifications.length} notifications...`,
   );
-
-  // Get Google access token
-  let accessToken: string;
-  try {
-    accessToken = await getAccessToken();
-  } catch (e) {
-    await finishCheckedOutNotifications(
-      supabase,
-      notifications as NotificationRow[],
-      "retry",
-      "fcm_oauth_unavailable",
-    );
-    console.error(
-      "[dispatch-notifications] Failed to get FCM access token:",
-      e,
-    );
-    await recordDispatchResult(
-      supabase,
-      false,
-      e instanceof Error ? e.message : "FCM token exchange failed",
-    );
-    return new Response("Internal Server Error", { status: 500 });
-  }
 
   // Resolve FCM tokens for all target users
   const userIds = [
@@ -275,6 +237,54 @@ Deno.serve(async (req: Request) => {
     const list = tokenMap.get(row.user_id) ?? [];
     list.push(row.fcm_token);
     tokenMap.set(row.user_id, list);
+  }
+
+  // Tokenless notifications are durable in-app events and do not require an
+  // external OAuth exchange. This keeps in-app delivery working when a member
+  // has not enabled push and avoids needless Google calls.
+  let accessToken = "";
+  if (tokenMap.size > 0) {
+    if (
+      (!FIREBASE_SERVICE_ACCOUNT_B64 && !FIREBASE_SERVICE_ACCOUNT_JSON) ||
+      !FIREBASE_PROJECT_ID
+    ) {
+      await finishCheckedOutNotifications(
+        supabase,
+        notifications as NotificationRow[],
+        "retry",
+        "fcm_configuration_missing",
+      );
+      console.error(
+        "[dispatch-notifications] Missing Firebase service account/project secrets.",
+      );
+      await recordDispatchResult(
+        supabase,
+        false,
+        "Firebase configuration missing",
+      );
+      return new Response("Internal Server Error", { status: 500 });
+    }
+
+    try {
+      accessToken = await getAccessToken();
+    } catch (e) {
+      await finishCheckedOutNotifications(
+        supabase,
+        notifications as NotificationRow[],
+        "retry",
+        "fcm_oauth_unavailable",
+      );
+      console.error(
+        "[dispatch-notifications] Failed to get FCM access token:",
+        e,
+      );
+      await recordDispatchResult(
+        supabase,
+        false,
+        e instanceof Error ? e.message : "FCM token exchange failed",
+      );
+      return new Response("Internal Server Error", { status: 500 });
+    }
   }
 
   // Dispatch each notification via FCM

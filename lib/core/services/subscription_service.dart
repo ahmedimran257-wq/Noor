@@ -351,21 +351,12 @@ class SubscriptionService {
       final row = await SupabaseService.client
           .from('countries')
           .select('pricing_tier')
-          .eq('code', countryCode)
+          .eq('iso_code', countryCode)
           .maybeSingle();
       return row?['pricing_tier'] as String?;
-    } catch (_) {
-      try {
-        final row = await SupabaseService.client
-            .from('countries')
-            .select('pricing_tier')
-            .eq('iso_code', countryCode)
-            .maybeSingle();
-        return row?['pricing_tier'] as String?;
-      } catch (e) {
-        debugPrint('[SubscriptionService] pricing tier lookup error: $e');
-        return null;
-      }
+    } catch (e) {
+      debugPrint('[SubscriptionService] pricing tier lookup error: $e');
+      return null;
     }
   }
 }

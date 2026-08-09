@@ -73,5 +73,22 @@ void main() {
       expect(cubitSource, contains('SubscriptionEntitlements.isPremiumActive'));
       expect(cubitSource, isNot(contains("active['premium']")));
     });
+
+    test('looks up regional pricing by the canonical ISO country column', () {
+      final serviceSource = File(
+        'lib/core/services/subscription_service.dart',
+      ).readAsStringSync();
+
+      expect(serviceSource, contains(".eq('iso_code', countryCode)"));
+      expect(serviceSource, isNot(contains(".eq('code', countryCode)")));
+    });
+
+    test('webhook fails closed when its vendor secret is absent', () {
+      final webhook = File(
+        'supabase/functions/revenuecat-webhook/index.ts',
+      ).readAsStringSync();
+      expect(webhook, contains('REVENUECAT_WEBHOOK_SECRET.length < 32'));
+      expect(webhook, contains('return new Response("Service Unavailable"'));
+    });
   });
 }

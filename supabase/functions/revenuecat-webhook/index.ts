@@ -7,7 +7,8 @@ import {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const REVENUECAT_WEBHOOK_SECRET = Deno.env.get("REVENUECAT_WEBHOOK_SECRET")!;
+const REVENUECAT_WEBHOOK_SECRET =
+  Deno.env.get("REVENUECAT_WEBHOOK_SECRET")?.trim() ?? "";
 const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY") ?? "";
 const REVENUECAT_EXPECTED_APP_ID = Deno.env.get("REVENUECAT_EXPECTED_APP_ID") ??
   "";
@@ -34,6 +35,10 @@ Deno.serve(async (req: Request) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  if (REVENUECAT_WEBHOOK_SECRET.length < 32) {
+    console.error("[revenuecat-webhook] Webhook secret is not configured.");
+    return new Response("Service Unavailable", { status: 503 });
+  }
   const authHeader = req.headers.get("Authorization") ?? "";
   if (authHeader !== `Bearer ${REVENUECAT_WEBHOOK_SECRET}`) {
     console.warn("[revenuecat-webhook] Invalid Authorization token.");

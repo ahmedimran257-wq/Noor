@@ -1,0 +1,58 @@
+name: Staging bounded load test
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_vus:
+        description: "Peak concurrent virtual users (staging only)"
+        required: true
+        default: "25"
+        type: choice
+        options:
+          - "1"
+          - "5"
+          - "10"
+          - "25"
+          - "50"
+      smoke_mode:
+        description: "Short 50-second run"
+        required: true
+        default: true
+        type: boolean
+
+concurrency:
+  group: staging-bounded-load-test
+  cancel-in-progress: false
+
+jobs:
+  load:
+    name: Exercise authenticated read paths
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "20.19.5"
+      - name: Install pinned k6
+        uses: grafana/setup-k6-action@db07bd9765aac508ef18982e52ab937fe633a065 # v1.2.1
+      - name: Run production-refusing staging load test
+        env:
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
+          STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          STAGING_PROJECT_REF: ${{ secrets.STAGING_PROJECT_REF }}
+          PRODUCTION_PROJECT_REF: ${{ secrets.PRODUCTION_PROJECT_REF }}
+          LOAD_TEST_MAX_VUS: ${{ inputs.max_vus }}
+          LOAD_TEST_SMOKE_MODE: ${{ inputs.smoke_mode }}
+          STAGING_LOAD_REPORT_PATH: build/staging-load-summary.json
+        run: node tool/run_staging_load_test.mjs
+      - name: Upload load-test evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: staging-load-summary-${{ inputs.max_vus }}-vus
+          path: build/staging-load-summary.json
+          if-no-files-found: error
+          retention-days: 30

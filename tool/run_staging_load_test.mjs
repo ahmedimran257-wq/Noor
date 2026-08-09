@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 
 const required = [
@@ -32,6 +32,9 @@ const fixtureCount = Math.min(Math.max(maxVus, 2), 10);
 const service = env.STAGING_SUPABASE_SERVICE_ROLE_KEY;
 const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 const fixtures = [];
+const summaryPath = path.resolve(
+  env.STAGING_LOAD_REPORT_PATH || "build/staging-load-summary.json",
+);
 
 async function request(
   requestPath,
@@ -126,20 +129,25 @@ try {
   const installedK6 = "C:\\Program Files\\k6\\k6.exe";
   const k6Path = env.K6_PATH || (existsSync(installedK6) ? installedK6 : "k6");
   const scriptPath = path.resolve("load-tests/staging_read_paths.js");
-  const result = spawnSync(k6Path, ["run", scriptPath], {
-    cwd: process.cwd(),
-    env: {
-      ...env,
-      TARGET_ENV: "staging",
-      SUPABASE_URL: baseUrl,
-      SUPABASE_ANON_KEY: env.STAGING_SUPABASE_ANON_KEY,
-      TEST_USER_TOKENS: tokens.join(","),
-      MAX_VUS: String(maxVus),
-      SMOKE_MODE: env.LOAD_TEST_SMOKE_MODE || "true",
-      ITERATION_SLEEP_SECONDS: env.LOAD_TEST_ITERATION_SLEEP_SECONDS || "1",
+  mkdirSync(path.dirname(summaryPath), { recursive: true });
+  const result = spawnSync(
+    k6Path,
+    ["run", `--summary-export=${summaryPath}`, scriptPath],
+    {
+      cwd: process.cwd(),
+      env: {
+        ...env,
+        TARGET_ENV: "staging",
+        SUPABASE_URL: baseUrl,
+        SUPABASE_ANON_KEY: env.STAGING_SUPABASE_ANON_KEY,
+        TEST_USER_TOKENS: tokens.join(","),
+        MAX_VUS: String(maxVus),
+        SMOKE_MODE: env.LOAD_TEST_SMOKE_MODE || "true",
+        ITERATION_SLEEP_SECONDS: env.LOAD_TEST_ITERATION_SLEEP_SECONDS || "1",
+      },
+      stdio: "inherit",
     },
-    stdio: "inherit",
-  });
+  );
   if (result.error) throw result.error;
   k6ExitCode = result.status ?? 1;
 } finally {
@@ -153,3 +161,4 @@ if (k6ExitCode !== 0) {
 console.log(
   `PASS: staging read-path load test (${maxVus} VUs) with disposable accounts`,
 );
+console.log(`Evidence: ${summaryPath}`);

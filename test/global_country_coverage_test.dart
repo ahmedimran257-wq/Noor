@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:silarah/core/data/country_communities_data.dart';
 import 'package:silarah/core/data/country_data.dart';
@@ -29,5 +31,31 @@ void main() {
             '${country.iso2} must have curated or regional options, not generated fallback copy.',
       );
     }
+  });
+
+  test('hosted migrations seed the original launch countries', () {
+    final migration = File(
+      'supabase/migrations/202_seed_launch_countries_in_hosted_environments.sql',
+    ).readAsStringSync();
+    for (final code in const [
+      'IN',
+      'PK',
+      'BD',
+      'GB',
+      'US',
+      'CA',
+      'AE',
+      'SA',
+      'MY',
+      'ID',
+      'TR',
+      'EG',
+      'NG',
+      'DE',
+      'FR',
+    ]) {
+      expect(migration, contains("('$code',"), reason: code);
+    }
+    expect(migration, contains('ON CONFLICT (iso_code) DO UPDATE'));
   });
 }

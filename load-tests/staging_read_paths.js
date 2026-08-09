@@ -43,6 +43,9 @@ export const options = {
     "http_req_duration{route:auth_user}": ["p(95)<1000"],
     "http_req_duration{route:interest_quota}": ["p(95)<1000"],
     "http_req_duration{route:profile_view_quota}": ["p(95)<1000"],
+    "http_req_duration{route:filter_access}": ["p(95)<1000"],
+    "http_req_duration{route:notification_inbox}": ["p(95)<1000"],
+    "http_req_duration{route:country_catalog}": ["p(95)<1000"],
   },
   noConnectionReuse: false,
   summaryTrendStats: ["avg", "min", "med", "max", "p(90)", "p(95)", "p(99)"],
@@ -90,6 +93,18 @@ export default function (config) {
       headers,
       tags: { route: "profile_view_quota" },
     }],
+    ["POST", `${config.baseUrl}/rest/v1/rpc/get_discovery_filter_access`, "{}", {
+      headers,
+      tags: { route: "filter_access" },
+    }],
+    ["GET", `${config.baseUrl}/rest/v1/notifications?select=id,type,created_at&order=created_at.desc&limit=20`, null, {
+      headers,
+      tags: { route: "notification_inbox" },
+    }],
+    ["GET", `${config.baseUrl}/rest/v1/countries?select=iso_code,name,pricing_tier&limit=250`, null, {
+      headers,
+      tags: { route: "country_catalog" },
+    }],
   ]);
 
   check(responses[0], {
@@ -100,6 +115,15 @@ export default function (config) {
   });
   check(responses[2], {
     "view quota responds": (response) => response.status === 200,
+  });
+  check(responses[3], {
+    "filter entitlement responds": (response) => response.status === 200,
+  });
+  check(responses[4], {
+    "notification inbox responds": (response) => response.status === 200,
+  });
+  check(responses[5], {
+    "country catalog responds": (response) => response.status === 200,
   });
 
   // Model an active member's think time and keep staging/free-tier traffic

@@ -54,6 +54,13 @@ void main() {
       retirementMigration,
       contains('clear selfie plus government-ID photos'),
     );
+
+    final publicPolicy = File(
+      'site/verification-policy/index.html',
+    ).readAsStringSync();
+    expect(publicPolicy.toLowerCase(), isNot(contains('digilocker')));
+    expect(publicPolicy, contains('clear live selfie'));
+    expect(publicPolicy, contains('clear photos of a supported government ID'));
   });
 
   test('Android owns branded notification channels and native share', () {

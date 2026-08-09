@@ -24,6 +24,22 @@ void main() {
     expect(migration, contains('dispatch_notifications_fallback_5m'));
     expect(
         migration, contains('SELECT private.invoke_notification_dispatch()'));
+
+    final bootstrap = File(
+      'supabase/migrations/203_bootstrap_backend_worker_url.sql',
+    ).readAsStringSync();
+    expect(bootstrap, contains("auth.role() <> 'service_role'"));
+    expect(bootstrap, contains("name = 'silarah_supabase_url'"));
+    expect(bootstrap, contains('vault.update_secret'));
+    expect(bootstrap, contains('private.invoke_notification_dispatch()'));
+
+    final repair = File(
+      'supabase/migrations/204_self_heal_backend_cron_credential.sql',
+    ).readAsStringSync();
+    expect(repair, contains("name = 'silarah_edge_cron_secret'"));
+    expect(repair, contains('extensions.gen_random_bytes(32)'));
+    expect(repair, contains('extensions.digest(v_cron_secret'));
+    expect(repair, contains('internal_cron_credentials'));
   });
 
   test('legacy notification routes are canonicalized before row repair', () {
@@ -44,6 +60,21 @@ void main() {
     expect(migration, contains('ranked.position > 5'));
     expect(
         migration, isNot(contains("RAISE EXCEPTION 'device_limit_reached'")));
+  });
+
+  test('tokenless in-app delivery avoids Firebase OAuth and external cost', () {
+    final worker = File(
+      'supabase/functions/dispatch-notifications/index.ts',
+    ).readAsStringSync();
+    final tokenLookup =
+        worker.indexOf('Resolve FCM tokens for all target users');
+    final tokenGuard = worker.indexOf('if (tokenMap.size > 0)');
+    final oauth = worker.indexOf('accessToken = await getAccessToken()');
+
+    expect(tokenLookup, greaterThanOrEqualTo(0));
+    expect(tokenGuard, greaterThan(tokenLookup));
+    expect(oauth, greaterThan(tokenGuard));
+    expect(worker, contains('fcm_configuration_missing'));
   });
 
   test('profile-view preference and deep link are first-class', () {
