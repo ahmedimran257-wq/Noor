@@ -127,4 +127,50 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     expect(find.byType(LinearProgressIndicator), findsNothing);
   });
+
+  testWidgets(
+      'premium card keeps media copy readable and explains identity trust',
+      (tester) async {
+    AppColors.activate(SilarahThemeMode.blackWhite);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 360,
+              child: SilarahProfileCard(
+                displayName: 'Khatun Khatun',
+                age: 25,
+                cityName: 'Kurnool',
+                sect: 'SUNNI',
+                deenLevel: 'practicing',
+                profession: 'Writer',
+                photoCount: 3,
+                isVerified: true,
+                lastActiveLabel: '23 hr ago',
+                previousMatchLabel: 'Previously matched on Jul 18',
+                interestActionLabel: 'Send Interest Again',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('ID verified'), findsOneWidget);
+    expect(find.text('23 hr ago'), findsOneWidget);
+    expect(find.text('Previously matched on Jul 18'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel(RegExp('Government ID verified')),
+      findsOneWidget,
+    );
+    expect(find.byIcon(Icons.location_on_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.history_rounded), findsOneWidget);
+
+    final displayName = tester.widget<Text>(find.text('Khatun Khatun'));
+    expect(displayName.style?.color, AppColors.onMedia);
+    expect(tester.takeException(), isNull);
+  });
 }

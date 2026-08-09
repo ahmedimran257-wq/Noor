@@ -2,7 +2,7 @@
 // "The most critical component. It must look like a
 //  luxury portfolio cover."
 //
-// Ratio: 3:4 Portrait
+// Ratio: 7:10 editorial portrait
 // Border: 1px solid rgba(255,255,255,0.1)
 // Gradient: Transparent (top) → 30% Obsidian (mid) → 100% Obsidian (bottom)
 // Name: Playfair Display 24px, bottom-left
@@ -90,13 +90,15 @@ class SilarahProfileCard extends StatelessWidget {
               boxShadow: isFocused
                   ? [
                       BoxShadow(
-                        color: AppColors.obsidianNight.withValues(alpha: 0.48),
-                        blurRadius: 30,
-                        offset: const Offset(0, 18),
+                        color: Colors.black.withValues(alpha: 0.22),
+                        blurRadius: 34,
+                        spreadRadius: -8,
+                        offset: const Offset(0, 20),
                       ),
                       BoxShadow(
-                        color: AppColors.champagneGold.withValues(alpha: 0.10),
-                        blurRadius: 26,
+                        color: AppColors.goldGlow,
+                        blurRadius: 28,
+                        spreadRadius: -12,
                       ),
                     ]
                   : null,
@@ -120,24 +122,22 @@ class SilarahProfileCard extends StatelessWidget {
                 // Content Layer
                 Positioned.fill(
                   child: Padding(
-                    padding: const EdgeInsets.all(AppDimensions.space20),
+                    padding: const EdgeInsets.all(AppDimensions.space16),
                     child: Column(
                       children: [
-                        // Top row: verified badge (left) + photo count pill (right)
+                        // Top row: photo count + activity, clear of the portrait.
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Photo count pill — public, multiple photos
                             if (!isPhotoPrivate && photoCount > 1)
                               _PhotoCountPill(count: photoCount)
-                            else
-                              const SizedBox.shrink(),
+                            else if (isPhotoPrivate && photoCount > 0)
+                              _PrivatePhotoCountPill(count: photoCount),
 
-                            // Verified badge — top right
-                            if (isVerified)
-                              _VerifiedBadge()
-                            else if (lastActiveLabel != null &&
+                            // Activity remains independent of ID verification.
+                            const Spacer(),
+                            if (lastActiveLabel != null &&
                                 lastActiveLabel!.isNotEmpty)
                               _LastActivePill(label: lastActiveLabel!)
                             else
@@ -156,36 +156,82 @@ class SilarahProfileCard extends StatelessWidget {
                               // Name
                               UiText(
                                 displayName,
-                                style: AppTypography.userName,
+                                style: AppTypography.userName.copyWith(
+                                  color: AppColors.onMedia,
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.12,
+                                  shadows: const [
+                                    Shadow(
+                                      color: AppColors.overlayBlack55,
+                                      blurRadius: 12,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(height: AppDimensions.space4),
+                              const SizedBox(height: AppDimensions.space6),
 
                               // Age · City
-                              UiText(
-                                '$age · $cityName',
-                                style: AppTypography.cardLocation,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.location_on_outlined,
+                                    size: 15,
+                                    color: Color(0xD9F8F8FA),
+                                  ),
+                                  const SizedBox(width: AppDimensions.space4),
+                                  Expanded(
+                                    child: UiText(
+                                      '$age · $cityName',
+                                      style:
+                                          AppTypography.cardLocation.copyWith(
+                                        color: AppColors.onMedia.withValues(
+                                          alpha: 0.88,
+                                        ),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  if (isVerified) ...[
+                                    const SizedBox(
+                                      width: AppDimensions.space8,
+                                    ),
+                                    _VerifiedBadge(),
+                                  ],
+                                ],
                               ),
 
                               if (previousMatchLabel != null) ...[
-                                const SizedBox(height: AppDimensions.space6),
+                                const SizedBox(height: AppDimensions.space8),
+                                _PreviousMatchPill(label: previousMatchLabel!),
+                              ],
+
+                              // Profession line
+                              if (profession != null) ...[
+                                const SizedBox(height: AppDimensions.space8),
                                 Row(
                                   children: [
                                     Icon(
-                                      Icons.history_rounded,
+                                      Icons.work_outline_rounded,
                                       size: 14,
-                                      color: AppColors.champagneGold,
+                                      color: AppColors.onMedia.withValues(
+                                        alpha: 0.68,
+                                      ),
                                     ),
                                     const SizedBox(width: AppDimensions.space6),
                                     Expanded(
                                       child: UiText(
-                                        previousMatchLabel!,
+                                        profession!,
                                         style: AppTypography.caption.copyWith(
-                                          color: AppColors.champagneLight,
-                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.onMedia.withValues(
+                                            alpha: 0.74,
+                                          ),
+                                          fontWeight: FontWeight.w500,
                                         ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -195,23 +241,9 @@ class SilarahProfileCard extends StatelessWidget {
                                 ),
                               ],
 
-                              // Profession line
-                              if (profession != null) ...[
-                                const SizedBox(height: AppDimensions.space4),
-                                UiText(
-                                  profession!,
-                                  style: AppTypography.caption.copyWith(
-                                    color: AppColors.pearlWhite
-                                        .withValues(alpha: 0.7),
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-
                               // Chips row
                               if (sect != null || deenLevel != null) ...[
-                                const SizedBox(height: AppDimensions.space12),
+                                const SizedBox(height: AppDimensions.space10),
                                 Wrap(
                                   spacing: AppDimensions.space8,
                                   runSpacing: AppDimensions.space6,
@@ -223,7 +255,7 @@ class SilarahProfileCard extends StatelessWidget {
                                 ),
                               ],
 
-                              const SizedBox(height: AppDimensions.space16),
+                              const SizedBox(height: AppDimensions.space14),
 
                               // Action row: bookmark + send interest
                               Row(
@@ -261,13 +293,28 @@ class SilarahProfileCard extends StatelessWidget {
 
                 if (isPhotoPrivate && photoCount > 0)
                   Positioned(
-                    bottom: 90, // above the action row
+                    top: 72,
                     left: 0,
                     right: 0,
                     child: Center(
                       child: _FrostedPhotoPill(photoCount: photoCount),
                     ),
                   ),
+
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(
+                          AppDimensions.radiusCard,
+                        ),
+                        border: Border.all(
+                          color: AppColors.onMedia.withValues(alpha: 0.12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -359,26 +406,19 @@ class _GradientOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
+    return const DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            AppColors.cardGradientTop,
-            AppColors.cardGradientMid,
-            AppColors.cardGradientBottom,
+            Color(0x08000000),
+            Color(0x18000000),
+            Color(0xB8000000),
+            Color(0xFA000000),
           ],
-          stops: const [0.0, 0.5, 1.0],
+          stops: [0.0, 0.38, 0.68, 1.0],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.obsidianNight.withValues(alpha: 0.28),
-            blurRadius: 24,
-            spreadRadius: 12,
-            offset: const Offset(0, 18),
-          ),
-        ],
       ),
     );
   }
@@ -387,34 +427,88 @@ class _GradientOverlay extends StatelessWidget {
 class _VerifiedBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final trustColor = AppColors.active.mode == SilarahThemeMode.blackWhite
+        ? AppColors.onMedia
+        : AppColors.verifiedTeal;
+
+    return Semantics(
+      label: context.uiCopy('Government ID verified'),
+      excludeSemantics: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.space8,
+          vertical: AppDimensions.space4,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.overlayBlack55,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+          border: Border.all(
+            color: trustColor.withValues(alpha: 0.72),
+            width: AppDimensions.borderThin,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.verified_user_rounded,
+              color: trustColor,
+              size: 13,
+            ),
+            const SizedBox(width: AppDimensions.space4),
+            UiText(
+              context.uiCopy('ID verified'),
+              style: AppTypography.caption.copyWith(
+                color: trustColor,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PreviousMatchPill extends StatelessWidget {
+  const _PreviousMatchPill({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.space8,
-        vertical: AppDimensions.space4,
+        horizontal: AppDimensions.space10,
+        vertical: AppDimensions.space6,
       ),
       decoration: BoxDecoration(
-        color: AppColors.verifiedTeal.withValues(alpha: 0.2),
+        color: AppColors.overlayBlack55,
         borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
         border: Border.all(
-          color: AppColors.verifiedTeal,
-          width: AppDimensions.borderThin,
+          color: AppColors.onMedia.withValues(alpha: 0.18),
         ),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            Icons.verified_rounded,
-            color: AppColors.verifiedTeal,
-            size: 12,
+            Icons.history_rounded,
+            color: AppColors.onMedia.withValues(alpha: 0.88),
+            size: 14,
           ),
-          const SizedBox(width: AppDimensions.space4),
-          UiText(
-            context.uiCopy('Verified'),
-            style: AppTypography.caption.copyWith(
-              color: AppColors.verifiedTeal,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
+          const SizedBox(width: AppDimensions.space6),
+          Expanded(
+            child: UiText(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.caption.copyWith(
+                color: AppColors.onMedia.withValues(alpha: 0.9),
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -471,12 +565,56 @@ class _PhotoCountPill extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.overlayBlack45,
         borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+        border: Border.all(
+          color: AppColors.onMedia.withValues(alpha: 0.12),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.camera_alt_outlined,
               color: AppColors.onMedia, size: 12),
+          const SizedBox(width: AppDimensions.space4),
+          UiText(
+            '$count',
+            style: AppTypography.caption.copyWith(
+              color: AppColors.onMedia,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PrivatePhotoCountPill extends StatelessWidget {
+  const _PrivatePhotoCountPill({required this.count});
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.space8,
+        vertical: AppDimensions.space4,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.overlayBlack45,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+        border: Border.all(
+          color: AppColors.onMedia.withValues(alpha: 0.12),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.lock_outline_rounded,
+            color: AppColors.onMedia,
+            size: 12,
+          ),
           const SizedBox(width: AppDimensions.space4),
           UiText(
             '$count',
@@ -504,21 +642,27 @@ class _InfoChip extends StatelessWidget {
         vertical: AppDimensions.space6,
       ),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.surfaceGlassHover.withValues(alpha: 0.76),
-            AppColors.midnightPlum.withValues(alpha: 0.24),
+            Color(0xD1000000),
+            Color(0x99000000),
           ],
         ),
         borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
         border: Border.all(
-          color: AppColors.cardBorder,
+          color: AppColors.onMedia.withValues(alpha: 0.22),
           width: AppDimensions.borderThin,
         ),
       ),
-      child: UiText(label, style: AppTypography.chipLabel),
+      child: UiText(
+        label,
+        style: AppTypography.chipLabel.copyWith(
+          color: AppColors.onMedia,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }
@@ -537,8 +681,9 @@ class _SendInterestButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isSending = label == 'Sending...';
     final isConfirmed = label == 'Interest Sent';
-    final foreground =
-        enabled ? AppColors.obsidianNight : AppColors.champagneLight;
+    final foreground = enabled
+        ? AppColors.readableOn(AppColors.champagneGold)
+        : AppColors.onMedia.withValues(alpha: 0.78);
     return SilarahPressable(
       onTap: onTap,
       enabled: enabled && onTap != null,
@@ -546,13 +691,13 @@ class _SendInterestButton extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeOutCubic,
-        height: 44,
+        height: 48,
         decoration: BoxDecoration(
           gradient: !enabled
-              ? LinearGradient(
+              ? const LinearGradient(
                   colors: [
-                    AppColors.champagneGold.withValues(alpha: 0.12),
-                    AppColors.midnightPlum.withValues(alpha: 0.18),
+                    AppColors.overlayBlack55,
+                    AppColors.overlayBlack87,
                   ],
                 )
               : LinearGradient(
@@ -566,7 +711,9 @@ class _SendInterestButton extends StatelessWidget {
                 ),
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
           border: Border.all(
-            color: !enabled ? AppColors.goldBorder : AppColors.champagneLight,
+            color: !enabled
+                ? AppColors.onMedia.withValues(alpha: 0.22)
+                : AppColors.champagneLight,
             width: AppDimensions.borderThin,
           ),
           boxShadow: !enabled
@@ -607,7 +754,7 @@ class _SendInterestButton extends StatelessWidget {
                   Icon(
                     Icons.check_circle_rounded,
                     size: 18,
-                    color: AppColors.champagneLight,
+                    color: foreground,
                   ),
                   const SizedBox(width: AppDimensions.space8),
                 ],
@@ -650,8 +797,8 @@ class _IconActionButton extends StatelessWidget {
       onTap: onTap,
       semanticLabel: tooltip,
       child: Container(
-        width: 44,
-        height: 44,
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -691,7 +838,7 @@ class _IconActionButton extends StatelessWidget {
   }
 }
 
-// D3: Last active indicator pill — shown in top-right when not verified
+// Last active stays visible alongside the identity badge.
 class _LastActivePill extends StatelessWidget {
   const _LastActivePill({required this.label});
   final String label;
@@ -699,6 +846,11 @@ class _LastActivePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isOnline = label == 'Online now';
+    final activeColor = isOnline
+        ? (AppColors.active.mode == SilarahThemeMode.blackWhite
+            ? AppColors.onMedia
+            : AppColors.onlineGreen)
+        : AppColors.onMedia.withValues(alpha: 0.58);
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.space8,
@@ -707,6 +859,9 @@ class _LastActivePill extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.overlayBlack45,
         borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+        border: Border.all(
+          color: AppColors.onMedia.withValues(alpha: 0.12),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -716,7 +871,7 @@ class _LastActivePill extends StatelessWidget {
             height: 6,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isOnline ? AppColors.onlineGreen : AppColors.slateMist,
+              color: activeColor,
             ),
           ),
           const SizedBox(width: AppDimensions.space4),

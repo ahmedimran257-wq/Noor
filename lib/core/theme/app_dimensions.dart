@@ -67,8 +67,8 @@ abstract final class AppDimensions {
   static const double space80 = 80.0;
 
   // Discovery Card
-  /// Card aspect ratio: 3:4 portrait.
-  static const double cardAspectRatio = 3 / 4;
+  /// Tall editorial portrait leaves room for trust and rematch context.
+  static const double cardAspectRatio = 7 / 10;
 
   // Animation Durations
   /// "The Reveal" — elements entering the screen (300–500ms).

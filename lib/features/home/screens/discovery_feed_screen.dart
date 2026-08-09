@@ -415,6 +415,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
                     deenLevel: p.deenLevel,
                     profession: p.occupation,
                     photoUrl: p.photoUrl,
+                    blurhash: p.blurhash,
                     photoCount: p.photoCount,
                     isPhotoPrivate: p.isPhotoPrivate,
                     isVerified: p.isVerified,

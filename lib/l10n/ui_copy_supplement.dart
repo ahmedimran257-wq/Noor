@@ -107,6 +107,8 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Photo access could not be updated.': 'لا يمكن تحديث الوصول إلى الصور.',
     'Photo requests could not be loaded.': 'تعذر تحميل طلبات الصور.',
     'Photo verified': 'تم التحقق من الصورة',
+    'ID verified': 'تم التحقق من الهوية',
+    'Government ID verified': 'تم التحقق من الهوية الحكومية',
     'Photos are checked privately before they become visible. Explicit content is not permitted.':
         'يتم فحص الصور بشكل خاص قبل أن تصبح مرئية. المحتوى الصريح غير مسموح به.',
     'Plans are shown in your local currency': 'يتم عرض الخطط بعملتك المحلية',
@@ -329,6 +331,8 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Photo access could not be updated.': 'ফটো অ্যাক্সেস আপডেট করা যায়নি.',
     'Photo requests could not be loaded.': 'ফটো অনুরোধ লোড করা যায়নি.',
     'Photo verified': 'ফটো যাচাই করা হয়েছে',
+    'ID verified': 'আইডি যাচাইকৃত',
+    'Government ID verified': 'সরকারি পরিচয়পত্র যাচাইকৃত',
     'Photos are checked privately before they become visible. Explicit content is not permitted.':
         'ফটোগুলি দৃশ্যমান হওয়ার আগে ব্যক্তিগতভাবে চেক করা হয়৷ স্পষ্ট বিষয়বস্তু অনুমোদিত নয়.',
     'Plans are shown in your local currency':
@@ -554,6 +558,8 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Photo requests could not be loaded.':
         'Fotoanfragen konnten nicht geladen werden.',
     'Photo verified': 'Foto bestätigt',
+    'ID verified': 'Identität bestätigt',
+    'Government ID verified': 'Amtlicher Ausweis bestätigt',
     'Photos are checked privately before they become visible. Explicit content is not permitted.':
         'Fotos werden privat geprüft, bevor sie sichtbar werden. Explizite Inhalte sind nicht gestattet.',
     'Plans are shown in your local currency':
@@ -783,6 +789,8 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Photo requests could not be loaded.':
         'Les demandes de photos n\'ont pas pu être chargées.',
     'Photo verified': 'Photo vérifiée',
+    'ID verified': 'Identité vérifiée',
+    'Government ID verified': 'Pièce d’identité officielle vérifiée',
     'Photos are checked privately before they become visible. Explicit content is not permitted.':
         'Les photos sont vérifiées en privé avant d\'être visibles. Le contenu explicite n\'est pas autorisé.',
     'Plans are shown in your local currency':
@@ -1010,6 +1018,8 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Photo access could not be updated.': 'फ़ोटो पहुंच अद्यतन नहीं की जा सकी.',
     'Photo requests could not be loaded.': 'फ़ोटो अनुरोध लोड नहीं किए जा सके.',
     'Photo verified': 'फ़ोटो सत्यापित',
+    'ID verified': 'आईडी सत्यापित',
+    'Government ID verified': 'सरकारी पहचान सत्यापित',
     'Photos are checked privately before they become visible. Explicit content is not permitted.':
         'दृश्यमान होने से पहले फ़ोटो की निजी तौर पर जाँच की जाती है। स्पष्ट सामग्री की अनुमति नहीं है.',
     'Plans are shown in your local currency':
@@ -1233,6 +1243,8 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Photo requests could not be loaded.':
         'Permintaan foto tidak dapat dimuat.',
     'Photo verified': 'Foto diverifikasi',
+    'ID verified': 'Identitas terverifikasi',
+    'Government ID verified': 'Identitas resmi terverifikasi',
     'Photos are checked privately before they become visible. Explicit content is not permitted.':
         'Foto diperiksa secara pribadi sebelum terlihat. Konten eksplisit tidak diizinkan.',
     'Plans are shown in your local currency':
@@ -1458,6 +1470,8 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Photo requests could not be loaded.':
         'Permintaan foto tidak dapat dimuatkan.',
     'Photo verified': 'Foto disahkan',
+    'ID verified': 'Identiti disahkan',
+    'Government ID verified': 'Identiti kerajaan disahkan',
     'Photos are checked privately before they become visible. Explicit content is not permitted.':
         'Foto disemak secara tertutup sebelum ia kelihatan. Kandungan eksplisit tidak dibenarkan.',
     'Plans are shown in your local currency':
@@ -1680,6 +1694,8 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Photo access could not be updated.': 'Fotoğraf erişimi güncellenemedi.',
     'Photo requests could not be loaded.': 'Fotoğraf istekleri yüklenemedi.',
     'Photo verified': 'Fotoğraf doğrulandı',
+    'ID verified': 'Kimlik doğrulandı',
+    'Government ID verified': 'Resmî kimlik doğrulandı',
     'Photos are checked privately before they become visible. Explicit content is not permitted.':
         'Fotoğraflar görünür hale gelmeden önce özel olarak kontrol edilir. Açık içeriğe izin verilmez.',
     'Plans are shown in your local currency':
@@ -1905,6 +1921,8 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Photo requests could not be loaded.':
         'تصویر کی درخواستیں لوڈ نہیں ہو سکیں۔',
     'Photo verified': 'تصویر کی تصدیق ہو گئی۔',
+    'ID verified': 'شناخت کی تصدیق ہو گئی',
+    'Government ID verified': 'سرکاری شناخت کی تصدیق ہو گئی',
     'Photos are checked privately before they become visible. Explicit content is not permitted.':
         'تصاویر نظر آنے سے پہلے ان کی نجی طور پر جانچ پڑتال کی جاتی ہے۔ واضح مواد کی اجازت نہیں ہے۔',
     'Plans are shown in your local currency':
