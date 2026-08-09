@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select extensions.plan(46);
+select extensions.plan(47);
 
 select extensions.ok(
   not has_table_privilege('authenticated', 'public.users', 'INSERT,UPDATE,DELETE'),
@@ -76,6 +76,21 @@ select extensions.ok(
   to_regclass('public.discovery_pool') is null
   and to_regclass('public.recommendations') is null,
   'superseded discovery storage is absent'
+);
+select extensions.ok(
+  to_regprocedure('public.directional_preference_score(uuid,uuid)') is not null
+  and not has_function_privilege(
+    'authenticated',
+    'public.directional_preference_score(uuid,uuid)',
+    'EXECUTE'
+  )
+  and position(
+    'public.directional_preference_score('
+    in pg_get_functiondef(
+      'public.get_discovery_feed(uuid,double precision,uuid,integer,jsonb)'::regprocedure
+    )
+  ) > 0,
+  'live discovery retains its private reciprocal-preference dependency'
 );
 select extensions.ok(
   to_regclass('public.user_devices') is null,
