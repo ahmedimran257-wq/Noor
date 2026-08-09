@@ -66,6 +66,13 @@ DECLARE
 BEGIN
   SELECT pg_get_functiondef(v_signature) INTO v_definition;
 
+  -- PostgreSQL emits function definitions with LF line endings. Normalize the
+  -- migration literals as well so deployments from Windows/CRLF work exactly
+  -- like Linux CI and the Supabase CLI.
+  v_definition := replace(v_definition, E'\r\n', E'\n');
+  v_anchor := replace(v_anchor, E'\r\n', E'\n');
+  v_replacement := replace(v_replacement, E'\r\n', E'\n');
+
   IF position('private.assert_discovery_filter_entitlement(' IN v_definition) > 0 THEN
     RETURN;
   END IF;

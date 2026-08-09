@@ -78,6 +78,11 @@ void main() {
     expect(migration, contains('get_discovery_feed'));
     expect(
       migration,
+      contains("replace(v_anchor, E'\\r\\n', E'\\n')"),
+      reason: 'The injection must work from Windows/CRLF worktrees.',
+    );
+    expect(
+      migration,
       contains('FROM PUBLIC, anon, authenticated'),
     );
   });
