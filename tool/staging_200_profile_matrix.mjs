@@ -183,13 +183,25 @@ function chunks(items, size) {
   return result;
 }
 
-async function insertRows(table, rows, { returning = false } = {}) {
+async function insertRows(
+  table,
+  rows,
+  { returning = false, onConflict } = {},
+) {
   const inserted = [];
   for (const batch of chunks(rows, 40)) {
-    const data = await request(`/rest/v1/${table}`, {
+    const path = onConflict
+      ? `/rest/v1/${table}?on_conflict=${encodeURIComponent(onConflict)}`
+      : `/rest/v1/${table}`;
+    const data = await request(path, {
       apiKey: service,
       method: "POST",
-      prefer: returning ? "return=representation" : "return=minimal",
+      prefer: [
+        onConflict ? "resolution=merge-duplicates" : null,
+        returning ? "return=representation" : "return=minimal",
+      ]
+        .filter(Boolean)
+        .join(","),
       body: batch,
     });
     if (returning && Array.isArray(data)) inserted.push(...data);
@@ -496,6 +508,7 @@ try {
       preferred_relocation: "no_preference",
       preferred_living_expectation: "no_preference",
     })),
+    { onConflict: "profile_id" },
   );
 
   const photoRows = members.map((member) => ({
