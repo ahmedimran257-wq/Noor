@@ -28,6 +28,7 @@ jobs:
           STAGING_REPORT_PATH: build/staging-200-profile-report.json
         run: node tool/staging_200_profile_matrix.mjs
       - name: Verify matching, chat, Premium, ending, reporting, blocking and rematching
+        if: always()
         env:
           STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
           STAGING_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
