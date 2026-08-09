@@ -1586,5 +1586,11 @@
   "ui_hoursShort": "{count}h",
   "@ui_hoursShort": {"placeholders":{"count":{"type":"int"}}},
   "ui_daysShort": "{count}d",
-  "@ui_daysShort": {"placeholders":{"count":{"type":"int"}}}
+  "@ui_daysShort": {"placeholders":{"count":{"type":"int"}}},
+  "discovery_filters_count": "عوامل التصفية ({count})",
+  "@discovery_filters_count": {"placeholders":{"count":{"type":"int"}}},
+  "discovery_previous_match": "تمت المطابقة سابقًا في {date}",
+  "@discovery_previous_match": {"placeholders":{"date":{"type":"String"}}},
+  "discovery_rematch_days": "إعادة المطابقة متاحة خلال {count} أيام",
+  "@discovery_rematch_days": {"placeholders":{"count":{"type":"int"}}}
 }

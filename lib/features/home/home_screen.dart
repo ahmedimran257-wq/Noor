@@ -12,6 +12,7 @@ import '../../core/cubits/discovery/discovery_feed_cubit.dart';
 import '../../core/cubits/interests/interests_cubit.dart';
 import '../../core/cubits/interests/interests_state.dart';
 import '../../core/router/app_router.dart';
+import '../../core/services/connectivity_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/theme/app_typography.dart';
@@ -148,6 +149,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           bottom: false,
           child: Column(
             children: [
+              const _ConnectivityStatusBanner(),
               BlocBuilder<AccountStandingCubit, AccountStandingState>(
                 buildWhen: (previous, current) =>
                     previous.kind != current.kind ||
@@ -191,6 +193,68 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ),
         resizeToAvoidBottomInset: false,
       ),
+    );
+  }
+}
+
+class _ConnectivityStatusBanner extends StatelessWidget {
+  const _ConnectivityStatusBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    if (!ConnectivityService.isInitialized) {
+      return const SizedBox.shrink();
+    }
+    final connectivity = ConnectivityService.instance;
+    return StreamBuilder<bool>(
+      stream: connectivity.connectivityStream,
+      initialData: connectivity.isOnline,
+      builder: (context, snapshot) {
+        final disconnected = snapshot.data == false;
+        final offline = disconnected && !connectivity.hasNetworkInterface;
+        final message = offline
+            ? 'No internet connection. Saved content remains available and reconnection is automatic.'
+            : 'Silarah is temporarily unavailable. Saved content remains available and retry is automatic.';
+        return AnimatedSwitcher(
+          duration: AppDimensions.durationTransition,
+          child: disconnected
+              ? Semantics(
+                  key: const ValueKey('offline-banner'),
+                  liveRegion: true,
+                  container: true,
+                  label: context.uiCopy(message),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppDimensions.space16,
+                      vertical: AppDimensions.space8,
+                    ),
+                    color: AppColors.errorRed.withValues(alpha: .12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.cloud_off_rounded,
+                          size: AppDimensions.iconSizeSmall,
+                          color: AppColors.softCoral,
+                        ),
+                        const SizedBox(width: AppDimensions.space8),
+                        Flexible(
+                          child: UiText(
+                            message,
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.softCoral,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : const SizedBox.shrink(key: ValueKey('online-banner')),
+        );
+      },
     );
   }
 }

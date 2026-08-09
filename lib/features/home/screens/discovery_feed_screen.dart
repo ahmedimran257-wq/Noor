@@ -28,6 +28,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/cards/silarah_profile_card.dart';
+import '../../../core/widgets/buttons/silarah_pressable.dart';
 import '../../../core/widgets/loaders/silarah_shimmer.dart';
 import '../../../core/widgets/silarah_empty_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -367,8 +368,9 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
 
     if (feedState.status == FeedStatus.error) {
       return _DiscoveryError(
+        kind: feedState.failureKind ?? DiscoveryFailureKind.unavailable,
         message: feedState.errorMessage ??
-            'Unable to load profiles. Please try again.',
+            'Profiles are temporarily unavailable. Please try again.',
         onRetry: () =>
             context.read<DiscoveryFeedCubit>().loadInitial(force: true),
       );
@@ -416,7 +418,8 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
                     photoCount: p.photoCount,
                     isPhotoPrivate: p.isPhotoPrivate,
                     isVerified: p.isVerified,
-                    lastActiveLabel: fp.lastActiveLabel,
+                    lastActiveLabel:
+                        _localizedLastActive(context, fp.lastActiveAt),
                     isFocused: true, // Scale handled externally now
                     cardScale: 1,
                     isBookmarked: _bookmarked.contains(p.id),
@@ -424,7 +427,11 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
                     isInterestActionEnabled: action.onTap != null,
                     previousMatchLabel: p.previousMatchAt == null
                         ? null
-                        : 'Previously matched on ${MaterialLocalizations.of(context).formatMediumDate(p.previousMatchAt!.toLocal())}',
+                        : AppLocalizations.of(context).discovery_previous_match(
+                            MaterialLocalizations.of(context).formatMediumDate(
+                              p.previousMatchAt!.toLocal(),
+                            ),
+                          ),
                     onTap: () => _openProfile(index, fp),
                     onSendInterest: action.onTap,
                     onBookmark: () => _handleBookmark(index, fp),
@@ -461,8 +468,31 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
               backgroundColor: AppColors.transparent,
             ),
           ),
+        if (feedState.failureKind != null)
+          Positioned(
+            top: AppDimensions.space8,
+            left: AppDimensions.space24,
+            right: AppDimensions.space24,
+            child: _DiscoveryConnectionNotice(
+              kind: feedState.failureKind!,
+              message: feedState.errorMessage ?? '',
+              onRetry: () =>
+                  context.read<DiscoveryFeedCubit>().loadInitial(force: true),
+            ),
+          ),
       ],
     );
+  }
+
+  String _localizedLastActive(BuildContext context, DateTime? lastActiveAt) {
+    if (lastActiveAt == null) return '';
+    final difference = DateTime.now().difference(lastActiveAt);
+    if (difference.inMinutes < 5) return context.uiCopy('Online now');
+    if (difference.inMinutes < 60) {
+      return context.uiMinutesAgo(difference.inMinutes);
+    }
+    if (difference.inHours < 24) return context.uiHoursAgo(difference.inHours);
+    return context.uiDaysAgo(difference.inDays);
   }
 
   _DiscoveryProfileAction _profileAction(
@@ -471,6 +501,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
     InterestsState interests,
     bool canMessage,
   ) {
+    final l10n = AppLocalizations.of(context);
     if (_interestWritesInFlight.contains(profile.profile.id)) {
       return const _DiscoveryProfileAction(label: 'Sending...');
     }
@@ -497,8 +528,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
         final cooldownDays = profile.profile.rematchCooldownDaysRemaining;
         if (cooldownDays != null) {
           return _DiscoveryProfileAction(
-            label:
-                'Rematch available in $cooldownDays day${cooldownDays == 1 ? '' : 's'}',
+            label: l10n.discovery_rematch_days(cooldownDays),
           );
         }
         return _DiscoveryProfileAction(
@@ -544,33 +574,99 @@ class _DiscoveryProfileAction {
 }
 
 class _DiscoveryError extends StatelessWidget {
-  const _DiscoveryError({required this.message, required this.onRetry});
+  const _DiscoveryError({
+    required this.kind,
+    required this.message,
+    required this.onRetry,
+  });
 
+  final DiscoveryFailureKind kind;
   final String message;
   final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
-    final title = _titleFor(message);
+    final title = switch (kind) {
+      DiscoveryFailureKind.offline => "You're offline",
+      DiscoveryFailureKind.unavailable => 'Profiles unavailable',
+      DiscoveryFailureKind.profileNotReady => 'Profile not live yet',
+      DiscoveryFailureKind.authenticationRequired => 'Sign in required',
+    };
     return SilarahEmptyState(
       visual: SilarahEmptyVisual.connection,
       title: title,
       subtitle: message,
-      ctaLabel: 'Try again',
+      ctaLabel: kind == DiscoveryFailureKind.offline
+          ? 'Check connection'
+          : 'Try again',
       onCta: onRetry,
     );
   }
+}
 
-  String _titleFor(String message) {
-    final lower = message.toLowerCase();
-    if (lower.contains('approved') ||
-        lower.contains('visible') ||
-        lower.contains('complete your profile') ||
-        lower.contains('approved profile photo')) {
-      return 'Profile not live yet';
-    }
-    if (lower.contains('sign in')) return 'Sign in required';
-    return 'Connection paused';
+class _DiscoveryConnectionNotice extends StatelessWidget {
+  const _DiscoveryConnectionNotice({
+    required this.kind,
+    required this.message,
+    required this.onRetry,
+  });
+
+  final DiscoveryFailureKind kind;
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final offline = kind == DiscoveryFailureKind.offline;
+    return Semantics(
+      liveRegion: true,
+      button: true,
+      label: context.uiCopy(message),
+      child: SilarahPressable(
+        onTap: onRetry,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppColors.surfaceElevated.withValues(alpha: .96),
+            borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+            border: Border.all(
+              color: offline ? AppColors.softCoral : AppColors.goldBorder,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDimensions.space12,
+              vertical: AppDimensions.space8,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  offline
+                      ? Icons.cloud_off_rounded
+                      : Icons.sync_problem_rounded,
+                  size: AppDimensions.iconSizeSmall,
+                  color:
+                      offline ? AppColors.softCoral : AppColors.champagneGold,
+                ),
+                const SizedBox(width: AppDimensions.space8),
+                Expanded(
+                  child: UiText(
+                    message,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.caption,
+                  ),
+                ),
+                Icon(
+                  Icons.refresh_rounded,
+                  size: AppDimensions.iconSizeSmall,
+                  color: AppColors.slateMist,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

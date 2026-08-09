@@ -12,6 +12,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/widgets.dart';
 import 'package:silarah/core/config/app_config.dart';
 
@@ -26,6 +27,8 @@ class ConnectivityService with WidgetsBindingObserver {
 
   /// Singleton instance — call [initialize] in main() before use.
   static ConnectivityService? _instance;
+  static bool get isInitialized => _instance != null;
+
   static ConnectivityService get instance {
     assert(_instance != null,
         'ConnectivityService.initialize() must be called first');
@@ -43,12 +46,15 @@ class ConnectivityService with WidgetsBindingObserver {
   final Duration checkInterval;
 
   final _controller = StreamController<bool>.broadcast();
+  final Connectivity _connectivity = Connectivity();
+  StreamSubscription<List<ConnectivityResult>>? _interfaceSubscription;
   Timer? _timer;
   Future<bool>? _checkInFlight;
   bool _lastKnownState = true;
   BackendConnectionQuality _lastQuality = BackendConnectionQuality.unknown;
   Duration? _lastLatency;
   bool _isForeground = true;
+  bool _hasNetworkInterface = true;
   DateTime? _lastCheckedAt;
 
   static const _offlineRetryInterval = Duration(seconds: 30);
@@ -59,6 +65,7 @@ class ConnectivityService with WidgetsBindingObserver {
 
   /// Whether the device was online at last check.
   bool get isOnline => _lastKnownState;
+  bool get hasNetworkInterface => _hasNetworkInterface;
 
   /// Quality is based on the same authenticated-backend health request used
   /// for reachability. It adds no network calls and avoids platform-specific
@@ -82,6 +89,13 @@ class ConnectivityService with WidgetsBindingObserver {
     HttpClient? client;
     final stopwatch = Stopwatch()..start();
     try {
+      await _refreshNetworkInterface();
+      if (!_hasNetworkInterface) {
+        _lastLatency = null;
+        _lastQuality = BackendConnectionQuality.offline;
+        _updateState(false);
+        return false;
+      }
       final backend = Uri.tryParse(AppConfig.supabaseUrl);
       if (backend == null ||
           backend.scheme != 'https' ||
@@ -152,12 +166,41 @@ class ConnectivityService with WidgetsBindingObserver {
       return;
     }
     WidgetsBinding.instance.addObserver(this);
+    _interfaceSubscription =
+        _connectivity.onConnectivityChanged.listen(_handleInterfaceChange);
     unawaited(checkNow());
+  }
+
+  Future<void> _refreshNetworkInterface() async {
+    if (Platform.environment.containsKey('FLUTTER_TEST')) return;
+    try {
+      _handleInterfaceChange(await _connectivity.checkConnectivity());
+    } catch (error) {
+      debugPrint('ConnectivityService: interface check unavailable: $error');
+    }
+  }
+
+  void _handleInterfaceChange(List<ConnectivityResult> results) {
+    final available =
+        results.any((result) => result != ConnectivityResult.none);
+    final changed = available != _hasNetworkInterface;
+    _hasNetworkInterface = available;
+    if (!available) {
+      _timer?.cancel();
+      _timer = null;
+      _lastLatency = null;
+      _lastQuality = BackendConnectionQuality.offline;
+      _updateState(false);
+      return;
+    }
+    if (changed && _isForeground) unawaited(checkNow());
   }
 
   void _scheduleNextCheck() {
     _timer?.cancel();
-    if (!_isForeground || _controller.isClosed) return;
+    if (!_isForeground || _controller.isClosed || !_hasNetworkInterface) {
+      return;
+    }
     // Healthy connections need only a low-frequency backend health check.
     // Offline devices retry sooner so the startup recovery screen remains
     // responsive without continuously billing the backend while online.
@@ -196,6 +239,7 @@ class ConnectivityService with WidgetsBindingObserver {
   /// Stop polling and close the stream.
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    unawaited(_interfaceSubscription?.cancel());
     _timer?.cancel();
     _controller.close();
     if (identical(_instance, this)) _instance = null;

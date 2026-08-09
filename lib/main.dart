@@ -519,7 +519,22 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
   }
 
   void _handleConnectivityChange(bool online) {
-    if (!mounted || _startupNetworkState == _StartupNetworkState.ready) {
+    if (!mounted) return;
+    if (_startupNetworkState == _StartupNetworkState.ready) {
+      if (!online) {
+        if (_connectivityService?.hasNetworkInterface == false) {
+          _discoveryFeedCubit.markOffline();
+          _accountStandingCubit.markOffline();
+        }
+        return;
+      }
+      if (SupabaseService.currentUserId != null) {
+        unawaited(_accountStandingCubit.refresh());
+        unawaited(_notificationsCubit.loadNotifications());
+        unawaited(_discoveryFeedCubit.refreshIfChanged(forceCheck: true));
+        unawaited(_interestsCubit.refreshIfChanged(forceCheck: true));
+        unawaited(_chatCubit.refreshIfChanged(forceCheck: true));
+      }
       return;
     }
     if (online) {

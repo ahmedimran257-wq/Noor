@@ -1586,5 +1586,11 @@
   "ui_hoursShort": "{count}ঘণ্টা",
   "@ui_hoursShort": {"placeholders":{"count":{"type":"int"}}},
   "ui_daysShort": "{count}দিন",
-  "@ui_daysShort": {"placeholders":{"count":{"type":"int"}}}
+  "@ui_daysShort": {"placeholders":{"count":{"type":"int"}}},
+  "discovery_filters_count": "ফিল্টার ({count})",
+  "@discovery_filters_count": {"placeholders":{"count":{"type":"int"}}},
+  "discovery_previous_match": "আগে {date} তারিখে ম্যাচ হয়েছিল",
+  "@discovery_previous_match": {"placeholders":{"date":{"type":"String"}}},
+  "discovery_rematch_days": "{count} দিনের মধ্যে আবার ম্যাচ করা যাবে",
+  "@discovery_rematch_days": {"placeholders":{"count":{"type":"int"}}}
 }

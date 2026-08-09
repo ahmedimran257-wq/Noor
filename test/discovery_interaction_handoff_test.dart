@@ -144,7 +144,7 @@ void main() {
     expect(screen, contains("label: 'Review Interest'"));
     expect(
       screen,
-      contains("'Rematch available in \$cooldownDays day"),
+      contains('l10n.discovery_rematch_days(cooldownDays)'),
     );
     expect(home, contains('case 0:'));
     expect(home, contains('refreshIfChanged()'));

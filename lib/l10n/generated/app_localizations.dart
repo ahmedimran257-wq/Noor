@@ -5021,6 +5021,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count}d'**
   String ui_daysShort(int count);
+
+  /// No description provided for @discovery_filters_count.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters ({count})'**
+  String discovery_filters_count(int count);
+
+  /// No description provided for @discovery_previous_match.
+  ///
+  /// In en, this message translates to:
+  /// **'Previously matched on {date}'**
+  String discovery_previous_match(String date);
+
+  /// No description provided for @discovery_rematch_days.
+  ///
+  /// In en, this message translates to:
+  /// **'Rematch available in {count} days'**
+  String discovery_rematch_days(int count);
 }
 
 class _AppLocalizationsDelegate

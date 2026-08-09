@@ -2749,4 +2749,19 @@ class AppLocalizationsHi extends AppLocalizations {
   String ui_daysShort(int count) {
     return '${count}d';
   }
+
+  @override
+  String discovery_filters_count(int count) {
+    return 'फ़िल्टर ($count)';
+  }
+
+  @override
+  String discovery_previous_match(String date) {
+    return 'पहले $date को मैच हुआ था';
+  }
+
+  @override
+  String discovery_rematch_days(int count) {
+    return '$count दिनों में दोबारा मैच उपलब्ध होगा';
+  }
 }

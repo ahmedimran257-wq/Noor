@@ -16,6 +16,7 @@ import '../../services/supabase_service.dart';
 import '../../services/profile_write_service.dart';
 import '../../services/location_service.dart';
 import '../../services/profile_photo_service.dart';
+import '../../services/connectivity_service.dart';
 import '../../models/onboarding_data.dart';
 import '../../utils/silarah_compute.dart';
 import 'discovery_feed_state.dart';
@@ -66,7 +67,11 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   Future<void> loadInitial({bool force = false}) async {
     if (!force && state.status != FeedStatus.initial) return;
     final requestVersion = _nextRequestVersion();
-    emit(state.copyWith(status: FeedStatus.loading));
+    emit(state.copyWith(
+      status:
+          state.profiles.isEmpty ? FeedStatus.loading : FeedStatus.refreshing,
+      clearFailure: true,
+    ));
 
     // Local filter restoration and the viewer projection are independent.
     // Starting them together avoids putting device I/O behind a database read.
@@ -145,10 +150,11 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
           activeFilter: filter,
           profilesViewedToday: quota.viewsToday,
           dailyLimit: quota.dailyLimit,
+          clearFailure: true,
         ));
       }
     } catch (e) {
-      if (_isCurrentRequest(requestVersion)) _emitDiscoveryError(e);
+      if (_isCurrentRequest(requestVersion)) await _emitDiscoveryError(e);
     }
   }
 
@@ -176,7 +182,14 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     _lastRevisionCheckAt = DateTime.now();
     final serverToken = await _readDiscoveryRevisionToken(state.activeFilter);
     if (serverToken == null || isClosed) return;
-    if (_loadedRevisionToken == serverToken) return;
+    if (_loadedRevisionToken == serverToken) {
+      if (state.status == FeedStatus.error) {
+        await loadInitial(force: true);
+      } else if (state.failureKind != null) {
+        emit(state.copyWith(clearFailure: true));
+      }
+      return;
+    }
 
     final loadedToken = _loadedRevisionToken;
     if (loadedToken != null &&
@@ -214,11 +227,12 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
           status: FeedStatus.loaded,
           profiles: [...baseProfiles, ...batch],
           hasMore: profiles.length == _batchSize,
+          clearFailure: true,
         ));
       }
     } catch (e) {
       if (_isCurrentRequest(requestVersion)) {
-        _emitDiscoveryError(e, keepProfiles: true);
+        await _emitDiscoveryError(e, keepProfiles: true);
       }
     }
   }
@@ -238,6 +252,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   /// Apply new filters — resets the feed and reloads from cursor 0.
   Future<void> applyFilter(DiscoveryFilter filter) async {
     final requestVersion = _nextRequestVersion();
+    final previousFilter = state.activeFilter;
     try {
       final effectiveFilter = await _enforceLocationFilterAccess(filter);
       if (!_isCurrentRequest(requestVersion)) return;
@@ -245,6 +260,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         status:
             state.profiles.isEmpty ? FeedStatus.loading : FeedStatus.refreshing,
         activeFilter: effectiveFilter,
+        clearFailure: true,
       ));
 
       // Persist only the server-authorized filter. This prevents an expired
@@ -271,10 +287,14 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
           status: batch.isEmpty ? FeedStatus.empty : FeedStatus.loaded,
           profiles: batch,
           hasMore: profiles.length == _batchSize,
+          clearFailure: true,
         ));
       }
     } catch (e) {
-      if (_isCurrentRequest(requestVersion)) _emitDiscoveryError(e);
+      if (_isCurrentRequest(requestVersion)) {
+        await _saveFilterToPrefs(previousFilter);
+        await _emitDiscoveryError(e, fallbackFilter: previousFilter);
+      }
     }
   }
 
@@ -839,6 +859,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       emit(state.copyWith(
         status: updated.isEmpty ? FeedStatus.empty : FeedStatus.loaded,
         profiles: updated,
+        clearFailure: true,
       ));
     } catch (error) {
       // Leave both the existing cards and old token intact so the next check
@@ -854,15 +875,68 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     return value == null ? null : DateTime.tryParse(value.toString());
   }
 
-  void _emitDiscoveryError(Object error, {bool keepProfiles = false}) {
+  Future<void> _emitDiscoveryError(
+    Object error, {
+    bool keepProfiles = false,
+    DiscoveryFilter? fallbackFilter,
+  }) async {
     if (isClosed) return;
+    final stateError = error is StateError ? error.message : null;
+    final normalized = stateError?.toLowerCase() ?? '';
+    final profileNotReady = normalized.contains('complete your profile') ||
+        normalized.contains('profile must be visible') ||
+        normalized.contains('approved profile photo') ||
+        normalized.contains('primary photo must pass');
+    final authenticationRequired = normalized.contains('sign in') ||
+        normalized.contains('authenticated session');
+
+    var isOffline = false;
+    if (!profileNotReady &&
+        !authenticationRequired &&
+        ConnectivityService.isInitialized) {
+      await ConnectivityService.instance.checkNow();
+      isOffline = !ConnectivityService.instance.hasNetworkInterface;
+      if (isClosed) return;
+    }
+
+    final kind = profileNotReady
+        ? DiscoveryFailureKind.profileNotReady
+        : authenticationRequired
+            ? DiscoveryFailureKind.authenticationRequired
+            : isOffline
+                ? DiscoveryFailureKind.offline
+                : DiscoveryFailureKind.unavailable;
+    final message = switch (kind) {
+      DiscoveryFailureKind.offline =>
+        'No internet connection. Saved profiles remain available and reconnection is automatic.',
+      DiscoveryFailureKind.unavailable =>
+        'Profiles are temporarily unavailable. Please try again.',
+      DiscoveryFailureKind.profileNotReady =>
+        stateError ?? 'Unable to load profiles. Please try again.',
+      DiscoveryFailureKind.authenticationRequired =>
+        'Please sign in to view discovery profiles.',
+    };
+    final preserveProfiles = keepProfiles || state.profiles.isNotEmpty;
     emit(state.copyWith(
-      status: FeedStatus.error,
-      profiles: keepProfiles ? state.profiles : const [],
-      hasMore: false,
-      errorMessage: error is StateError
-          ? error.message
-          : 'Unable to load profiles. Please try again.',
+      status: preserveProfiles ? FeedStatus.loaded : FeedStatus.error,
+      profiles: preserveProfiles ? state.profiles : const [],
+      hasMore: preserveProfiles ? state.hasMore : false,
+      activeFilter: fallbackFilter,
+      errorMessage: message,
+      failureKind: kind,
+    ));
+  }
+
+  /// Keeps already loaded cards usable while the device is offline. A later
+  /// connectivity transition triggers a normal revision-aware refresh.
+  void markOffline() {
+    if (isClosed) return;
+    final preserveProfiles = state.profiles.isNotEmpty;
+    emit(state.copyWith(
+      status: preserveProfiles ? FeedStatus.loaded : FeedStatus.error,
+      errorMessage:
+          'No internet connection. Saved profiles remain available and reconnection is automatic.',
+      failureKind: DiscoveryFailureKind.offline,
     ));
   }
 

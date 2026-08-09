@@ -2743,4 +2743,19 @@ class AppLocalizationsTr extends AppLocalizations {
   String ui_daysShort(int count) {
     return '${count}d';
   }
+
+  @override
+  String discovery_filters_count(int count) {
+    return 'Filtreler ($count)';
+  }
+
+  @override
+  String discovery_previous_match(String date) {
+    return 'Daha önce $date tarihinde eşleştiniz';
+  }
+
+  @override
+  String discovery_rematch_days(int count) {
+    return 'Yeniden eşleşme $count gün içinde kullanılabilir';
+  }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:silarah/l10n/generated/app_localizations.dart';
 import 'package:silarah/l10n/generated/app_localizations_en.dart';
+import 'package:silarah/l10n/ui_copy_supplement.dart';
 
 final AppLocalizations _englishUiCopy = AppLocalizationsEn();
 
@@ -13,8 +14,15 @@ class UiCopy {
 
   static String localize(BuildContext context, String source) {
     final languageCode = Localizations.localeOf(context).languageCode;
-    return _translations[languageCode]?[source] ?? source;
+    return supplementalUiCopy[languageCode]?[source] ??
+        _translations[languageCode]?[source] ??
+        source;
   }
+
+  static bool hasTranslation(String languageCode, String source) =>
+      languageCode == 'en' ||
+      supplementalUiCopy[languageCode]?.containsKey(source) == true ||
+      _translations[languageCode]?.containsKey(source) == true;
 
   static const Map<String, Map<String, String>> _translations = {
     'ar': {

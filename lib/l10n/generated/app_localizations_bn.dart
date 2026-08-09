@@ -2745,4 +2745,19 @@ class AppLocalizationsBn extends AppLocalizations {
   String ui_daysShort(int count) {
     return '$countদিন';
   }
+
+  @override
+  String discovery_filters_count(int count) {
+    return 'ফিল্টার ($count)';
+  }
+
+  @override
+  String discovery_previous_match(String date) {
+    return 'আগে $date তারিখে ম্যাচ হয়েছিল';
+  }
+
+  @override
+  String discovery_rematch_days(int count) {
+    return '$count দিনের মধ্যে আবার ম্যাচ করা যাবে';
+  }
 }

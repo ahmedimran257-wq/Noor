@@ -18,6 +18,7 @@ import '../../../core/models/discovery_profile.dart';
 import '../../../core/models/onboarding_data.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/services/bookmark_service.dart';
+import '../../../core/services/connectivity_service.dart';
 import '../../../core/services/authorized_profile_service.dart';
 import '../../../core/services/kyc_verification_service.dart';
 import '../../../core/theme/app_colors.dart';
@@ -312,10 +313,19 @@ class _MyProfileScreenState extends State<MyProfileScreen>
       photoSlots = await ProfilePhotoService.instance.getMyPhotoSlots();
     } catch (_) {
       if (!mounted) return;
+      var offline = false;
+      if (ConnectivityService.isInitialized) {
+        await ConnectivityService.instance.checkNow();
+        offline = !ConnectivityService.instance.hasNetworkInterface;
+      }
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: UiText(context
-              .uiCopy('Your photo gallery could not be opened. Try again.')),
+          content: UiText(
+            offline
+                ? 'No internet connection. Connect to open your photo gallery.'
+                : 'Your photo gallery could not be opened. Try again.',
+          ),
         ),
       );
       return;

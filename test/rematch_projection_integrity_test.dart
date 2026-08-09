@@ -40,7 +40,7 @@ void main() {
 
     expect(discovery, contains('Timer? _rematchCountdownTimer'));
     expect(discovery, contains("'Send Interest Again'"));
-    expect(discovery, contains("'Rematch available in \$cooldownDays day"));
+    expect(discovery, contains('l10n.discovery_rematch_days(cooldownDays)'));
     expect(detail, contains("'Send interest again'"));
     expect(discovery, contains("'Unlock Chat'"));
   });

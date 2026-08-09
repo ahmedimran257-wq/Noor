@@ -2738,4 +2738,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String ui_daysShort(int count) {
     return '${count}d';
   }
+
+  @override
+  String discovery_filters_count(int count) {
+    return 'Filters ($count)';
+  }
+
+  @override
+  String discovery_previous_match(String date) {
+    return 'Previously matched on $date';
+  }
+
+  @override
+  String discovery_rematch_days(int count) {
+    return 'Rematch available in $count days';
+  }
 }

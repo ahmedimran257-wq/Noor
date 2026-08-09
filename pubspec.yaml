@@ -1,7 +1,7 @@
 name: silarah
 description: "Silarah - Premium Muslim Matrimony App"
 publish_to: 'none'
-version: 1.0.0+12007
+version: 1.0.0+12008
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -49,6 +49,7 @@ dependencies:
 
   # Networking
   http: ^1.2.2                    # Photon + Wikidata requests
+  connectivity_plus: ^6.1.5      # Local link-state events; no metered backend polling
 
   # Media and motion
   flutter_animate: ^4.5.2         # City search dropdown animations

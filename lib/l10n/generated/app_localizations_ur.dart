@@ -2743,4 +2743,19 @@ class AppLocalizationsUr extends AppLocalizations {
   String ui_daysShort(int count) {
     return '${count}d';
   }
+
+  @override
+  String discovery_filters_count(int count) {
+    return 'فلٹرز ($count)';
+  }
+
+  @override
+  String discovery_previous_match(String date) {
+    return 'پہلے $date کو میچ ہوا تھا';
+  }
+
+  @override
+  String discovery_rematch_days(int count) {
+    return '$count دنوں میں دوبارہ میچ دستیاب ہوگا';
+  }
 }

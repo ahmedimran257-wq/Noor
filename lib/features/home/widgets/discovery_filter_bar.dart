@@ -17,6 +17,7 @@ import '../../../core/cubits/discovery/discovery_feed_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import 'discovery_filter_sheet.dart';
 
 class DiscoveryFilterBar extends StatelessWidget {
@@ -28,6 +29,7 @@ class DiscoveryFilterBar extends StatelessWidget {
         DiscoveryFilter>(
       selector: (state) => state.activeFilter,
       builder: (context, f) {
+        final l10n = AppLocalizations.of(context);
         return SizedBox(
           height: 52,
           child: ListView(
@@ -39,8 +41,8 @@ class DiscoveryFilterBar extends StatelessWidget {
                 icon: Icons.tune_rounded,
                 accentSlot: 0,
                 label: f.activeCount > 0
-                    ? 'Filters (${f.activeCount})'
-                    : 'All Filters',
+                    ? l10n.discovery_filters_count(f.activeCount)
+                    : context.uiCopy('All Filters'),
                 isActive: f.isActive,
                 onTap: () => _showAllFilters(context, f),
               ),

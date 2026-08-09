@@ -2709,4 +2709,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String ui_daysShort(int count) {
     return '${count}d';
   }
+
+  @override
+  String discovery_filters_count(int count) {
+    return 'عوامل التصفية ($count)';
+  }
+
+  @override
+  String discovery_previous_match(String date) {
+    return 'تمت المطابقة سابقًا في $date';
+  }
+
+  @override
+  String discovery_rematch_days(int count) {
+    return 'إعادة المطابقة متاحة خلال $count أيام';
+  }
 }

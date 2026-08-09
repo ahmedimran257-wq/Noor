@@ -1586,5 +1586,11 @@
   "ui_hoursShort": "{count}h",
   "@ui_hoursShort": {"placeholders":{"count":{"type":"int"}}},
   "ui_daysShort": "{count}d",
-  "@ui_daysShort": {"placeholders":{"count":{"type":"int"}}}
+  "@ui_daysShort": {"placeholders":{"count":{"type":"int"}}},
+  "discovery_filters_count": "فلٹرز ({count})",
+  "@discovery_filters_count": {"placeholders":{"count":{"type":"int"}}},
+  "discovery_previous_match": "پہلے {date} کو میچ ہوا تھا",
+  "@discovery_previous_match": {"placeholders":{"date":{"type":"String"}}},
+  "discovery_rematch_days": "{count} دنوں میں دوبارہ میچ دستیاب ہوگا",
+  "@discovery_rematch_days": {"placeholders":{"count":{"type":"int"}}}
 }

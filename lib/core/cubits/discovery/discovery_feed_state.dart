@@ -15,6 +15,13 @@ enum FeedStatus {
   error,
 }
 
+enum DiscoveryFailureKind {
+  offline,
+  unavailable,
+  profileNotReady,
+  authenticationRequired,
+}
+
 class FeedProfile extends Equatable {
   const FeedProfile({
     required this.profile,
@@ -47,6 +54,7 @@ class DiscoveryFeedState extends Equatable {
     this.status = FeedStatus.initial,
     this.profiles = const [],
     this.errorMessage,
+    this.failureKind,
     this.hasMore = true,
     this.profilesViewedToday = 0,
     this.dailyLimit = 15,
@@ -56,6 +64,7 @@ class DiscoveryFeedState extends Equatable {
   final FeedStatus status;
   final List<FeedProfile> profiles;
   final String? errorMessage;
+  final DiscoveryFailureKind? failureKind;
   final bool hasMore;
   final int profilesViewedToday;
   final int dailyLimit;
@@ -69,6 +78,8 @@ class DiscoveryFeedState extends Equatable {
     FeedStatus? status,
     List<FeedProfile>? profiles,
     String? errorMessage,
+    DiscoveryFailureKind? failureKind,
+    bool clearFailure = false,
     bool? hasMore,
     int? profilesViewedToday,
     int? dailyLimit,
@@ -77,7 +88,8 @@ class DiscoveryFeedState extends Equatable {
     return DiscoveryFeedState(
       status: status ?? this.status,
       profiles: profiles ?? this.profiles,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: clearFailure ? null : errorMessage ?? this.errorMessage,
+      failureKind: clearFailure ? null : failureKind ?? this.failureKind,
       hasMore: hasMore ?? this.hasMore,
       profilesViewedToday: profilesViewedToday ?? this.profilesViewedToday,
       dailyLimit: dailyLimit ?? this.dailyLimit,
@@ -90,6 +102,7 @@ class DiscoveryFeedState extends Equatable {
         status,
         profiles,
         errorMessage,
+        failureKind,
         hasMore,
         profilesViewedToday,
         dailyLimit,

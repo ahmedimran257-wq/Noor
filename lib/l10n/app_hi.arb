@@ -1586,5 +1586,11 @@
   "ui_hoursShort": "{count}ह",
   "@ui_hoursShort": {"placeholders":{"count":{"type":"int"}}},
   "ui_daysShort": "{count}d",
-  "@ui_daysShort": {"placeholders":{"count":{"type":"int"}}}
+  "@ui_daysShort": {"placeholders":{"count":{"type":"int"}}},
+  "discovery_filters_count": "फ़िल्टर ({count})",
+  "@discovery_filters_count": {"placeholders":{"count":{"type":"int"}}},
+  "discovery_previous_match": "पहले {date} को मैच हुआ था",
+  "@discovery_previous_match": {"placeholders":{"date":{"type":"String"}}},
+  "discovery_rematch_days": "{count} दिनों में दोबारा मैच उपलब्ध होगा",
+  "@discovery_rematch_days": {"placeholders":{"count":{"type":"int"}}}
 }

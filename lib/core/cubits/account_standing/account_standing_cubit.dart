@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../services/supabase_service.dart';
+import '../../services/connectivity_service.dart';
 import 'account_standing_state.dart';
 
 /// One authoritative, realtime account-standing source for the whole app.
@@ -92,9 +93,17 @@ class AccountStandingCubit extends Cubit<AccountStandingState> {
       ));
     } catch (_) {
       if (isClosed || version != _loadVersion || _userId != userId) return;
+      var offline = false;
+      if (ConnectivityService.isInitialized) {
+        await ConnectivityService.instance.checkNow();
+        offline = !ConnectivityService.instance.hasNetworkInterface;
+      }
+      if (isClosed || version != _loadVersion || _userId != userId) return;
       emit(state.copyWith(
         loading: false,
-        errorMessage: 'Account status could not be refreshed.',
+        errorMessage: offline
+            ? 'No internet connection. Showing your last known account status.'
+            : 'Account status could not be refreshed.',
       ));
     }
   }
@@ -137,6 +146,15 @@ class AccountStandingCubit extends Cubit<AccountStandingState> {
     _channel = null;
     if (channel != null) await channel.unsubscribe();
     if (!isClosed) emit(const AccountStandingState());
+  }
+
+  void markOffline() {
+    if (isClosed || _userId == null) return;
+    emit(state.copyWith(
+      loading: false,
+      errorMessage:
+          'No internet connection. Showing your last known account status.',
+    ));
   }
 
   @override

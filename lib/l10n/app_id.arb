@@ -1586,5 +1586,11 @@
   "ui_hoursShort": "{count}jam",
   "@ui_hoursShort": {"placeholders":{"count":{"type":"int"}}},
   "ui_daysShort": "{count}d",
-  "@ui_daysShort": {"placeholders":{"count":{"type":"int"}}}
+  "@ui_daysShort": {"placeholders":{"count":{"type":"int"}}},
+  "discovery_filters_count": "Filter ({count})",
+  "@discovery_filters_count": {"placeholders":{"count":{"type":"int"}}},
+  "discovery_previous_match": "Pernah cocok pada {date}",
+  "@discovery_previous_match": {"placeholders":{"date":{"type":"String"}}},
+  "discovery_rematch_days": "Pencocokan ulang tersedia dalam {count} hari",
+  "@discovery_rematch_days": {"placeholders":{"count":{"type":"int"}}}
 }
