@@ -2779,4 +2779,34 @@ class AppLocalizationsMs extends AppLocalizations {
   String discovery_rematch_days(int count) {
     return 'Padanan semula tersedia dalam $count hari';
   }
+
+  @override
+  String get settings_notify_compatibleProfiles =>
+      'Peringatan profil yang serasi';
+
+  @override
+  String get settings_notify_compatibleProfilesSub =>
+      'Apabila suapan Teroka yang kosong mempunyai hasil baharu';
+
+  @override
+  String get settings_notify_discoveryDigest => 'Ringkasan Teroka';
+
+  @override
+  String get settings_notify_digestHelp =>
+      'Ringkasan pilihan; peringatan hasil baharu selepas suapan kosong kekal segera.';
+
+  @override
+  String get settings_notify_digestOff => 'Tutup';
+
+  @override
+  String get settings_notify_digestDaily => 'Harian';
+
+  @override
+  String get settings_notify_digestWeekly => 'Mingguan';
+
+  @override
+  String get settings_quietHoursStart => 'Waktu tenang bermula';
+
+  @override
+  String get settings_quietHoursEnd => 'Waktu tenang berakhir';
 }

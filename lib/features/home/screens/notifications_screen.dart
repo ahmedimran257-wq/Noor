@@ -332,6 +332,8 @@ class _NotificationTile extends StatelessWidget {
         return Icons.rocket_launch_rounded;
       case 'profile_live':
         return Icons.verified_rounded;
+      case 'new_compatible_profiles':
+        return Icons.explore_rounded;
       case 'photo_access_request':
         return Icons.lock_person_outlined;
       case 'photo_access_granted':
@@ -364,6 +366,8 @@ class _NotificationTile extends StatelessWidget {
       case 'boost_ready':
         return AppColors.champagneGold;
       case 'profile_live':
+        return AppColors.verifiedTeal;
+      case 'new_compatible_profiles':
         return AppColors.verifiedTeal;
       case 'photo_access_request':
         return AppColors.champagneGold;

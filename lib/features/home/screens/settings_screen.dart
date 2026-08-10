@@ -224,6 +224,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               _Divider(),
               _ToggleTile(
+                icon: Icons.explore_outlined,
+                label: l10n.settings_notify_compatibleProfiles,
+                caption: l10n.settings_notify_compatibleProfilesSub,
+                value: prefs.newCompatibleProfiles,
+                onChanged: (v) => context
+                    .read<NotificationPrefsCubit>()
+                    .toggleNewCompatibleProfiles(v),
+              ),
+              _Divider(),
+              _NavTile(
+                icon: Icons.calendar_month_outlined,
+                label: l10n.settings_notify_discoveryDigest,
+                value: _digestFrequencyLabel(
+                  l10n,
+                  prefs.discoveryDigestFrequency,
+                ),
+                onTap: () => _showDiscoveryDigestSheet(context, prefs),
+              ),
+              _Divider(),
+              _ToggleTile(
                 icon: Icons.timer_outlined,
                 label: l10n.settings_notify_interestExpiring,
                 value: prefs.interestExpiring,
@@ -506,6 +526,69 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   static String _fmtHour(int h) => '${h.toString().padLeft(2, '0')}:00';
 
+  static String _digestFrequencyLabel(
+    AppLocalizations l10n,
+    DiscoveryDigestFrequency frequency,
+  ) =>
+      switch (frequency) {
+        DiscoveryDigestFrequency.off => l10n.settings_notify_digestOff,
+        DiscoveryDigestFrequency.daily => l10n.settings_notify_digestDaily,
+        DiscoveryDigestFrequency.weekly => l10n.settings_notify_digestWeekly,
+      };
+
+  Future<void> _showDiscoveryDigestSheet(
+    BuildContext context,
+    NotificationPrefsState prefs,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final selected = await showModalBottomSheet<DiscoveryDigestFrequency>(
+      context: context,
+      backgroundColor: AppColors.obsidianNight,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (sheetContext) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            UiText(
+              l10n.settings_notify_discoveryDigest,
+              style: AppTypography.screenTitle.copyWith(fontSize: 20),
+            ),
+            const SizedBox(height: 6),
+            UiText(
+              l10n.settings_notify_digestHelp,
+              style: AppTypography.caption,
+            ),
+            const SizedBox(height: 12),
+            for (final frequency in DiscoveryDigestFrequency.values)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: UiText(
+                  _digestFrequencyLabel(l10n, frequency),
+                  style: AppTypography.body,
+                ),
+                trailing: Icon(
+                  frequency == prefs.discoveryDigestFrequency
+                      ? Icons.radio_button_checked_rounded
+                      : Icons.radio_button_off_rounded,
+                  color: frequency == prefs.discoveryDigestFrequency
+                      ? AppColors.champagneGold
+                      : AppColors.slateMist,
+                ),
+                onTap: () => Navigator.of(sheetContext).pop(frequency),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (selected == null || !context.mounted) return;
+    context
+        .read<NotificationPrefsCubit>()
+        .setDiscoveryDigestFrequency(selected);
+  }
+
   Future<void> _changeQuietHours(
     BuildContext context,
     NotificationPrefsState prefs,
@@ -513,7 +596,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final start = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(hour: prefs.quietStartHour, minute: 0),
-      helpText: 'Quiet hours start',
+      helpText: AppLocalizations.of(context).settings_quietHoursStart,
       initialEntryMode: TimePickerEntryMode.dialOnly,
     );
     if (start == null || !context.mounted) return;
@@ -521,7 +604,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final end = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(hour: prefs.quietEndHour, minute: 0),
-      helpText: 'Quiet hours end',
+      helpText: AppLocalizations.of(context).settings_quietHoursEnd,
       initialEntryMode: TimePickerEntryMode.dialOnly,
     );
     if (end == null || !context.mounted) return;

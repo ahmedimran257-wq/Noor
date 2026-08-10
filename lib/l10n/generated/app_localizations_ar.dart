@@ -2724,4 +2724,34 @@ class AppLocalizationsAr extends AppLocalizations {
   String discovery_rematch_days(int count) {
     return 'إعادة المطابقة متاحة خلال $count أيام';
   }
+
+  @override
+  String get settings_notify_compatibleProfiles =>
+      'تنبيهات الملفات الشخصية المتوافقة';
+
+  @override
+  String get settings_notify_compatibleProfilesSub =>
+      'عندما تظهر نتائج جديدة في صفحة استكشاف كانت فارغة';
+
+  @override
+  String get settings_notify_discoveryDigest => 'ملخص الاستكشاف';
+
+  @override
+  String get settings_notify_digestHelp =>
+      'ملخصات اختيارية؛ تظل تنبيهات ظهور نتائج بعد فراغ الصفحة فورية.';
+
+  @override
+  String get settings_notify_digestOff => 'إيقاف';
+
+  @override
+  String get settings_notify_digestDaily => 'يومي';
+
+  @override
+  String get settings_notify_digestWeekly => 'أسبوعي';
+
+  @override
+  String get settings_quietHoursStart => 'بداية ساعات الهدوء';
+
+  @override
+  String get settings_quietHoursEnd => 'نهاية ساعات الهدوء';
 }

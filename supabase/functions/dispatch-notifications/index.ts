@@ -182,6 +182,25 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // Generate at most one bounded batch before checking out the durable push
+  // queue. Failure here is isolated: critical chat, safety, and account
+  // notifications must continue to dispatch even if availability work fails.
+  let availabilityResult: Record<string, unknown> | null = null;
+  if (!directPayload) {
+    const { data, error } = await supabase.rpc(
+      "process_discovery_availability_notifications",
+      { p_batch_size: 40 },
+    );
+    if (error) {
+      console.error(
+        "[dispatch-notifications] Discovery availability batch failed:",
+        error.message,
+      );
+    } else if (data && typeof data === "object") {
+      availabilityResult = data as Record<string, unknown>;
+    }
+  }
+
   // Checkout a batch of due notifications
   const { data: notifications, error: checkoutError } = await supabase
     .rpc("checkout_notifications", { batch_size: BATCH_SIZE });
@@ -196,7 +215,10 @@ Deno.serve(async (req: Request) => {
   }
 
   if (!notifications || notifications.length === 0) {
-    await recordDispatchResult(supabase, true, null, { dispatched: 0 });
+    await recordDispatchResult(supabase, true, null, {
+      dispatched: 0,
+      discovery_availability: availabilityResult,
+    });
     return new Response(JSON.stringify({ dispatched: 0 }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -327,7 +349,12 @@ Deno.serve(async (req: Request) => {
     supabase,
     failed === 0,
     failed === 0 ? null : `${failed} notification deliveries failed`,
-    { dispatched: succeeded, failed, in_app_only: noToken },
+    {
+      dispatched: succeeded,
+      failed,
+      in_app_only: noToken,
+      discovery_availability: availabilityResult,
+    },
   );
 
   return new Response(

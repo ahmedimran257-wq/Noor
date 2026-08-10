@@ -346,6 +346,8 @@ class FcmService {
       path = '/home?tab=1';
     } else if (type == 'profile_live') {
       path = '/home?tab=3';
+    } else if (type == 'new_compatible_profiles') {
+      path = '/home?tab=0';
     } else if (type == 'profile_view') {
       path = '/profile-views';
     } else if (type == 'photo_access_request') {

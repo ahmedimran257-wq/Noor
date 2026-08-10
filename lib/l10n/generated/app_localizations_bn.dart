@@ -2760,4 +2760,33 @@ class AppLocalizationsBn extends AppLocalizations {
   String discovery_rematch_days(int count) {
     return '$count দিনের মধ্যে আবার ম্যাচ করা যাবে';
   }
+
+  @override
+  String get settings_notify_compatibleProfiles => 'উপযুক্ত প্রোফাইলের সতর্কতা';
+
+  @override
+  String get settings_notify_compatibleProfilesSub =>
+      'খালি ডিসকভারি ফিডে নতুন ফলাফল এলে';
+
+  @override
+  String get settings_notify_discoveryDigest => 'ডিসকভারি সারসংক্ষেপ';
+
+  @override
+  String get settings_notify_digestHelp =>
+      'ঐচ্ছিক সারসংক্ষেপ; খালি ফিডে নতুন ফলাফলের সতর্কতা তাৎক্ষণিক থাকবে।';
+
+  @override
+  String get settings_notify_digestOff => 'বন্ধ';
+
+  @override
+  String get settings_notify_digestDaily => 'দৈনিক';
+
+  @override
+  String get settings_notify_digestWeekly => 'সাপ্তাহিক';
+
+  @override
+  String get settings_quietHoursStart => 'নীরব সময় শুরু';
+
+  @override
+  String get settings_quietHoursEnd => 'নীরব সময় শেষ';
 }

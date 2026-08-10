@@ -2758,4 +2758,33 @@ class AppLocalizationsUr extends AppLocalizations {
   String discovery_rematch_days(int count) {
     return '$count دنوں میں دوبارہ میچ دستیاب ہوگا';
   }
+
+  @override
+  String get settings_notify_compatibleProfiles => 'موزوں پروفائل کی اطلاعات';
+
+  @override
+  String get settings_notify_compatibleProfilesSub =>
+      'جب خالی ڈسکوری فیڈ میں نئے نتائج آئیں';
+
+  @override
+  String get settings_notify_discoveryDigest => 'ڈسکوری خلاصہ';
+
+  @override
+  String get settings_notify_digestHelp =>
+      'اختیاری خلاصے؛ خالی فیڈ میں نئے نتائج کی اطلاع فوراً ملے گی۔';
+
+  @override
+  String get settings_notify_digestOff => 'بند';
+
+  @override
+  String get settings_notify_digestDaily => 'روزانہ';
+
+  @override
+  String get settings_notify_digestWeekly => 'ہفتہ وار';
+
+  @override
+  String get settings_quietHoursStart => 'خاموش اوقات کا آغاز';
+
+  @override
+  String get settings_quietHoursEnd => 'خاموش اوقات کا اختتام';
 }

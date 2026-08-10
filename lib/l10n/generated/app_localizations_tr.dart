@@ -2758,4 +2758,33 @@ class AppLocalizationsTr extends AppLocalizations {
   String discovery_rematch_days(int count) {
     return 'Yeniden eşleşme $count gün içinde kullanılabilir';
   }
+
+  @override
+  String get settings_notify_compatibleProfiles => 'Uyumlu profil bildirimleri';
+
+  @override
+  String get settings_notify_compatibleProfilesSub =>
+      'Boş Keşfet akışına yeni sonuçlar geldiğinde';
+
+  @override
+  String get settings_notify_discoveryDigest => 'Keşfet özeti';
+
+  @override
+  String get settings_notify_digestHelp =>
+      'İsteğe bağlı özetler; boş akışa gelen yeni sonuç bildirimleri anında kalır.';
+
+  @override
+  String get settings_notify_digestOff => 'Kapalı';
+
+  @override
+  String get settings_notify_digestDaily => 'Günlük';
+
+  @override
+  String get settings_notify_digestWeekly => 'Haftalık';
+
+  @override
+  String get settings_quietHoursStart => 'Sessiz saatlerin başlangıcı';
+
+  @override
+  String get settings_quietHoursEnd => 'Sessiz saatlerin sonu';
 }

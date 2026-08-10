@@ -5039,6 +5039,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rematch available in {count} days'**
   String discovery_rematch_days(int count);
+
+  /// No description provided for @settings_notify_compatibleProfiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Compatible profile alerts'**
+  String get settings_notify_compatibleProfiles;
+
+  /// No description provided for @settings_notify_compatibleProfilesSub.
+  ///
+  /// In en, this message translates to:
+  /// **'When an empty Discovery feed has new results'**
+  String get settings_notify_compatibleProfilesSub;
+
+  /// No description provided for @settings_notify_discoveryDigest.
+  ///
+  /// In en, this message translates to:
+  /// **'Discovery digest'**
+  String get settings_notify_discoveryDigest;
+
+  /// No description provided for @settings_notify_digestHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional summaries; zero-to-available alerts stay immediate.'**
+  String get settings_notify_digestHelp;
+
+  /// No description provided for @settings_notify_digestOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get settings_notify_digestOff;
+
+  /// No description provided for @settings_notify_digestDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily'**
+  String get settings_notify_digestDaily;
+
+  /// No description provided for @settings_notify_digestWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get settings_notify_digestWeekly;
+
+  /// No description provided for @settings_quietHoursStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiet hours start'**
+  String get settings_quietHoursStart;
+
+  /// No description provided for @settings_quietHoursEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiet hours end'**
+  String get settings_quietHoursEnd;
 }
 
 class _AppLocalizationsDelegate

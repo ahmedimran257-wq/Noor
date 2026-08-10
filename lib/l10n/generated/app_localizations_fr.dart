@@ -2781,4 +2781,34 @@ class AppLocalizationsFr extends AppLocalizations {
   String discovery_rematch_days(int count) {
     return 'Nouvelle mise en relation disponible dans $count jours';
   }
+
+  @override
+  String get settings_notify_compatibleProfiles =>
+      'Alertes de profils compatibles';
+
+  @override
+  String get settings_notify_compatibleProfilesSub =>
+      'Quand de nouveaux résultats arrivent dans un fil Découvrir vide';
+
+  @override
+  String get settings_notify_discoveryDigest => 'Résumé Découvrir';
+
+  @override
+  String get settings_notify_digestHelp =>
+      'Résumés facultatifs ; les alertes après un fil vide restent immédiates.';
+
+  @override
+  String get settings_notify_digestOff => 'Désactivé';
+
+  @override
+  String get settings_notify_digestDaily => 'Quotidien';
+
+  @override
+  String get settings_notify_digestWeekly => 'Hebdomadaire';
+
+  @override
+  String get settings_quietHoursStart => 'Début des heures calmes';
+
+  @override
+  String get settings_quietHoursEnd => 'Fin des heures calmes';
 }

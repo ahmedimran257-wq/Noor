@@ -205,6 +205,11 @@ class NotificationsCubit extends Cubit<NotificationsState> {
 
   (String, String) _copyForType(String type) {
     switch (type) {
+      case 'new_compatible_profiles':
+        return (
+          'New compatible profiles are available',
+          'Open Discovery to view profiles selected for your preferences.'
+        );
       case 'profile_live':
         return (
           'Your profile is now live! 🎉',
@@ -391,6 +396,7 @@ String? notificationPathFor(NotificationItem item) {
     case 'interest_accepted':
       return '/home?tab=1';
     case 'match_ended':
+    case 'new_compatible_profiles':
       return '/home?tab=0';
     case 'admin_announcement':
       return '/notifications';

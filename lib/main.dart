@@ -443,6 +443,9 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
         unawaited(_interestsCubit.refreshIfChanged(forceCheck: true));
         unawaited(_discoveryFeedCubit.refreshIfChanged(forceCheck: true));
       }
+      if (item.type == 'new_compatible_profiles') {
+        unawaited(_discoveryFeedCubit.refreshIfChanged(forceCheck: true));
+      }
     });
 
     _router =
@@ -469,7 +472,8 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
           message.data['type'] == 'match_ended') {
         unawaited(_interestsCubit.refreshIfChanged(forceCheck: true));
       }
-      if (message.data['type'] == 'match_ended') {
+      if (message.data['type'] == 'match_ended' ||
+          message.data['type'] == 'new_compatible_profiles') {
         unawaited(_discoveryFeedCubit.refreshIfChanged(forceCheck: true));
       }
     };

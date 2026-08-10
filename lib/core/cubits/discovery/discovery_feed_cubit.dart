@@ -7,6 +7,7 @@
 //
 // Filter persistence: active filter is saved to SharedPreferences
 // so it survives app restarts.
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -152,6 +153,10 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
           dailyLimit: quota.dailyLimit,
           clearFailure: true,
         ));
+        unawaited(_recordDiscoveryInventory(
+          filter,
+          hasProfiles: batch.isNotEmpty,
+        ));
       }
     } catch (e) {
       if (_isCurrentRequest(requestVersion)) await _emitDiscoveryError(e);
@@ -288,6 +293,10 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
           profiles: batch,
           hasMore: profiles.length == _batchSize,
           clearFailure: true,
+        ));
+        unawaited(_recordDiscoveryInventory(
+          effectiveFilter,
+          hasProfiles: batch.isNotEmpty,
         ));
       }
     } catch (e) {
@@ -597,6 +606,29 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         'willing_to_relocate': f.willingToRelocate,
       if (hasChildren != null) 'has_children': hasChildren,
     };
+  }
+
+  Future<void> _recordDiscoveryInventory(
+    DiscoveryFilter filter, {
+    required bool hasProfiles,
+  }) async {
+    if (!SupabaseService.isInitialized ||
+        SupabaseService.currentUserId == null) {
+      return;
+    }
+    try {
+      await SupabaseService.client.rpc(
+        'record_discovery_inventory',
+        params: {
+          'p_filters': _mapFilterToJson(filter),
+          'p_has_profiles': hasProfiles,
+        },
+      );
+    } catch (error) {
+      // Notification state is an optimization and must never delay or replace
+      // a successfully loaded Discovery feed.
+      debugPrint('[DiscoveryFeedCubit] Inventory state sync deferred: $error');
+    }
   }
 
   String? _enumToken(String? value) {

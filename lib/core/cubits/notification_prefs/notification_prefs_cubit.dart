@@ -34,6 +34,7 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
           .from('notification_prefs')
           .select(
             'new_interest, interest_accepted, new_message, profile_view, profile_live, '
+            'new_compatible_profiles, discovery_digest_frequency, '
             'interest_expiring, inactive_nudge, boost_available, '
             'quiet_start, quiet_end',
           )
@@ -47,6 +48,11 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
           newMessage: (row['new_message'] as bool?) ?? true,
           profileView: (row['profile_view'] as bool?) ?? true,
           profileLive: (row['profile_live'] as bool?) ?? true,
+          newCompatibleProfiles:
+              (row['new_compatible_profiles'] as bool?) ?? true,
+          discoveryDigestFrequency: DiscoveryDigestFrequency.fromDb(
+            row['discovery_digest_frequency'],
+          ),
           interestExpiring: (row['interest_expiring'] as bool?) ?? true,
           inactiveNudge: (row['inactive_nudge'] as bool?) ?? true,
           boostAvailable: (row['boost_available'] as bool?) ?? true,
@@ -82,6 +88,16 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
 
   void toggleProfileLive(bool value) {
     emit(state.copyWith(profileLive: value));
+    _schedulePersist();
+  }
+
+  void toggleNewCompatibleProfiles(bool value) {
+    emit(state.copyWith(newCompatibleProfiles: value));
+    _schedulePersist();
+  }
+
+  void setDiscoveryDigestFrequency(DiscoveryDigestFrequency value) {
+    emit(state.copyWith(discoveryDigestFrequency: value));
     _schedulePersist();
   }
 
@@ -151,6 +167,8 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
         'new_message': snapshot.newMessage,
         'profile_view': snapshot.profileView,
         'profile_live': snapshot.profileLive,
+        'new_compatible_profiles': snapshot.newCompatibleProfiles,
+        'discovery_digest_frequency': snapshot.discoveryDigestFrequency.dbValue,
         'interest_expiring': snapshot.interestExpiring,
         'inactive_nudge': snapshot.inactiveNudge,
         'boost_available': snapshot.boostAvailable,

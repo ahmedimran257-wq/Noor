@@ -2777,4 +2777,34 @@ class AppLocalizationsDe extends AppLocalizations {
   String discovery_rematch_days(int count) {
     return 'Erneutes Match in $count Tagen verfügbar';
   }
+
+  @override
+  String get settings_notify_compatibleProfiles =>
+      'Hinweise auf passende Profile';
+
+  @override
+  String get settings_notify_compatibleProfilesSub =>
+      'Wenn ein leerer Entdecken-Feed neue Ergebnisse erhält';
+
+  @override
+  String get settings_notify_discoveryDigest => 'Entdecken-Zusammenfassung';
+
+  @override
+  String get settings_notify_digestHelp =>
+      'Optionale Zusammenfassungen; Hinweise bei neuen Ergebnissen bleiben sofortig.';
+
+  @override
+  String get settings_notify_digestOff => 'Aus';
+
+  @override
+  String get settings_notify_digestDaily => 'Täglich';
+
+  @override
+  String get settings_notify_digestWeekly => 'Wöchentlich';
+
+  @override
+  String get settings_quietHoursStart => 'Beginn der Ruhezeit';
+
+  @override
+  String get settings_quietHoursEnd => 'Ende der Ruhezeit';
 }

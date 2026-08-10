@@ -2764,4 +2764,33 @@ class AppLocalizationsHi extends AppLocalizations {
   String discovery_rematch_days(int count) {
     return '$count दिनों में दोबारा मैच उपलब्ध होगा';
   }
+
+  @override
+  String get settings_notify_compatibleProfiles => 'अनुकूल प्रोफ़ाइल अलर्ट';
+
+  @override
+  String get settings_notify_compatibleProfilesSub =>
+      'जब खाली डिस्कवरी फ़ीड में नए परिणाम आएँ';
+
+  @override
+  String get settings_notify_discoveryDigest => 'डिस्कवरी सारांश';
+
+  @override
+  String get settings_notify_digestHelp =>
+      'वैकल्पिक सारांश; खाली फ़ीड में नए परिणाम के अलर्ट तुरंत मिलेंगे।';
+
+  @override
+  String get settings_notify_digestOff => 'बंद';
+
+  @override
+  String get settings_notify_digestDaily => 'दैनिक';
+
+  @override
+  String get settings_notify_digestWeekly => 'साप्ताहिक';
+
+  @override
+  String get settings_quietHoursStart => 'शांत समय शुरू';
+
+  @override
+  String get settings_quietHoursEnd => 'शांत समय समाप्त';
 }

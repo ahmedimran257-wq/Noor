@@ -2780,4 +2780,34 @@ class AppLocalizationsId extends AppLocalizations {
   String discovery_rematch_days(int count) {
     return 'Pencocokan ulang tersedia dalam $count hari';
   }
+
+  @override
+  String get settings_notify_compatibleProfiles =>
+      'Peringatan profil yang cocok';
+
+  @override
+  String get settings_notify_compatibleProfilesSub =>
+      'Saat umpan Temukan yang kosong memiliki hasil baru';
+
+  @override
+  String get settings_notify_discoveryDigest => 'Ringkasan Temukan';
+
+  @override
+  String get settings_notify_digestHelp =>
+      'Ringkasan opsional; peringatan hasil baru setelah umpan kosong tetap langsung.';
+
+  @override
+  String get settings_notify_digestOff => 'Nonaktif';
+
+  @override
+  String get settings_notify_digestDaily => 'Harian';
+
+  @override
+  String get settings_notify_digestWeekly => 'Mingguan';
+
+  @override
+  String get settings_quietHoursStart => 'Jam tenang dimulai';
+
+  @override
+  String get settings_quietHoursEnd => 'Jam tenang berakhir';
 }

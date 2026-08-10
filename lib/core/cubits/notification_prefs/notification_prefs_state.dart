@@ -7,12 +7,31 @@
 // Step 12: replace toggles with Supabase UPSERT on change.
 import 'package:equatable/equatable.dart';
 
+enum DiscoveryDigestFrequency {
+  off('off'),
+  daily('daily'),
+  weekly('weekly');
+
+  const DiscoveryDigestFrequency(this.dbValue);
+  final String dbValue;
+
+  static DiscoveryDigestFrequency fromDb(Object? value) {
+    final token = value?.toString().toLowerCase();
+    return values.firstWhere(
+      (frequency) => frequency.dbValue == token,
+      orElse: () => DiscoveryDigestFrequency.off,
+    );
+  }
+}
+
 class NotificationPrefsState extends Equatable {
   final bool newInterest;
   final bool interestAccepted;
   final bool newMessage;
   final bool profileView;
   final bool profileLive;
+  final bool newCompatibleProfiles;
+  final DiscoveryDigestFrequency discoveryDigestFrequency;
   final bool interestExpiring;
   final bool inactiveNudge;
   final bool boostAvailable;
@@ -27,6 +46,8 @@ class NotificationPrefsState extends Equatable {
     this.newMessage = true,
     this.profileView = true,
     this.profileLive = true,
+    this.newCompatibleProfiles = true,
+    this.discoveryDigestFrequency = DiscoveryDigestFrequency.off,
     this.interestExpiring = true,
     this.inactiveNudge = true,
     this.boostAvailable = true,
@@ -40,6 +61,8 @@ class NotificationPrefsState extends Equatable {
     bool? newMessage,
     bool? profileView,
     bool? profileLive,
+    bool? newCompatibleProfiles,
+    DiscoveryDigestFrequency? discoveryDigestFrequency,
     bool? interestExpiring,
     bool? inactiveNudge,
     bool? boostAvailable,
@@ -52,6 +75,10 @@ class NotificationPrefsState extends Equatable {
       newMessage: newMessage ?? this.newMessage,
       profileView: profileView ?? this.profileView,
       profileLive: profileLive ?? this.profileLive,
+      newCompatibleProfiles:
+          newCompatibleProfiles ?? this.newCompatibleProfiles,
+      discoveryDigestFrequency:
+          discoveryDigestFrequency ?? this.discoveryDigestFrequency,
       interestExpiring: interestExpiring ?? this.interestExpiring,
       inactiveNudge: inactiveNudge ?? this.inactiveNudge,
       boostAvailable: boostAvailable ?? this.boostAvailable,
@@ -67,6 +94,8 @@ class NotificationPrefsState extends Equatable {
         newMessage,
         profileView,
         profileLive,
+        newCompatibleProfiles,
+        discoveryDigestFrequency,
         interestExpiring,
         inactiveNudge,
         boostAvailable,

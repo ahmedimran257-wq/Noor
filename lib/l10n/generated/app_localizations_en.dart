@@ -2753,4 +2753,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String discovery_rematch_days(int count) {
     return 'Rematch available in $count days';
   }
+
+  @override
+  String get settings_notify_compatibleProfiles => 'Compatible profile alerts';
+
+  @override
+  String get settings_notify_compatibleProfilesSub =>
+      'When an empty Discovery feed has new results';
+
+  @override
+  String get settings_notify_discoveryDigest => 'Discovery digest';
+
+  @override
+  String get settings_notify_digestHelp =>
+      'Optional summaries; zero-to-available alerts stay immediate.';
+
+  @override
+  String get settings_notify_digestOff => 'Off';
+
+  @override
+  String get settings_notify_digestDaily => 'Daily';
+
+  @override
+  String get settings_notify_digestWeekly => 'Weekly';
+
+  @override
+  String get settings_quietHoursStart => 'Quiet hours start';
+
+  @override
+  String get settings_quietHoursEnd => 'Quiet hours end';
 }
