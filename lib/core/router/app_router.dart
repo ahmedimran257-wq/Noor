@@ -81,6 +81,12 @@ GoRouter buildAppRouter(
 }) {
   return GoRouter(
     initialLocation: initialLocation,
+    // FCM notification intents can launch Android with an empty platform
+    // route. go_router attempts to match that empty URI again when auth emits
+    // during session recovery, which raises a RangeError before redirect can
+    // normalize it. App Links are consumed by AuthCallbackService, so the
+    // router should always start from this validated internal location.
+    overridePlatformDefaultLocation: true,
     refreshListenable: _AuthStateListenable(authCubit),
     redirect: (context, state) {
       final authState = authCubit.state;

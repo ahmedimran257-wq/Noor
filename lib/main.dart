@@ -45,6 +45,7 @@ import 'core/cubits/theme/theme_cubit.dart';
 import 'core/theme/app_colors.dart';
 import 'core/cubits/account_standing/account_standing_cubit.dart';
 import 'core/router/app_router.dart';
+import 'core/router/notification_navigation.dart';
 import 'core/widgets/in_app_notification_banner.dart';
 import 'core/widgets/startup_offline_screen.dart';
 import 'core/widgets/silarah_launch_sequence.dart';
@@ -453,7 +454,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
 
     // Wire up FCM tap navigation callback
     FcmService.instance.onNotificationTap = (path) {
-      _router.push(path);
+      navigateFromPushNotification(_router, path);
     };
     FcmService.instance.onForegroundMessage = (message) {
       if (message.data['type'] == 'account_suspended' ||
