@@ -30,7 +30,8 @@ Verified on 10 August 2026 with Android emulator `emulator-5554`:
 - Restore while Premium is active: passed.
 - User cancellation without entitlement: passed.
 - Forced billing failure without entitlement: passed.
-- Accelerated monthly renewal visible in RevenueCat customer state: passed.
+- Accelerated monthly renewal and final expiry visible in RevenueCat customer
+  state: passed.
 
 ## Google Play sandbox sign-off
 

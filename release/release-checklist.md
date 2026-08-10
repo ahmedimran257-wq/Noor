@@ -23,7 +23,8 @@
       `1.0.0+16011` before widening the tester group.
 - [x] RevenueCat Test Store exposes the current monthly and annual packages;
       Android purchase, restore, cancellation, forced failure and accelerated
-      renewal pass. Production webhook state remains a Play sandbox/staging gate.
+      renewal/expiry pass. Production webhook state remains a Play sandbox/staging
+      gate.
 - [x] Legal pages, deletion URL, sitemap and canonical domain are live.
 - [ ] Device QA checklist is signed off.
 
