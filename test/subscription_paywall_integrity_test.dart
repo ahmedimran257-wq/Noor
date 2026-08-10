@@ -4,6 +4,19 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('RevenueCat environment isolation', () {
+    test('uses a Test Store-compatible SDK and current purchase contract', () {
+      final pubspec = File('pubspec.yaml').readAsStringSync();
+      final serviceSource = File(
+        'lib/core/services/subscription_service.dart',
+      ).readAsStringSync();
+
+      expect(pubspec, contains('purchases_flutter: ^10.8.0'));
+      expect(serviceSource, contains('Purchases.purchase('));
+      expect(serviceSource, contains('PurchaseParams.package(package)'));
+      expect(serviceSource, contains('result.customerInfo'));
+      expect(serviceSource, isNot(contains('Purchases.purchasePackage(')));
+    });
+
     test('debug Test Store key cannot leak into release selection', () {
       final mainSource = File('lib/main.dart').readAsStringSync();
       final configSource =

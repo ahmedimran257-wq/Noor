@@ -41,4 +41,5 @@ automated checks in `release-checklist.md` before creating the final bundle.
 - `data-safety.md`: a conservative answer worksheet to copy into Play Console.
 - `reviewer-instructions.md`: review access and deterministic test paths.
 - `device-qa.md`: pre-release physical-device acceptance checklist.
+- `revenuecat-qa.md`: Test Store automation and Play sandbox acceptance steps.
 - `release-checklist.md`: final owner sign-off, including account-only actions.

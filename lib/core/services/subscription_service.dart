@@ -162,9 +162,12 @@ class SubscriptionService {
       final package = isAnnual ? offering.annual : offering.monthly;
       if (package == null) throw Exception('Package not available');
 
-      final result = await Purchases.purchasePackage(package);
-      _isSubscribed = SubscriptionEntitlements.isPremiumActive(result);
-      _customerInfo = result;
+      final result = await Purchases.purchase(
+        PurchaseParams.package(package),
+      );
+      final customerInfo = result.customerInfo;
+      _isSubscribed = SubscriptionEntitlements.isPremiumActive(customerInfo);
+      _customerInfo = customerInfo;
       return _isSubscribed;
     } catch (e) {
       debugPrint('[SubscriptionService] Purchase error: $e');

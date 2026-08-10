@@ -3,7 +3,7 @@
 ## Automated and repository gates
 
 - [x] `flutter analyze` has zero findings.
-- [x] Full Flutter test suite passes (260 tests on 27 July 2026).
+- [x] Full Flutter test suite passes (366 tests on 10 August 2026).
 - [x] Admin lint, typecheck, Next.js build, OpenNext Cloudflare build and
       production dependency audit pass.
 - [x] Supabase migration validation and Edge Function tests pass.
@@ -18,12 +18,12 @@
 - [x] `/.well-known/assetlinks.json` contains the upload certificate until Play
       App Signing provides the production app-signing certificate.
 - [x] Support, safety, privacy and grievance addresses receive transactional mail.
-- [ ] Crashlytics initializes and the release mapping upload is wired. The
-      `1.0.0+4003` signed candidate was built with symbol upload enabled; confirm
-      a controlled event in Firebase for this exact candidate.
-- [ ] RevenueCat Test Store exposes the current monthly and annual packages;
-      complete purchase/restore/cancel/webhook lifecycle with the unlocked
-      review account.
+- [ ] Crashlytics initializes and the release mapping upload is wired. Upload
+      symbols and confirm a controlled event in Firebase for candidate
+      `1.0.0+16011` before widening the tester group.
+- [x] RevenueCat Test Store exposes the current monthly and annual packages;
+      Android purchase, restore, cancellation, forced failure and accelerated
+      renewal pass. Production webhook state remains a Play sandbox/staging gate.
 - [x] Legal pages, deletion URL, sitemap and canonical domain are live.
 - [ ] Device QA checklist is signed off.
 
