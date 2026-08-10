@@ -96,6 +96,8 @@ void main() {
       dispatch,
       isNot(contains('.eq("moderation_status", "approved")')),
     );
+    expect(dispatch, contains('deep_link: "silarah://discover"'));
+    expect(dispatch, isNot(contains('deep_link: "/home?tab=0"')));
     expect(
       migration,
       contains("'photo_approved', 'photo_rejected'"),

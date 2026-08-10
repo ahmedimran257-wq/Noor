@@ -1,6 +1,6 @@
 # Silarah global launch readiness
 
-Last technical review: 9 August 2026
+Last technical review: 10 August 2026
 
 This is an engineering launch gate, not a legal opinion. A country appearing in
 the 198-country product catalog means that country selection, metadata and
@@ -19,7 +19,9 @@ been legally cleared, registered, taxed, priced or store-tested there.
   United Kingdom and the United States. Cities are obtained from a live global
   provider and cached; there is no finite bundled list of every city worldwide.
 - Backend function authentication boundaries and tokenless durable notification
-  delivery pass on staging.
+  delivery pass on staging. Separate least-privilege Firebase senders are now
+  configured for staging and production, and real background delivery passed
+  on the connected Android 13 device in both environments.
 - The bounded 50-VU staging baseline completed 9,558 authenticated requests
   with no HTTP failures; this is not a million-user capacity certification.
 
@@ -38,9 +40,9 @@ been legally cleared, registered, taxed, priced or store-tested there.
    government-ID, matrimonial and moderation processing in every launch market.
 6. Complete local consumer, auto-renewal, refund, tax, invoicing, sanctions,
    content, online-safety and law-enforcement-response reviews.
-7. Configure genuine staging Firebase service-account credentials and prove one
-   real Android token and one real iOS token. A database queue test cannot prove
-   operating-system delivery.
+7. Upload/verify the Apple APNs authentication key in Firebase and prove one
+   real iOS token on a physical iPhone. Android operating-system delivery is
+   verified; an iOS build cannot be built or physically tested from Windows.
 8. Test monthly purchase, annual purchase, cancellation, restore, renewal,
    expiry, refund, billing retry and webhook idempotency on real Play and Apple
    sandboxes in every pricing region that will launch.
@@ -82,5 +84,5 @@ RevenueCat country and custom-attribute rules are described in its
 
 Engineering status is **staging-ready for expanded functional and load tests**.
 Worldwide production status remains **blocked** until the owner supplies the
-legal entity details, real FCM credentials, store sandbox access and written
+legal entity details, Apple APNs/device access, store sandbox access and written
 country-by-country legal approvals above.

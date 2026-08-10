@@ -169,7 +169,7 @@ Deno.serve(async (req: Request) => {
       type: directPayload.type,
       title: directPayload.title,
       body: directPayload.body,
-      deep_link: "/home?tab=0",
+      deep_link: "silarah://discover",
       scheduled_at: new Date().toISOString(),
     });
     if (insertError) {
