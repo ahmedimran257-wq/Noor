@@ -93,12 +93,11 @@ async function request(
       "Content-Type": contentType,
       ...(prefer ? { Prefer: prefer } : {}),
     },
-    body:
-      body === undefined
-        ? undefined
-        : contentType === "application/json"
-          ? JSON.stringify(body)
-          : body,
+    body: body === undefined
+      ? undefined
+      : contentType === "application/json"
+      ? JSON.stringify(body)
+      : body,
   });
   const text = await response.text();
   let data = null;
@@ -110,8 +109,7 @@ async function request(
     }
   }
   if (!response.ok) {
-    const message =
-      data?.message ??
+    const message = data?.message ??
       data?.error_description ??
       data?.error ??
       (typeof data === "string" ? data : `HTTP ${response.status}`);
@@ -296,13 +294,13 @@ function isoBirthday(age) {
 
 function groupCount(items, selector) {
   return Object.fromEntries(
-    [...items.reduce((map, item) => {
-      const key = String(selector(item));
-      map.set(key, (map.get(key) ?? 0) + 1);
-      return map;
-    }, new Map()).entries()].sort(([left], [right]) =>
-      left.localeCompare(right),
-    ),
+    [
+      ...items.reduce((map, item) => {
+        const key = String(selector(item));
+        map.set(key, (map.get(key) ?? 0) + 1);
+        return map;
+      }, new Map()).entries(),
+    ].sort(([left], [right]) => left.localeCompare(right)),
   );
 }
 
@@ -349,21 +347,28 @@ try {
     "/rest/v1/countries?select=iso_code,name&order=display_priority.desc.nullslast,name.asc&limit=100",
     { apiKey: service },
   );
-  assert(countries.length >= 5, "Staging needs at least five configured countries");
+  assert(
+    countries.length >= 5,
+    "Staging needs at least five configured countries",
+  );
 
   const cities = await request(
     "/rest/v1/cities?select=id,name,region_id,latitude,longitude&latitude=not.is.null&longitude=not.is.null&limit=200",
     { apiKey: service },
   );
-  const regionIds = [...new Set(cities.map((city) => city.region_id).filter(Boolean))];
+  const regionIds = [
+    ...new Set(cities.map((city) => city.region_id).filter(Boolean)),
+  ];
   const regions = regionIds.length
     ? await request(
-        `/rest/v1/regions?id=in.(${regionIds.join(",")})&select=id,country_code`,
-        { apiKey: service },
-      )
+      `/rest/v1/regions?id=in.(${regionIds.join(",")})&select=id,country_code`,
+      { apiKey: service },
+    )
     : [];
   const regionCountry = new Map(
-    regions.map((region) => [region.id, String(region.country_code).toUpperCase()]),
+    regions.map((
+      region,
+    ) => [region.id, String(region.country_code).toUpperCase()]),
   );
   const cityByCountry = new Map();
   for (const city of cities) {
@@ -372,9 +377,11 @@ try {
   }
 
   const allCountryCodes = countries.map((row) =>
-    String(row.iso_code).toUpperCase(),
+    String(row.iso_code).toUpperCase()
   );
-  const locationCountry = allCountryCodes.find((code) => cityByCountry.has(code));
+  const locationCountry = allCountryCodes.find((code) =>
+    cityByCountry.has(code)
+  );
   const countryCodes = [
     ...(locationCountry ? [locationCountry] : []),
     ...allCountryCodes.filter((code) => code !== locationCountry),
@@ -389,7 +396,9 @@ try {
       gender,
       premium,
       countryCode: countryCodes[Math.floor(index / 20) % countryCodes.length],
-      email: `matrix.${runId}.${String(index).padStart(3, "0")}@staging.silarah.invalid`,
+      email: `matrix.${runId}.${
+        String(index).padStart(3, "0")
+      }@staging.silarah.invalid`,
       password: `Mx-${crypto.randomUUID()}-aA7!`,
     };
   });
@@ -442,7 +451,9 @@ try {
     return {
       user_id: member.id,
       static_rank_score: member.index % 10,
-      first_name: `Matrix${member.gender === "female" ? "F" : "M"}${String(member.index).padStart(3, "0")}`,
+      first_name: `Matrix${member.gender === "female" ? "F" : "M"}${
+        String(member.index).padStart(3, "0")
+      }`,
       last_name: "Staging",
       date_of_birth: isoBirthday(profileAge(member.index)),
       gender: member.gender,
@@ -540,11 +551,13 @@ try {
   report.distribution = {
     gender: groupCount(members, (member) => member.gender),
     country: groupCount(members, (member) => member.countryCode),
-    entitlement: groupCount(members, (member) =>
-      member.premium ? "premium" : "free",
+    entitlement: groupCount(
+      members,
+      (member) => member.premium ? "premium" : "free",
     ),
-    verified: groupCount(members, (member) =>
-      member.profile.is_verified ? "verified" : "unverified",
+    verified: groupCount(
+      members,
+      (member) => member.profile.is_verified ? "verified" : "unverified",
     ),
   };
   assert(report.distribution.gender.male === 100, "Expected 100 men");
@@ -587,8 +600,14 @@ try {
 
   await test("population is visible live without a materialized refresh", async () => {
     const rows = await feed(premiumMale);
-    assert(rows.length === 20, `Expected a full page of 20, received ${rows.length}`);
-    assert(rows.every((row) => row.gender === "female"), "Male feed mixed genders");
+    assert(
+      rows.length === 20,
+      `Expected a full page of 20, received ${rows.length}`,
+    );
+    assert(
+      rows.every((row) => row.gender === "female"),
+      "Male feed mixed genders",
+    );
     return { pageSize: rows.length };
   });
 
@@ -613,9 +632,21 @@ try {
       ["age", { age_min: 25, age_max: 25 }, (row) => row.age === 25],
       ["verified", { verified_only: true }, (row) => row.is_verified === true],
       ["sect", { sect: "Sunni" }, (row) => row.sect === "Sunni"],
-      ["deen", { deen_level: "practicing" }, (row) => row.deen_level === "practicing"],
-      ["family", { family_type: "nuclear" }, (row) => row.family_type === "nuclear"],
-      ["marital", { marital_status: "divorced" }, (row) => row.previously_married === "divorced"],
+      [
+        "deen",
+        { deen_level: "practicing" },
+        (row) => row.deen_level === "practicing",
+      ],
+      [
+        "family",
+        { family_type: "nuclear" },
+        (row) => row.family_type === "nuclear",
+      ],
+      [
+        "marital",
+        { marital_status: "divorced" },
+        (row) => row.previously_married === "divorced",
+      ],
       [
         "education",
         { education_min: 6 },
@@ -625,19 +656,56 @@ try {
               .education_rank ?? 0,
           ) >= 6,
       ],
-      ["language", { mother_tongue: "English" }, (row) => row.mother_tongue === "English"],
-      ["community", { community: "South Asian" }, (row) => row.community === "South Asian"],
-      ["living", { living_expectation: "separate" }, (row) => row.living_expectation === "separate"],
-      ["quran", { quran_memorization: "none" }, (row) => row.quran_memorization === "none"],
-      ["timeline", { marriage_timeline: "asap" }, (row) => row.marriage_timeline === "asap"],
-      ["relocation", { willing_to_relocate: "yes" }, (row) => row.willing_to_relocate === "yes"],
-      ["children", { has_children: "yes" }, (row) => Number(row.children_count) > 0],
-      ["active", { active_recently: true }, (row) => new Date(row.last_active_at) >= new Date(Date.now() - 14 * 86_400_000)],
+      [
+        "language",
+        { mother_tongue: "English" },
+        (row) => row.mother_tongue === "English",
+      ],
+      [
+        "community",
+        { community: "South Asian" },
+        (row) => row.community === "South Asian",
+      ],
+      [
+        "living",
+        { living_expectation: "separate" },
+        (row) => row.living_expectation === "separate",
+      ],
+      [
+        "quran",
+        { quran_memorization: "none" },
+        (row) => row.quran_memorization === "none",
+      ],
+      [
+        "timeline",
+        { marriage_timeline: "asap" },
+        (row) => row.marriage_timeline === "asap",
+      ],
+      [
+        "relocation",
+        { willing_to_relocate: "yes" },
+        (row) => row.willing_to_relocate === "yes",
+      ],
+      [
+        "children",
+        { has_children: "yes" },
+        (row) => Number(row.children_count) > 0,
+      ],
+      [
+        "active",
+        { active_recently: true },
+        (row) =>
+          new Date(row.last_active_at) >=
+            new Date(Date.now() - 14 * 86_400_000),
+      ],
     ];
     for (const [label, filters, predicate] of cases) {
       const rows = await feed(premiumMale, filters);
       assert(rows.length > 0, `${label} filter returned no fixture profiles`);
-      assert(rows.every(predicate), `${label} filter returned a mismatched row`);
+      assert(
+        rows.every(predicate),
+        `${label} filter returned a mismatched row`,
+      );
     }
     return { filtersVerified: cases.length };
   });
@@ -651,7 +719,10 @@ try {
     const sameCountry = await feed(premiumMale, {
       location_scope: "same_country",
     });
-    assert(sameCountry.length > 0, "Premium same-country filter returned no profiles");
+    assert(
+      sameCountry.length > 0,
+      "Premium same-country filter returned no profiles",
+    );
     assert(
       sameCountry.every((row) => row.country_code === premiumMale.countryCode),
       "Premium same-country filter crossed countries",
@@ -662,7 +733,10 @@ try {
         country_codes: [code],
       });
       assert(rows.length > 0, `Country ${code} returned no profiles`);
-      assert(rows.every((row) => row.country_code === code), `${code} filter leaked another country`);
+      assert(
+        rows.every((row) => row.country_code === code),
+        `${code} filter leaked another country`,
+      );
     }
     const diasporaCode = countryCodes.find(
       (code) => code !== premiumMale.countryCode,
@@ -678,10 +752,9 @@ try {
     );
     if (premiumMale.profile.city_id) {
       for (const scope of ["same_city", "same_region", "radius"]) {
-        const filters =
-          scope === "radius"
-            ? { location_scope: scope, max_distance_km: 25 }
-            : { location_scope: scope };
+        const filters = scope === "radius"
+          ? { location_scope: scope, max_distance_km: 25 }
+          : { location_scope: scope };
         const rows = await feed(premiumMale, filters);
         assert(rows.length > 0, `Premium ${scope} filter returned no profiles`);
       }
@@ -722,7 +795,10 @@ try {
       p_city_id: null,
     });
     assert(rows.length > 0, "Profile search returned no women");
-    assert(rows.every((row) => row.first_name.startsWith("MatrixF")), "Search prefix was not enforced");
+    assert(
+      rows.every((row) => row.first_name.startsWith("MatrixF")),
+      "Search prefix was not enforced",
+    );
     return { results: rows.length };
   });
 
@@ -737,14 +813,197 @@ try {
         order_index: 0,
       },
     });
-    assert(Object.keys(data?.urls ?? {}).length === owners.length, "Signed URL batch was incomplete");
+    assert(
+      Object.keys(data?.urls ?? {}).length === owners.length,
+      "Signed URL batch was incomplete",
+    );
     for (const url of Object.values(data.urls)) {
       const response = await fetch(url);
       assert(response.ok, `Signed photo returned HTTP ${response.status}`);
-      assert((await response.arrayBuffer()).byteLength > 0, "Signed photo was empty");
+      assert(
+        (await response.arrayBuffer()).byteLength > 0,
+        "Signed photo was empty",
+      );
     }
     return { signedPhotos: owners.length };
   });
+
+  await test(
+    "compatible-profile notifications are exact, localized, private, deduplicated, and optional",
+    async () => {
+      const candidate = femalePremiumMembers.at(-1);
+      const originalTongue = candidate.profile.mother_tongue;
+      const uniqueTongue = `Availability-${runId}`;
+      const localeCodes = [
+        "en",
+        "ar",
+        "bn",
+        "de",
+        "fr",
+        "hi",
+        "id",
+        "ms",
+        "tr",
+        "ur",
+      ];
+      const cohortMembers = malePremiumMembers.slice(3, 15);
+      assert(cohortMembers.length === 12, "Notification cohort is incomplete");
+      const cohort = await mapConcurrent(cohortMembers, 6, signIn);
+      const optedIn = cohort.slice(0, 10);
+      const optedOut = cohort.slice(10);
+      const filters = {
+        location_scope: "anywhere",
+        anywhere: true,
+        gender_pref: "female",
+        mother_tongue: uniqueTongue,
+      };
+
+      // Keep the candidate outside Discovery while the viewers establish an
+      // authoritative empty feed. Updating a paused profile cannot race the
+      // availability worker.
+      await request(`/rest/v1/profiles?id=eq.${candidate.profileId}`, {
+        apiKey: service,
+        method: "PATCH",
+        body: { visibility: "paused", mother_tongue: uniqueTongue },
+        prefer: "return=minimal",
+      });
+      for (let index = 0; index < cohort.length; index += 1) {
+        const actor = cohort[index];
+        const isOptedIn = index < optedIn.length;
+        await request(`/rest/v1/users?id=eq.${actor.id}`, {
+          apiKey: service,
+          method: "PATCH",
+          body: { preferred_language: localeCodes[index % localeCodes.length] },
+          prefer: "return=minimal",
+        });
+        await request("/rest/v1/notification_prefs?on_conflict=user_id", {
+          token: actor.token,
+          method: "POST",
+          body: {
+            user_id: actor.id,
+            new_compatible_profiles: isOptedIn,
+            discovery_digest_frequency: "off",
+          },
+          prefer: "resolution=merge-duplicates,return=minimal",
+        });
+        const emptyRows = await feed(actor, filters);
+        assert(
+          emptyRows.length === 0,
+          `Availability feed was not empty for cohort member ${index}`,
+        );
+        await rpc(actor, "record_discovery_inventory", {
+          p_filters: filters,
+          p_has_profiles: false,
+        });
+      }
+
+      await request(`/rest/v1/profiles?id=eq.${candidate.profileId}`, {
+        apiKey: service,
+        method: "PATCH",
+        body: { visibility: "visible", approved_at: new Date().toISOString() },
+        prefer: "return=minimal",
+      });
+
+      let notificationRows = [];
+      for (let attempt = 0; attempt < 30; attempt += 1) {
+        notificationRows = await request(
+          `/rest/v1/notifications?user_id=in.(${
+            cohort.map((actor) => actor.id).join(",")
+          })&type=eq.new_compatible_profiles&select=user_id,title,body,deep_link`,
+          { apiKey: service },
+        );
+        if (notificationRows.length >= optedIn.length) break;
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+
+      const notifiedIds = new Set(notificationRows.map((row) => row.user_id));
+      assert(
+        notificationRows.length === optedIn.length,
+        `Expected ${optedIn.length} availability alerts, received ${notificationRows.length}`,
+      );
+      assert(
+        optedIn.every((actor) => notifiedIds.has(actor.id)),
+        "An opted-in compatible viewer was not notified",
+      );
+      assert(
+        optedOut.every((actor) => !notifiedIds.has(actor.id)),
+        "An opted-out viewer received an availability notification",
+      );
+      const candidateName = candidate.profile.first_name.toLowerCase();
+      const candidateCountry = candidate.countryCode.toLowerCase();
+      for (const row of notificationRows) {
+        const copy = `${row.title} ${row.body}`.toLowerCase();
+        assert(
+          row.deep_link === "silarah://discover",
+          "Availability route was not canonical",
+        );
+        assert(
+          !copy.includes(candidateName),
+          "Availability copy leaked a member name",
+        );
+        assert(
+          !copy.includes(candidateCountry),
+          "Availability copy leaked a country",
+        );
+      }
+      assert(
+        new Set(notificationRows.map((row) => row.title)).size ===
+          localeCodes.length,
+        "All ten localized notification titles were not produced",
+      );
+
+      for (const actor of optedIn) {
+        const rows = await feed(actor, filters);
+        assert(
+          rows.some((row) => row.user_id === candidate.id),
+          "Notified viewer did not receive the candidate in the exact feed",
+        );
+      }
+
+      // A later catalog event must not create a duplicate while the member's
+      // inventory state is already non-empty.
+      await request(`/rest/v1/profiles?id=eq.${candidate.profileId}`, {
+        apiKey: service,
+        method: "PATCH",
+        body: { mother_tongue: uniqueTongue },
+        prefer: "return=minimal",
+      });
+      await request(
+        "/rest/v1/rpc/process_discovery_availability_notifications",
+        {
+          apiKey: service,
+          method: "POST",
+          body: { p_batch_size: 40 },
+        },
+      );
+      const deduped = await request(
+        `/rest/v1/notifications?user_id=in.(${
+          cohort.map((actor) => actor.id).join(",")
+        })&type=eq.new_compatible_profiles&select=id`,
+        { apiKey: service },
+      );
+      assert(
+        deduped.length === optedIn.length,
+        "A repeated catalog event created duplicate availability alerts",
+      );
+
+      await request(`/rest/v1/profiles?id=eq.${candidate.profileId}`, {
+        apiKey: service,
+        method: "PATCH",
+        body: { mother_tongue: originalTongue },
+        prefer: "return=minimal",
+      });
+      return {
+        population: PROFILE_COUNT,
+        evaluatedViewers: cohort.length,
+        notified: notificationRows.length,
+        optedOut: optedOut.length,
+        localizedTitles: localeCodes.length,
+        duplicateAlerts: deduped.length - notificationRows.length,
+      };
+    },
+    { continueOnFailure: false },
+  );
 
   await test("free daily profile-view limit stops the sixteenth distinct view", async () => {
     const targets = femaleFreeMembers.slice(3, 19);
@@ -765,8 +1024,14 @@ try {
       }),
       "record_profile_view",
     );
-    assert(denied.allowed === false, "The sixteenth free distinct view was allowed");
-    assert(Number(denied.daily_limit) === 15, "Free profile-view limit is not 15");
+    assert(
+      denied.allowed === false,
+      "The sixteenth free distinct view was allowed",
+    );
+    assert(
+      Number(denied.daily_limit) === 15,
+      "Free profile-view limit is not 15",
+    );
     return { allowed: 15, denied: 1 };
   });
 
@@ -781,7 +1046,10 @@ try {
         "record_profile_view",
       );
       assert(row.allowed === true, "Premium profile view was rejected");
-      assert(Number(row.daily_limit) > PROFILE_COUNT, "Premium view limit is unexpectedly finite");
+      assert(
+        Number(row.daily_limit) > PROFILE_COUNT,
+        "Premium view limit is unexpectedly finite",
+      );
     }
     return { viewsRecorded: targets.length };
   });
@@ -799,7 +1067,10 @@ try {
       await rpc(freeFemale, "get_my_profile_view_summary"),
       "profile view summary",
     );
-    assert(Number(summary.viewer_count) >= 1, "Free aggregate viewer count was missing");
+    assert(
+      Number(summary.viewer_count) >= 1,
+      "Free aggregate viewer count was missing",
+    );
     await expectRejected(
       () => rpc(freeFemale, "get_my_profile_viewers", { p_limit: 50 }),
       "premium_required",
@@ -808,7 +1079,10 @@ try {
     const viewers = await rpc(premiumFemale, "get_my_profile_viewers", {
       p_limit: 50,
     });
-    assert(viewers.some((row) => row.viewer_user_id === freeMale.id), "Premium viewer list omitted the viewer");
+    assert(
+      viewers.some((row) => row.viewer_user_id === freeMale.id),
+      "Premium viewer list omitted the viewer",
+    );
     return { premiumViewerRows: viewers.length };
   });
 
@@ -826,10 +1100,11 @@ try {
       });
     }
     await expectRejected(
-      () => rpc(freeInterestMale, "send_interest", {
-        p_receiver_id: targets[5].id,
-        p_note: null,
-      }),
+      () =>
+        rpc(freeInterestMale, "send_interest", {
+          p_receiver_id: targets[5].id,
+          p_note: null,
+        }),
       "interest_quota_exhausted",
       "Free member sent a sixth daily interest",
     );
@@ -842,7 +1117,10 @@ try {
       await rpc(premiumInterestMale, "get_interest_quota"),
       "Premium interest quota",
     );
-    assert(Number(before.daily_limit) === 25, "Premium interest limit is not 25");
+    assert(
+      Number(before.daily_limit) === 25,
+      "Premium interest limit is not 25",
+    );
     for (const target of targets.slice(0, 25)) {
       await rpc(premiumInterestMale, "send_interest", {
         p_receiver_id: target.id,
@@ -850,10 +1128,11 @@ try {
       });
     }
     await expectRejected(
-      () => rpc(premiumInterestMale, "send_interest", {
-        p_receiver_id: targets[25].id,
-        p_note: null,
-      }),
+      () =>
+        rpc(premiumInterestMale, "send_interest", {
+          p_receiver_id: targets[25].id,
+          p_note: null,
+        }),
       "interest_quota_exhausted",
       "Premium member sent a twenty-sixth daily interest",
     );
@@ -873,32 +1152,51 @@ try {
     const pending = await rpc(actor, "get_prior_match_context", {
       p_candidate_user_ids: [target.id],
     });
-    assert(pending[0]?.relationship_state === "pending_sent", "Pending card state was not returned");
+    assert(
+      pending[0]?.relationship_state === "pending_sent",
+      "Pending card state was not returned",
+    );
     await rpc(actor, "withdraw_interest", { p_interest_id: interestId });
     const withdrawn = await rpc(actor, "get_prior_match_context", {
       p_candidate_user_ids: [target.id],
     });
-    assert(withdrawn[0]?.relationship_state === "none", "Withdrawn card state remained pending");
+    assert(
+      withdrawn[0]?.relationship_state === "none",
+      "Withdrawn card state remained pending",
+    );
     const after = await feed(actor);
-    assert(after.some((row) => row.user_id === target.id), "Withdrawn profile disappeared from Discovery");
+    assert(
+      after.some((row) => row.user_id === target.id),
+      "Withdrawn profile disappeared from Discovery",
+    );
     return { relationshipState: withdrawn[0]?.relationship_state };
   });
 
   await test("interest and profile-view events create notification records", async () => {
     const interestNotifications = await request(
-      `/rest/v1/notifications?user_id=in.(${femaleFreeMembers.map((member) => member.id).join(",")})&type=eq.interest_received&select=id`,
+      `/rest/v1/notifications?user_id=in.(${
+        femaleFreeMembers.map((member) => member.id).join(",")
+      })&type=eq.interest_received&select=id`,
       { apiKey: service },
     );
-    assert(interestNotifications.length >= 30, "Interest notifications were not queued");
+    assert(
+      interestNotifications.length >= 30,
+      "Interest notifications were not queued",
+    );
     await rpc(premiumMale, "record_profile_view", {
       p_viewed_user_id: femaleFreeMembers[0].id,
       p_notify_owner: true,
     });
     const viewNotifications = await request(
-      `/rest/v1/notifications?user_id=eq.${femaleFreeMembers[0].id}&type=eq.profile_view&select=id,deep_link`,
+      `/rest/v1/notifications?user_id=eq.${
+        femaleFreeMembers[0].id
+      }&type=eq.profile_view&select=id,deep_link`,
       { apiKey: service },
     );
-    assert(viewNotifications.length === 1, "Profile-view notification was not queued");
+    assert(
+      viewNotifications.length === 1,
+      "Profile-view notification was not queued",
+    );
     return {
       interestNotifications: interestNotifications.length,
       profileViewNotifications: viewNotifications.length,
@@ -910,7 +1208,9 @@ try {
     .map((entry) => entry.durationMs)
     .sort((left, right) => left - right);
   const percentile = (value) =>
-    durations[Math.min(durations.length - 1, Math.ceil(durations.length * value) - 1)] ?? 0;
+    durations[
+      Math.min(durations.length - 1, Math.ceil(durations.length * value) - 1)
+    ] ?? 0;
   report.performance = {
     measuredSteps: durations.length,
     p50Ms: percentile(0.5),
