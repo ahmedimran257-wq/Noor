@@ -37,7 +37,6 @@ import '../../features/home/screens/help_support_screen.dart';
 import '../../features/home/screens/photo_access_requests_screen.dart';
 import '../../features/home/screens/profile_route_screen.dart';
 import '../../features/verification/screens/badge_verification_screen.dart';
-import '../../features/verification/screens/kyc_verification_screen.dart';
 import '../widgets/loaders/silarah_shimmer.dart';
 
 // Route names
@@ -305,7 +304,8 @@ GoRouter buildAppRouter(
         path: AppRoutes.verify,
         pageBuilder: (context, state) => _slidePage(
           key: state.pageKey,
-          child: const KycVerificationScreen(),
+          // Backward-compatible route for old notification links.
+          child: const BadgeVerificationScreen(),
         ),
       ),
       GoRoute(

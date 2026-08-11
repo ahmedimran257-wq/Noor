@@ -27,8 +27,8 @@ class LegalDocument {
 }
 
 abstract final class LegalDocuments {
-  static const version = '2.0.0';
-  static const effectiveDate = '17 July 2026';
+  static const version = '2.1.0';
+  static const effectiveDate = '11 August 2026';
   static const supportEmail = 'support@silarah.com';
   static const privacyEmail = 'privacy@silarah.com';
   static const safetyEmail = 'safety@silarah.com';
@@ -63,7 +63,7 @@ abstract final class LegalDocuments {
       ),
       LegalSection(
         '6. Verification and guardians',
-        'Photo, liveness, identity and guardian features reduce certain risks but do not constitute a criminal, financial, employment, immigration or comprehensive background check. A badge is not a guarantee that every statement is true or that a member is safe. Guardian mode is optional product functionality and is not legal advice or a determination that a particular wali arrangement is valid under religious or civil law. The separate Verification and Guardian/Wali Policies apply.',
+        'Photo, phone, email, account-history and guardian trust checks reduce certain risks but do not establish legal identity and do not constitute a criminal, financial, employment, immigration or comprehensive background check. A badge is not a guarantee that every statement is true or that a member is safe. Guardian mode is optional product functionality and is not legal advice or a determination that a particular wali arrangement is valid under religious or civil law. The separate Verification and Guardian/Wali Policies apply.',
       ),
       LegalSection(
         '7. Subscriptions, renewal and cancellation',
@@ -121,7 +121,7 @@ abstract final class LegalDocuments {
       ),
       LegalSection(
         '4. Sensitive and verification data',
-        'Religious beliefs, identity documents, facial images and some matrimonial information may be sensitive under applicable law. We use religious information for compatibility only with explicit consent where required. Government ID and selfie data are used for age, document and face-match checks, fraud prevention and manual review when necessary. Ordinary profile-photo moderation is separate from identity verification. We do not use sensitive data for third-party advertising.',
+        'Religious beliefs, temporary verification captures and some matrimonial information may be sensitive under applicable law. We use religious information for compatibility only with explicit consent where required. The optional photo check creates three temporary guided captures for an authorized human to compare with the current profile photo. We do not create facial embeddings or templates, perform government-ID matching, estimate age from a face, or use these captures for advertising.',
       ),
       LegalSection(
         '5. Purposes and legal bases',
@@ -133,7 +133,7 @@ abstract final class LegalDocuments {
       ),
       LegalSection(
         '7. Service providers and disclosures',
-        'We use vetted processors to run the Service: Supabase for authentication, database, storage, realtime and server functions; Google Firebase for push delivery, phone authentication where enabled and crash reporting; RevenueCat and the applicable app store for subscriptions and transaction state; Brevo for transactional email; Cloudflare for website delivery, DNS and security; Google ML Kit for on-device image, face, object and text analysis; and Photon/Wikidata for location and language lookup. These providers process only data needed for their role under their own contractual and legal obligations. We may also disclose data with your direction, during a corporate transaction, to protect people and the Service, or when lawfully required. We do not sell personal data and do not run third-party behavioural advertising.',
+        'We use vetted processors to run the Service: Supabase for authentication, database, private storage, realtime and server functions; Google Firebase for push delivery, phone authentication where enabled and crash reporting; RevenueCat and the applicable app store for subscriptions and transaction state; Brevo for transactional email; Cloudflare for website delivery, DNS and security; Google ML Kit for on-device capture guidance and photo-safety signals; and Photon/Wikidata for location and language lookup. These providers process only data needed for their role under their own contractual and legal obligations. We may also disclose data with your direction, during a corporate transaction, to protect people and the Service, or when lawfully required. We do not sell personal data and do not run third-party behavioural advertising.',
       ),
       LegalSection(
         '8. International processing',
@@ -141,11 +141,11 @@ abstract final class LegalDocuments {
       ),
       LegalSection(
         '9. Retention',
-        'Active-account profile, preference, photo, match and message data is retained while needed to provide the Service. A requested account enters a 30-day recovery period before purge. Verification documents are retained in restricted storage while needed to decide and maintain the integrity of verification; outcome and audit records may be retained longer for fraud, safety and legal defence. Reports, blocks, transaction records, consent records, security logs and backups may be retained after account deletion only for applicable limitation, tax, payment, abuse-prevention and legal periods, then deleted or de-identified. Backup deletion may complete on the provider’s normal rotation schedule. We periodically review retention and avoid keeping identifiable data merely because it may be useful.',
+        'Active-account profile, preference, photo, match and message data is retained while needed to provide the Service. A requested account enters a 30-day recovery period before purge. Temporary photo-verification captures are deleted from active verification storage after review and no later than 48 hours after submission. We retain the decision, date, reviewer audit and deletion result without retaining the captures. Reports, blocks, transaction records, consent records, security logs and backups may be retained after account deletion only for applicable limitation, tax, payment, abuse-prevention and legal periods, then deleted or de-identified. Backup deletion may complete on the provider’s normal rotation schedule. We periodically review retention and avoid keeping identifiable data merely because it may be useful.',
       ),
       LegalSection(
         '10. Security',
-        'We use encrypted transport, private storage for identity documents, row-level access controls, signed media access, role-based staff access, audit logs, rate limits and secret management. No online system is risk-free. Use a secure device, protect OTP codes and report suspected compromise promptly. We will make legally required breach notifications.',
+        'We use encrypted transport, private storage for temporary verification captures, row-level access controls, short-lived signed media access, role-based staff access, audit logs, rate limits and secret management. No online system is risk-free. Use a secure device, protect OTP codes and report suspected compromise promptly. We will make legally required breach notifications.',
       ),
       LegalSection(
         '11. Your rights and choices',
@@ -289,26 +289,26 @@ abstract final class LegalDocuments {
   static const verification = LegalDocument(
     id: 'verification_policy',
     slug: 'verification-policy',
-    title: 'KYC & Verification Policy',
+    title: 'Trust & Verification Policy',
     summary:
-        'What selfie, liveness and government-ID checks establish, how documents are handled and how decisions can be challenged.',
+        'What photo, phone, email, guardian and account-history checks establish, how temporary captures are handled and how decisions can be challenged.',
     sections: [
       LegalSection('1. Purpose and types of check',
-          'Silarah may offer a profile-photo liveness badge and a separate government-ID identity check. Liveness is intended to show that a live person completed a camera check. KYC compares a selfie, document information and document photo to support age and identity confidence. Neither check is a comprehensive background check.'),
+          'Silarah may offer profile-photo review, SMS phone confirmation, email confirmation, guardian connection and established-member indicators. These are separate trust signals. They do not establish legal identity and are not a comprehensive background check.'),
       LegalSection('2. What we collect',
-          'Depending on the check, we process camera frames or a captured selfie, government-ID image, document type and issuing country, extracted date of birth, face-match similarity, anti-spoofing or quality signals, submission timestamps, decision status and reviewer notes. Do not submit another person’s document.'),
+          'For the optional photo check, we process three temporary guided captures (look at camera, gentle smile and blink), the current primary profile photo, submission timestamps, decision status, reviewer notes and deletion audit. We do not request a government ID for this check and do not create or retain facial embeddings or templates.'),
       LegalSection('3. Automated and manual processing',
-          'Text extraction and face similarity may run on the device as capture and reviewer hints. Every valid submission is decided by an authorized human reviewer using the original private document and selfie; a client score can never approve or reject identity.'),
+          'On-device face signals provide capture guidance only. Smile and blink detection may be bypassed through the accessibility fallback. Every submission is decided by an authorized human reviewer comparing the temporary captures with the current profile photo; an on-device score can never grant or reject the badge.'),
       LegalSection('4. Fair-use requirements',
-          'Use a genuine, unaltered document that belongs to you and a current live selfie. Do not use filters, screens, masks intended to deceive, forged documents or another person. Poor lighting, unreadable text, age under 18, mismatch, suspected manipulation or unsupported documents may cause rejection or resubmission.'),
+          'Submit your own current, unaltered image. Normal glasses, hijab, niqab and culturally modest clothing are allowed. Do not use filters, screens, masks intended to deceive or another person. Poor lighting, multiple people, mismatch or suspected manipulation may require resubmission or rejection.'),
       LegalSection('5. Badge meaning and limitations',
           'A badge means only that the stated Silarah check passed at a point in time. It does not certify character, intentions, marital status, finances, criminal history, immigration status or safety, and it does not replace independent judgment. We may remove or repeat verification when material information changes or risk is detected.'),
       LegalSection('6. Access, security and retention',
-          'Identity documents are stored privately, shown only through short-lived staff previews, and are not displayed to members or guardians. Raw global-KYC images are scheduled for deletion 30 days after submission or decision. The decision checklist, timestamps and cryptographic file digests may remain for audit, fraud prevention, appeals and legal obligations without retaining the raw images. Account deletion follows the Data Deletion and Privacy Policies, subject to limited lawful retention.'),
+          'Temporary captures are stored privately, shown only through short-lived staff previews, and are never displayed to members or guardians. They are deleted from active verification storage after review and no later than 48 hours after submission. The decision, timestamps, reviewer audit and deletion result may remain for integrity, appeals and legal obligations without retaining the captures.'),
       LegalSection('7. Decision and appeal',
           'The app provides a reason or next step when possible. You may retry after correcting quality issues or appeal through safety@silarah.com. Include your account email and decision date, but do not email identity documents. Staff may request a new secure submission. Appeals do not guarantee approval.'),
-      LegalSection('8. Regional document support',
-          'Available government-issued document types may vary by country. Silarah will never ask for a government-service password or OTP. Submit identity evidence only through the private in-app verification flow.'),
+      LegalSection('8. Regional availability and phone confirmation',
+          'The initial service launch is limited to enabled launch markets shown in the app. Silarah will never ask for your email or phone OTP outside the official in-app verification flow. A phone badge appears only after successful SMS confirmation, never from a purchase alone.'),
     ],
   );
 
@@ -320,7 +320,7 @@ abstract final class LegalDocuments {
         'Rules and automated safety checks for profile photos, plus review, privacy and appeal procedures.',
     sections: [
       LegalSection('1. Scope',
-          'This Policy applies to profile and gallery photos. It is separate from liveness and identity verification. Passing photo moderation does not grant an identity badge, and verification does not exempt a photo from these rules.'),
+          'This Policy applies to profile and gallery photos. It is separate from the optional profile-photo trust check. Passing automated photo moderation does not grant a trust badge, and a trust badge does not exempt a photo from these rules.'),
       LegalSection('2. What profile photos must show',
           'Photos must be genuine, usable images relevant to the account member. Group and culturally modest photos, including hijab, niqab and traditional clothing, are permitted when otherwise compliant. You must have permission to upload images containing other adults. Images whose primary purpose is text, scenery, advertising, a random object or impersonation may be rejected as unsuitable for a matrimonial profile.'),
       LegalSection('3. Prohibited images',

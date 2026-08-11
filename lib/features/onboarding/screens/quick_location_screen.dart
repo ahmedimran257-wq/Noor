@@ -5,7 +5,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/data/country_data.dart';
+import '../../../core/models/onboarding_data.dart';
 import '../../../core/services/country_context_service.dart';
+import '../../../core/services/launch_configuration_service.dart';
 import '../../../core/services/location_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
@@ -35,11 +37,26 @@ class _QuickLocationScreenState extends State<QuickLocationScreen> {
   void initState() {
     super.initState();
     final data = context.read<OnboardingCubit>().currentData;
-    final matches = kAllCountries.where(
-      (country) =>
-          country.iso2.toUpperCase() == data.countryCode?.toUpperCase(),
-    );
-    _country = matches.isEmpty ? deviceCountry() : matches.first;
+    _country = kAllCountries.firstWhere((country) => country.iso2 == 'IN');
+    _loadLaunchCountry(data);
+  }
+
+  void _restoreSavedLocation(
+    OnboardingData data,
+    CountryInfo selectedCountry,
+  ) {
+    final savedCountry = data.countryCode?.trim().toUpperCase();
+    final locationBelongsToSelectedCountry = savedCountry == null ||
+        savedCountry.isEmpty ||
+        savedCountry == selectedCountry.iso2.toUpperCase();
+    if (!locationBelongsToSelectedCountry) {
+      _region = null;
+      _initialRegion = null;
+      _city = null;
+      _initialCity = null;
+      return;
+    }
+
     final savedState = data.stateName?.trim().isNotEmpty == true
         ? data.stateName!.trim()
         : _stateFromCityName(data.cityName);
@@ -48,8 +65,8 @@ class _QuickLocationScreenState extends State<QuickLocationScreen> {
       _region = RegionResult(
         id: '',
         name: savedState,
-        countryCode: _country.iso2,
-        country: _country.name,
+        countryCode: selectedCountry.iso2,
+        country: selectedCountry.name,
       );
     }
     _initialCity = data.cityName;
@@ -61,20 +78,40 @@ class _QuickLocationScreenState extends State<QuickLocationScreen> {
       _city = CityResult(
         city: cityOnly,
         state: savedState ?? data.stateName ?? '',
-        country: _country.name,
-        countryCode: _country.iso2,
+        country: selectedCountry.name,
+        countryCode: selectedCountry.iso2,
         postalCode: data.postalCode ?? '',
         fullAddress: [
           cityOnly,
           if ((savedState ?? data.stateName)?.trim().isNotEmpty == true)
             (savedState ?? data.stateName)!.trim(),
-          _country.name,
+          selectedCountry.name,
         ].join(', '),
         placeId: data.cityId ?? '',
         lat: data.lat!,
         lng: data.lng!,
       );
     }
+  }
+
+  Future<void> _loadLaunchCountry(OnboardingData data) async {
+    final launch = await LaunchConfigurationService.load();
+    if (!mounted) return;
+    final preferred = data.countryCode?.trim().toUpperCase();
+    final device = deviceCountry().iso2.toUpperCase();
+    final selectedCode = launch.enabledCountries.contains(preferred)
+        ? preferred!
+        : launch.enabledCountries.contains(device)
+            ? device
+            : launch.defaultCountry;
+    final matches = kAllCountries.where(
+      (country) => country.iso2.toUpperCase() == selectedCode,
+    );
+    final selectedCountry = matches.isNotEmpty ? matches.first : _country;
+    setState(() {
+      _country = selectedCountry;
+      _restoreSavedLocation(data, selectedCountry);
+    });
   }
 
   bool get _isValid => _city != null && !_saving;

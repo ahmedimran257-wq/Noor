@@ -340,11 +340,10 @@ class _NotificationTile extends StatelessWidget {
         return Icons.photo_library_outlined;
       case 'profile_returned_to_review':
       case 'photo_rejected':
-      case 'kyc_rejected':
-      case 'kyc_pending':
+      case 'photo_verification_reviewed':
         return Icons.info_rounded;
       case 'photo_approved':
-      case 'kyc_approved':
+      case 'photo_verification_approved':
       case 'account_restored':
         return Icons.check_circle_rounded;
       case 'account_suspended':
@@ -375,11 +374,10 @@ class _NotificationTile extends StatelessWidget {
         return AppColors.verifiedTeal;
       case 'profile_returned_to_review':
       case 'photo_rejected':
-      case 'kyc_rejected':
-      case 'kyc_pending':
+      case 'photo_verification_reviewed':
         return AppColors.champagneGold;
       case 'photo_approved':
-      case 'kyc_approved':
+      case 'photo_verification_approved':
       case 'account_restored':
         return AppColors.verifiedTeal;
       case 'account_suspended':

@@ -6,7 +6,7 @@ const healthLabels: Record<string, string> = {
   staleNotifications: "Stale notifications",
   futureNotifications: "Future notifications",
   fcmTokenUsers: "Users with FCM tokens",
-  pendingKyc: "Pending KYC",
+  pendingPhotoChecks: "Pending photo checks",
   pendingPhotos: "Pending photos",
   openReports: "Open reports",
   queuedCampaigns: "Queued campaigns",

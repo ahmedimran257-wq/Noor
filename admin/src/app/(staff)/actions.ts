@@ -19,24 +19,20 @@ const bulkAccountActionSchema = z.object({
   action: z.enum(["suspend", "restore", "ban", "shadowban"]),
   reason: z.string().trim().min(6, "Bulk actions require a reason.").max(500),
 });
-const kycReviewSchema = z.object({
+const photoVerificationReviewSchema = z.object({
   submissionId: uuidSchema,
   decision: z.enum(["approve", "reject", "resubmit"]),
   reason: reasonSchema,
-  documentReadable: z.boolean(),
-  nameMatch: z.boolean(),
-  dobMatch: z.boolean(),
-  faceMatch: z.boolean(),
-  documentUnexpired: z.boolean(),
+  samePerson: z.boolean(),
+  clearCapture: z.boolean(),
+  currentPhotoMatch: z.boolean(),
 }).superRefine((value, ctx) => {
   if (value.decision === "approve" && ![
-    value.documentReadable,
-    value.nameMatch,
-    value.dobMatch,
-    value.faceMatch,
-    value.documentUnexpired,
+    value.samePerson,
+    value.clearCapture,
+    value.currentPhotoMatch,
   ].every(Boolean)) {
-    ctx.addIssue({ code: "custom", message: "Complete all five evidence checks before approval." });
+    ctx.addIssue({ code: "custom", message: "Complete all three photo checks before approval." });
   }
   if (value.decision !== "approve" && value.reason.trim().length < 6) {
     ctx.addIssue({ code: "custom", message: "Choose a clear resubmission or rejection reason." });
@@ -118,7 +114,7 @@ async function run(name: string, values: Record<string, unknown>) {
   if (error) throw new Error(error.message);
 }
 
-async function claimWorkItem(itemType: "kyc" | "report" | "photo" | "message_report", itemId: string) {
+async function claimWorkItem(itemType: "report" | "photo" | "message_report", itemId: string) {
   await run("admin_claim_work_item", {
     p_item_type: itemType,
     p_item_id: itemId,
@@ -190,31 +186,49 @@ export async function bulkAccountAction(formData: FormData) {
     });
   }, "Bulk action completed.");
 }
-export async function reviewKyc(formData: FormData) {
-  await guardedAction("/kyc", async () => {
+export async function reviewPhotoVerification(formData: FormData) {
+  await guardedAction("/photo-verification", async () => {
     const admin = await requireAdmin();
     assertRole(admin, ["super_admin", "moderator"]);
-    const parsed = kycReviewSchema.parse({
+    const parsed = photoVerificationReviewSchema.parse({
       submissionId: formData.get("submissionId"),
       decision: formData.get("decision"),
       reason: formString(formData, "reason"),
-      documentReadable: formData.get("documentReadable") === "on",
-      nameMatch: formData.get("nameMatch") === "on",
-      dobMatch: formData.get("dobMatch") === "on",
-      faceMatch: formData.get("faceMatch") === "on",
-      documentUnexpired: formData.get("documentUnexpired") === "on",
+      samePerson: formData.get("samePerson") === "on",
+      clearCapture: formData.get("clearCapture") === "on",
+      currentPhotoMatch: formData.get("currentPhotoMatch") === "on",
     });
-    await run("admin_review_kyc", {
+    await run("admin_review_photo_verification", {
       p_submission_id: parsed.submissionId,
       p_decision: parsed.decision,
       p_reason: parsed.reason,
-      p_document_readable: parsed.documentReadable,
-      p_name_match: parsed.nameMatch,
-      p_dob_match: parsed.dobMatch,
-      p_face_match: parsed.faceMatch,
-      p_document_unexpired: parsed.documentUnexpired,
+      p_same_person: parsed.samePerson,
+      p_clear_capture: parsed.clearCapture,
+      p_current_photo_match: parsed.currentPhotoMatch,
     });
-  }, "Identity review saved.");
+    // Delete captures immediately after the decision. The five-minute worker
+    // remains an idempotent fallback for storage or network failures.
+    const service = createAdminClient();
+    const { data: claimed } = await service.rpc(
+      "checkout_photo_verification_purges",
+      { p_limit: 25 },
+    );
+    const current = (claimed ?? []).find(
+      (row: { submission_id?: string }) => row.submission_id === parsed.submissionId,
+    );
+    if (current) {
+      const paths = [current.neutral_path, current.smile_path, current.blink_path]
+        .filter((path): path is string => typeof path === "string" && path.length > 0);
+      const { error: removeError } = paths.length === 0
+        ? { error: null }
+        : await service.storage.from("photo-verification-captures").remove(paths);
+      await service.rpc("finish_photo_verification_purge", {
+        p_submission_id: parsed.submissionId,
+        p_success: !removeError,
+        p_error: removeError?.message ?? null,
+      });
+    }
+  }, "Photo verification review saved and capture deletion started.");
 }
 export async function resolveReport(formData: FormData) {
   await guardedAction("/moderation", async () => {

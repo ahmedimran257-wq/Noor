@@ -3,7 +3,12 @@ import { isAuthorizedCronRequest } from "../_shared/cron_auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const BUCKETS = ["profile-photos", "kyc-documents", "selfie-verifications"];
+const BUCKETS = [
+  "profile-photos",
+  "kyc-documents",
+  "selfie-verifications",
+  "photo-verification-captures",
+];
 const CONCURRENCY = 3;
 
 function createAdminClient() {

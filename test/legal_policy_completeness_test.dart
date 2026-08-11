@@ -11,7 +11,7 @@ void main() {
     'child-safety': 'Child Safety Standards',
     'refund-policy': 'Refund Policy',
     'data-deletion': 'Data Deletion Policy',
-    'verification-policy': 'KYC & Verification Policy',
+    'verification-policy': 'Trust & Verification Policy',
     'photo-moderation-policy': 'Photo Moderation Policy',
     'guardian-policy': 'Guardian / Wali Policy',
   };
@@ -72,15 +72,23 @@ void main() {
             .readAsStringSync();
     final consentService =
         File('lib/core/services/legal_consent_service.dart').readAsStringSync();
-    final migration = File(
+    final originalConsentMigration = File(
       'supabase/migrations/134_versioned_legal_policy_consents.sql',
+    ).readAsStringSync();
+    final currentConsentMigration = File(
+      'supabase/migrations/206_india_launch_and_photo_trust.sql',
     ).readAsStringSync();
 
     expect(settings, contains('LegalDocuments.all'));
     expect(legalGate, contains('community-guidelines'));
     expect(consentService, contains('LegalDocuments.version'));
-    expect(migration, contains("'community_guidelines'"));
-    expect(migration, contains("DEFAULT '${LegalDocuments.version}'"));
+    expect(originalConsentMigration, contains("'community_guidelines'"));
+    expect(
+        currentConsentMigration,
+        contains(
+            "trim(coalesce(p_policy_version, '')) <> '${LegalDocuments.version}'"));
+    expect(currentConsentMigration,
+        contains("VALUES ('${LegalDocuments.version}', p_acceptances)"));
   });
 
   test('account deletion never claims app-store billing is cancelled', () {

@@ -24,7 +24,6 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const BUCKET_NAME = "profile-photos";
-const KYC_BUCKET_NAME = "kyc-documents";
 const MAX_PHOTOS = 4;
 const UPLOAD_URL_EXPIRES_IN = 300; // Upload tokens stay deliberately short-lived.
 // Keep private grants revocable. The client refreshes authorized URLs on
@@ -35,7 +34,6 @@ const PURPOSE_LIMITS: Record<string, number> = {
   read: 300,
   upload: 20,
   delete: 20,
-  kyc: 10,
 };
 
 Deno.serve(async (req: Request) => {
@@ -89,8 +87,6 @@ Deno.serve(async (req: Request) => {
       order_index?: number;
       file_extension?: string;
       purpose?:
-        | "kyc_selfie"
-        | "kyc_id"
         | "read_profile_photo"
         | "read_profile_photos"
         | "read_profile_gallery"
@@ -104,8 +100,6 @@ Deno.serve(async (req: Request) => {
       ? "read"
       : requestBody.purpose?.startsWith("delete_")
       ? "delete"
-      : requestBody.purpose?.startsWith("kyc_")
-      ? "kyc"
       : "upload";
 
     // Rate limiting (anti-scraping)
@@ -169,17 +163,9 @@ Deno.serve(async (req: Request) => {
     }
 
     const ext = (file_extension ?? "webp").toLowerCase();
-    const allowedTypes = purpose === "kyc_selfie" || purpose === "kyc_id"
-      ? ["webp", "jpg", "jpeg"]
-      : ["jpg"];
+    const allowedTypes = ["jpg"];
     if (!allowedTypes.includes(ext)) {
       return errorResponse(400, "Unsupported image format.");
-    }
-
-    // KYC uploads use a dedicated private bucket. They never create a public
-    // photo record and are always scoped to the authenticated user's folder.
-    if (purpose === "kyc_selfie" || purpose === "kyc_id") {
-      return await createKycSignedUploadUrl(userId, purpose, ext);
     }
 
     if (order_index === undefined || order_index < 0 || order_index > 3) {
@@ -355,57 +341,6 @@ function deleteReplacedProfilePhotoObject(
   _storagePath: string | undefined,
 ): Response {
   return errorResponse(410, "Client-side replaced-photo cleanup is retired.");
-}
-
-async function createKycSignedUploadUrl(
-  userId: string,
-  purpose: "kyc_selfie" | "kyc_id",
-  extension: string,
-): Promise<Response> {
-  const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-  const canonicalExtension = extension === "jpeg" ? "jpg" : extension;
-  const storagePath =
-    `${userId}/${purpose}_${crypto.randomUUID()}.${canonicalExtension}`;
-  const expectedMime = canonicalExtension === "webp"
-    ? "image/webp"
-    : "image/jpeg";
-  const { data: reservationRows, error: reservationError } = await adminClient
-    .rpc("reserve_upload", {
-      p_user_id: userId,
-      p_bucket_id: KYC_BUCKET_NAME,
-      p_purpose: purpose,
-      p_storage_path: storagePath,
-      p_expected_mime: expectedMime,
-      p_max_bytes: 8 * 1024 * 1024,
-      p_order_index: null,
-    });
-  const reservation = Array.isArray(reservationRows)
-    ? reservationRows[0]
-    : reservationRows;
-  if (reservationError || !reservation?.reservation_id) {
-    return errorResponse(409, "The identity upload could not be reserved.");
-  }
-  const { data, error } = await adminClient.storage
-    .from(KYC_BUCKET_NAME)
-    .createSignedUploadUrl(storagePath);
-  if (error || !data?.signedUrl) {
-    throw new Error(`Failed to generate KYC upload URL: ${error?.message}`);
-  }
-  return new Response(
-    JSON.stringify({
-      signed_url: data.signedUrl,
-      storage_path: storagePath,
-      reservation_id: reservation.reservation_id,
-      token: data.token,
-      expires_in: UPLOAD_URL_EXPIRES_IN,
-    }),
-    {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    },
-  );
 }
 
 async function createAuthorizedProfilePhotoReadUrl(

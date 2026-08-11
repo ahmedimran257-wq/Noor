@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('profile photo moderation is independent from badge verification', () {
-    test('upload screen contains no face or liveness gate', () {
+    test('upload screen contains no photo-badge capture gate', () {
       final source = File(
         'lib/features/onboarding/screens/photo_upload_screen.dart',
       ).readAsStringSync();
@@ -43,7 +43,7 @@ void main() {
       expect(source, isNot(contains('ateq_nsfw.tflite')));
     });
 
-    test('face and liveness detection remains in badge verification only', () {
+    test('smile and blink guidance remains in badge verification only', () {
       final source = File(
         'lib/features/verification/screens/badge_verification_screen.dart',
       ).readAsStringSync();

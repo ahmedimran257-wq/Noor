@@ -12,7 +12,7 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/users/:path*",
-    "/kyc/:path*",
+    "/photo-verification/:path*",
     "/moderation/:path*",
     "/matches/:path*",
     "/subscriptions/:path*",

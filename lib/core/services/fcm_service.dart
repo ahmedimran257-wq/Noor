@@ -371,10 +371,9 @@ class FcmService {
         type == 'account_restored' ||
         type == 'photo_approved' ||
         type == 'photo_rejected' ||
-        type == 'kyc_approved' ||
-        type == 'kyc_pending') {
+        type == 'photo_verification_approved') {
       path = '/home?tab=3';
-    } else if (type == 'kyc_rejected') {
+    } else if (type == 'photo_verification_reviewed') {
       path = '/verify';
     } else if (type == 'account_suspended' || type == 'account_banned') {
       path = '/help-support';

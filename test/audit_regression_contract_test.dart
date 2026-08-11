@@ -36,10 +36,12 @@ void main() {
       File('supabase/functions/digilocker-verify/index.ts').existsSync(),
       false,
     );
-    final kyc = File(
-      'lib/features/verification/screens/kyc_verification_screen.dart',
-    ).readAsStringSync();
-    expect(kyc.toLowerCase(), isNot(contains('digilocker')));
+    expect(
+      File('lib/features/verification/screens/kyc_verification_screen.dart')
+          .existsSync(),
+      false,
+    );
+    expect(File('supabase/functions/process-kyc/index.ts').existsSync(), false);
 
     final retirementMigration = File(
       'supabase/migrations/195_retire_digilocker_verification.sql',
@@ -50,17 +52,15 @@ void main() {
         'DROP TABLE IF EXISTS public.identity_verification_evidence',
       ),
     );
-    expect(
-      retirementMigration,
-      contains('clear selfie plus government-ID photos'),
-    );
-
     final publicPolicy = File(
       'site/verification-policy/index.html',
     ).readAsStringSync();
     expect(publicPolicy.toLowerCase(), isNot(contains('digilocker')));
-    expect(publicPolicy, contains('clear live selfie'));
-    expect(publicPolicy, contains('clear photos of a supported government ID'));
+    expect(publicPolicy, contains('look at the camera'));
+    expect(publicPolicy, contains('gentle smile'));
+    expect(publicPolicy, contains('blink once'));
+    expect(publicPolicy, contains('government-ID matching'));
+    expect(publicPolicy, contains('48 hours'));
   });
 
   test('Android owns branded notification channels and native share', () {

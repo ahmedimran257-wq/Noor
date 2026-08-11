@@ -159,11 +159,11 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('ID verified'), findsOneWidget);
+    expect(find.text('Photo'), findsOneWidget);
     expect(find.text('23 hr ago'), findsOneWidget);
     expect(find.text('Previously matched on Jul 18'), findsOneWidget);
     expect(
-      find.bySemanticsLabel(RegExp('Government ID verified')),
+      find.bySemanticsLabel(RegExp('Profile photo verified')),
       findsOneWidget,
     );
     expect(find.byIcon(Icons.location_on_outlined), findsOneWidget);

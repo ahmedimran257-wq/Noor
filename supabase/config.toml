@@ -106,11 +106,6 @@ enabled = true
 # Edge Functions are in supabase/functions/
 # Deploy all with: supabase functions deploy
 
-[functions.process-kyc]
-# KYC accepts only the signed-in user's JWT and re-validates ownership inside
-# the function before touching private identity documents.
-verify_jwt = true
-
 [functions.location-search]
 # Typed location data is proxied through an authenticated, rate-limited
 # boundary instead of being disclosed directly from the member's device.
@@ -136,6 +131,14 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.purge-kyc-documents]
+# Private pg_cron request authenticated by the Vault-backed cron credential.
+verify_jwt = false
+
+[functions.photo-verification]
+# Member JWT is revalidated inside the function before private upload grants.
+verify_jwt = true
+
+[functions.purge-photo-verification-captures]
 # Private pg_cron request authenticated by the Vault-backed cron credential.
 verify_jwt = false
 

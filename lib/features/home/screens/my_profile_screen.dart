@@ -20,7 +20,8 @@ import '../../../core/router/app_router.dart';
 import '../../../core/services/bookmark_service.dart';
 import '../../../core/services/connectivity_service.dart';
 import '../../../core/services/authorized_profile_service.dart';
-import '../../../core/services/kyc_verification_service.dart';
+import '../../../core/services/photo_verification_service.dart';
+import '../../../core/services/phone_verification_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
@@ -34,7 +35,6 @@ import 'profile_views_screen.dart';
 import 'profile_detail_screen.dart';
 import 'notifications_screen.dart';
 import '../../../core/services/supabase_service.dart';
-import '../../../core/services/selfie_verification_service.dart';
 import '../../../core/services/profile_photo_service.dart';
 import '../../../core/services/profile_view_service.dart';
 import '../../../core/services/wali_mode_service.dart';
@@ -111,8 +111,10 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   bool _verificationLoading = true;
   bool _trustStateLoading = true;
   bool _emailVerified = false;
-  KycVerificationStatus _kycStatus = KycVerificationStatus.notStarted;
-  String _kycAssuranceLevel = 'none';
+  PhotoVerificationStatus _photoVerificationStatus =
+      const PhotoVerificationStatus.notStarted();
+  bool _phoneVerified = false;
+  bool _establishedMember = false;
   String? _accountEmail;
   String? _primaryPhotoUrl;
   int _approvedPhotoCount = 0;
@@ -239,7 +241,9 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     var hasBadge = false;
     if (SupabaseService.isInitialized) {
       try {
-        hasBadge = await SelfieVerificationService.instance.hasBadge();
+        final status = await PhotoVerificationService.instance.fetchStatus();
+        hasBadge = status.isApproved;
+        _photoVerificationStatus = status;
       } catch (_) {
         hasBadge = false;
       }
@@ -254,11 +258,6 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   Future<void> _openVerification() async {
     await context.push(AppRoutes.badgeVerification);
     if (mounted) await _loadVerificationBadge();
-  }
-
-  Future<void> _openIdentityVerification() async {
-    await context.push(AppRoutes.verify);
-    if (mounted) await _loadTrustState();
   }
 
   Future<void> _openEditProfile() async {
@@ -365,7 +364,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           : data.photoPrivacy == PhotoPrivacy.requestOnly
               ? 'request_only'
               : 'public',
-      isVerified: _kycStatus == KycVerificationStatus.approved,
+      isVerified: _hasVerificationBadge,
       occupation: data.profession,
       education: data.educationLabel,
       bio: data.bio,
@@ -422,14 +421,25 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     if (userId == null) return;
 
     try {
-      final kyc = await KycVerificationService.instance.fetchStatus();
+      final results = await Future.wait<dynamic>([
+        PhotoVerificationService.instance.fetchStatus(),
+        PhoneVerificationService.instance.currentStatus(),
+      ]);
+      final photo = results[0] as PhotoVerificationStatus;
+      final phone = results[1] as PhoneVerificationStatus;
       final authUser = SupabaseService.client.auth.currentUser;
+      final accountCreatedAt = authUser == null
+          ? null
+          : DateTime.tryParse(authUser.createdAt)?.toLocal();
       if (!mounted) return;
       setState(() {
-        _kycStatus = kyc.status;
-        _kycAssuranceLevel = kyc.assuranceLevel;
+        _photoVerificationStatus = photo;
+        _hasVerificationBadge = photo.isApproved;
+        _phoneVerified = phone.isVerified;
         _accountEmail = authUser?.email;
         _emailVerified = authUser?.emailConfirmedAt != null;
+        _establishedMember = accountCreatedAt != null &&
+            DateTime.now().difference(accountCreatedAt).inDays >= 30;
         _trustStateLoading = false;
       });
     } catch (_) {
@@ -641,13 +651,13 @@ class _MyProfileScreenState extends State<MyProfileScreen>
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: _TrustCenterCard(
               loading: _trustStateLoading,
-              kycStatus: _kycStatus,
-              kycAssuranceLevel: _kycAssuranceLevel,
-              hasFaceBadge: _hasVerificationBadge,
+              photoStatus: _photoVerificationStatus,
+              phoneVerified: _phoneVerified,
+              guardianConnected: _guardianEnabled,
+              establishedMember: _establishedMember,
               email: _accountEmail,
               emailVerified: _emailVerified,
-              onIdentityVerification: _openIdentityVerification,
-              onFaceVerification: _openVerification,
+              onPhotoVerification: _openVerification,
             ),
           ),
 
@@ -1149,60 +1159,60 @@ class _ProfileLifecycleCard extends StatelessWidget {
 class _TrustCenterCard extends StatelessWidget {
   const _TrustCenterCard({
     required this.loading,
-    required this.kycStatus,
-    required this.kycAssuranceLevel,
-    required this.hasFaceBadge,
+    required this.photoStatus,
+    required this.phoneVerified,
+    required this.guardianConnected,
+    required this.establishedMember,
     required this.email,
     required this.emailVerified,
-    required this.onIdentityVerification,
-    required this.onFaceVerification,
+    required this.onPhotoVerification,
   });
 
   final bool loading;
-  final KycVerificationStatus kycStatus;
-  final String kycAssuranceLevel;
-  final bool hasFaceBadge;
+  final PhotoVerificationStatus photoStatus;
+  final bool phoneVerified;
+  final bool guardianConnected;
+  final bool establishedMember;
   final String? email;
   final bool emailVerified;
-  final VoidCallback onIdentityVerification;
-  final VoidCallback onFaceVerification;
+  final VoidCallback onPhotoVerification;
 
   @override
   Widget build(BuildContext context) {
-    final identityVerified = kycStatus == KycVerificationStatus.approved;
-    final identityPending = kycStatus == KycVerificationStatus.pendingReview;
-    final isManualReview = kycAssuranceLevel == 'manual_document_review';
-    final identityPresentation = switch (kycStatus) {
-      KycVerificationStatus.approved => (
-          status: 'ID reviewed',
-          subtitle: isManualReview
-              ? 'Document and selfie reviewed by Silarah'
-              : 'Identity evidence reviewed',
+    final photoPresentation = switch (photoStatus.state) {
+      PhotoVerificationState.approved when photoStatus.pausedAt == null => (
+          status: 'Verified',
+          subtitle: 'Temporary captures matched your current profile photo',
           color: AppColors.verifiedTeal,
         ),
-      KycVerificationStatus.pendingReview => (
+      PhotoVerificationState.pending => (
           status: 'In review',
-          subtitle: 'Submitted for a secure human review',
+          subtitle: 'Captures delete after review or within 48 hours',
           color: AppColors.champagneGold,
         ),
-      KycVerificationStatus.rejected => (
+      PhotoVerificationState.rejected => (
           status: 'Not approved',
-          subtitle: 'Open to review the decision and available next steps',
+          subtitle: photoStatus.reason ?? 'You can submit a new photo check',
           color: AppColors.softCoral,
         ),
-      KycVerificationStatus.resubmitRequired => (
+      PhotoVerificationState.resubmit => (
           status: 'Action needed',
-          subtitle: 'New or clearer identity evidence is required',
+          subtitle: photoStatus.reason ?? 'New guided captures are needed',
           color: AppColors.softCoral,
         ),
-      KycVerificationStatus.expired => (
+      PhotoVerificationState.expired => (
           status: 'Expired',
-          subtitle: 'Submit a current government-issued document',
+          subtitle: 'Temporary captures were deleted; submit again',
           color: AppColors.champagneGold,
         ),
-      KycVerificationStatus.notStarted => (
-          status: 'Verify',
-          subtitle: 'Match a government ID with your selfie',
+      PhotoVerificationState.approved || PhotoVerificationState.revoked => (
+          status: 'Paused',
+          subtitle: 'Verify again after changing your primary photo',
+          color: AppColors.champagneGold,
+        ),
+      _ => (
+          status: 'Start',
+          subtitle: 'Easy look, smile and blink guide with human review',
           color: AppColors.champagneGold,
         ),
     };
@@ -1227,7 +1237,7 @@ class _TrustCenterCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      UiText(context.uiCopy('Trust & identity'),
+                      UiText(context.uiCopy('Trust checks'),
                           style: AppTypography.bodyMedium),
                       const SizedBox(height: 2),
                       UiText(
@@ -1242,26 +1252,26 @@ class _TrustCenterCard extends StatelessWidget {
           ),
           Divider(height: 1, color: AppColors.cardBorder),
           _TrustRow(
-            icon: Icons.badge_outlined,
-            title: 'Government ID check',
-            subtitle: identityPresentation.subtitle,
-            status: identityPresentation.status,
-            statusColor: identityPresentation.color,
-            onTap: identityVerified || identityPending || loading
+            icon: Icons.face_retouching_natural_outlined,
+            title: 'Profile photo check',
+            subtitle: photoPresentation.subtitle,
+            status: photoPresentation.status,
+            statusColor: photoPresentation.color,
+            onTap: photoStatus.isApproved || photoStatus.isPending || loading
                 ? null
-                : onIdentityVerification,
+                : onPhotoVerification,
           ),
           Divider(height: 1, indent: 56, color: AppColors.cardBorder),
           _TrustRow(
-            icon: Icons.face_retouching_natural_outlined,
-            title: 'On-device photo check',
-            subtitle: hasFaceBadge
-                ? 'Passive liveness check completed'
-                : 'Checks photo readiness; not government ID',
-            status: hasFaceBadge ? 'Completed' : 'Start',
-            statusColor:
-                hasFaceBadge ? AppColors.verifiedTeal : AppColors.champagneGold,
-            onTap: hasFaceBadge ? null : onFaceVerification,
+            icon: Icons.phone_iphone_rounded,
+            title: 'Phone number',
+            subtitle: phoneVerified
+                ? 'Confirmed by SMS verification code'
+                : 'Verified during Premium activation or before first message',
+            status: phoneVerified ? 'Verified' : 'Not verified',
+            statusColor: phoneVerified
+                ? AppColors.verifiedTeal
+                : AppColors.champagneGold,
           ),
           Divider(height: 1, indent: 56, color: AppColors.cardBorder),
           _TrustRow(
@@ -1272,6 +1282,28 @@ class _TrustCenterCard extends StatelessWidget {
             statusColor: emailVerified
                 ? AppColors.verifiedTeal
                 : AppColors.champagneGold,
+          ),
+          Divider(height: 1, indent: 56, color: AppColors.cardBorder),
+          _TrustRow(
+            icon: Icons.family_restroom_rounded,
+            title: 'Guardian connection',
+            subtitle: guardianConnected
+                ? 'Guardian invitation accepted and connected'
+                : 'Optional consent-based guardian connection',
+            status: guardianConnected ? 'Connected' : 'Optional',
+            statusColor: guardianConnected
+                ? AppColors.verifiedTeal
+                : AppColors.slateMist,
+          ),
+          Divider(height: 1, indent: 56, color: AppColors.cardBorder),
+          _TrustRow(
+            icon: Icons.history_toggle_off_rounded,
+            title: 'Established member',
+            subtitle: 'Based on account age and good standing',
+            status: establishedMember ? 'Established' : 'Building history',
+            statusColor: establishedMember
+                ? AppColors.verifiedTeal
+                : AppColors.slateMist,
           ),
           Container(
             width: double.infinity,
@@ -2101,7 +2133,7 @@ class _VerificationIdentityStatus extends StatelessWidget {
       onTap: onVerify,
       child: Semantics(
         button: true,
-        label: 'Verify profile photo with a passive face scan',
+        label: 'Verify profile photo with guided smile and blink captures',
         child: Container(
           padding: const EdgeInsets.symmetric(
             horizontal: AppDimensions.space10,

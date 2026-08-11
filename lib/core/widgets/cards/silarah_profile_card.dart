@@ -29,6 +29,7 @@ class SilarahProfileCard extends StatelessWidget {
     this.photoCount = 0,
     this.isPhotoPrivate = false,
     this.isVerified = false,
+    this.phoneVerified = false,
     this.isFocused = true, // Controls the scale focus effect
     this.onTap,
     this.onSendInterest,
@@ -52,6 +53,7 @@ class SilarahProfileCard extends StatelessWidget {
   final int photoCount;
   final bool isPhotoPrivate;
   final bool isVerified;
+  final bool phoneVerified;
   final bool isFocused;
   final VoidCallback? onTap;
   final VoidCallback? onSendInterest;
@@ -212,6 +214,12 @@ class SilarahProfileCard extends StatelessWidget {
                                       width: AppDimensions.space8,
                                     ),
                                     _VerifiedBadge(),
+                                  ],
+                                  if (phoneVerified) ...[
+                                    const SizedBox(
+                                      width: AppDimensions.space6,
+                                    ),
+                                    const _PhoneVerifiedBadge(),
                                   ],
                                 ],
                               ),
@@ -427,7 +435,7 @@ class _VerifiedBadge extends StatelessWidget {
         : AppColors.verifiedTeal;
 
     return Semantics(
-      label: context.uiCopy('Government ID verified'),
+      label: context.uiCopy('Profile photo verified'),
       excludeSemantics: true,
       child: Container(
         padding: const EdgeInsets.symmetric(
@@ -446,18 +454,59 @@ class _VerifiedBadge extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.verified_user_rounded,
+              Icons.face_retouching_natural_rounded,
               color: trustColor,
               size: 13,
             ),
             const SizedBox(width: AppDimensions.space4),
             UiText(
-              context.uiCopy('ID verified'),
+              context.uiCopy('Photo'),
               style: AppTypography.caption.copyWith(
                 color: trustColor,
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PhoneVerifiedBadge extends StatelessWidget {
+  const _PhoneVerifiedBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final trustColor = AppColors.active.mode == SilarahThemeMode.blackWhite
+        ? AppColors.onMedia
+        : AppColors.champagneGold;
+    return Semantics(
+      label: context.uiCopy('Phone number verified by SMS'),
+      excludeSemantics: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.space8,
+          vertical: AppDimensions.space4,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.overlayBlack55,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+          border: Border.all(color: trustColor.withValues(alpha: 0.72)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.phone_iphone_rounded, color: trustColor, size: 13),
+            const SizedBox(width: AppDimensions.space4),
+            UiText(
+              context.uiCopy('Phone'),
+              style: AppTypography.caption.copyWith(
+                color: trustColor,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],

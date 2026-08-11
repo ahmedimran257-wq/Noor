@@ -18,6 +18,7 @@ import '../../services/profile_write_service.dart';
 import '../../services/location_service.dart';
 import '../../services/profile_photo_service.dart';
 import '../../services/connectivity_service.dart';
+import '../../services/launch_configuration_service.dart';
 import '../../models/onboarding_data.dart';
 import '../../utils/silarah_compute.dart';
 import 'discovery_feed_state.dart';
@@ -79,11 +80,13 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     final initialData = await Future.wait<dynamic>([
       _getViewerProfile(),
       _loadFilterFromPrefs(),
+      LaunchConfigurationService.load(),
     ]);
     if (!_isCurrentRequest(requestVersion)) return;
     final viewerProfile = initialData[0] as OnboardingData?;
     final savedFilter = initialData[1] as DiscoveryFilter?;
     DiscoveryFilter filter = savedFilter ?? state.activeFilter;
+    final launch = initialData[2] as LaunchConfiguration;
 
     if (savedFilter == null && viewerProfile != null) {
       filter = DiscoveryFilter(
@@ -106,6 +109,18 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
                         LocationPreference.sameCountry
                     ? 'Same Country'
                     : 'Anywhere'),
+      );
+    }
+
+    if (launch.isSingleCountry) {
+      final legacyGlobalLabel = filter.distanceLabel == 'Same Country' ||
+          filter.distanceLabel == 'Anywhere';
+      filter = filter.copyWith(
+        diasporaMode: false,
+        clearDiasporaCountries: true,
+        clearBrowseCountries: true,
+        clearDistanceLabel: legacyGlobalLabel,
+        clearMaxDistance: legacyGlobalLabel,
       );
     }
 
@@ -439,6 +454,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         sect: j['sect'] as String?,
         deenLevel: j['deenLevel'] as String?,
         verifiedOnly: (j['verifiedOnly'] as bool?) ?? false,
+        trustFilter: j['trustFilter'] as String?,
         activeRecentlyOnly: (j['activeRecentlyOnly'] as bool?) ?? false,
         maxDistanceKm: j['maxDistanceKm'] as int?,
         familyType: j['familyType'] as String?,
@@ -481,6 +497,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         'sect': f.sect,
         'deenLevel': f.deenLevel,
         'verifiedOnly': f.verifiedOnly,
+        'trustFilter': f.trustFilter,
         'activeRecentlyOnly': f.activeRecentlyOnly,
         'maxDistanceKm': f.maxDistanceKm,
         'familyType': f.familyType,
@@ -588,6 +605,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       if (sect != null) 'sect': sect,
       if (deenLevel != null) 'deen_level': deenLevel,
       'verified_only': f.verifiedOnly,
+      if (f.trustFilter != null) 'trust_filter': f.trustFilter,
       if (familyType != null) 'family_type': familyType,
       if (maritalStatus != null) 'marital_status': maritalStatus,
       'open_to_divorced': f.openToDivorced,
@@ -700,6 +718,11 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
           .whereType<String>()
           .where((id) => id.isNotEmpty)
           .toList(growable: false);
+      final candidateIds = rows
+          .map((row) => row['user_id']?.toString())
+          .whereType<String>()
+          .where((id) => id.isNotEmpty)
+          .toList(growable: false);
 
       // Relationship context and the one batched photo-signing call are
       // independent. Running them together removes a full network round-trip
@@ -709,8 +732,12 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         publicPhotoOwners.isEmpty
             ? Future<Map<String, String>>.value(const {})
             : _loadPublicPhotoUrls(publicPhotoOwners),
+        candidateIds.isEmpty
+            ? Future<Map<String, Map<String, bool>>>.value(const {})
+            : _loadTrustSummaries(candidateIds),
       ]);
       final signedUrls = enrichment[1] as Map<String, String>;
+      final trustByUser = enrichment[2] as Map<String, Map<String, bool>>;
       for (final row in rows) {
         // Feed rows must never expose private Storage paths as image URLs.
         row.remove('photo_url');
@@ -718,6 +745,13 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         final signedUrl = signedUrls[row['user_id']?.toString()];
         if (signedUrl != null && signedUrl.isNotEmpty) {
           row['photo_url'] = signedUrl;
+        }
+        final trust = trustByUser[row['user_id']?.toString()];
+        if (trust != null) {
+          row['is_verified'] = trust['photo_verified'] ?? false;
+          row['phone_verified'] = trust['phone_verified'] ?? false;
+          row['guardian_connected'] = trust['guardian_connected'] ?? false;
+          row['established_member'] = trust['established_member'] ?? false;
         }
       }
       final contextMs = timings.elapsedMilliseconds - feedMs;
@@ -737,6 +771,35 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     } catch (e) {
       debugPrint('DiscoveryFeedCubit: Supabase discovery failed: $e');
       rethrow;
+    }
+  }
+
+  Future<Map<String, Map<String, bool>>> _loadTrustSummaries(
+    List<String> userIds,
+  ) async {
+    try {
+      final response = await SupabaseService.client.rpc(
+        'get_member_trust_summaries',
+        params: {'p_user_ids': userIds.take(20).toList(growable: false)},
+      );
+      final result = <String, Map<String, bool>>{};
+      for (final raw in response as List<dynamic>) {
+        final row = Map<String, dynamic>.from(raw as Map);
+        final id = row['user_id']?.toString();
+        if (id == null || id.isEmpty) continue;
+        result[id] = {
+          'photo_verified': row['photo_verified'] as bool? ?? false,
+          'phone_verified': row['phone_verified'] as bool? ?? false,
+          'guardian_connected': row['guardian_connected'] as bool? ?? false,
+          'established_member': row['established_member'] as bool? ?? false,
+        };
+      }
+      return result;
+    } catch (error) {
+      // Trust badges are presentational. A failed summary request must not
+      // blank an otherwise valid discovery page.
+      debugPrint('DiscoveryFeedCubit: trust summary unavailable: $error');
+      return const {};
     }
   }
 

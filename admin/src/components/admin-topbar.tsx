@@ -8,7 +8,7 @@ const titles: Record<string, string> = {
   dashboard: "Overview",
   inbox: "Admin inbox",
   users: "Members",
-  kyc: "KYC queue",
+  "photo-verification": "Photo checks",
   moderation: "Moderation",
   matches: "Matches",
   subscriptions: "Subscriptions",

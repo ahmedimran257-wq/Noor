@@ -24,7 +24,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </div>
 
           <p className="auth-lead">
-            Staff-only control for trust, KYC, moderation, subscriptions, campaigns, and live platform health.
+            Staff-only control for trust, photo checks, moderation, subscriptions, campaigns, and live platform health.
           </p>
 
           <div className="auth-system-panel">

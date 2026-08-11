@@ -210,7 +210,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       final authState = context.read<AuthCubit>().state;
       final countryCode =
           authState is AuthAuthenticated ? authState.countryCode : null;
-      final verified = await _showPhoneVerificationSheet(
+      final verified = await showPhoneVerificationSheet(
         context,
         countryCode: countryCode,
       );
@@ -258,7 +258,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
 }
 
 // Header
-Future<bool?> _showPhoneVerificationSheet(
+Future<bool?> showPhoneVerificationSheet(
   BuildContext context, {
   String? countryCode,
 }) {

@@ -12,7 +12,7 @@ export default async function DashboardPage() {
   ]);
   const cards = [
     ["Total profiles", metrics.totalUsers, Users], ["New today", metrics.signupsToday, Activity],
-    ["Pending KYC", metrics.pendingKyc, BadgeCheck], ["Open reports", metrics.openReports, Flag],
+    ["Pending photo checks", metrics.pendingPhotoChecks, BadgeCheck], ["Open reports", metrics.openReports, Flag],
     ["Active subscriptions", metrics.activeSubscriptions, BadgeCheck], ["Messages today", metrics.messagesToday, MessageCircle],
   ] as const;
   return (

@@ -77,7 +77,7 @@ class HelpSupportScreen extends StatelessWidget {
           const _FaqTile(
             question: 'How does verification work?',
             answer:
-                'Profile photo verification uses a passive face and liveness scan. Identity verification separately matches a government ID with your selfie. Both are available in Profile under Trust & identity.',
+                'Photo verification uses an easy look, smile and blink guide followed by human comparison with your current profile photo. Temporary captures are deleted after review and within 48 hours; no face template or government-ID match is created.',
           ),
           const SizedBox(height: AppDimensions.space20),
           UiText(context.uiCopy('Official online resources'),

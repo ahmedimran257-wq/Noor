@@ -16,6 +16,9 @@ class DiscoveryProfile {
     this.isPhotoPrivate = false,
     this.photoPrivacy = 'public',
     this.isVerified = false,
+    this.phoneVerified = false,
+    this.guardianConnected = false,
+    this.establishedMember = false,
     this.occupation,
     this.education,
     this.bio,
@@ -91,6 +94,9 @@ class DiscoveryProfile {
   String get effectivePhotoPrivacy =>
       photoPrivacy == 'public' && isPhotoPrivate ? 'mutual_only' : photoPrivacy;
   final bool isVerified;
+  final bool phoneVerified;
+  final bool guardianConnected;
+  final bool establishedMember;
   final String? occupation;
   final String? education;
   final String? bio;
@@ -186,6 +192,9 @@ class DiscoveryProfile {
     bool? isPhotoPrivate,
     String? photoPrivacy,
     bool? isVerified,
+    bool? phoneVerified,
+    bool? guardianConnected,
+    bool? establishedMember,
     String? occupation,
     String? education,
     String? bio,
@@ -243,6 +252,9 @@ class DiscoveryProfile {
       isPhotoPrivate: isPhotoPrivate ?? this.isPhotoPrivate,
       photoPrivacy: photoPrivacy ?? this.photoPrivacy,
       isVerified: isVerified ?? this.isVerified,
+      phoneVerified: phoneVerified ?? this.phoneVerified,
+      guardianConnected: guardianConnected ?? this.guardianConnected,
+      establishedMember: establishedMember ?? this.establishedMember,
       occupation: occupation ?? this.occupation,
       education: education ?? this.education,
       bio: bio ?? this.bio,

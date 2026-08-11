@@ -67,8 +67,7 @@ typedef NsfwScanner = Future<NsfwScores> Function(String path);
 /// compact OpenNSFW2 binary classifier is executed directly through LiteRT,
 /// avoiding the release-only Flutter embedding defect in the old
 /// `nsfw_detect` plugin.
-/// Face, eye, pose, prominence, liveness, and group-size checks remain isolated
-/// to badge verification.
+/// Guided photo-badge capture remains a separate, human-reviewed workflow.
 class PhotoModerationService {
   PhotoModerationService({
     HumanPresenceScanner? humanPresenceScanner,

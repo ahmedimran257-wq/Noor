@@ -257,17 +257,15 @@ class NotificationsCubit extends Cubit<NotificationsState> {
           'Photo not approved',
           'Please upload a clear, respectful profile photo.'
         );
-      case 'kyc_approved':
-        return ('Identity verified', 'Your identity status is now verified.');
-      case 'kyc_pending':
+      case 'photo_verification_approved':
         return (
-          'Identity check submitted',
-          'Your documents were received securely and are awaiting review.'
+          'Photo verified',
+          'Your photo check is approved and its temporary captures are being deleted.'
         );
-      case 'kyc_rejected':
+      case 'photo_verification_reviewed':
         return (
-          'Identity check needs attention',
-          'Retake your selfie and document images in clear lighting.'
+          'Photo check reviewed',
+          'Open your profile to see the result and any next step.'
         );
       case 'interest_received':
         return ('New interest', 'Someone is interested in your profile.');
@@ -424,10 +422,9 @@ String? notificationPathFor(NotificationItem item) {
     case 'account_restored':
     case 'photo_approved':
     case 'photo_rejected':
-    case 'kyc_approved':
-    case 'kyc_pending':
+    case 'photo_verification_approved':
       return '/home?tab=3';
-    case 'kyc_rejected':
+    case 'photo_verification_reviewed':
       return '/verify';
     case 'account_suspended':
     case 'account_banned':

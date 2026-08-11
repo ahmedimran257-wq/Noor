@@ -419,6 +419,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
                     photoCount: p.photoCount,
                     isPhotoPrivate: p.isPhotoPrivate,
                     isVerified: p.isVerified,
+                    phoneVerified: p.phoneVerified,
                     lastActiveLabel:
                         _localizedLastActive(context, fp.lastActiveAt),
                     isFocused: true, // Scale handled externally now

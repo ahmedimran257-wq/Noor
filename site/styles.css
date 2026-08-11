@@ -170,16 +170,14 @@ p { color: var(--muted); }
 .text-link:hover span { transform:translateX(4px); }
 
 .verification-band { overflow:hidden; border-block:1px solid var(--line-soft); background:radial-gradient(circle at 50% 100%,rgba(141,120,255,.11),transparent 50%),#090910; }
-.verification-grid { display:grid; grid-template-columns:.8fr 1.25fr .8fr; gap:35px; align-items:center; }
+.verification-grid { display:grid; grid-template-columns:minmax(260px,.8fr) minmax(320px,1.25fr); gap:48px; align-items:center; max-width:900px; }
 .verification-copy { text-align:center; }
 .verification-copy .eyebrow { justify-content:center; }
 .verification-copy p { font-size:13px; }
 .verification-card { min-height:330px; padding:27px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; border:1px solid var(--line); border-radius:28px; background:rgba(255,255,255,.025); }
 .verification-card.photo-check { transform:rotate(-2deg); }
-.verification-card.identity-check { transform:rotate(2deg); }
 .verification-kicker { color:#8f8a99; text-transform:uppercase; letter-spacing:.16em; font-size:9px; }
 .verification-seal { width:76px; height:76px; margin:26px 0 19px; display:grid; place-items:center; border-radius:50%; border:1px solid rgba(94,230,189,.28); color:var(--mint); background:rgba(94,230,189,.075); box-shadow:0 0 40px rgba(94,230,189,.08); font-weight:800; }
-.identity-check .verification-seal { color:#b8aaff; border-color:rgba(141,120,255,.3); background:rgba(141,120,255,.08); }
 .verification-card h3 { font-family:var(--serif); font-size:20px; }
 .verification-card p { font-size:11px; }
 

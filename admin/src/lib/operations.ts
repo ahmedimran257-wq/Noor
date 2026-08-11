@@ -48,24 +48,37 @@ export async function getRevealedUserPii(userId: string, reason: string) {
   });
   return rows[0] ?? null;
 }
-export async function getKycQueue(): Promise<KycRow[]> {
-  const rows = await rpc<KycRow[]>("admin_kyc_queue", { p_limit: 25 });
+export async function getPhotoVerificationQueue(): Promise<PhotoVerificationRow[]> {
+  const rows = await rpc<PhotoVerificationRow[]>("admin_photo_verification_queue", { p_limit: 25 });
   if (rows.length === 0) return rows;
 
   const adminClient = createAdminClient();
-  const paths = rows.flatMap((row) => [row.selfie_path, row.id_path]);
-  const { data, error } = await adminClient.storage
-    .from("kyc-documents")
-    .createSignedUrls(paths, 60 * 5);
-  const signedByPath = new Map(
-    (data ?? []).map((entry) => [entry.path, entry.signedUrl ?? null]),
+  const [profileResult, captureResult] = await Promise.all([
+    adminClient.storage.from("profile-photos").createSignedUrls(
+      rows.map((row) => row.primary_photo_path),
+      60 * 5,
+    ),
+    adminClient.storage.from("photo-verification-captures").createSignedUrls(
+      rows.flatMap((row) => [row.neutral_path, row.smile_path, row.blink_path]),
+      60 * 5,
+    ),
+  ]);
+  const profileSignedByPath = new Map(
+    (profileResult.data ?? []).map((entry) => [entry.path, entry.signedUrl ?? null]),
+  );
+  const captureSignedByPath = new Map(
+    (captureResult.data ?? []).map((entry) => [entry.path, entry.signedUrl ?? null]),
   );
   return rows.map((row) => {
     return {
       ...row,
-      selfie_url: signedByPath.get(row.selfie_path) ?? null,
-      id_url: signedByPath.get(row.id_path) ?? null,
-      preview_error: error ? "Identity previews are temporarily unavailable." : null,
+      primary_photo_url: profileSignedByPath.get(row.primary_photo_path) ?? null,
+      neutral_url: captureSignedByPath.get(row.neutral_path) ?? null,
+      smile_url: captureSignedByPath.get(row.smile_path) ?? null,
+      blink_url: captureSignedByPath.get(row.blink_path) ?? null,
+      preview_error: profileResult.error || captureResult.error
+        ? "Private photo previews are temporarily unavailable."
+        : null,
     };
   });
 }
@@ -108,14 +121,14 @@ export const getAuditFeed = () => rpc<AuditRow[]>("admin_audit_feed", { p_limit:
 export const getAdminInbox = () => rpc<AdminNotificationRow[]>("admin_inbox", { p_limit: 200 });
 export const getSecurityMetrics = () => rpc<DashboardMetrics>("admin_security_metrics");
 
-export type UserRow = { user_id:string; profile_id:string; name:string; email:string|null; country_code:string; gender:string; joined_at:string; last_active_at:string|null; onboarding_step:number; completeness_score:number; visibility:string; is_banned:boolean; is_shadowbanned:boolean; subscription_status:string; verification_status:string; has_verification_badge:boolean; kyc_status:"not_started"|"pending_review"|"approved"|"rejected"|"resubmit_required"|"expired"; kyc_status_reason:string|null; kyc_submitted_at:string|null; can_approve_profile:boolean; approval_block_reason:string|null; total_count?:number };
+export type UserRow = { user_id:string; profile_id:string; name:string; email:string|null; country_code:string; gender:string; joined_at:string; last_active_at:string|null; onboarding_step:number; completeness_score:number; visibility:string; is_banned:boolean; is_shadowbanned:boolean; subscription_status:string; verification_status:string; has_verification_badge:boolean; can_approve_profile:boolean; approval_block_reason:string|null; total_count?:number };
 export type RevealedUserPii = { user_id:string; name:string; email:string|null; revealed_at:string };
-export type KycRow = {
-  submission_id:string; user_id:string; profile_id:string; name:string;
-  date_of_birth:string; age:number; country_code:string; kyc_id_type:string;
-  client_ocr_dob:string|null; client_face_similarity:number|null;
-  attempt_number:number; submitted_at:string; selfie_path:string; id_path:string;
-  selfie_url?:string|null; id_url?:string|null; preview_error?:string|null;
+export type PhotoVerificationRow = {
+  submission_id:string; user_id:string; profile_id:string; member_name:string;
+  submitted_at:string; review_deadline:string; guidance_mode:string;
+  primary_photo_path:string; neutral_path:string; smile_path:string; blink_path:string;
+  primary_photo_url?:string|null; neutral_url?:string|null;
+  smile_url?:string|null; blink_url?:string|null; preview_error?:string|null;
 };
 export type ReportRow = { report_id:string; reporter_id:string; reported_user_id:string; reason:string; description:string|null; created_at:string; report_count:number; reported_name:string };
 export type MessageReportRow = { report_id:string; message_id:string; match_id:string; reporter_id:string; reported_user_id:string; reported_name:string; reason:string; description:string|null; message_content:string; created_at:string };

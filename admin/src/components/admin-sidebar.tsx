@@ -37,7 +37,7 @@ const groups = [
   {
     label: "Trust",
     items: [
-      ["/kyc", "KYC queue", BadgeCheck],
+      ["/photo-verification", "Photo checks", BadgeCheck],
       ["/moderation", "Moderation", Flag],
       ["/matches", "Matches", Heart],
       ["/subscriptions", "Subscriptions", WalletCards],

@@ -62,14 +62,16 @@ void main() {
       expect(migration, contains('coalesce(np.inactive_nudge, true)'));
     });
 
-    test('separates passive photo verification from legal identity checks', () {
+    test('presents privacy-minimizing trust checks without identity KYC', () {
       expect(profile, contains('_VerificationIdentityStatus('));
       expect(profile, contains('AppRoutes.badgeVerification'));
       expect(profile, contains('_TrustCenterCard('));
-      expect(profile, contains('AppRoutes.verify'));
-      expect(profile, contains('Government ID check'));
-      expect(profile, contains('On-device photo check'));
-      expect(profile, contains('not government ID'));
+      expect(profile, contains('Profile photo check'));
+      expect(
+          profile, contains('Captures delete after review or within 48 hours'));
+      expect(profile, contains('Confirmed by SMS verification code'));
+      expect(profile, isNot(contains('Government ID check')));
+      expect(profile, isNot(contains('AppRoutes.verify')));
       expect(profile, contains('noreply@mail.silarah.com'));
       expect(profile, contains('Live in discovery'));
     });

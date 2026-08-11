@@ -12,6 +12,7 @@ class DiscoveryFilter {
     this.sect,
     this.deenLevel,
     this.verifiedOnly = false,
+    this.trustFilter,
     this.activeRecentlyOnly = false,
     this.maxDistanceKm,
     this.familyType,
@@ -38,6 +39,9 @@ class DiscoveryFilter {
   final String? sect;
   final String? deenLevel;
   final bool verifiedOnly;
+
+  /// null | photo | phone | both | guardian
+  final String? trustFilter;
   final bool activeRecentlyOnly;
   final int? maxDistanceKm;
   final String? familyType;
@@ -101,6 +105,7 @@ class DiscoveryFilter {
       sect != null ||
       deenLevel != null ||
       verifiedOnly ||
+      trustFilter != null ||
       activeRecentlyOnly ||
       maxDistanceKm != null ||
       familyType != null ||
@@ -125,7 +130,7 @@ class DiscoveryFilter {
     if (ageMin != null || ageMax != null) count++;
     if (sect != null) count++;
     if (deenLevel != null) count++;
-    if (verifiedOnly) count++;
+    if (verifiedOnly || trustFilter != null) count++;
     if (activeRecentlyOnly) count++;
     if (maxDistanceKm != null ||
         RegExp(r'^\d+\s*km$', caseSensitive: false)
@@ -160,6 +165,7 @@ class DiscoveryFilter {
     String? sect,
     String? deenLevel,
     bool? verifiedOnly,
+    String? trustFilter,
     bool? activeRecentlyOnly,
     int? maxDistanceKm,
     String? familyType,
@@ -181,6 +187,7 @@ class DiscoveryFilter {
     // Nulling sentinels
     bool clearSect = false,
     bool clearDeenLevel = false,
+    bool clearTrustFilter = false,
     bool clearMaxDistance = false,
     bool clearFamilyType = false,
     bool clearAgeRange = false,
@@ -204,6 +211,7 @@ class DiscoveryFilter {
       sect: clearSect ? null : (sect ?? this.sect),
       deenLevel: clearDeenLevel ? null : (deenLevel ?? this.deenLevel),
       verifiedOnly: verifiedOnly ?? this.verifiedOnly,
+      trustFilter: clearTrustFilter ? null : (trustFilter ?? this.trustFilter),
       activeRecentlyOnly: activeRecentlyOnly ?? this.activeRecentlyOnly,
       maxDistanceKm:
           clearMaxDistance ? null : (maxDistanceKm ?? this.maxDistanceKm),

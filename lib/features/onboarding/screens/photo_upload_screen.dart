@@ -1177,8 +1177,8 @@ class _PhotoSlot extends StatelessWidget {
               ),
             ),
 
-            // Content-safety status. Face/liveness status is intentionally not
-            // represented here; it belongs to badge verification.
+            // Content-safety status is independent from the optional,
+            // human-reviewed photo badge.
             if (isFilled && isPrimary && (moderation != null || isRemote))
               Positioned(
                 top: AppDimensions.space10,

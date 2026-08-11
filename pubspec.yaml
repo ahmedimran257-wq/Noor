@@ -41,8 +41,7 @@ dependencies:
   flutter_image_compress: ^2.3.0  # Compress before upload
   google_mlkit_face_detection: ^0.11.1  # Compatible with text recognition ^0.13.0
   google_mlkit_object_detection: ^0.13.0 # On-device human-presence gate for profile photos
-  google_mlkit_text_recognition: ^0.13.0 # On-device ID OCR (free)
-  tflite_flutter: ^0.12.1               # 16 KB-safe LiteRT runtime for MobileFaceNet + file-backed NSFW
+  tflite_flutter: ^0.12.1               # 16 KB-safe LiteRT runtime for file-backed NSFW moderation
   app_links: ^7.0.0                     # Verified Supabase auth callbacks
   url_launcher: ^6.3.2                  # Legal and support links
   path_provider: ^2.1.4                 # Temp dir for face detection
@@ -87,9 +86,7 @@ flutter:
   # Assets
   assets:
     - assets/icon/
-    - assets/models/mobilefacenet.tflite
     - assets/models/opennsfw2_float16.tflite
-    - assets/licenses/mobilefacenet-Apache-2.0.txt
     - assets/licenses/opennsfw2-MIT.txt
 
 flutter_launcher_icons:
