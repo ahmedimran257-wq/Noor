@@ -257,7 +257,30 @@ class _MyProfileScreenState extends State<MyProfileScreen>
 
   Future<void> _openVerification() async {
     await context.push(AppRoutes.badgeVerification);
-    if (mounted) await _loadVerificationBadge();
+    if (!mounted) return;
+    await Future.wait([_loadVerificationBadge(), _loadTrustState()]);
+  }
+
+  Future<void> _startPhoneVerification() async {
+    final authState = context.read<AuthCubit>().state;
+    final countryCode = authState is AuthAuthenticated
+        ? authState.countryCode
+        : context.read<OnboardingCubit>().currentData.countryCode;
+    final verified = await showPhoneVerificationSheet(
+      context,
+      countryCode: countryCode,
+    );
+    if (verified == true && mounted) await _loadTrustState();
+  }
+
+  Future<void> _openGuardianSettings() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const SettingsScreen(initialSection: 'guardian'),
+      ),
+    );
+    if (!mounted) return;
+    await Future.wait([_loadGuardian(), _loadTrustState()]);
   }
 
   Future<void> _openEditProfile() async {
@@ -658,6 +681,8 @@ class _MyProfileScreenState extends State<MyProfileScreen>
               email: _accountEmail,
               emailVerified: _emailVerified,
               onPhotoVerification: _openVerification,
+              onPhoneVerification: _startPhoneVerification,
+              onGuardianConnection: _openGuardianSettings,
             ),
           ),
 
@@ -1166,6 +1191,8 @@ class _TrustCenterCard extends StatelessWidget {
     required this.email,
     required this.emailVerified,
     required this.onPhotoVerification,
+    required this.onPhoneVerification,
+    required this.onGuardianConnection,
   });
 
   final bool loading;
@@ -1176,6 +1203,8 @@ class _TrustCenterCard extends StatelessWidget {
   final String? email;
   final bool emailVerified;
   final VoidCallback onPhotoVerification;
+  final VoidCallback onPhoneVerification;
+  final VoidCallback onGuardianConnection;
 
   @override
   Widget build(BuildContext context) {
@@ -1267,11 +1296,12 @@ class _TrustCenterCard extends StatelessWidget {
             title: 'Phone number',
             subtitle: phoneVerified
                 ? 'Confirmed by SMS verification code'
-                : 'Verified during Premium activation or before first message',
-            status: phoneVerified ? 'Verified' : 'Not verified',
+                : 'Verify your phone with a one-time SMS code. A purchase does not verify your number.',
+            status: phoneVerified ? 'Verified' : 'Verify',
             statusColor: phoneVerified
                 ? AppColors.verifiedTeal
                 : AppColors.champagneGold,
+            onTap: phoneVerified || loading ? null : onPhoneVerification,
           ),
           Divider(height: 1, indent: 56, color: AppColors.cardBorder),
           _TrustRow(
@@ -1290,10 +1320,11 @@ class _TrustCenterCard extends StatelessWidget {
             subtitle: guardianConnected
                 ? 'Guardian invitation accepted and connected'
                 : 'Optional consent-based guardian connection',
-            status: guardianConnected ? 'Connected' : 'Optional',
+            status: guardianConnected ? 'Manage' : 'Set up',
             statusColor: guardianConnected
                 ? AppColors.verifiedTeal
-                : AppColors.slateMist,
+                : AppColors.champagneGold,
+            onTap: loading ? null : onGuardianConnection,
           ),
           Divider(height: 1, indent: 56, color: AppColors.cardBorder),
           _TrustRow(

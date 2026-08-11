@@ -11,7 +11,6 @@ class DiscoveryFilter {
     this.ageMax,
     this.sect,
     this.deenLevel,
-    this.verifiedOnly = false,
     this.trustFilter,
     this.activeRecentlyOnly = false,
     this.maxDistanceKm,
@@ -38,7 +37,6 @@ class DiscoveryFilter {
   final int? ageMax;
   final String? sect;
   final String? deenLevel;
-  final bool verifiedOnly;
 
   /// null | photo | phone | both | guardian
   final String? trustFilter;
@@ -104,7 +102,6 @@ class DiscoveryFilter {
       ageMax != null ||
       sect != null ||
       deenLevel != null ||
-      verifiedOnly ||
       trustFilter != null ||
       activeRecentlyOnly ||
       maxDistanceKm != null ||
@@ -130,7 +127,7 @@ class DiscoveryFilter {
     if (ageMin != null || ageMax != null) count++;
     if (sect != null) count++;
     if (deenLevel != null) count++;
-    if (verifiedOnly || trustFilter != null) count++;
+    if (trustFilter != null) count++;
     if (activeRecentlyOnly) count++;
     if (maxDistanceKm != null ||
         RegExp(r'^\d+\s*km$', caseSensitive: false)
@@ -164,7 +161,6 @@ class DiscoveryFilter {
     int? ageMax,
     String? sect,
     String? deenLevel,
-    bool? verifiedOnly,
     String? trustFilter,
     bool? activeRecentlyOnly,
     int? maxDistanceKm,
@@ -210,7 +206,6 @@ class DiscoveryFilter {
       ageMax: clearAgeRange ? null : (ageMax ?? this.ageMax),
       sect: clearSect ? null : (sect ?? this.sect),
       deenLevel: clearDeenLevel ? null : (deenLevel ?? this.deenLevel),
-      verifiedOnly: verifiedOnly ?? this.verifiedOnly,
       trustFilter: clearTrustFilter ? null : (trustFilter ?? this.trustFilter),
       activeRecentlyOnly: activeRecentlyOnly ?? this.activeRecentlyOnly,
       maxDistanceKm:

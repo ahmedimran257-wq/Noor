@@ -70,6 +70,8 @@ void main() {
       expect(
           profile, contains('Captures delete after review or within 48 hours'));
       expect(profile, contains('Confirmed by SMS verification code'));
+      expect(profile, contains('showPhoneVerificationSheet('));
+      expect(profile, contains("SettingsScreen(initialSection: 'guardian')"));
       expect(profile, isNot(contains('Government ID check')));
       expect(profile, isNot(contains('AppRoutes.verify')));
       expect(profile, contains('noreply@mail.silarah.com'));

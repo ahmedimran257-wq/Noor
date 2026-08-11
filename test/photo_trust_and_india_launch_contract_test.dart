@@ -108,16 +108,42 @@ void main() {
     final filters = File(
       'lib/features/home/widgets/discovery_filter_sheet.dart',
     ).readAsStringSync();
+    final filterBar = File(
+      'lib/features/home/widgets/discovery_filter_bar.dart',
+    ).readAsStringSync();
+    final filterModel = File(
+      'lib/core/cubits/discovery/discovery_filter.dart',
+    ).readAsStringSync();
     expect(filters, contains('Photo verified'));
     expect(filters, contains('Phone verified'));
     expect(filters, contains('Photo + phone'));
     expect(filters, contains('Guardian connected'));
     expect(filters, contains('Anywhere in India'));
+    expect(filterBar, contains("label: 'Trust checks'"));
+    expect(filterBar, contains("scrollToSection: 'verified'"));
+    expect(filterBar, isNot(contains('Verified Only')));
+    expect(filterModel, isNot(contains('verifiedOnly')));
     expect(
         migration,
         contains(
             "v_trust_filter NOT IN ('photo', 'phone', 'both', 'guardian')"));
     expect(migration,
         contains("v_features := array_append(v_features, 'trust_filter')"));
+  });
+
+  test('profile trust rows start phone and guardian flows directly', () {
+    final profile = File(
+      'lib/features/home/screens/my_profile_screen.dart',
+    ).readAsStringSync();
+    final settings = File(
+      'lib/features/home/screens/settings_screen.dart',
+    ).readAsStringSync();
+
+    expect(profile, contains('showPhoneVerificationSheet('));
+    expect(profile, contains('onPhoneVerification: _startPhoneVerification'));
+    expect(profile, contains("SettingsScreen(initialSection: 'guardian')"));
+    expect(profile, contains('onGuardianConnection: _openGuardianSettings'));
+    expect(settings, contains("case 'guardian':"));
+    expect(settings, contains('key: _guardianKey'));
   });
 }

@@ -79,7 +79,7 @@ IconData _legalIcon(String slug) => switch (slug) {
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key, this.initialSection});
 
-  /// Optional section to scroll to on open: 'privacy', 'help', 'account', etc.
+  /// Optional section to scroll to on open.
   final String? initialSection;
 
   @override
@@ -91,6 +91,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _helpKey = GlobalKey();
   final _accountKey = GlobalKey();
   final _notificationsKey = GlobalKey();
+  final _guardianKey = GlobalKey();
   String _appVersion = '—';
 
   @override
@@ -120,6 +121,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         key = _accountKey;
       case 'notifications':
         key = _notificationsKey;
+      case 'guardian':
+        key = _guardianKey;
     }
     if (key?.currentContext != null) {
       _scrollToKey(key!);
@@ -283,7 +286,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
 
           // 3. GUARDIAN
-          _SectionHeader(l10n.settings_section_guardian),
+          _SectionHeader(l10n.settings_section_guardian, key: _guardianKey),
           const _GuardianSection(),
 
           // 4. PRIVACY

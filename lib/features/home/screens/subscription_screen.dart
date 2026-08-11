@@ -417,7 +417,7 @@ class _PremiumPhoneVerificationSheetState
             const SizedBox(height: 10),
             UiText(
               context.uiCopy(
-                  'This is only required before subscription purchase.'),
+                  'Verify your phone with a one-time SMS code. A purchase does not verify your number.'),
               style: AppTypography.caption.copyWith(color: AppColors.slateMist),
             ),
             const SizedBox(height: 18),

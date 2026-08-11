@@ -1,9 +1,6 @@
 // SILARAH — Full Filter Bottom Sheet (Feature 8 + 9)
 //
-// Sections (scrollable):
-//   Gender · Age Range · Sect · Deen Level · Education
-//   Family Type · Marital Status · Has Children
-//   Verified Only · Distance
+// Scrollable, server-authoritative discovery filters with saved presets.
 //
 // Presets (Feature 9):
 //   "Save this filter" → name + persist via FilterPresetService
@@ -636,7 +633,6 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                             _draft = _draft.copyWith(
                               trustFilter: value,
                               clearTrustFilter: value == null,
-                              verifiedOnly: false,
                             );
                           }),
                         ),

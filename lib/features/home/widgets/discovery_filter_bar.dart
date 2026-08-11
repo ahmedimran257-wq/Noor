@@ -1,13 +1,5 @@
-// SILARAH — Discovery Filter Bar (Step 6 — Functional)
-//
-//   "A full-height bottom sheet with all available filters.
-//    Age range with a dual slider. Sect and sub-sect.
-//    Deen level. Verified only. Family type.
-//    Active recently toggle."
-//
-// Each chip shows an active indicator when that filter is set.
-// Tapping "All Filters" opens the comprehensive sheet.
-// Tapping any individual chip opens that filter's mini-sheet.
+// SILARAH — Discovery Filter Bar
+// Each shortcut opens the matching section of the comprehensive filter sheet.
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -76,16 +68,11 @@ class DiscoveryFilterBar extends StatelessWidget {
               ),
               const SizedBox(width: AppDimensions.space8),
               _Chip(
-                icon: Icons.verified_outlined,
+                icon: Icons.verified_user_outlined,
                 accentSlot: 4,
-                label: 'Verified Only',
-                isActive: f.verifiedOnly,
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  context.read<DiscoveryFeedCubit>().applyFilter(
-                        f.copyWith(verifiedOnly: !f.verifiedOnly),
-                      );
-                },
+                label: 'Trust checks',
+                isActive: f.trustFilter != null,
+                onTap: () => _showTrustFilter(context, f),
               ),
               const SizedBox(width: AppDimensions.space8),
               _Chip(
@@ -117,6 +104,11 @@ class DiscoveryFilterBar extends StatelessWidget {
 
   void _showDeenFilter(BuildContext context, DiscoveryFilter filter) {
     showDiscoveryFilterSheet(context, initial: filter, scrollToSection: 'deen');
+  }
+
+  void _showTrustFilter(BuildContext context, DiscoveryFilter filter) {
+    showDiscoveryFilterSheet(context,
+        initial: filter, scrollToSection: 'verified');
   }
 
   void _showFamilyFilter(BuildContext context, DiscoveryFilter filter) {
