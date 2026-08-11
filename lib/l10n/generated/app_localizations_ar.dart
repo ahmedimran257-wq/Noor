@@ -2019,31 +2019,31 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get settings_privacy_download_body =>
-      'بموجب القانون العام لحماية البيانات (GDPR) ولوائح الخصوصية الأخرى، يمكنك طلب تصدير كامل لبيانات ملفك الشخصي والمطابقة والنشاط. سيتم إعداد الملف وإرساله إلى عنوانك المسجل.';
+      'أنشئ الآن أرشيف ZIP خاصًا يتضمن حسابك وملفك وصورك واهتماماتك ومطابقاتك ورسائلك وإعداداتك وسجل الموافقات والاشتراك. احفظه عبر نافذة المشاركة الآمنة في جهازك.';
 
   @override
-  String get settings_privacy_download_btn => 'طلب تصدير البيانات';
+  String get settings_privacy_download_btn => 'إنشاء أرشيف آمن';
 
   @override
-  String get settings_privacy_download_label => 'قم بتنزيل بياناتي';
+  String get settings_privacy_download_label => 'تنزيل بياناتي';
 
   @override
   String get settings_privacy_download_sub =>
-      'قم بتصدير نسخة من بياناتك الشخصية بموجب اللائحة العامة لحماية البيانات';
+      'احفظ نسخة قابلة للقراءة آليًا من بيانات Silarah الخاصة بك';
 
   @override
   String get settings_privacy_export_body =>
-      'لقد تم استلام طلبك! نحن نقوم بتجميع أرشيف البيانات الشخصية الخاصة بك.';
+      'أرشيفك الخاص جاهز. استخدم نافذة المشاركة لحفظه بأمان.';
 
   @override
   String get settings_privacy_export_btn_close => 'مفهوم';
 
   @override
   String get settings_privacy_export_subbody =>
-      'سيتم إرسال رابط التنزيل إلى هاتفك/بريدك الإلكتروني المسجل خلال 48 ساعة بما يتوافق مع إرشادات اللائحة العامة لحماية البيانات.';
+      'قد يحتوي الأرشيف على رسائل خاصة وبيانات اتصال. خزّنه بأمان ولا تشاركه إلا مع من تثق بهم.';
 
   @override
-  String get settings_privacy_export_title => 'طلب التصدير';
+  String get settings_privacy_export_title => 'الأرشيف جاهز';
 
   @override
   String get settings_privacy_online_label => 'حالة الاتصال بالإنترنت';
@@ -2251,11 +2251,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings_grievanceOfficer => 'مسؤول الشكاوى';
 
   @override
-  String get settings_grievanceResponse => 'مدة الرد: خلال 48 ساعة من الاستلام';
+  String get settings_grievanceResponse =>
+      'تأكيد الاستلام خلال 24 ساعة؛ حل معظم الشكاوى خلال 7 أيام';
 
   @override
   String get settings_grievanceIndiaNotice =>
-      'للمستخدمين في الهند: نلتزم بقواعد تقنية المعلومات (إرشادات الوسطاء ومدونة أخلاقيات الوسائط الرقمية) لعام 2021.';
+      'تتبع معالجة الشكاوى في الهند قواعد تقنية المعلومات (إرشادات الوسطاء ومدونة أخلاقيات الوسائط الرقمية) بصيغتها المعدلة. تخضع شكاوى المحتوى غير القانوني أو الحميم العاجلة للمواعيد القانونية الأقصر.';
 
   @override
   String get settings_managePhotoRequests => 'إدارة طلبات الصور';

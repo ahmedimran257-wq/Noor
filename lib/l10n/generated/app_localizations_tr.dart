@@ -2041,31 +2041,31 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get settings_privacy_download_body =>
-      'GDPR ve diğer gizlilik düzenlemeleri uyarınca profilinizin, eşleşmenizin ve etkinlik verilerinizin eksiksiz bir şekilde dışa aktarılmasını talep edebilirsiniz. Dosya hazırlanıp kayıtlı adresinize gönderilecektir.';
+      'Hesabınızı, profilinizi, fotoğraflarınızı, ilgi alanlarınızı, eşleşmelerinizi, mesajlarınızı, ayarlarınızı, onaylarınızı ve abonelik geçmişinizi içeren özel bir ZIP arşivini şimdi oluşturun. Cihazınızın güvenli paylaşım sayfasıyla kaydedin.';
 
   @override
-  String get settings_privacy_download_btn => 'Veri Dışa Aktarma Talebi';
+  String get settings_privacy_download_btn => 'Güvenli arşiv oluştur';
 
   @override
-  String get settings_privacy_download_label => 'VERİLERİMİ İNDİR';
+  String get settings_privacy_download_label => 'Verilerimi indir';
 
   @override
   String get settings_privacy_download_sub =>
-      'Kişisel verilerinizin bir kopyasını GDPR kapsamında dışa aktarın';
+      'Silarah verilerinizin makine tarafından okunabilir bir kopyasını kaydedin';
 
   @override
   String get settings_privacy_export_body =>
-      'Talebiniz alındı! Kişisel veri arşivinizi derliyoruz.';
+      'Özel arşiviniz hazır. Güvenle kaydetmek için paylaşım sayfasını kullanın.';
 
   @override
   String get settings_privacy_export_btn_close => 'Anlaşıldı';
 
   @override
   String get settings_privacy_export_subbody =>
-      'Kayıtlı telefonunuza/e-posta adresinize GDPR yönergelerine uygun olarak 48 saat içinde bir indirme bağlantısı gönderilecektir.';
+      'Bu arşiv özel mesajlar ve iletişim bilgileri içerebilir. Güvenle saklayın ve yalnızca güvendiğiniz kişilerle paylaşın.';
 
   @override
-  String get settings_privacy_export_title => 'İhracat İstendi';
+  String get settings_privacy_export_title => 'Arşiv hazır';
 
   @override
   String get settings_privacy_online_label => 'ÇEVRİMİÇİ DURUM';
@@ -2278,11 +2278,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get settings_grievanceResponse =>
-      'Yanıt süresi: Teslim alındıktan sonra 48 saat içinde';
+      '24 saat içinde alındı onayı; çoğu şikâyet 7 gün içinde çözülür';
 
   @override
   String get settings_grievanceIndiaNotice =>
-      'Hindistan’daki kullanıcılar için: 2021 Bilgi Teknolojileri (Aracı Kuruluş Yönergeleri ve Dijital Medya Etik Kodu) Kurallarına uyuyoruz.';
+      'Hindistan\'daki şikâyet işlemleri, değiştirildiği şekliyle Bilgi Teknolojileri (Aracı Kuruluş Yönergeleri ve Dijital Medya Etik Kodu) Kurallarına tabidir. Acil yasa dışı veya mahrem içerik şikâyetlerinde daha kısa yasal süreler uygulanır.';
 
   @override
   String get settings_managePhotoRequests => 'Fotoğraf isteklerini yönet';

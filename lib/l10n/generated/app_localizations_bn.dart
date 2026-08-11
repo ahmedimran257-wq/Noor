@@ -2044,31 +2044,31 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get settings_privacy_download_body =>
-      'GDPR এবং অন্যান্য গোপনীয়তা প্রবিধানের অধীনে, আপনি আপনার প্রোফাইল, ম্যাচিং এবং কার্যকলাপ ডেটা সম্পূর্ণ রপ্তানির অনুরোধ করতে পারেন। ফাইলটি প্রস্তুত করে আপনার নিবন্ধিত ঠিকানায় পাঠানো হবে।';
+      'আপনার অ্যাকাউন্ট, প্রোফাইল, ছবি, আগ্রহ, ম্যাচ, বার্তা, সেটিংস, সম্মতি ও সাবস্ক্রিপশন ইতিহাসের একটি ব্যক্তিগত ZIP আর্কাইভ এখনই তৈরি করুন। ডিভাইসের নিরাপদ শেয়ার শিট দিয়ে এটি সংরক্ষণ করুন।';
 
   @override
-  String get settings_privacy_download_btn => 'তথ্য রপ্তানি অনুরোধ';
+  String get settings_privacy_download_btn => 'নিরাপদ আর্কাইভ তৈরি করুন';
 
   @override
   String get settings_privacy_download_label => 'আমার ডেটা ডাউনলোড করুন';
 
   @override
   String get settings_privacy_download_sub =>
-      'জিডিপিআর-এর অধীনে আপনার ব্যক্তিগত ডেটার একটি অনুলিপি রপ্তানি করুন';
+      'আপনার Silarah ডেটার মেশিন-পঠনযোগ্য কপি সংরক্ষণ করুন';
 
   @override
   String get settings_privacy_export_body =>
-      'আপনার অনুরোধ গৃহীত হয়েছে! আমরা আপনার ব্যক্তিগত তথ্য সংরক্ষণাগার কম্পাইল করছি.';
+      'আপনার ব্যক্তিগত আর্কাইভ প্রস্তুত। নিরাপদে সংরক্ষণ করতে শেয়ার শিট ব্যবহার করুন।';
 
   @override
   String get settings_privacy_export_btn_close => 'বোঝা গেল';
 
   @override
   String get settings_privacy_export_subbody =>
-      'জিডিপিআর নির্দেশিকা মেনে 48 ঘন্টার মধ্যে আপনার নিবন্ধিত ফোন/ইমেলে একটি ডাউনলোড লিঙ্ক পাঠানো হবে।';
+      'এই আর্কাইভে ব্যক্তিগত বার্তা ও যোগাযোগের তথ্য থাকতে পারে। নিরাপদে রাখুন এবং শুধু বিশ্বস্ত ব্যক্তির সঙ্গে ভাগ করুন।';
 
   @override
-  String get settings_privacy_export_title => 'রপ্তানি অনুরোধ করা হয়েছে';
+  String get settings_privacy_export_title => 'আর্কাইভ প্রস্তুত';
 
   @override
   String get settings_privacy_online_label => 'অনলাইন স্ট্যাটাস';
@@ -2282,11 +2282,11 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get settings_grievanceResponse =>
-      'প্রতিক্রিয়ার সময়: প্রাপ্তির ৪৮ ঘণ্টার মধ্যে';
+      '২৪ ঘণ্টার মধ্যে স্বীকৃতি; অধিকাংশ অভিযোগ ৭ দিনের মধ্যে সমাধান';
 
   @override
   String get settings_grievanceIndiaNotice =>
-      'ভারতের ব্যবহারকারীদের জন্য: আমরা তথ্য প্রযুক্তি (মধ্যস্থতাকারী নির্দেশিকা ও ডিজিটাল মিডিয়া নৈতিকতা বিধি) ২০২১ মেনে চলি।';
+      'ভারতে অভিযোগ নিষ্পত্তি সংশোধিত তথ্য প্রযুক্তি (মধ্যস্থতাকারী নির্দেশিকা ও ডিজিটাল মিডিয়া নৈতিকতা বিধি) অনুসরণ করে। জরুরি বেআইনি বা অন্তরঙ্গ বিষয়বস্তুর অভিযোগে আরও কম আইনি সময়সীমা প্রযোজ্য।';
 
   @override
   String get settings_managePhotoRequests => 'ছবির অনুরোধ পরিচালনা করুন';

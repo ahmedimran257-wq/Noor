@@ -11,6 +11,7 @@ void main() {
     'child-safety': 'Child Safety Standards',
     'refund-policy': 'Refund Policy',
     'data-deletion': 'Data Deletion Policy',
+    'privacy-rights': 'Privacy Rights & Grievance Policy',
     'verification-policy': 'Trust & Verification Policy',
     'photo-moderation-policy': 'Photo Moderation Policy',
     'guardian-policy': 'Guardian / Wali Policy',
@@ -76,7 +77,7 @@ void main() {
       'supabase/migrations/134_versioned_legal_policy_consents.sql',
     ).readAsStringSync();
     final currentConsentMigration = File(
-      'supabase/migrations/206_india_launch_and_photo_trust.sql',
+      'supabase/migrations/207_personal_data_export_and_legal_rights.sql',
     ).readAsStringSync();
 
     expect(settings, contains('LegalDocuments.all'));
@@ -89,6 +90,8 @@ void main() {
             "trim(coalesce(p_policy_version, '')) <> '${LegalDocuments.version}'"));
     expect(currentConsentMigration,
         contains("VALUES ('${LegalDocuments.version}', p_acceptances)"));
+    expect(LegalDocuments.operatorName, 'Imran Ahmed');
+    expect(LegalDocuments.grievanceOfficerName, 'Imran Ahmed');
   });
 
   test('account deletion never claims app-store billing is cancelled', () {

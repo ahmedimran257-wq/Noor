@@ -2039,31 +2039,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settings_privacy_download_body =>
-      'Under GDPR and other privacy regulations, you can request a complete export of your profile, matching, and activity data. The file will be prepared and sent to your registered address.';
+      'Create a private ZIP archive now with your account, profile, photos, interests, matches, messages, settings, consent and subscription history. You can save it using your device\'s secure share sheet.';
 
   @override
-  String get settings_privacy_download_btn => 'Request Data Export';
+  String get settings_privacy_download_btn => 'Create secure archive';
 
   @override
-  String get settings_privacy_download_label => 'DOWNLOAD MY DATA';
+  String get settings_privacy_download_label => 'Download my data';
 
   @override
   String get settings_privacy_download_sub =>
-      'Export a copy of your personal data under GDPR';
+      'Save a machine-readable copy of your Silarah data';
 
   @override
   String get settings_privacy_export_body =>
-      'Your request has been received! We are compiling your personal data archive.';
+      'Your private archive is ready. Use the share sheet to save it securely.';
 
   @override
   String get settings_privacy_export_btn_close => 'Understood';
 
   @override
   String get settings_privacy_export_subbody =>
-      'A download link will be sent to your registered phone/email within 48 hours in compliance with GDPR guidelines.';
+      'This archive may contain private messages and contact details. Store it securely and share it only with people you trust.';
 
   @override
-  String get settings_privacy_export_title => 'Export Requested';
+  String get settings_privacy_export_title => 'Archive ready';
 
   @override
   String get settings_privacy_online_label => 'ONLINE STATUS';
@@ -2274,11 +2274,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settings_grievanceResponse =>
-      'Response time: Within 48 hours of receipt';
+      'Acknowledgement within 24 hours; most complaints resolved within 7 days';
 
   @override
   String get settings_grievanceIndiaNotice =>
-      'For users in India: We comply with the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021.';
+      'India grievance handling follows the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, as amended. Urgent unlawful or intimate-content complaints receive the shorter legally required timelines.';
 
   @override
   String get settings_managePhotoRequests => 'Manage photo requests';

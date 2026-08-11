@@ -32,6 +32,7 @@ import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/cubits/account_standing/account_standing_cubit.dart';
 import '../../../core/models/onboarding_data.dart';
 import '../../../core/services/profile_photo_service.dart';
+import '../../../core/services/personal_data_export_service.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/services/wali_mode_service.dart';
 import '../../../core/legal/legal_documents.dart';
@@ -68,6 +69,7 @@ IconData _legalIcon(String slug) => switch (slug) {
       'child-safety' => Icons.child_care_outlined,
       'refund-policy' => Icons.receipt_long_outlined,
       'data-deletion' => Icons.delete_sweep_outlined,
+      'privacy-rights' => Icons.manage_accounts_outlined,
       'verification-policy' => Icons.badge_outlined,
       'photo-moderation-policy' => Icons.photo_filter_outlined,
       'guardian-policy' => Icons.family_restroom_outlined,
@@ -453,6 +455,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  UiText(
+                    LegalDocuments.grievanceOfficerName,
+                    style: AppTypography.bodyMedium,
+                  ),
+                  const SizedBox(height: AppDimensions.space8),
                   Row(
                     children: [
                       Icon(Icons.email_outlined,
@@ -992,6 +999,7 @@ class _PrivacySectionState extends State<_PrivacySection> {
   bool _profilePauseSaving = false;
   String _profileVisibility = 'visible';
   String? _visibilityBlockReason;
+  bool _exportingData = false;
   // Animated save checkmark
   final Map<String, bool> _savedIndicators = {};
 
@@ -1184,6 +1192,103 @@ class _PrivacySectionState extends State<_PrivacySection> {
     }
   }
 
+  Future<void> _downloadMyData() async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.surfaceMid,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+          side: BorderSide(color: AppColors.cardBorder),
+        ),
+        title: UiText(l10n.settings_privacy_download_label),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            UiText(
+              l10n.settings_privacy_download_body,
+              style: AppTypography.bodyMedium.copyWith(height: 1.5),
+            ),
+            const SizedBox(height: AppDimensions.space12),
+            Container(
+              padding: const EdgeInsets.all(AppDimensions.space12),
+              decoration: BoxDecoration(
+                color: AppColors.premiumGold.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+                border: Border.all(
+                  color: AppColors.premiumGold.withValues(alpha: 0.28),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.lock_outline_rounded,
+                      color: AppColors.premiumGold, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: UiText(
+                      l10n.settings_privacy_export_subbody,
+                      style: AppTypography.caption.copyWith(height: 1.45),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: UiText(
+              MaterialLocalizations.of(dialogContext).cancelButtonLabel,
+            ),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            icon: const Icon(Icons.archive_outlined, size: 18),
+            label: UiText(l10n.settings_privacy_download_btn),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _exportingData = true);
+    try {
+      final renderBox = context.findRenderObject() as RenderBox?;
+      final origin = renderBox == null
+          ? null
+          : renderBox.localToGlobal(Offset.zero) & renderBox.size;
+      final result = await PersonalDataExportService.instance.createAndShare(
+        sharePositionOrigin: origin,
+      );
+      if (!mounted) return;
+      final message = result.wasDismissed
+          ? l10n.settings_privacy_export_subbody
+          : l10n.settings_privacy_export_body;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: UiText(message)),
+      );
+    } on PostgrestException catch (error) {
+      if (!mounted) return;
+      final rateLimited = error.message.contains('export_rate_limited');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: UiText(rateLimited
+            ? 'A fresh export was created recently. You can create another in 10 minutes.'
+            : _settingsErrorMessage(error.message)),
+      ));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: UiText(_settingsErrorMessage(error.toString()))),
+      );
+    } finally {
+      if (mounted) setState(() => _exportingData = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -1348,7 +1453,27 @@ class _PrivacySectionState extends State<_PrivacySection> {
       ),
       const SizedBox(height: AppDimensions.space8),
 
-      // Download My Data (GDPR)
+      _PrivacyCard(
+        label: l10n.settings_privacy_download_label,
+        subtitle: l10n.settings_privacy_download_sub,
+        saved: false,
+        child: Padding(
+          padding: const EdgeInsets.only(top: AppDimensions.space12),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _exportingData ? null : _downloadMyData,
+              icon: _exportingData
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.download_for_offline_outlined),
+              label: UiText(l10n.settings_privacy_download_btn),
+            ),
+          ),
+        ),
+      ),
     ]);
   }
 }

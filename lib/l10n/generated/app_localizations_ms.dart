@@ -2062,31 +2062,31 @@ class AppLocalizationsMs extends AppLocalizations {
 
   @override
   String get settings_privacy_download_body =>
-      'Di bawah GDPR dan peraturan privasi lain, anda boleh meminta eksport lengkap profil, pemadanan dan data aktiviti anda. Fail akan disediakan dan dihantar ke alamat berdaftar anda.';
+      'Cipta sekarang arkib ZIP peribadi yang mengandungi akaun, profil, foto, minat, padanan, mesej, tetapan, persetujuan dan sejarah langganan anda. Simpan melalui helaian perkongsian selamat peranti.';
 
   @override
-  String get settings_privacy_download_btn => 'Minta Eksport Data';
+  String get settings_privacy_download_btn => 'Cipta arkib selamat';
 
   @override
-  String get settings_privacy_download_label => 'MUAT TURUN DATA SAYA';
+  String get settings_privacy_download_label => 'Muat turun data saya';
 
   @override
   String get settings_privacy_download_sub =>
-      'Eksport salinan data peribadi anda di bawah GDPR';
+      'Simpan salinan data Silarah yang boleh dibaca mesin';
 
   @override
   String get settings_privacy_export_body =>
-      'Permintaan anda telah diterima! Kami sedang menyusun arkib data peribadi anda.';
+      'Arkib peribadi anda sudah sedia. Gunakan helaian perkongsian untuk menyimpannya dengan selamat.';
 
   @override
   String get settings_privacy_export_btn_close => 'Difahamkan';
 
   @override
   String get settings_privacy_export_subbody =>
-      'Pautan muat turun akan dihantar ke telefon/e-mel berdaftar anda dalam masa 48 jam selaras dengan garis panduan GDPR.';
+      'Arkib ini mungkin mengandungi mesej peribadi dan butiran hubungan. Simpan dengan selamat dan kongsi hanya dengan orang yang anda percayai.';
 
   @override
-  String get settings_privacy_export_title => 'Eksport Diminta';
+  String get settings_privacy_export_title => 'Arkib sedia';
 
   @override
   String get settings_privacy_online_label => 'STATUS DALAM TALIAN';
@@ -2300,11 +2300,11 @@ class AppLocalizationsMs extends AppLocalizations {
 
   @override
   String get settings_grievanceResponse =>
-      'Masa respons: Dalam 48 jam selepas diterima';
+      'Akuan dalam 24 jam; kebanyakan aduan selesai dalam 7 hari';
 
   @override
   String get settings_grievanceIndiaNotice =>
-      'Untuk pengguna di India: Kami mematuhi Peraturan Teknologi Maklumat (Garis Panduan Pengantara dan Kod Etika Media Digital) 2021.';
+      'Pengendalian aduan di India mematuhi Peraturan Teknologi Maklumat (Garis Panduan Pengantara dan Kod Etika Media Digital) sebagaimana dipinda. Aduan segera tentang kandungan menyalahi undang-undang atau intim tertakluk pada tempoh undang-undang yang lebih singkat.';
 
   @override
   String get settings_managePhotoRequests => 'Urus permintaan foto';

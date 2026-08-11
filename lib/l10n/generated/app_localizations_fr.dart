@@ -2058,32 +2058,31 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get settings_privacy_download_body =>
-      'En vertu du RGPD et d\'autres réglementations en matière de confidentialité, vous pouvez demander une exportation complète de vos données de profil, de correspondance et d\'activité. Le dossier sera préparé et envoyé à votre adresse enregistrée.';
+      'Créez maintenant une archive ZIP privée contenant votre compte, profil, photos, intérêts, matchs, messages, réglages, consentements et historique d\'abonnement. Enregistrez-la avec la feuille de partage sécurisée de votre appareil.';
 
   @override
-  String get settings_privacy_download_btn =>
-      'Demander l\'exportation de données';
+  String get settings_privacy_download_btn => 'Créer l\'archive sécurisée';
 
   @override
-  String get settings_privacy_download_label => 'TÉLÉCHARGER MES DONNÉES';
+  String get settings_privacy_download_label => 'Télécharger mes données';
 
   @override
   String get settings_privacy_download_sub =>
-      'Exporter une copie de vos données personnelles sous RGPD';
+      'Enregistrer une copie lisible par machine de vos données Silarah';
 
   @override
   String get settings_privacy_export_body =>
-      'Votre demande a été reçue ! Nous compilons vos archives de données personnelles.';
+      'Votre archive privée est prête. Utilisez la feuille de partage pour l\'enregistrer en sécurité.';
 
   @override
   String get settings_privacy_export_btn_close => 'Compris';
 
   @override
   String get settings_privacy_export_subbody =>
-      'Un lien de téléchargement sera envoyé sur votre téléphone/e-mail enregistré dans les 48 heures, conformément aux directives du RGPD.';
+      'Cette archive peut contenir des messages privés et des coordonnées. Conservez-la en sécurité et ne la partagez qu\'avec des personnes de confiance.';
 
   @override
-  String get settings_privacy_export_title => 'Exportation demandée';
+  String get settings_privacy_export_title => 'Archive prête';
 
   @override
   String get settings_privacy_online_label => 'STATUT EN LIGNE';
@@ -2298,11 +2297,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get settings_grievanceResponse =>
-      'Délai de réponse : sous 48 heures après réception';
+      'Accusé de réception sous 24 heures ; la plupart des plaintes résolues sous 7 jours';
 
   @override
   String get settings_grievanceIndiaNotice =>
-      'Pour les utilisateurs en Inde : nous respectons les règles de 2021 sur les technologies de l’information (directives aux intermédiaires et code d’éthique des médias numériques).';
+      'En Inde, le traitement des plaintes suit les règles modifiées sur les technologies de l’information (directives aux intermédiaires et code d’éthique des médias numériques). Les contenus illégaux ou intimes urgents suivent des délais légaux plus courts.';
 
   @override
   String get settings_managePhotoRequests => 'Gérer les demandes de photos';

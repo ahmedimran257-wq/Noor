@@ -3849,31 +3849,31 @@ abstract class AppLocalizations {
   /// No description provided for @settings_privacy_download_body.
   ///
   /// In en, this message translates to:
-  /// **'Under GDPR and other privacy regulations, you can request a complete export of your profile, matching, and activity data. The file will be prepared and sent to your registered address.'**
+  /// **'Create a private ZIP archive now with your account, profile, photos, interests, matches, messages, settings, consent and subscription history. You can save it using your device\'s secure share sheet.'**
   String get settings_privacy_download_body;
 
   /// No description provided for @settings_privacy_download_btn.
   ///
   /// In en, this message translates to:
-  /// **'Request Data Export'**
+  /// **'Create secure archive'**
   String get settings_privacy_download_btn;
 
   /// No description provided for @settings_privacy_download_label.
   ///
   /// In en, this message translates to:
-  /// **'DOWNLOAD MY DATA'**
+  /// **'Download my data'**
   String get settings_privacy_download_label;
 
   /// No description provided for @settings_privacy_download_sub.
   ///
   /// In en, this message translates to:
-  /// **'Export a copy of your personal data under GDPR'**
+  /// **'Save a machine-readable copy of your Silarah data'**
   String get settings_privacy_download_sub;
 
   /// No description provided for @settings_privacy_export_body.
   ///
   /// In en, this message translates to:
-  /// **'Your request has been received! We are compiling your personal data archive.'**
+  /// **'Your private archive is ready. Use the share sheet to save it securely.'**
   String get settings_privacy_export_body;
 
   /// No description provided for @settings_privacy_export_btn_close.
@@ -3885,13 +3885,13 @@ abstract class AppLocalizations {
   /// No description provided for @settings_privacy_export_subbody.
   ///
   /// In en, this message translates to:
-  /// **'A download link will be sent to your registered phone/email within 48 hours in compliance with GDPR guidelines.'**
+  /// **'This archive may contain private messages and contact details. Store it securely and share it only with people you trust.'**
   String get settings_privacy_export_subbody;
 
   /// No description provided for @settings_privacy_export_title.
   ///
   /// In en, this message translates to:
-  /// **'Export Requested'**
+  /// **'Archive ready'**
   String get settings_privacy_export_title;
 
   /// No description provided for @settings_privacy_online_label.
@@ -4281,13 +4281,13 @@ abstract class AppLocalizations {
   /// No description provided for @settings_grievanceResponse.
   ///
   /// In en, this message translates to:
-  /// **'Response time: Within 48 hours of receipt'**
+  /// **'Acknowledgement within 24 hours; most complaints resolved within 7 days'**
   String get settings_grievanceResponse;
 
   /// No description provided for @settings_grievanceIndiaNotice.
   ///
   /// In en, this message translates to:
-  /// **'For users in India: We comply with the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021.'**
+  /// **'India grievance handling follows the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, as amended. Urgent unlawful or intimate-content complaints receive the shorter legally required timelines.'**
   String get settings_grievanceIndiaNotice;
 
   /// No description provided for @settings_managePhotoRequests.

@@ -3,7 +3,7 @@
 ## Automated and repository gates
 
 - [x] `flutter analyze` has zero findings.
-- [x] Full Flutter test suite passes (366 tests on 10 August 2026).
+- [x] Full Flutter test suite passes (362 tests on 11 August 2026).
 - [x] Admin lint, typecheck, Next.js build, OpenNext Cloudflare build and
       production dependency audit pass.
 - [x] Supabase migration validation and Edge Function tests pass.
@@ -20,7 +20,7 @@
 - [x] Support, safety, privacy and grievance addresses receive transactional mail.
 - [ ] Crashlytics initializes and the release mapping upload is wired. Upload
       symbols and confirm a controlled event in Firebase for candidate
-      `1.0.0+16011` before widening the tester group.
+      `1.0.0+18013` before widening the tester group.
 - [x] RevenueCat Test Store exposes the current monthly and annual packages;
       Android purchase, restore, cancellation, forced failure and accelerated
       renewal/expiry pass. Production webhook state remains a Play sandbox/staging

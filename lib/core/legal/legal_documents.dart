@@ -27,8 +27,10 @@ class LegalDocument {
 }
 
 abstract final class LegalDocuments {
-  static const version = '2.1.0';
+  static const version = '2.2.0';
   static const effectiveDate = '11 August 2026';
+  static const operatorName = 'Imran Ahmed';
+  static const grievanceOfficerName = 'Imran Ahmed';
   static const supportEmail = 'support@silarah.com';
   static const privacyEmail = 'privacy@silarah.com';
   static const safetyEmail = 'safety@silarah.com';
@@ -43,7 +45,7 @@ abstract final class LegalDocuments {
     sections: [
       LegalSection(
         '1. Agreement and incorporated policies',
-        'These Terms form a binding agreement between you and Silarah for use of the Silarah mobile application, website and related services (the “Service”). By creating an account, accessing the Service or purchasing a subscription, you accept these Terms and the Privacy Policy, Community Guidelines, Refund Policy, Data Deletion Policy, Verification Policy, Photo Moderation Policy and Guardian/Wali Policy. If you do not accept them, do not use the Service.',
+        'These Terms form a binding agreement between you and Imran Ahmed, an individual developer operating Silarah in India, for use of the Silarah mobile application, website and related services (the “Service”). By creating an account, accessing the Service or purchasing a subscription, you accept these Terms and the Privacy Policy, Privacy Rights and Grievance Policy, Community Guidelines, Refund Policy, Data Deletion Policy, Verification Policy, Photo Moderation Policy and Guardian/Wali Policy. If you do not accept them, do not use the Service.',
       ),
       LegalSection(
         '2. Eligibility and purpose',
@@ -109,7 +111,7 @@ abstract final class LegalDocuments {
     sections: [
       LegalSection(
         '1. Scope and controller',
-        'This Policy applies to the Silarah app, silarah.com and related support, safety and verification operations. Silarah is the controller of personal data used to provide the Service. Privacy questions and rights requests may be sent to privacy@silarah.com; formal grievances may be sent to grievance@silarah.com.',
+        'This Policy applies to the Silarah app, silarah.com and related support, safety and verification operations. Imran Ahmed is the individual developer operating Silarah in India and the data fiduciary responsible for deciding why and how personal data is processed. The grievance officer is Imran Ahmed. Privacy questions and rights requests may be sent to privacy@silarah.com; formal grievances may be sent to grievance@silarah.com.',
       ),
       LegalSection(
         '2. Data you provide',
@@ -141,7 +143,7 @@ abstract final class LegalDocuments {
       ),
       LegalSection(
         '9. Retention',
-        'Active-account profile, preference, photo, match and message data is retained while needed to provide the Service. A requested account enters a 30-day recovery period before purge. Temporary photo-verification captures are deleted from active verification storage after review and no later than 48 hours after submission. We retain the decision, date, reviewer audit and deletion result without retaining the captures. Reports, blocks, transaction records, consent records, security logs and backups may be retained after account deletion only for applicable limitation, tax, payment, abuse-prevention and legal periods, then deleted or de-identified. Backup deletion may complete on the provider’s normal rotation schedule. We periodically review retention and avoid keeping identifiable data merely because it may be useful.',
+        'Active-account profile, preference, photo, match and message data is retained while needed to provide the Service. A requested account enters a 30-day recovery period before purge. Temporary photo-verification captures are deleted from active verification storage after review and no later than 48 hours after submission. We retain the decision, date, reviewer audit and deletion result without retaining the captures. Information and removed content that applicable intermediary rules require us to preserve may be retained for 180 days, or longer when a lawful order requires it. Reports, blocks, transaction records, consent records, security logs and backups may otherwise remain only for applicable limitation, tax, payment, abuse-prevention and legal periods, then be deleted or de-identified. Backup deletion completes through normal provider rotation. We periodically review retention and avoid keeping identifiable data merely because it may be useful.',
       ),
       LegalSection(
         '10. Security',
@@ -149,7 +151,7 @@ abstract final class LegalDocuments {
       ),
       LegalSection(
         '11. Your rights and choices',
-        'Depending on applicable law, you may access, correct, export or delete data; withdraw consent; object to or restrict processing; request portability; and complain to a regulator. In-app controls let you edit your profile, change photo visibility, pause discovery, manage notifications, block members and request deletion. We may verify identity before completing a request. We will respond within the legally required period and explain any lawful refusal. Email privacy@silarah.com to exercise a right.',
+        'Depending on applicable law, you may access, correct, export or delete data; withdraw consent; object to or restrict processing; request portability; nominate another person where that right applies; and complain to a regulator. In-app controls let you edit your profile, change photo visibility, pause discovery, manage notifications, block members, download a machine-readable ZIP archive and request deletion. Withdrawal must be as easy as giving consent, but processing already lawfully completed is not reversed. We may proportionately verify identity before completing a request. We will respond within the legally required period and explain any lawful refusal. Email privacy@silarah.com for an omitted category or assisted request.',
       ),
       LegalSection(
         '12. Adults only',
@@ -286,6 +288,34 @@ abstract final class LegalDocuments {
     ],
   );
 
+  static const privacyRights = LegalDocument(
+    id: 'privacy_rights_and_grievance_policy',
+    slug: 'privacy-rights',
+    title: 'Privacy Rights & Grievance Policy',
+    summary:
+        'How to access, export, correct or erase data, withdraw consent, submit a complaint and appeal a grievance decision.',
+    sections: [
+      LegalSection('1. Scope and request channels',
+          'This Policy explains the rights-request and grievance process for Silarah members and people whose data may be processed by the Service. Signed-in members should use the account controls where available because authentication provides proportionate identity verification. You may also email privacy@silarah.com for access, correction, consent or deletion requests, grievance@silarah.com for formal complaints, and safety@silarah.com for urgent safety content. Never send passwords, OTP codes, payment credentials or identity documents by ordinary email.'),
+      LegalSection('2. Downloading a portable copy',
+          'Profile → Settings → Privacy → Download my data creates an authenticated ZIP archive immediately and opens the device save or share sheet. It includes a machine-readable JSON copy of account and profile data, current accessible profile photos, interests, matches, messages, settings, consent records, subscription events, notifications, guardian links, verification decisions, blocks and reports created by you. Repeated generation is briefly rate-limited to protect account data and control database cost.'),
+      LegalSection('3. Export limits and assisted access',
+          'The self-service archive excludes passwords, OTP codes, raw notification credentials, temporary verification captures, other members’ confidential reports, staff identities, privileged legal material and details that would undermine anti-abuse controls. Those exclusions do not automatically determine the result of a formal legal request. Email privacy@silarah.com if you require an omitted category, an explanation of processing, a summary of data, the identities or categories of processors, or an accessible alternative format. We may redact third-party data and apply lawful exceptions.'),
+      LegalSection('4. Correction, erasure and withdrawal',
+          'You can correct many profile fields and replace or remove photos in the app. You can pause discovery without deleting the account, or request account deletion in Settings. Consent may be withdrawn through the relevant control or privacy@silarah.com, and withdrawing it must be as easy as giving it. Withdrawal applies prospectively and may disable a feature that cannot operate without the data. Erasure may be limited where retention remains necessary for law, safety, fraud prevention, claims, payments or another permitted purpose.'),
+      LegalSection('5. Identity verification and request tracking',
+          'We verify a request using the signed-in session, the registered email or proportionate account facts. We do not ask for more data than reasonably needed and will provide a secure route if stronger verification is genuinely necessary. Include the account email, request type and relevant dates. We may ask you to identify the profile field, message, transaction or decision concerned. Duplicate or abusive automated requests may be consolidated without preventing a genuine legal right.'),
+      LegalSection('6. Grievance timelines in India',
+          'Formal grievances are acknowledged within 24 hours and ordinarily resolved within 7 days under the applicable Indian intermediary rules. Complaints concerning specified removal requests follow the legally shorter deadline, including 36 hours for qualifying unlawful-content complaints and 2 hours for qualifying intimate imagery, nudity, sexual impersonation or similar urgent material. These timelines do not guarantee a requested outcome and may change when amended law imposes a shorter period.'),
+      LegalSection('7. Grievance information and evidence',
+          'The grievance officer is Imran Ahmed. Send a concise description, account email, dates, relevant profile or conversation reference and the outcome requested to grievance@silarah.com. Do not forward suspected child sexual abuse material or non-consensual intimate imagery by email; identify where it appears so authorized staff can preserve and restrict it safely. We may acknowledge receipt, request necessary clarification, issue a reasoned outcome, preserve required evidence, restrict content or accounts, and notify an authority when law requires.'),
+      LegalSection('8. Appeals and external remedies',
+          'If you disagree with a grievance decision, reply with the original reference and explain the error. Where the Indian Grievance Appellate Committee has jurisdiction, an eligible appeal may be filed through its prescribed online mechanism within the legally applicable period, currently 30 days from receipt of the grievance officer’s decision. Privacy complaints may also be taken to the competent data-protection authority when its relevant powers and procedures are in force. Nothing here removes a non-waivable court, consumer or regulatory remedy.'),
+      LegalSection('9. Security, records and changes',
+          'Rights requests and grievance records are access-restricted and used to verify, investigate, respond, audit compliance, prevent abuse and meet legal duties. Required intermediary records and removed content may be preserved for 180 days or a longer period directed by a lawful order; other request records are retained only as needed for proof, security, limitation and legal obligations. Material changes to this process will be published with a new policy version and notified or presented for renewed consent where required.'),
+    ],
+  );
+
   static const verification = LegalDocument(
     id: 'verification_policy',
     slug: 'verification-policy',
@@ -371,6 +401,7 @@ abstract final class LegalDocuments {
     childSafety,
     refund,
     deletion,
+    privacyRights,
     verification,
     photoModeration,
     guardian,
@@ -383,6 +414,7 @@ abstract final class LegalDocuments {
       'child-safety' || 'csae' => 'child-safety',
       'refund' => 'refund-policy',
       'deletion' => 'data-deletion',
+      'rights' || 'grievance' || 'data-access' => 'privacy-rights',
       'kyc' || 'verification' => 'verification-policy',
       'photos' || 'photo-moderation' => 'photo-moderation-policy',
       'guardian' || 'wali' => 'guardian-policy',

@@ -56,7 +56,7 @@ class HelpSupportScreen extends StatelessWidget {
             icon: Icons.gavel_outlined,
             title: 'Grievance Officer',
             body:
-                'For formal grievance requests under applicable platform rules.',
+                'Imran Ahmed. Formal grievances are acknowledged within 24 hours and ordinarily resolved within 7 days.',
             actionLabel: 'grievance@silarah.com',
             onTap: () => _contactEmail(context, 'grievance@silarah.com'),
           ),

@@ -2045,31 +2045,31 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get settings_privacy_download_body =>
-      'GDPR اور رازداری کے دیگر ضوابط کے تحت، آپ اپنے پروفائل، مماثلت اور سرگرمی کے ڈیٹا کی مکمل برآمد کی درخواست کر سکتے ہیں۔ فائل تیار کر کے آپ کے رجسٹرڈ ایڈریس پر بھیج دی جائے گی۔';
+      'اپنے اکاؤنٹ، پروفائل، تصاویر، دلچسپیوں، میچز، پیغامات، ترتیبات، رضامندیوں اور سبسکرپشن ہسٹری کا نجی ZIP آرکائیو ابھی بنائیں۔ اسے اپنے آلے کی محفوظ شیئر شیٹ سے محفوظ کریں۔';
 
   @override
-  String get settings_privacy_download_btn => 'ڈیٹا ایکسپورٹ کی درخواست کریں۔';
+  String get settings_privacy_download_btn => 'محفوظ آرکائیو بنائیں';
 
   @override
-  String get settings_privacy_download_label => 'میرا ڈیٹا ڈاؤن لوڈ کریں۔';
+  String get settings_privacy_download_label => 'میرا ڈیٹا ڈاؤن لوڈ کریں';
 
   @override
   String get settings_privacy_download_sub =>
-      'جی ڈی پی آر کے تحت اپنے ذاتی ڈیٹا کی ایک کاپی برآمد کریں۔';
+      'اپنے Silarah ڈیٹا کی مشین ریڈیبل کاپی محفوظ کریں';
 
   @override
   String get settings_privacy_export_body =>
-      'آپ کی درخواست موصول ہو گئی ہے! ہم آپ کے ذاتی ڈیٹا آرکائیو کو مرتب کر رہے ہیں۔';
+      'آپ کا نجی آرکائیو تیار ہے۔ اسے محفوظ کرنے کے لیے شیئر شیٹ استعمال کریں۔';
 
   @override
   String get settings_privacy_export_btn_close => 'سمجھ گیا';
 
   @override
   String get settings_privacy_export_subbody =>
-      'GDPR کے رہنما خطوط کی تعمیل میں 48 گھنٹوں کے اندر آپ کے رجسٹرڈ فون/ای میل پر ایک ڈاؤن لوڈ لنک بھیجا جائے گا۔';
+      'اس آرکائیو میں نجی پیغامات اور رابطے کی معلومات ہو سکتی ہیں۔ اسے محفوظ رکھیں اور صرف قابلِ اعتماد افراد سے شیئر کریں۔';
 
   @override
-  String get settings_privacy_export_title => 'برآمد کی درخواست کی گئی۔';
+  String get settings_privacy_export_title => 'آرکائیو تیار ہے';
 
   @override
   String get settings_privacy_online_label => 'آن لائن اسٹیٹس';
@@ -2281,11 +2281,11 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get settings_grievanceResponse =>
-      'جواب کا وقت: موصول ہونے کے 48 گھنٹوں کے اندر';
+      '24 گھنٹوں میں تصدیق؛ زیادہ تر شکایات 7 دن میں حل';
 
   @override
   String get settings_grievanceIndiaNotice =>
-      'بھارت کے صارفین کے لیے: ہم انفارمیشن ٹیکنالوجی (انٹرمیڈیری گائیڈ لائنز اور ڈیجیٹل میڈیا ایتھکس کوڈ) رولز 2021 کی پابندی کرتے ہیں۔';
+      'بھارت میں شکایات کا ازالہ ترمیم شدہ انفارمیشن ٹیکنالوجی (انٹرمیڈیری گائیڈ لائنز اور ڈیجیٹل میڈیا ایتھکس کوڈ) رولز کے مطابق ہوتا ہے۔ فوری غیر قانونی یا نجی مواد کی شکایات پر کم قانونی مدت لاگو ہوتی ہے۔';
 
   @override
   String get settings_managePhotoRequests => 'تصویر کی درخواستیں منظم کریں';

@@ -2049,31 +2049,31 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get settings_privacy_download_body =>
-      'जीडीपीआर और अन्य गोपनीयता नियमों के तहत, आप अपनी प्रोफ़ाइल, मिलान और गतिविधि डेटा के पूर्ण निर्यात का अनुरोध कर सकते हैं। फ़ाइल तैयार कर आपके पंजीकृत पते पर भेज दी जाएगी.';
+      'अपने खाते, प्रोफ़ाइल, फ़ोटो, रुचियों, मैच, संदेशों, सेटिंग्स, सहमतियों और सदस्यता इतिहास का निजी ZIP संग्रह अभी बनाएँ। इसे अपने डिवाइस की सुरक्षित शेयर शीट से सहेजें।';
 
   @override
-  String get settings_privacy_download_btn => 'डेटा निर्यात का अनुरोध करें';
+  String get settings_privacy_download_btn => 'सुरक्षित संग्रह बनाएँ';
 
   @override
   String get settings_privacy_download_label => 'मेरा डेटा डाउनलोड करें';
 
   @override
   String get settings_privacy_download_sub =>
-      'जीडीपीआर के तहत अपने व्यक्तिगत डेटा की एक प्रति निर्यात करें';
+      'अपने Silarah डेटा की मशीन-पठनीय प्रति सहेजें';
 
   @override
   String get settings_privacy_export_body =>
-      'आपका अनुरोध प्राप्त हो गया है! हम आपका व्यक्तिगत डेटा संग्रह संकलित कर रहे हैं।';
+      'आपका निजी संग्रह तैयार है। इसे सुरक्षित रूप से सहेजने के लिए शेयर शीट का उपयोग करें।';
 
   @override
   String get settings_privacy_export_btn_close => 'समझा';
 
   @override
   String get settings_privacy_export_subbody =>
-      'जीडीपीआर दिशानिर्देशों के अनुपालन में 48 घंटों के भीतर आपके पंजीकृत फोन/ईमेल पर एक डाउनलोड लिंक भेजा जाएगा।';
+      'इस संग्रह में निजी संदेश और संपर्क विवरण हो सकते हैं। इसे सुरक्षित रखें और केवल भरोसेमंद लोगों से साझा करें।';
 
   @override
-  String get settings_privacy_export_title => 'निर्यात का अनुरोध किया गया';
+  String get settings_privacy_export_title => 'संग्रह तैयार है';
 
   @override
   String get settings_privacy_online_label => 'ऑनलाइन स्थिति';
@@ -2287,11 +2287,11 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get settings_grievanceResponse =>
-      'उत्तर का समय: प्राप्ति के 48 घंटों के भीतर';
+      '24 घंटे में पावती; अधिकांश शिकायतों का समाधान 7 दिनों में';
 
   @override
   String get settings_grievanceIndiaNotice =>
-      'भारत के उपयोगकर्ताओं के लिए: हम सूचना प्रौद्योगिकी (मध्यस्थ दिशानिर्देश और डिजिटल मीडिया आचार संहिता) नियम, 2021 का पालन करते हैं।';
+      'भारत में शिकायत निवारण संशोधित सूचना प्रौद्योगिकी (मध्यस्थ दिशानिर्देश और डिजिटल मीडिया आचार संहिता) नियमों के अनुसार होता है। तत्काल अवैध या अंतरंग सामग्री की शिकायतों पर कम कानूनी समय-सीमा लागू होती है।';
 
   @override
   String get settings_managePhotoRequests => 'फ़ोटो अनुरोध प्रबंधित करें';

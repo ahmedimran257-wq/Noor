@@ -2060,31 +2060,31 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get settings_privacy_download_body =>
-      'Berdasarkan GDPR dan peraturan privasi lainnya, Anda dapat meminta ekspor lengkap profil, pencocokan, dan data aktivitas Anda. File akan disiapkan dan dikirim ke alamat Anda yang terdaftar.';
+      'Buat sekarang arsip ZIP pribadi berisi akun, profil, foto, minat, kecocokan, pesan, pengaturan, persetujuan, dan riwayat langganan Anda. Simpan melalui lembar berbagi aman di perangkat.';
 
   @override
-  String get settings_privacy_download_btn => 'Minta Ekspor Data';
+  String get settings_privacy_download_btn => 'Buat arsip aman';
 
   @override
-  String get settings_privacy_download_label => 'UNDUH DATA SAYA';
+  String get settings_privacy_download_label => 'Unduh data saya';
 
   @override
   String get settings_privacy_download_sub =>
-      'Ekspor salinan data pribadi Anda berdasarkan GDPR';
+      'Simpan salinan data Silarah yang dapat dibaca mesin';
 
   @override
   String get settings_privacy_export_body =>
-      'Permintaan Anda telah diterima! Kami sedang mengumpulkan arsip data pribadi Anda.';
+      'Arsip pribadi Anda siap. Gunakan lembar berbagi untuk menyimpannya dengan aman.';
 
   @override
   String get settings_privacy_export_btn_close => 'Dipahami';
 
   @override
   String get settings_privacy_export_subbody =>
-      'Tautan unduhan akan dikirimkan ke ponsel/email Anda yang terdaftar dalam waktu 48 jam sesuai dengan pedoman GDPR.';
+      'Arsip ini mungkin berisi pesan pribadi dan detail kontak. Simpan dengan aman dan bagikan hanya kepada orang yang Anda percaya.';
 
   @override
-  String get settings_privacy_export_title => 'Ekspor Diminta';
+  String get settings_privacy_export_title => 'Arsip siap';
 
   @override
   String get settings_privacy_online_label => 'STATUS ONLINE';
@@ -2299,11 +2299,11 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get settings_grievanceResponse =>
-      'Waktu respons: Dalam 48 jam setelah diterima';
+      'Diterima dalam 24 jam; sebagian besar keluhan selesai dalam 7 hari';
 
   @override
   String get settings_grievanceIndiaNotice =>
-      'Untuk pengguna di India: Kami mematuhi Peraturan Teknologi Informasi (Pedoman Perantara dan Kode Etik Media Digital) 2021.';
+      'Penanganan keluhan di India mengikuti Peraturan Teknologi Informasi (Pedoman Perantara dan Kode Etik Media Digital) sebagaimana diubah. Keluhan mendesak tentang konten melanggar hukum atau intim mengikuti tenggat hukum yang lebih singkat.';
 
   @override
   String get settings_managePhotoRequests => 'Kelola permintaan foto';

@@ -1,6 +1,9 @@
 // GENERATED FILE. Source strings are audited by localization_quality_test.dart.
 const supplementalUiCopy = <String, Map<String, String>>{
   'ar': {
+    'Privacy Rights & Grievance Policy': 'سياسة حقوق الخصوصية والشكاوى',
+    'Imran Ahmed. Formal grievances are acknowledged within 24 hours and ordinarily resolved within 7 days.':
+        'عمران أحمد. يتم تأكيد استلام الشكاوى الرسمية خلال 24 ساعة وتُحل عادةً خلال 7 أيام.',
     'Silarah is temporarily unavailable. Saved content remains available and retry is automatic.':
         'سيلارا غير متاحة مؤقتًا. يظل المحتوى المحفوظ متاحًا، وستتم إعادة المحاولة تلقائيًا.',
     'Add an approved profile photo before browsing discovery.':
@@ -223,6 +226,9 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'now': 'الآن',
   },
   'bn': {
+    'Privacy Rights & Grievance Policy': 'গোপনীয়তা অধিকার ও অভিযোগ নীতি',
+    'Imran Ahmed. Formal grievances are acknowledged within 24 hours and ordinarily resolved within 7 days.':
+        'ইমরান আহমেদ। আনুষ্ঠানিক অভিযোগ ২৪ ঘণ্টার মধ্যে স্বীকার করা হয় এবং সাধারণত ৭ দিনের মধ্যে সমাধান করা হয়।',
     'Silarah is temporarily unavailable. Saved content remains available and retry is automatic.':
         'সিলারাহ সাময়িকভাবে অনুপলব্ধ। সংরক্ষিত কনটেন্ট দেখা যাবে এবং স্বয়ংক্রিয়ভাবে আবার চেষ্টা করা হবে।',
     'Add an approved profile photo before browsing discovery.':
@@ -447,6 +453,10 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'now': 'এখন',
   },
   'de': {
+    'Privacy Rights & Grievance Policy':
+        'Datenschutzrechte- und Beschwerderichtlinie',
+    'Imran Ahmed. Formal grievances are acknowledged within 24 hours and ordinarily resolved within 7 days.':
+        'Imran Ahmed. Formelle Beschwerden werden innerhalb von 24 Stunden bestätigt und normalerweise innerhalb von 7 Tagen gelöst.',
     'Silarah is temporarily unavailable. Saved content remains available and retry is automatic.':
         'Silarah ist vorübergehend nicht verfügbar. Gespeicherte Inhalte bleiben verfügbar und ein neuer Versuch erfolgt automatisch.',
     'Add an approved profile photo before browsing discovery.':
@@ -678,6 +688,10 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'now': 'Jetzt',
   },
   'fr': {
+    'Privacy Rights & Grievance Policy':
+        'Politique relative aux droits à la vie privée et aux réclamations',
+    'Imran Ahmed. Formal grievances are acknowledged within 24 hours and ordinarily resolved within 7 days.':
+        'Imran Ahmed. Les réclamations formelles sont accusées sous 24 heures et normalement résolues sous 7 jours.',
     'Silarah is temporarily unavailable. Saved content remains available and retry is automatic.':
         'Silarah est temporairement indisponible. Le contenu enregistré reste accessible et une nouvelle tentative sera automatique.',
     'Add an approved profile photo before browsing discovery.':
@@ -909,6 +923,9 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'now': 'maintenant',
   },
   'hi': {
+    'Privacy Rights & Grievance Policy': 'गोपनीयता अधिकार और शिकायत नीति',
+    'Imran Ahmed. Formal grievances are acknowledged within 24 hours and ordinarily resolved within 7 days.':
+        'इमरान अहमद। औपचारिक शिकायतों की पावती 24 घंटे में दी जाती है और सामान्यतः 7 दिनों में समाधान किया जाता है।',
     'Silarah is temporarily unavailable. Saved content remains available and retry is automatic.':
         'सिलाराह अस्थायी रूप से उपलब्ध नहीं है। सेव किया गया कॉन्टेंट उपलब्ध रहेगा और दोबारा प्रयास अपने-आप होगा।',
     'Add an approved profile photo before browsing discovery.':
@@ -1135,6 +1152,9 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'now': 'अब',
   },
   'id': {
+    'Privacy Rights & Grievance Policy': 'Kebijakan Hak Privasi & Pengaduan',
+    'Imran Ahmed. Formal grievances are acknowledged within 24 hours and ordinarily resolved within 7 days.':
+        'Imran Ahmed. Pengaduan resmi diterima dalam 24 jam dan biasanya diselesaikan dalam 7 hari.',
     'Silarah is temporarily unavailable. Saved content remains available and retry is automatic.':
         'Silarah sementara tidak tersedia. Konten tersimpan tetap tersedia dan percobaan ulang dilakukan otomatis.',
     'Add an approved profile photo before browsing discovery.':
@@ -1360,6 +1380,9 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'now': 'Sekarang',
   },
   'ms': {
+    'Privacy Rights & Grievance Policy': 'Dasar Hak Privasi & Aduan',
+    'Imran Ahmed. Formal grievances are acknowledged within 24 hours and ordinarily resolved within 7 days.':
+        'Imran Ahmed. Aduan rasmi diakui dalam 24 jam dan biasanya diselesaikan dalam 7 hari.',
     'Silarah is temporarily unavailable. Saved content remains available and retry is automatic.':
         'Silarah tidak tersedia buat sementara waktu. Kandungan tersimpan kekal tersedia dan percubaan semula dilakukan secara automatik.',
     'Add an approved profile photo before browsing discovery.':
@@ -1587,6 +1610,10 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'now': 'sekarang',
   },
   'tr': {
+    'Privacy Rights & Grievance Policy':
+        'Gizlilik Hakları ve Şikâyet Politikası',
+    'Imran Ahmed. Formal grievances are acknowledged within 24 hours and ordinarily resolved within 7 days.':
+        'Imran Ahmed. Resmî şikâyetler 24 saat içinde alınır ve normalde 7 gün içinde çözülür.',
     'Silarah is temporarily unavailable. Saved content remains available and retry is automatic.':
         'Silarah geçici olarak kullanılamıyor. Kaydedilen içerikler erişilebilir kalır ve otomatik olarak yeniden denenir.',
     'Add an approved profile photo before browsing discovery.':
@@ -1811,6 +1838,9 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'now': 'Şimdi',
   },
   'ur': {
+    'Privacy Rights & Grievance Policy': 'رازداری کے حقوق اور شکایات کی پالیسی',
+    'Imran Ahmed. Formal grievances are acknowledged within 24 hours and ordinarily resolved within 7 days.':
+        'عمران احمد۔ رسمی شکایات کی وصولی 24 گھنٹوں میں تسلیم کی جاتی ہے اور عام طور پر 7 دن میں حل کی جاتی ہیں۔',
     'Silarah is temporarily unavailable. Saved content remains available and retry is automatic.':
         'سلارہ عارضی طور پر دستیاب نہیں ہے۔ محفوظ مواد دستیاب رہے گا اور خودکار طور پر دوبارہ کوشش ہوگی۔',
     'Add an approved profile photo before browsing discovery.':

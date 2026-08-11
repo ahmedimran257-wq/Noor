@@ -2057,31 +2057,31 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get settings_privacy_download_body =>
-      'Gemäß DSGVO und anderen Datenschutzbestimmungen können Sie einen vollständigen Export Ihrer Profil-, Matching- und Aktivitätsdaten anfordern. Die Datei wird vorbereitet und an Ihre registrierte Adresse gesendet.';
+      'Erstellen Sie jetzt ein privates ZIP-Archiv mit Konto, Profil, Fotos, Interessen, Matches, Nachrichten, Einstellungen, Einwilligungen und Abonnementverlauf. Speichern Sie es über das sichere Teilen-Menü Ihres Geräts.';
 
   @override
-  String get settings_privacy_download_btn => 'Datenexport anfordern';
+  String get settings_privacy_download_btn => 'Sicheres Archiv erstellen';
 
   @override
-  String get settings_privacy_download_label => 'MEINE DATEN HERUNTERLADEN';
+  String get settings_privacy_download_label => 'Meine Daten herunterladen';
 
   @override
   String get settings_privacy_download_sub =>
-      'Exportieren Sie eine Kopie Ihrer personenbezogenen Daten gemäß DSGVO';
+      'Eine maschinenlesbare Kopie Ihrer Silarah-Daten speichern';
 
   @override
   String get settings_privacy_export_body =>
-      'Ihre Anfrage ist eingegangen! Wir erstellen Ihr persönliches Datenarchiv.';
+      'Ihr privates Archiv ist bereit. Speichern Sie es sicher über das Teilen-Menü.';
 
   @override
   String get settings_privacy_export_btn_close => 'Verstanden';
 
   @override
   String get settings_privacy_export_subbody =>
-      'Gemäß den DSGVO-Richtlinien wird innerhalb von 48 Stunden ein Download-Link an Ihre registrierte Telefonnummer/E-Mail-Adresse gesendet.';
+      'Dieses Archiv kann private Nachrichten und Kontaktdaten enthalten. Bewahren Sie es sicher auf und teilen Sie es nur mit vertrauenswürdigen Personen.';
 
   @override
-  String get settings_privacy_export_title => 'Export angefordert';
+  String get settings_privacy_export_title => 'Archiv bereit';
 
   @override
   String get settings_privacy_online_label => 'ONLINE-STATUS';
@@ -2296,11 +2296,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get settings_grievanceResponse =>
-      'Antwortzeit: Innerhalb von 48 Stunden nach Eingang';
+      'Bestätigung innerhalb von 24 Stunden; die meisten Beschwerden innerhalb von 7 Tagen gelöst';
 
   @override
   String get settings_grievanceIndiaNotice =>
-      'Für Nutzer in Indien: Wir erfüllen die Information Technology Rules (Intermediary Guidelines and Digital Media Ethics Code) von 2021.';
+      'Die Beschwerdebearbeitung in Indien folgt den geänderten Information Technology Rules (Intermediary Guidelines and Digital Media Ethics Code). Für dringende rechtswidrige oder intime Inhalte gelten kürzere gesetzliche Fristen.';
 
   @override
   String get settings_managePhotoRequests => 'Fotoanfragen verwalten';
