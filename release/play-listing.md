@@ -36,10 +36,11 @@ Built for serious introductions:
 Subscriptions unlock the benefits shown in the app. Prices, billing periods,
 trials and renewal terms are always presented by Google Play before purchase.
 Women can read and message accepted connections without a paid subscription or
-phone verification. Men need active Premium and complete SMS verification
-before sending. Changing a verified number uses a new OTP and does not shorten
-an existing store subscription. Other access and daily interest limits follow
-the entitlement shown in the app.
+phone verification. Premium is purchased first; India +91 phone verification
+then becomes available. Men need active Premium and complete SMS verification
+before sending. While Premium is active, a verified number can be changed with
+a new OTP without shortening the store subscription. Other access and daily
+interest limits follow the entitlement shown in the app.
 
 Silarah is for adults aged 18 and over. Verification improves trust but is not a
 guarantee of character, compatibility or safety. Keep conversations on-platform,

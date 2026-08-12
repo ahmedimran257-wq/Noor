@@ -20,6 +20,13 @@ class PhoneVerificationStatus {
   final DateTime? verifiedAt;
 }
 
+class PremiumActivationPendingException implements Exception {
+  const PremiumActivationPendingException();
+
+  @override
+  String toString() => 'premium_activation_pending';
+}
+
 class PhoneVerificationService {
   PhoneVerificationService._();
   static final instance = PhoneVerificationService._();
@@ -59,6 +66,7 @@ class PhoneVerificationService {
     required CountryInfo country,
     required String nationalDigits,
   }) async {
+    await _assertLaunchCountryEnabled(country);
     final phone = _fullPhone(country, nationalDigits);
     await SupabaseService.client.auth.updateUser(
       UserAttributes(phone: phone),
@@ -70,6 +78,7 @@ class PhoneVerificationService {
     required String nationalDigits,
     required String code,
   }) async {
+    await _assertLaunchCountryEnabled(country);
     final phone = _fullPhone(country, nationalDigits);
     await SupabaseService.client.auth.verifyOTP(
       phone: phone,
@@ -77,11 +86,49 @@ class PhoneVerificationService {
       type: OtpType.phoneChange,
     );
 
-    await SupabaseService.client.rpc(
-      'confirm_my_verified_phone',
-      params: {'p_country_code': country.iso2},
-    );
+    for (var attempt = 0; attempt < 5; attempt++) {
+      try {
+        await SupabaseService.client.rpc(
+          'confirm_my_verified_phone',
+          params: {'p_country_code': country.iso2},
+        );
+        return;
+      } catch (error) {
+        if (!_isPremiumSyncPending(error)) rethrow;
+        if (attempt == 4) {
+          throw const PremiumActivationPendingException();
+        }
+        await Future<void>.delayed(const Duration(seconds: 2));
+      }
+    }
+    throw const PremiumActivationPendingException();
   }
+
+  Future<void> _assertLaunchCountryEnabled(CountryInfo country) async {
+    // RevenueCat confirms the purchase on-device before its webhook may have
+    // updated our subscription row. Give that short server-sync window the
+    // same bounded retry as final OTP confirmation, without allowing OTP for
+    // accounts that never purchased Premium.
+    for (var attempt = 0; attempt < 5; attempt++) {
+      try {
+        await SupabaseService.client.rpc(
+          'assert_my_phone_country_enabled',
+          params: {'p_country_code': country.iso2},
+        );
+        return;
+      } catch (error) {
+        if (!_isPremiumSyncPending(error)) rethrow;
+        if (attempt == 4) {
+          throw const PremiumActivationPendingException();
+        }
+        await Future<void>.delayed(const Duration(seconds: 2));
+      }
+    }
+    throw const PremiumActivationPendingException();
+  }
+
+  bool _isPremiumSyncPending(Object error) =>
+      error.toString().toLowerCase().contains('subscription_required');
 
   String _fullPhone(CountryInfo country, String nationalDigits) {
     final digits = nationalDigits.replaceAll(RegExp(r'\D'), '');

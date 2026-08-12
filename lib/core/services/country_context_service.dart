@@ -171,14 +171,57 @@ class CountryContextService {
     if (_hasUsableLanguages(memoryCached)) return memoryCached!;
     _locationLanguageCache.remove(cacheKey);
 
+    const cacheVersion = 'v2';
+    final persistentCacheKey = 'loc_lang_${cacheVersion}_$cacheKey';
     try {
       final prefs = await SharedPreferences.getInstance();
-      final cached = prefs.getStringList('loc_lang_cache_$cacheKey');
+      final cached = prefs.getStringList(persistentCacheKey);
       if (_hasUsableLanguages(cached)) {
         _locationLanguageCache[cacheKey] = cached!;
         return cached;
       }
     } catch (_) {}
+
+    // India launch uses a server-owned Census/state catalogue. Residence only
+    // ranks likely choices; the RPC also returns the complete India catalogue
+    // so migrants and linguistic minorities are never excluded.
+    if (code == 'IN' && SupabaseService.isInitialized) {
+      try {
+        final response = await SupabaseService.client.rpc(
+          'get_mother_tongues_for_location',
+          params: {
+            'p_country_code': code,
+            'p_state_name': state.isEmpty ? null : state,
+            'p_city_name': city.isEmpty ? null : city,
+          },
+        );
+        final rows = response as List<dynamic>? ?? const [];
+        final serverLanguages = _uniqueLanguages(rows
+            .whereType<Map>()
+            .map((row) => row['language']?.toString() ?? '')
+            .where((language) => language.trim().isNotEmpty)
+            .toList());
+        if (_hasUsableLanguages(serverLanguages)) {
+          if (!serverLanguages.contains('Other')) {
+            serverLanguages.add('Other');
+          }
+          _locationLanguageCache[cacheKey] = serverLanguages;
+          try {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setStringList(persistentCacheKey, serverLanguages);
+          } catch (_) {}
+          return serverLanguages;
+        }
+      } catch (error) {
+        debugPrint(
+          '[CountryContextService] India mother-tongue catalogue failed: $error',
+        );
+        OperationalTelemetryService.record(
+          'onboarding',
+          'mother_tongue_catalogue_failed',
+        );
+      }
+    }
 
     final merged = _uniqueLanguages([
       ...await getLanguages(code),
@@ -189,7 +232,7 @@ class CountryContextService {
     _locationLanguageCache[cacheKey] = merged;
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList('loc_lang_cache_$cacheKey', merged);
+      await prefs.setStringList(persistentCacheKey, merged);
     } catch (_) {}
 
     return merged;

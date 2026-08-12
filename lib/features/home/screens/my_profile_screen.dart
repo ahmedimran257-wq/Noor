@@ -262,6 +262,12 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   }
 
   Future<void> _startPhoneVerification() async {
+    final subscription = context.read<SubscriptionCubit>().state;
+    if (!subscription.isSubscribed) {
+      await context.push(AppRoutes.subscription);
+      if (mounted) await _loadTrustState();
+      return;
+    }
     final authState = context.read<AuthCubit>().state;
     final countryCode = authState is AuthAuthenticated
         ? authState.countryCode
@@ -673,17 +679,20 @@ class _MyProfileScreenState extends State<MyProfileScreen>
 
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: _TrustCenterCard(
-              loading: _trustStateLoading,
-              photoStatus: _photoVerificationStatus,
-              phoneVerified: _phoneVerified,
-              guardianConnected: _guardianEnabled,
-              establishedMember: _establishedMember,
-              email: _accountEmail,
-              emailVerified: _emailVerified,
-              onPhotoVerification: _openVerification,
-              onPhoneVerification: _startPhoneVerification,
-              onGuardianConnection: _openGuardianSettings,
+            child: BlocBuilder<SubscriptionCubit, SubscriptionState>(
+              builder: (context, subscription) => _TrustCenterCard(
+                loading: _trustStateLoading,
+                photoStatus: _photoVerificationStatus,
+                phoneVerified: _phoneVerified,
+                premiumActive: subscription.isSubscribed,
+                guardianConnected: _guardianEnabled,
+                establishedMember: _establishedMember,
+                email: _accountEmail,
+                emailVerified: _emailVerified,
+                onPhotoVerification: _openVerification,
+                onPhoneVerification: _startPhoneVerification,
+                onGuardianConnection: _openGuardianSettings,
+              ),
             ),
           ),
 
@@ -1187,6 +1196,7 @@ class _TrustCenterCard extends StatelessWidget {
     required this.loading,
     required this.photoStatus,
     required this.phoneVerified,
+    required this.premiumActive,
     required this.guardianConnected,
     required this.establishedMember,
     required this.email,
@@ -1199,6 +1209,7 @@ class _TrustCenterCard extends StatelessWidget {
   final bool loading;
   final PhotoVerificationStatus photoStatus;
   final bool phoneVerified;
+  final bool premiumActive;
   final bool guardianConnected;
   final bool establishedMember;
   final String? email;
@@ -1296,9 +1307,17 @@ class _TrustCenterCard extends StatelessWidget {
             icon: Icons.phone_iphone_rounded,
             title: 'Phone number',
             subtitle: phoneVerified
-                ? 'Confirmed by SMS verification code. A new number requires a new OTP; Premium expiry stays unchanged.'
-                : 'Women message free without a phone check. Men verify by SMS in the Premium messaging flow.',
-            status: phoneVerified ? 'Change' : 'Verify',
+                ? premiumActive
+                    ? 'Confirmed by SMS verification code. Change it here with a new OTP; Premium expiry stays unchanged.'
+                    : 'Your number remains verified. Activate Premium to change it with a new OTP.'
+                : premiumActive
+                    ? 'Premium is active. Verify an India +91 number by SMS; women can still message without it.'
+                    : 'Available after Premium activation. Women can still message free without phone verification.',
+            status: phoneVerified && premiumActive
+                ? 'Change'
+                : premiumActive
+                    ? 'Verify'
+                    : 'Premium',
             statusColor: phoneVerified
                 ? AppColors.verifiedTeal
                 : AppColors.champagneGold,

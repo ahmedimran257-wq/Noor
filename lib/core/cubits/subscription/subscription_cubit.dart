@@ -96,7 +96,7 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
     }
   }
 
-  Future<void> purchase(String productId) async {
+  Future<bool> purchase(String productId) async {
     emit(state.copyWith(isLoading: true, clearError: true));
 
     if (!SupabaseService.isInitialized) {
@@ -104,7 +104,7 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
         isLoading: false,
         error: 'Subscriptions are not configured. Please try again later.',
       ));
-      return;
+      return false;
     }
 
     try {
@@ -112,7 +112,7 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
         isAnnual: productId == annualProductId,
       );
 
-      if (isClosed) return;
+      if (isClosed) return false;
 
       if (success) {
         final info = await Purchases.getCustomerInfo();
@@ -126,11 +126,13 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
           expiresAt: expiry,
           successMessage: 'JazakAllah khair - SILARAH Premium is now active!',
         ));
+        return true;
       } else {
         emit(state.copyWith(
           isLoading: false,
           error: 'Purchase could not be completed. Please try again.',
         ));
+        return false;
       }
     } catch (e) {
       debugPrint('[SubscriptionCubit] Purchase error: $e');
@@ -140,6 +142,7 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
           error: 'Purchase failed. Please check your connection and try again.',
         ));
       }
+      return false;
     }
   }
 

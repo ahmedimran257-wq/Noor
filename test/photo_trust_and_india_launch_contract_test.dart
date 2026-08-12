@@ -137,7 +137,8 @@ void main() {
         contains("v_features := array_append(v_features, 'trust_filter')"));
   });
 
-  test('profile trust rows start phone and guardian flows directly', () {
+  test('profile trust row gates phone by Premium and starts guardian directly',
+      () {
     final profile = File(
       'lib/features/home/screens/my_profile_screen.dart',
     ).readAsStringSync();
@@ -147,6 +148,8 @@ void main() {
 
     expect(profile, contains('showPhoneVerificationSheet('));
     expect(profile, contains('onPhoneVerification: _startPhoneVerification'));
+    expect(profile, contains('if (!subscription.isSubscribed)'));
+    expect(profile, contains('AppRoutes.subscription'));
     expect(profile, contains("SettingsScreen(initialSection: 'guardian')"));
     expect(profile, contains('onGuardianConnection: _openGuardianSettings'));
     expect(settings, contains("case 'guardian':"));

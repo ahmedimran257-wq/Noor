@@ -13,6 +13,7 @@ import 'package:flutter/services.dart';
 import '../../../core/data/country_data.dart';
 import '../../../core/services/phone_verification_service.dart';
 import '../../../core/services/subscription_service.dart';
+import '../../../core/services/launch_configuration_service.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/cubits/auth/auth_state.dart';
 import '../../../core/cubits/subscription/subscription_cubit.dart';
@@ -43,6 +44,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   // Pricing (loaded from RevenueCat via SubscriptionService)
   DisplayPricing _pricing = DisplayPricing.loading();
   StreamSubscription<DisplayPricing>? _pricingSub;
+  bool _postPurchasePhonePromptOpen = false;
 
   @override
   void initState() {
@@ -204,23 +206,31 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       return;
     }
 
-    final status = await PhoneVerificationService.instance.currentStatus();
-    if (!mounted) return;
-    if (!status.isVerified) {
-      final authState = context.read<AuthCubit>().state;
-      final countryCode =
-          authState is AuthAuthenticated ? authState.countryCode : null;
-      final verified = await showPhoneVerificationSheet(
-        context,
-        countryCode: countryCode,
-      );
-      if (!mounted || verified != true) return;
-    }
-
     final planId = _selectedPlan == 'annual'
         ? SubscriptionCubit.annualProductId
         : SubscriptionCubit.monthlyProductId;
-    context.read<SubscriptionCubit>().purchase(planId);
+    final purchased = await context.read<SubscriptionCubit>().purchase(planId);
+    if (!mounted || !purchased) return;
+    await _offerPostPurchasePhoneVerification();
+  }
+
+  Future<void> _offerPostPurchasePhoneVerification() async {
+    if (_postPurchasePhonePromptOpen) return;
+    final status = await PhoneVerificationService.instance.currentStatus();
+    if (!mounted || status.isVerified) return;
+    _postPurchasePhonePromptOpen = true;
+    try {
+      final authState = context.read<AuthCubit>().state;
+      final countryCode =
+          authState is AuthAuthenticated ? authState.countryCode : null;
+      await showPhoneVerificationSheet(
+        context,
+        countryCode: countryCode,
+        isPostPurchase: true,
+      );
+    } finally {
+      _postPurchasePhonePromptOpen = false;
+    }
   }
 
   void _showSuccess(BuildContext context, String message) {
@@ -262,6 +272,7 @@ Future<bool?> showPhoneVerificationSheet(
   BuildContext context, {
   String? countryCode,
   bool isChangingNumber = false,
+  bool isPostPurchase = false,
 }) {
   return showModalBottomSheet<bool>(
     context: context,
@@ -270,6 +281,7 @@ Future<bool?> showPhoneVerificationSheet(
     builder: (_) => _PremiumPhoneVerificationSheet(
       countryCode: countryCode,
       isChangingNumber: isChangingNumber,
+      isPostPurchase: isPostPurchase,
     ),
   );
 }
@@ -278,10 +290,12 @@ class _PremiumPhoneVerificationSheet extends StatefulWidget {
   const _PremiumPhoneVerificationSheet({
     this.countryCode,
     required this.isChangingNumber,
+    required this.isPostPurchase,
   });
 
   final String? countryCode;
   final bool isChangingNumber;
+  final bool isPostPurchase;
 
   @override
   State<_PremiumPhoneVerificationSheet> createState() =>
@@ -293,6 +307,7 @@ class _PremiumPhoneVerificationSheetState
   final _phoneCtrl = TextEditingController();
   final _otpCtrl = TextEditingController();
   late CountryInfo _country;
+  LaunchConfiguration _launch = LaunchConfiguration.india;
   bool _codeSent = false;
   bool _loading = false;
   String? _error;
@@ -301,8 +316,25 @@ class _PremiumPhoneVerificationSheetState
   @override
   void initState() {
     super.initState();
-    _country = _countryForCode(widget.countryCode) ?? deviceCountry();
+    _country = _indiaCountry;
     _phoneCtrl.addListener(_onPhoneChanged);
+    _loadLaunchConfiguration();
+  }
+
+  Future<void> _loadLaunchConfiguration() async {
+    final launch = await LaunchConfigurationService.load();
+    if (!mounted) return;
+    final requested = _countryForCode(widget.countryCode);
+    final selected =
+        requested != null && launch.enabledCountries.contains(requested.iso2)
+            ? requested
+            : _countryForCode(launch.defaultCountry) ?? _indiaCountry;
+    setState(() {
+      _launch = launch;
+      _country = selected;
+      _rawDigits = '';
+      _phoneCtrl.clear();
+    });
   }
 
   @override
@@ -373,6 +405,14 @@ class _PremiumPhoneVerificationSheetState
       );
       if (!mounted) return;
       Navigator.of(context).pop(true);
+    } on PremiumActivationPendingException {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = context.uiCopy(
+          'Premium is still activating. Wait a moment, then tap Verify again — your purchase is safe.',
+        );
+      });
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -410,7 +450,9 @@ class _PremiumPhoneVerificationSheetState
                   child: UiText(
                     context.uiCopy(widget.isChangingNumber
                         ? 'Change verified phone number'
-                        : 'Verify phone to continue'),
+                        : widget.isPostPurchase
+                            ? 'Premium is active — verify your phone'
+                            : 'Verify phone to continue'),
                     style: AppTypography.bodyMedium,
                   ),
                 ),
@@ -428,7 +470,9 @@ class _PremiumPhoneVerificationSheetState
             UiText(
               context.uiCopy(widget.isChangingNumber
                   ? 'Your new number becomes verified only after the SMS code succeeds. Changing it does not cancel Premium or alter its expiry date.'
-                  : 'Verify your phone with a one-time SMS code. A purchase does not verify your number.'),
+                  : widget.isPostPurchase
+                      ? 'Your Premium purchase is complete. Verify an India +91 number by SMS to add the phone badge and, for men, enable sending messages.'
+                      : 'Verify your phone with a one-time SMS code. Premium must be active before a number can be verified.'),
               style: AppTypography.caption.copyWith(color: AppColors.slateMist),
             ),
             const SizedBox(height: 18),
@@ -436,6 +480,7 @@ class _PremiumPhoneVerificationSheetState
               country: _country,
               controller: _phoneCtrl,
               enabled: !_codeSent && !_loading,
+              enabledCountryCodes: _launch.enabledCountries.toSet(),
               onCountryChanged: (country) {
                 setState(() {
                   _country = country;
@@ -444,6 +489,17 @@ class _PremiumPhoneVerificationSheetState
                 });
               },
             ),
+            if (_launch.isSingleCountry) ...[
+              const SizedBox(height: 8),
+              UiText(
+                context.uiCopy(
+                  'India launch: only +91 verification is available. Other countries are shown as coming later.',
+                ),
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.slateMist,
+                ),
+              ),
+            ],
             if (_codeSent) ...[
               const SizedBox(height: 14),
               TextField(
@@ -514,6 +570,9 @@ class _PremiumPhoneVerificationSheetState
     }
     return null;
   }
+
+  static CountryInfo get _indiaCountry =>
+      kAllCountries.firstWhere((country) => country.iso2 == 'IN');
 }
 
 class _PhoneEntryRow extends StatefulWidget {
@@ -521,12 +580,14 @@ class _PhoneEntryRow extends StatefulWidget {
     required this.country,
     required this.controller,
     required this.enabled,
+    required this.enabledCountryCodes,
     required this.onCountryChanged,
   });
 
   final CountryInfo country;
   final TextEditingController controller;
   final bool enabled;
+  final Set<String> enabledCountryCodes;
   final ValueChanged<CountryInfo> onCountryChanged;
 
   @override
@@ -594,10 +655,31 @@ class _PhoneEntryRowState extends State<_PhoneEntryRow> {
                     .map(
                       (c) => DropdownMenuItem(
                         value: c,
-                        child: UiText(
-                          '${c.flag} ${c.name} ${c.dialCode}',
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTypography.body,
+                        enabled: widget.enabledCountryCodes.contains(c.iso2),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: UiText(
+                                '${c.flag} ${c.name} ${c.dialCode}',
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTypography.body.copyWith(
+                                  color: widget.enabledCountryCodes
+                                          .contains(c.iso2)
+                                      ? AppColors.pearlWhite
+                                      : AppColors.slateMist
+                                          .withValues(alpha: 0.55),
+                                ),
+                              ),
+                            ),
+                            if (!widget.enabledCountryCodes.contains(c.iso2))
+                              UiText(
+                                context.uiCopy('Coming later'),
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.slateMist
+                                      .withValues(alpha: 0.55),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     )
