@@ -89,10 +89,12 @@ void main() {
     expect(sitemap, contains('https://silarah.com/child-safety/'));
   });
 
-  test('public homepage uses text-only branding and a restrained favicon', () {
+  test('public homepage uses honest campaign imagery and a restrained favicon', () {
     expect(home, isNot(contains('silarah-icon')));
-    expect(home, isNot(contains('<img')));
-    expect(home, contains('class="brand-wordmark">Silarah</div>'));
+    expect(home, contains('class="brand"'));
+    expect(home, contains('<img'));
+    expect(home, contains('fictional AI-generated models'));
+    expect(home, contains('not members or testimonials'));
     expect(home, contains('href="/brand-gold-s.svg"'));
 
     final favicon = File('site/brand-gold-s.svg').readAsStringSync();
