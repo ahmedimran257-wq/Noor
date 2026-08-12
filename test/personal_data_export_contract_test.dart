@@ -6,6 +6,9 @@ void main() {
   final migration = File(
     'supabase/migrations/207_personal_data_export_and_legal_rights.sql',
   ).readAsStringSync();
+  final retiredDeviceRepair = File(
+    'supabase/migrations/209_remove_retired_device_export_reference.sql',
+  ).readAsStringSync();
   final service = File('lib/core/services/personal_data_export_service.dart')
       .readAsStringSync();
   final settings =
@@ -22,6 +25,12 @@ void main() {
         migration, contains('REVOKE ALL ON FUNCTION public.download_my_data'));
     expect(migration,
         contains('GRANT EXECUTE ON FUNCTION public.download_my_data'));
+  });
+
+  test('export does not query the retired device table', () {
+    expect(retiredDeviceRepair, contains("'devices', '[]'::jsonb"));
+    expect(retiredDeviceRepair, contains('user_fcm_tokens'));
+    expect(retiredDeviceRepair, isNot(contains('CREATE TABLE')));
   });
 
   test('mobile archive contains JSON, accessible photos and privacy warning',
