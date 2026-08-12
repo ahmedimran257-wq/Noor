@@ -24,6 +24,7 @@ import '../../../core/widgets/loaders/silarah_shimmer.dart';
 import '../../../core/services/phone_verification_service.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/cubits/auth/auth_state.dart';
+import '../../../core/utils/messaging_access_policy.dart';
 import 'paywall_gate_screen.dart';
 import 'profile_route_screen.dart';
 import 'subscription_screen.dart' show showPhoneVerificationSheet;
@@ -173,17 +174,20 @@ class _ChatScreenState extends State<ChatScreen>
   Future<void> _sendMessage() async {
     final text = _inputCtrl.text.trim();
     if (text.isEmpty) return;
-    final phone = await PhoneVerificationService.instance.currentStatus();
-    if (!mounted) return;
-    if (!phone.isVerified) {
-      final authState = context.read<AuthCubit>().state;
-      final countryCode =
-          authState is AuthAuthenticated ? authState.countryCode : null;
-      final verified = await showPhoneVerificationSheet(
-        context,
-        countryCode: countryCode,
-      );
-      if (!mounted || verified != true) return;
+    final authState = context.read<AuthCubit>().state;
+    final gender = authState is AuthAuthenticated ? authState.gender : null;
+    if (MessagingAccessPolicy.requiresVerifiedPhoneToSend(gender)) {
+      final phone = await PhoneVerificationService.instance.currentStatus();
+      if (!mounted) return;
+      if (!phone.isVerified) {
+        final countryCode =
+            authState is AuthAuthenticated ? authState.countryCode : null;
+        final verified = await showPhoneVerificationSheet(
+          context,
+          countryCode: countryCode,
+        );
+        if (!mounted || verified != true) return;
+      }
     }
     _inputCtrl.clear();
     _chatCubit.updateTyping(widget.conversationId, isTyping: false);
@@ -735,9 +739,12 @@ class _EndMatchSheet extends StatefulWidget {
 
 class _EndMatchSheetState extends State<_EndMatchSheet> {
   int? _selected;
+  bool _submitting = false;
 
   @override
   Widget build(BuildContext context) {
+    final confirmBackground = AppColors.softCoral.withValues(alpha: 0.9);
+    final disabledBackground = AppColors.surfaceGlassHover;
     return Container(
       margin: const EdgeInsets.all(AppDimensions.space16),
       padding: const EdgeInsets.all(AppDimensions.space24),
@@ -812,25 +819,39 @@ class _EndMatchSheetState extends State<_EndMatchSheet> {
             width: double.infinity,
             height: AppDimensions.buttonHeight,
             child: ElevatedButton(
-              onPressed: _selected != null
-                  ? () => widget.onConfirm(_kClosureMessages[_selected!])
+              onPressed: _selected != null && !_submitting
+                  ? () {
+                      setState(() => _submitting = true);
+                      widget.onConfirm(_kClosureMessages[_selected!]);
+                    }
                   : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.softCoral.withValues(alpha: 0.9),
-                disabledBackgroundColor: AppColors.surfaceGlassHover,
+                backgroundColor: confirmBackground,
+                foregroundColor: AppColors.readableOn(confirmBackground),
+                disabledBackgroundColor: disabledBackground,
+                disabledForegroundColor:
+                    AppColors.readableOn(disabledBackground),
                 shape: RoundedRectangleBorder(
                     borderRadius:
                         BorderRadius.circular(AppDimensions.radiusButton)),
                 elevation: 0,
               ),
-              child: UiText(
-                context.uiCopy('Send & End Match'),
-                style: AppTypography.button.copyWith(
-                  color: _selected != null
-                      ? AppColors.pearlWhite
-                      : AppColors.slateMist,
-                ),
-              ),
+              child: _submitting
+                  ? SizedBox.square(
+                      dimension: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.readableOn(confirmBackground),
+                      ),
+                    )
+                  : UiText(
+                      context.uiCopy('Send & End Match'),
+                      style: AppTypography.button.copyWith(
+                        color: _selected != null
+                            ? AppColors.readableOn(confirmBackground)
+                            : AppColors.readableOn(disabledBackground),
+                      ),
+                    ),
             ),
           ),
           const SizedBox(height: AppDimensions.space8),

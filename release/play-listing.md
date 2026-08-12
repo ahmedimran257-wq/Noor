@@ -35,8 +35,11 @@ Built for serious introductions:
 
 Subscriptions unlock the benefits shown in the app. Prices, billing periods,
 trials and renewal terms are always presented by Google Play before purchase.
-Women can message accepted connections without a paid subscription; other
-access and daily interest limits follow the entitlement shown in the app.
+Women can read and message accepted connections without a paid subscription or
+phone verification. Men need active Premium and complete SMS verification
+before sending. Changing a verified number uses a new OTP and does not shorten
+an existing store subscription. Other access and daily interest limits follow
+the entitlement shown in the app.
 
 Silarah is for adults aged 18 and over. Verification improves trust but is not a
 guarantee of character, compatibility or safety. Keep conversations on-platform,

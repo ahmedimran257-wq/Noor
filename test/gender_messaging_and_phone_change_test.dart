@@ -1,0 +1,155 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:silarah/core/cubits/auth/auth_cubit.dart';
+import 'package:silarah/core/cubits/auth/auth_state.dart';
+import 'package:silarah/core/theme/app_colors.dart';
+import 'package:silarah/core/utils/messaging_access_policy.dart';
+import 'package:silarah/features/home/screens/paywall_gate_screen.dart';
+import 'package:silarah/l10n/messaging_policy_ui_copy.dart';
+
+void main() {
+  test('client messaging policy is explicit and unknown gender fails closed',
+      () {
+    expect(MessagingAccessPolicy.hasFreeMessaging('female'), isTrue);
+    expect(
+        MessagingAccessPolicy.requiresVerifiedPhoneToSend('female'), isFalse);
+    expect(MessagingAccessPolicy.hasFreeMessaging('male'), isFalse);
+    expect(MessagingAccessPolicy.requiresVerifiedPhoneToSend('male'), isTrue);
+    expect(MessagingAccessPolicy.hasFreeMessaging(null), isFalse);
+    expect(MessagingAccessPolicy.requiresVerifiedPhoneToSend('other'), isTrue);
+  });
+
+  testWidgets('rapid Premium gate requests render only one modal',
+      (tester) async {
+    AppColors.activate(SilarahThemeMode.blackWhite);
+    final auth = _SeededAuthCubit('male');
+    addTearDown(auth.close);
+
+    await tester.pumpWidget(
+      BlocProvider<AuthCubit>.value(
+        value: auth,
+        child: const MaterialApp(home: Scaffold(body: SizedBox())),
+      ),
+    );
+    final context = tester.element(find.byType(SizedBox).first);
+    final first = PaywallGateSheet.show(context);
+    final second = PaywallGateSheet.show(context);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Subscribe to Unlock Messaging'), findsOneWidget);
+    Navigator.of(context).pop();
+    await tester.pumpAndSettle();
+    await Future.wait([first, second]);
+  });
+
+  testWidgets('female accounts never receive the messaging paywall',
+      (tester) async {
+    final auth = _SeededAuthCubit('female');
+    addTearDown(auth.close);
+    await tester.pumpWidget(
+      BlocProvider<AuthCubit>.value(
+        value: auth,
+        child: const MaterialApp(home: Scaffold(body: SizedBox())),
+      ),
+    );
+    final context = tester.element(find.byType(SizedBox).first);
+    await PaywallGateSheet.show(context);
+    await tester.pump();
+    expect(find.text('Subscribe to Unlock Messaging'), findsNothing);
+  });
+
+  test('server applies separate female and male messaging rules', () {
+    final migration = File(
+      'supabase/migrations/208_gender_messaging_and_verified_phone_change.sql',
+    ).readAsStringSync();
+    final female = migration.indexOf("IF v_gender = 'female' THEN");
+    final premium = migration.indexOf('has_active_premium(p_user_id)');
+    final phone = migration.indexOf('IF v_phone_verified_at IS NULL THEN');
+
+    expect(female, greaterThan(0));
+    expect(premium, greaterThan(female));
+    expect(phone, greaterThan(premium));
+    expect(migration, contains('v_gender IS NULL'));
+    expect(migration, contains("RAISE EXCEPTION 'profile_gender_required'"));
+    expect(
+        migration,
+        contains(
+            'PERFORM private.assert_outgoing_chat_entitlement(NEW.sender_id)'));
+  });
+
+  test('OTP-confirmed phone changes cannot alter subscription entitlement', () {
+    final migration = File(
+      'supabase/migrations/208_gender_messaging_and_verified_phone_change.sql',
+    ).readAsStringSync();
+    final start = migration.indexOf(
+      'CREATE OR REPLACE FUNCTION public.confirm_my_verified_phone(',
+    );
+    final end = migration.indexOf(
+      'REVOKE ALL ON FUNCTION public.confirm_my_verified_phone(text)',
+    );
+    final function = migration.substring(start, end);
+
+    expect(function, contains('au.phone_confirmed_at'));
+    expect(function, contains('phone_country_mismatch'));
+    expect(function, contains('phone_verified_at = now()'));
+    expect(function, isNot(contains('subscription_status')));
+    expect(function, isNot(contains('subscription_expires_at')));
+
+    final phoneService = File(
+      'lib/core/services/phone_verification_service.dart',
+    ).readAsStringSync();
+    expect(phoneService, contains('OtpType.phoneChange'));
+    expect(phoneService, contains("'p_country_code': country.iso2"));
+  });
+
+  test('end-match and Premium CTAs select readable theme foregrounds', () {
+    final chat =
+        File('lib/features/home/screens/chat_screen.dart').readAsStringSync();
+    final paywall = File(
+      'lib/features/home/screens/paywall_gate_screen.dart',
+    ).readAsStringSync();
+    expect(chat, contains('AppColors.readableOn(confirmBackground)'));
+    expect(chat, contains('AppColors.readableOn(disabledBackground)'));
+    expect(paywall, contains('AppColors.readableOn(AppColors.champagneGold)'));
+  });
+
+  test('new messaging and phone policy copy is complete in every locale', () {
+    final expected = messagingPolicyUiCopy['ar']!.keys.toSet();
+    expect(expected.length, 5);
+    for (final locale in const [
+      'ar',
+      'bn',
+      'de',
+      'fr',
+      'hi',
+      'id',
+      'ms',
+      'tr',
+      'ur',
+    ]) {
+      expect(messagingPolicyUiCopy[locale]?.keys.toSet(), expected,
+          reason: locale);
+      expect(
+        messagingPolicyUiCopy[locale]!
+            .values
+            .every((value) => value.trim().isNotEmpty),
+        isTrue,
+        reason: locale,
+      );
+    }
+  });
+}
+
+class _SeededAuthCubit extends AuthCubit {
+  _SeededAuthCubit(String gender) {
+    emit(AuthAuthenticated(
+      userId: 'test-user',
+      onboardingStep: 4,
+      gender: gender,
+      onboardingCompleted: true,
+    ));
+  }
+}

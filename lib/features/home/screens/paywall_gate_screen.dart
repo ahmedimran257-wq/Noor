@@ -16,9 +16,12 @@ import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/cubits/auth/auth_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/messaging_access_policy.dart';
 import 'subscription_screen.dart';
 
 class PaywallGateSheet {
+  static Future<void>? _activeSheet;
+
   /// Shows the paywall as a modal bottom sheet.
   ///
   /// This method is a no-op if the current user is female —
@@ -27,16 +30,26 @@ class PaywallGateSheet {
   static Future<void> show(BuildContext context) {
     // Runtime guard: never show paywall to women.
     final authState = context.read<AuthCubit>().state;
-    final gender =
-        authState is AuthAuthenticated ? (authState.gender ?? 'male') : 'male';
-    if (gender == 'female') return Future.value();
+    final gender = authState is AuthAuthenticated ? authState.gender : null;
+    if (MessagingAccessPolicy.hasFreeMessaging(gender)) {
+      return Future.value();
+    }
 
-    return showModalBottomSheet<void>(
+    // A fast double tap can finish two access checks before the first route is
+    // painted. Share one in-flight modal future so only one paywall can exist.
+    final active = _activeSheet;
+    if (active != null) return active;
+
+    final sheet = showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const _PaywallGateContent(),
     );
+    _activeSheet = sheet;
+    return sheet.whenComplete(() {
+      if (identical(_activeSheet, sheet)) _activeSheet = null;
+    });
   }
 }
 
@@ -139,8 +152,12 @@ class _PaywallGateContent extends StatelessWidget {
                 color: AppColors.champagneGold,
               ),
               alignment: Alignment.center,
-              child: UiText(context.uiCopy('See Plans'),
-                  style: AppTypography.button),
+              child: UiText(
+                context.uiCopy('See Plans'),
+                style: AppTypography.button.copyWith(
+                  color: AppColors.readableOn(AppColors.champagneGold),
+                ),
+              ),
             ),
           ),
 

@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:silarah/l10n/generated/app_localizations.dart';
 import 'package:silarah/l10n/generated/app_localizations_en.dart';
+import 'package:silarah/l10n/messaging_policy_ui_copy.dart';
 import 'package:silarah/l10n/photo_guide_ui_copy.dart';
 import 'package:silarah/l10n/trust_ui_copy.dart';
 import 'package:silarah/l10n/ui_copy_supplement.dart';
@@ -16,7 +17,8 @@ class UiCopy {
 
   static String localize(BuildContext context, String source) {
     final languageCode = Localizations.localeOf(context).languageCode;
-    return photoGuideUiCopy[languageCode]?[source] ??
+    return messagingPolicyUiCopy[languageCode]?[source] ??
+        photoGuideUiCopy[languageCode]?[source] ??
         trustUiCopy[languageCode]?[source] ??
         supplementalUiCopy[languageCode]?[source] ??
         _translations[languageCode]?[source] ??
@@ -25,6 +27,7 @@ class UiCopy {
 
   static bool hasTranslation(String languageCode, String source) =>
       languageCode == 'en' ||
+      messagingPolicyUiCopy[languageCode]?.containsKey(source) == true ||
       photoGuideUiCopy[languageCode]?.containsKey(source) == true ||
       trustUiCopy[languageCode]?.containsKey(source) == true ||
       supplementalUiCopy[languageCode]?.containsKey(source) == true ||

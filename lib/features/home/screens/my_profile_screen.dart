@@ -269,6 +269,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     final verified = await showPhoneVerificationSheet(
       context,
       countryCode: countryCode,
+      isChangingNumber: _phoneVerified,
     );
     if (verified == true && mounted) await _loadTrustState();
   }
@@ -1295,13 +1296,13 @@ class _TrustCenterCard extends StatelessWidget {
             icon: Icons.phone_iphone_rounded,
             title: 'Phone number',
             subtitle: phoneVerified
-                ? 'Confirmed by SMS verification code'
-                : 'Verify your phone with a one-time SMS code. A purchase does not verify your number.',
-            status: phoneVerified ? 'Verified' : 'Verify',
+                ? 'Confirmed by SMS verification code. A new number requires a new OTP; Premium expiry stays unchanged.'
+                : 'Women message free without a phone check. Men verify by SMS in the Premium messaging flow.',
+            status: phoneVerified ? 'Change' : 'Verify',
             statusColor: phoneVerified
                 ? AppColors.verifiedTeal
                 : AppColors.champagneGold,
-            onTap: phoneVerified || loading ? null : onPhoneVerification,
+            onTap: loading ? null : onPhoneVerification,
           ),
           Divider(height: 1, indent: 56, color: AppColors.cardBorder),
           _TrustRow(

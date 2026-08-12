@@ -261,19 +261,27 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
 Future<bool?> showPhoneVerificationSheet(
   BuildContext context, {
   String? countryCode,
+  bool isChangingNumber = false,
 }) {
   return showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => _PremiumPhoneVerificationSheet(countryCode: countryCode),
+    builder: (_) => _PremiumPhoneVerificationSheet(
+      countryCode: countryCode,
+      isChangingNumber: isChangingNumber,
+    ),
   );
 }
 
 class _PremiumPhoneVerificationSheet extends StatefulWidget {
-  const _PremiumPhoneVerificationSheet({this.countryCode});
+  const _PremiumPhoneVerificationSheet({
+    this.countryCode,
+    required this.isChangingNumber,
+  });
 
   final String? countryCode;
+  final bool isChangingNumber;
 
   @override
   State<_PremiumPhoneVerificationSheet> createState() =>
@@ -400,7 +408,9 @@ class _PremiumPhoneVerificationSheetState
                 const SizedBox(width: 10),
                 Expanded(
                   child: UiText(
-                    context.uiCopy('Verify phone to continue'),
+                    context.uiCopy(widget.isChangingNumber
+                        ? 'Change verified phone number'
+                        : 'Verify phone to continue'),
                     style: AppTypography.bodyMedium,
                   ),
                 ),
@@ -416,8 +426,9 @@ class _PremiumPhoneVerificationSheetState
             ),
             const SizedBox(height: 10),
             UiText(
-              context.uiCopy(
-                  'Verify your phone with a one-time SMS code. A purchase does not verify your number.'),
+              context.uiCopy(widget.isChangingNumber
+                  ? 'Your new number becomes verified only after the SMS code succeeds. Changing it does not cancel Premium or alter its expiry date.'
+                  : 'Verify your phone with a one-time SMS code. A purchase does not verify your number.'),
               style: AppTypography.caption.copyWith(color: AppColors.slateMist),
             ),
             const SizedBox(height: 18),

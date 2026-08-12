@@ -77,7 +77,10 @@ class PhoneVerificationService {
       type: OtpType.phoneChange,
     );
 
-    await SupabaseService.client.rpc('confirm_my_verified_phone');
+    await SupabaseService.client.rpc(
+      'confirm_my_verified_phone',
+      params: {'p_country_code': country.iso2},
+    );
   }
 
   String _fullPhone(CountryInfo country, String nationalDigits) {

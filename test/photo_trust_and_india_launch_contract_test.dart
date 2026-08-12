@@ -92,16 +92,22 @@ void main() {
     expect(File('assets/models/mobilefacenet.tflite').existsSync(), false);
   });
 
-  test('outgoing chat requires successful phone OTP on client and server', () {
+  test('outgoing chat delegates gender-aware phone policy to migration 208',
+      () {
     final chat = File(
       'lib/features/home/screens/chat_screen.dart',
     ).readAsStringSync();
+    final genderPolicy = File(
+      'supabase/migrations/208_gender_messaging_and_verified_phone_change.sql',
+    ).readAsStringSync();
     expect(chat, contains('PhoneVerificationService.instance.currentStatus()'));
     expect(chat, contains('showPhoneVerificationSheet'));
-    expect(
-        migration, contains("RAISE EXCEPTION 'phone_verification_required'"));
-    expect(
-        migration, contains('verified_sender.phone_verified_at IS NOT NULL'));
+    expect(chat, contains('MessagingAccessPolicy.requiresVerifiedPhoneToSend'));
+    expect(genderPolicy, contains("IF v_gender = 'female' THEN"));
+    expect(genderPolicy,
+        contains("RAISE EXCEPTION 'phone_verification_required'"));
+    expect(genderPolicy,
+        contains('private.assert_outgoing_chat_entitlement(v_me)'));
   });
 
   test('trust filters are server-authoritative and premium gated', () {

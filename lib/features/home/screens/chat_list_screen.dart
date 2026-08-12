@@ -34,6 +34,7 @@ class _ChatListScreenState extends State<ChatListScreen>
   bool _isSearching = false;
   String _searchQuery = '';
   final Set<String> _revealedConversationIds = {};
+  final Set<String> _openingConversationIds = {};
 
   @override
   bool get wantKeepAlive => true;
@@ -273,60 +274,67 @@ class _ChatListScreenState extends State<ChatListScreen>
                                 ? () => _confirmDeleteConversation(conv)
                                 : null,
                             onTap: () async {
+                              if (!_openingConversationIds.add(conv.id)) {
+                                return;
+                              }
                               final navigator = Navigator.of(context);
                               final chatCubit = context.read<ChatCubit>();
-                              final access =
-                                  await chatCubit.checkChatAccess(conv.id);
-                              if (!context.mounted) return;
-                              if (access.requiresSubscription) {
-                                PaywallGateSheet.show(context);
-                                return;
-                              }
-                              if (!access.allowed) {
-                                final message = switch (access.reason) {
-                                  ChatAccessReason.suspended =>
-                                    'Messaging is temporarily restricted on this account.',
-                                  ChatAccessReason.closed =>
-                                    'This conversation has ended.',
-                                  _ =>
-                                    'We could not open this conversation. Please try again.',
-                                };
-                                ScaffoldMessenger.of(context)
-                                  ..clearSnackBars()
-                                  ..showSnackBar(SnackBar(
-                                    content: UiText(message),
-                                    behavior: SnackBarBehavior.floating,
-                                  ));
-                                return;
-                              }
+                              try {
+                                final access =
+                                    await chatCubit.checkChatAccess(conv.id);
+                                if (!context.mounted) return;
+                                if (access.requiresSubscription) {
+                                  await PaywallGateSheet.show(context);
+                                  return;
+                                }
+                                if (!access.allowed) {
+                                  final message = switch (access.reason) {
+                                    ChatAccessReason.suspended =>
+                                      'Messaging is temporarily restricted on this account.',
+                                    ChatAccessReason.closed =>
+                                      'This conversation has ended.',
+                                    _ =>
+                                      'We could not open this conversation. Please try again.',
+                                  };
+                                  ScaffoldMessenger.of(context)
+                                    ..clearSnackBars()
+                                    ..showSnackBar(SnackBar(
+                                      content: UiText(message),
+                                      behavior: SnackBarBehavior.floating,
+                                    ));
+                                  return;
+                                }
 
-                              chatCubit.markRead(conv.id);
-                              navigator.push(
-                                PageRouteBuilder(
-                                  transitionDuration:
-                                      AppDimensions.durationReveal,
-                                  reverseTransitionDuration:
-                                      AppDimensions.durationTransition,
-                                  pageBuilder: (ctx, animation, _) =>
-                                      FadeTransition(
-                                    opacity: CurvedAnimation(
-                                      parent: animation,
-                                      curve: AppCurves.reveal,
-                                    ),
-                                    child: SlideTransition(
-                                      position: Tween<Offset>(
-                                        begin: const Offset(0.035, 0),
-                                        end: Offset.zero,
-                                      ).animate(CurvedAnimation(
+                                chatCubit.markRead(conv.id);
+                                await navigator.push(
+                                  PageRouteBuilder(
+                                    transitionDuration:
+                                        AppDimensions.durationReveal,
+                                    reverseTransitionDuration:
+                                        AppDimensions.durationTransition,
+                                    pageBuilder: (ctx, animation, _) =>
+                                        FadeTransition(
+                                      opacity: CurvedAnimation(
                                         parent: animation,
                                         curve: AppCurves.reveal,
-                                      )),
-                                      child:
-                                          ChatScreen(conversationId: conv.id),
+                                      ),
+                                      child: SlideTransition(
+                                        position: Tween<Offset>(
+                                          begin: const Offset(0.035, 0),
+                                          end: Offset.zero,
+                                        ).animate(CurvedAnimation(
+                                          parent: animation,
+                                          curve: AppCurves.reveal,
+                                        )),
+                                        child:
+                                            ChatScreen(conversationId: conv.id),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              );
+                                );
+                              } finally {
+                                _openingConversationIds.remove(conv.id);
+                              }
                             },
                           ),
                         );

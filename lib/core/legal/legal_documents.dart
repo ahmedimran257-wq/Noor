@@ -338,7 +338,7 @@ abstract final class LegalDocuments {
       LegalSection('7. Decision and appeal',
           'The app provides a reason or next step when possible. You may retry after correcting quality issues or appeal through safety@silarah.com. Include your account email and decision date, but do not email identity documents. Staff may request a new secure submission. Appeals do not guarantee approval.'),
       LegalSection('8. Regional availability and phone confirmation',
-          'The initial service launch is limited to enabled launch markets shown in the app. Silarah will never ask for your email or phone OTP outside the official in-app verification flow. A phone badge appears only after successful SMS confirmation, never from a purchase alone.'),
+          'The initial service launch is limited to enabled launch markets shown in the app. Silarah will never ask for your email or phone OTP outside the official in-app verification flow. Women do not need phone confirmation for free messaging. Men complete SMS confirmation in the Premium messaging flow before sending. A phone badge appears only after successful SMS confirmation, never from a purchase alone. Changing a confirmed number requires a new OTP and does not cancel or shorten an existing store subscription.'),
     ],
   );
 
