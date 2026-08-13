@@ -2433,98 +2433,6 @@ class AppLocalizationsUr extends AppLocalizations {
       'گفتگو شروع کرنے کے لیے دلچسپی قبول کریں یا اپنی دلچسپی قبول ہونے دیں۔';
 
   @override
-  String get kyc_title => 'اپنی شناخت کی تصدیق کریں';
-
-  @override
-  String get kyc_heading => 'اپنے پروفائل کی تصدیق کریں';
-
-  @override
-  String get kyc_intro =>
-      'تصویر کے معیار کی جانچ اسی ڈیوائس پر ہوتی ہے۔ پھر سلارہ آپ کی نجی دستاویز اور سیلفی کا جائزہ لیتا ہے۔ ڈیوائس اسکور کبھی شناخت منظور نہیں کرتے۔';
-
-  @override
-  String get kyc_selfieTitle => '1. واضح سیلفی لیں';
-
-  @override
-  String get kyc_selfieHint => 'ایک چہرہ، اچھی روشنی';
-
-  @override
-  String get kyc_selfieCaptured => 'سیلفی لے لی گئی';
-
-  @override
-  String get kyc_idTitle => '2. شناختی دستاویز کی تصویر لیں';
-
-  @override
-  String get kyc_idHint => 'آپ کا نام، تصویر اور تاریخ پیدائش واضح ہونی چاہیے';
-
-  @override
-  String get kyc_idCaptured => 'شناختی دستاویز لے لی گئی';
-
-  @override
-  String get kyc_documentType => 'دستاویز کی قسم';
-
-  @override
-  String get kyc_governmentId => 'سرکاری شناختی کارڈ';
-
-  @override
-  String get kyc_passport => 'پاسپورٹ';
-
-  @override
-  String get kyc_drivingLicence => 'ڈرائیونگ لائسنس';
-
-  @override
-  String get kyc_submitReview => 'نجی جائزے کے لیے بھیجیں';
-
-  @override
-  String get kyc_submitNewEvidence => 'نیا ثبوت بھیجیں';
-
-  @override
-  String kyc_submitted(String date) {
-    return '$date کو جمع کیا گیا';
-  }
-
-  @override
-  String get kyc_statusApproved => 'شناخت منظور ہو گئی';
-
-  @override
-  String get kyc_statusApprovedBody =>
-      'آپ کے سرکاری شناختی ثبوت کی محفوظ طریقے سے تصدیق ہو گئی ہے۔';
-
-  @override
-  String get kyc_statusPending => 'نجی جائزہ جاری ہے';
-
-  @override
-  String get kyc_statusPendingBody =>
-      'آپ کا ثبوت انسانی جائزے کی قطار میں ہے۔ اسے دوبارہ بھیجنے کی ضرورت نہیں۔';
-
-  @override
-  String get kyc_statusRejected => 'شناخت کی جانچ منظور نہیں ہوئی';
-
-  @override
-  String get kyc_statusRejectedBody =>
-      'نیچے وجہ دیکھیں اور ضرورت ہو تو نیا ثبوت بھیجیں۔';
-
-  @override
-  String get kyc_statusResubmit => 'نیا ثبوت درکار ہے';
-
-  @override
-  String get kyc_statusResubmitBody =>
-      'زیادہ واضح اور موجودہ شناختی ثبوت لے کر دوبارہ بھیجیں۔';
-
-  @override
-  String get kyc_statusExpired => 'شناختی ثبوت کی مدت ختم ہو گئی';
-
-  @override
-  String get kyc_statusExpiredBody => 'موجودہ سرکاری دستاویز جمع کریں۔';
-
-  @override
-  String get kyc_statusNotStarted => 'شناخت کی جانچ شروع نہیں ہوئی';
-
-  @override
-  String get kyc_statusNotStartedBody =>
-      'نجی جائزے کے لیے سرکاری شناختی کارڈ اور سیلفی جمع کریں۔';
-
-  @override
   String get referral_title => 'دوست کو دعوت دیں';
 
   @override
@@ -2665,11 +2573,6 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String ui_addLabel(String label) {
     return '$label شامل کریں';
-  }
-
-  @override
-  String ui_kycStatusSemantics(String status) {
-    return 'شناخت کی تصدیق کی حیثیت: $status';
   }
 
   @override

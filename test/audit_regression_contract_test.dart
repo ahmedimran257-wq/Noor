@@ -42,6 +42,20 @@ void main() {
       false,
     );
     expect(File('supabase/functions/process-kyc/index.ts').existsSync(), false);
+    expect(
+      File('supabase/functions/purge-kyc-documents/index.ts').existsSync(),
+      false,
+    );
+
+    final finalRetirement = File(
+      'supabase/migrations/211_retire_legacy_kyc_and_refresh_admin_metrics.sql',
+    ).readAsStringSync();
+    expect(finalRetirement,
+        contains('DROP TABLE IF EXISTS public.kyc_review_submissions'));
+    expect(finalRetirement,
+        contains('legacy_kyc_cleanup_blocked_nonempty_storage'));
+    expect(finalRetirement, contains("purpose = 'profile_photo'"));
+    expect(finalRetirement, contains("'pendingPhotoChecks'"));
 
     final retirementMigration = File(
       'supabase/migrations/195_retire_digilocker_verification.sql',
@@ -61,6 +75,41 @@ void main() {
     expect(publicPolicy, contains('blink once'));
     expect(publicPolicy, contains('government-ID matching'));
     expect(publicPolicy, contains('48 hours'));
+  });
+
+  test('quarterly policy reminder and signup consent use one policy version',
+      () {
+    final migration = File(
+      'supabase/migrations/212_quarterly_policy_reminder_and_consent_alignment.sql',
+    ).readAsStringSync();
+    final legalDocuments =
+        File('lib/core/legal/legal_documents.dart').readAsStringSync();
+    final home = File('lib/features/home/home_screen.dart').readAsStringSync();
+
+    expect(legalDocuments, contains("static const version = '2.2.0'"));
+    expect(migration, contains("v_tx.policy_version <> '2.2.0'"));
+    expect(migration, contains("interval '3 months'"));
+    expect(migration, contains('get_my_policy_reminder_state'));
+    expect(migration, contains('acknowledge_policy_reminder'));
+    expect(home, contains('PolicyReminderService.instance.getState()'));
+    expect(home, contains('PolicyReminderSheet.show(context)'));
+  });
+
+  test('retired government-ID copy cannot return to active localization', () {
+    final sources = <String>[
+      for (final file in Directory('lib/l10n').listSync())
+        if (file is File &&
+            (file.path.endsWith('.arb') ||
+                file.path.endsWith('ui_copy.dart') ||
+                file.path.endsWith('ui_copy_supplement.dart')))
+          file.readAsStringSync(),
+    ].join('\n');
+
+    expect(sources, isNot(contains('kyc_statusApproved')));
+    expect(sources, isNot(contains('KYC & Verification Policy')));
+    expect(sources, isNot(contains('Photograph your ID')));
+    expect(sources, isNot(contains('Government ID verified')));
+    expect(sources, isNot(contains('Passive face scan')));
   });
 
   test('Android owns branded notification channels and native share', () {

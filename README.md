@@ -44,7 +44,7 @@ Create ignored config files from the example:
 ```bash
 copy config\dart_defines.example.json config\dev.json
 copy config\dart_defines.example.json config\staging.json
-copy config\dart_defines.example.json config\prod.json
+copy config\dart_defines.example.json config\prod.local.json
 ```
 
 Fill those files from your password manager or CI secrets. Never commit real `config/*.json` files.
@@ -53,14 +53,14 @@ Run the Flutter app:
 
 ```bash
 flutter pub get
-flutter run --dart-define-from-file=config/dev.json
+flutter run --dart-define-from-file=config/dev.local.json
 ```
 
 Build release artifacts:
 
 ```bash
-flutter build appbundle --release --dart-define-from-file=config/prod.json
-flutter build ipa --release --dart-define-from-file=config/prod.json
+flutter build appbundle --release --dart-define-from-file=config/prod.local.json
+flutter build ipa --release --dart-define-from-file=config/prod.local.json
 ```
 
 ## Firebase Setup
@@ -122,7 +122,7 @@ ALTER DATABASE postgres SET app.supabase_url = 'https://YOUR_PROJECT_REF.supabas
 5. Create required storage buckets from migrations/dashboard expectations:
 
 - `profile-photos` - private
-- `kyc-documents` - private
+- `photo-verification-captures` - private, temporary (48-hour maximum)
 
 Keep private buckets private. Photo reads must go through access-controlled RPC/Edge Function logic.
 
@@ -153,8 +153,9 @@ npx supabase functions deploy admin-purge-deleted-users
 npx supabase functions deploy auth-before-user-created
 npx supabase functions deploy dispatch-notifications
 npx supabase functions deploy get-signed-url
-npx supabase functions deploy process-kyc
 npx supabase functions deploy revenuecat-webhook
+npx supabase functions deploy photo-verification
+npx supabase functions deploy purge-photo-verification-captures --no-verify-jwt
 npx supabase functions deploy validate-photo-upload
 npx supabase functions deploy translate-message
 ```
@@ -329,7 +330,7 @@ Before releasing:
 - Profile visibility, approval, and pause flows are server-enforced
 - Free limits are enforced by Supabase/RPC, not local storage
 - Admin audit logs record sensitive reads and writes
-- Android app bundle/IPA built with `config/prod.json`
+- Android app bundle/IPA built with the ignored `config/prod.local.json`
 - Native Firebase files for prod were injected by CI and not committed
 - Backup job and restore drill are current
 
@@ -363,7 +364,8 @@ in the default local tools directory.
 
 - Keep storage backup procedures for private buckets:
   - `profile-photos`
-  - `kyc-documents`
+  - `photo-verification-captures` (operational recovery only; never extend
+    the 48-hour deletion deadline)
 
 Restore drill:
 

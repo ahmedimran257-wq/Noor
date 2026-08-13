@@ -29,17 +29,17 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         home: Builder(builder: (context) {
           copy = AppLocalizations.of(context);
-          return Text(copy.kyc_title);
+          return Text(copy.onboarding_photo_title);
         }),
       ));
       await tester.pumpAndSettle();
 
-      expect(copy.kyc_title, isNotEmpty);
+      expect(copy.onboarding_photo_title, isNotEmpty);
       expect(copy.settings_appearance, isNotEmpty);
       expect(copy.referral_title, isNotEmpty);
       expect(copy.chat_noConversationsFound, isNotEmpty);
       if (locale.languageCode != 'en') {
-        expect(copy.kyc_title, isNot('Verify your identity'));
+        expect(copy.onboarding_photo_title, isNot('Add your photos'));
         expect(copy.settings_appearance, isNot('Appearance'));
       }
     });

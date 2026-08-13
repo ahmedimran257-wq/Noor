@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:silarah/l10n/generated/app_localizations.dart';
 import 'package:silarah/l10n/generated/app_localizations_en.dart';
 import 'package:silarah/l10n/india_launch_ui_copy.dart';
+import 'package:silarah/l10n/legal_access_ui_copy.dart';
 import 'package:silarah/l10n/messaging_policy_ui_copy.dart';
 import 'package:silarah/l10n/photo_guide_ui_copy.dart';
 import 'package:silarah/l10n/trust_ui_copy.dart';
@@ -19,6 +20,7 @@ class UiCopy {
   static String localize(BuildContext context, String source) {
     final languageCode = Localizations.localeOf(context).languageCode;
     return indiaLaunchUiCopy[languageCode]?[source] ??
+        legalAccessUiCopy[languageCode]?[source] ??
         messagingPolicyUiCopy[languageCode]?[source] ??
         photoGuideUiCopy[languageCode]?[source] ??
         trustUiCopy[languageCode]?[source] ??
@@ -30,6 +32,7 @@ class UiCopy {
   static bool hasTranslation(String languageCode, String source) =>
       languageCode == 'en' ||
       indiaLaunchUiCopy[languageCode]?.containsKey(source) == true ||
+      legalAccessUiCopy[languageCode]?.containsKey(source) == true ||
       messagingPolicyUiCopy[languageCode]?.containsKey(source) == true ||
       photoGuideUiCopy[languageCode]?.containsKey(source) == true ||
       trustUiCopy[languageCode]?.containsKey(source) == true ||
@@ -40,10 +43,8 @@ class UiCopy {
     'ar': {
       '"The best of you are the best to your wives." — Prophet Muhammad ﷺ\n\nBeing honest about your readiness helps build a strong foundation.':
           '«خيركم خياركم لنسائكم». - النبي محمد صلي الله عليه وسلم\n\nإن الصدق بشأن استعدادك يساعد في بناء أساس قوي.',
-      '1. Take a clear selfie': '1. التقط صورة ذاتية واضحة',
       '18 – 60': '18 - 60',
       '2+ years': '2+ سنة',
-      '2. Photograph your ID': '2. صوّر وثيقة هويتك',
       '30-day grace period': 'فترة سماح مدتها 30 يومًا',
       'A complete visual identity—not a color filter. Every surface, field and system control changes together.':
           'هوية بصرية متكاملة وليست مجرد مرشح ألوان. تتغير جميع الأسطح والحقول وعناصر النظام معًا.',
@@ -169,10 +170,6 @@ class UiCopy {
       'Cancel store billing separately': 'قم بإلغاء فواتير المتجر بشكل منفصل',
       'Candidate\'s first name': 'الاسم الأول للمرشح',
       'Candidate\'s gender': 'جنس المرشح',
-      'Capture clearer, current identity evidence and submit it again.':
-          'التقط دليل هوية أوضح وحديثًا ثم أرسله مجددًا.',
-      'Capture-quality checks run on this device. Your private document and selfie are then reviewed by Silarah. Device scores never approve your identity.':
-          'تُجرى فحوصات جودة الالتقاط على هذا الجهاز، ثم تراجع سيلاراه مستندك الخاص وصورتك الذاتية. لا تعتمد درجات الجهاز هويتك مطلقًا.',
       'Change language': 'تغيير اللغة',
       'Chat': 'الدردشة',
       'Chat options': 'خيارات الدردشة',
@@ -263,7 +260,6 @@ class UiCopy {
       'Do you observe hijab?': 'هل تلتزمين بالحجاب؟',
       'Do you pray five times daily?': 'هل تصلي خمس مرات يوميا؟',
       'Doctorate / PhD': 'دكتوراه / دكتوراه',
-      'Document type': 'نوع المستند',
       'Does your brother have a beard?': 'هل لدى أخيك لحية؟',
       'Does your child pray five times daily?': 'هل يصلي طفلك خمس مرات يوميا؟',
       'Does your daughter observe hijab?': 'هل تلتزم ابنتك بالحجاب؟',
@@ -272,7 +268,6 @@ class UiCopy {
       'Does your sister observe hijab?': 'هل أختك ملتزمة بالحجاب؟',
       'Does your son have a beard?': 'هل ابنك له لحية؟',
       'Done': 'منتهي',
-      'Driving licence': 'رخصة قيادة',
       'Dutch': 'هولندي',
       'EDUCATION LEVEL': 'المستوى التعليمي',
       'EDUCATION MINIMUM': 'الحد الأدنى من التعليم',
@@ -358,8 +353,6 @@ class UiCopy {
       'Generous': 'كريم',
       'German': 'الألمانية',
       'Get 7 days of Premium for free': 'احصل على 7 أيام من Premium مجانًا',
-      'Government ID': 'هوية حكومية',
-      'Government ID check': 'التحقق من الهوية الحكومية',
       'Graphic design': 'التصميم الجرافيكي',
       'Grievance Officer': 'مسؤول الشكاوى',
       'Group photos cannot be your primary photo.':
@@ -430,15 +423,10 @@ class UiCopy {
           'أفضّل أن يكون لدينا منزل مستقل خاص بنا.',
       'I wear niqab': 'أرتدي النقاب',
       'I\'ll do this later': 'سأفعل هذا لاحقا',
-      'ID captured': 'تم التقاط وثيقة الهوية',
       'INCOME RANGE  (Optional)': 'نطاق الدخل (اختياري)',
       'INTERESTS': 'الاهتمامات',
       'Identifies as Muslim, celebrates occasions, may not pray regularly':
           'يُعرف بأنه مسلم، ويحتفل بالمناسبات، وقد لا يصلي بانتظام',
-      'Identity approved': 'تم اعتماد الهوية',
-      'Identity check not approved': 'لم تتم الموافقة على التحقق',
-      'Identity check not started': 'لم يبدأ التحقق من الهوية',
-      'Identity evidence expired': 'انتهت صلاحية دليل الهوية',
       'If a friend invited you to Silarah, enter their 6-character referral code below.':
           'إذا دعاك أحد الأصدقاء إلى ?????، فأدخل رمز الإحالة المكون من 6 أحرف أدناه.',
       'Igbo': 'الإيغبو',
@@ -464,7 +452,6 @@ class UiCopy {
       'Javanese': 'الجاوية',
       'Join SILARAH': 'انضم إلى سيلاراه',
       'Joint': 'مشترك',
-      'KYC & Verification Policy': 'سياسة KYC والتحقق',
       'Kannada': 'الكانادا',
       'Kazakh': 'الكازاخستانية',
       'Keep': 'احتفظ',
@@ -524,8 +511,6 @@ class UiCopy {
       'Martial arts': 'فنون الدفاع عن النفس',
       'Master\'s +': 'الماجستير+',
       'Master\'s Degree': 'درجة الماجستير',
-      'Match a government ID with your selfie':
-          'قم بمطابقة بطاقة هوية حكومية مع صورتك الشخصية',
       'Matched profiles move to Chat, so they are not shown again in Discover.':
           'تنتقل الملفات المتطابقة إلى الدردشة، لذلك لن تظهر مرة أخرى في الاستكشاف.',
       'May Allah bless this with goodness': 'جزاكم الله هذا الخير',
@@ -556,7 +541,6 @@ class UiCopy {
       'Never': 'أبداً',
       'New Interests': 'اهتمامات جديدة',
       'New Messages': 'رسائل جديدة',
-      'New evidence required': 'مطلوب دليل جديد',
       'New or clearer identity evidence is required':
           'مطلوب أدلة هوية جديدة أو أكثر وضوحا',
       'Next': 'التالي',
@@ -602,7 +586,6 @@ class UiCopy {
       'Official online resources': 'الموارد الرسمية عبر الإنترنت',
       'Olive': 'زيتونية',
       'On-device photo check': 'فحص الصور على الجهاز',
-      'One face, good lighting': 'وجه واحد وإضاءة جيدة',
       'Open Chat': 'افتح الدردشة',
       'Open Interests': 'افتح الاهتمامات',
       'Open Settings': 'فتح الإعدادات',
@@ -642,8 +625,6 @@ class UiCopy {
       'Partner age range': 'الفئة العمرية للشريك',
       'Partner preferences': 'تفضيلات الشريك',
       'Pashto': 'الباشتو',
-      'Passive face scan': 'مسح الوجه السلبي',
-      'Passport': 'جواز سفر',
       'Payment issue — subscription in grace period.':
           'مشكلة الدفع - الاشتراك في فترة السماح.',
       'Pending': 'قيد المراجعة',
@@ -704,7 +685,6 @@ class UiCopy {
       'Privacy Policy': 'سياسة الخصوصية',
       'Private introductions, thoughtful compatibility, and family-aware connection.':
           'تعارف خاص، وتوافق مدروس، وتواصل يراعي الأسرة.',
-      'Private review in progress': 'المراجعة الخاصة جارية',
       'Profession': 'مهنة',
       'Profession  (Optional)': 'المهنة (اختياري)',
       'Profile': 'الملف الشخصي',
@@ -713,8 +693,6 @@ class UiCopy {
       'Profile boost requires a backend connection.':
           'يتطلب تعزيز الملف الشخصي اتصالاً خلفيًا.',
       'Profile goes live': 'نشر الملف الشخصي',
-      'Profile photo verification uses a passive face and liveness scan. Identity verification separately matches a government ID with your selfie. Both are available in Profile under Trust & identity.':
-          'يستخدم التحقق من صورة الملف الشخصي فحصًا سلبيًا للوجه والحيوية. يطابق التحقق من الهوية بشكل منفصل بطاقة هوية حكومية مع صورتك الذاتية. كلاهما متاح في الملف الشخصي ضمن الثقة والهوية.',
       'Profile photo verified': 'تم التحقق من صورة الملف الشخصي',
       'Profile quality': 'جودة الملف الشخصي',
       'Profile views': 'مشاهدات الملف الشخصي',
@@ -780,8 +758,6 @@ class UiCopy {
       'Revert': 'يرجع',
       'Revert / Convert (Optional)': 'العودة / التحويل (اختياري)',
       'Review Interest': 'مراجعة الفائدة',
-      'Review the reason below and submit new evidence if appropriate.':
-          'راجع السبب أدناه وأرسل دليلًا جديدًا عند الحاجة.',
       'Revoke': 'إبطال',
       'Revoke access': 'إبطال الوصول',
       'Revoke photo access?': 'هل تريد إلغاء الوصول إلى الصور؟',
@@ -838,7 +814,6 @@ class UiCopy {
       'Self-Taught': 'العصاميين',
       'Self-employed': 'العاملون لحسابهم الخاص',
       'Selfie Challenge': 'تحدي السيلفي',
-      'Selfie captured': 'تم التقاط الصورة الذاتية',
       'Send & End Match': 'إرسال وإنهاء المباراة',
       'Send Interest': 'أرسل الفائدة',
       'Send Verification Code': 'إرسال رمز التحقق',
@@ -898,12 +873,6 @@ class UiCopy {
       'Submit Report': 'إرسال التقرير',
       'Submit a current government-issued document':
           'تقديم وثيقة صادرة عن الحكومة الحالية',
-      'Submit a current government-issued document.':
-          'أرسل مستندًا حكوميًا ساريًا.',
-      'Submit a government ID and selfie for a private evidence review.':
-          'أرسل هوية حكومية وصورة ذاتية لمراجعة خاصة.',
-      'Submit for private review': 'إرسال للمراجعة الخاصة',
-      'Submit new evidence': 'إرسال أدلة جديدة',
       'Submitted for a secure human review': 'تم تقديمه لمراجعة بشرية آمنة',
       'Subscribe to unlock messaging. Women always message free on Silarah.':
           'اشترك لفتح الرسائل. تقوم النساء دائمًا بإرسال رسائل مجانية على ?????.',
@@ -1016,10 +985,6 @@ class UiCopy {
       'Verified Only': 'تم التحقق منه فقط',
       'Verify': 'يؤكد',
       'Verify Profile': 'التحقق من الملف الشخصي',
-      'Verify profile photo with a passive face scan':
-          'التحقق من صورة الملف الشخصي من خلال مسح الوجه السلبي',
-      'Verify your identity': 'تحقق من هويتك',
-      'Verify your profile': 'تحقق من ملفك الشخصي',
       'Version': 'إصدار',
       'View profile': 'عرض الملف الشخصي',
       'View your public profile': 'عرض ملفك الشخصي العام',
@@ -1101,17 +1066,11 @@ class UiCopy {
       'Your current financial obligations.': 'التزاماتك المالية الحالية.',
       'Your data is encrypted and never sold to third parties.':
           'يتم تشفير بياناتك ولا يتم بيعها أبدًا لأطراف ثالثة.',
-      'Your evidence is queued for human review. You do not need to submit it again.':
-          'دليلك في قائمة المراجعة البشرية، ولا حاجة لإرساله مجددًا.',
-      'Your government-ID evidence has been verified securely.':
-          'تم التحقق من دليل هويتك الحكومية بأمان.',
       'Your guardian details': 'تفاصيل الوصي الخاص بك',
       'Your height': 'طولك',
       'Your interest is in progress': 'اهتمامك قيد المتابعة',
       'Your name as the guardian. This is shown to matches.':
           'اسمك كوصي. يظهر هذا للمباريات.',
-      'Your name, photo and date of birth must be visible':
-          'يجب أن يظهر اسمك وصورتك وتاريخ ميلادك',
       'Your number': 'رقمك',
       'Your photo gallery could not be opened. Try again.':
           'لا يمكن فتح معرض الصور الخاص بك. حاول ثانية.',
@@ -1139,10 +1098,8 @@ class UiCopy {
     'bn': {
       '"The best of you are the best to your wives." — Prophet Muhammad ﷺ\n\nBeing honest about your readiness helps build a strong foundation.':
           '"তোমাদের মধ্যে উত্তম তারাই তোমাদের স্ত্রীদের কাছে উত্তম।" - নবী মুহাম্মদ সা\n\nআপনার প্রস্তুতি সম্পর্কে সৎ থাকা একটি শক্তিশালী ভিত্তি তৈরি করতে সহায়তা করে।',
-      '1. Take a clear selfie': '১. পরিষ্কার সেলফি তুলুন',
       '18 – 60': '18 - 60',
       '2+ years': '2+ বছর',
-      '2. Photograph your ID': '২. পরিচয়পত্রের ছবি তুলুন',
       '30-day grace period': '30 দিনের গ্রেস পিরিয়ড',
       'A complete visual identity—not a color filter. Every surface, field and system control changes together.':
           'শুধু রঙের ফিল্টার নয়—একটি সম্পূর্ণ ভিজ্যুয়াল পরিচয়। সব পৃষ্ঠ, ক্ষেত্র ও সিস্টেম কন্ট্রোল একসঙ্গে বদলায়।',
@@ -1268,10 +1225,6 @@ class UiCopy {
       'Cancel store billing separately': 'আলাদাভাবে দোকান বিলিং বাতিল করুন',
       'Candidate\'s first name': 'প্রার্থীর প্রথম নাম',
       'Candidate\'s gender': 'প্রার্থীর লিঙ্গ',
-      'Capture clearer, current identity evidence and submit it again.':
-          'আরও পরিষ্কার ও বর্তমান পরিচয় প্রমাণ তুলে আবার পাঠান।',
-      'Capture-quality checks run on this device. Your private document and selfie are then reviewed by Silarah. Device scores never approve your identity.':
-          'ছবি তোলার মান এই ডিভাইসে পরীক্ষা করা হয়। এরপর সিলারাহ আপনার ব্যক্তিগত নথি ও সেলফি পর্যালোচনা করে। ডিভাইসের স্কোর কখনও পরিচয় অনুমোদন করে না।',
       'Change language': 'ভাষা পরিবর্তন করুন',
       'Chat': 'চ্যাট',
       'Chat options': 'চ্যাট বিকল্প',
@@ -1363,7 +1316,6 @@ class UiCopy {
       'Do you pray five times daily?':
           'আপনি কি প্রতিদিন পাঁচ ওয়াক্ত নামাজ পড়েন?',
       'Doctorate / PhD': 'ডক্টরেট/পিএইচডি',
-      'Document type': 'নথির ধরন',
       'Does your brother have a beard?': 'তোমার ভাইয়ের কি দাড়ি আছে?',
       'Does your child pray five times daily?':
           'আপনার সন্তান কি প্রতিদিন পাঁচ ওয়াক্ত নামাজ পড়ে?',
@@ -1373,7 +1325,6 @@ class UiCopy {
       'Does your sister observe hijab?': 'আপনার বোন হিজাব পালন করেন?',
       'Does your son have a beard?': 'আপনার ছেলের কি দাড়ি আছে?',
       'Done': 'সম্পন্ন',
-      'Driving licence': 'ড্রাইভিং লাইসেন্স',
       'Dutch': 'ডাচ',
       'EDUCATION LEVEL': 'শিক্ষার স্তর',
       'EDUCATION MINIMUM': 'শিক্ষা ন্যূনতম',
@@ -1461,8 +1412,6 @@ class UiCopy {
       'Generous': 'উদার',
       'German': 'জার্মান',
       'Get 7 days of Premium for free': 'বিনামূল্যে ৭ দিনের প্রিমিয়াম পান',
-      'Government ID': 'সরকারি পরিচয়পত্র',
-      'Government ID check': 'সরকারি আইডি চেক',
       'Graphic design': 'গ্রাফিক ডিজাইন',
       'Grievance Officer': 'অভিযোগ কর্মকর্তা',
       'Group photos cannot be your primary photo.':
@@ -1534,15 +1483,10 @@ class UiCopy {
           'আমি পছন্দ করি যে আমাদের নিজস্ব স্বাধীন বাড়ি আছে।',
       'I wear niqab': 'আমি নেকাব পরি',
       'I\'ll do this later': 'আমি এটা পরে করব',
-      'ID captured': 'পরিচয়পত্র তোলা হয়েছে',
       'INCOME RANGE  (Optional)': 'ইনকাম রেঞ্জ (ঐচ্ছিক)',
       'INTERESTS': 'আগ্রহ',
       'Identifies as Muslim, celebrates occasions, may not pray regularly':
           'মুসলিম হিসেবে পরিচয় দেয়, অনুষ্ঠান উদযাপন করে, নিয়মিত প্রার্থনা নাও করতে পারে',
-      'Identity approved': 'পরিচয় অনুমোদিত',
-      'Identity check not approved': 'পরিচয় যাচাই অনুমোদিত হয়নি',
-      'Identity check not started': 'পরিচয় যাচাই শুরু হয়নি',
-      'Identity evidence expired': 'পরিচয় প্রমাণের মেয়াদ শেষ',
       'If a friend invited you to Silarah, enter their 6-character referral code below.':
           'যদি কোনো বন্ধু আপনাকে Silarah-এ আমন্ত্রণ জানায়, নিচে তাদের 6-অক্ষরের রেফারেল কোড লিখুন।',
       'Igbo': 'ইগবো',
@@ -1568,7 +1512,6 @@ class UiCopy {
       'Javanese': 'জাভানিজ',
       'Join SILARAH': 'SILARAH-এ যোগ দিন',
       'Joint': 'জয়েন্ট',
-      'KYC & Verification Policy': 'কেওয়াইসি এবং যাচাইকরণ নীতি',
       'Kannada': 'কন্নড়',
       'Kazakh': 'কাজাখ',
       'Keep': 'রাখা',
@@ -1628,8 +1571,6 @@ class UiCopy {
       'Martial arts': 'মার্শাল আর্ট',
       'Master\'s +': 'মাস্টার্স +',
       'Master\'s Degree': 'স্নাতকোত্তর ডিগ্রি',
-      'Match a government ID with your selfie':
-          'আপনার সেলফির সাথে একটি সরকারি আইডি মিলান',
       'Matched profiles move to Chat, so they are not shown again in Discover.':
           'ম্যাচ হওয়া প্রোফাইলগুলো চ্যাটে চলে যায়, তাই ডিসকভারে আবার দেখানো হয় না।',
       'May Allah bless this with goodness': 'আল্লাহ তায়ালা এর কল্যাণ করুন',
@@ -1662,7 +1603,6 @@ class UiCopy {
       'Never': 'কখনই না',
       'New Interests': 'নতুন আগ্রহ',
       'New Messages': 'নতুন বার্তা',
-      'New evidence required': 'নতুন প্রমাণ প্রয়োজন',
       'New or clearer identity evidence is required':
           'নতুন বা স্পষ্ট পরিচয় প্রমাণ প্রয়োজন',
       'Next': 'পরবর্তী',
@@ -1707,7 +1647,6 @@ class UiCopy {
       'Official online resources': 'অফিসিয়াল অনলাইন সম্পদ',
       'Olive': 'জলপাই বর্ণ',
       'On-device photo check': 'অন-ডিভাইস ফটো চেক',
-      'One face, good lighting': 'একটি মুখ, ভালো আলো',
       'Open Chat': 'চ্যাট খুলুন',
       'Open Interests': 'ইন্টারেস্টস খুলুন',
       'Open Settings': 'সেটিংস খুলুন',
@@ -1750,8 +1689,6 @@ class UiCopy {
       'Partner age range': 'অংশীদার বয়স পরিসীমা',
       'Partner preferences': 'অংশীদার পছন্দ',
       'Pashto': 'পশতু',
-      'Passive face scan': 'প্যাসিভ ফেস স্ক্যান',
-      'Passport': 'পাসপোর্ট',
       'Payment issue — subscription in grace period.':
           'অর্থপ্রদানের সমস্যা - গ্রেস পিরিয়ডে সাবস্ক্রিপশন।',
       'Pending': 'পর্যালোচনাধীন',
@@ -1813,7 +1750,6 @@ class UiCopy {
       'Privacy Policy': 'গোপনীয়তা নীতি',
       'Private introductions, thoughtful compatibility, and family-aware connection.':
           'ব্যক্তিগত পরিচয়, বিবেচনাপূর্ণ সামঞ্জস্য এবং পরিবার-সচেতন সংযোগ।',
-      'Private review in progress': 'ব্যক্তিগত পর্যালোচনা চলছে',
       'Profession': 'পেশা',
       'Profession  (Optional)': 'পেশা (ঐচ্ছিক)',
       'Profile': 'প্রোফাইল',
@@ -1822,8 +1758,6 @@ class UiCopy {
       'Profile boost requires a backend connection.':
           'প্রোফাইল বুস্টের জন্য একটি ব্যাকএন্ড সংযোগ প্রয়োজন৷',
       'Profile goes live': 'প্রোফাইল প্রকাশিত হয়েছে',
-      'Profile photo verification uses a passive face and liveness scan. Identity verification separately matches a government ID with your selfie. Both are available in Profile under Trust & identity.':
-          'প্রোফাইল ফটো যাচাইকরণ একটি প্যাসিভ ফেস এবং লাইভনেস স্ক্যান ব্যবহার করে। পরিচয় যাচাইকরণ আলাদাভাবে আপনার সেলফির সাথে একটি সরকারি আইডির সাথে মিলে যায়। উভয়ই ট্রাস্ট এবং পরিচয়ের অধীনে প্রোফাইলে উপলব্ধ।',
       'Profile photo verified': 'প্রোফাইল ফটো যাচাই করা হয়েছে',
       'Profile quality': 'প্রোফাইলের গুণমান',
       'Profile views': 'প্রোফাইল দেখা',
@@ -1890,8 +1824,6 @@ class UiCopy {
       'Revert': 'প্রত্যাবর্তন',
       'Revert / Convert (Optional)': 'প্রত্যাবর্তন / রূপান্তর (ঐচ্ছিক)',
       'Review Interest': 'সুদ পর্যালোচনা করুন',
-      'Review the reason below and submit new evidence if appropriate.':
-          'নিচের কারণ দেখুন এবং প্রয়োজন হলে নতুন প্রমাণ দিন।',
       'Revoke': 'প্রত্যাহার করুন',
       'Revoke access': 'অ্যাক্সেস প্রত্যাহার করুন',
       'Revoke photo access?': 'ফটো অ্যাক্সেস প্রত্যাহার করবেন?',
@@ -1949,7 +1881,6 @@ class UiCopy {
       'Self-Taught': 'স্ব-শিক্ষিত',
       'Self-employed': 'স্ব-নিযুক্ত',
       'Selfie Challenge': 'সেলফি চ্যালেঞ্জ',
-      'Selfie captured': 'সেলফি তোলা হয়েছে',
       'Send & End Match': 'পাঠান এবং ম্যাচ শেষ করুন',
       'Send Interest': 'আগ্রহ পাঠান',
       'Send Verification Code': 'যাচাইকরণ কোড পাঠান',
@@ -2009,12 +1940,6 @@ class UiCopy {
       'Submit Report': 'রিপোর্ট জমা দিন',
       'Submit a current government-issued document':
           'একটি বর্তমান সরকার জারি করা নথি জমা দিন',
-      'Submit a current government-issued document.':
-          'বর্তমান সরকারি নথি জমা দিন।',
-      'Submit a government ID and selfie for a private evidence review.':
-          'ব্যক্তিগত পর্যালোচনার জন্য সরকারি পরিচয়পত্র ও সেলফি দিন।',
-      'Submit for private review': 'ব্যক্তিগত পর্যালোচনার জন্য পাঠান',
-      'Submit new evidence': 'নতুন প্রমাণ পাঠান',
       'Submitted for a secure human review':
           'একটি নিরাপদ মানব পর্যালোচনার জন্য জমা দেওয়া হয়েছে',
       'Subscribe to unlock messaging. Women always message free on Silarah.':
@@ -2131,10 +2056,6 @@ class UiCopy {
       'Verified Only': 'শুধুমাত্র যাচাই করা হয়েছে',
       'Verify': 'যাচাই করুন',
       'Verify Profile': 'প্রোফাইল যাচাই করুন',
-      'Verify profile photo with a passive face scan':
-          'একটি প্যাসিভ ফেস স্ক্যান দিয়ে প্রোফাইল ফটো যাচাই করুন',
-      'Verify your identity': 'আপনার পরিচয় যাচাই করুন',
-      'Verify your profile': 'আপনার প্রোফাইল যাচাই করুন',
       'Version': 'সংস্করণ',
       'View profile': 'প্রোফাইল দেখুন',
       'View your public profile': 'আপনার পাবলিক প্রোফাইল দেখুন',
@@ -2218,17 +2139,11 @@ class UiCopy {
           'আপনার বর্তমান আর্থিক বাধ্যবাধকতা.',
       'Your data is encrypted and never sold to third parties.':
           'আপনার ডেটা এনক্রিপ্ট করা হয় এবং তৃতীয় পক্ষের কাছে বিক্রি হয় না।',
-      'Your evidence is queued for human review. You do not need to submit it again.':
-          'আপনার প্রমাণ মানব পর্যালোচনার অপেক্ষায় আছে। আবার জমা দিতে হবে না।',
-      'Your government-ID evidence has been verified securely.':
-          'আপনার সরকারি পরিচয়পত্রের প্রমাণ নিরাপদে যাচাই হয়েছে।',
       'Your guardian details': 'আপনার অভিভাবকের বিবরণ',
       'Your height': 'আপনার উচ্চতা',
       'Your interest is in progress': 'আপনার আগ্রহটি প্রক্রিয়াধীন',
       'Your name as the guardian. This is shown to matches.':
           'অভিভাবক হিসেবে আপনার নাম। এই মিল দেখানো হয়.',
-      'Your name, photo and date of birth must be visible':
-          'আপনার নাম, ছবি ও জন্মতারিখ দৃশ্যমান হতে হবে',
       'Your number': 'আপনার নম্বর',
       'Your photo gallery could not be opened. Try again.':
           'আপনার ফটো গ্যালারি খোলা যাবে না. আবার চেষ্টা করুন',
@@ -2256,10 +2171,8 @@ class UiCopy {
     'de': {
       '"The best of you are the best to your wives." — Prophet Muhammad ﷺ\n\nBeing honest about your readiness helps build a strong foundation.':
           '„Die Besten von euch sind die Besten für eure Frauen.“ — Prophet Muhammad ﷺ\n\nWenn Sie ehrlich über Ihre Bereitschaft sprechen, können Sie eine solide Grundlage schaffen.',
-      '1. Take a clear selfie': '1. Deutliches Selfie aufnehmen',
       '18 – 60': '18 – 60',
       '2+ years': '2+ Jahre',
-      '2. Photograph your ID': '2. Ausweis fotografieren',
       '30-day grace period': '30-tägige Nachfrist',
       'A complete visual identity—not a color filter. Every surface, field and system control changes together.':
           'Eine vollständige visuelle Identität – kein Farbfilter. Alle Flächen, Felder und Systemelemente ändern sich gemeinsam.',
@@ -2386,10 +2299,6 @@ class UiCopy {
       'Cancel store billing separately': 'Shop-Abrechnung separat stornieren',
       'Candidate\'s first name': 'Vorname des Kandidaten',
       'Candidate\'s gender': 'Geschlecht des Kandidaten',
-      'Capture clearer, current identity evidence and submit it again.':
-          'Nimm einen deutlicheren, aktuellen Identitätsnachweis auf und sende ihn erneut.',
-      'Capture-quality checks run on this device. Your private document and selfie are then reviewed by Silarah. Device scores never approve your identity.':
-          'Aufnahmequalität wird auf diesem Gerät geprüft. Anschließend überprüft Silarah dein privates Dokument und Selfie. Gerätewerte genehmigen niemals deine Identität.',
       'Change language': 'Sprache ändern',
       'Chat': 'Chatten',
       'Chat options': 'Chat-Optionen',
@@ -2481,7 +2390,6 @@ class UiCopy {
       'Do you observe hijab?': 'Beobachten Sie den Hijab?',
       'Do you pray five times daily?': 'Beten Sie fünfmal täglich?',
       'Doctorate / PhD': 'Doktortitel / PhD',
-      'Document type': 'Dokumenttyp',
       'Does your brother have a beard?': 'Hat dein Bruder einen Bart?',
       'Does your child pray five times daily?':
           'Betet Ihr Kind fünfmal täglich?',
@@ -2491,7 +2399,6 @@ class UiCopy {
       'Does your sister observe hijab?': 'Beachtet deine Schwester den Hijab?',
       'Does your son have a beard?': 'Hat Ihr Sohn einen Bart?',
       'Done': 'Erledigt',
-      'Driving licence': 'Führerschein',
       'Dutch': 'Niederländisch',
       'EDUCATION LEVEL': 'BILDUNGSNIVEAU',
       'EDUCATION MINIMUM': 'MINDESTBILDUNG',
@@ -2579,8 +2486,6 @@ class UiCopy {
       'Generous': 'Großzügig',
       'German': 'Deutsch',
       'Get 7 days of Premium for free': 'Erhalten Sie 7 Tage Premium kostenlos',
-      'Government ID': 'Amtlicher Ausweis',
-      'Government ID check': 'Überprüfung des amtlichen Ausweises',
       'Graphic design': 'Grafikdesign',
       'Grievance Officer': 'Beschwerdebeauftragte Person',
       'Group photos cannot be your primary photo.':
@@ -2654,15 +2559,10 @@ class UiCopy {
           'Mir ist es lieber, wenn wir ein eigenes, unabhängiges Zuhause haben.',
       'I wear niqab': 'Ich trage Niqab',
       'I\'ll do this later': 'Ich mache das später',
-      'ID captured': 'Ausweis aufgenommen',
       'INCOME RANGE  (Optional)': 'EINKOMMENSBEREICH (optional)',
       'INTERESTS': 'INTERESSEN',
       'Identifies as Muslim, celebrates occasions, may not pray regularly':
           'Identifiziert sich als Muslim, feiert Anlässe und betet möglicherweise nicht regelmäßig',
-      'Identity approved': 'Identität bestätigt',
-      'Identity check not approved': 'Identitätsprüfung nicht genehmigt',
-      'Identity check not started': 'Identitätsprüfung nicht begonnen',
-      'Identity evidence expired': 'Identitätsnachweis abgelaufen',
       'If a friend invited you to Silarah, enter their 6-character referral code below.':
           'Wenn ein Freund Sie zu Silarah eingeladen hat, geben Sie unten seinen 6-stelligen Empfehlungscode ein.',
       'Igbo': 'Igbo',
@@ -2688,7 +2588,6 @@ class UiCopy {
       'Javanese': 'Javanisch',
       'Join SILARAH': 'SILARAH beitreten',
       'Joint': 'Gemeinsam',
-      'KYC & Verification Policy': 'KYC- und Verifizierungsrichtlinie',
       'Kannada': 'Kannada',
       'Kazakh': 'Kasachisch',
       'Keep': 'Behalten',
@@ -2748,8 +2647,6 @@ class UiCopy {
       'Martial arts': 'Kampfkunst',
       'Master\'s +': 'Master +',
       'Master\'s Degree': 'Master-Abschluss',
-      'Match a government ID with your selfie':
-          'Ordnen Sie Ihrem Selfie einen amtlichen Ausweis zu',
       'Matched profiles move to Chat, so they are not shown again in Discover.':
           'Matches wechseln in den Chat und werden deshalb nicht erneut in Entdecken angezeigt.',
       'May Allah bless this with goodness': 'Möge Allah dies mit Güte segnen',
@@ -2781,7 +2678,6 @@ class UiCopy {
       'Never': 'Niemals',
       'New Interests': 'Neue Interessen',
       'New Messages': 'Neue Nachrichten',
-      'New evidence required': 'Neuer Nachweis erforderlich',
       'New or clearer identity evidence is required':
           'Es sind neue oder eindeutigere Identitätsnachweise erforderlich',
       'Next': 'Nächste',
@@ -2827,7 +2723,6 @@ class UiCopy {
       'Official online resources': 'Offizielle Online-Ressourcen',
       'Olive': 'Olivfarben',
       'On-device photo check': 'Fotokontrolle auf dem Gerät',
-      'One face, good lighting': 'Ein Gesicht, gute Beleuchtung',
       'Open Chat': 'Chat öffnen',
       'Open Interests': 'Interessen öffnen',
       'Open Settings': 'Einstellungen öffnen',
@@ -2870,8 +2765,6 @@ class UiCopy {
       'Partner age range': 'Altersspanne des Partners',
       'Partner preferences': 'Partnerpräferenzen',
       'Pashto': 'Paschtu',
-      'Passive face scan': 'Passiver Gesichtsscan',
-      'Passport': 'Reisepass',
       'Payment issue — subscription in grace period.':
           'Zahlungsproblem – Abonnement in der Kulanzfrist.',
       'Pending': 'Ausstehend',
@@ -2932,7 +2825,6 @@ class UiCopy {
       'Privacy Policy': 'Datenschutzrichtlinie',
       'Private introductions, thoughtful compatibility, and family-aware connection.':
           'Private Begegnungen, durchdachte Kompatibilität und eine familienbewusste Verbindung.',
-      'Private review in progress': 'Private Prüfung läuft',
       'Profession': 'Beruf',
       'Profession  (Optional)': 'Beruf (optional)',
       'Profile': 'Profil',
@@ -2941,8 +2833,6 @@ class UiCopy {
       'Profile boost requires a backend connection.':
           'Für die Profilverstärkung ist eine Backend-Verbindung erforderlich.',
       'Profile goes live': 'Profil wird sichtbar',
-      'Profile photo verification uses a passive face and liveness scan. Identity verification separately matches a government ID with your selfie. Both are available in Profile under Trust & identity.':
-          'Bei der Profilfotoverifizierung wird ein passiver Gesichts- und Lebendigkeitsscan verwendet. Bei der Identitätsprüfung wird ein amtlicher Ausweis separat mit Ihrem Selfie abgeglichen. Beide sind im Profil unter Vertrauen & Identität verfügbar.',
       'Profile photo verified': 'Profilfoto bestätigt',
       'Profile quality': 'Profilqualität',
       'Profile views': 'Profilaufrufe',
@@ -3009,8 +2899,6 @@ class UiCopy {
       'Revert': 'Zurücksetzen',
       'Revert / Convert (Optional)': 'Zurücksetzen/Konvertieren (optional)',
       'Review Interest': 'Überprüfen Sie das Interesse',
-      'Review the reason below and submit new evidence if appropriate.':
-          'Prüfe den Grund unten und sende bei Bedarf neue Nachweise.',
       'Revoke': 'Widerrufen',
       'Revoke access': 'Zugriff widerrufen',
       'Revoke photo access?': 'Fotozugriff widerrufen?',
@@ -3068,7 +2956,6 @@ class UiCopy {
       'Self-Taught': 'Autodidakt',
       'Self-employed': 'Selbstständig',
       'Selfie Challenge': 'Selfie-Herausforderung',
-      'Selfie captured': 'Selfie aufgenommen',
       'Send & End Match': 'Match senden und beenden',
       'Send Interest': 'Interesse senden',
       'Send Verification Code': 'Bestätigungscode senden',
@@ -3130,12 +3017,6 @@ class UiCopy {
       'Submit Report': 'Bericht einreichen',
       'Submit a current government-issued document':
           'Reichen Sie ein aktuelles, von der Regierung ausgestelltes Dokument ein',
-      'Submit a current government-issued document.':
-          'Reiche ein aktuelles amtliches Dokument ein.',
-      'Submit a government ID and selfie for a private evidence review.':
-          'Reiche einen amtlichen Ausweis und ein Selfie zur privaten Prüfung ein.',
-      'Submit for private review': 'Zur privaten Prüfung senden',
-      'Submit new evidence': 'Neue Nachweise senden',
       'Submitted for a secure human review':
           'Zur sicheren menschlichen Überprüfung eingereicht',
       'Subscribe to unlock messaging. Women always message free on Silarah.':
@@ -3253,10 +3134,6 @@ class UiCopy {
       'Verified Only': 'Nur verifiziert',
       'Verify': 'Verifizieren',
       'Verify Profile': 'Profil überprüfen',
-      'Verify profile photo with a passive face scan':
-          'Überprüfen Sie Ihr Profilfoto mit einem passiven Gesichtsscan',
-      'Verify your identity': 'Identität bestätigen',
-      'Verify your profile': 'Profil verifizieren',
       'Version': 'Version',
       'View profile': 'Profil ansehen',
       'View your public profile': 'Sehen Sie sich Ihr öffentliches Profil an',
@@ -3343,17 +3220,11 @@ class UiCopy {
           'Ihre aktuellen finanziellen Verpflichtungen.',
       'Your data is encrypted and never sold to third parties.':
           'Ihre Daten werden verschlüsselt und niemals an Dritte verkauft.',
-      'Your evidence is queued for human review. You do not need to submit it again.':
-          'Dein Nachweis wartet auf die menschliche Prüfung. Du musst ihn nicht erneut senden.',
-      'Your government-ID evidence has been verified securely.':
-          'Dein amtlicher Identitätsnachweis wurde sicher geprüft.',
       'Your guardian details': 'Angaben zu Ihrem Vormund',
       'Your height': 'Deine Größe',
       'Your interest is in progress': 'Dein Interesse wird bearbeitet',
       'Your name as the guardian. This is shown to matches.':
           'Ihr Name als Vormund. Dies wird bei Übereinstimmungen angezeigt.',
-      'Your name, photo and date of birth must be visible':
-          'Name, Foto und Geburtsdatum müssen sichtbar sein',
       'Your number': 'Ihre Nummer',
       'Your photo gallery could not be opened. Try again.':
           'Ihre Fotogalerie konnte nicht geöffnet werden. Versuchen Sie es erneut.',
@@ -3381,10 +3252,8 @@ class UiCopy {
     'fr': {
       '"The best of you are the best to your wives." — Prophet Muhammad ﷺ\n\nBeing honest about your readiness helps build a strong foundation.':
           '"Les meilleurs d\'entre vous sont les meilleurs pour vos femmes." — Prophète Muhammad ﷺ\n\nÊtre honnête quant à votre état de préparation aide à construire une base solide.',
-      '1. Take a clear selfie': '1. Prenez un selfie net',
       '18 – 60': '18 – 60',
       '2+ years': '2+ ans',
-      '2. Photograph your ID': '2. Photographiez votre pièce d’identité',
       '30-day grace period': 'Délai de grâce de 30 jours',
       'A complete visual identity—not a color filter. Every surface, field and system control changes together.':
           'Une identité visuelle complète, pas un simple filtre de couleur. Toutes les surfaces, tous les champs et contrôles changent ensemble.',
@@ -3513,10 +3382,6 @@ class UiCopy {
           'Annuler la facturation du magasin séparément',
       'Candidate\'s first name': 'Prénom du candidat',
       'Candidate\'s gender': 'Sexe du candidat',
-      'Capture clearer, current identity evidence and submit it again.':
-          'Capturez une preuve d’identité actuelle et plus nette, puis renvoyez-la.',
-      'Capture-quality checks run on this device. Your private document and selfie are then reviewed by Silarah. Device scores never approve your identity.':
-          'La qualité de capture est contrôlée sur cet appareil. Silarah examine ensuite votre document privé et votre selfie. Les scores de l’appareil n’approuvent jamais votre identité.',
       'Change language': 'Changer de langue',
       'Chat': 'Discuter',
       'Chat options': 'Options de discussion',
@@ -3609,7 +3474,6 @@ class UiCopy {
       'Do you observe hijab?': 'Observez-vous le hijab ?',
       'Do you pray five times daily?': 'Priez-vous cinq fois par jour ?',
       'Doctorate / PhD': 'Doctorat / PhD',
-      'Document type': 'Type de document',
       'Does your brother have a beard?': 'Ton frère a-t-il une barbe ?',
       'Does your child pray five times daily?':
           'Votre enfant prie-t-il cinq fois par jour ?',
@@ -3620,7 +3484,6 @@ class UiCopy {
       'Does your sister observe hijab?': 'Votre sœur porte-t-elle le hijab ?',
       'Does your son have a beard?': 'Votre fils a-t-il une barbe ?',
       'Done': 'Fait',
-      'Driving licence': 'Permis de conduire',
       'Dutch': 'Néerlandais',
       'EDUCATION LEVEL': 'NIVEAU D\'ÉDUCATION',
       'EDUCATION MINIMUM': 'FORMATION MINIMALE',
@@ -3709,8 +3572,6 @@ class UiCopy {
       'German': 'Allemand',
       'Get 7 days of Premium for free':
           'Obtenez 7 jours de Premium gratuitement',
-      'Government ID': 'Pièce d’identité officielle',
-      'Government ID check': 'Vérification d\'identité gouvernementale',
       'Graphic design': 'Conception graphique',
       'Grievance Officer': 'Responsable des réclamations',
       'Group photos cannot be your primary photo.':
@@ -3782,15 +3643,10 @@ class UiCopy {
           'Je préfère que nous ayons notre propre maison indépendante.',
       'I wear niqab': 'je porte le niqab',
       'I\'ll do this later': 'je ferai ça plus tard',
-      'ID captured': 'Pièce d’identité capturée',
       'INCOME RANGE  (Optional)': 'GAMME DE REVENU (Facultatif)',
       'INTERESTS': 'INTÉRÊTS',
       'Identifies as Muslim, celebrates occasions, may not pray regularly':
           'S\'identifie comme musulman, célèbre des occasions, ne peut pas prier régulièrement',
-      'Identity approved': 'Identité approuvée',
-      'Identity check not approved': 'Vérification d’identité non approuvée',
-      'Identity check not started': 'Vérification d’identité non commencée',
-      'Identity evidence expired': 'Preuve d’identité expirée',
       'If a friend invited you to Silarah, enter their 6-character referral code below.':
           'Si un ami vous a invité sur Silarah, saisissez son code de parrainage à 6 caractères ci-dessous.',
       'Igbo': 'Igbo',
@@ -3816,7 +3672,6 @@ class UiCopy {
       'Javanese': 'javanais',
       'Join SILARAH': 'Rejoignez SILARAH',
       'Joint': 'Articulation',
-      'KYC & Verification Policy': 'KYC et politique de vérification',
       'Kannada': 'Kannada',
       'Kazakh': 'Kazakh',
       'Keep': 'Garder',
@@ -3877,8 +3732,6 @@ class UiCopy {
       'Martial arts': 'Arts martiaux',
       'Master\'s +': 'Master +',
       'Master\'s Degree': 'Une maîtrise',
-      'Match a government ID with your selfie':
-          'Faites correspondre une pièce d\'identité gouvernementale avec votre selfie',
       'Matched profiles move to Chat, so they are not shown again in Discover.':
           'Les profils compatibles passent dans Chat et ne sont donc plus affichés dans Découvrir.',
       'May Allah bless this with goodness': 'Qu\'Allah bénisse cela avec bonté',
@@ -3910,7 +3763,6 @@ class UiCopy {
       'Never': 'Jamais',
       'New Interests': 'Nouveaux intérêts',
       'New Messages': 'Nouveaux messages',
-      'New evidence required': 'Nouvelle preuve requise',
       'New or clearer identity evidence is required':
           'Des preuves d\'identité nouvelles ou plus claires sont requises',
       'Next': 'Suivant',
@@ -3956,7 +3808,6 @@ class UiCopy {
       'Official online resources': 'Ressources officielles en ligne',
       'Olive': 'Olive',
       'On-device photo check': 'Vérification des photos sur l\'appareil',
-      'One face, good lighting': 'Un seul visage, bon éclairage',
       'Open Chat': 'Ouvrir le chat',
       'Open Interests': 'Ouvrir les intérêts',
       'Open Settings': 'Ouvrir les paramètres',
@@ -4000,8 +3851,6 @@ class UiCopy {
       'Partner age range': 'Tranche d\'âge du partenaire',
       'Partner preferences': 'Préférences du partenaire',
       'Pashto': 'pachtou',
-      'Passive face scan': 'Analyse passive du visage',
-      'Passport': 'Passeport',
       'Payment issue — subscription in grace period.':
           'Problème de paiement – abonnement en période de grâce.',
       'Pending': 'En attente',
@@ -4063,7 +3912,6 @@ class UiCopy {
       'Privacy Policy': 'Politique de confidentialité',
       'Private introductions, thoughtful compatibility, and family-aware connection.':
           'Des présentations privées, une compatibilité réfléchie et un lien respectueux de la famille.',
-      'Private review in progress': 'Examen privé en cours',
       'Profession': 'Profession',
       'Profession  (Optional)': 'Métier (facultatif)',
       'Profile': 'Profil',
@@ -4072,8 +3920,6 @@ class UiCopy {
       'Profile boost requires a backend connection.':
           'L\'amélioration du profil nécessite une connexion backend.',
       'Profile goes live': 'Mise en ligne du profil',
-      'Profile photo verification uses a passive face and liveness scan. Identity verification separately matches a government ID with your selfie. Both are available in Profile under Trust & identity.':
-          'La vérification des photos de profil utilise une analyse passive du visage et de la vivacité. La vérification d\'identité associe séparément une pièce d\'identité gouvernementale à votre selfie. Les deux sont disponibles dans Profil sous Confiance et identité.',
       'Profile photo verified': 'Photo de profil vérifiée',
       'Profile quality': 'Qualité du profil',
       'Profile views': 'Vues du profil',
@@ -4140,8 +3986,6 @@ class UiCopy {
       'Revert': 'Revenir',
       'Revert / Convert (Optional)': 'Rétablir/Convertir (Facultatif)',
       'Review Interest': 'Intérêt pour les avis',
-      'Review the reason below and submit new evidence if appropriate.':
-          'Consultez le motif ci-dessous et envoyez de nouvelles preuves si nécessaire.',
       'Revoke': 'Révoquer',
       'Revoke access': 'Révoquer l\'accès',
       'Revoke photo access?': 'Révoquer l\'accès aux photos ?',
@@ -4199,7 +4043,6 @@ class UiCopy {
       'Self-Taught': 'Autodidacte',
       'Self-employed': 'Travailleur indépendant',
       'Selfie Challenge': 'Défi selfie',
-      'Selfie captured': 'Selfie capturé',
       'Send & End Match': 'Envoyer et terminer la correspondance',
       'Send Interest': 'Envoyer des intérêts',
       'Send Verification Code': 'Envoyer le code de vérification',
@@ -4262,12 +4105,6 @@ class UiCopy {
       'Submit Report': 'Soumettre le rapport',
       'Submit a current government-issued document':
           'Soumettre un document actuel émis par le gouvernement',
-      'Submit a current government-issued document.':
-          'Envoyez un document officiel en cours de validité.',
-      'Submit a government ID and selfie for a private evidence review.':
-          'Envoyez une pièce d’identité officielle et un selfie pour un examen privé.',
-      'Submit for private review': 'Envoyer pour examen privé',
-      'Submit new evidence': 'Envoyer de nouvelles preuves',
       'Submitted for a secure human review':
           'Soumis pour un examen humain sécurisé',
       'Subscribe to unlock messaging. Women always message free on Silarah.':
@@ -4384,10 +4221,6 @@ class UiCopy {
       'Verified Only': 'Vérifié uniquement',
       'Verify': 'Vérifier',
       'Verify Profile': 'Vérifier le profil',
-      'Verify profile photo with a passive face scan':
-          'Vérifier la photo de profil avec une analyse passive du visage',
-      'Verify your identity': 'Vérifier votre identité',
-      'Verify your profile': 'Vérifier votre profil',
       'Version': 'Version',
       'View profile': 'Voir le profil',
       'View your public profile': 'Afficher votre profil public',
@@ -4474,17 +4307,11 @@ class UiCopy {
           'Vos obligations financières actuelles.',
       'Your data is encrypted and never sold to third parties.':
           'Vos données sont cryptées et jamais revendues à des tiers.',
-      'Your evidence is queued for human review. You do not need to submit it again.':
-          'Votre preuve attend un examen humain. Vous n’avez pas besoin de la renvoyer.',
-      'Your government-ID evidence has been verified securely.':
-          'Votre preuve d’identité officielle a été vérifiée en toute sécurité.',
       'Your guardian details': 'Les coordonnées de votre tuteur',
       'Your height': 'Votre taille',
       'Your interest is in progress': 'Votre intérêt est en cours',
       'Your name as the guardian. This is shown to matches.':
           'Votre nom en tant que tuteur. Ceci est montré aux correspondances.',
-      'Your name, photo and date of birth must be visible':
-          'Votre nom, photo et date de naissance doivent être visibles',
       'Your number': 'Votre numéro',
       'Your photo gallery could not be opened. Try again.':
           'Votre galerie de photos n\'a pas pu être ouverte. Essayer à nouveau.',
@@ -4512,10 +4339,8 @@ class UiCopy {
     'hi': {
       '"The best of you are the best to your wives." — Prophet Muhammad ﷺ\n\nBeing honest about your readiness helps build a strong foundation.':
           '"आपमें से जो सर्वश्रेष्ठ हैं, वे आपकी पत्नियों के लिए सर्वश्रेष्ठ हैं।" - पैगंबर मुहम्मद ﷺ\n\nअपनी तैयारी के प्रति ईमानदार रहने से एक मजबूत नींव बनाने में मदद मिलती है।',
-      '1. Take a clear selfie': '1. साफ़ सेल्फ़ी लें',
       '18 – 60': '18 – 60',
       '2+ years': '2+ वर्ष',
-      '2. Photograph your ID': '2. पहचान पत्र की फ़ोटो लें',
       '30-day grace period': '30 दिन की छूट अवधि',
       'A complete visual identity—not a color filter. Every surface, field and system control changes together.':
           'यह केवल रंग फ़िल्टर नहीं, पूरी दृश्य पहचान है। हर सतह, फ़ील्ड और सिस्टम नियंत्रण साथ बदलता है।',
@@ -4642,10 +4467,6 @@ class UiCopy {
       'Cancel store billing separately': 'स्टोर बिलिंग अलग से रद्द करें',
       'Candidate\'s first name': 'उम्मीदवार का पहला नाम',
       'Candidate\'s gender': 'उम्मीदवार का लिंग',
-      'Capture clearer, current identity evidence and submit it again.':
-          'अधिक साफ़ और वर्तमान पहचान प्रमाण लेकर फिर भेजें।',
-      'Capture-quality checks run on this device. Your private document and selfie are then reviewed by Silarah. Device scores never approve your identity.':
-          'कैप्चर की गुणवत्ता इस डिवाइस पर जाँची जाती है। फिर सिलाराह आपके निजी दस्तावेज़ और सेल्फ़ी की समीक्षा करता है। डिवाइस स्कोर कभी आपकी पहचान मंज़ूर नहीं करते।',
       'Change language': 'भाषा बदलें',
       'Chat': 'बातचीत',
       'Chat options': 'चैट विकल्प',
@@ -4738,7 +4559,6 @@ class UiCopy {
       'Do you pray five times daily?':
           'क्या आप प्रतिदिन पाँच बार प्रार्थना करते हैं?',
       'Doctorate / PhD': 'डॉक्टरेट/पीएचडी',
-      'Document type': 'दस्तावेज़ का प्रकार',
       'Does your brother have a beard?': 'क्या आपके भाई की दाढ़ी है?',
       'Does your child pray five times daily?':
           'क्या आपका बच्चा प्रतिदिन पाँच बार प्रार्थना करता है?',
@@ -4749,7 +4569,6 @@ class UiCopy {
       'Does your sister observe hijab?': 'क्या आपकी बहन हिजाब का पालन करती है?',
       'Does your son have a beard?': 'क्या आपके बेटे की दाढ़ी है?',
       'Done': 'हो गया',
-      'Driving licence': 'ड्राइविंग लाइसेंस',
       'Dutch': 'डच',
       'EDUCATION LEVEL': 'शिक्षा का स्तर',
       'EDUCATION MINIMUM': 'शिक्षा न्यूनतम',
@@ -4838,8 +4657,6 @@ class UiCopy {
       'German': 'जर्मन',
       'Get 7 days of Premium for free':
           '7 दिनों का प्रीमियम निःशुल्क प्राप्त करें',
-      'Government ID': 'सरकारी पहचान पत्र',
-      'Government ID check': 'सरकारी आईडी जांच',
       'Graphic design': 'ग्राफ़िक डिज़ाइन',
       'Grievance Officer': 'शिकायत अधिकारी',
       'Group photos cannot be your primary photo.':
@@ -4911,15 +4728,10 @@ class UiCopy {
           'मैं पसंद करता हूं कि हमारा अपना स्वतंत्र घर हो।',
       'I wear niqab': 'मैं नकाब पहनता हूं',
       'I\'ll do this later': 'मैं यह बाद में करूंगा',
-      'ID captured': 'पहचान पत्र लिया गया',
       'INCOME RANGE  (Optional)': 'आय सीमा (वैकल्पिक)',
       'INTERESTS': 'रुचियाँ',
       'Identifies as Muslim, celebrates occasions, may not pray regularly':
           'अपनी पहचान मुस्लिम के रूप में करता है, अवसरों का जश्न मनाता है, नियमित रूप से प्रार्थना नहीं करता है',
-      'Identity approved': 'पहचान स्वीकृत',
-      'Identity check not approved': 'पहचान जाँच स्वीकृत नहीं हुई',
-      'Identity check not started': 'पहचान जाँच शुरू नहीं हुई',
-      'Identity evidence expired': 'पहचान प्रमाण की अवधि समाप्त',
       'If a friend invited you to Silarah, enter their 6-character referral code below.':
           'यदि किसी मित्र ने आपको Silarah के लिए आमंत्रित किया है, तो नीचे उनका 6-वर्ण का रेफरल कोड दर्ज करें।',
       'Igbo': 'ईग्बो',
@@ -4945,7 +4757,6 @@ class UiCopy {
       'Javanese': 'जावानीस',
       'Join SILARAH': 'SILARAH से जुड़ें',
       'Joint': 'संयुक्त',
-      'KYC & Verification Policy': 'केवाईसी और सत्यापन नीति',
       'Kannada': 'कन्नडा',
       'Kazakh': 'कजाख',
       'Keep': 'रखें',
@@ -5005,8 +4816,6 @@ class UiCopy {
       'Martial arts': 'मार्शल आर्ट',
       'Master\'s +': 'मास्टर +',
       'Master\'s Degree': 'स्नातकोत्तर उपाधि',
-      'Match a government ID with your selfie':
-          'अपनी सेल्फी के साथ सरकारी आईडी का मिलान करें',
       'Matched profiles move to Chat, so they are not shown again in Discover.':
           'मैच हुई प्रोफ़ाइलें चैट में चली जाती हैं, इसलिए वे डिस्कवर में दोबारा नहीं दिखतीं।',
       'May Allah bless this with goodness': 'अल्लाह इसे भलाई से नवाजे',
@@ -5038,7 +4847,6 @@ class UiCopy {
       'Never': 'कभी नहीं',
       'New Interests': 'नई रुचियाँ',
       'New Messages': 'नए संदेश',
-      'New evidence required': 'नया प्रमाण आवश्यक है',
       'New or clearer identity evidence is required':
           'नए या स्पष्ट पहचान प्रमाण की आवश्यकता है',
       'Next': 'अगला',
@@ -5083,7 +4891,6 @@ class UiCopy {
       'Official online resources': 'आधिकारिक ऑनलाइन संसाधन',
       'Olive': 'गेहुँआ',
       'On-device photo check': 'ऑन-डिवाइस फोटो जांच',
-      'One face, good lighting': 'एक चेहरा, अच्छी रोशनी',
       'Open Chat': 'चैट खोलें',
       'Open Interests': 'इंटरेस्ट्स खोलें',
       'Open Settings': 'सेटिंग खोलें',
@@ -5127,8 +4934,6 @@ class UiCopy {
       'Partner age range': 'साथी की आयु सीमा',
       'Partner preferences': 'साझेदार प्राथमिकताएँ',
       'Pashto': 'पश्तो',
-      'Passive face scan': 'निष्क्रिय चेहरा स्कैन',
-      'Passport': 'पासपोर्ट',
       'Payment issue — subscription in grace period.':
           'भुगतान मुद्दा - अनुग्रह अवधि में सदस्यता।',
       'Pending': 'समीक्षा लंबित',
@@ -5190,7 +4995,6 @@ class UiCopy {
       'Privacy Policy': 'गोपनीयता नीति',
       'Private introductions, thoughtful compatibility, and family-aware connection.':
           'निजी परिचय, सोच-समझकर अनुकूलता और परिवार का सम्मान करने वाला जुड़ाव।',
-      'Private review in progress': 'निजी समीक्षा जारी है',
       'Profession': 'पेशा',
       'Profession  (Optional)': 'पेशा (वैकल्पिक)',
       'Profile': 'प्रोफाइल',
@@ -5199,8 +5003,6 @@ class UiCopy {
       'Profile boost requires a backend connection.':
           'प्रोफ़ाइल बूस्ट के लिए बैकएंड कनेक्शन की आवश्यकता होती है।',
       'Profile goes live': 'प्रोफ़ाइल लाइव हुई',
-      'Profile photo verification uses a passive face and liveness scan. Identity verification separately matches a government ID with your selfie. Both are available in Profile under Trust & identity.':
-          'प्रोफ़ाइल फ़ोटो सत्यापन एक निष्क्रिय चेहरे और जीवंतता स्कैन का उपयोग करता है। पहचान सत्यापन अलग से आपकी सेल्फी के साथ एक सरकारी आईडी से मेल खाता है। दोनों ट्रस्ट और पहचान के तहत प्रोफाइल में उपलब्ध हैं।',
       'Profile photo verified': 'प्रोफ़ाइल फ़ोटो सत्यापित',
       'Profile quality': 'प्रोफ़ाइल गुणवत्ता',
       'Profile views': 'प्रोफ़ाइल देखे जाने की सूचना',
@@ -5267,8 +5069,6 @@ class UiCopy {
       'Revert': 'फिर लौट आना',
       'Revert / Convert (Optional)': 'पूर्ववत करें/रूपांतरित करें (वैकल्पिक)',
       'Review Interest': 'रुचि की समीक्षा करें',
-      'Review the reason below and submit new evidence if appropriate.':
-          'नीचे कारण देखें और उचित हो तो नया प्रमाण भेजें।',
       'Revoke': 'निरस्त करें',
       'Revoke access': 'पहुंच निरस्त करें',
       'Revoke photo access?': 'फ़ोटो पहुंच निरस्त करें?',
@@ -5325,7 +5125,6 @@ class UiCopy {
       'Self-Taught': 'स्व सिखाया',
       'Self-employed': 'स्वनियोजित',
       'Selfie Challenge': 'सेल्फी चैलेंज',
-      'Selfie captured': 'सेल्फ़ी ली गई',
       'Send & End Match': 'भेजें और मिलान समाप्त करें',
       'Send Interest': 'रुचि भेजें',
       'Send Verification Code': 'सत्यापन कोड भेजें',
@@ -5385,12 +5184,6 @@ class UiCopy {
       'Submit Report': 'रिपोर्ट प्रस्तुत करें',
       'Submit a current government-issued document':
           'वर्तमान सरकार द्वारा जारी दस्तावेज़ जमा करें',
-      'Submit a current government-issued document.':
-          'वर्तमान सरकारी दस्तावेज़ भेजें।',
-      'Submit a government ID and selfie for a private evidence review.':
-          'निजी समीक्षा के लिए सरकारी पहचान पत्र और सेल्फ़ी भेजें।',
-      'Submit for private review': 'निजी समीक्षा के लिए भेजें',
-      'Submit new evidence': 'नया प्रमाण भेजें',
       'Submitted for a secure human review':
           'सुरक्षित मानव समीक्षा के लिए प्रस्तुत किया गया',
       'Subscribe to unlock messaging. Women always message free on Silarah.':
@@ -5507,10 +5300,6 @@ class UiCopy {
       'Verified Only': 'केवल सत्यापित',
       'Verify': 'सत्यापित करें',
       'Verify Profile': 'प्रोफ़ाइल सत्यापित करें',
-      'Verify profile photo with a passive face scan':
-          'पैसिव फेस स्कैन से प्रोफाइल फोटो सत्यापित करें',
-      'Verify your identity': 'अपनी पहचान सत्यापित करें',
-      'Verify your profile': 'अपनी प्रोफ़ाइल सत्यापित करें',
       'Version': 'संस्करण',
       'View profile': 'प्रोफ़ाइल देखें',
       'View your public profile': 'अपनी सार्वजनिक प्रोफ़ाइल देखें',
@@ -5595,17 +5384,11 @@ class UiCopy {
       'Your current financial obligations.': 'आपके वर्तमान वित्तीय दायित्व.',
       'Your data is encrypted and never sold to third parties.':
           'आपका डेटा एन्क्रिप्ट किया गया है और कभी भी तीसरे पक्ष को नहीं बेचा जाता है।',
-      'Your evidence is queued for human review. You do not need to submit it again.':
-          'आपका प्रमाण मानवीय समीक्षा की कतार में है। इसे दोबारा भेजने की आवश्यकता नहीं है।',
-      'Your government-ID evidence has been verified securely.':
-          'आपके सरकारी पहचान प्रमाण को सुरक्षित रूप से सत्यापित किया गया है।',
       'Your guardian details': 'आपके अभिभावक का विवरण',
       'Your height': 'आपकी ऊंचाई',
       'Your interest is in progress': 'आपकी दिलचस्पी प्रक्रिया में है',
       'Your name as the guardian. This is shown to matches.':
           'संरक्षक के रूप में आपका नाम. यह मैचों को दिखाया जाता है.',
-      'Your name, photo and date of birth must be visible':
-          'आपका नाम, फ़ोटो और जन्मतिथि दिखाई देनी चाहिए',
       'Your number': 'तुम्हारी संख्या',
       'Your photo gallery could not be opened. Try again.':
           'आपकी फ़ोटो गैलरी नहीं खोली जा सकी. पुनः प्रयास करें।',
@@ -5633,10 +5416,8 @@ class UiCopy {
     'id': {
       '"The best of you are the best to your wives." — Prophet Muhammad ﷺ\n\nBeing honest about your readiness helps build a strong foundation.':
           '“Sebaik-baik kalian adalah yang terbaik terhadap istri kalian.” — Nabi Muhammad ﷺ\n\nJujur tentang kesiapan Anda membantu membangun landasan yang kuat.',
-      '1. Take a clear selfie': '1. Ambil swafoto yang jelas',
       '18 – 60': '18 – 60',
       '2+ years': '2+ tahun',
-      '2. Photograph your ID': '2. Foto identitas Anda',
       '30-day grace period': 'Masa tenggang 30 hari',
       'A complete visual identity—not a color filter. Every surface, field and system control changes together.':
           'Identitas visual yang menyeluruh, bukan sekadar filter warna. Semua permukaan, kolom, dan kontrol sistem berubah bersama.',
@@ -5764,10 +5545,6 @@ class UiCopy {
           'Batalkan penagihan toko secara terpisah',
       'Candidate\'s first name': 'Nama depan kandidat',
       'Candidate\'s gender': 'jenis kelamin kandidat',
-      'Capture clearer, current identity evidence and submit it again.':
-          'Ambil bukti identitas terkini yang lebih jelas lalu kirim lagi.',
-      'Capture-quality checks run on this device. Your private document and selfie are then reviewed by Silarah. Device scores never approve your identity.':
-          'Kualitas pengambilan diperiksa di perangkat ini. Dokumen pribadi dan swafoto Anda kemudian ditinjau oleh Silarah. Skor perangkat tidak pernah menyetujui identitas.',
       'Change language': 'Ubah bahasa',
       'Chat': 'Obrolan',
       'Chat options': 'Opsi obrolan',
@@ -5859,7 +5636,6 @@ class UiCopy {
       'Do you observe hijab?': 'Apakah Anda memperhatikan hijab?',
       'Do you pray five times daily?': 'Apakah Anda berdoa lima kali sehari?',
       'Doctorate / PhD': 'Doktor/PhD',
-      'Document type': 'Jenis dokumen',
       'Does your brother have a beard?': 'Apakah kakakmu berjanggut?',
       'Does your child pray five times daily?':
           'Apakah anak Anda shalat lima waktu sehari?',
@@ -5869,7 +5645,6 @@ class UiCopy {
       'Does your sister observe hijab?': 'Apakah adikmu menjalankan hijab?',
       'Does your son have a beard?': 'Apakah anak Anda berjanggut?',
       'Done': 'Selesai',
-      'Driving licence': 'SIM',
       'Dutch': 'Belanda',
       'EDUCATION LEVEL': 'TINGKAT PENDIDIKAN',
       'EDUCATION MINIMUM': 'MINIMAL PENDIDIKAN',
@@ -5957,8 +5732,6 @@ class UiCopy {
       'Generous': 'Dermawan',
       'German': 'Jerman',
       'Get 7 days of Premium for free': 'Dapatkan Premium 7 hari secara gratis',
-      'Government ID': 'Identitas pemerintah',
-      'Government ID check': 'Pemeriksaan identitas pemerintah',
       'Graphic design': 'Desain Grafis',
       'Grievance Officer': 'Petugas Pengaduan',
       'Group photos cannot be your primary photo.':
@@ -6030,15 +5803,10 @@ class UiCopy {
           'Saya lebih suka kita memiliki rumah mandiri sendiri.',
       'I wear niqab': 'Saya memakai niqab',
       'I\'ll do this later': 'Aku akan melakukannya nanti',
-      'ID captured': 'Identitas diambil',
       'INCOME RANGE  (Optional)': 'KIRAN PENDAPATAN (Opsional)',
       'INTERESTS': 'BUNGA',
       'Identifies as Muslim, celebrates occasions, may not pray regularly':
           'Mengidentifikasi sebagai Muslim, merayakan acara-acara, mungkin tidak berdoa secara teratur',
-      'Identity approved': 'Identitas disetujui',
-      'Identity check not approved': 'Pemeriksaan identitas tidak disetujui',
-      'Identity check not started': 'Pemeriksaan identitas belum dimulai',
-      'Identity evidence expired': 'Bukti identitas kedaluwarsa',
       'If a friend invited you to Silarah, enter their 6-character referral code below.':
           'Jika seorang teman mengundang Anda ke Silarah, masukkan kode referensi 6 karakter mereka di bawah.',
       'Igbo': 'Igbo',
@@ -6064,7 +5832,6 @@ class UiCopy {
       'Javanese': 'Jawa',
       'Join SILARAH': 'Bergabung dengan SILARAH',
       'Joint': 'Persendian',
-      'KYC & Verification Policy': 'Kebijakan KYC & Verifikasi',
       'Kannada': 'Kannada',
       'Kazakh': 'Kazakh',
       'Keep': 'Simpan',
@@ -6125,8 +5892,6 @@ class UiCopy {
       'Martial arts': 'Seni bela diri',
       'Master\'s +': '+ Guru',
       'Master\'s Degree': 'Gelar Master',
-      'Match a government ID with your selfie':
-          'Cocokkan tanda pengenal pemerintah dengan selfie Anda',
       'Matched profiles move to Chat, so they are not shown again in Discover.':
           'Profil yang cocok berpindah ke Chat sehingga tidak ditampilkan lagi di Temukan.',
       'May Allah bless this with goodness':
@@ -6158,7 +5923,6 @@ class UiCopy {
       'Never': 'Tidak pernah',
       'New Interests': 'Minat Baru',
       'New Messages': 'Pesan Baru',
-      'New evidence required': 'Bukti baru diperlukan',
       'New or clearer identity evidence is required':
           'Diperlukan bukti identitas baru atau lebih jelas',
       'Next': 'Berikutnya',
@@ -6204,7 +5968,6 @@ class UiCopy {
       'Official online resources': 'Sumber daya online resmi',
       'Olive': 'Zaitun',
       'On-device photo check': 'Pemeriksaan foto di perangkat',
-      'One face, good lighting': 'Satu wajah, pencahayaan baik',
       'Open Chat': 'Buka Chat',
       'Open Interests': 'Buka Minat',
       'Open Settings': 'Buka Pengaturan',
@@ -6248,8 +6011,6 @@ class UiCopy {
       'Partner age range': 'Rentang usia pasangan',
       'Partner preferences': 'Preferensi mitra',
       'Pashto': 'pasto',
-      'Passive face scan': 'Pemindaian wajah pasif',
-      'Passport': 'Paspor',
       'Payment issue — subscription in grace period.':
           'Masalah pembayaran — berlangganan dalam masa tenggang.',
       'Pending': 'Menunggu tinjauan',
@@ -6310,7 +6071,6 @@ class UiCopy {
       'Privacy Policy': 'Kebijakan Privasi',
       'Private introductions, thoughtful compatibility, and family-aware connection.':
           'Perkenalan privat, kecocokan yang dipertimbangkan, dan koneksi yang menghargai keluarga.',
-      'Private review in progress': 'Tinjauan pribadi berlangsung',
       'Profession': 'Profesi',
       'Profession  (Optional)': 'Profesi (Opsional)',
       'Profile': 'Profil',
@@ -6319,8 +6079,6 @@ class UiCopy {
       'Profile boost requires a backend connection.':
           'Peningkatan profil memerlukan koneksi backend.',
       'Profile goes live': 'Profil mulai tayang',
-      'Profile photo verification uses a passive face and liveness scan. Identity verification separately matches a government ID with your selfie. Both are available in Profile under Trust & identity.':
-          'Verifikasi foto profil menggunakan pemindaian wajah dan keaktifan pasif. Verifikasi identitas secara terpisah mencocokkan tanda pengenal pemerintah dengan selfie Anda. Keduanya tersedia di Profil di bawah Kepercayaan & identitas.',
       'Profile photo verified': 'Foto profil diverifikasi',
       'Profile quality': 'Kualitas profil',
       'Profile views': 'Kunjungan profil',
@@ -6387,8 +6145,6 @@ class UiCopy {
       'Revert': 'Kembali',
       'Revert / Convert (Optional)': 'Kembalikan / Konversi (Opsional)',
       'Review Interest': 'Tinjau Minat',
-      'Review the reason below and submit new evidence if appropriate.':
-          'Tinjau alasan di bawah dan kirim bukti baru bila perlu.',
       'Revoke': 'Cabut',
       'Revoke access': 'Cabut akses',
       'Revoke photo access?': 'Cabut akses foto?',
@@ -6445,7 +6201,6 @@ class UiCopy {
       'Self-Taught': 'Otodidak',
       'Self-employed': 'Wiraswasta',
       'Selfie Challenge': 'Tantangan Selfie',
-      'Selfie captured': 'Swafoto diambil',
       'Send & End Match': 'Kirim & Akhiri Pertandingan',
       'Send Interest': 'Kirim Minat',
       'Send Verification Code': 'Kirim Kode Verifikasi',
@@ -6506,12 +6261,6 @@ class UiCopy {
       'Submit Report': 'Kirim Laporan',
       'Submit a current government-issued document':
           'Kirimkan dokumen terbaru yang dikeluarkan pemerintah',
-      'Submit a current government-issued document.':
-          'Kirim dokumen pemerintah yang masih berlaku.',
-      'Submit a government ID and selfie for a private evidence review.':
-          'Kirim identitas pemerintah dan swafoto untuk tinjauan pribadi.',
-      'Submit for private review': 'Kirim untuk tinjauan pribadi',
-      'Submit new evidence': 'Kirim bukti baru',
       'Submitted for a secure human review':
           'Dikirim untuk peninjauan manusia yang aman',
       'Subscribe to unlock messaging. Women always message free on Silarah.':
@@ -6629,10 +6378,6 @@ class UiCopy {
       'Verified Only': 'Hanya Terverifikasi',
       'Verify': 'Memeriksa',
       'Verify Profile': 'Verifikasi Profil',
-      'Verify profile photo with a passive face scan':
-          'Verifikasi foto profil dengan pemindaian wajah pasif',
-      'Verify your identity': 'Verifikasi identitas Anda',
-      'Verify your profile': 'Verifikasi profil Anda',
       'Version': 'Versi',
       'View profile': 'Lihat profil',
       'View your public profile': 'Lihat profil publik Anda',
@@ -6719,17 +6464,11 @@ class UiCopy {
           'Kewajiban keuangan Anda saat ini.',
       'Your data is encrypted and never sold to third parties.':
           'Data Anda dienkripsi dan tidak pernah dijual kepada pihak ketiga.',
-      'Your evidence is queued for human review. You do not need to submit it again.':
-          'Bukti Anda menunggu tinjauan manusia. Anda tidak perlu mengirimkannya lagi.',
-      'Your government-ID evidence has been verified securely.':
-          'Bukti identitas pemerintah Anda telah diverifikasi dengan aman.',
       'Your guardian details': 'Detail wali Anda',
       'Your height': 'Tinggi badanmu',
       'Your interest is in progress': 'Minat Anda sedang diproses',
       'Your name as the guardian. This is shown to matches.':
           'Nama Anda sebagai wali. Ini ditunjukkan pada pertandingan.',
-      'Your name, photo and date of birth must be visible':
-          'Nama, foto, dan tanggal lahir harus terlihat',
       'Your number': 'Nomor Anda',
       'Your photo gallery could not be opened. Try again.':
           'Galeri foto Anda tidak dapat dibuka. Coba lagi.',
@@ -6757,10 +6496,8 @@ class UiCopy {
     'ms': {
       '"The best of you are the best to your wives." — Prophet Muhammad ﷺ\n\nBeing honest about your readiness helps build a strong foundation.':
           '"Sebaik-baik kamu ialah yang terbaik terhadap isteri-isteri kamu." - Nabi Muhammad ﷺ\n\nBersikap jujur tentang kesediaan anda membantu membina asas yang kukuh.',
-      '1. Take a clear selfie': '1. Ambil swafoto yang jelas',
       '18 – 60': '18 – 60',
       '2+ years': '2+ tahun',
-      '2. Photograph your ID': '2. Ambil foto ID anda',
       '30-day grace period': 'Tempoh tangguh 30 hari',
       'A complete visual identity—not a color filter. Every surface, field and system control changes together.':
           'Identiti visual yang lengkap, bukan sekadar penapis warna. Semua permukaan, medan dan kawalan sistem berubah bersama.',
@@ -6887,10 +6624,6 @@ class UiCopy {
           'Batalkan pengebilan kedai secara berasingan',
       'Candidate\'s first name': 'Nama pertama calon',
       'Candidate\'s gender': 'Jantina calon',
-      'Capture clearer, current identity evidence and submit it again.':
-          'Ambil bukti identiti semasa yang lebih jelas dan hantar semula.',
-      'Capture-quality checks run on this device. Your private document and selfie are then reviewed by Silarah. Device scores never approve your identity.':
-          'Kualiti tangkapan diperiksa pada peranti ini. Dokumen peribadi dan swafoto anda kemudian disemak oleh Silarah. Skor peranti tidak pernah meluluskan identiti.',
       'Change language': 'Tukar bahasa',
       'Chat': 'Sembang',
       'Chat options': 'Pilihan sembang',
@@ -6983,7 +6716,6 @@ class UiCopy {
       'Do you pray five times daily?':
           'Adakah anda solat lima waktu setiap hari?',
       'Doctorate / PhD': 'Kedoktoran / PhD',
-      'Document type': 'Jenis dokumen',
       'Does your brother have a beard?': 'Adakah abang anda mempunyai janggut?',
       'Does your child pray five times daily?':
           'Adakah anak anda solat lima waktu setiap hari?',
@@ -6994,7 +6726,6 @@ class UiCopy {
       'Does your sister observe hijab?': 'Adakah kakak anda mengamalkan hijab?',
       'Does your son have a beard?': 'Adakah anak anda mempunyai janggut?',
       'Done': 'Selesai',
-      'Driving licence': 'Lesen memandu',
       'Dutch': 'Belanda',
       'EDUCATION LEVEL': 'PERINGKAT PENDIDIKAN',
       'EDUCATION MINIMUM': 'PENDIDIKAN MINIMUM',
@@ -7083,8 +6814,6 @@ class UiCopy {
       'German': 'Jerman',
       'Get 7 days of Premium for free':
           'Dapatkan 7 hari Premium secara percuma',
-      'Government ID': 'ID kerajaan',
-      'Government ID check': 'Semakan ID Kerajaan',
       'Graphic design': 'Reka bentuk grafik',
       'Grievance Officer': 'Pegawai Aduan',
       'Group photos cannot be your primary photo.':
@@ -7157,15 +6886,10 @@ class UiCopy {
           'Saya lebih suka kita mempunyai rumah sendiri.',
       'I wear niqab': 'Saya berniqab',
       'I\'ll do this later': 'Saya akan lakukan ini kemudian',
-      'ID captured': 'ID diambil',
       'INCOME RANGE  (Optional)': 'Julat PENDAPATAN (Pilihan)',
       'INTERESTS': 'MINAT',
       'Identifies as Muslim, celebrates occasions, may not pray regularly':
           'Mengenal pasti sebagai Muslim, meraikan majlis, mungkin tidak solat secara tetap',
-      'Identity approved': 'Identiti diluluskan',
-      'Identity check not approved': 'Semakan identiti tidak diluluskan',
-      'Identity check not started': 'Semakan identiti belum bermula',
-      'Identity evidence expired': 'Bukti identiti tamat tempoh',
       'If a friend invited you to Silarah, enter their 6-character referral code below.':
           'Jika rakan menjemput anda untuk Silarah, masukkan kod rujukan 6 aksara mereka di bawah.',
       'Igbo': 'Igbo',
@@ -7191,7 +6915,6 @@ class UiCopy {
       'Javanese': 'bahasa jawa',
       'Join SILARAH': 'Sertai SILARAH',
       'Joint': 'sendi',
-      'KYC & Verification Policy': 'KYC & Dasar Pengesahan',
       'Kannada': 'Kannada',
       'Kazakh': 'bahasa Kazakhstan',
       'Keep': 'Simpan',
@@ -7252,8 +6975,6 @@ class UiCopy {
       'Martial arts': 'Seni mempertahankan diri',
       'Master\'s +': 'Sarjana +',
       'Master\'s Degree': 'Ijazah Sarjana',
-      'Match a government ID with your selfie':
-          'Padankan ID kerajaan dengan swafoto anda',
       'Matched profiles move to Chat, so they are not shown again in Discover.':
           'Profil yang sepadan berpindah ke Sembang, jadi ia tidak dipaparkan lagi dalam Temui.',
       'May Allah bless this with goodness':
@@ -7286,7 +7007,6 @@ class UiCopy {
       'Never': 'tidak pernah',
       'New Interests': 'Minat Baru',
       'New Messages': 'Mesej Baharu',
-      'New evidence required': 'Bukti baharu diperlukan',
       'New or clearer identity evidence is required':
           'Bukti identiti baharu atau lebih jelas diperlukan',
       'Next': 'Seterusnya',
@@ -7331,7 +7051,6 @@ class UiCopy {
       'Official online resources': 'Sumber dalam talian rasmi',
       'Olive': 'Zaitun',
       'On-device photo check': 'Semakan foto pada peranti',
-      'One face, good lighting': 'Satu wajah, pencahayaan baik',
       'Open Chat': 'Buka Sembang',
       'Open Interests': 'Buka Minat',
       'Open Settings': 'Buka Tetapan',
@@ -7375,8 +7094,6 @@ class UiCopy {
       'Partner age range': 'Julat umur rakan kongsi',
       'Partner preferences': 'Pilihan rakan kongsi',
       'Pashto': 'Pashto',
-      'Passive face scan': 'Imbasan muka pasif',
-      'Passport': 'Pasport',
       'Payment issue — subscription in grace period.':
           'Isu pembayaran — langganan dalam tempoh tangguh.',
       'Pending': 'Menunggu semakan',
@@ -7437,7 +7154,6 @@ class UiCopy {
       'Privacy Policy': 'Dasar Privasi',
       'Private introductions, thoughtful compatibility, and family-aware connection.':
           'Perkenalan peribadi, keserasian yang dipertimbangkan dan hubungan yang menghormati keluarga.',
-      'Private review in progress': 'Semakan peribadi sedang berjalan',
       'Profession': 'Profesion',
       'Profession  (Optional)': 'Profesion (Pilihan)',
       'Profile': 'Profil',
@@ -7446,8 +7162,6 @@ class UiCopy {
       'Profile boost requires a backend connection.':
           'Peningkatan profil memerlukan sambungan bahagian belakang.',
       'Profile goes live': 'Profil disiarkan',
-      'Profile photo verification uses a passive face and liveness scan. Identity verification separately matches a government ID with your selfie. Both are available in Profile under Trust & identity.':
-          'Pengesahan foto profil menggunakan imbasan wajah dan keceriaan pasif. Pengesahan identiti secara berasingan memadankan ID kerajaan dengan swafoto anda. Kedua-duanya tersedia dalam Profil di bawah Amanah & identiti.',
       'Profile photo verified': 'Foto profil disahkan',
       'Profile quality': 'Kualiti profil',
       'Profile views': 'Paparan profil',
@@ -7514,8 +7228,6 @@ class UiCopy {
       'Revert': 'Kembalikan',
       'Revert / Convert (Optional)': 'Kembalikan / Tukar (Pilihan)',
       'Review Interest': 'Minat Semakan',
-      'Review the reason below and submit new evidence if appropriate.':
-          'Semak sebab di bawah dan hantar bukti baharu jika perlu.',
       'Revoke': 'Batalkan',
       'Revoke access': 'Batalkan akses',
       'Revoke photo access?': 'Batalkan akses foto?',
@@ -7572,7 +7284,6 @@ class UiCopy {
       'Self-Taught': 'Belajar Sendiri',
       'Self-employed': 'Bekerja sendiri',
       'Selfie Challenge': 'Cabaran Selfie',
-      'Selfie captured': 'Swafoto diambil',
       'Send & End Match': 'Hantar & Tamatkan Perlawanan',
       'Send Interest': 'Hantar Faedah',
       'Send Verification Code': 'Hantar Kod Pengesahan',
@@ -7633,12 +7344,6 @@ class UiCopy {
       'Submit Report': 'Hantar Laporan',
       'Submit a current government-issued document':
           'Serahkan dokumen semasa yang dikeluarkan kerajaan',
-      'Submit a current government-issued document.':
-          'Hantar dokumen kerajaan yang masih sah.',
-      'Submit a government ID and selfie for a private evidence review.':
-          'Hantar ID kerajaan dan swafoto untuk semakan peribadi.',
-      'Submit for private review': 'Hantar untuk semakan peribadi',
-      'Submit new evidence': 'Hantar bukti baharu',
       'Submitted for a secure human review':
           'Dihantar untuk semakan manusia yang selamat',
       'Subscribe to unlock messaging. Women always message free on Silarah.':
@@ -7756,10 +7461,6 @@ class UiCopy {
       'Verified Only': 'Disahkan Sahaja',
       'Verify': 'Sahkan',
       'Verify Profile': 'Sahkan Profil',
-      'Verify profile photo with a passive face scan':
-          'Sahkan foto profil dengan imbasan muka pasif',
-      'Verify your identity': 'Sahkan identiti anda',
-      'Verify your profile': 'Sahkan profil anda',
       'Version': 'Versi',
       'View profile': 'Lihat profil',
       'View your public profile': 'Lihat profil awam anda',
@@ -7845,17 +7546,11 @@ class UiCopy {
       'Your current financial obligations.': 'Kewajipan kewangan semasa anda.',
       'Your data is encrypted and never sold to third parties.':
           'Data anda disulitkan dan tidak pernah dijual kepada pihak ketiga.',
-      'Your evidence is queued for human review. You do not need to submit it again.':
-          'Bukti anda menunggu semakan manusia. Anda tidak perlu menghantarnya semula.',
-      'Your government-ID evidence has been verified securely.':
-          'Bukti ID kerajaan anda telah disahkan dengan selamat.',
       'Your guardian details': 'Butiran penjaga anda',
       'Your height': 'ketinggian awak',
       'Your interest is in progress': 'Minat anda sedang diproses',
       'Your name as the guardian. This is shown to matches.':
           'Nama awak sebagai penjaga. Ini ditunjukkan pada perlawanan.',
-      'Your name, photo and date of birth must be visible':
-          'Nama, foto dan tarikh lahir mesti kelihatan',
       'Your number': 'Nombor awak',
       'Your photo gallery could not be opened. Try again.':
           'Galeri foto anda tidak dapat dibuka. Cuba lagi.',
@@ -7883,10 +7578,8 @@ class UiCopy {
     'tr': {
       '"The best of you are the best to your wives." — Prophet Muhammad ﷺ\n\nBeing honest about your readiness helps build a strong foundation.':
           '"Sizin en hayırlınız, eşlerinize karşı en hayırlı olanınızdır." — Hz.Muhammed ﷺ\n\nHazır olup olmadığınız konusunda dürüst olmak, güçlü bir temel oluşturmanıza yardımcı olur.',
-      '1. Take a clear selfie': '1. Net bir özçekim yap',
       '18 – 60': '18 – 60',
       '2+ years': '2+ yıl',
-      '2. Photograph your ID': '2. Kimliğinin fotoğrafını çek',
       '30-day grace period': '30 günlük ödemesiz süre',
       'A complete visual identity—not a color filter. Every surface, field and system control changes together.':
           'Yalnızca bir renk filtresi değil, eksiksiz bir görsel kimlik. Tüm yüzeyler, alanlar ve sistem kontrolleri birlikte değişir.',
@@ -8013,10 +7706,6 @@ class UiCopy {
           'Mağaza faturalandırmasını ayrı olarak iptal edin',
       'Candidate\'s first name': 'Adayın adı',
       'Candidate\'s gender': 'Adayın cinsiyeti',
-      'Capture clearer, current identity evidence and submit it again.':
-          'Daha net, güncel kimlik kanıtı çekip yeniden gönderin.',
-      'Capture-quality checks run on this device. Your private document and selfie are then reviewed by Silarah. Device scores never approve your identity.':
-          'Çekim kalitesi bu cihazda kontrol edilir. Özel belgeniz ve özçekiminiz daha sonra Silarah tarafından incelenir. Cihaz puanları kimliğinizi asla onaylamaz.',
       'Change language': 'Dili değiştir',
       'Chat': 'Sohbet',
       'Chat options': 'Sohbet seçenekleri',
@@ -8108,7 +7797,6 @@ class UiCopy {
       'Do you observe hijab?': 'Başörtüsüne dikkat ediyor musun?',
       'Do you pray five times daily?': 'Günde beş vakit namaz kılıyor musunuz?',
       'Doctorate / PhD': 'Doktora / Doktora',
-      'Document type': 'Belge türü',
       'Does your brother have a beard?': 'Kardeşinin sakalı var mı?',
       'Does your child pray five times daily?':
           'Çocuğunuz günde beş vakit namaz kılıyor mu?',
@@ -8119,7 +7807,6 @@ class UiCopy {
           'Kız kardeşiniz başörtüsüne uyuyor mu?',
       'Does your son have a beard?': 'Oğlunuzun sakalı var mı?',
       'Done': 'Tamamlamak',
-      'Driving licence': 'Sürücü belgesi',
       'Dutch': 'Flemenkçe',
       'EDUCATION LEVEL': 'EĞİTİM SEVİYESİ',
       'EDUCATION MINIMUM': 'ASGARİ EĞİTİM',
@@ -8207,8 +7894,6 @@ class UiCopy {
       'Generous': 'Cömert',
       'German': 'Almanca',
       'Get 7 days of Premium for free': '7 günlük Premium\'u ücretsiz edinin',
-      'Government ID': 'Resmî kimlik',
-      'Government ID check': 'Resmi kimlik kontrolü',
       'Graphic design': 'Grafik tasarım',
       'Grievance Officer': 'Şikâyet Sorumlusu',
       'Group photos cannot be your primary photo.':
@@ -8279,15 +7964,10 @@ class UiCopy {
           'Kendi bağımsız evimizin olmasını tercih ederim.',
       'I wear niqab': 'Peçe takıyorum',
       'I\'ll do this later': 'Bunu daha sonra yapacağım',
-      'ID captured': 'Kimlik çekildi',
       'INCOME RANGE  (Optional)': 'GELİR ARALIĞI (Opsiyonel)',
       'INTERESTS': 'İLGİ ALANLARI',
       'Identifies as Muslim, celebrates occasions, may not pray regularly':
           'Kendini Müslüman olarak tanımlar, etkinlikleri kutlar, düzenli olarak dua etmeyebilir',
-      'Identity approved': 'Kimlik onaylandı',
-      'Identity check not approved': 'Kimlik kontrolü onaylanmadı',
-      'Identity check not started': 'Kimlik kontrolü başlamadı',
-      'Identity evidence expired': 'Kimlik kanıtının süresi doldu',
       'If a friend invited you to Silarah, enter their 6-character referral code below.':
           'Bir arkadaşınız sizi Silarah\'a davet ettiyse 6 karakterli tavsiye kodunu aşağıya girin.',
       'Igbo': 'İbo',
@@ -8313,7 +7993,6 @@ class UiCopy {
       'Javanese': 'Cava',
       'Join SILARAH': 'SILARAH’a Katıl',
       'Joint': 'Eklem yeri',
-      'KYC & Verification Policy': 'KYC ve Doğrulama Politikası',
       'Kannada': 'Kannadaca',
       'Kazakh': 'Kazak',
       'Keep': 'Tut',
@@ -8373,8 +8052,6 @@ class UiCopy {
       'Martial arts': 'Dövüş sanatları',
       'Master\'s +': 'Yüksek Lisans +',
       'Master\'s Degree': 'Yüksek lisans',
-      'Match a government ID with your selfie':
-          'Resmi kimliğinizi selfienizle eşleştirin',
       'Matched profiles move to Chat, so they are not shown again in Discover.':
           'Eşleşen profiller Sohbet\'e taşınır ve Keşfet\'te tekrar gösterilmez.',
       'May Allah bless this with goodness': 'Allah bunu hayırla mübarek kılsın',
@@ -8406,7 +8083,6 @@ class UiCopy {
       'Never': 'Asla',
       'New Interests': 'Yeni İlgi Alanları',
       'New Messages': 'Yeni Mesajlar',
-      'New evidence required': 'Yeni kanıt gerekli',
       'New or clearer identity evidence is required':
           'Yeni veya daha net kimlik kanıtı gerekli',
       'Next': 'Sonraki',
@@ -8451,7 +8127,6 @@ class UiCopy {
       'Official online resources': 'Resmi çevrimiçi kaynaklar',
       'Olive': 'Buğday',
       'On-device photo check': 'Cihazda fotoğraf kontrolü',
-      'One face, good lighting': 'Tek yüz, iyi aydınlatma',
       'Open Chat': 'Sohbeti aç',
       'Open Interests': 'İlgileri aç',
       'Open Settings': 'Ayarları Aç',
@@ -8491,8 +8166,6 @@ class UiCopy {
       'Partner age range': 'İş ortağı yaş aralığı',
       'Partner preferences': 'İş ortağı tercihleri',
       'Pashto': 'Peştuca',
-      'Passive face scan': 'Pasif yüz taraması',
-      'Passport': 'Pasaport',
       'Payment issue — subscription in grace period.':
           'Ödeme sorunu — ödemesiz dönem kapsamındaki abonelik.',
       'Pending': 'İnceleme bekliyor',
@@ -8553,7 +8226,6 @@ class UiCopy {
       'Privacy Policy': 'Gizlilik Politikası',
       'Private introductions, thoughtful compatibility, and family-aware connection.':
           'Özel tanışmalar, özenle değerlendirilen uyum ve aileyi gözeten bağlar.',
-      'Private review in progress': 'Özel inceleme sürüyor',
       'Profession': 'Meslek',
       'Profession  (Optional)': 'Meslek (İsteğe bağlı)',
       'Profile': 'Profil',
@@ -8562,8 +8234,6 @@ class UiCopy {
       'Profile boost requires a backend connection.':
           'Profil güçlendirme bir arka uç bağlantısı gerektirir.',
       'Profile goes live': 'Profil yayına alındı',
-      'Profile photo verification uses a passive face and liveness scan. Identity verification separately matches a government ID with your selfie. Both are available in Profile under Trust & identity.':
-          'Profil fotoğrafı doğrulama, pasif bir yüz ve canlılık taraması kullanır. Kimlik doğrulama, resmi kimliğinizle selfie\'nizi ayrı ayrı eşleştirir. Her ikisi de Profil\'de Güven ve kimlik altında mevcuttur.',
       'Profile photo verified': 'Profil fotoğrafı doğrulandı',
       'Profile quality': 'Profil kalitesi',
       'Profile views': 'Profil görüntülemeleri',
@@ -8630,8 +8300,6 @@ class UiCopy {
       'Revert': 'Geri al',
       'Revert / Convert (Optional)': 'Geri Döndür / Dönüştür (İsteğe bağlı)',
       'Review Interest': 'İnceleme İlgisi',
-      'Review the reason below and submit new evidence if appropriate.':
-          'Aşağıdaki nedeni inceleyin ve gerekirse yeni kanıt gönderin.',
       'Revoke': 'İptal et',
       'Revoke access': 'Erişimi iptal et',
       'Revoke photo access?': 'Fotoğraf erişimi iptal edilsin mi?',
@@ -8688,7 +8356,6 @@ class UiCopy {
       'Self-Taught': 'Kendi Kendine Öğretilmiş',
       'Self-employed': 'Serbest meslek',
       'Selfie Challenge': 'Selfie Mücadelesi',
-      'Selfie captured': 'Özçekim yapıldı',
       'Send & End Match': 'Eşleşmeyi Gönder ve Bitir',
       'Send Interest': 'Faiz Gönder',
       'Send Verification Code': 'Doğrulama Kodunu Gönder',
@@ -8749,12 +8416,6 @@ class UiCopy {
       'Submit Report': 'Raporu Gönder',
       'Submit a current government-issued document':
           'Devlet tarafından verilmiş güncel bir belge gönderin',
-      'Submit a current government-issued document.':
-          'Güncel bir resmî belge gönderin.',
-      'Submit a government ID and selfie for a private evidence review.':
-          'Özel inceleme için resmî kimlik ve özçekim gönderin.',
-      'Submit for private review': 'Özel incelemeye gönder',
-      'Submit new evidence': 'Yeni kanıt gönder',
       'Submitted for a secure human review':
           'Güvenli bir insan incelemesi için gönderildi',
       'Subscribe to unlock messaging. Women always message free on Silarah.':
@@ -8871,10 +8532,6 @@ class UiCopy {
       'Verified Only': 'Yalnızca Doğrulandı',
       'Verify': 'Doğrulamak',
       'Verify Profile': 'Profili Doğrula',
-      'Verify profile photo with a passive face scan':
-          'Profil fotoğrafını pasif yüz taramasıyla doğrulayın',
-      'Verify your identity': 'Kimliğini doğrula',
-      'Verify your profile': 'Profilini doğrula',
       'Version': 'Sürüm',
       'View profile': 'Profili görüntüle',
       'View your public profile': 'Herkese açık profilinizi görüntüleyin',
@@ -8958,17 +8615,11 @@ class UiCopy {
       'Your current financial obligations.': 'Mevcut mali yükümlülükleriniz.',
       'Your data is encrypted and never sold to third parties.':
           'Verileriniz şifrelenir ve asla üçüncü şahıslara satılmaz.',
-      'Your evidence is queued for human review. You do not need to submit it again.':
-          'Kanıtınız insan incelemesi sırasında. Yeniden göndermeniz gerekmez.',
-      'Your government-ID evidence has been verified securely.':
-          'Resmî kimlik kanıtınız güvenli biçimde doğrulandı.',
       'Your guardian details': 'Vasi ayrıntılarınız',
       'Your height': 'Boyunuz',
       'Your interest is in progress': 'İlginiz devam ediyor',
       'Your name as the guardian. This is shown to matches.':
           'Koruyucu olarak adınız. Bu eşleşmelere gösterilir.',
-      'Your name, photo and date of birth must be visible':
-          'Adın, fotoğrafın ve doğum tarihin görünür olmalı',
       'Your number': 'Numaranız',
       'Your photo gallery could not be opened. Try again.':
           'Fotoğraf galeriniz açılamadı. Tekrar deneyin.',
@@ -8996,10 +8647,8 @@ class UiCopy {
     'ur': {
       '"The best of you are the best to your wives." — Prophet Muhammad ﷺ\n\nBeing honest about your readiness helps build a strong foundation.':
           '’’تم میں سے بہترین وہ ہے جو اپنی بیویوں کے لیے بہترین ہو۔‘‘ - رسول اللہ صلی اللہ علیہ وسلم\n\nاپنی تیاری کے بارے میں ایماندار ہونا ایک مضبوط بنیاد بنانے میں مدد کرتا ہے۔',
-      '1. Take a clear selfie': '1. واضح سیلفی لیں',
       '18 – 60': '18 - 60',
       '2+ years': '2+ سال',
-      '2. Photograph your ID': '2. شناختی دستاویز کی تصویر لیں',
       '30-day grace period': '30 دن کی رعایتی مدت',
       'A complete visual identity—not a color filter. Every surface, field and system control changes together.':
           'یہ صرف رنگوں کا فلٹر نہیں بلکہ مکمل بصری شناخت ہے۔ ہر سطح، فیلڈ اور سسٹم کنٹرول ایک ساتھ بدلتا ہے۔',
@@ -9126,10 +8775,6 @@ class UiCopy {
       'Cancel store billing separately': 'الگ سے اسٹور بلنگ منسوخ کریں۔',
       'Candidate\'s first name': 'امیدوار کا پہلا نام',
       'Candidate\'s gender': 'امیدوار کی جنس',
-      'Capture clearer, current identity evidence and submit it again.':
-          'زیادہ واضح اور موجودہ شناختی ثبوت لے کر دوبارہ بھیجیں۔',
-      'Capture-quality checks run on this device. Your private document and selfie are then reviewed by Silarah. Device scores never approve your identity.':
-          'تصویر کے معیار کی جانچ اسی ڈیوائس پر ہوتی ہے۔ پھر سلارہ آپ کی نجی دستاویز اور سیلفی کا جائزہ لیتا ہے۔ ڈیوائس اسکور کبھی شناخت منظور نہیں کرتے۔',
       'Change language': 'زبان بدلو',
       'Chat': 'گپ شپ',
       'Chat options': 'چیٹ کے اختیارات',
@@ -9222,7 +8867,6 @@ class UiCopy {
       'Do you pray five times daily?':
           'کیا آپ روزانہ پانچ وقت کی نماز پڑھتے ہیں؟',
       'Doctorate / PhD': 'ڈاکٹریٹ/پی ایچ ڈی',
-      'Document type': 'دستاویز کی قسم',
       'Does your brother have a beard?': 'کیا آپ کے بھائی کی داڑھی ہے؟',
       'Does your child pray five times daily?':
           'کیا آپ کا بچہ روزانہ پانچ وقت کی نماز پڑھتا ہے؟',
@@ -9234,7 +8878,6 @@ class UiCopy {
           'کیا آپ کی بہن حجاب کی پابندی کرتی ہے؟',
       'Does your son have a beard?': 'کیا آپ کے بیٹے کی داڑھی ہے؟',
       'Done': 'ہو گیا',
-      'Driving licence': 'ڈرائیونگ لائسنس',
       'Dutch': 'ڈچ',
       'EDUCATION LEVEL': 'تعلیم کی سطح',
       'EDUCATION MINIMUM': 'تعلیم کم سے کم',
@@ -9322,8 +8965,6 @@ class UiCopy {
       'Generous': 'فیاض',
       'German': 'جرمن',
       'Get 7 days of Premium for free': '7 دن کا پریمیم مفت حاصل کریں۔',
-      'Government ID': 'سرکاری شناختی کارڈ',
-      'Government ID check': 'سرکاری شناختی چیک',
       'Graphic design': 'گرافک ڈیزائن',
       'Grievance Officer': 'شکایات افسر',
       'Group photos cannot be your primary photo.':
@@ -9395,15 +9036,10 @@ class UiCopy {
           'میں ترجیح دیتا ہوں کہ ہمارا اپنا خود مختار گھر ہو۔',
       'I wear niqab': 'میں نقاب پہنتا ہوں۔',
       'I\'ll do this later': 'میں یہ بعد میں کروں گا۔',
-      'ID captured': 'شناختی دستاویز لے لی گئی',
       'INCOME RANGE  (Optional)': 'آمدنی کی حد (اختیاری)',
       'INTERESTS': 'دلچسپیاں',
       'Identifies as Muslim, celebrates occasions, may not pray regularly':
           'مسلمان کے طور پر شناخت کرتا ہے، مواقع مناتا ہے، باقاعدگی سے نماز نہیں پڑھ سکتا',
-      'Identity approved': 'شناخت منظور ہو گئی',
-      'Identity check not approved': 'شناخت کی جانچ منظور نہیں ہوئی',
-      'Identity check not started': 'شناخت کی جانچ شروع نہیں ہوئی',
-      'Identity evidence expired': 'شناختی ثبوت کی مدت ختم ہو گئی',
       'If a friend invited you to Silarah, enter their 6-character referral code below.':
           'اگر کسی دوست نے آپ کو Silarah میں مدعو کیا، تو ذیل میں ان کا 6-حروف کا حوالہ کوڈ درج کریں۔',
       'Igbo': 'اگبو',
@@ -9429,7 +9065,6 @@ class UiCopy {
       'Javanese': 'جاوانی',
       'Join SILARAH': 'SILARAH میں شامل ہوں',
       'Joint': 'مشترکہ',
-      'KYC & Verification Policy': 'KYC اور تصدیق کی پالیسی',
       'Kannada': 'کنڑ',
       'Kazakh': 'قازق',
       'Keep': 'رکھو',
@@ -9489,8 +9124,6 @@ class UiCopy {
       'Martial arts': 'مارشل آرٹس',
       'Master\'s +': 'ماسٹرز +',
       'Master\'s Degree': 'ماسٹر ڈگری',
-      'Match a government ID with your selfie':
-          'اپنی سیلفی کے ساتھ حکومتی شناختی کارڈ ملا دیں۔',
       'Matched profiles move to Chat, so they are not shown again in Discover.':
           'میچ شدہ پروفائلز چیٹ میں منتقل ہو جاتے ہیں، اس لیے وہ ڈسکور میں دوبارہ نہیں دکھتے۔',
       'May Allah bless this with goodness':
@@ -9523,7 +9156,6 @@ class UiCopy {
       'Never': 'کبھی نہیں۔',
       'New Interests': 'نئی دلچسپیاں',
       'New Messages': 'نئے پیغامات',
-      'New evidence required': 'نیا ثبوت درکار ہے',
       'New or clearer identity evidence is required':
           'نئے یا واضح شناختی ثبوت کی ضرورت ہے۔',
       'Next': 'اگلا',
@@ -9568,7 +9200,6 @@ class UiCopy {
       'Official online resources': 'سرکاری آن لائن وسائل',
       'Olive': 'گندمی',
       'On-device photo check': 'آن ڈیوائس تصویر کی جانچ',
-      'One face, good lighting': 'ایک چہرہ، اچھی روشنی',
       'Open Chat': 'چیٹ کھولیں',
       'Open Interests': 'دلچسپیاں کھولیں',
       'Open Settings': 'ترتیبات کھولیں',
@@ -9610,8 +9241,6 @@ class UiCopy {
       'Partner age range': 'ساتھی کی عمر کی حد',
       'Partner preferences': 'ساتھی کی ترجیحات',
       'Pashto': 'پشتو',
-      'Passive face scan': 'غیر فعال چہرہ اسکین',
-      'Passport': 'پاسپورٹ',
       'Payment issue — subscription in grace period.':
           'ادائیگی کا مسئلہ - رعایتی مدت میں سبسکرپشن۔',
       'Pending': 'جائزہ زیر التوا',
@@ -9672,7 +9301,6 @@ class UiCopy {
       'Privacy Policy': 'رازداری کی پالیسی',
       'Private introductions, thoughtful compatibility, and family-aware connection.':
           'نجی تعارف، سوچا سمجھا باہمی میل اور خاندان کا لحاظ رکھنے والا تعلق۔',
-      'Private review in progress': 'نجی جائزہ جاری ہے',
       'Profession': 'پیشہ',
       'Profession  (Optional)': 'پیشہ (اختیاری)',
       'Profile': 'پروفائل',
@@ -9681,8 +9309,6 @@ class UiCopy {
       'Profile boost requires a backend connection.':
           'پروفائل کو فروغ دینے کے لیے بیک اینڈ کنکشن کی ضرورت ہے۔',
       'Profile goes live': 'پروفائل شائع ہو گیا',
-      'Profile photo verification uses a passive face and liveness scan. Identity verification separately matches a government ID with your selfie. Both are available in Profile under Trust & identity.':
-          'پروفائل تصویر کی توثیق ایک غیر فعال چہرہ اور زندہ دلی کا اسکین استعمال کرتی ہے۔ شناخت کی توثیق علیحدہ طور پر آپ کی سیلفی کے ساتھ سرکاری ID سے ملتی ہے۔ دونوں ٹرسٹ اور شناخت کے تحت پروفائل میں دستیاب ہیں۔',
       'Profile photo verified': 'پروفائل تصویر کی تصدیق ہو گئی۔',
       'Profile quality': 'پروفائل کا معیار',
       'Profile views': 'پروفائل دیکھے جانے کی اطلاع',
@@ -9749,8 +9375,6 @@ class UiCopy {
       'Revert': 'واپس لوٹنا',
       'Revert / Convert (Optional)': 'واپس / تبدیل کریں (اختیاری)',
       'Review Interest': 'دلچسپی کا جائزہ لیں۔',
-      'Review the reason below and submit new evidence if appropriate.':
-          'نیچے وجہ دیکھیں اور ضرورت ہو تو نیا ثبوت بھیجیں۔',
       'Revoke': 'منسوخ کریں۔',
       'Revoke access': 'رسائی منسوخ کریں۔',
       'Revoke photo access?': 'تصویر تک رسائی منسوخ کریں؟',
@@ -9808,7 +9432,6 @@ class UiCopy {
       'Self-Taught': 'خود سکھایا',
       'Self-employed': 'سیلف ایمپلائیڈ',
       'Selfie Challenge': 'سیلفی چیلنج',
-      'Selfie captured': 'سیلفی لے لی گئی',
       'Send & End Match': 'بھیجیں اور میچ ختم کریں۔',
       'Send Interest': 'دلچسپی بھیجیں۔',
       'Send Verification Code': 'تصدیقی کوڈ بھیجیں۔',
@@ -9867,12 +9490,6 @@ class UiCopy {
       'Submit Report': 'رپورٹ جمع کروائیں۔',
       'Submit a current government-issued document':
           'حکومت کی طرف سے جاری کردہ موجودہ دستاویز جمع کروائیں۔',
-      'Submit a current government-issued document.':
-          'موجودہ سرکاری دستاویز جمع کریں۔',
-      'Submit a government ID and selfie for a private evidence review.':
-          'نجی جائزے کے لیے سرکاری شناختی کارڈ اور سیلفی جمع کریں۔',
-      'Submit for private review': 'نجی جائزے کے لیے بھیجیں',
-      'Submit new evidence': 'نیا ثبوت بھیجیں',
       'Submitted for a secure human review':
           'محفوظ انسانی جائزے کے لیے جمع کرایا گیا۔',
       'Subscribe to unlock messaging. Women always message free on Silarah.':
@@ -9989,10 +9606,6 @@ class UiCopy {
       'Verified Only': 'صرف تصدیق شدہ',
       'Verify': 'تصدیق کریں۔',
       'Verify Profile': 'پروفائل کی تصدیق کریں۔',
-      'Verify profile photo with a passive face scan':
-          'غیر فعال چہرہ اسکین کے ساتھ پروفائل تصویر کی تصدیق کریں۔',
-      'Verify your identity': 'اپنی شناخت کی تصدیق کریں',
-      'Verify your profile': 'اپنے پروفائل کی تصدیق کریں',
       'Version': 'ورژن',
       'View profile': 'پروفائل دیکھیں',
       'View your public profile': 'اپنا عوامی پروفائل دیکھیں',
@@ -10075,17 +9688,11 @@ class UiCopy {
       'Your current financial obligations.': 'آپ کی موجودہ مالی ذمہ داریاں۔',
       'Your data is encrypted and never sold to third parties.':
           'آپ کا ڈیٹا انکرپٹڈ ہے اور تیسرے فریق کو کبھی فروخت نہیں کیا جاتا۔',
-      'Your evidence is queued for human review. You do not need to submit it again.':
-          'آپ کا ثبوت انسانی جائزے کی قطار میں ہے۔ اسے دوبارہ بھیجنے کی ضرورت نہیں۔',
-      'Your government-ID evidence has been verified securely.':
-          'آپ کے سرکاری شناختی ثبوت کی محفوظ طریقے سے تصدیق ہو گئی ہے۔',
       'Your guardian details': 'آپ کے سرپرست کی تفصیلات',
       'Your height': 'آپ کا قد',
       'Your interest is in progress': 'آپ کی دلچسپی زیرِ عمل ہے',
       'Your name as the guardian. This is shown to matches.':
           'آپ کا نام بطور سرپرست۔ یہ مماثلتوں کو دکھایا گیا ہے۔',
-      'Your name, photo and date of birth must be visible':
-          'آپ کا نام، تصویر اور تاریخ پیدائش واضح ہونی چاہیے',
       'Your number': 'آپ کا نمبر',
       'Your photo gallery could not be opened. Try again.':
           'آپ کی تصویری گیلری نہیں کھولی جا سکی۔ دوبارہ کوشش کریں۔',
@@ -10134,8 +9741,6 @@ extension UiCopyBuildContext on BuildContext {
   String uiRemoveLabel(String label) => _uiL10n.ui_removeLabel(label);
   String uiSelectedLabel(String label) => _uiL10n.ui_selectedLabel(label);
   String uiAddLabel(String label) => _uiL10n.ui_addLabel(label);
-  String uiKycStatusSemantics(String status) =>
-      _uiL10n.ui_kycStatusSemantics(status);
   String uiPhotoRequestSent(String name) => _uiL10n.ui_photoRequestSent(name);
   String uiBlockedCount(Object count) =>
       _uiL10n.settings_label_blocked_count(count);

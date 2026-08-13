@@ -2452,100 +2452,6 @@ class AppLocalizationsFr extends AppLocalizations {
       'Acceptez un intérêt ou attendez que le vôtre soit accepté pour commencer une conversation.';
 
   @override
-  String get kyc_title => 'Vérifier votre identité';
-
-  @override
-  String get kyc_heading => 'Vérifier votre profil';
-
-  @override
-  String get kyc_intro =>
-      'La qualité de capture est contrôlée sur cet appareil. Silarah examine ensuite votre document privé et votre selfie. Les scores de l’appareil n’approuvent jamais votre identité.';
-
-  @override
-  String get kyc_selfieTitle => '1. Prenez un selfie net';
-
-  @override
-  String get kyc_selfieHint => 'Un seul visage, bon éclairage';
-
-  @override
-  String get kyc_selfieCaptured => 'Selfie capturé';
-
-  @override
-  String get kyc_idTitle => '2. Photographiez votre pièce d’identité';
-
-  @override
-  String get kyc_idHint =>
-      'Votre nom, photo et date de naissance doivent être visibles';
-
-  @override
-  String get kyc_idCaptured => 'Pièce d’identité capturée';
-
-  @override
-  String get kyc_documentType => 'Type de document';
-
-  @override
-  String get kyc_governmentId => 'Pièce d’identité officielle';
-
-  @override
-  String get kyc_passport => 'Passeport';
-
-  @override
-  String get kyc_drivingLicence => 'Permis de conduire';
-
-  @override
-  String get kyc_submitReview => 'Envoyer pour examen privé';
-
-  @override
-  String get kyc_submitNewEvidence => 'Envoyer de nouvelles preuves';
-
-  @override
-  String kyc_submitted(String date) {
-    return 'Envoyé le $date';
-  }
-
-  @override
-  String get kyc_statusApproved => 'Identité approuvée';
-
-  @override
-  String get kyc_statusApprovedBody =>
-      'Votre preuve d’identité officielle a été vérifiée en toute sécurité.';
-
-  @override
-  String get kyc_statusPending => 'Examen privé en cours';
-
-  @override
-  String get kyc_statusPendingBody =>
-      'Votre preuve attend un examen humain. Vous n’avez pas besoin de la renvoyer.';
-
-  @override
-  String get kyc_statusRejected => 'Vérification d’identité non approuvée';
-
-  @override
-  String get kyc_statusRejectedBody =>
-      'Consultez le motif ci-dessous et envoyez de nouvelles preuves si nécessaire.';
-
-  @override
-  String get kyc_statusResubmit => 'Nouvelle preuve requise';
-
-  @override
-  String get kyc_statusResubmitBody =>
-      'Capturez une preuve d’identité actuelle et plus nette, puis renvoyez-la.';
-
-  @override
-  String get kyc_statusExpired => 'Preuve d’identité expirée';
-
-  @override
-  String get kyc_statusExpiredBody =>
-      'Envoyez un document officiel en cours de validité.';
-
-  @override
-  String get kyc_statusNotStarted => 'Vérification d’identité non commencée';
-
-  @override
-  String get kyc_statusNotStartedBody =>
-      'Envoyez une pièce d’identité officielle et un selfie pour un examen privé.';
-
-  @override
   String get referral_title => 'Inviter un ami';
 
   @override
@@ -2686,11 +2592,6 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String ui_addLabel(String label) {
     return 'Ajouter $label';
-  }
-
-  @override
-  String ui_kycStatusSemantics(String status) {
-    return 'Statut de vérification d\'identité : $status';
   }
 
   @override

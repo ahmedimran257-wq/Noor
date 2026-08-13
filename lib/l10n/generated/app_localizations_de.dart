@@ -2450,99 +2450,6 @@ class AppLocalizationsDe extends AppLocalizations {
       'Nimm ein Interesse an oder warte auf die Annahme deines Interesses, um eine Unterhaltung zu beginnen.';
 
   @override
-  String get kyc_title => 'Identität bestätigen';
-
-  @override
-  String get kyc_heading => 'Profil verifizieren';
-
-  @override
-  String get kyc_intro =>
-      'Aufnahmequalität wird auf diesem Gerät geprüft. Anschließend überprüft Silarah dein privates Dokument und Selfie. Gerätewerte genehmigen niemals deine Identität.';
-
-  @override
-  String get kyc_selfieTitle => '1. Deutliches Selfie aufnehmen';
-
-  @override
-  String get kyc_selfieHint => 'Ein Gesicht, gute Beleuchtung';
-
-  @override
-  String get kyc_selfieCaptured => 'Selfie aufgenommen';
-
-  @override
-  String get kyc_idTitle => '2. Ausweis fotografieren';
-
-  @override
-  String get kyc_idHint => 'Name, Foto und Geburtsdatum müssen sichtbar sein';
-
-  @override
-  String get kyc_idCaptured => 'Ausweis aufgenommen';
-
-  @override
-  String get kyc_documentType => 'Dokumenttyp';
-
-  @override
-  String get kyc_governmentId => 'Amtlicher Ausweis';
-
-  @override
-  String get kyc_passport => 'Reisepass';
-
-  @override
-  String get kyc_drivingLicence => 'Führerschein';
-
-  @override
-  String get kyc_submitReview => 'Zur privaten Prüfung senden';
-
-  @override
-  String get kyc_submitNewEvidence => 'Neue Nachweise senden';
-
-  @override
-  String kyc_submitted(String date) {
-    return 'Eingereicht am $date';
-  }
-
-  @override
-  String get kyc_statusApproved => 'Identität bestätigt';
-
-  @override
-  String get kyc_statusApprovedBody =>
-      'Dein amtlicher Identitätsnachweis wurde sicher geprüft.';
-
-  @override
-  String get kyc_statusPending => 'Private Prüfung läuft';
-
-  @override
-  String get kyc_statusPendingBody =>
-      'Dein Nachweis wartet auf die menschliche Prüfung. Du musst ihn nicht erneut senden.';
-
-  @override
-  String get kyc_statusRejected => 'Identitätsprüfung nicht genehmigt';
-
-  @override
-  String get kyc_statusRejectedBody =>
-      'Prüfe den Grund unten und sende bei Bedarf neue Nachweise.';
-
-  @override
-  String get kyc_statusResubmit => 'Neuer Nachweis erforderlich';
-
-  @override
-  String get kyc_statusResubmitBody =>
-      'Nimm einen deutlicheren, aktuellen Identitätsnachweis auf und sende ihn erneut.';
-
-  @override
-  String get kyc_statusExpired => 'Identitätsnachweis abgelaufen';
-
-  @override
-  String get kyc_statusExpiredBody =>
-      'Reiche ein aktuelles amtliches Dokument ein.';
-
-  @override
-  String get kyc_statusNotStarted => 'Identitätsprüfung nicht begonnen';
-
-  @override
-  String get kyc_statusNotStartedBody =>
-      'Reiche einen amtlichen Ausweis und ein Selfie zur privaten Prüfung ein.';
-
-  @override
   String get referral_title => 'Freund einladen';
 
   @override
@@ -2683,11 +2590,6 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String ui_addLabel(String label) {
     return '$label hinzufügen';
-  }
-
-  @override
-  String ui_kycStatusSemantics(String status) {
-    return 'Status der Identitätsüberprüfung: $status';
   }
 
   @override

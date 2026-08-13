@@ -2454,98 +2454,6 @@ class AppLocalizationsMs extends AppLocalizations {
       'Terima minat atau tunggu minat anda diterima untuk memulakan perbualan.';
 
   @override
-  String get kyc_title => 'Sahkan identiti anda';
-
-  @override
-  String get kyc_heading => 'Sahkan profil anda';
-
-  @override
-  String get kyc_intro =>
-      'Kualiti tangkapan diperiksa pada peranti ini. Dokumen peribadi dan swafoto anda kemudian disemak oleh Silarah. Skor peranti tidak pernah meluluskan identiti.';
-
-  @override
-  String get kyc_selfieTitle => '1. Ambil swafoto yang jelas';
-
-  @override
-  String get kyc_selfieHint => 'Satu wajah, pencahayaan baik';
-
-  @override
-  String get kyc_selfieCaptured => 'Swafoto diambil';
-
-  @override
-  String get kyc_idTitle => '2. Ambil foto ID anda';
-
-  @override
-  String get kyc_idHint => 'Nama, foto dan tarikh lahir mesti kelihatan';
-
-  @override
-  String get kyc_idCaptured => 'ID diambil';
-
-  @override
-  String get kyc_documentType => 'Jenis dokumen';
-
-  @override
-  String get kyc_governmentId => 'ID kerajaan';
-
-  @override
-  String get kyc_passport => 'Pasport';
-
-  @override
-  String get kyc_drivingLicence => 'Lesen memandu';
-
-  @override
-  String get kyc_submitReview => 'Hantar untuk semakan peribadi';
-
-  @override
-  String get kyc_submitNewEvidence => 'Hantar bukti baharu';
-
-  @override
-  String kyc_submitted(String date) {
-    return 'Dihantar $date';
-  }
-
-  @override
-  String get kyc_statusApproved => 'Identiti diluluskan';
-
-  @override
-  String get kyc_statusApprovedBody =>
-      'Bukti ID kerajaan anda telah disahkan dengan selamat.';
-
-  @override
-  String get kyc_statusPending => 'Semakan peribadi sedang berjalan';
-
-  @override
-  String get kyc_statusPendingBody =>
-      'Bukti anda menunggu semakan manusia. Anda tidak perlu menghantarnya semula.';
-
-  @override
-  String get kyc_statusRejected => 'Semakan identiti tidak diluluskan';
-
-  @override
-  String get kyc_statusRejectedBody =>
-      'Semak sebab di bawah dan hantar bukti baharu jika perlu.';
-
-  @override
-  String get kyc_statusResubmit => 'Bukti baharu diperlukan';
-
-  @override
-  String get kyc_statusResubmitBody =>
-      'Ambil bukti identiti semasa yang lebih jelas dan hantar semula.';
-
-  @override
-  String get kyc_statusExpired => 'Bukti identiti tamat tempoh';
-
-  @override
-  String get kyc_statusExpiredBody => 'Hantar dokumen kerajaan yang masih sah.';
-
-  @override
-  String get kyc_statusNotStarted => 'Semakan identiti belum bermula';
-
-  @override
-  String get kyc_statusNotStartedBody =>
-      'Hantar ID kerajaan dan swafoto untuk semakan peribadi.';
-
-  @override
   String get referral_title => 'Jemput Rakan';
 
   @override
@@ -2686,11 +2594,6 @@ class AppLocalizationsMs extends AppLocalizations {
   @override
   String ui_addLabel(String label) {
     return 'Tambah $label';
-  }
-
-  @override
-  String ui_kycStatusSemantics(String status) {
-    return 'Status pengesahan identiti: $status';
   }
 
   @override

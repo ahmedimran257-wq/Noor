@@ -1,5 +1,5 @@
 param(
-    [string]$Config = 'config/dev.local.json',
+    [string]$Config = 'config/prod.local.json',
     [switch]$UploadCrashlyticsSymbols
 )
 

@@ -2432,98 +2432,6 @@ class AppLocalizationsTr extends AppLocalizations {
       'Bir konuşma başlatmak için bir ilgiyi kabul edin veya ilginizin kabul edilmesini bekleyin.';
 
   @override
-  String get kyc_title => 'Kimliğini doğrula';
-
-  @override
-  String get kyc_heading => 'Profilini doğrula';
-
-  @override
-  String get kyc_intro =>
-      'Çekim kalitesi bu cihazda kontrol edilir. Özel belgeniz ve özçekiminiz daha sonra Silarah tarafından incelenir. Cihaz puanları kimliğinizi asla onaylamaz.';
-
-  @override
-  String get kyc_selfieTitle => '1. Net bir özçekim yap';
-
-  @override
-  String get kyc_selfieHint => 'Tek yüz, iyi aydınlatma';
-
-  @override
-  String get kyc_selfieCaptured => 'Özçekim yapıldı';
-
-  @override
-  String get kyc_idTitle => '2. Kimliğinin fotoğrafını çek';
-
-  @override
-  String get kyc_idHint => 'Adın, fotoğrafın ve doğum tarihin görünür olmalı';
-
-  @override
-  String get kyc_idCaptured => 'Kimlik çekildi';
-
-  @override
-  String get kyc_documentType => 'Belge türü';
-
-  @override
-  String get kyc_governmentId => 'Resmî kimlik';
-
-  @override
-  String get kyc_passport => 'Pasaport';
-
-  @override
-  String get kyc_drivingLicence => 'Sürücü belgesi';
-
-  @override
-  String get kyc_submitReview => 'Özel incelemeye gönder';
-
-  @override
-  String get kyc_submitNewEvidence => 'Yeni kanıt gönder';
-
-  @override
-  String kyc_submitted(String date) {
-    return '$date tarihinde gönderildi';
-  }
-
-  @override
-  String get kyc_statusApproved => 'Kimlik onaylandı';
-
-  @override
-  String get kyc_statusApprovedBody =>
-      'Resmî kimlik kanıtınız güvenli biçimde doğrulandı.';
-
-  @override
-  String get kyc_statusPending => 'Özel inceleme sürüyor';
-
-  @override
-  String get kyc_statusPendingBody =>
-      'Kanıtınız insan incelemesi sırasında. Yeniden göndermeniz gerekmez.';
-
-  @override
-  String get kyc_statusRejected => 'Kimlik kontrolü onaylanmadı';
-
-  @override
-  String get kyc_statusRejectedBody =>
-      'Aşağıdaki nedeni inceleyin ve gerekirse yeni kanıt gönderin.';
-
-  @override
-  String get kyc_statusResubmit => 'Yeni kanıt gerekli';
-
-  @override
-  String get kyc_statusResubmitBody =>
-      'Daha net, güncel kimlik kanıtı çekip yeniden gönderin.';
-
-  @override
-  String get kyc_statusExpired => 'Kimlik kanıtının süresi doldu';
-
-  @override
-  String get kyc_statusExpiredBody => 'Güncel bir resmî belge gönderin.';
-
-  @override
-  String get kyc_statusNotStarted => 'Kimlik kontrolü başlamadı';
-
-  @override
-  String get kyc_statusNotStartedBody =>
-      'Özel inceleme için resmî kimlik ve özçekim gönderin.';
-
-  @override
   String get referral_title => 'Arkadaşını Davet Et';
 
   @override
@@ -2664,11 +2572,6 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String ui_addLabel(String label) {
     return '$label ekle';
-  }
-
-  @override
-  String ui_kycStatusSemantics(String status) {
-    return 'Kimlik doğrulama durumu: $status';
   }
 
   @override

@@ -2427,99 +2427,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Accept an interest or have yours accepted to begin a conversation.';
 
   @override
-  String get kyc_title => 'Verify your identity';
-
-  @override
-  String get kyc_heading => 'Verify your profile';
-
-  @override
-  String get kyc_intro =>
-      'Capture-quality checks run on this device. Your private document and selfie are then reviewed by Silarah. Device scores never approve your identity.';
-
-  @override
-  String get kyc_selfieTitle => '1. Take a clear selfie';
-
-  @override
-  String get kyc_selfieHint => 'One face, good lighting';
-
-  @override
-  String get kyc_selfieCaptured => 'Selfie captured';
-
-  @override
-  String get kyc_idTitle => '2. Photograph your ID';
-
-  @override
-  String get kyc_idHint => 'Your name, photo and date of birth must be visible';
-
-  @override
-  String get kyc_idCaptured => 'ID captured';
-
-  @override
-  String get kyc_documentType => 'Document type';
-
-  @override
-  String get kyc_governmentId => 'Government ID';
-
-  @override
-  String get kyc_passport => 'Passport';
-
-  @override
-  String get kyc_drivingLicence => 'Driving licence';
-
-  @override
-  String get kyc_submitReview => 'Submit for private review';
-
-  @override
-  String get kyc_submitNewEvidence => 'Submit new evidence';
-
-  @override
-  String kyc_submitted(String date) {
-    return 'Submitted $date';
-  }
-
-  @override
-  String get kyc_statusApproved => 'Identity approved';
-
-  @override
-  String get kyc_statusApprovedBody =>
-      'Your government-ID evidence has been verified securely.';
-
-  @override
-  String get kyc_statusPending => 'Private review in progress';
-
-  @override
-  String get kyc_statusPendingBody =>
-      'Your evidence is queued for human review. You do not need to submit it again.';
-
-  @override
-  String get kyc_statusRejected => 'Identity check not approved';
-
-  @override
-  String get kyc_statusRejectedBody =>
-      'Review the reason below and submit new evidence if appropriate.';
-
-  @override
-  String get kyc_statusResubmit => 'New evidence required';
-
-  @override
-  String get kyc_statusResubmitBody =>
-      'Capture clearer, current identity evidence and submit it again.';
-
-  @override
-  String get kyc_statusExpired => 'Identity evidence expired';
-
-  @override
-  String get kyc_statusExpiredBody =>
-      'Submit a current government-issued document.';
-
-  @override
-  String get kyc_statusNotStarted => 'Identity check not started';
-
-  @override
-  String get kyc_statusNotStartedBody =>
-      'Submit a government ID and selfie for a private evidence review.';
-
-  @override
   String get referral_title => 'Refer a Friend';
 
   @override
@@ -2660,11 +2567,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String ui_addLabel(String label) {
     return 'Add $label';
-  }
-
-  @override
-  String ui_kycStatusSemantics(String status) {
-    return 'Identity verification status: $status';
   }
 
   @override

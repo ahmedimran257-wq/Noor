@@ -252,7 +252,7 @@ try {
   await test("protected and webhook functions reject unauthenticated calls", async () => {
     const probes = [
       ["location-search", {}, [401]],
-      ["process-kyc", {}, [401]],
+      ["photo-verification", {}, [401]],
       ["translate-message", {}, [401]],
       ["validate-photo-upload", {}, [401]],
       ["get-signed-url", {}, [401]],

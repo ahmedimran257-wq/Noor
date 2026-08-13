@@ -2400,98 +2400,6 @@ class AppLocalizationsAr extends AppLocalizations {
       'اقبل اهتمامًا أو انتظر قبول اهتمامك لبدء محادثة.';
 
   @override
-  String get kyc_title => 'تحقق من هويتك';
-
-  @override
-  String get kyc_heading => 'تحقق من ملفك الشخصي';
-
-  @override
-  String get kyc_intro =>
-      'تُجرى فحوصات جودة الالتقاط على هذا الجهاز، ثم تراجع سيلاراه مستندك الخاص وصورتك الذاتية. لا تعتمد درجات الجهاز هويتك مطلقًا.';
-
-  @override
-  String get kyc_selfieTitle => '1. التقط صورة ذاتية واضحة';
-
-  @override
-  String get kyc_selfieHint => 'وجه واحد وإضاءة جيدة';
-
-  @override
-  String get kyc_selfieCaptured => 'تم التقاط الصورة الذاتية';
-
-  @override
-  String get kyc_idTitle => '2. صوّر وثيقة هويتك';
-
-  @override
-  String get kyc_idHint => 'يجب أن يظهر اسمك وصورتك وتاريخ ميلادك';
-
-  @override
-  String get kyc_idCaptured => 'تم التقاط وثيقة الهوية';
-
-  @override
-  String get kyc_documentType => 'نوع المستند';
-
-  @override
-  String get kyc_governmentId => 'هوية حكومية';
-
-  @override
-  String get kyc_passport => 'جواز سفر';
-
-  @override
-  String get kyc_drivingLicence => 'رخصة قيادة';
-
-  @override
-  String get kyc_submitReview => 'إرسال للمراجعة الخاصة';
-
-  @override
-  String get kyc_submitNewEvidence => 'إرسال أدلة جديدة';
-
-  @override
-  String kyc_submitted(String date) {
-    return 'أُرسل في $date';
-  }
-
-  @override
-  String get kyc_statusApproved => 'تم اعتماد الهوية';
-
-  @override
-  String get kyc_statusApprovedBody =>
-      'تم التحقق من دليل هويتك الحكومية بأمان.';
-
-  @override
-  String get kyc_statusPending => 'المراجعة الخاصة جارية';
-
-  @override
-  String get kyc_statusPendingBody =>
-      'دليلك في قائمة المراجعة البشرية، ولا حاجة لإرساله مجددًا.';
-
-  @override
-  String get kyc_statusRejected => 'لم تتم الموافقة على التحقق';
-
-  @override
-  String get kyc_statusRejectedBody =>
-      'راجع السبب أدناه وأرسل دليلًا جديدًا عند الحاجة.';
-
-  @override
-  String get kyc_statusResubmit => 'مطلوب دليل جديد';
-
-  @override
-  String get kyc_statusResubmitBody =>
-      'التقط دليل هوية أوضح وحديثًا ثم أرسله مجددًا.';
-
-  @override
-  String get kyc_statusExpired => 'انتهت صلاحية دليل الهوية';
-
-  @override
-  String get kyc_statusExpiredBody => 'أرسل مستندًا حكوميًا ساريًا.';
-
-  @override
-  String get kyc_statusNotStarted => 'لم يبدأ التحقق من الهوية';
-
-  @override
-  String get kyc_statusNotStartedBody =>
-      'أرسل هوية حكومية وصورة ذاتية لمراجعة خاصة.';
-
-  @override
   String get referral_title => 'ادعُ صديقًا';
 
   @override
@@ -2632,11 +2540,6 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String ui_addLabel(String label) {
     return 'إضافة $label';
-  }
-
-  @override
-  String ui_kycStatusSemantics(String status) {
-    return 'حالة التحقق من الهوية: $status';
   }
 
   @override

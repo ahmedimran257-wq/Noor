@@ -1,4 +1,4 @@
-// GENERATED FILE. Source strings are audited by localization_quality_test.dart.
+﻿// GENERATED FILE. Source strings are audited by localization_quality_test.dart.
 const supplementalUiCopy = <String, Map<String, String>>{
   'ar': {
     'Privacy Rights & Grievance Policy': 'سياسة حقوق الخصوصية والشكاوى',
@@ -111,7 +111,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Photo requests could not be loaded.': 'تعذر تحميل طلبات الصور.',
     'Photo verified': 'تم التحقق من الصورة',
     'ID verified': 'تم التحقق من الهوية',
-    'Government ID verified': 'تم التحقق من الهوية الحكومية',
     'Photos are checked privately before they become visible. Explicit content is not permitted.':
         'يتم فحص الصور بشكل خاص قبل أن تصبح مرئية. المحتوى الصريح غير مسموح به.',
     'Plans are shown in your local currency': 'يتم عرض الخطط بعملتك المحلية',
@@ -205,8 +204,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
         'سيتم جدولة حسابك للحذف. يمكنك تسجيل الدخول مرة أخرى في أي وقت خلال 30 يومًا للإلغاء.',
     'Your legal acceptance has expired. Please review and accept it again.':
         'لقد انتهت صلاحية قبولك القانوني. يرجى مراجعتها وقبولها مرة أخرى.',
-    'Your passive face scan passed. This on-device photo check is separate from government identity verification.':
-        'لقد نجح فحص وجهك السلبي. يعد فحص الصور على الجهاز منفصلاً عن التحقق من الهوية الحكومية.',
     'Your photos could not be loaded. Please try again.':
         'لا يمكن تحميل الصور الخاصة بك. يرجى المحاولة مرة أخرى.',
     'Your presence on Silarah': 'وجودكم على سيلاراه',
@@ -338,7 +335,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Photo requests could not be loaded.': 'ফটো অনুরোধ লোড করা যায়নি.',
     'Photo verified': 'ফটো যাচাই করা হয়েছে',
     'ID verified': 'আইডি যাচাইকৃত',
-    'Government ID verified': 'সরকারি পরিচয়পত্র যাচাইকৃত',
     'Photos are checked privately before they become visible. Explicit content is not permitted.':
         'ফটোগুলি দৃশ্যমান হওয়ার আগে ব্যক্তিগতভাবে চেক করা হয়৷ স্পষ্ট বিষয়বস্তু অনুমোদিত নয়.',
     'Plans are shown in your local currency':
@@ -432,8 +428,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
         'আপনার অ্যাকাউন্ট মুছে ফেলার জন্য নির্ধারিত হবে। আপনি বাতিল করতে 30 দিনের মধ্যে যে কোনো সময় লগ ইন করতে পারেন।',
     'Your legal acceptance has expired. Please review and accept it again.':
         'আপনার আইনি স্বীকৃতির মেয়াদ শেষ হয়ে গেছে। পর্যালোচনা করুন এবং আবার এটি গ্রহণ করুন.',
-    'Your passive face scan passed. This on-device photo check is separate from government identity verification.':
-        'আপনার প্যাসিভ ফেস স্ক্যান পাস হয়েছে। এই অন-ডিভাইস ফটো চেক সরকারি পরিচয় যাচাইকরণ থেকে আলাদা।',
     'Your photos could not be loaded. Please try again.':
         'আপনার ফটো লোড করা যাবে না. আবার চেষ্টা করুন.',
     'Your presence on Silarah': 'সিলারায় আপনার উপস্থিতি',
@@ -569,7 +563,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
         'Fotoanfragen konnten nicht geladen werden.',
     'Photo verified': 'Foto bestätigt',
     'ID verified': 'Identität bestätigt',
-    'Government ID verified': 'Amtlicher Ausweis bestätigt',
     'Photos are checked privately before they become visible. Explicit content is not permitted.':
         'Fotos werden privat geprüft, bevor sie sichtbar werden. Explizite Inhalte sind nicht gestattet.',
     'Plans are shown in your local currency':
@@ -666,8 +659,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
         'Die Löschung Ihres Kontos wird geplant. Sie können sich jederzeit innerhalb von 30 Tagen erneut anmelden und kündigen.',
     'Your legal acceptance has expired. Please review and accept it again.':
         'Ihre gesetzliche Zulassung ist abgelaufen. Bitte überprüfen und akzeptieren Sie es erneut.',
-    'Your passive face scan passed. This on-device photo check is separate from government identity verification.':
-        'Ihr passiver Gesichtsscan wurde bestanden. Diese Fotoprüfung auf dem Gerät erfolgt unabhängig von der Identitätsprüfung durch die Regierung.',
     'Your photos could not be loaded. Please try again.':
         'Ihre Fotos konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
     'Your presence on Silarah': 'Deine Anwesenheit auf Silarah',
@@ -804,7 +795,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
         'Les demandes de photos n\'ont pas pu être chargées.',
     'Photo verified': 'Photo vérifiée',
     'ID verified': 'Identité vérifiée',
-    'Government ID verified': 'Pièce d’identité officielle vérifiée',
     'Photos are checked privately before they become visible. Explicit content is not permitted.':
         'Les photos sont vérifiées en privé avant d\'être visibles. Le contenu explicite n\'est pas autorisé.',
     'Plans are shown in your local currency':
@@ -901,8 +891,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
         'La suppression de votre compte sera programmée. Vous pouvez vous reconnecter à tout moment dans les 30 jours pour annuler.',
     'Your legal acceptance has expired. Please review and accept it again.':
         'Votre acceptation légale a expiré. Veuillez le consulter et l\'accepter à nouveau.',
-    'Your passive face scan passed. This on-device photo check is separate from government identity verification.':
-        'Votre scan passif du visage a réussi. Cette vérification photo sur l\'appareil est distincte de la vérification d\'identité gouvernementale.',
     'Your photos could not be loaded. Please try again.':
         'Vos photos n\'ont pas pu être chargées. Veuillez réessayer.',
     'Your presence on Silarah': 'Votre présence sur Silarah',
@@ -1036,7 +1024,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Photo requests could not be loaded.': 'फ़ोटो अनुरोध लोड नहीं किए जा सके.',
     'Photo verified': 'फ़ोटो सत्यापित',
     'ID verified': 'आईडी सत्यापित',
-    'Government ID verified': 'सरकारी पहचान सत्यापित',
     'Photos are checked privately before they become visible. Explicit content is not permitted.':
         'दृश्यमान होने से पहले फ़ोटो की निजी तौर पर जाँच की जाती है। स्पष्ट सामग्री की अनुमति नहीं है.',
     'Plans are shown in your local currency':
@@ -1131,8 +1118,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
         'आपका खाता हटाने के लिए निर्धारित किया जाएगा. रद्द करने के लिए आप 30 दिनों के भीतर किसी भी समय वापस लॉग इन कर सकते हैं।',
     'Your legal acceptance has expired. Please review and accept it again.':
         'आपकी कानूनी स्वीकृति समाप्त हो गई है. कृपया इसकी दोबारा समीक्षा करें और स्वीकार करें।',
-    'Your passive face scan passed. This on-device photo check is separate from government identity verification.':
-        'आपका पैसिव फेस स्कैन पास हो गया। यह ऑन-डिवाइस फोटो जांच सरकारी पहचान सत्यापन से अलग है।',
     'Your photos could not be loaded. Please try again.':
         'आपकी फ़ोटो लोड नहीं की जा सकीं. कृपया पुन: प्रयास करें।',
     'Your presence on Silarah': 'सिलारा पर आपकी उपस्थिति',
@@ -1264,7 +1249,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
         'Permintaan foto tidak dapat dimuat.',
     'Photo verified': 'Foto diverifikasi',
     'ID verified': 'Identitas terverifikasi',
-    'Government ID verified': 'Identitas resmi terverifikasi',
     'Photos are checked privately before they become visible. Explicit content is not permitted.':
         'Foto diperiksa secara pribadi sebelum terlihat. Konten eksplisit tidak diizinkan.',
     'Plans are shown in your local currency':
@@ -1359,8 +1343,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
         'Akun Anda akan dijadwalkan untuk dihapus. Anda dapat masuk kembali kapan saja dalam waktu 30 hari untuk membatalkan.',
     'Your legal acceptance has expired. Please review and accept it again.':
         'Penerimaan hukum Anda telah kedaluwarsa. Harap tinjau dan terima lagi.',
-    'Your passive face scan passed. This on-device photo check is separate from government identity verification.':
-        'Pemindaian wajah pasif Anda berhasil. Pemeriksaan foto di perangkat ini terpisah dari verifikasi identitas pemerintah.',
     'Your photos could not be loaded. Please try again.':
         'Foto Anda tidak dapat dimuat. Silakan coba lagi.',
     'Your presence on Silarah': 'Kehadiranmu di Silarah',
@@ -1494,7 +1476,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
         'Permintaan foto tidak dapat dimuatkan.',
     'Photo verified': 'Foto disahkan',
     'ID verified': 'Identiti disahkan',
-    'Government ID verified': 'Identiti kerajaan disahkan',
     'Photos are checked privately before they become visible. Explicit content is not permitted.':
         'Foto disemak secara tertutup sebelum ia kelihatan. Kandungan eksplisit tidak dibenarkan.',
     'Plans are shown in your local currency':
@@ -1589,8 +1570,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
         'Akaun anda akan dijadualkan untuk pemadaman. Anda boleh log masuk semula pada bila-bila masa dalam masa 30 hari untuk membatalkan.',
     'Your legal acceptance has expired. Please review and accept it again.':
         'Penerimaan undang-undang anda telah tamat tempoh. Sila semak dan terima semula.',
-    'Your passive face scan passed. This on-device photo check is separate from government identity verification.':
-        'Imbasan muka pasif anda lulus. Semakan foto pada peranti ini berasingan daripada pengesahan identiti kerajaan.',
     'Your photos could not be loaded. Please try again.':
         'Foto anda tidak dapat dimuatkan. Sila cuba lagi.',
     'Your presence on Silarah': 'Kehadiranmu pada Silarah',
@@ -1722,7 +1701,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Photo requests could not be loaded.': 'Fotoğraf istekleri yüklenemedi.',
     'Photo verified': 'Fotoğraf doğrulandı',
     'ID verified': 'Kimlik doğrulandı',
-    'Government ID verified': 'Resmî kimlik doğrulandı',
     'Photos are checked privately before they become visible. Explicit content is not permitted.':
         'Fotoğraflar görünür hale gelmeden önce özel olarak kontrol edilir. Açık içeriğe izin verilmez.',
     'Plans are shown in your local currency':
@@ -1817,8 +1795,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
         'Hesabınızın silinmesi planlanacak. İptal etmek için 30 gün içinde istediğiniz zaman tekrar giriş yapabilirsiniz.',
     'Your legal acceptance has expired. Please review and accept it again.':
         'Yasal kabulünüzün süresi doldu. Lütfen tekrar inceleyip kabul edin.',
-    'Your passive face scan passed. This on-device photo check is separate from government identity verification.':
-        'Pasif yüz taramanız başarılı oldu. Bu cihazdaki fotoğraf kontrolü, resmi kimlik doğrulamasından ayrıdır.',
     'Your photos could not be loaded. Please try again.':
         'Fotoğraflarınız yüklenemedi. Lütfen tekrar deneyin.',
     'Your presence on Silarah': 'Silarah\'taki varlığınız',
@@ -1952,7 +1928,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
         'تصویر کی درخواستیں لوڈ نہیں ہو سکیں۔',
     'Photo verified': 'تصویر کی تصدیق ہو گئی۔',
     'ID verified': 'شناخت کی تصدیق ہو گئی',
-    'Government ID verified': 'سرکاری شناخت کی تصدیق ہو گئی',
     'Photos are checked privately before they become visible. Explicit content is not permitted.':
         'تصاویر نظر آنے سے پہلے ان کی نجی طور پر جانچ پڑتال کی جاتی ہے۔ واضح مواد کی اجازت نہیں ہے۔',
     'Plans are shown in your local currency':
@@ -2046,8 +2021,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
         'آپ کا اکاؤنٹ حذف کرنے کے لیے شیڈول کیا جائے گا۔ آپ منسوخ کرنے کے لیے 30 دنوں کے اندر کسی بھی وقت دوبارہ لاگ ان کر سکتے ہیں۔',
     'Your legal acceptance has expired. Please review and accept it again.':
         'آپ کی قانونی قبولیت ختم ہو گئی ہے۔ براہ کرم جائزہ لیں اور اسے دوبارہ قبول کریں۔',
-    'Your passive face scan passed. This on-device photo check is separate from government identity verification.':
-        'آپ کا غیر فعال چہرہ اسکین گزر گیا۔ یہ آن ڈیوائس تصویر کی جانچ سرکاری شناخت کی تصدیق سے الگ ہے۔',
     'Your photos could not be loaded. Please try again.':
         'آپ کی تصاویر لوڈ نہیں ہو سکیں۔ براہ کرم دوبارہ کوشش کریں۔',
     'Your presence on Silarah': 'سلارہ پر آپ کی موجودگی',

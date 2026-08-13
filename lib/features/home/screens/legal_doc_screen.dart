@@ -34,7 +34,7 @@ class LegalDocScreen extends StatelessWidget {
           ),
         ),
         title: UiText(
-          document.title,
+          context.uiCopy(document.title),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: AppTypography.screenTitle.copyWith(fontSize: 20),
@@ -60,6 +60,10 @@ class LegalDocScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _DocumentHeader(document: document),
+              if (Localizations.localeOf(context).languageCode != 'en') ...[
+                const SizedBox(height: AppDimensions.space16),
+                const _OfficialLanguageNotice(),
+              ],
               const SizedBox(height: AppDimensions.space24),
               for (final section in document.sections)
                 _PolicySection(section: section),
@@ -125,7 +129,7 @@ class _DocumentHeader extends StatelessWidget {
               const SizedBox(width: AppDimensions.space10),
               Expanded(
                 child: UiText(
-                  document.title,
+                  context.uiCopy(document.title),
                   style: AppTypography.bodyMedium.copyWith(
                     color: AppColors.champagneGold,
                   ),
@@ -140,8 +144,58 @@ class _DocumentHeader extends StatelessWidget {
           ),
           const SizedBox(height: AppDimensions.space14),
           UiText(
-            'Effective ${LegalDocuments.effectiveDate}  •  Version ${LegalDocuments.version}',
+            '${context.uiCopy('Effective')} '
+            '${LegalDocuments.effectiveDate}  •  '
+            '${context.uiCopy('Version')} ${LegalDocuments.version}',
             style: AppTypography.caption,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OfficialLanguageNotice extends StatelessWidget {
+  const _OfficialLanguageNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppDimensions.space14),
+      decoration: BoxDecoration(
+        color: AppColors.champagneGold.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+        border: Border.all(
+          color: AppColors.champagneGold.withValues(alpha: 0.22),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.translate_rounded,
+            color: AppColors.champagneGold,
+            size: 20,
+          ),
+          const SizedBox(width: AppDimensions.space12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                UiText(
+                  context.uiCopy('Official policy text'),
+                  style: AppTypography.bodyMedium,
+                ),
+                const SizedBox(height: AppDimensions.space4),
+                UiText(
+                  context.uiCopy(
+                    'The binding policy below is provided in English. Localized titles and navigation help you find each policy.',
+                  ),
+                  style: AppTypography.caption.copyWith(height: 1.5),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -191,9 +245,11 @@ class _ContactFooter extends StatelessWidget {
         ),
       ),
       child: UiText(
-        'Questions: ${LegalDocuments.supportEmail}\n'
-        'Privacy requests: ${LegalDocuments.privacyEmail}\n'
-        'Formal grievances: ${LegalDocuments.grievanceEmail}',
+        '${context.uiCopy('Questions')}: ${LegalDocuments.supportEmail}\n'
+        '${context.uiCopy('Privacy requests')}: '
+        '${LegalDocuments.privacyEmail}\n'
+        '${context.uiCopy('Formal grievances')}: '
+        '${LegalDocuments.grievanceEmail}',
         style: AppTypography.caption.copyWith(height: 1.7),
       ),
     );

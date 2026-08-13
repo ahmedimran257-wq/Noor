@@ -2434,98 +2434,6 @@ class AppLocalizationsBn extends AppLocalizations {
       'কথোপকথন শুরু করতে আগ্রহ গ্রহণ করুন বা আপনার আগ্রহ গৃহীত হওয়ার অপেক্ষা করুন।';
 
   @override
-  String get kyc_title => 'আপনার পরিচয় যাচাই করুন';
-
-  @override
-  String get kyc_heading => 'আপনার প্রোফাইল যাচাই করুন';
-
-  @override
-  String get kyc_intro =>
-      'ছবি তোলার মান এই ডিভাইসে পরীক্ষা করা হয়। এরপর সিলারাহ আপনার ব্যক্তিগত নথি ও সেলফি পর্যালোচনা করে। ডিভাইসের স্কোর কখনও পরিচয় অনুমোদন করে না।';
-
-  @override
-  String get kyc_selfieTitle => '১. পরিষ্কার সেলফি তুলুন';
-
-  @override
-  String get kyc_selfieHint => 'একটি মুখ, ভালো আলো';
-
-  @override
-  String get kyc_selfieCaptured => 'সেলফি তোলা হয়েছে';
-
-  @override
-  String get kyc_idTitle => '২. পরিচয়পত্রের ছবি তুলুন';
-
-  @override
-  String get kyc_idHint => 'আপনার নাম, ছবি ও জন্মতারিখ দৃশ্যমান হতে হবে';
-
-  @override
-  String get kyc_idCaptured => 'পরিচয়পত্র তোলা হয়েছে';
-
-  @override
-  String get kyc_documentType => 'নথির ধরন';
-
-  @override
-  String get kyc_governmentId => 'সরকারি পরিচয়পত্র';
-
-  @override
-  String get kyc_passport => 'পাসপোর্ট';
-
-  @override
-  String get kyc_drivingLicence => 'ড্রাইভিং লাইসেন্স';
-
-  @override
-  String get kyc_submitReview => 'ব্যক্তিগত পর্যালোচনার জন্য পাঠান';
-
-  @override
-  String get kyc_submitNewEvidence => 'নতুন প্রমাণ পাঠান';
-
-  @override
-  String kyc_submitted(String date) {
-    return 'জমা দেওয়া হয়েছে $date';
-  }
-
-  @override
-  String get kyc_statusApproved => 'পরিচয় অনুমোদিত';
-
-  @override
-  String get kyc_statusApprovedBody =>
-      'আপনার সরকারি পরিচয়পত্রের প্রমাণ নিরাপদে যাচাই হয়েছে।';
-
-  @override
-  String get kyc_statusPending => 'ব্যক্তিগত পর্যালোচনা চলছে';
-
-  @override
-  String get kyc_statusPendingBody =>
-      'আপনার প্রমাণ মানব পর্যালোচনার অপেক্ষায় আছে। আবার জমা দিতে হবে না।';
-
-  @override
-  String get kyc_statusRejected => 'পরিচয় যাচাই অনুমোদিত হয়নি';
-
-  @override
-  String get kyc_statusRejectedBody =>
-      'নিচের কারণ দেখুন এবং প্রয়োজন হলে নতুন প্রমাণ দিন।';
-
-  @override
-  String get kyc_statusResubmit => 'নতুন প্রমাণ প্রয়োজন';
-
-  @override
-  String get kyc_statusResubmitBody =>
-      'আরও পরিষ্কার ও বর্তমান পরিচয় প্রমাণ তুলে আবার পাঠান।';
-
-  @override
-  String get kyc_statusExpired => 'পরিচয় প্রমাণের মেয়াদ শেষ';
-
-  @override
-  String get kyc_statusExpiredBody => 'বর্তমান সরকারি নথি জমা দিন।';
-
-  @override
-  String get kyc_statusNotStarted => 'পরিচয় যাচাই শুরু হয়নি';
-
-  @override
-  String get kyc_statusNotStartedBody =>
-      'ব্যক্তিগত পর্যালোচনার জন্য সরকারি পরিচয়পত্র ও সেলফি দিন।';
-
-  @override
   String get referral_title => 'বন্ধুকে আমন্ত্রণ জানান';
 
   @override
@@ -2666,11 +2574,6 @@ class AppLocalizationsBn extends AppLocalizations {
   @override
   String ui_addLabel(String label) {
     return '$label যোগ করুন';
-  }
-
-  @override
-  String ui_kycStatusSemantics(String status) {
-    return 'পরিচয় যাচাইকরণের স্থিতি: $status';
   }
 
   @override

@@ -1,7 +1,7 @@
 param(
     [ValidateSet('debug', 'release')]
-    [string]$Mode = 'debug',
-    [string]$Config = 'config/dev.local.json',
+    [string]$Mode = 'release',
+    [string]$Config = 'config/prod.local.json',
     [string]$Device = ''
 )
 

@@ -13,6 +13,7 @@ import '../../core/cubits/interests/interests_cubit.dart';
 import '../../core/cubits/interests/interests_state.dart';
 import '../../core/router/app_router.dart';
 import '../../core/services/connectivity_service.dart';
+import '../../core/services/policy_reminder_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/theme/app_typography.dart';
@@ -23,6 +24,7 @@ import 'screens/chat_list_screen.dart';
 import 'screens/my_profile_screen.dart';
 import 'widgets/silarah_bottom_nav.dart';
 import 'widgets/interest_quota_sheet.dart';
+import 'widgets/policy_reminder_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.initialTab});
@@ -36,6 +38,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _currentTab = 0;
   late final List<Widget?> _tabCache;
   int _profileRefreshToken = 0;
+  bool _policyReminderChecked = false;
   static const _tabCount = 4;
 
   @override
@@ -47,6 +50,17 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
     _tabCache = List<Widget?>.filled(_tabCount, null);
     _ensureTabBuilt(_currentTab);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showPolicyReminderIfDue();
+    });
+  }
+
+  Future<void> _showPolicyReminderIfDue() async {
+    if (_policyReminderChecked) return;
+    _policyReminderChecked = true;
+    final state = await PolicyReminderService.instance.getState();
+    if (!mounted || !state.isDue) return;
+    await PolicyReminderSheet.show(context);
   }
 
   @override

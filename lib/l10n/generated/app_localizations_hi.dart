@@ -2439,98 +2439,6 @@ class AppLocalizationsHi extends AppLocalizations {
       'बातचीत शुरू करने के लिए रुचि स्वीकार करें या अपनी रुचि स्वीकार होने दें।';
 
   @override
-  String get kyc_title => 'अपनी पहचान सत्यापित करें';
-
-  @override
-  String get kyc_heading => 'अपनी प्रोफ़ाइल सत्यापित करें';
-
-  @override
-  String get kyc_intro =>
-      'कैप्चर की गुणवत्ता इस डिवाइस पर जाँची जाती है। फिर सिलाराह आपके निजी दस्तावेज़ और सेल्फ़ी की समीक्षा करता है। डिवाइस स्कोर कभी आपकी पहचान मंज़ूर नहीं करते।';
-
-  @override
-  String get kyc_selfieTitle => '1. साफ़ सेल्फ़ी लें';
-
-  @override
-  String get kyc_selfieHint => 'एक चेहरा, अच्छी रोशनी';
-
-  @override
-  String get kyc_selfieCaptured => 'सेल्फ़ी ली गई';
-
-  @override
-  String get kyc_idTitle => '2. पहचान पत्र की फ़ोटो लें';
-
-  @override
-  String get kyc_idHint => 'आपका नाम, फ़ोटो और जन्मतिथि दिखाई देनी चाहिए';
-
-  @override
-  String get kyc_idCaptured => 'पहचान पत्र लिया गया';
-
-  @override
-  String get kyc_documentType => 'दस्तावेज़ का प्रकार';
-
-  @override
-  String get kyc_governmentId => 'सरकारी पहचान पत्र';
-
-  @override
-  String get kyc_passport => 'पासपोर्ट';
-
-  @override
-  String get kyc_drivingLicence => 'ड्राइविंग लाइसेंस';
-
-  @override
-  String get kyc_submitReview => 'निजी समीक्षा के लिए भेजें';
-
-  @override
-  String get kyc_submitNewEvidence => 'नया प्रमाण भेजें';
-
-  @override
-  String kyc_submitted(String date) {
-    return '$date को भेजा गया';
-  }
-
-  @override
-  String get kyc_statusApproved => 'पहचान स्वीकृत';
-
-  @override
-  String get kyc_statusApprovedBody =>
-      'आपके सरकारी पहचान प्रमाण को सुरक्षित रूप से सत्यापित किया गया है।';
-
-  @override
-  String get kyc_statusPending => 'निजी समीक्षा जारी है';
-
-  @override
-  String get kyc_statusPendingBody =>
-      'आपका प्रमाण मानवीय समीक्षा की कतार में है। इसे दोबारा भेजने की आवश्यकता नहीं है।';
-
-  @override
-  String get kyc_statusRejected => 'पहचान जाँच स्वीकृत नहीं हुई';
-
-  @override
-  String get kyc_statusRejectedBody =>
-      'नीचे कारण देखें और उचित हो तो नया प्रमाण भेजें।';
-
-  @override
-  String get kyc_statusResubmit => 'नया प्रमाण आवश्यक है';
-
-  @override
-  String get kyc_statusResubmitBody =>
-      'अधिक साफ़ और वर्तमान पहचान प्रमाण लेकर फिर भेजें।';
-
-  @override
-  String get kyc_statusExpired => 'पहचान प्रमाण की अवधि समाप्त';
-
-  @override
-  String get kyc_statusExpiredBody => 'वर्तमान सरकारी दस्तावेज़ भेजें।';
-
-  @override
-  String get kyc_statusNotStarted => 'पहचान जाँच शुरू नहीं हुई';
-
-  @override
-  String get kyc_statusNotStartedBody =>
-      'निजी समीक्षा के लिए सरकारी पहचान पत्र और सेल्फ़ी भेजें।';
-
-  @override
   String get referral_title => 'मित्र को आमंत्रित करें';
 
   @override
@@ -2671,11 +2579,6 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String ui_addLabel(String label) {
     return '$label जोड़ें';
-  }
-
-  @override
-  String ui_kycStatusSemantics(String status) {
-    return 'पहचान सत्यापन स्थिति: $status';
   }
 
   @override

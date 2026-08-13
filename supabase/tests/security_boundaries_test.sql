@@ -368,35 +368,30 @@ select extensions.ok(
   'guardian invitations have expiry, consumption, attempt and lock state'
 );
 select extensions.ok(
-  has_function_privilege(
-    'service_role',
-    'public.checkout_kyc_document_purges(integer)',
-    'EXECUTE'
-  )
-  and not has_function_privilege(
-    'authenticated',
-    'public.checkout_kyc_document_purges(integer)',
-    'EXECUTE'
-  ),
-  'KYC purge checkout is service-only'
+  to_regprocedure('public.checkout_kyc_document_purges(integer)') is null
+  and to_regprocedure(
+    'public.record_kyc_purge_object_result(uuid,text,boolean,text)'
+  ) is null
+  and to_regprocedure('public.finish_kyc_document_purge(uuid)') is null,
+  'retired government-ID functions are absent'
 );
 select extensions.ok(
   has_function_privilege(
     'service_role',
-    'public.record_kyc_purge_object_result(uuid,text,boolean,text)',
+    'public.checkout_photo_verification_purges(integer)',
     'EXECUTE'
   )
   and has_function_privilege(
     'service_role',
-    'public.finish_kyc_document_purge(uuid)',
+    'public.finish_photo_verification_purge(uuid,boolean,text)',
     'EXECUTE'
   )
   and not has_function_privilege(
     'authenticated',
-    'public.finish_kyc_document_purge(uuid)',
+    'public.finish_photo_verification_purge(uuid,boolean,text)',
     'EXECUTE'
   ),
-  'KYC purge progress and completion are service-only'
+  'temporary photo-capture purge progress remains service-only'
 );
 select extensions.ok(
   exists (

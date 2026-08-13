@@ -57,7 +57,7 @@ ALTER DATABASE postgres SET app.supabase_url = 'https://YOUR_PROJECT_REF.supabas
 Create private buckets:
 
 - `profile-photos`
-- `kyc-documents`
+- `photo-verification-captures` (temporary; 48-hour maximum)
 
 All sensitive reads must go through access-controlled RPC or Edge Functions. Do not make these buckets public.
 
@@ -108,9 +108,9 @@ npx supabase functions deploy auth-before-user-created
 npx supabase functions deploy brevo-key-keepalive
 npx supabase functions deploy dispatch-notifications
 npx supabase functions deploy get-signed-url
-npx supabase functions deploy process-kyc
-npx supabase functions deploy purge-kyc-documents --no-verify-jwt
 npx supabase functions deploy revenuecat-webhook
+npx supabase functions deploy photo-verification
+npx supabase functions deploy purge-photo-verification-captures --no-verify-jwt
 npx supabase functions deploy validate-photo-upload
 npx supabase functions deploy translate-message
 ```

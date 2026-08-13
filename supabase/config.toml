@@ -130,10 +130,6 @@ verify_jwt = false
 # pg_cron authenticates with the private Vault-backed cron credential.
 verify_jwt = false
 
-[functions.purge-kyc-documents]
-# Private pg_cron request authenticated by the Vault-backed cron credential.
-verify_jwt = false
-
 [functions.photo-verification]
 # Member JWT is revalidated inside the function before private upload grants.
 verify_jwt = true
