@@ -12,6 +12,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
 import '../../../core/data/country_data.dart';
 import '../../../core/services/phone_verification_service.dart';
+import '../../../core/services/billing_portal_service.dart';
 import '../../../core/services/subscription_service.dart';
 import '../../../core/services/launch_configuration_service.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
@@ -1242,11 +1243,14 @@ class _SecondaryLinks extends StatelessWidget {
           ),
         ),
         SizedBox(height: isSmallScreen ? 2 : 4),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 2,
+          runSpacing: 0,
           children: [
             TextButton(
-              onPressed: () => _openLegalPage(context, 'Privacy Policy'),
+              onPressed: () => _openLegalPage(context, 'privacy'),
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 minimumSize: Size.zero,
@@ -1260,7 +1264,7 @@ class _SecondaryLinks extends StatelessWidget {
                 style:
                     AppTypography.caption.copyWith(color: AppColors.slateMist)),
             TextButton(
-              onPressed: () => _openLegalPage(context, 'Terms of Service'),
+              onPressed: () => _openLegalPage(context, 'tos'),
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 minimumSize: Size.zero,
@@ -1270,11 +1274,43 @@ class _SecondaryLinks extends StatelessWidget {
                   style: AppTypography.caption
                       .copyWith(fontSize: isSmallScreen ? 11 : 12)),
             ),
+            UiText('·',
+                style:
+                    AppTypography.caption.copyWith(color: AppColors.slateMist)),
+            TextButton(
+              onPressed: () => _openLegalPage(context, 'refund-policy'),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: UiText(context.uiCopy('Refund Policy'),
+                  style: AppTypography.caption
+                      .copyWith(fontSize: isSmallScreen ? 11 : 12)),
+            ),
+            UiText('·',
+                style:
+                    AppTypography.caption.copyWith(color: AppColors.slateMist)),
+            TextButton(
+              onPressed: () => _openBillingPortal(context),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: UiText(context.uiCopy('Manage Subscription'),
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.champagneGold,
+                    fontSize: isSmallScreen ? 11 : 12,
+                  )),
+            ),
           ],
         ),
         SizedBox(height: isSmallScreen ? 4 : 8),
         UiText(
-          'Subscription auto-renews unless cancelled 24h before renewal.\nWomen always message free on SILARAH.',
+          context.uiCopy(
+            'Auto-renews at the displayed price and billing period unless cancelled in Google Play before the renewal date shown there.\nCancellation normally keeps access through the paid period and does not automatically refund it. Statutory rights apply.',
+          ),
           style: AppTypography.caption
               .copyWith(fontSize: isSmallScreen ? 10 : 11, height: 1.5),
           textAlign: TextAlign.center,
@@ -1283,10 +1319,23 @@ class _SecondaryLinks extends StatelessWidget {
     );
   }
 
-  static void _openLegalPage(BuildContext context, String title) {
-    final type = title.toLowerCase().contains('privacy') ? 'privacy' : 'tos';
+  static void _openLegalPage(BuildContext context, String type) {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => LegalDocScreen(type: type)),
+    );
+  }
+
+  static Future<void> _openBillingPortal(BuildContext context) async {
+    final opened = await BillingPortalService.openGooglePlaySubscriptions();
+    if (opened || !context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: UiText(
+          context.uiCopy(
+            'Unable to open Google Play subscriptions. Try again.',
+          ),
+        ),
+      ),
     );
   }
 }

@@ -19,7 +19,7 @@ Static Cloudflare Pages project for `silarah.com`.
 - `silarah.com/sitemap.xml` lists public, indexable pages only. The app and
   staff console are intentionally excluded.
 
-The Android asset link currently contains the development/release-debug signing
-fingerprint used before Play Console enrollment. Add the Play App Signing SHA-256
-fingerprint before publishing the store build. Add an Apple App Site Association
-file after the Apple Developer Team ID is available.
+The Android asset link contains the signed release upload-certificate fingerprint.
+Add the separate Play App Signing SHA-256 fingerprint after Play Console creates it
+for the published app. Add an Apple App Site Association file after the Apple
+Developer Team ID is available.

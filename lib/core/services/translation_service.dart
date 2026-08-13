@@ -1,7 +1,8 @@
 // SILARAH — Translation Service (Muslima Feature)
 //
-// Communicates only with the Supabase translate-message Edge Function so
-// private chat text never leaves the server-controlled boundary from Flutter.
+// Communicates with the authenticated Supabase translate-message Edge Function.
+// After an explicit client disclosure, that function sends the selected text
+// to the disclosed MyMemory provider and stores the returned translation.
 import 'package:flutter/foundation.dart';
 import 'supabase_service.dart';
 

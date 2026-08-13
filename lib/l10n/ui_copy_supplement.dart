@@ -144,8 +144,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Send without note': 'إرسال دون ملاحظة',
     'Sign in required': 'تسجيل الدخول مطلوب',
     'Subscribe to Unlock Messaging': 'الاشتراك في فتح الرسائل',
-    'Subscription auto-renews unless cancelled 24h before renewal.\nWomen always message free on SILARAH.':
-        'يتم تجديد الاشتراك تلقائيًا ما لم يتم إلغاؤه قبل 24 ساعة من التجديد.\nتقوم النساء دائمًا بإرسال رسائل مجانية على SILARAH.',
     'Target Home Countries': 'البلدان الرئيسية المستهدفة',
     'They won\'t be notified.': 'لن يتم إخطارهم.',
     'This closes the match and prevents further messages.':
@@ -369,8 +367,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Send without note': 'নোট ছাড়াই পাঠান',
     'Sign in required': 'সাইন ইন প্রয়োজন',
     'Subscribe to Unlock Messaging': 'আনলক মেসেজিং-এ সদস্যতা নিন',
-    'Subscription auto-renews unless cancelled 24h before renewal.\nWomen always message free on SILARAH.':
-        'পুনর্নবীকরণের 24 ঘন্টা আগে বাতিল না হলে সদস্যতা স্বয়ংক্রিয়ভাবে পুনর্নবীকরণ হয়।\nমহিলারা সবসময় SILARAH এ বিনামূল্যে বার্তা দেয়।',
     'Target Home Countries': 'টার্গেট হোম দেশ',
     'They won\'t be notified.': 'তাদের জানানো হবে না।',
     'This closes the match and prevents further messages.':
@@ -598,8 +594,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Send without note': 'Ohne Notiz senden',
     'Sign in required': 'Anmeldung erforderlich',
     'Subscribe to Unlock Messaging': 'Abonnieren Sie Unlock Messaging',
-    'Subscription auto-renews unless cancelled 24h before renewal.\nWomen always message free on SILARAH.':
-        'Das Abonnement verlängert sich automatisch, sofern es nicht 24 Stunden vor der Verlängerung gekündigt wird.\nFrauen können auf SILARAH immer kostenlos Nachrichten verschicken.',
     'Target Home Countries': 'Ziel-Heimatländer',
     'They won\'t be notified.': 'Sie werden nicht benachrichtigt.',
     'This closes the match and prevents further messages.':
@@ -831,8 +825,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Sign in required': 'Connexion requise',
     'Subscribe to Unlock Messaging':
         'Abonnez-vous pour débloquer la messagerie',
-    'Subscription auto-renews unless cancelled 24h before renewal.\nWomen always message free on SILARAH.':
-        'L\'abonnement se renouvelle automatiquement sauf annulation 24 heures avant le renouvellement.\nLes femmes envoient toujours des messages gratuits sur SILARAH.',
     'Target Home Countries': 'Pays d\'origine cibles',
     'They won\'t be notified.': 'Ils ne seront pas avertis.',
     'This closes the match and prevents further messages.':
@@ -1058,8 +1050,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Send without note': 'बिना नोट के भेजें',
     'Sign in required': 'साइन इन आवश्यक',
     'Subscribe to Unlock Messaging': 'अनलॉक मैसेजिंग की सदस्यता लें',
-    'Subscription auto-renews unless cancelled 24h before renewal.\nWomen always message free on SILARAH.':
-        'नवीनीकरण से 24 घंटे पहले रद्द न होने पर सदस्यता स्वतः नवीनीकृत हो जाती है।\nमहिलाएं हमेशा SILARAH पर निःशुल्क संदेश भेजती हैं।',
     'Target Home Countries': 'घरेलू देशों को लक्षित करें',
     'They won\'t be notified.': 'उन्हें सूचित नहीं किया जाएगा.',
     'This closes the match and prevents further messages.':
@@ -1283,8 +1273,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Send without note': 'Kirim tanpa catatan',
     'Sign in required': 'Diperlukan masuk',
     'Subscribe to Unlock Messaging': 'Berlangganan untuk Membuka Kunci Pesan',
-    'Subscription auto-renews unless cancelled 24h before renewal.\nWomen always message free on SILARAH.':
-        'Langganan diperpanjang secara otomatis kecuali dibatalkan 24 jam sebelum perpanjangan.\nWanita selalu mengirim pesan gratis di SILARAH.',
     'Target Home Countries': 'Targetkan Negara Asal',
     'They won\'t be notified.': 'Mereka tidak akan diberitahu.',
     'This closes the match and prevents further messages.':
@@ -1510,8 +1498,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Send without note': 'Hantar tanpa nota',
     'Sign in required': 'Log masuk diperlukan',
     'Subscribe to Unlock Messaging': 'Langgan untuk Membuka Kunci Pemesejan',
-    'Subscription auto-renews unless cancelled 24h before renewal.\nWomen always message free on SILARAH.':
-        'Langganan diperbaharui secara automatik melainkan dibatalkan 24 jam sebelum pembaharuan.\nWanita sentiasa mesej percuma di SILARAH.',
     'Target Home Countries': 'Negara Asal Sasaran',
     'They won\'t be notified.': 'Mereka tidak akan dimaklumkan.',
     'This closes the match and prevents further messages.':
@@ -1736,8 +1722,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Sign in required': 'Oturum açmanız gerekiyor',
     'Subscribe to Unlock Messaging':
         'Mesajlaşmanın Kilidini Açmak için abone olun',
-    'Subscription auto-renews unless cancelled 24h before renewal.\nWomen always message free on SILARAH.':
-        'Abonelik, yenilemeden 24 saat önce iptal edilmediği sürece otomatik olarak yenilenir.\nKadınlar SILARAH\'ta her zaman ücretsiz mesaj atar.',
     'Target Home Countries': 'Hedef Ülkeler',
     'They won\'t be notified.': 'Onlara haber verilmeyecek.',
     'This closes the match and prevents further messages.':
@@ -1962,8 +1946,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Send without note': 'بغیر نوٹ کے بھیجیں۔',
     'Sign in required': 'سائن ان کی ضرورت ہے۔',
     'Subscribe to Unlock Messaging': 'انلاک میسجنگ کو سبسکرائب کریں۔',
-    'Subscription auto-renews unless cancelled 24h before renewal.\nWomen always message free on SILARAH.':
-        'سبسکرپشن خود بخود تجدید ہوتی ہے جب تک کہ تجدید سے 24 گھنٹے پہلے منسوخ نہ ہو جائے۔\nخواتین ہمیشہ SILARAH پر مفت پیغام دیتی ہیں۔',
     'Target Home Countries': 'ٹارگٹ ہوم کنٹریز',
     'They won\'t be notified.': 'انہیں مطلع نہیں کیا جائے گا۔',
     'This closes the match and prevents further messages.':

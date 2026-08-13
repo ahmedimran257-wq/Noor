@@ -18,6 +18,7 @@ import '../../../core/models/discovery_profile.dart';
 import '../../../core/models/onboarding_data.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/services/bookmark_service.dart';
+import '../../../core/services/billing_portal_service.dart';
 import '../../../core/services/connectivity_service.dart';
 import '../../../core/services/authorized_profile_service.dart';
 import '../../../core/services/photo_verification_service.dart';
@@ -633,6 +634,27 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                     context.read<AccountStandingCubit>().resumeProfile(),
                 onContactSupport: () => context.push(AppRoutes.helpSupport),
                 onManagePhotos: _openManagePhotos,
+              ),
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
+            child: Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: TextButton.icon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const SettingsScreen(
+                      initialSection: 'help',
+                    ),
+                  ),
+                ),
+                icon: const Icon(Icons.support_agent_outlined),
+                label: UiText(
+                  '${context.uiCopy('Help & Support')} · '
+                  '${context.uiCopy('Formal grievances')}',
+                ),
               ),
             ),
           ),
@@ -1814,6 +1836,14 @@ class _SubscriptionCard extends StatelessWidget {
                   style: AppTypography.caption),
           ],
         )),
+        TextButton(
+          onPressed: () => _manageSubscription(context),
+          child: UiText(
+            context.uiCopy('Manage Subscription'),
+            style: AppTypography.captionMedium
+                .copyWith(color: AppColors.verifiedTeal),
+          ),
+        ),
       ]),
     );
   }
@@ -1831,9 +1861,8 @@ class _SubscriptionCard extends StatelessWidget {
                 context.uiCopy('Payment issue — subscription in grace period.'),
                 style: AppTypography.caption)),
         TextButton(
-          onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
-              builder: (_) => const SubscriptionScreen())),
-          child: UiText(context.uiCopy('Fix'),
+          onPressed: () => _manageSubscription(context),
+          child: UiText(context.uiCopy('Manage Subscription'),
               style: AppTypography.captionMedium
                   .copyWith(color: AppColors.premiumGold)),
         ),
@@ -1875,6 +1904,20 @@ class _SubscriptionCard extends StatelessWidget {
                     fontWeight: FontWeight.w600)),
           ),
         ]),
+      ),
+    );
+  }
+
+  Future<void> _manageSubscription(BuildContext context) async {
+    final opened = await BillingPortalService.openGooglePlaySubscriptions();
+    if (opened || !context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: UiText(
+          context.uiCopy(
+            'Unable to open Google Play subscriptions. Try again.',
+          ),
+        ),
       ),
     );
   }

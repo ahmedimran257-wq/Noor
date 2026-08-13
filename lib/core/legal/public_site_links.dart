@@ -7,6 +7,12 @@ abstract final class PublicSiteLinks {
   static final help = Uri.parse('$origin/help/');
   static final legal = Uri.parse('$origin/legal/');
   static final deleteAccount = Uri.parse('$origin/delete-account/');
+  static final googlePlaySubscriptions = Uri.parse(
+    'https://play.google.com/store/account/subscriptions?package=com.silarah.app',
+  );
+  static final googlePlayRefundRequest = Uri.parse(
+    'https://support.google.com/googleplay/workflow/9813244',
+  );
 
   static Uri policy(String slug) => Uri.parse('$origin/$slug/');
 }

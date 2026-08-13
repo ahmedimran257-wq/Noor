@@ -77,7 +77,7 @@ void main() {
       'supabase/migrations/134_versioned_legal_policy_consents.sql',
     ).readAsStringSync();
     final currentConsentMigration = File(
-      'supabase/migrations/207_personal_data_export_and_legal_rights.sql',
+      'supabase/migrations/214_policy_230_subscription_and_privacy_consents.sql',
     ).readAsStringSync();
 
     expect(settings, contains('LegalDocuments.all'));
@@ -90,6 +90,8 @@ void main() {
             "trim(coalesce(p_policy_version, '')) <> '${LegalDocuments.version}'"));
     expect(currentConsentMigration,
         contains("VALUES ('${LegalDocuments.version}', p_acceptances)"));
+    expect(currentConsentMigration,
+        contains("to_jsonb('${LegalDocuments.version}'::text)"));
     expect(LegalDocuments.operatorName, 'Imran Ahmed');
     expect(LegalDocuments.grievanceOfficerName, 'Imran Ahmed');
   });
@@ -100,5 +102,35 @@ void main() {
     expect(screen, contains('Cancel store billing separately'));
     expect(screen, contains('does not cancel Apple or Google billing'));
     expect(screen, isNot(contains('Subscriptions cancelled')));
+  });
+
+  test('subscription disclosures preserve store and statutory remedies', () {
+    final paywall = File(
+      'lib/features/home/screens/subscription_screen.dart',
+    ).readAsStringSync();
+    final profile = File(
+      'lib/features/home/screens/my_profile_screen.dart',
+    ).readAsStringSync();
+    final policies = File(
+      'lib/core/legal/legal_documents.dart',
+    ).readAsStringSync();
+    final privacy = File('site/privacy/index.html').readAsStringSync();
+    final chat = File(
+      'lib/features/home/screens/chat_screen.dart',
+    ).readAsStringSync();
+
+    expect(paywall, contains('Manage Subscription'));
+    expect(paywall, contains("'refund-policy'"));
+    expect(paywall, contains('before the renewal date shown there'));
+    expect(paywall, isNot(contains('24h before renewal')));
+    expect(profile, contains('openGooglePlaySubscriptions'));
+    expect(profile, contains("context.uiCopy('Formal grievances')"));
+    expect(profile, contains("initialSection: 'help'"));
+    expect(policies, contains('does not impose an absolute “no refunds” rule'));
+    expect(policies, contains('within 48 hours'));
+    expect(policies, contains('statutory'));
+    expect(privacy, contains('MyMemory'));
+    expect(chat, contains('Translate with an external provider?'));
+    expect(chat, contains('external_translation_notice_mymemory_v1'));
   });
 }

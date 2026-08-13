@@ -71,6 +71,26 @@ void main() {
     });
   });
 
+  group('store-managed cancellation', () {
+    test('exposes Google Play cancellation and refund information', () {
+      final paywall = File(
+        'lib/features/home/screens/subscription_screen.dart',
+      ).readAsStringSync();
+      final billingPortal = File(
+        'lib/core/services/billing_portal_service.dart',
+      ).readAsStringSync();
+
+      expect(paywall, contains('Manage Subscription'));
+      expect(paywall, contains('Refund Policy'));
+      expect(paywall, contains('does not automatically refund it'));
+      expect(paywall, isNot(contains('24h before renewal')));
+      expect(
+        billingPortal,
+        contains('PublicSiteLinks.googlePlaySubscriptions'),
+      );
+    });
+  });
+
   group('RevenueCat entitlement contract', () {
     test('uses only the Silarah premium entitlement identifier', () {
       final serviceSource = File(

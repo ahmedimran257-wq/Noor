@@ -144,6 +144,51 @@ class _ChatScreenState extends State<ChatScreen>
     await prefs.setBool('openers_dismissed_${widget.conversationId}', true);
   }
 
+  Future<void> _translateWithPrivacyNotice(
+    String messageId,
+    String locale,
+  ) async {
+    const consentKey = 'external_translation_notice_mymemory_v1';
+    final preferences = await SharedPreferences.getInstance();
+    var allowed = preferences.getBool(consentKey) ?? false;
+    if (!allowed && mounted) {
+      allowed = await showDialog<bool>(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              backgroundColor: AppColors.surfaceElevated,
+              title: UiText(
+                context.uiCopy('Translate with an external provider?'),
+                style: AppTypography.bodyMedium,
+              ),
+              content: UiText(
+                context.uiCopy(
+                  'If you continue, the selected message text will be sent to MyMemory for translation and the result will be saved in this chat. Do not translate highly sensitive information.',
+                ),
+                style: AppTypography.bodyMuted,
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: UiText(context.uiCopy('Not now')),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  child: UiText(context.uiCopy('Continue to translate')),
+                ),
+              ],
+            ),
+          ) ??
+          false;
+      if (allowed) await preferences.setBool(consentKey, true);
+    }
+    if (!allowed || !mounted) return;
+    await context.read<ChatCubit>().translateMessage(
+          widget.conversationId,
+          messageId,
+          locale,
+        );
+  }
+
   @override
   void dispose() {
     _chatCubit.updateTyping(widget.conversationId, isTyping: false);
@@ -564,12 +609,11 @@ class _ChatScreenState extends State<ChatScreen>
                                           msg.status == MessageStatus.failed
                                               ? () => _retryMessage(msg)
                                               : null,
-                                      onTranslate: () => context
-                                          .read<ChatCubit>()
-                                          .translateMessage(
-                                              widget.conversationId,
-                                              msg.id,
-                                              locale),
+                                      onTranslate: () =>
+                                          _translateWithPrivacyNotice(
+                                        msg.id,
+                                        locale,
+                                      ),
                                     ),
                                   );
                                 },
