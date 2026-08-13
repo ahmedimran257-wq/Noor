@@ -126,6 +126,11 @@ void main() {
     expect(profile, contains('openGooglePlaySubscriptions'));
     expect(profile, contains("context.uiCopy('Formal grievances')"));
     expect(profile, contains("initialSection: 'help'"));
+    expect(profile, contains('child: _HelpAndGrievanceCard('));
+    expect(
+      profile.indexOf('child: _SavedProfilesSection('),
+      lessThan(profile.indexOf('child: _HelpAndGrievanceCard(')),
+    );
     expect(policies, contains('does not impose an absolute “no refunds” rule'));
     expect(policies, contains('within 48 hours'));
     expect(policies, contains('statutory'));

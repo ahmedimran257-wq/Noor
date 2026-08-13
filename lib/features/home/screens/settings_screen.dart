@@ -158,264 +158,275 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: UiText(l10n.settings_title,
             style: AppTypography.screenTitle.copyWith(fontSize: 20)),
       ),
-      body: ListView(
+      // This is a bounded, static settings document. Building its sections
+      // together keeps GlobalKey-based deep links (Help, Privacy, Guardian)
+      // reliable; a lazy ListView can leave the requested off-screen section
+      // without a BuildContext when the first-frame jump runs.
+      body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
-        children: [
-          // 1. ACCOUNT
-          _SectionHeader(l10n.settings_section_account, key: _accountKey),
-          _SettingsCard(children: [
-            Builder(
-              builder: (ctx) {
-                final data = ctx.read<OnboardingCubit>().currentData;
-                final email = data.email ??
-                    (SupabaseService.isInitialized
-                        ? SupabaseService.client.auth.currentUser?.email
-                        : null);
-                return _InfoTile(
-                  icon: Icons.alternate_email_rounded,
-                  label: l10n.settings_label_email,
-                  value: _maskEmail(email),
-                );
-              },
-            ),
-          ]),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 1. ACCOUNT
+            _SectionHeader(l10n.settings_section_account, key: _accountKey),
+            _SettingsCard(children: [
+              Builder(
+                builder: (ctx) {
+                  final data = ctx.read<OnboardingCubit>().currentData;
+                  final email = data.email ??
+                      (SupabaseService.isInitialized
+                          ? SupabaseService.client.auth.currentUser?.email
+                          : null);
+                  return _InfoTile(
+                    icon: Icons.alternate_email_rounded,
+                    label: l10n.settings_label_email,
+                    value: _maskEmail(email),
+                  );
+                },
+              ),
+            ]),
 
-          // 2. NOTIFICATIONS
-          _SectionHeader(l10n.settings_section_notifications,
-              key: _notificationsKey),
-          BlocBuilder<NotificationPrefsCubit, NotificationPrefsState>(
-            builder: (context, prefs) => _SettingsCard(children: [
-              _ToggleTile(
-                icon: Icons.favorite_outline_rounded,
-                label: l10n.settings_notify_newInterest,
-                value: prefs.newInterest,
-                onChanged: (v) =>
-                    context.read<NotificationPrefsCubit>().toggleNewInterest(v),
-              ),
-              _Divider(),
-              _ToggleTile(
-                icon: Icons.check_circle_outline_rounded,
-                label: l10n.settings_notify_interestAccepted,
-                value: prefs.interestAccepted,
-                onChanged: (v) => context
-                    .read<NotificationPrefsCubit>()
-                    .toggleInterestAccepted(v),
-              ),
-              _Divider(),
-              _ToggleTile(
-                icon: Icons.chat_bubble_outline_rounded,
-                label: l10n.settings_notify_newMessage,
-                value: prefs.newMessage,
-                onChanged: (v) =>
-                    context.read<NotificationPrefsCubit>().toggleNewMessage(v),
-              ),
-              _Divider(),
-              _ToggleTile(
-                icon: Icons.visibility_outlined,
-                label: l10n.settings_notify_profileViews,
-                caption: l10n.settings_notify_profileViewsSub,
-                value: prefs.profileView,
-                onChanged: (v) =>
-                    context.read<NotificationPrefsCubit>().toggleProfileView(v),
-              ),
-              _Divider(),
-              _ToggleTile(
-                icon: Icons.public_rounded,
-                label: l10n.settings_notify_profileLive,
-                caption: l10n.settings_notify_profileLiveSub,
-                value: prefs.profileLive,
-                onChanged: (v) =>
-                    context.read<NotificationPrefsCubit>().toggleProfileLive(v),
-              ),
-              _Divider(),
-              _ToggleTile(
-                icon: Icons.explore_outlined,
-                label: l10n.settings_notify_compatibleProfiles,
-                caption: l10n.settings_notify_compatibleProfilesSub,
-                value: prefs.newCompatibleProfiles,
-                onChanged: (v) => context
-                    .read<NotificationPrefsCubit>()
-                    .toggleNewCompatibleProfiles(v),
-              ),
-              _Divider(),
-              _NavTile(
-                icon: Icons.calendar_month_outlined,
-                label: l10n.settings_notify_discoveryDigest,
-                value: _digestFrequencyLabel(
-                  l10n,
-                  prefs.discoveryDigestFrequency,
+            // 2. NOTIFICATIONS
+            _SectionHeader(l10n.settings_section_notifications,
+                key: _notificationsKey),
+            BlocBuilder<NotificationPrefsCubit, NotificationPrefsState>(
+              builder: (context, prefs) => _SettingsCard(children: [
+                _ToggleTile(
+                  icon: Icons.favorite_outline_rounded,
+                  label: l10n.settings_notify_newInterest,
+                  value: prefs.newInterest,
+                  onChanged: (v) => context
+                      .read<NotificationPrefsCubit>()
+                      .toggleNewInterest(v),
                 ),
-                onTap: () => _showDiscoveryDigestSheet(context, prefs),
-              ),
-              _Divider(),
-              _ToggleTile(
-                icon: Icons.timer_outlined,
-                label: l10n.settings_notify_interestExpiring,
-                value: prefs.interestExpiring,
-                onChanged: (v) => context
-                    .read<NotificationPrefsCubit>()
-                    .toggleInterestExpiring(v),
-              ),
-              _Divider(),
-              _ToggleTile(
-                icon: Icons.notifications_active_outlined,
-                label: l10n.settings_notify_activityNudges,
-                caption: l10n.settings_notify_activityNudgesSub,
-                value: prefs.inactiveNudge,
-                onChanged: (v) => context
-                    .read<NotificationPrefsCubit>()
-                    .toggleInactiveNudge(v),
-              ),
-              _Divider(),
-              _ToggleTile(
-                icon: Icons.rocket_launch_outlined,
-                label: l10n.settings_notify_boostReminders,
-                caption: l10n.settings_notify_boostRemindersSub,
-                value: prefs.boostAvailable,
-                onChanged: (v) => context
-                    .read<NotificationPrefsCubit>()
-                    .toggleBoostAvailable(v),
-              ),
-              _Divider(),
-              _NavTile(
-                icon: Icons.bedtime_outlined,
-                label: l10n.settings_notify_quietHours,
-                value:
-                    '${_fmtHour(prefs.quietStartHour)} – ${_fmtHour(prefs.quietEndHour)}',
-                onTap: () => _changeQuietHours(context, prefs),
-              ),
-            ]),
-          ),
-
-          // 3. GUARDIAN
-          _SectionHeader(l10n.settings_section_guardian, key: _guardianKey),
-          const _GuardianSection(),
-
-          // 4. PRIVACY
-          _SectionHeader(l10n.settings_section_privacy, key: _privacyKey),
-          const _PrivacySection(),
-
-          // 5. APP
-          _SectionHeader(l10n.settings_section_app),
-          _SettingsCard(children: [
-            BlocBuilder<ThemeCubit, ThemeSelectionState>(
-              builder: (context, themeState) => _NavTile(
-                icon: Icons.palette_outlined,
-                label: l10n.settings_appearance,
-                value: _themeLabel(l10n, themeState.activeMode),
-                onTap: () => _showThemeSheet(context),
-              ),
-            ),
-            _Divider(),
-            BlocBuilder<LocaleCubit, Locale>(
-              builder: (context, locale) {
-                final lang = _kLanguages.firstWhere(
-                    (l) => l.code == locale.languageCode,
-                    orElse: () => _kLanguages.first);
-                return _NavTile(
-                  icon: Icons.language_rounded,
-                  label: l10n.settings_label_language,
-                  value: lang.englishName,
-                  onTap: () => _showLanguageSheet(context, lang),
-                );
-              },
-            ),
-            _Divider(),
-            _InfoTile(
-              icon: Icons.info_outline_rounded,
-              label: l10n.settings_label_version,
-              value: _appVersion,
-            ),
-          ]),
-
-          // 6. SAFETY
-          _SectionHeader(l10n.settings_section_safety),
-          BlocBuilder<BlockReportCubit, BlockReportState>(
-            builder: (context, brs) => _SettingsCard(children: [
-              _NavTile(
-                icon: Icons.block_rounded,
-                label: l10n.settings_label_blocked,
-                value: brs.blockedUsers.isEmpty
-                    ? l10n.settings_label_blocked_none
-                    : l10n
-                        .settings_label_blocked_count(brs.blockedUsers.length),
-                onTap: () => context.push(AppRoutes.blockList),
-              ),
-              _Divider(),
-              _NavTile(
-                icon: Icons.flag_outlined,
-                label: l10n.settings_label_reports,
-                value: brs.reportHistory.isEmpty
-                    ? l10n.settings_label_reports_none
-                    : l10n
-                        .settings_label_reports_count(brs.reportHistory.length),
-                onTap: () => _showReportHistory(context, brs),
-              ),
-            ]),
-          ),
-
-          // 7. LEGAL
-          _SectionHeader(l10n.settings_helpSupport, key: _helpKey),
-          _SettingsCard(children: [
-            _NavTile(
-              icon: Icons.help_outline_rounded,
-              label: l10n.settings_helpCenter,
-              onTap: () => context.push(AppRoutes.helpSupport),
-            ),
-            _Divider(),
-            _NavTile(
-              icon: Icons.gavel_outlined,
-              label: l10n.settings_grievanceOfficer,
-              onTap: () => _showGrievanceInfo(context),
-            ),
-          ]),
-
-          _SectionHeader(l10n.settings_section_legal),
-          _SettingsCard(
-            children: [
-              for (var index = 0;
-                  index < LegalDocuments.all.length;
-                  index++) ...[
+                _Divider(),
+                _ToggleTile(
+                  icon: Icons.check_circle_outline_rounded,
+                  label: l10n.settings_notify_interestAccepted,
+                  value: prefs.interestAccepted,
+                  onChanged: (v) => context
+                      .read<NotificationPrefsCubit>()
+                      .toggleInterestAccepted(v),
+                ),
+                _Divider(),
+                _ToggleTile(
+                  icon: Icons.chat_bubble_outline_rounded,
+                  label: l10n.settings_notify_newMessage,
+                  value: prefs.newMessage,
+                  onChanged: (v) => context
+                      .read<NotificationPrefsCubit>()
+                      .toggleNewMessage(v),
+                ),
+                _Divider(),
+                _ToggleTile(
+                  icon: Icons.visibility_outlined,
+                  label: l10n.settings_notify_profileViews,
+                  caption: l10n.settings_notify_profileViewsSub,
+                  value: prefs.profileView,
+                  onChanged: (v) => context
+                      .read<NotificationPrefsCubit>()
+                      .toggleProfileView(v),
+                ),
+                _Divider(),
+                _ToggleTile(
+                  icon: Icons.public_rounded,
+                  label: l10n.settings_notify_profileLive,
+                  caption: l10n.settings_notify_profileLiveSub,
+                  value: prefs.profileLive,
+                  onChanged: (v) => context
+                      .read<NotificationPrefsCubit>()
+                      .toggleProfileLive(v),
+                ),
+                _Divider(),
+                _ToggleTile(
+                  icon: Icons.explore_outlined,
+                  label: l10n.settings_notify_compatibleProfiles,
+                  caption: l10n.settings_notify_compatibleProfilesSub,
+                  value: prefs.newCompatibleProfiles,
+                  onChanged: (v) => context
+                      .read<NotificationPrefsCubit>()
+                      .toggleNewCompatibleProfiles(v),
+                ),
+                _Divider(),
                 _NavTile(
-                  icon: _legalIcon(LegalDocuments.all[index].slug),
-                  label: LegalDocuments.all[index].title,
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => LegalDocScreen(
-                        type: LegalDocuments.all[index].slug,
+                  icon: Icons.calendar_month_outlined,
+                  label: l10n.settings_notify_discoveryDigest,
+                  value: _digestFrequencyLabel(
+                    l10n,
+                    prefs.discoveryDigestFrequency,
+                  ),
+                  onTap: () => _showDiscoveryDigestSheet(context, prefs),
+                ),
+                _Divider(),
+                _ToggleTile(
+                  icon: Icons.timer_outlined,
+                  label: l10n.settings_notify_interestExpiring,
+                  value: prefs.interestExpiring,
+                  onChanged: (v) => context
+                      .read<NotificationPrefsCubit>()
+                      .toggleInterestExpiring(v),
+                ),
+                _Divider(),
+                _ToggleTile(
+                  icon: Icons.notifications_active_outlined,
+                  label: l10n.settings_notify_activityNudges,
+                  caption: l10n.settings_notify_activityNudgesSub,
+                  value: prefs.inactiveNudge,
+                  onChanged: (v) => context
+                      .read<NotificationPrefsCubit>()
+                      .toggleInactiveNudge(v),
+                ),
+                _Divider(),
+                _ToggleTile(
+                  icon: Icons.rocket_launch_outlined,
+                  label: l10n.settings_notify_boostReminders,
+                  caption: l10n.settings_notify_boostRemindersSub,
+                  value: prefs.boostAvailable,
+                  onChanged: (v) => context
+                      .read<NotificationPrefsCubit>()
+                      .toggleBoostAvailable(v),
+                ),
+                _Divider(),
+                _NavTile(
+                  icon: Icons.bedtime_outlined,
+                  label: l10n.settings_notify_quietHours,
+                  value:
+                      '${_fmtHour(prefs.quietStartHour)} – ${_fmtHour(prefs.quietEndHour)}',
+                  onTap: () => _changeQuietHours(context, prefs),
+                ),
+              ]),
+            ),
+
+            // 3. GUARDIAN
+            _SectionHeader(l10n.settings_section_guardian, key: _guardianKey),
+            const _GuardianSection(),
+
+            // 4. PRIVACY
+            _SectionHeader(l10n.settings_section_privacy, key: _privacyKey),
+            const _PrivacySection(),
+
+            // 5. APP
+            _SectionHeader(l10n.settings_section_app),
+            _SettingsCard(children: [
+              BlocBuilder<ThemeCubit, ThemeSelectionState>(
+                builder: (context, themeState) => _NavTile(
+                  icon: Icons.palette_outlined,
+                  label: l10n.settings_appearance,
+                  value: _themeLabel(l10n, themeState.activeMode),
+                  onTap: () => _showThemeSheet(context),
+                ),
+              ),
+              _Divider(),
+              BlocBuilder<LocaleCubit, Locale>(
+                builder: (context, locale) {
+                  final lang = _kLanguages.firstWhere(
+                      (l) => l.code == locale.languageCode,
+                      orElse: () => _kLanguages.first);
+                  return _NavTile(
+                    icon: Icons.language_rounded,
+                    label: l10n.settings_label_language,
+                    value: lang.englishName,
+                    onTap: () => _showLanguageSheet(context, lang),
+                  );
+                },
+              ),
+              _Divider(),
+              _InfoTile(
+                icon: Icons.info_outline_rounded,
+                label: l10n.settings_label_version,
+                value: _appVersion,
+              ),
+            ]),
+
+            // 6. SAFETY
+            _SectionHeader(l10n.settings_section_safety),
+            BlocBuilder<BlockReportCubit, BlockReportState>(
+              builder: (context, brs) => _SettingsCard(children: [
+                _NavTile(
+                  icon: Icons.block_rounded,
+                  label: l10n.settings_label_blocked,
+                  value: brs.blockedUsers.isEmpty
+                      ? l10n.settings_label_blocked_none
+                      : l10n.settings_label_blocked_count(
+                          brs.blockedUsers.length),
+                  onTap: () => context.push(AppRoutes.blockList),
+                ),
+                _Divider(),
+                _NavTile(
+                  icon: Icons.flag_outlined,
+                  label: l10n.settings_label_reports,
+                  value: brs.reportHistory.isEmpty
+                      ? l10n.settings_label_reports_none
+                      : l10n.settings_label_reports_count(
+                          brs.reportHistory.length),
+                  onTap: () => _showReportHistory(context, brs),
+                ),
+              ]),
+            ),
+
+            // 7. LEGAL
+            _SectionHeader(l10n.settings_helpSupport, key: _helpKey),
+            _SettingsCard(children: [
+              _NavTile(
+                icon: Icons.help_outline_rounded,
+                label: l10n.settings_helpCenter,
+                onTap: () => context.push(AppRoutes.helpSupport),
+              ),
+              _Divider(),
+              _NavTile(
+                icon: Icons.gavel_outlined,
+                label: l10n.settings_grievanceOfficer,
+                onTap: () => _showGrievanceInfo(context),
+              ),
+            ]),
+
+            _SectionHeader(l10n.settings_section_legal),
+            _SettingsCard(
+              children: [
+                for (var index = 0;
+                    index < LegalDocuments.all.length;
+                    index++) ...[
+                  _NavTile(
+                    icon: _legalIcon(LegalDocuments.all[index].slug),
+                    label: LegalDocuments.all[index].title,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => LegalDocScreen(
+                          type: LegalDocuments.all[index].slug,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                if (index != LegalDocuments.all.length - 1) _Divider(),
+                  if (index != LegalDocuments.all.length - 1) _Divider(),
+                ],
               ],
-            ],
-          ),
-
-          // 8. DANGER ZONE
-          _SectionHeader(l10n.settings_section_dangerZone),
-          _SettingsCard(
-            borderColor: AppColors.softCoral.withValues(alpha: 0.3),
-            children: [
-              _NavTile(
-                icon: Icons.delete_forever_outlined,
-                label: l10n.settings_button_deleteAccount,
-                iconColor: AppColors.softCoral,
-                labelColor: AppColors.softCoral,
-                onTap: () => context.push(AppRoutes.deleteAccount),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 20),
-          Center(
-            child: UiText(
-              l10n.settings_brand_credit,
-              style: AppTypography.caption.copyWith(fontSize: 11),
-              textAlign: TextAlign.center,
             ),
-          ),
-        ],
+
+            // 8. DANGER ZONE
+            _SectionHeader(l10n.settings_section_dangerZone),
+            _SettingsCard(
+              borderColor: AppColors.softCoral.withValues(alpha: 0.3),
+              children: [
+                _NavTile(
+                  icon: Icons.delete_forever_outlined,
+                  label: l10n.settings_button_deleteAccount,
+                  iconColor: AppColors.softCoral,
+                  labelColor: AppColors.softCoral,
+                  onTap: () => context.push(AppRoutes.deleteAccount),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+            Center(
+              child: UiText(
+                l10n.settings_brand_credit,
+                style: AppTypography.caption.copyWith(fontSize: 11),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

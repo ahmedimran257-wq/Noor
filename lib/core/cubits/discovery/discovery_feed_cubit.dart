@@ -178,6 +178,20 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     }
   }
 
+  /// Invalidates only viewer readiness when onboarding publishes a profile.
+  /// This is an event-driven, once-per-signup handoff; normal tab changes keep
+  /// using the inexpensive revision token instead of reloading the feed.
+  Future<void> refreshAfterViewerPublication() async {
+    _readyViewerId = null;
+    _viewerReadyAt = null;
+    _loadedRevisionToken = null;
+    _pendingRevisionToken = null;
+    _lastRevisionCheckAt = null;
+
+    if (isClosed || state.status == FeedStatus.initial) return;
+    await loadInitial(force: true);
+  }
+
   /// Checks a tiny server revision and reloads only when discovery-relevant
   /// catalog or relationship state changed. Repeated tab taps and short
   /// background/resume cycles therefore do not re-query or re-sign the feed.

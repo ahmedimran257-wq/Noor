@@ -27,12 +27,15 @@ class AccountStandingCubit extends Cubit<AccountStandingState> {
     await stop();
     _userId = userId;
     emit(const AccountStandingState(loading: true));
-    await refresh();
-    if (isClosed || _userId != userId) return;
+
+    // Subscribe before the initial read and include INSERT events. A newly
+    // authenticated member may not have a profiles row yet; subscribing only
+    // to UPDATE after the read can permanently cache that temporary absence as
+    // "paused" until a manual refresh.
     _channel = SupabaseService.client
         .channel('account_standing_$userId')
         .onPostgresChanges(
-          event: PostgresChangeEvent.update,
+          event: PostgresChangeEvent.all,
           schema: 'public',
           table: 'profiles',
           filter: PostgresChangeFilter(
@@ -43,6 +46,7 @@ class AccountStandingCubit extends Cubit<AccountStandingState> {
           callback: (_) => unawaited(refresh()),
         )
         .subscribe();
+    await refresh();
   }
 
   Future<void> refresh() async {

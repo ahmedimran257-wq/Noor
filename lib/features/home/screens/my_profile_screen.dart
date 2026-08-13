@@ -638,27 +638,6 @@ class _MyProfileScreenState extends State<MyProfileScreen>
             ),
           ),
 
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
-            child: Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: TextButton.icon(
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const SettingsScreen(
-                      initialSection: 'help',
-                    ),
-                  ),
-                ),
-                icon: const Icon(Icons.support_agent_outlined),
-                label: UiText(
-                  '${context.uiCopy('Help & Support')} · '
-                  '${context.uiCopy('Formal grievances')}',
-                ),
-              ),
-            ),
-          ),
-
           const SizedBox(height: AppDimensions.space16),
 
           // Profile card preview (live completeness)
@@ -877,6 +856,20 @@ class _MyProfileScreenState extends State<MyProfileScreen>
             ),
           ),
           const SizedBox(height: AppDimensions.space20),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: _HelpAndGrievanceCard(
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const SettingsScreen(
+                    initialSection: 'help',
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppDimensions.space16),
 
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -2373,6 +2366,70 @@ class _SavedProfilesSection extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+class _HelpAndGrievanceCard extends StatelessWidget {
+  const _HelpAndGrievanceCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SilarahPressable(
+      semanticLabel: '${context.uiCopy('Help & Support')}. '
+          '${context.uiCopy('Formal grievances')}',
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(AppDimensions.space16),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceGlass,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+          border: Border.all(color: AppColors.cardBorder),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.champagneGold.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.goldBorder),
+              ),
+              child: Icon(
+                Icons.support_agent_outlined,
+                color: AppColors.champagneGold,
+                size: AppDimensions.iconSizeMedium,
+              ),
+            ),
+            const SizedBox(width: AppDimensions.space12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  UiText(
+                    context.uiCopy('Help & Support'),
+                    style: AppTypography.bodyMedium,
+                  ),
+                  const SizedBox(height: AppDimensions.space4),
+                  UiText(
+                    context.uiCopy('Formal grievances'),
+                    style: AppTypography.caption,
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.slateMist,
+              size: AppDimensions.iconSizeMedium,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

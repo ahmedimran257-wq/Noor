@@ -381,6 +381,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
   /// BlocListener which calls initialize() and wipes all accumulated form data.
   bool _onboardingInitialized = false;
   String? _activeSessionUserId;
+  String? _onboardingPublicationSyncedUserId;
   late final DateTime _startupStartedAt =
       widget.startupStartedAt ?? DateTime.now();
 
@@ -641,6 +642,13 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
     await _subscriptionCubit.loginUser(userId);
   }
 
+  Future<void> _synchronizePublishedProfile(String userId) async {
+    if (_activeSessionUserId != userId) return;
+    await _accountStandingCubit.refresh();
+    if (_activeSessionUserId != userId) return;
+    await _discoveryFeedCubit.refreshAfterViewerPublication();
+  }
+
   void _clearUserScopedState({String? departingUserId}) {
     BookmarkService.clearCache();
     _chatCubit.clear();
@@ -725,6 +733,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
                 final departingUserId = _activeSessionUserId;
                 _onboardingInitialized = false;
                 _activeSessionUserId = null;
+                _onboardingPublicationSyncedUserId = null;
                 PresenceService.instance.stop();
                 _clearUserScopedState(departingUserId: departingUserId);
               }
@@ -735,6 +744,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
                   departingUserId: _activeSessionUserId,
                 );
                 _onboardingInitialized = false;
+                _onboardingPublicationSyncedUserId = null;
               }
               final isNewAuthenticatedSession = state is AuthAuthenticated &&
                   _activeSessionUserId != state.userId;
@@ -758,6 +768,20 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
                   _chatCubit.loadConversations();
                   _notificationsCubit.loadNotifications();
                   _interestsCubit.loadData();
+                }
+                if (state.onboardingCompleted) {
+                  if (isNewAuthenticatedSession) {
+                    // Existing members are covered by the session-start read.
+                    _onboardingPublicationSyncedUserId = state.userId;
+                  } else if (_onboardingPublicationSyncedUserId !=
+                      state.userId) {
+                    // New signup completion is a one-time server publication
+                    // boundary. Refresh account standing and invalidate only
+                    // viewer readiness so Discovery never inherits the
+                    // pre-profile "paused" snapshot.
+                    _onboardingPublicationSyncedUserId = state.userId;
+                    unawaited(_synchronizePublishedProfile(state.userId));
+                  }
                 }
                 _interestsCubit.setDailyLimitForGender(
                   gender: state.gender ?? 'male',

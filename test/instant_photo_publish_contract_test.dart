@@ -24,6 +24,13 @@ void main() {
   final adminModeration = File(
     'admin/src/app/(staff)/moderation/page.tsx',
   ).readAsStringSync();
+  final accountStanding = File(
+    'lib/core/cubits/account_standing/account_standing_cubit.dart',
+  ).readAsStringSync();
+  final discovery = File(
+    'lib/core/cubits/discovery/discovery_feed_cubit.dart',
+  ).readAsStringSync();
+  final app = File('lib/main.dart').readAsStringSync();
 
   test('safe uploads publish immediately and every upload enters moderation',
       () {
@@ -71,6 +78,25 @@ void main() {
       uploadScreen,
       contains('Safe photos are live and remain subject to moderation'),
     );
+  });
+
+  test('signup publication cannot leave account standing or discovery stale',
+      () {
+    expect(accountStanding, contains('event: PostgresChangeEvent.all'));
+    final subscriptionIndex =
+        accountStanding.indexOf(".channel('account_standing_\$userId')");
+    final initialReadIndex =
+        accountStanding.indexOf('await refresh();', subscriptionIndex);
+    expect(
+      subscriptionIndex,
+      lessThan(initialReadIndex),
+    );
+    expect(discovery, contains('refreshAfterViewerPublication'));
+    expect(discovery, contains('_readyViewerId = null'));
+    expect(app, contains('_synchronizePublishedProfile(state.userId)'));
+    expect(app, contains('_accountStandingCubit.refresh()'));
+    expect(
+        app, contains('_discoveryFeedCubit.refreshAfterViewerPublication()'));
   });
 
   test('later moderator rejection removes the photo and pauses a primary', () {
