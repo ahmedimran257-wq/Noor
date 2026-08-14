@@ -125,6 +125,7 @@ import_map = "./functions/deno.json"
 # RevenueCat signs requests with REVENUECAT_WEBHOOK_SECRET; Supabase JWT
 # verification must stay off so external webhooks can reach our own verifier.
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.brevo-key-keepalive]
 # pg_cron authenticates with the private Vault-backed cron credential.

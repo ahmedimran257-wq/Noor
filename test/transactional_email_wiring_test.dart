@@ -24,6 +24,10 @@ void main() {
   });
 
   test('RevenueCat billing email is server-only, durable, and idempotent', () {
+    final config = source('supabase/config.toml');
+    final functionConfig = RegExp(
+      r'\[functions\.revenuecat-webhook\][\s\S]*?(?=\r?\n\[functions\.|\z)',
+    ).firstMatch(config)?.group(0) ?? '';
     final webhook = source('supabase/functions/revenuecat-webhook/index.ts');
     final migration = source(
       'supabase/migrations/127_transactional_subscription_email_outbox.sql',
@@ -33,6 +37,8 @@ void main() {
     );
 
     expect(webhook, contains('REVENUECAT_WEBHOOK_SECRET'));
+    expect(functionConfig, contains('verify_jwt = false'));
+    expect(functionConfig, contains('import_map = "./functions/deno.json"'));
     expect(webhook, contains('claim_transactional_email'));
     expect(webhook, contains('sendBrevoTransactionalEmail'));
     expect(webhook, contains('Email delivery deferred'));
@@ -42,6 +48,8 @@ void main() {
     expect(migration, contains('attempts < 8'));
     expect(renderer, contains('https://api.brevo.com/v3/smtp/email'));
     expect(renderer, contains('noreply@mail.silarah.com'));
+    expect(renderer, contains('replyTo:'));
+    expect(renderer, contains('support@silarah.com'));
     expect(renderer, contains('textContent'));
     expect(renderer, contains('escapeHtml'));
   });

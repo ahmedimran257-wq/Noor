@@ -173,6 +173,7 @@ export async function sendBrevoTransactionalEmail(args: {
       },
       body: JSON.stringify({
         sender: { name: "Silarah", email: "noreply@mail.silarah.com" },
+        replyTo: { name: "Silarah Support", email: "support@silarah.com" },
         to: [{
           email: args.to,
           ...(args.recipientName ? { name: args.recipientName } : {}),
