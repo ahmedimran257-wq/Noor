@@ -2462,7 +2462,52 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get referral_body =>
-      'Invitez vos amis sur SILARAH. Lorsqu’une personne du sexe opposé termine son inscription avec votre code, vous recevez tous les deux 3 jours de Premium gratuits !';
+      'Invitez une personne éligible du sexe opposé sur SILARAH. Chaque compte peut recevoir une seule récompense de parrainage Premium de 3 jours. Si vous avez déjà reçu la vôtre, votre ami peut toujours recevoir la sienne.';
+
+  @override
+  String get referral_premiumActiveTitle =>
+      'Le Premium de parrainage est actif';
+
+  @override
+  String referral_premiumRemainingDaysHours(int days, int hours) {
+    return '$days j $hours h restantes';
+  }
+
+  @override
+  String referral_premiumRemainingHoursMinutes(int hours, int minutes) {
+    return '$hours h $minutes min restantes';
+  }
+
+  @override
+  String referral_premiumRemainingMinutes(int minutes) {
+    return '$minutes min restantes';
+  }
+
+  @override
+  String get referral_premiumEndingNow => 'La récompense se termine maintenant';
+
+  @override
+  String referral_premiumEndsAt(String date) {
+    return 'Se termine le $date';
+  }
+
+  @override
+  String get referral_premiumNoPayment =>
+      'Toutes les fonctions Premium sont débloquées. Aucun paiement n’a été prélevé et cette récompense ne sera pas renouvelée automatiquement.';
+
+  @override
+  String get referral_premiumPlansAfter =>
+      'Les abonnements seront disponibles après votre récompense gratuite afin de ne perdre aucun temps gratuit restant.';
+
+  @override
+  String get referral_premiumBackToProfile => 'Retour au profil';
+
+  @override
+  String get referral_premiumFeaturesUnlocked =>
+      'Toutes les fonctions Premium sont débloquées';
+
+  @override
+  String get referral_premiumViewReward => 'Voir la récompense';
 
   @override
   String get referral_codeLabel => 'VOTRE CODE DE PARRAINAGE';

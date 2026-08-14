@@ -93,21 +93,26 @@ class ReferralService {
       final userId = _supabase.auth.currentUser?.id;
       if (userId == null) throw Exception('Not authenticated');
 
-      final response = await _supabase
-          .from('referrals')
-          .select('id, referred_gender, reward_granted, reward_type')
-          .eq('referrer_id', userId);
+      final responses = await Future.wait([
+        _supabase
+            .from('referrals')
+            .select('id, referred_gender, reward_granted, reward_type')
+            .eq('referrer_id', userId),
+        _supabase
+            .from('promotional_premium_grants')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('beneficiary_role', 'referrer'),
+      ]);
 
-      final referrals = response as List<dynamic>;
+      final referrals = responses.first as List<dynamic>;
+      final earnedGrants = responses.last as List<dynamic>;
 
       return ReferralStats(
         totalReferrals: referrals.length,
-        rewardsEarned: referrals
-            .where((r) =>
-                r['reward_granted'] == true &&
-                (r['reward_type'] == '3_days_premium_both' ||
-                    r['reward_type'] == '7_days_premium'))
-            .length,
+        // The database enforces one lifetime reward per account. Count the
+        // auditable grant owned by this inviter, not every completed referral.
+        rewardsEarned: earnedGrants.length,
         pendingReferrals:
             referrals.where((r) => r['reward_granted'] == false).length,
       );
@@ -129,7 +134,7 @@ class ReferralStats {
   /// Total number of users referred (completed onboarding).
   final int totalReferrals;
 
-  /// Number of Premium rewards earned from opposite-gender referrals.
+  /// Number of one-time Premium rewards earned from referrals (0 or 1).
   final int rewardsEarned;
 
   /// Referrals who haven't completed onboarding yet.

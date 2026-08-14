@@ -2449,7 +2449,51 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get referral_body =>
-      'मित्रों को SILARAH पर बुलाएँ। विपरीत लिंग का कोई व्यक्ति आपके कोड से ऑनबोर्डिंग पूरी करे तो आप दोनों को 3 दिन का मुफ़्त प्रीमियम मिलेगा!';
+      'विपरीत लिंग के एक योग्य मित्र को SILARAH पर बुलाएँ। हर अकाउंट जीवन में केवल एक बार 3 दिन का रेफ़रल प्रीमियम पा सकता है। यदि आपको अपना पुरस्कार मिल चुका है, तब भी आपके मित्र को उनका पुरस्कार मिलेगा।';
+
+  @override
+  String get referral_premiumActiveTitle => 'रेफ़रल प्रीमियम सक्रिय है';
+
+  @override
+  String referral_premiumRemainingDaysHours(int days, int hours) {
+    return '$daysदि $hoursघं बाकी';
+  }
+
+  @override
+  String referral_premiumRemainingHoursMinutes(int hours, int minutes) {
+    return '$hoursघं $minutesमि बाकी';
+  }
+
+  @override
+  String referral_premiumRemainingMinutes(int minutes) {
+    return '$minutesमि बाकी';
+  }
+
+  @override
+  String get referral_premiumEndingNow => 'पुरस्कार अभी समाप्त हो रहा है';
+
+  @override
+  String referral_premiumEndsAt(String date) {
+    return '$date को समाप्त';
+  }
+
+  @override
+  String get referral_premiumNoPayment =>
+      'सभी प्रीमियम सुविधाएँ खुली हैं। कोई भुगतान नहीं लिया गया और यह पुरस्कार अपने आप नवीनीकृत नहीं होगा।';
+
+  @override
+  String get referral_premiumPlansAfter =>
+      'मुफ़्त पुरस्कार समाप्त होने के बाद सब्सक्रिप्शन प्लान उपलब्ध होंगे, इसलिए आपका बचा मुफ़्त समय व्यर्थ नहीं होगा।';
+
+  @override
+  String get referral_premiumBackToProfile => 'प्रोफ़ाइल पर वापस जाएँ';
+
+  @override
+  String get referral_premiumFeaturesUnlocked =>
+      'सभी प्रीमियम सुविधाएँ खुली हैं';
+
+  @override
+  String get referral_premiumViewReward => 'पुरस्कार देखें';
 
   @override
   String get referral_codeLabel => 'आपका रेफ़रल कोड';

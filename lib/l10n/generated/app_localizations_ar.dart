@@ -2410,7 +2410,50 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get referral_body =>
-      'ادعُ أصدقاءك إلى سيلاراه. عندما يُكمل شخص من الجنس الآخر التسجيل باستخدام رمزك، تحصلان على 3 أيام مجانية من المزايا المميزة!';
+      'ادعُ صديقًا مؤهلًا من الجنس الآخر إلى سيلاراه. يمكن لكل حساب الحصول على مكافأة إحالة واحدة فقط لمدة 3 أيام. إذا حصلت على مكافأتك بالفعل، فلا يزال بإمكان صديقك الحصول على مكافأته.';
+
+  @override
+  String get referral_premiumActiveTitle => 'مكافأة الإحالة المميزة نشطة';
+
+  @override
+  String referral_premiumRemainingDaysHours(int days, int hours) {
+    return 'متبقي $daysي $hoursس';
+  }
+
+  @override
+  String referral_premiumRemainingHoursMinutes(int hours, int minutes) {
+    return 'متبقي $hoursس $minutesد';
+  }
+
+  @override
+  String referral_premiumRemainingMinutes(int minutes) {
+    return 'متبقي $minutesد';
+  }
+
+  @override
+  String get referral_premiumEndingNow => 'تنتهي المكافأة الآن';
+
+  @override
+  String referral_premiumEndsAt(String date) {
+    return 'تنتهي في $date';
+  }
+
+  @override
+  String get referral_premiumNoPayment =>
+      'جميع المزايا المميزة مفتوحة. لم يتم تحصيل أي مبلغ ولن تتجدد هذه المكافأة تلقائيًا.';
+
+  @override
+  String get referral_premiumPlansAfter =>
+      'تتوفر خطط الاشتراك بعد انتهاء مكافأتك المجانية حتى لا تفقد أي وقت مجاني متبقٍ.';
+
+  @override
+  String get referral_premiumBackToProfile => 'العودة إلى الملف الشخصي';
+
+  @override
+  String get referral_premiumFeaturesUnlocked => 'جميع المزايا المميزة مفتوحة';
+
+  @override
+  String get referral_premiumViewReward => 'عرض المكافأة';
 
   @override
   String get referral_codeLabel => 'رمز الإحالة الخاص بك';

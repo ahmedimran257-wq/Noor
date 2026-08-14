@@ -4575,8 +4575,74 @@ abstract class AppLocalizations {
   /// No description provided for @referral_body.
   ///
   /// In en, this message translates to:
-  /// **'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 3 days of FREE Premium!'**
+  /// **'Invite one eligible opposite-gender friend to SILARAH. Each account can claim one 3-day referral Premium reward in its lifetime. If you already claimed yours, your friend can still claim theirs.'**
   String get referral_body;
+
+  /// No description provided for @referral_premiumActiveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Referral Premium is active'**
+  String get referral_premiumActiveTitle;
+
+  /// No description provided for @referral_premiumRemainingDaysHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{days}d {hours}h remaining'**
+  String referral_premiumRemainingDaysHours(int days, int hours);
+
+  /// No description provided for @referral_premiumRemainingHoursMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h {minutes}m remaining'**
+  String referral_premiumRemainingHoursMinutes(int hours, int minutes);
+
+  /// No description provided for @referral_premiumRemainingMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}m remaining'**
+  String referral_premiumRemainingMinutes(int minutes);
+
+  /// No description provided for @referral_premiumEndingNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Reward ending now'**
+  String get referral_premiumEndingNow;
+
+  /// No description provided for @referral_premiumEndsAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends {date}'**
+  String referral_premiumEndsAt(String date);
+
+  /// No description provided for @referral_premiumNoPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'All Premium features are unlocked. No payment was taken and this reward will not renew automatically.'**
+  String get referral_premiumNoPayment;
+
+  /// No description provided for @referral_premiumPlansAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription plans become available after your free reward ends, so none of your remaining free time is wasted.'**
+  String get referral_premiumPlansAfter;
+
+  /// No description provided for @referral_premiumBackToProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to profile'**
+  String get referral_premiumBackToProfile;
+
+  /// No description provided for @referral_premiumFeaturesUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'All Premium features are unlocked'**
+  String get referral_premiumFeaturesUnlocked;
+
+  /// No description provided for @referral_premiumViewReward.
+  ///
+  /// In en, this message translates to:
+  /// **'View reward'**
+  String get referral_premiumViewReward;
 
   /// No description provided for @referral_codeLabel.
   ///

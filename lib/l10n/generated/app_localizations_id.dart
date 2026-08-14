@@ -2463,7 +2463,50 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get referral_body =>
-      'Ajak teman ke SILARAH. Saat seseorang dari gender berbeda menyelesaikan orientasi dengan kode Anda, kalian berdua mendapat Premium GRATIS selama 3 hari!';
+      'Undang satu teman lawan jenis yang memenuhi syarat ke SILARAH. Setiap akun hanya dapat menerima satu hadiah Premium referral 3 hari. Jika Anda sudah menerima hadiah, teman Anda tetap dapat menerima hadiahnya.';
+
+  @override
+  String get referral_premiumActiveTitle => 'Premium referral aktif';
+
+  @override
+  String referral_premiumRemainingDaysHours(int days, int hours) {
+    return 'Tersisa ${days}h ${hours}j';
+  }
+
+  @override
+  String referral_premiumRemainingHoursMinutes(int hours, int minutes) {
+    return 'Tersisa ${hours}j ${minutes}m';
+  }
+
+  @override
+  String referral_premiumRemainingMinutes(int minutes) {
+    return 'Tersisa ${minutes}m';
+  }
+
+  @override
+  String get referral_premiumEndingNow => 'Hadiah berakhir sekarang';
+
+  @override
+  String referral_premiumEndsAt(String date) {
+    return 'Berakhir $date';
+  }
+
+  @override
+  String get referral_premiumNoPayment =>
+      'Semua fitur Premium terbuka. Tidak ada pembayaran dan hadiah ini tidak diperpanjang otomatis.';
+
+  @override
+  String get referral_premiumPlansAfter =>
+      'Paket langganan tersedia setelah hadiah gratis berakhir agar sisa waktu gratis Anda tidak terbuang.';
+
+  @override
+  String get referral_premiumBackToProfile => 'Kembali ke profil';
+
+  @override
+  String get referral_premiumFeaturesUnlocked => 'Semua fitur Premium terbuka';
+
+  @override
+  String get referral_premiumViewReward => 'Lihat hadiah';
 
   @override
   String get referral_codeLabel => 'KODE REFERAL ANDA';

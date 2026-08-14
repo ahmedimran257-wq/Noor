@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/cubits/auth/auth_state.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
@@ -639,6 +640,21 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           ),
 
           const SizedBox(height: AppDimensions.space16),
+
+          BlocBuilder<SubscriptionCubit, SubscriptionState>(
+            builder: (context, subscription) {
+              if (!subscription.isReferralOnly) {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                child: _ReferralPremiumProfileBanner(
+                  expiresAt: subscription.expiresAt,
+                  onTap: () => context.push(AppRoutes.subscription),
+                ),
+              );
+            },
+          ),
 
           // Profile card preview (live completeness)
           Padding(
@@ -1788,6 +1804,103 @@ class _BoostLocked extends StatelessWidget {
   }
 }
 
+class _ReferralPremiumProfileBanner extends StatelessWidget {
+  const _ReferralPremiumProfileBanner({
+    required this.expiresAt,
+    required this.onTap,
+  });
+
+  final DateTime? expiresAt;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final remaining = expiresAt?.toLocal().difference(DateTime.now());
+    final days = remaining?.inDays ?? 3;
+    final hours = remaining?.inHours.remainder(24) ?? 0;
+    final minutes = remaining?.inMinutes.remainder(60) ?? 0;
+    final remainingText = days > 0
+        ? l10n.referral_premiumRemainingDaysHours(days, hours)
+        : hours > 0
+            ? l10n.referral_premiumRemainingHoursMinutes(hours, minutes)
+            : l10n.referral_premiumRemainingMinutes(
+                remaining?.inMinutes.clamp(1, 59) ?? 1,
+              );
+
+    return SilarahPressable(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppDimensions.space16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppColors.champagneGold.withValues(alpha: 0.16),
+              AppColors.verifiedTeal.withValues(alpha: 0.10),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+          border: Border.all(color: AppColors.goldBorder, width: 1.4),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.champagneGold.withValues(alpha: 0.06),
+              blurRadius: 22,
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.champagneGold.withValues(alpha: 0.14),
+                border: Border.all(color: AppColors.goldBorder),
+              ),
+              child: Icon(
+                Icons.workspace_premium_rounded,
+                color: AppColors.champagneGold,
+                size: 26,
+              ),
+            ),
+            const SizedBox(width: AppDimensions.space12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  UiText(
+                    l10n.referral_premiumActiveTitle,
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppColors.champagneGold,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  UiText(
+                    remainingText,
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.verifiedTeal,
+                    ),
+                  ),
+                  UiText(
+                    l10n.referral_premiumFeaturesUnlocked,
+                    style: AppTypography.caption,
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.champagneGold,
+              size: AppDimensions.iconSizeMedium,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // Subscription Card
 class _SubscriptionCard extends StatelessWidget {
   @override
@@ -1795,10 +1908,12 @@ class _SubscriptionCard extends StatelessWidget {
     final authState = context.watch<AuthCubit>().state;
     final gender =
         authState is AuthAuthenticated ? (authState.gender ?? 'male') : 'male';
-    if (gender == 'female') return const SizedBox.shrink();
 
     return BlocBuilder<SubscriptionCubit, SubscriptionState>(
       builder: (context, state) {
+        if (gender == 'female' && !state.includesReferral) {
+          return const SizedBox.shrink();
+        }
         return switch (state.status) {
           SubscriptionStatus.active => _buildActive(context, state),
           SubscriptionStatus.grace => _buildGrace(context),
@@ -1809,7 +1924,9 @@ class _SubscriptionCard extends StatelessWidget {
   }
 
   Widget _buildActive(BuildContext context, SubscriptionState state) {
+    final l10n = AppLocalizations.of(context);
     final expiry = state.expiresAt;
+    final referralOnly = state.isReferralOnly;
     return _CardShell(
       borderColor: AppColors.verifiedTeal,
       glowColor: AppColors.verifiedTeal.withValues(alpha: 0.1),
@@ -1821,18 +1938,34 @@ class _SubscriptionCard extends StatelessWidget {
             child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            UiText('SILARAH Premium · Active',
+            UiText(
+                referralOnly
+                    ? l10n.referral_premiumActiveTitle
+                    : 'SILARAH Premium · Active',
                 style: AppTypography.bodyMedium
                     .copyWith(color: AppColors.verifiedTeal)),
             if (expiry != null)
-              UiText(context.uiRenewsDate(_fmtDate(expiry)),
+              UiText(
+                  referralOnly
+                      ? l10n.referral_premiumEndsAt(_fmtDate(expiry))
+                      : context.uiRenewsDate(_fmtDate(expiry)),
                   style: AppTypography.caption),
           ],
         )),
         TextButton(
-          onPressed: () => _manageSubscription(context),
+          onPressed: referralOnly
+              ? () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const SubscriptionScreen(),
+                    ),
+                  )
+              : () => _manageSubscription(context),
           child: UiText(
-            context.uiCopy('Manage Subscription'),
+            context.uiCopy(
+              referralOnly
+                  ? l10n.referral_premiumViewReward
+                  : 'Manage Subscription',
+            ),
             style: AppTypography.captionMedium
                 .copyWith(color: AppColors.verifiedTeal),
           ),

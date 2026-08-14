@@ -6,12 +6,16 @@ import 'package:silarah/core/cubits/subscription/subscription_state.dart';
 
 void main() {
   late String migration;
+  late String runtimeMigration;
   late String subscriptionCubit;
   late String referralService;
 
   setUpAll(() {
     migration = File(
       'supabase/migrations/215_three_day_referral_premium_for_both.sql',
+    ).readAsStringSync();
+    runtimeMigration = File(
+      'supabase/migrations/216_referral_premium_runtime_integrity.sql',
     ).readAsStringSync();
     subscriptionCubit = File(
       'lib/core/cubits/subscription/subscription_cubit.dart',
@@ -20,7 +24,7 @@ void main() {
         File('lib/core/services/referral_service.dart').readAsStringSync();
   });
 
-  test('grants three independent Premium days to both participants', () {
+  test('initial eligible referral grants three days to both participants', () {
     expect(migration, contains("v_starts_at + interval '3 days'"));
     expect(migration, contains("'referrer'\n  );"));
     expect(migration, contains("'referred'\n  );"));
@@ -29,6 +33,28 @@ void main() {
       migration,
       isNot(contains('UPDATE public.users SET subscription_status')),
     );
+  });
+
+  test('caps referral Premium at one lifetime grant per account', () {
+    expect(
+      runtimeMigration,
+      contains('promotional_premium_grants_one_lifetime_reward_per_user'),
+    );
+    expect(runtimeMigration, contains('WHERE g.user_id = p_user_id'));
+    expect(runtimeMigration, contains('RETURN NULL;'));
+    expect(
+      runtimeMigration,
+      contains("THEN '3_days_premium_referred_only'"),
+    );
+    expect(runtimeMigration, isNot(contains('max(g.expires_at)')));
+  });
+
+  test('daily profile limit consumes the combined entitlement', () {
+    expect(
+      runtimeMigration,
+      contains('WHEN public.has_active_premium(p_user_id)'),
+    );
+    expect(runtimeMigration, contains('THEN 2147483647'));
   });
 
   test('merges paid and referral Premium with authoritative expiry', () {
@@ -55,8 +81,24 @@ void main() {
   });
 
   test('referral statistics use the new three-day reward', () {
-    expect(referralService, contains("'3_days_premium_both'"));
+    expect(referralService, contains("from('promotional_premium_grants')"));
+    expect(referralService, contains(".eq('beneficiary_role', 'referrer')"));
     expect(referralService, contains('rewardsEarned * 3'));
+  });
+
+  test('client distinguishes referral Premium from paid Premium', () {
+    const referral = SubscriptionState(
+      status: SubscriptionStatus.active,
+      source: PremiumEntitlementSource.referral,
+    );
+    const paid = SubscriptionState(
+      status: SubscriptionStatus.active,
+      source: PremiumEntitlementSource.paid,
+    );
+
+    expect(referral.isReferralOnly, isTrue);
+    expect(referral.includesReferral, isTrue);
+    expect(paid.isReferralOnly, isFalse);
   });
 
   test('every locale promises three days to both users', () {

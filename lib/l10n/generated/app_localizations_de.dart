@@ -2460,7 +2460,51 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get referral_body =>
-      'Lade Freunde zu SILARAH ein. Wenn eine Person des anderen Geschlechts mit deinem Code das Onboarding abschließt, erhaltet ihr beide 3 Tage Premium kostenlos!';
+      'Lade eine berechtigte Person des anderen Geschlechts zu SILARAH ein. Jedes Konto kann einmalig 3 Tage Empfehlungs-Premium erhalten. Hast du deine Prämie bereits erhalten, kann dein Freund seine weiterhin bekommen.';
+
+  @override
+  String get referral_premiumActiveTitle => 'Empfehlungs-Premium ist aktiv';
+
+  @override
+  String referral_premiumRemainingDaysHours(int days, int hours) {
+    return 'Noch $days T. $hours Std.';
+  }
+
+  @override
+  String referral_premiumRemainingHoursMinutes(int hours, int minutes) {
+    return 'Noch $hours Std. $minutes Min.';
+  }
+
+  @override
+  String referral_premiumRemainingMinutes(int minutes) {
+    return 'Noch $minutes Min.';
+  }
+
+  @override
+  String get referral_premiumEndingNow => 'Prämie endet jetzt';
+
+  @override
+  String referral_premiumEndsAt(String date) {
+    return 'Endet am $date';
+  }
+
+  @override
+  String get referral_premiumNoPayment =>
+      'Alle Premium-Funktionen sind freigeschaltet. Es wurde nichts berechnet und diese Prämie verlängert sich nicht automatisch.';
+
+  @override
+  String get referral_premiumPlansAfter =>
+      'Abos sind nach Ende deiner Gratis-Prämie verfügbar, damit keine kostenlose Restzeit verloren geht.';
+
+  @override
+  String get referral_premiumBackToProfile => 'Zurück zum Profil';
+
+  @override
+  String get referral_premiumFeaturesUnlocked =>
+      'Alle Premium-Funktionen sind freigeschaltet';
+
+  @override
+  String get referral_premiumViewReward => 'Prämie ansehen';
 
   @override
   String get referral_codeLabel => 'DEIN EMPFEHLUNGSCODE';

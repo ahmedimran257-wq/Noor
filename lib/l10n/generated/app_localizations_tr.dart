@@ -2442,7 +2442,50 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get referral_body =>
-      'Arkadaşlarını SILARAH’a davet et. Karşı cinsten biri kodunla katılımı tamamladığında ikiniz de 3 gün ÜCRETSİZ Premium kazanırsınız!';
+      'Karşı cinsten uygun bir arkadaşını SILARAH’a davet et. Her hesap ömür boyu bir kez 3 günlük referans Premium ödülü alabilir. Sen ödülünü aldıysan arkadaşın yine de kendi ödülünü alabilir.';
+
+  @override
+  String get referral_premiumActiveTitle => 'Referans Premium etkin';
+
+  @override
+  String referral_premiumRemainingDaysHours(int days, int hours) {
+    return '${days}g ${hours}sa kaldı';
+  }
+
+  @override
+  String referral_premiumRemainingHoursMinutes(int hours, int minutes) {
+    return '${hours}sa ${minutes}dk kaldı';
+  }
+
+  @override
+  String referral_premiumRemainingMinutes(int minutes) {
+    return '${minutes}dk kaldı';
+  }
+
+  @override
+  String get referral_premiumEndingNow => 'Ödül şimdi sona eriyor';
+
+  @override
+  String referral_premiumEndsAt(String date) {
+    return '$date tarihinde sona erer';
+  }
+
+  @override
+  String get referral_premiumNoPayment =>
+      'Tüm Premium özellikler açık. Ödeme alınmadı ve bu ödül otomatik yenilenmez.';
+
+  @override
+  String get referral_premiumPlansAfter =>
+      'Kalan ücretsiz süreniz boşa gitmesin diye abonelik planları ödülünüz bittikten sonra açılır.';
+
+  @override
+  String get referral_premiumBackToProfile => 'Profile dön';
+
+  @override
+  String get referral_premiumFeaturesUnlocked => 'Tüm Premium özellikler açık';
+
+  @override
+  String get referral_premiumViewReward => 'Ödülü gör';
 
   @override
   String get referral_codeLabel => 'DAVET KODUN';

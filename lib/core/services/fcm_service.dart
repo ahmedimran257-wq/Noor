@@ -328,7 +328,12 @@ class FcmService {
     debugPrint('[FcmService] Notification tapped: ${message.data}');
     final deepLink = message.data['deep_link'] as String?;
     final type = message.data['type'] as String?;
-    String? path = notificationPathFromDeepLink(deepLink);
+    // Referral Premium is an account entitlement, not a checkout request.
+    // Override already-delivered legacy pushes that still carry the old
+    // subscription deep link.
+    String? path = type == 'referral_reward'
+        ? '/home?tab=3'
+        : notificationPathFromDeepLink(deepLink);
 
     if (path != null) {
       // Deep links are the server-side source of truth for queued push

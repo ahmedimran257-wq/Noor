@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/cubits/notifications/notifications_cubit.dart';
+import '../../../core/cubits/subscription/subscription_cubit.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
@@ -138,8 +139,19 @@ class NotificationsScreen extends StatelessWidget {
                   item: item,
                   onTap: () async {
                     await context.read<NotificationsCubit>().markRead(item.id);
+                    if (item.type == 'referral_reward' && context.mounted) {
+                      await context
+                          .read<SubscriptionCubit>()
+                          .refreshEntitlement();
+                    }
                     final path = notificationPathFor(item);
-                    if (path != null && context.mounted) context.push(path);
+                    if (path != null && context.mounted) {
+                      if (item.type == 'referral_reward') {
+                        context.go(path);
+                      } else {
+                        context.push(path);
+                      }
+                    }
                   },
                 ),
               );

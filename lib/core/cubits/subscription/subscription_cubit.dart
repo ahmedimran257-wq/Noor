@@ -38,6 +38,8 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
       emit(state.copyWith(
         isLoading: false,
         status: SubscriptionStatus.none,
+        source: PremiumEntitlementSource.none,
+        clearExpiresAt: true,
       ));
     }
   }
@@ -73,6 +75,15 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
   }
 
   Future<bool> purchase(String productId) async {
+    if (state.isReferralOnly) {
+      emit(state.copyWith(
+        isLoading: false,
+        error:
+            'Your free referral Premium is active. Plans become available after it ends so no free time is wasted.',
+      ));
+      return false;
+    }
+
     emit(state.copyWith(isLoading: true, clearError: true));
 
     if (!SupabaseService.isInitialized) {
@@ -161,6 +172,27 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
     emit(state.copyWith(clearError: true, clearSuccess: true));
   }
 
+  /// Refreshes paid and promotional access without requiring a new login.
+  /// Referral rewards can arrive while the app is already open, so login-only
+  /// entitlement hydration is not sufficient.
+  Future<void> refreshEntitlement({bool showLoading = false}) async {
+    if (!SupabaseService.isInitialized) return;
+    if (showLoading && !isClosed) emit(state.copyWith(isLoading: true));
+
+    CustomerInfo? customerInfo;
+    try {
+      customerInfo = await Purchases.getCustomerInfo();
+    } catch (e) {
+      debugPrint('[SubscriptionCubit] RevenueCat refresh error: $e');
+    }
+    await _refreshEffectiveEntitlement(customerInfo, isLoading: false);
+  }
+
+  void clear() {
+    _entitlementRefreshId++;
+    if (!isClosed) emit(const SubscriptionState());
+  }
+
   Future<void> _refreshEffectiveEntitlement(
     CustomerInfo? customerInfo, {
     bool? isLoading,
@@ -187,10 +219,16 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
     final expiry = hasIndefiniteEntitlement
         ? null
         : _laterOf(revenueCatExpiry, server.expiresAt);
+    final source = _effectiveSource(
+      active: active,
+      revenueCatActive: revenueCatActive,
+      serverSource: server.source,
+    );
 
     emit(state.copyWith(
       isLoading: isLoading ?? false,
       status: active ? SubscriptionStatus.active : SubscriptionStatus.none,
+      source: source,
       expiresAt: expiry,
       clearExpiresAt: expiry == null,
       successMessage: successMessage,
@@ -211,6 +249,7 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
 
       return _ServerPremiumEntitlement(
         isActive: row['is_active'] == true,
+        source: PremiumEntitlementSource.fromServer(row['source']?.toString()),
         expiresAt: DateTime.tryParse(row['expires_at']?.toString() ?? ''),
       );
     } catch (e) {
@@ -225,6 +264,21 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
     return first.isAfter(second) ? first : second;
   }
 
+  PremiumEntitlementSource _effectiveSource({
+    required bool active,
+    required bool revenueCatActive,
+    required PremiumEntitlementSource serverSource,
+  }) {
+    if (!active) return PremiumEntitlementSource.none;
+    if (revenueCatActive && serverSource == PremiumEntitlementSource.referral) {
+      return PremiumEntitlementSource.paidAndReferral;
+    }
+    if (revenueCatActive && serverSource == PremiumEntitlementSource.none) {
+      return PremiumEntitlementSource.paid;
+    }
+    return serverSource;
+  }
+
   @override
   Future<void> close() {
     _pricingSub?.cancel();
@@ -235,9 +289,11 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
 class _ServerPremiumEntitlement {
   const _ServerPremiumEntitlement({
     this.isActive = false,
+    this.source = PremiumEntitlementSource.none,
     this.expiresAt,
   });
 
   final bool isActive;
+  final PremiumEntitlementSource source;
   final DateTime? expiresAt;
 }

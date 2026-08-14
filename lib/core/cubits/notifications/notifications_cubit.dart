@@ -382,6 +382,10 @@ class NotificationsCubit extends Cubit<NotificationsState> {
 }
 
 String? notificationPathFor(NotificationItem item) {
+  // Referral rewards open the account surface even for legacy rows whose
+  // deep link pointed at checkout.
+  if (item.type == 'referral_reward') return '/home?tab=3';
+
   final deepLinkPath = notificationPathFromDeepLink(item.deepLink);
   if (deepLinkPath != null) return deepLinkPath;
 

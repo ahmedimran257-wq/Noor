@@ -2437,7 +2437,51 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get referral_body =>
-      'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 3 days of FREE Premium!';
+      'Invite one eligible opposite-gender friend to SILARAH. Each account can claim one 3-day referral Premium reward in its lifetime. If you already claimed yours, your friend can still claim theirs.';
+
+  @override
+  String get referral_premiumActiveTitle => 'Referral Premium is active';
+
+  @override
+  String referral_premiumRemainingDaysHours(int days, int hours) {
+    return '${days}d ${hours}h remaining';
+  }
+
+  @override
+  String referral_premiumRemainingHoursMinutes(int hours, int minutes) {
+    return '${hours}h ${minutes}m remaining';
+  }
+
+  @override
+  String referral_premiumRemainingMinutes(int minutes) {
+    return '${minutes}m remaining';
+  }
+
+  @override
+  String get referral_premiumEndingNow => 'Reward ending now';
+
+  @override
+  String referral_premiumEndsAt(String date) {
+    return 'Ends $date';
+  }
+
+  @override
+  String get referral_premiumNoPayment =>
+      'All Premium features are unlocked. No payment was taken and this reward will not renew automatically.';
+
+  @override
+  String get referral_premiumPlansAfter =>
+      'Subscription plans become available after your free reward ends, so none of your remaining free time is wasted.';
+
+  @override
+  String get referral_premiumBackToProfile => 'Back to profile';
+
+  @override
+  String get referral_premiumFeaturesUnlocked =>
+      'All Premium features are unlocked';
+
+  @override
+  String get referral_premiumViewReward => 'View reward';
 
   @override
   String get referral_codeLabel => 'YOUR REFERRAL CODE';

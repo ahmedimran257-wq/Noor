@@ -10,6 +10,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../../core/data/country_data.dart';
 import '../../../core/services/phone_verification_service.dart';
 import '../../../core/services/billing_portal_service.dart';
@@ -45,6 +47,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   // Pricing (loaded from RevenueCat via SubscriptionService)
   DisplayPricing _pricing = DisplayPricing.loading();
   StreamSubscription<DisplayPricing>? _pricingSub;
+  Timer? _countdownTimer;
   bool _postPurchasePhonePromptOpen = false;
 
   @override
@@ -61,6 +64,20 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     ).animate(CurvedAnimation(parent: _headerAnim, curve: Curves.easeOutCubic));
     _headerAnim.forward();
     _loadPricing();
+    _countdownTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (!mounted) return;
+      final subscription = context.read<SubscriptionCubit>().state;
+      final expiry = subscription.expiresAt;
+      if (subscription.isReferralOnly &&
+          expiry != null &&
+          !expiry.isAfter(DateTime.now())) {
+        unawaited(
+          context.read<SubscriptionCubit>().refreshEntitlement(),
+        );
+        return;
+      }
+      if (subscription.isReferralOnly) setState(() {});
+    });
   }
 
   Future<void> _loadPricing() async {
@@ -86,6 +103,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   @override
   void dispose() {
     _pricingSub?.cancel();
+    _countdownTimer?.cancel();
     _headerAnim.dispose();
     super.dispose();
   }
@@ -116,88 +134,130 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         }
       },
       builder: (context, state) {
-        return Scaffold(
-          backgroundColor: AppColors.obsidianNight,
-          appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            leading: IconButton(
-              onPressed: () => Navigator.of(context).pop(),
-              icon: Icon(Icons.arrow_back_ios_new_rounded,
-                  color: AppColors.pearlWhite, size: 20),
+        if (state.isReferralOnly) {
+          return _safeBackShell(
+            context,
+            Scaffold(
+              backgroundColor: AppColors.obsidianNight,
+              appBar: _appBar(),
+              body: _ReferralPremiumActiveView(
+                expiresAt: state.expiresAt,
+                isFemale: isFemale,
+                onBackToProfile: _closeScreen,
+              ),
             ),
-          ),
-          body: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: EdgeInsets.fromLTRB(20, 0, 20, isSmallScreen ? 20 : 40),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Header
-                SlideTransition(
-                  position: _headerSlide,
-                  child: FadeTransition(
-                    opacity: _headerFade,
-                    child: _Header(
-                        isFemale: isFemale, isSmallScreen: isSmallScreen),
-                  ),
-                ),
+          );
+        }
 
-                SizedBox(height: spaceLarge),
-
-                // Plan Cards
-                if (_pricing.source == PricingSource.loading)
-                  _PricingStatusCard(
-                    isLoading: true,
-                    isSmallScreen: isSmallScreen,
-                    onRetry: _retryPricing,
-                  )
-                else if (!_pricing.isAvailable)
-                  _PricingStatusCard(
-                    isLoading: false,
-                    isSmallScreen: isSmallScreen,
-                    onRetry: _retryPricing,
-                  )
-                else
-                  _PlanCards(
-                    pricing: _pricing,
-                    selectedPlan: _selectedPlan,
-                    onSelect: (plan) => setState(() => _selectedPlan = plan),
-                    isSmallScreen: isSmallScreen,
+        return _safeBackShell(
+          context,
+          Scaffold(
+            backgroundColor: AppColors.obsidianNight,
+            appBar: _appBar(),
+            body: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(20, 0, 20, isSmallScreen ? 20 : 40),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Header
+                  SlideTransition(
+                    position: _headerSlide,
+                    child: FadeTransition(
+                      opacity: _headerFade,
+                      child: _Header(
+                          isFemale: isFemale, isSmallScreen: isSmallScreen),
+                    ),
                   ),
 
-                SizedBox(height: spaceMedium),
+                  SizedBox(height: spaceLarge),
 
-                // What's included
-                _IncludedFeatures(
-                    isFemale: isFemale, isSmallScreen: isSmallScreen),
+                  // Plan Cards
+                  if (_pricing.source == PricingSource.loading)
+                    _PricingStatusCard(
+                      isLoading: true,
+                      isSmallScreen: isSmallScreen,
+                      onRetry: _retryPricing,
+                    )
+                  else if (!_pricing.isAvailable)
+                    _PricingStatusCard(
+                      isLoading: false,
+                      isSmallScreen: isSmallScreen,
+                      onRetry: _retryPricing,
+                    )
+                  else
+                    _PlanCards(
+                      pricing: _pricing,
+                      selectedPlan: _selectedPlan,
+                      onSelect: (plan) => setState(() => _selectedPlan = plan),
+                      isSmallScreen: isSmallScreen,
+                    ),
 
-                SizedBox(height: spaceLarge),
+                  SizedBox(height: spaceMedium),
 
-                // CTA Button
-                if (_pricing.isAvailable)
-                  _CtaButton(
-                    selectedPlan: _selectedPlan,
-                    pricing: _pricing,
+                  // What's included
+                  _IncludedFeatures(
+                      isFemale: isFemale, isSmallScreen: isSmallScreen),
+
+                  SizedBox(height: spaceLarge),
+
+                  // CTA Button
+                  if (_pricing.isAvailable)
+                    _CtaButton(
+                      selectedPlan: _selectedPlan,
+                      pricing: _pricing,
+                      isLoading: state.isLoading,
+                      isSmallScreen: isSmallScreen,
+                      onTap: _startPurchase,
+                    ),
+
+                  SizedBox(height: spaceSmall),
+
+                  // Secondary links
+                  _SecondaryLinks(
                     isLoading: state.isLoading,
                     isSmallScreen: isSmallScreen,
-                    onTap: _startPurchase,
+                    onRestore: () =>
+                        context.read<SubscriptionCubit>().restore(),
                   ),
-
-                SizedBox(height: spaceSmall),
-
-                // Secondary links
-                _SecondaryLinks(
-                  isLoading: state.isLoading,
-                  isSmallScreen: isSmallScreen,
-                  onRestore: () => context.read<SubscriptionCubit>().restore(),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
       },
     );
+  }
+
+  PreferredSizeWidget _appBar() => AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          onPressed: _closeScreen,
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: AppColors.pearlWhite,
+            size: 20,
+          ),
+        ),
+      );
+
+  Widget _safeBackShell(BuildContext context, Widget child) {
+    return PopScope(
+      canPop: Navigator.of(context).canPop(),
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && context.mounted) context.go('/home?tab=3');
+      },
+      child: child,
+    );
+  }
+
+  void _closeScreen() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      context.go('/home?tab=3');
+    }
   }
 
   Future<void> _startPurchase() async {
@@ -264,6 +324,182 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
+    );
+  }
+}
+
+class _ReferralPremiumActiveView extends StatelessWidget {
+  const _ReferralPremiumActiveView({
+    required this.expiresAt,
+    required this.isFemale,
+    required this.onBackToProfile,
+  });
+
+  final DateTime? expiresAt;
+  final bool isFemale;
+  final VoidCallback onBackToProfile;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final expiry = expiresAt?.toLocal();
+    final remaining = expiry?.difference(DateTime.now());
+    final remainingLabel = _remainingLabel(l10n, remaining);
+    final expiryLabel = expiry == null
+        ? null
+        : '${MaterialLocalizations.of(context).formatMediumDate(expiry)} · '
+            '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(expiry))}';
+
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppDimensions.space24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.champagneGold.withValues(alpha: 0.18),
+                  AppColors.verifiedTeal.withValues(alpha: 0.10),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+              border: Border.all(color: AppColors.goldBorder, width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.champagneGold.withValues(alpha: 0.07),
+                  blurRadius: 28,
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Container(
+                  width: 76,
+                  height: 76,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.champagneGold.withValues(alpha: 0.14),
+                    border: Border.all(color: AppColors.goldBorder, width: 1.5),
+                  ),
+                  child: Icon(
+                    Icons.workspace_premium_rounded,
+                    color: AppColors.champagneGold,
+                    size: 38,
+                  ),
+                ),
+                const SizedBox(height: AppDimensions.space16),
+                UiText(
+                  l10n.referral_premiumActiveTitle,
+                  style: AppTypography.screenTitle.copyWith(fontSize: 26),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppDimensions.space8),
+                UiText(
+                  remainingLabel,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.verifiedTeal,
+                    fontSize: 18,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                if (expiryLabel != null) ...[
+                  const SizedBox(height: 4),
+                  UiText(
+                    l10n.referral_premiumEndsAt(expiryLabel),
+                    style: AppTypography.caption,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: AppDimensions.space20),
+          Container(
+            padding: const EdgeInsets.all(AppDimensions.space16),
+            decoration: BoxDecoration(
+              color: AppColors.verifiedTeal.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+              border: Border.all(
+                color: AppColors.verifiedTeal.withValues(alpha: 0.35),
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.check_circle_rounded,
+                    color: AppColors.verifiedTeal, size: 22),
+                const SizedBox(width: AppDimensions.space12),
+                Expanded(
+                  child: UiText(
+                    l10n.referral_premiumNoPayment,
+                    style: AppTypography.bodyMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppDimensions.space24),
+          _IncludedFeatures(isFemale: isFemale, isSmallScreen: false),
+          const SizedBox(height: AppDimensions.space24),
+          Container(
+            padding: const EdgeInsets.all(AppDimensions.space16),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceGlass,
+              borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+              border: Border.all(color: AppColors.cardBorder),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.shield_outlined,
+                    color: AppColors.champagneGold, size: 21),
+                const SizedBox(width: AppDimensions.space12),
+                Expanded(
+                  child: UiText(
+                    l10n.referral_premiumPlansAfter,
+                    style: AppTypography.caption,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppDimensions.space24),
+          SizedBox(
+            height: AppDimensions.buttonHeight,
+            child: ElevatedButton.icon(
+              onPressed: onBackToProfile,
+              icon: const Icon(Icons.person_outline_rounded),
+              label: UiText(
+                l10n.referral_premiumBackToProfile,
+                style: AppTypography.button,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _remainingLabel(
+    AppLocalizations l10n,
+    Duration? remaining,
+  ) {
+    if (remaining == null) return l10n.referral_premiumRemainingDaysHours(3, 0);
+    if (remaining <= Duration.zero) return l10n.referral_premiumEndingNow;
+    final days = remaining.inDays;
+    final hours = remaining.inHours.remainder(24);
+    final minutes = remaining.inMinutes.remainder(60);
+    if (days > 0) {
+      return l10n.referral_premiumRemainingDaysHours(days, hours);
+    }
+    if (hours > 0) {
+      return l10n.referral_premiumRemainingHoursMinutes(hours, minutes);
+    }
+    return l10n.referral_premiumRemainingMinutes(
+      remaining.inMinutes.clamp(1, 59),
     );
   }
 }

@@ -2464,7 +2464,50 @@ class AppLocalizationsMs extends AppLocalizations {
 
   @override
   String get referral_body =>
-      'Jemput rakan ke SILARAH. Apabila seseorang berlainan jantina melengkapkan pengenalan menggunakan kod anda, anda berdua mendapat Premium PERCUMA selama 3 hari!';
+      'Jemput seorang rakan berlainan jantina yang layak ke SILARAH. Setiap akaun hanya boleh menerima satu ganjaran Premium rujukan selama 3 hari. Jika anda sudah menerimanya, rakan anda masih boleh menerima ganjarannya.';
+
+  @override
+  String get referral_premiumActiveTitle => 'Premium rujukan aktif';
+
+  @override
+  String referral_premiumRemainingDaysHours(int days, int hours) {
+    return 'Baki ${days}h ${hours}j';
+  }
+
+  @override
+  String referral_premiumRemainingHoursMinutes(int hours, int minutes) {
+    return 'Baki ${hours}j ${minutes}m';
+  }
+
+  @override
+  String referral_premiumRemainingMinutes(int minutes) {
+    return 'Baki ${minutes}m';
+  }
+
+  @override
+  String get referral_premiumEndingNow => 'Ganjaran tamat sekarang';
+
+  @override
+  String referral_premiumEndsAt(String date) {
+    return 'Tamat $date';
+  }
+
+  @override
+  String get referral_premiumNoPayment =>
+      'Semua ciri Premium dibuka. Tiada bayaran diambil dan ganjaran ini tidak diperbaharui secara automatik.';
+
+  @override
+  String get referral_premiumPlansAfter =>
+      'Pelan langganan tersedia selepas ganjaran percuma tamat supaya baki masa percuma anda tidak terbuang.';
+
+  @override
+  String get referral_premiumBackToProfile => 'Kembali ke profil';
+
+  @override
+  String get referral_premiumFeaturesUnlocked => 'Semua ciri Premium dibuka';
+
+  @override
+  String get referral_premiumViewReward => 'Lihat ganjaran';
 
   @override
   String get referral_codeLabel => 'KOD RUJUKAN ANDA';

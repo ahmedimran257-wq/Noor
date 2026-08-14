@@ -1,14 +1,26 @@
-// SILARAH — Subscription State
-//
-//   • Gender-split: women always free, men must subscribe to message
-//   • status: none | active | grace
-//   • grace: 24h window on billing_issue (DB trigger enforces this too)
+// SILARAH subscription state. Paid-store and promotional entitlements are
+// merged into one canonical runtime state.
 import 'package:equatable/equatable.dart';
 
 enum SubscriptionStatus { none, active, grace }
 
+enum PremiumEntitlementSource {
+  none,
+  paid,
+  referral,
+  paidAndReferral;
+
+  static PremiumEntitlementSource fromServer(String? value) => switch (value) {
+        'paid' => PremiumEntitlementSource.paid,
+        'referral' => PremiumEntitlementSource.referral,
+        'paid_and_referral' => PremiumEntitlementSource.paidAndReferral,
+        _ => PremiumEntitlementSource.none,
+      };
+}
+
 class SubscriptionState extends Equatable {
   final SubscriptionStatus status;
+  final PremiumEntitlementSource source;
   final DateTime? expiresAt;
   final bool isLoading;
   final String? error;
@@ -16,6 +28,7 @@ class SubscriptionState extends Equatable {
 
   const SubscriptionState({
     this.status = SubscriptionStatus.none,
+    this.source = PremiumEntitlementSource.none,
     this.expiresAt,
     this.isLoading = false,
     this.error,
@@ -36,6 +49,13 @@ class SubscriptionState extends Equatable {
   /// Alias used by filter/boost gates.
   bool get isActive => isSubscribed;
 
+  bool get isReferralOnly =>
+      isSubscribed && source == PremiumEntitlementSource.referral;
+
+  bool get includesReferral =>
+      source == PremiumEntitlementSource.referral ||
+      source == PremiumEntitlementSource.paidAndReferral;
+
   /// Premium features — require subscription for ALL users.
   bool canUseAdvancedFilters(String gender) => isActive;
   bool canBoostProfile(String gender) => isActive;
@@ -47,6 +67,7 @@ class SubscriptionState extends Equatable {
 
   SubscriptionState copyWith({
     SubscriptionStatus? status,
+    PremiumEntitlementSource? source,
     DateTime? expiresAt,
     bool? isLoading,
     String? error,
@@ -57,6 +78,7 @@ class SubscriptionState extends Equatable {
   }) {
     return SubscriptionState(
       status: status ?? this.status,
+      source: source ?? this.source,
       expiresAt: clearExpiresAt ? null : (expiresAt ?? this.expiresAt),
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
@@ -67,5 +89,5 @@ class SubscriptionState extends Equatable {
 
   @override
   List<Object?> get props =>
-      [status, expiresAt, isLoading, error, successMessage];
+      [status, source, expiresAt, isLoading, error, successMessage];
 }

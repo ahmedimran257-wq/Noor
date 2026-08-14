@@ -448,6 +448,9 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
       if (item.type == 'new_compatible_profiles') {
         unawaited(_discoveryFeedCubit.refreshIfChanged(forceCheck: true));
       }
+      if (item.type == 'referral_reward') {
+        unawaited(_refreshPremiumEntitlement(refreshDiscovery: true));
+      }
     });
 
     _router =
@@ -458,6 +461,9 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
       navigateFromPushNotification(_router, path);
     };
     FcmService.instance.onForegroundMessage = (message) {
+      if (message.data['type'] == 'referral_reward') {
+        unawaited(_refreshPremiumEntitlement(refreshDiscovery: true));
+      }
       if (message.data['type'] == 'account_suspended' ||
           message.data['type'] == 'account_banned' ||
           message.data['type'] == 'account_restored') {
@@ -537,6 +543,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
       if (SupabaseService.currentUserId != null) {
         unawaited(_accountStandingCubit.refresh());
         unawaited(_notificationsCubit.loadNotifications());
+        unawaited(_refreshPremiumEntitlement(refreshDiscovery: false));
         unawaited(_discoveryFeedCubit.refreshIfChanged(forceCheck: true));
         unawaited(_interestsCubit.refreshIfChanged(forceCheck: true));
         unawaited(_chatCubit.refreshIfChanged(forceCheck: true));
@@ -629,6 +636,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
         SupabaseService.currentUserId != null) {
       unawaited(_accountStandingCubit.refresh());
       unawaited(_notificationsCubit.loadNotifications());
+      unawaited(_refreshPremiumEntitlement(refreshDiscovery: false));
       unawaited(_discoveryFeedCubit.refreshIfChanged());
       unawaited(_interestsCubit.refreshIfChanged());
       unawaited(_onboardingCubit.refreshProfileFromDb());
@@ -640,6 +648,14 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
     await _revenueCatReady;
     if (!mounted) return;
     await _subscriptionCubit.loginUser(userId);
+  }
+
+  Future<void> _refreshPremiumEntitlement({
+    required bool refreshDiscovery,
+  }) async {
+    await _subscriptionCubit.refreshEntitlement();
+    if (!mounted || !refreshDiscovery) return;
+    await _discoveryFeedCubit.refreshIfChanged(forceCheck: true);
   }
 
   Future<void> _synchronizePublishedProfile(String userId) async {
@@ -657,6 +673,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
     _discoveryFeedCubit.clear();
     _interestsCubit.clear();
     _blockReportCubit.clear();
+    _subscriptionCubit.clear();
     unawaited(_accountStandingCubit.stop());
     unawaited(OnboardingCubit.clearSensitiveDeviceState(
       userId: departingUserId,
