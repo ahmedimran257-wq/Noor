@@ -2462,7 +2462,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get referral_body =>
-      'Invitez vos amis sur SILARAH. Lorsqu’une personne du sexe opposé termine son inscription avec votre code, vous recevez tous les deux 7 jours de Premium gratuits !';
+      'Invitez vos amis sur SILARAH. Lorsqu’une personne du sexe opposé termine son inscription avec votre code, vous recevez tous les deux 3 jours de Premium gratuits !';
 
   @override
   String get referral_codeLabel => 'VOTRE CODE DE PARRAINAGE';

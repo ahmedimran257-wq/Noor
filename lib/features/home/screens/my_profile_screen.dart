@@ -823,7 +823,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                           UiText(context.uiCopy('Refer a Friend'),
                               style: AppTypography.bodyMedium),
                           UiText(
-                              context.uiCopy('Get 7 days of Premium for free'),
+                              context.uiCopy('Get 3 days of Premium for free'),
                               style: AppTypography.caption),
                         ],
                       ),

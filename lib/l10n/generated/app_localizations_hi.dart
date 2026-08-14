@@ -2449,7 +2449,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get referral_body =>
-      'मित्रों को SILARAH पर बुलाएँ। विपरीत लिंग का कोई व्यक्ति आपके कोड से ऑनबोर्डिंग पूरी करे तो आप दोनों को 7 दिन का मुफ़्त प्रीमियम मिलेगा!';
+      'मित्रों को SILARAH पर बुलाएँ। विपरीत लिंग का कोई व्यक्ति आपके कोड से ऑनबोर्डिंग पूरी करे तो आप दोनों को 3 दिन का मुफ़्त प्रीमियम मिलेगा!';
 
   @override
   String get referral_codeLabel => 'आपका रेफ़रल कोड';

@@ -2443,7 +2443,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get referral_body =>
-      'اپنے دوستوں کو SILARAH پر بلائیں۔ مخالف جنس کا کوئی شخص آپ کے کوڈ سے آن بورڈنگ مکمل کرے تو آپ دونوں کو 7 دن کا مفت پریمیم ملے گا!';
+      'اپنے دوستوں کو SILARAH پر بلائیں۔ مخالف جنس کا کوئی شخص آپ کے کوڈ سے آن بورڈنگ مکمل کرے تو آپ دونوں کو 3 دن کا مفت پریمیم ملے گا!';
 
   @override
   String get referral_codeLabel => 'آپ کا ریفرل کوڈ';

@@ -105,7 +105,8 @@ class ReferralService {
         rewardsEarned: referrals
             .where((r) =>
                 r['reward_granted'] == true &&
-                r['reward_type'] == '7_days_premium')
+                (r['reward_type'] == '3_days_premium_both' ||
+                    r['reward_type'] == '7_days_premium'))
             .length,
         pendingReferrals:
             referrals.where((r) => r['reward_granted'] == false).length,
@@ -128,12 +129,12 @@ class ReferralStats {
   /// Total number of users referred (completed onboarding).
   final int totalReferrals;
 
-  /// Number of 7-day premium rewards earned (opposite gender referrals).
+  /// Number of Premium rewards earned from opposite-gender referrals.
   final int rewardsEarned;
 
   /// Referrals who haven't completed onboarding yet.
   final int pendingReferrals;
 
   /// Total days of premium earned from referrals.
-  int get premiumDaysEarned => rewardsEarned * 7;
+  int get premiumDaysEarned => rewardsEarned * 3;
 }

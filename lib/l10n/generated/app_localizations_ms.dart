@@ -2464,7 +2464,7 @@ class AppLocalizationsMs extends AppLocalizations {
 
   @override
   String get referral_body =>
-      'Jemput rakan ke SILARAH. Apabila seseorang berlainan jantina melengkapkan pengenalan menggunakan kod anda, anda berdua mendapat Premium PERCUMA selama 7 hari!';
+      'Jemput rakan ke SILARAH. Apabila seseorang berlainan jantina melengkapkan pengenalan menggunakan kod anda, anda berdua mendapat Premium PERCUMA selama 3 hari!';
 
   @override
   String get referral_codeLabel => 'KOD RUJUKAN ANDA';

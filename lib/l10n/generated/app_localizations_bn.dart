@@ -2444,7 +2444,7 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get referral_body =>
-      'বন্ধুদের SILARAH-এ আমন্ত্রণ জানান। বিপরীত লিঙ্গের কেউ আপনার কোড দিয়ে অনবোর্ডিং শেষ করলে আপনারা দুজনেই ৭ দিনের বিনামূল্যের প্রিমিয়াম পাবেন!';
+      'বন্ধুদের SILARAH-এ আমন্ত্রণ জানান। বিপরীত লিঙ্গের কেউ আপনার কোড দিয়ে অনবোর্ডিং শেষ করলে আপনারা দুজনেই ৩ দিনের বিনামূল্যের প্রিমিয়াম পাবেন!';
 
   @override
   String get referral_codeLabel => 'আপনার রেফারেল কোড';

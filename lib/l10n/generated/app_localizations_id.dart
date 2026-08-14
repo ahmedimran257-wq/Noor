@@ -2463,7 +2463,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get referral_body =>
-      'Ajak teman ke SILARAH. Saat seseorang dari gender berbeda menyelesaikan orientasi dengan kode Anda, kalian berdua mendapat Premium GRATIS selama 7 hari!';
+      'Ajak teman ke SILARAH. Saat seseorang dari gender berbeda menyelesaikan orientasi dengan kode Anda, kalian berdua mendapat Premium GRATIS selama 3 hari!';
 
   @override
   String get referral_codeLabel => 'KODE REFERAL ANDA';

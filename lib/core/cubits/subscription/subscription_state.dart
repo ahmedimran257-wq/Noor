@@ -51,12 +51,13 @@ class SubscriptionState extends Equatable {
     bool? isLoading,
     String? error,
     String? successMessage,
+    bool clearExpiresAt = false,
     bool clearError = false,
     bool clearSuccess = false,
   }) {
     return SubscriptionState(
       status: status ?? this.status,
-      expiresAt: expiresAt ?? this.expiresAt,
+      expiresAt: clearExpiresAt ? null : (expiresAt ?? this.expiresAt),
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
       successMessage:

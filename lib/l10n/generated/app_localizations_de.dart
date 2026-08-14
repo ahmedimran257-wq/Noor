@@ -2460,7 +2460,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get referral_body =>
-      'Lade Freunde zu SILARAH ein. Wenn eine Person des anderen Geschlechts mit deinem Code das Onboarding abschließt, erhaltet ihr beide 7 Tage Premium kostenlos!';
+      'Lade Freunde zu SILARAH ein. Wenn eine Person des anderen Geschlechts mit deinem Code das Onboarding abschließt, erhaltet ihr beide 3 Tage Premium kostenlos!';
 
   @override
   String get referral_codeLabel => 'DEIN EMPFEHLUNGSCODE';

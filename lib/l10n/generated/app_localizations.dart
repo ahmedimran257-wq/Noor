@@ -4575,7 +4575,7 @@ abstract class AppLocalizations {
   /// No description provided for @referral_body.
   ///
   /// In en, this message translates to:
-  /// **'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 7 days of FREE Premium!'**
+  /// **'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 3 days of FREE Premium!'**
   String get referral_body;
 
   /// No description provided for @referral_codeLabel.

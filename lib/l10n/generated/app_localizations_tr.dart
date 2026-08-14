@@ -2442,7 +2442,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get referral_body =>
-      'Arkadaşlarını SILARAH’a davet et. Karşı cinsten biri kodunla katılımı tamamladığında ikiniz de 7 gün ÜCRETSİZ Premium kazanırsınız!';
+      'Arkadaşlarını SILARAH’a davet et. Karşı cinsten biri kodunla katılımı tamamladığında ikiniz de 3 gün ÜCRETSİZ Premium kazanırsınız!';
 
   @override
   String get referral_codeLabel => 'DAVET KODUN';

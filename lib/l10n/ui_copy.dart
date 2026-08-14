@@ -358,7 +358,7 @@ class UiCopy {
       'Gender': 'جنس',
       'Generous': 'كريم',
       'German': 'الألمانية',
-      'Get 7 days of Premium for free': 'احصل على 7 أيام من Premium مجانًا',
+      'Get 3 days of Premium for free': 'احصل على 3 أيام من Premium مجانًا',
       'Graphic design': 'التصميم الجرافيكي',
       'Grievance Officer': 'مسؤول الشكاوى',
       'Group photos cannot be your primary photo.':
@@ -447,8 +447,8 @@ class UiCopy {
       'Interest Sent ✓': 'تم إرسال الفائدة ✓',
       'Interests': 'الاهتمامات',
       'Interests (up to 6)': 'الاهتمامات (حتى 6)',
-      'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 7 days of FREE Premium!':
-          'ادعُ أصدقاءك إلى سيلاراه. عندما يُكمل شخص من الجنس الآخر التسجيل باستخدام رمزك، تحصلان على 7 أيام مجانية من المزايا المميزة!',
+      'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 3 days of FREE Premium!':
+          'ادعُ أصدقاءك إلى سيلاراه. عندما يُكمل شخص من الجنس الآخر التسجيل باستخدام رمزك، تحصلان على 3 أيام مجانية من المزايا المميزة!',
       'Islamic Identity': 'الهوية الإسلامية',
       'Islamic Life': 'الحياة الإسلامية',
       'Islamic University': 'الجامعة الإسلامية',
@@ -1417,7 +1417,7 @@ class UiCopy {
       'Gender': 'লিঙ্গ',
       'Generous': 'উদার',
       'German': 'জার্মান',
-      'Get 7 days of Premium for free': 'বিনামূল্যে ৭ দিনের প্রিমিয়াম পান',
+      'Get 3 days of Premium for free': 'বিনামূল্যে ৩ দিনের প্রিমিয়াম পান',
       'Graphic design': 'গ্রাফিক ডিজাইন',
       'Grievance Officer': 'অভিযোগ কর্মকর্তা',
       'Group photos cannot be your primary photo.':
@@ -1507,8 +1507,8 @@ class UiCopy {
       'Interest Sent ✓': 'সুদ পাঠানো হয়েছে ✓',
       'Interests': 'আগ্রহ',
       'Interests (up to 6)': 'আগ্রহ (6 পর্যন্ত)',
-      'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 7 days of FREE Premium!':
-          'বন্ধুদের SILARAH-এ আমন্ত্রণ জানান। বিপরীত লিঙ্গের কেউ আপনার কোড দিয়ে অনবোর্ডিং শেষ করলে আপনারা দুজনেই ৭ দিনের বিনামূল্যের প্রিমিয়াম পাবেন!',
+      'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 3 days of FREE Premium!':
+          'বন্ধুদের SILARAH-এ আমন্ত্রণ জানান। বিপরীত লিঙ্গের কেউ আপনার কোড দিয়ে অনবোর্ডিং শেষ করলে আপনারা দুজনেই ৩ দিনের বিনামূল্যের প্রিমিয়াম পাবেন!',
       'Islamic Identity': 'ইসলামিক পরিচয়',
       'Islamic Life': 'ইসলামী জীবন',
       'Islamic University': 'ইসলামী বিশ্ববিদ্যালয়',
@@ -2491,7 +2491,7 @@ class UiCopy {
       'Gender': 'Geschlecht',
       'Generous': 'Großzügig',
       'German': 'Deutsch',
-      'Get 7 days of Premium for free': 'Erhalten Sie 7 Tage Premium kostenlos',
+      'Get 3 days of Premium for free': 'Erhalten Sie 3 Tage Premium kostenlos',
       'Graphic design': 'Grafikdesign',
       'Grievance Officer': 'Beschwerdebeauftragte Person',
       'Group photos cannot be your primary photo.':
@@ -2583,8 +2583,8 @@ class UiCopy {
       'Interest Sent ✓': 'Interesse gesendet ✓',
       'Interests': 'Interessen',
       'Interests (up to 6)': 'Interessen (bis zu 6)',
-      'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 7 days of FREE Premium!':
-          'Lade Freunde zu SILARAH ein. Wenn eine Person des anderen Geschlechts mit deinem Code das Onboarding abschließt, erhaltet ihr beide 7 Tage Premium kostenlos!',
+      'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 3 days of FREE Premium!':
+          'Lade Freunde zu SILARAH ein. Wenn eine Person des anderen Geschlechts mit deinem Code das Onboarding abschließt, erhaltet ihr beide 3 Tage Premium kostenlos!',
       'Islamic Identity': 'Islamische Identität',
       'Islamic Life': 'Islamisches Leben',
       'Islamic University': 'Islamische Universität',
@@ -3576,8 +3576,8 @@ class UiCopy {
       'Gender': 'Genre',
       'Generous': 'Généreux',
       'German': 'Allemand',
-      'Get 7 days of Premium for free':
-          'Obtenez 7 jours de Premium gratuitement',
+      'Get 3 days of Premium for free':
+          'Obtenez 3 jours de Premium gratuitement',
       'Graphic design': 'Conception graphique',
       'Grievance Officer': 'Responsable des réclamations',
       'Group photos cannot be your primary photo.':
@@ -3667,8 +3667,8 @@ class UiCopy {
       'Interest Sent ✓': 'Intérêts envoyés ✓',
       'Interests': 'Intérêts',
       'Interests (up to 6)': 'Intérêts (jusqu\'à 6)',
-      'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 7 days of FREE Premium!':
-          'Invitez vos amis sur SILARAH. Lorsqu’une personne du sexe opposé termine son inscription avec votre code, vous recevez tous les deux 7 jours de Premium gratuits !',
+      'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 3 days of FREE Premium!':
+          'Invitez vos amis sur SILARAH. Lorsqu’une personne du sexe opposé termine son inscription avec votre code, vous recevez tous les deux 3 jours de Premium gratuits !',
       'Islamic Identity': 'Identité islamique',
       'Islamic Life': 'La vie islamique',
       'Islamic University': 'Université islamique',
@@ -4661,8 +4661,8 @@ class UiCopy {
       'Gender': 'लिंग',
       'Generous': 'उदार',
       'German': 'जर्मन',
-      'Get 7 days of Premium for free':
-          '7 दिनों का प्रीमियम निःशुल्क प्राप्त करें',
+      'Get 3 days of Premium for free':
+          '3 दिनों का प्रीमियम निःशुल्क प्राप्त करें',
       'Graphic design': 'ग्राफ़िक डिज़ाइन',
       'Grievance Officer': 'शिकायत अधिकारी',
       'Group photos cannot be your primary photo.':
@@ -4752,8 +4752,8 @@ class UiCopy {
       'Interest Sent ✓': 'रुचि भेजी गई ✓',
       'Interests': 'रुचियाँ',
       'Interests (up to 6)': 'रुचियाँ (6 तक)',
-      'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 7 days of FREE Premium!':
-          'मित्रों को SILARAH पर बुलाएँ। विपरीत लिंग का कोई व्यक्ति आपके कोड से ऑनबोर्डिंग पूरी करे तो आप दोनों को 7 दिन का मुफ़्त प्रीमियम मिलेगा!',
+      'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 3 days of FREE Premium!':
+          'मित्रों को SILARAH पर बुलाएँ। विपरीत लिंग का कोई व्यक्ति आपके कोड से ऑनबोर्डिंग पूरी करे तो आप दोनों को 3 दिन का मुफ़्त प्रीमियम मिलेगा!',
       'Islamic Identity': 'इस्लामी पहचान',
       'Islamic Life': 'इस्लामी जीवन',
       'Islamic University': 'इस्लामी विश्वविद्यालय',
@@ -5737,7 +5737,7 @@ class UiCopy {
       'Gender': 'Jenis kelamin',
       'Generous': 'Dermawan',
       'German': 'Jerman',
-      'Get 7 days of Premium for free': 'Dapatkan Premium 7 hari secara gratis',
+      'Get 3 days of Premium for free': 'Dapatkan Premium 3 hari secara gratis',
       'Graphic design': 'Desain Grafis',
       'Grievance Officer': 'Petugas Pengaduan',
       'Group photos cannot be your primary photo.':
@@ -5827,8 +5827,8 @@ class UiCopy {
       'Interest Sent ✓': 'Bunga Terkirim ✓',
       'Interests': 'Minat',
       'Interests (up to 6)': 'Minat (hingga 6)',
-      'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 7 days of FREE Premium!':
-          'Ajak teman ke SILARAH. Saat seseorang dari gender berbeda menyelesaikan orientasi dengan kode Anda, kalian berdua mendapat Premium GRATIS selama 7 hari!',
+      'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 3 days of FREE Premium!':
+          'Ajak teman ke SILARAH. Saat seseorang dari gender berbeda menyelesaikan orientasi dengan kode Anda, kalian berdua mendapat Premium GRATIS selama 3 hari!',
       'Islamic Identity': 'Identitas Islam',
       'Islamic Life': 'Kehidupan Islami',
       'Islamic University': 'Universitas Islam',
@@ -6818,8 +6818,8 @@ class UiCopy {
       'Gender': 'Jantina',
       'Generous': 'pemurah',
       'German': 'Jerman',
-      'Get 7 days of Premium for free':
-          'Dapatkan 7 hari Premium secara percuma',
+      'Get 3 days of Premium for free':
+          'Dapatkan 3 hari Premium secara percuma',
       'Graphic design': 'Reka bentuk grafik',
       'Grievance Officer': 'Pegawai Aduan',
       'Group photos cannot be your primary photo.':
@@ -6910,8 +6910,8 @@ class UiCopy {
       'Interest Sent ✓': 'Faedah Dihantar ✓',
       'Interests': 'minat',
       'Interests (up to 6)': 'Minat (sehingga 6)',
-      'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 7 days of FREE Premium!':
-          'Jemput rakan ke SILARAH. Apabila seseorang berlainan jantina melengkapkan pengenalan menggunakan kod anda, anda berdua mendapat Premium PERCUMA selama 7 hari!',
+      'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 3 days of FREE Premium!':
+          'Jemput rakan ke SILARAH. Apabila seseorang berlainan jantina melengkapkan pengenalan menggunakan kod anda, anda berdua mendapat Premium PERCUMA selama 3 hari!',
       'Islamic Identity': 'Jati Diri Islam',
       'Islamic Life': 'Kehidupan Islam',
       'Islamic University': 'Universiti Islam',
@@ -7899,7 +7899,7 @@ class UiCopy {
       'Gender': 'Cinsiyet',
       'Generous': 'Cömert',
       'German': 'Almanca',
-      'Get 7 days of Premium for free': '7 günlük Premium\'u ücretsiz edinin',
+      'Get 3 days of Premium for free': '3 günlük Premium\'u ücretsiz edinin',
       'Graphic design': 'Grafik tasarım',
       'Grievance Officer': 'Şikâyet Sorumlusu',
       'Group photos cannot be your primary photo.':
@@ -7988,8 +7988,8 @@ class UiCopy {
       'Interest Sent ✓': 'Gönderilen Faiz ✓',
       'Interests': 'İlgi alanları',
       'Interests (up to 6)': 'İlgi Alanları (en fazla 6)',
-      'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 7 days of FREE Premium!':
-          'Arkadaşlarını SILARAH’a davet et. Karşı cinsten biri kodunla katılımı tamamladığında ikiniz de 7 gün ÜCRETSİZ Premium kazanırsınız!',
+      'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 3 days of FREE Premium!':
+          'Arkadaşlarını SILARAH’a davet et. Karşı cinsten biri kodunla katılımı tamamladığında ikiniz de 3 gün ÜCRETSİZ Premium kazanırsınız!',
       'Islamic Identity': 'İslami Kimlik',
       'Islamic Life': 'İslami Hayat',
       'Islamic University': 'İslam Üniversitesi',
@@ -8970,7 +8970,7 @@ class UiCopy {
       'Gender': 'جنس',
       'Generous': 'فیاض',
       'German': 'جرمن',
-      'Get 7 days of Premium for free': '7 دن کا پریمیم مفت حاصل کریں۔',
+      'Get 3 days of Premium for free': '3 دن کا پریمیم مفت حاصل کریں۔',
       'Graphic design': 'گرافک ڈیزائن',
       'Grievance Officer': 'شکایات افسر',
       'Group photos cannot be your primary photo.':
@@ -9060,8 +9060,8 @@ class UiCopy {
       'Interest Sent ✓': 'سود بھیجا گیا ✓',
       'Interests': 'دلچسپیاں',
       'Interests (up to 6)': 'دلچسپیاں (6 تک)',
-      'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 7 days of FREE Premium!':
-          'اپنے دوستوں کو SILARAH پر بلائیں۔ مخالف جنس کا کوئی شخص آپ کے کوڈ سے آن بورڈنگ مکمل کرے تو آپ دونوں کو 7 دن کا مفت پریمیم ملے گا!',
+      'Invite your friends to SILARAH. When someone of the opposite gender completes onboarding using your code, you both get 3 days of FREE Premium!':
+          'اپنے دوستوں کو SILARAH پر بلائیں۔ مخالف جنس کا کوئی شخص آپ کے کوڈ سے آن بورڈنگ مکمل کرے تو آپ دونوں کو 3 دن کا مفت پریمیم ملے گا!',
       'Islamic Identity': 'اسلامی شناخت',
       'Islamic Life': 'اسلامی زندگی',
       'Islamic University': 'اسلامی یونیورسٹی',
