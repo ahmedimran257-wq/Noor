@@ -19,6 +19,9 @@ void main() {
   final contextService = File(
     'lib/core/services/country_context_service.dart',
   ).readAsStringSync();
+  final firebaseVerifier = File(
+    'supabase/functions/verify-firebase-phone/index.ts',
+  ).readAsStringSync();
 
   test('Premium purchase completes before phone verification is offered', () {
     final purchaseStart = subscription.indexOf('Future<void> _startPurchase');
@@ -62,17 +65,12 @@ void main() {
     expect(migration, contains("RAISE EXCEPTION 'subscription_required'"));
   });
 
-  test('phone confirmation cannot bypass Premium through the legacy overload',
-      () {
-    expect(
-      migration,
-      contains(
-          'PERFORM public.assert_my_phone_country_enabled(v_country_code)'),
-    );
-    expect(
-      migration,
-      contains('PERFORM public.confirm_my_verified_phone(v_country_code)'),
-    );
+  test('Firebase phone confirmation cannot bypass Premium authorization', () {
+    expect(firebaseVerifier,
+        contains('userClient.rpc("assert_my_phone_country_enabled"'));
+    expect(firebaseVerifier,
+        contains('claims.firebase?.sign_in_provider !== "phone"'));
+    expect(firebaseVerifier, contains('claims.aud !== FIREBASE_PROJECT_ID'));
     expect(phoneService, contains('PremiumActivationPendingException'));
     expect(phoneService, contains('const Duration(seconds: 2)'));
   });

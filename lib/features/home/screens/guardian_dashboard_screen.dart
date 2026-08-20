@@ -12,8 +12,12 @@
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../../../core/cubits/auth/auth_cubit.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/services/wali_mode_service.dart';
 import '../../../core/theme/app_colors.dart';
@@ -153,6 +157,50 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
             const Spacer(),
             // Realtime connection indicator
             _RealtimeIndicator(isConnected: _isRealtimeConnected),
+            PopupMenuButton<_GuardianAccountAction>(
+              tooltip: context.uiCopy('Guardian account'),
+              color: AppColors.surfaceDark,
+              icon: Icon(
+                Icons.account_circle_outlined,
+                color: AppColors.pearlWhite,
+              ),
+              onSelected: (action) async {
+                switch (action) {
+                  case _GuardianAccountAction.acceptAnother:
+                    context.push(AppRoutes.guardianConnect);
+                    break;
+                  case _GuardianAccountAction.help:
+                    context.push(AppRoutes.helpSupport);
+                    break;
+                  case _GuardianAccountAction.delete:
+                    context.push(AppRoutes.deleteAccount);
+                    break;
+                  case _GuardianAccountAction.signOut:
+                    await context.read<AuthCubit>().signOut();
+                    break;
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: _GuardianAccountAction.acceptAnother,
+                  child: UiText(
+                    context.uiCopy('Accept another Guardian invitation'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: _GuardianAccountAction.help,
+                  child: UiText(context.uiCopy('Help & Support')),
+                ),
+                PopupMenuItem(
+                  value: _GuardianAccountAction.delete,
+                  child: UiText(context.uiCopy('Delete account')),
+                ),
+                PopupMenuItem(
+                  value: _GuardianAccountAction.signOut,
+                  child: UiText(context.uiCopy('Sign out')),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -188,6 +236,8 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
     );
   }
 }
+
+enum _GuardianAccountAction { acceptAnother, help, delete, signOut }
 
 // Realtime Connection Indicator
 class _RealtimeIndicator extends StatelessWidget {

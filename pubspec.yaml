@@ -1,7 +1,7 @@
 name: silarah
 description: "Silarah - Premium Muslim Matrimony App"
 publish_to: 'none'
-version: 1.0.0+22019
+version: 1.0.0+23020
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -26,6 +26,7 @@ dependencies:
   # Backend
   supabase_flutter: ^2.9.0
   firebase_core: ^3.8.0           # Firebase initialization
+  firebase_auth: ^5.7.0           # SMS phone ownership for Premium/Guardian trust
   firebase_crashlytics: ^4.3.2   # Production crash reporting (free)
   purchases_flutter: ^10.8.0    # RevenueCat subscriptions and Test Store support
   firebase_messaging: ^15.2.0    # Push notifications via FCM (free & unlimited)

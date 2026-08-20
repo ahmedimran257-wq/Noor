@@ -39,6 +39,8 @@ class AuthAuthenticated extends AuthState {
     this.countryCode,
     this.isGuardianPath = false,
     this.onboardingCompleted = false,
+    this.accountRole = 'member',
+    this.guardianInvitationPending = false,
   });
 
   final String userId;
@@ -63,8 +65,18 @@ class AuthAuthenticated extends AuthState {
   /// Persisted server-side. Do not infer completion from a numeric step.
   final bool onboardingCompleted;
 
+  /// `guardian` accounts exist only to oversee an invited ward. Existing
+  /// matrimony members who also accept an invitation use `member_guardian`.
+  final String accountRole;
+
+  /// A locally-held one-time code must resume before ordinary onboarding.
+  final bool guardianInvitationPending;
+
   /// Completion is persisted server-side.
   bool get isOnboardingComplete => onboardingCompleted;
+  bool get isGuardianOnly => accountRole == 'guardian';
+  bool get hasGuardianAccess =>
+      accountRole == 'guardian' || accountRole == 'member_guardian';
 
   @override
   List<Object?> get props => [
@@ -74,7 +86,9 @@ class AuthAuthenticated extends AuthState {
         email,
         countryCode,
         isGuardianPath,
-        onboardingCompleted
+        onboardingCompleted,
+        accountRole,
+        guardianInvitationPending,
       ];
 }
 

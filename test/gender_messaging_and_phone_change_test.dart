@@ -80,29 +80,21 @@ void main() {
             'PERFORM private.assert_outgoing_chat_entitlement(NEW.sender_id)'));
   });
 
-  test('OTP-confirmed phone changes cannot alter subscription entitlement', () {
-    final migration = File(
-      'supabase/migrations/208_gender_messaging_and_verified_phone_change.sql',
-    ).readAsStringSync();
-    final start = migration.indexOf(
-      'CREATE OR REPLACE FUNCTION public.confirm_my_verified_phone(',
-    );
-    final end = migration.indexOf(
-      'REVOKE ALL ON FUNCTION public.confirm_my_verified_phone(text)',
-    );
-    final function = migration.substring(start, end);
-
-    expect(function, contains('au.phone_confirmed_at'));
-    expect(function, contains('phone_country_mismatch'));
-    expect(function, contains('phone_verified_at = now()'));
-    expect(function, isNot(contains('subscription_status')));
-    expect(function, isNot(contains('subscription_expires_at')));
-
+  test('Firebase-verified phone changes cannot alter subscription entitlement',
+      () {
     final phoneService = File(
       'lib/core/services/phone_verification_service.dart',
     ).readAsStringSync();
-    expect(phoneService, contains('OtpType.phoneChange'));
+    final verifier = File(
+      'supabase/functions/verify-firebase-phone/index.ts',
+    ).readAsStringSync();
+    expect(phoneService, contains('verifyPhoneNumber'));
+    expect(phoneService, contains('getIdToken(true)'));
+    expect(phoneService, contains("'verify-firebase-phone'"));
     expect(phoneService, contains("'p_country_code': country.iso2"));
+    expect(verifier, contains('phone_verified_at: new Date().toISOString()'));
+    expect(verifier, isNot(contains('subscription_status')));
+    expect(verifier, isNot(contains('subscription_expires_at')));
   });
 
   test('end-match and Premium CTAs select readable theme foregrounds', () {

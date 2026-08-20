@@ -478,17 +478,50 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                         const SizedBox(height: AppDimensions.space8),
                         FadeTransition(
                           opacity: _tertiaryOpacity,
-                          child: TextButton(
-                            onPressed: () => _lightTap(
-                              () => _showReferralSheet(context),
-                            ),
-                            child: UiText(
-                              l10n.splash_referral_question,
-                              style: AppTypography.captionMedium.copyWith(
-                                color: AppColors.champagneGold,
-                                decoration: TextDecoration.none,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Semantics(
+                                  label: context.uiCopy(
+                                    'I have a Guardian invitation',
+                                  ),
+                                  button: true,
+                                  child: TextButton(
+                                    onPressed: () => _lightTap(
+                                      () => context.push(
+                                        AppRoutes.guardianConnect,
+                                      ),
+                                    ),
+                                    child: UiText(
+                                      context.uiCopy('Guardian invitation'),
+                                      textAlign: TextAlign.center,
+                                      maxLines: 2,
+                                      style:
+                                          AppTypography.captionMedium.copyWith(
+                                        color: AppColors.pearlWhite,
+                                        decoration: TextDecoration.none,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
+                              Expanded(
+                                child: TextButton(
+                                  onPressed: () => _lightTap(
+                                    () => _showReferralSheet(context),
+                                  ),
+                                  child: UiText(
+                                    l10n.splash_referral_question,
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    style: AppTypography.captionMedium.copyWith(
+                                      color: AppColors.champagneGold,
+                                      decoration: TextDecoration.none,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],

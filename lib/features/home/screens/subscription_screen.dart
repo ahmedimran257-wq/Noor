@@ -510,6 +510,7 @@ Future<bool?> showPhoneVerificationSheet(
   String? countryCode,
   bool isChangingNumber = false,
   bool isPostPurchase = false,
+  String? guardianInvitationCode,
 }) {
   return showModalBottomSheet<bool>(
     context: context,
@@ -519,6 +520,7 @@ Future<bool?> showPhoneVerificationSheet(
       countryCode: countryCode,
       isChangingNumber: isChangingNumber,
       isPostPurchase: isPostPurchase,
+      guardianInvitationCode: guardianInvitationCode,
     ),
   );
 }
@@ -528,11 +530,13 @@ class _PremiumPhoneVerificationSheet extends StatefulWidget {
     this.countryCode,
     required this.isChangingNumber,
     required this.isPostPurchase,
+    this.guardianInvitationCode,
   });
 
   final String? countryCode;
   final bool isChangingNumber;
   final bool isPostPurchase;
+  final String? guardianInvitationCode;
 
   @override
   State<_PremiumPhoneVerificationSheet> createState() =>
@@ -582,7 +586,9 @@ class _PremiumPhoneVerificationSheetState
     super.dispose();
   }
 
-  bool get _phoneReady => _rawDigits.length >= (_country.maxDigits - 1);
+  bool get _phoneReady =>
+      _rawDigits.length == _country.maxDigits &&
+      (_country.iso2 != 'IN' || RegExp(r'^[6-9]').hasMatch(_rawDigits));
   bool get _otpReady => _otpCtrl.text.replaceAll(RegExp(r'\D'), '').length == 6;
 
   void _onPhoneChanged() {
@@ -612,17 +618,27 @@ class _PremiumPhoneVerificationSheetState
       await PhoneVerificationService.instance.sendCode(
         country: _country,
         nationalDigits: _rawDigits,
+        purpose: widget.guardianInvitationCode == null
+            ? PhoneVerificationPurpose.premium
+            : PhoneVerificationPurpose.guardian,
+        guardianInvitationCode: widget.guardianInvitationCode,
       );
       if (!mounted) return;
       setState(() {
         _codeSent = true;
         _loading = false;
       });
+    } on PhoneVerificationException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = error.message;
+      });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'Could not send code. Please check the number.';
+        _error = 'Could not send the SMS. Please try again.';
       });
     }
   }
@@ -639,6 +655,10 @@ class _PremiumPhoneVerificationSheetState
         country: _country,
         nationalDigits: _rawDigits,
         code: _otpCtrl.text.replaceAll(RegExp(r'\D'), ''),
+        purpose: widget.guardianInvitationCode == null
+            ? PhoneVerificationPurpose.premium
+            : PhoneVerificationPurpose.guardian,
+        guardianInvitationCode: widget.guardianInvitationCode,
       );
       if (!mounted) return;
       Navigator.of(context).pop(true);
@@ -650,11 +670,17 @@ class _PremiumPhoneVerificationSheetState
           'Premium is still activating. Wait a moment, then tap Verify again — your purchase is safe.',
         );
       });
+    } on PhoneVerificationException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = error.message;
+      });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'Invalid code. Please try again.';
+        _error = 'Phone verification could not be completed. Try again.';
       });
     }
   }
@@ -687,9 +713,11 @@ class _PremiumPhoneVerificationSheetState
                   child: UiText(
                     context.uiCopy(widget.isChangingNumber
                         ? 'Change verified phone number'
-                        : widget.isPostPurchase
-                            ? 'Premium is active — verify your phone'
-                            : 'Verify phone to continue'),
+                        : widget.guardianInvitationCode != null
+                            ? 'Verify your Guardian phone'
+                            : widget.isPostPurchase
+                                ? 'Premium is active — verify your phone'
+                                : 'Verify phone to continue'),
                     style: AppTypography.bodyMedium,
                   ),
                 ),
@@ -707,9 +735,11 @@ class _PremiumPhoneVerificationSheetState
             UiText(
               context.uiCopy(widget.isChangingNumber
                   ? 'Your new number becomes verified only after the SMS code succeeds. Changing it does not cancel Premium or alter its expiry date.'
-                  : widget.isPostPurchase
-                      ? 'Your Premium purchase is complete. Verify an India +91 number by SMS to add the phone badge and, for men, enable sending messages.'
-                      : 'Verify your phone with a one-time SMS code. Premium must be active before a number can be verified.'),
+                  : widget.guardianInvitationCode != null
+                      ? 'Use the same India mobile number that the member entered for this Guardian invitation.'
+                      : widget.isPostPurchase
+                          ? 'Your Premium purchase is complete. Verify an India +91 number by SMS to add the phone badge and, for men, enable sending messages.'
+                          : 'Verify your phone with a one-time SMS code. Premium must be active before a number can be verified.'),
               style: AppTypography.caption.copyWith(color: AppColors.slateMist),
             ),
             const SizedBox(height: 18),

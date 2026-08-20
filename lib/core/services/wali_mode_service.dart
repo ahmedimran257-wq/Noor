@@ -7,6 +7,7 @@
 // Messages appear live via Supabase Realtime.
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_service.dart';
 
@@ -20,6 +21,7 @@ import 'supabase_service.dart';
 class WaliModeService {
   WaliModeService._();
   static final instance = WaliModeService._();
+  static const pendingInvitationKey = 'pending_guardian_invitation_code';
 
   SupabaseClient get _supabase {
     if (!SupabaseService.isInitialized) {
@@ -72,6 +74,40 @@ class WaliModeService {
       debugPrint('[WaliModeService] Activation error: $e');
       rethrow;
     }
+  }
+
+  Future<Map<String, dynamic>> acceptInvitation(String code) async {
+    final normalized = code.trim().toUpperCase();
+    if (!RegExp(r'^[A-F0-9]{10}$').hasMatch(normalized)) {
+      throw const FormatException('invalid_guardian_invitation_code');
+    }
+    final response = await _supabase.rpc(
+      'accept_my_guardian_invitation',
+      params: {'p_code': normalized},
+    );
+    return Map<String, dynamic>.from(response as Map);
+  }
+
+  Future<void> rememberPendingInvitation(String code) async {
+    final normalized = code.trim().toUpperCase();
+    if (!RegExp(r'^[A-F0-9]{10}$').hasMatch(normalized)) {
+      throw const FormatException('invalid_guardian_invitation_code');
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(pendingInvitationKey, normalized);
+  }
+
+  Future<String?> pendingInvitation() async {
+    final prefs = await SharedPreferences.getInstance();
+    final code = prefs.getString(pendingInvitationKey)?.trim().toUpperCase();
+    return code != null && RegExp(r'^[A-F0-9]{10}$').hasMatch(code)
+        ? code
+        : null;
+  }
+
+  Future<void> clearPendingInvitation() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(pendingInvitationKey);
   }
 
   // Dashboard
@@ -230,7 +266,7 @@ class WaliModeService {
   /// Saves the ward's guardian settings on the profile row and encrypts the
   /// phone through the existing SECURITY DEFINER RPC. SharedPreferences should
   /// only be used by callers as a UI cache, never as the source of truth.
-  Future<void> saveMyGuardianSettings({
+  Future<GuardianInvitation?> saveMyGuardianSettings({
     required bool enabled,
     required String guardianName,
     required String guardianPhone,
@@ -242,13 +278,27 @@ class WaliModeService {
       throw StateError('Sign in is required to save guardian settings.');
     }
 
-    await _supabase.rpc('save_my_guardian_configuration', params: {
+    final response =
+        await _supabase.rpc('save_my_guardian_configuration', params: {
       'p_enabled': enabled,
       'p_can_reply': canReply,
       'p_name': guardianName.trim(),
       'p_relationship': _dbRelationship(relationship),
       'p_phone': guardianPhone.trim().isEmpty ? null : guardianPhone.trim(),
     });
+    final result = Map<String, dynamic>.from(response as Map);
+    return GuardianInvitation.fromResponse(result);
+  }
+
+  Future<GuardianInvitation> renewMyGuardianInvitation() async {
+    final response = await _supabase.rpc('renew_my_guardian_invitation');
+    final invitation = GuardianInvitation.fromResponse(
+      Map<String, dynamic>.from(response as Map),
+    );
+    if (invitation == null) {
+      throw StateError('guardian_invitation_unavailable');
+    }
+    return invitation;
   }
 
   static String _dbRelationship(String label) {
@@ -419,4 +469,20 @@ class GuardianInfo {
   final bool isLinked;
   final bool hasPhone;
   final DateTime? invitationExpiresAt;
+}
+
+class GuardianInvitation {
+  const GuardianInvitation({required this.code, required this.expiresAt});
+
+  final String code;
+  final DateTime expiresAt;
+
+  static GuardianInvitation? fromResponse(Map<String, dynamic> response) {
+    final code = response['invitation_code']?.toString().trim().toUpperCase();
+    final expiresAt = DateTime.tryParse(
+      response['invitation_expires_at']?.toString() ?? '',
+    )?.toLocal();
+    if (code == null || code.isEmpty || expiresAt == null) return null;
+    return GuardianInvitation(code: code, expiresAt: expiresAt);
+  }
 }

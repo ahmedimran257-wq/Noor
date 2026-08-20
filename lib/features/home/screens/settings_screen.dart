@@ -14,6 +14,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../l10n/generated/app_localizations.dart';
 
@@ -690,6 +691,8 @@ class _GuardianSectionState extends State<_GuardianSection> {
   bool _saved = false;
   bool _saving = false;
   bool _hasGuardianPhoneOnServer = false;
+  bool _renewingInvitation = false;
+  bool _hasDashboardAccess = false;
 
   static const _relationships = [
     'Father',
@@ -714,10 +717,13 @@ class _GuardianSectionState extends State<_GuardianSection> {
 
   Future<void> _load() async {
     if (!SupabaseService.isInitialized) return;
-    final info = await WaliModeService.instance.getMyGuardianInfo();
+    final service = WaliModeService.instance;
+    final info = await service.getMyGuardianInfo();
+    final hasDashboardAccess = await service.isGuardian();
     if (!mounted) return;
-    if (info == null) return;
     setState(() {
+      _hasDashboardAccess = hasDashboardAccess;
+      if (info == null) return;
       _enabled = true;
       _serverEnabled = true;
       _isLinked = info.isLinked;
@@ -754,8 +760,9 @@ class _GuardianSectionState extends State<_GuardianSection> {
     }
 
     setState(() => _saving = true);
+    GuardianInvitation? invitation;
     try {
-      await WaliModeService.instance.saveMyGuardianSettings(
+      invitation = await WaliModeService.instance.saveMyGuardianSettings(
         enabled: _enabled,
         guardianName: _nameCtrl.text,
         guardianPhone: _phoneCtrl.text,
@@ -786,7 +793,99 @@ class _GuardianSectionState extends State<_GuardianSection> {
           _phoneCtrl.clear();
         }
       });
+      if (invitation != null) await _showInvitation(invitation);
     }
+  }
+
+  Future<void> _renewInvitation() async {
+    if (_renewingInvitation) return;
+    setState(() => _renewingInvitation = true);
+    try {
+      final invitation =
+          await WaliModeService.instance.renewMyGuardianInvitation();
+      if (!mounted) return;
+      await _showInvitation(invitation);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: UiText('A new Guardian invitation could not be created.'),
+      ));
+    } finally {
+      if (mounted) setState(() => _renewingInvitation = false);
+    }
+  }
+
+  Future<void> _showInvitation(GuardianInvitation invitation) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surfaceDark,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              UiText('Guardian invitation', style: AppTypography.screenTitle),
+              const SizedBox(height: 8),
+              UiText(
+                'Share this one-time code only with your chosen Guardian. They must verify the same India mobile number within 7 days.',
+                style: AppTypography.bodyMuted,
+              ),
+              const SizedBox(height: 18),
+              Semantics(
+                label: 'Guardian invitation code ${invitation.code}',
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.inputSurface,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.cardBorder),
+                  ),
+                  child: UiText(
+                    invitation.code,
+                    style: AppTypography.userName.copyWith(letterSpacing: 4),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      await Clipboard.setData(
+                        ClipboardData(text: invitation.code),
+                      );
+                      if (!sheetContext.mounted) return;
+                      ScaffoldMessenger.of(sheetContext).showSnackBar(
+                        const SnackBar(
+                            content: UiText('Invitation code copied.')),
+                      );
+                    },
+                    icon: const Icon(Icons.copy_rounded),
+                    label: const UiText('Copy code'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => SharePlus.instance.share(ShareParams(
+                      subject: 'Silarah Guardian invitation',
+                      text:
+                          'You are invited as my Guardian on Silarah. Install or open Silarah, choose “I have a Guardian invitation”, and enter code ${invitation.code}. Use the India mobile number I registered. This code expires in 7 days.',
+                    )),
+                    icon: const Icon(Icons.ios_share_rounded),
+                    label: const UiText('Share securely'),
+                  ),
+                ),
+              ]),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   String _relationLabel(AppLocalizations l10n, String relation) {
@@ -825,6 +924,53 @@ class _GuardianSectionState extends State<_GuardianSection> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return _SettingsCard(children: [
+      if (_hasDashboardAccess) ...[
+        ListTile(
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+          leading: Icon(
+            Icons.visibility_outlined,
+            color: AppColors.verifiedTeal,
+            size: 20,
+          ),
+          title: UiText(
+            context.uiCopy('Open Guardian dashboard'),
+            style: AppTypography.body,
+          ),
+          subtitle: UiText(
+            context.uiCopy('View the conversations shared by your wards'),
+            style: AppTypography.caption,
+          ),
+          trailing: Icon(
+            Icons.chevron_right_rounded,
+            color: AppColors.slateMist,
+          ),
+          onTap: () => context.push(AppRoutes.guardianDashboard),
+        ),
+        const _DividerFull(),
+      ],
+      ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+        leading: Icon(
+          Icons.mark_email_unread_outlined,
+          color: AppColors.champagneGold,
+          size: 20,
+        ),
+        title: UiText(
+          context.uiCopy('Accept a Guardian invitation'),
+          style: AppTypography.body,
+        ),
+        subtitle: UiText(
+          context.uiCopy('Enter a private invitation code from a member'),
+          style: AppTypography.caption,
+        ),
+        trailing: Icon(
+          Icons.chevron_right_rounded,
+          color: AppColors.slateMist,
+        ),
+        onTap: () => context.push(AppRoutes.guardianConnect),
+      ),
+      const _DividerFull(),
       // Guardian Mode master toggle
       ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
@@ -911,6 +1057,27 @@ class _GuardianSectionState extends State<_GuardianSection> {
                       ],
                     ),
                   ),
+                  if (!_isLinked) ...[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(56, 0, 16, 10),
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: TextButton.icon(
+                          onPressed:
+                              _renewingInvitation ? null : _renewInvitation,
+                          icon: _renewingInvitation
+                              ? const SizedBox.square(
+                                  dimension: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.share_outlined, size: 18),
+                          label: const UiText('Create a new invitation code'),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
                 const _DividerFull(),
                 // Relationship dropdown

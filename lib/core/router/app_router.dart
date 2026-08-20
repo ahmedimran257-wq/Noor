@@ -31,6 +31,7 @@ import '../../features/home/screens/delete_account_screen.dart';
 import '../../features/home/screens/block_list_screen.dart';
 import '../../features/home/screens/subscription_screen.dart';
 import '../../features/home/screens/guardian_dashboard_screen.dart';
+import '../../features/home/screens/guardian_connect_screen.dart';
 import '../../features/home/screens/chat_screen.dart';
 import '../../features/home/screens/referral_screen.dart';
 import '../../features/home/screens/help_support_screen.dart';
@@ -56,6 +57,7 @@ abstract final class AppRoutes {
   static const blockList = '/block-list';
   static const subscription = '/subscription';
   static const guardianDashboard = '/guardian-dashboard';
+  static const guardianConnect = '/guardian-connect';
   static const referral = '/referral';
   static const verify = '/verify';
   static const badgeVerification = '/badge-verification';
@@ -105,6 +107,7 @@ GoRouter buildAppRouter(
             location == AppRoutes.splash ||
             location == AppRoutes.legal ||
             location == AppRoutes.email ||
+            location == AppRoutes.guardianConnect ||
             location == AppRoutes.boot) {
           return null;
         }
@@ -120,7 +123,8 @@ GoRouter buildAppRouter(
         if (location == AppRoutes.languageSelect ||
             location == AppRoutes.splash ||
             location == AppRoutes.legal ||
-            location == AppRoutes.email) {
+            location == AppRoutes.email ||
+            location == AppRoutes.guardianConnect) {
           return null; // allow these pages
         }
         return AppRoutes.splash;
@@ -128,6 +132,21 @@ GoRouter buildAppRouter(
 
       // Authenticated
       if (authState is AuthAuthenticated) {
+        if (authState.guardianInvitationPending && !authState.isGuardianOnly) {
+          if (location == AppRoutes.guardianConnect) return null;
+          return AppRoutes.guardianConnect;
+        }
+
+        if (authState.isGuardianOnly) {
+          if (location == AppRoutes.guardianDashboard ||
+              location == AppRoutes.guardianConnect ||
+              location == AppRoutes.deleteAccount ||
+              location == AppRoutes.helpSupport) {
+            return null;
+          }
+          return AppRoutes.guardianDashboard;
+        }
+
         if (authState.isOnboardingComplete) {
           // Fully onboarded — go to home unless already there or on sub-routes
           if (location.startsWith(AppRoutes.home) ||
@@ -138,6 +157,7 @@ GoRouter buildAppRouter(
               location == AppRoutes.blockList ||
               location == AppRoutes.subscription ||
               location == AppRoutes.guardianDashboard ||
+              location == AppRoutes.guardianConnect ||
               location == AppRoutes.referral ||
               location == AppRoutes.verify ||
               location == AppRoutes.badgeVerification ||
@@ -298,6 +318,13 @@ GoRouter buildAppRouter(
         pageBuilder: (context, state) => _slidePage(
           key: state.pageKey,
           child: const GuardianDashboardScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.guardianConnect,
+        pageBuilder: (context, state) => _slidePage(
+          key: state.pageKey,
+          child: const GuardianConnectScreen(),
         ),
       ),
       GoRoute(

@@ -14,6 +14,7 @@ import '../../services/fcm_service.dart';
 import '../../services/legal_consent_service.dart';
 import '../../services/otp_request_coalescer.dart';
 import '../../services/supabase_service.dart';
+import '../../services/wali_mode_service.dart';
 import 'auth_state.dart';
 
 enum AuthSessionCheckResult { authenticated, signedOut, retryableFailure }
@@ -161,6 +162,8 @@ class AuthCubit extends Cubit<AuthState> {
     final prefs = await SharedPreferences.getInstance();
     final countryCode = prefs.getString('user_country_code');
     final authData = await _loadUserProfile(userId);
+    final guardianInvitationPending =
+        await WaliModeService.instance.pendingInvitation() != null;
     final onboardingStep = _returningUserStep(authData);
 
     _hydratedSessionUserId = userId;
@@ -173,6 +176,8 @@ class AuthCubit extends Cubit<AuthState> {
       countryCode: countryCode,
       isGuardianPath: authData.isGuardianPath,
       onboardingCompleted: authData.onboardingCompleted,
+      accountRole: authData.accountRole,
+      guardianInvitationPending: guardianInvitationPending,
     ));
   }
 
@@ -333,6 +338,8 @@ class AuthCubit extends Cubit<AuthState> {
         final prefs = await SharedPreferences.getInstance();
         final countryCode = prefs.getString('user_country_code');
         final authData = await _loadUserProfile(user.id);
+        final guardianInvitationPending =
+            await WaliModeService.instance.pendingInvitation() != null;
         if (requestId != _verifyOtpRequestId) return;
 
         final onboardingStep = _pendingAuthMode == 'signup'
@@ -347,6 +354,8 @@ class AuthCubit extends Cubit<AuthState> {
           countryCode: countryCode,
           isGuardianPath: authData.isGuardianPath,
           onboardingCompleted: authData.onboardingCompleted,
+          accountRole: authData.accountRole,
+          guardianInvitationPending: guardianInvitationPending,
         ));
         await _clearPendingOtp();
       } catch (e) {
@@ -401,6 +410,8 @@ class AuthCubit extends Cubit<AuthState> {
         countryCode: current.countryCode,
         isGuardianPath: isGuardianPath ?? current.isGuardianPath,
         onboardingCompleted: onboardingCompleted ?? current.onboardingCompleted,
+        accountRole: current.accountRole,
+        guardianInvitationPending: current.guardianInvitationPending,
       ));
     }
   }
@@ -491,6 +502,8 @@ class AuthCubit extends Cubit<AuthState> {
         countryCode: current.countryCode,
         isGuardianPath: current.isGuardianPath,
         onboardingCompleted: current.onboardingCompleted,
+        accountRole: current.accountRole,
+        guardianInvitationPending: current.guardianInvitationPending,
       ));
     }
   }
@@ -523,6 +536,8 @@ class AuthCubit extends Cubit<AuthState> {
         countryCode: normalizedCountryCode,
         isGuardianPath: current.isGuardianPath,
         onboardingCompleted: current.onboardingCompleted,
+        accountRole: current.accountRole,
+        guardianInvitationPending: current.guardianInvitationPending,
       ));
     }
     return true;
@@ -675,6 +690,7 @@ class AuthCubit extends Cubit<AuthState> {
     bool onboardingCompleted = false;
     bool hasUserRow = false;
     bool hasProfileRow = false;
+    String accountRole = 'member';
 
     try {
       Map<String, dynamic>? userRow;
@@ -682,7 +698,7 @@ class AuthCubit extends Cubit<AuthState> {
         userRow = await SupabaseService.client
             .from('users')
             .select(
-                'gender, onboarding_step, is_guardian_path, profile_owner_type, onboarding_completed')
+                'gender, onboarding_step, is_guardian_path, profile_owner_type, onboarding_completed, account_role')
             .eq('id', userId)
             .maybeSingle();
       } catch (e) {
@@ -705,6 +721,7 @@ class AuthCubit extends Cubit<AuthState> {
             (userRow['profile_owner_type'] as String?) == 'guardian' ||
                 (userRow['is_guardian_path'] as bool? ?? false);
         onboardingCompleted = userRow['onboarding_completed'] as bool? ?? false;
+        accountRole = userRow['account_role'] as String? ?? 'member';
       }
 
       final profileRow = await SupabaseService.client
@@ -738,7 +755,15 @@ class AuthCubit extends Cubit<AuthState> {
       hasUserRow: hasUserRow,
       hasProfileRow: hasProfileRow,
       onboardingCompleted: onboardingCompleted,
+      accountRole: accountRole,
     );
+  }
+
+  Future<void> refreshAuthenticatedProfile() async {
+    if (!_isRealMode) return;
+    final session = SupabaseService.client.auth.currentSession;
+    if (session == null) return;
+    await _emitAuthenticatedFromSession(session);
   }
 
   int _returningUserStep(_UserProfileData authData) {
@@ -751,7 +776,8 @@ class AuthCubit extends Cubit<AuthState> {
         (message.contains('onboarding_step') ||
             message.contains('onboarding_completed') ||
             message.contains('profile_owner_type') ||
-            message.contains('is_guardian_path'));
+            message.contains('is_guardian_path') ||
+            message.contains('account_role'));
   }
 }
 
@@ -763,6 +789,7 @@ class _UserProfileData {
     required this.hasUserRow,
     required this.hasProfileRow,
     required this.onboardingCompleted,
+    required this.accountRole,
   });
 
   final String? gender;
@@ -771,4 +798,5 @@ class _UserProfileData {
   final bool hasUserRow;
   final bool hasProfileRow;
   final bool onboardingCompleted;
+  final String accountRole;
 }

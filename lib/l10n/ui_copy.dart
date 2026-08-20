@@ -8,6 +8,7 @@ import 'package:silarah/l10n/messaging_policy_ui_copy.dart';
 import 'package:silarah/l10n/photo_guide_ui_copy.dart';
 import 'package:silarah/l10n/trust_ui_copy.dart';
 import 'package:silarah/l10n/translation_privacy_ui_copy.dart';
+import 'package:silarah/l10n/guardian_ui_copy.dart';
 import 'package:silarah/l10n/ui_copy_supplement.dart';
 
 final AppLocalizations _englishUiCopy = AppLocalizationsEn();
@@ -28,6 +29,7 @@ class UiCopy {
         photoGuideUiCopy[languageCode]?[source] ??
         trustUiCopy[languageCode]?[source] ??
         translationPrivacyUiCopy[languageCode]?[source] ??
+        guardianUiCopy[languageCode]?[source] ??
         supplementalUiCopy[languageCode]?[source] ??
         _translations[languageCode]?[source] ??
         source;
@@ -42,6 +44,7 @@ class UiCopy {
       photoGuideUiCopy[languageCode]?.containsKey(source) == true ||
       trustUiCopy[languageCode]?.containsKey(source) == true ||
       translationPrivacyUiCopy[languageCode]?.containsKey(source) == true ||
+      guardianUiCopy[languageCode]?.containsKey(source) == true ||
       supplementalUiCopy[languageCode]?.containsKey(source) == true ||
       _translations[languageCode]?.containsKey(source) == true;
 
