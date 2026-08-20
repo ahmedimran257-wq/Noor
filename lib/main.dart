@@ -781,6 +781,9 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
                   unawaited(_accountStandingCubit.start(state.userId));
                   unawaited(_loginSubscriptionUser(state.userId));
                   unawaited(FcmService.instance.onUserLogin());
+                  unawaited(
+                    _localeCubit.syncToServer(countryCode: state.countryCode),
+                  );
                   unawaited(_notificationPrefsCubit.loadPrefs());
                   _chatCubit.loadConversations();
                   _notificationsCubit.loadNotifications();

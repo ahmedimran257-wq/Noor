@@ -235,7 +235,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   Future<void> _loadGuardian() async {
     if (SupabaseService.isInitialized) {
       final info = await WaliModeService.instance.getMyGuardianInfo();
-      if (mounted) setState(() => _guardianEnabled = info != null);
+      if (mounted) setState(() => _guardianEnabled = info?.isLinked == true);
     }
   }
 
@@ -1502,6 +1502,7 @@ class _BoostSection extends StatefulWidget {
 
 class _BoostSectionState extends State<_BoostSection> {
   DateTime? _boostedAt;
+  DateTime? _nextBoostAvailableAt;
   bool _boosting = false;
   Timer? _timer;
 
@@ -1522,12 +1523,26 @@ class _BoostSectionState extends State<_BoostSection> {
     if (SupabaseService.isInitialized && userId != null) {
       final row = await SupabaseService.client
           .from('my_profile_private')
-          .select('is_boosted, boost_expires_at')
+          .select(
+            'is_boosted, boost_expires_at, boost_last_activated_at',
+          )
           .eq('user_id', userId)
           .maybeSingle();
       final expiresAt = row?['boost_expires_at'] == null
           ? null
           : DateTime.tryParse(row!['boost_expires_at'] as String)?.toLocal();
+      final activatedAt = row?['boost_last_activated_at'] == null
+          ? null
+          : DateTime.tryParse(
+              row!['boost_last_activated_at'].toString(),
+            )?.toLocal();
+      final nextAvailable = activatedAt?.add(const Duration(days: 7));
+      if (mounted &&
+          nextAvailable != null &&
+          nextAvailable.isAfter(DateTime.now())) {
+        setState(() => _nextBoostAvailableAt = nextAvailable);
+        _startTimer();
+      }
       if ((row?['is_boosted'] as bool? ?? false) &&
           expiresAt != null &&
           expiresAt.isAfter(DateTime.now())) {
@@ -1546,20 +1561,27 @@ class _BoostSectionState extends State<_BoostSection> {
   void _startTimer() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (_boostedAt == null) return;
-      final remaining =
-          const Duration(hours: 2) - DateTime.now().difference(_boostedAt!);
-      if (remaining.isNegative) {
-        setState(() => _boostedAt = null);
-        _timer?.cancel();
-      } else {
+      final now = DateTime.now();
+      final boostExpired = _boostedAt != null &&
+          (const Duration(hours: 2) - now.difference(_boostedAt!)).isNegative;
+      final cooldownExpired =
+          _nextBoostAvailableAt != null && !_nextBoostAvailableAt!.isAfter(now);
+      if (boostExpired || cooldownExpired) {
+        setState(() {
+          if (boostExpired) _boostedAt = null;
+          if (cooldownExpired) _nextBoostAvailableAt = null;
+        });
+      } else if (_boostedAt != null || _nextBoostAvailableAt != null) {
         setState(() {});
+      }
+      if (_boostedAt == null && _nextBoostAvailableAt == null) {
+        _timer?.cancel();
       }
     });
   }
 
   Future<void> _activate() async {
-    if (_boosting || _boostedAt != null) return;
+    if (_boosting || _boostedAt != null || _isCoolingDown) return;
     final userId = await SupabaseService.currentUserIdOrRefresh();
     if (!mounted) return;
     if (!SupabaseService.isInitialized || userId == null) {
@@ -1590,6 +1612,7 @@ class _BoostSectionState extends State<_BoostSection> {
       setState(() {
         _boosting = false;
         _boostedAt = expiresAt.subtract(const Duration(hours: 2));
+        _nextBoostAvailableAt = now.add(const Duration(days: 7));
       });
     } catch (error) {
       if (!mounted) return;
@@ -1636,6 +1659,23 @@ class _BoostSectionState extends State<_BoostSection> {
     return '$h:$m:$s';
   }
 
+  bool get _isCoolingDown =>
+      _nextBoostAvailableAt != null &&
+      _nextBoostAvailableAt!.isAfter(DateTime.now());
+
+  String _availabilityCountdown() {
+    final next = _nextBoostAvailableAt;
+    if (next == null) return '';
+    final remaining = next.difference(DateTime.now());
+    if (remaining.isNegative) return 'Ready now';
+    final days = remaining.inDays;
+    final hours = remaining.inHours % 24;
+    final minutes = remaining.inMinutes % 60;
+    if (days > 0) return 'Available in ${days}d ${hours}h';
+    if (hours > 0) return 'Available in ${hours}h ${minutes}m';
+    return 'Available in ${remaining.inMinutes + 1}m';
+  }
+
   @override
   Widget build(BuildContext context) {
     // Women can use profile boosts without a paid entitlement.
@@ -1647,6 +1687,7 @@ class _BoostSectionState extends State<_BoostSection> {
     return BlocBuilder<SubscriptionCubit, SubscriptionState>(
       builder: (context, subState) {
         final isActive = _boostedAt != null;
+        final isCoolingDown = _isCoolingDown && !isActive;
 
         // Women: always show boost as available (free, no paywall).
         // Men with no subscription: show locked state.
@@ -1677,7 +1718,9 @@ class _BoostSectionState extends State<_BoostSection> {
           child: showAsSubscribed
               ? _BoostActiveOrAvailable(
                   isActive: isActive,
+                  isCoolingDown: isCoolingDown,
                   countdown: _countdown(),
+                  availabilityCountdown: _availabilityCountdown(),
                   onActivate: _activate,
                 )
               : _BoostLocked(
@@ -1695,11 +1738,15 @@ class _BoostSectionState extends State<_BoostSection> {
 class _BoostActiveOrAvailable extends StatelessWidget {
   const _BoostActiveOrAvailable({
     required this.isActive,
+    required this.isCoolingDown,
     required this.countdown,
+    required this.availabilityCountdown,
     required this.onActivate,
   });
   final bool isActive;
+  final bool isCoolingDown;
   final String countdown;
+  final String availabilityCountdown;
   final VoidCallback onActivate;
 
   @override
@@ -1738,7 +1785,9 @@ class _BoostActiveOrAvailable extends StatelessWidget {
         UiText(
           isActive
               ? 'Your profile is at the top of searches.'
-              : 'Appear at the top of searches for 2 hours.',
+              : isCoolingDown
+                  ? 'One profile boost is available every 7 days.'
+                  : 'Appear at the top of searches for 2 hours.',
           style: AppTypography.caption,
         ),
         const SizedBox(height: AppDimensions.space12),
@@ -1754,9 +1803,13 @@ class _BoostActiveOrAvailable extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
               ),
             ),
-            onPressed: isActive ? null : onActivate,
+            onPressed: isActive || isCoolingDown ? null : onActivate,
             child: UiText(
-              isActive ? countdown : 'Activate Boost',
+              isActive
+                  ? countdown
+                  : isCoolingDown
+                      ? availabilityCountdown
+                      : 'Activate Boost',
               style: AppTypography.button.copyWith(
                 color: isActive ? AppColors.slateMist : AppColors.obsidianNight,
                 fontVariations: [const FontVariation('wght', 700)],

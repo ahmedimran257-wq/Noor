@@ -426,6 +426,11 @@ String? notificationPathFor(NotificationItem item) {
           : '/profile/${item.profileId}';
     case 'profile_nudge':
       return '/edit-profile';
+    case 'inactive_nudge':
+      return '/home?tab=0';
+    case 'boost_ready':
+    case 'boost_available':
+      return '/home?tab=3';
     case 'subscription_active':
     case 'subscription_renewed':
     case 'subscription_updated':

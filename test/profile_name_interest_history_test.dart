@@ -35,7 +35,9 @@ void main() {
 
     expect(
       cubit,
-      contains(".inFilter('status', ['pending', 'accepted', 'declined'])"),
+      contains(
+        ".inFilter('status', ['pending', 'accepted', 'declined', 'expired'])",
+      ),
     );
     expect(cubit, contains("status: _parseStatus(row['status'] as String)"));
     expect(home, contains('read<InterestsCubit>().refreshIfChanged()'));

@@ -1,6 +1,10 @@
 ﻿// GENERATED FILE. Source strings are audited by localization_quality_test.dart.
 const supplementalUiCopy = <String, Map<String, String>>{
   'ar': {
+    'LOCATION IN INDIA': 'الموقع في الهند',
+    'Verifying city…': 'جارٍ التحقق من المدينة…',
+    'Choose a state, then optionally a city. This searches where members live and does not change your own profile.':
+        'اختر ولاية، ثم مدينة اختياريًا. يبحث هذا عن مكان إقامة الأعضاء ولا يغيّر ملفك الشخصي.',
     'Privacy Rights & Grievance Policy': 'سياسة حقوق الخصوصية والشكاوى',
     'Imran Ahmed. Formal grievances are acknowledged within 24 hours and ordinarily resolved within 7 days.':
         'عمران أحمد. يتم تأكيد استلام الشكاوى الرسمية خلال 24 ساعة وتُحل عادةً خلال 7 أيام.',
@@ -221,6 +225,10 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'now': 'الآن',
   },
   'bn': {
+    'LOCATION IN INDIA': 'ভারতে অবস্থান',
+    'Verifying city…': 'শহর যাচাই করা হচ্ছে…',
+    'Choose a state, then optionally a city. This searches where members live and does not change your own profile.':
+        'একটি রাজ্য বেছে নিন, তারপর চাইলে একটি শহর। এটি সদস্যরা কোথায় থাকেন তা খোঁজে এবং আপনার নিজের প্রোফাইল পরিবর্তন করে না।',
     'Privacy Rights & Grievance Policy': 'গোপনীয়তা অধিকার ও অভিযোগ নীতি',
     'Imran Ahmed. Formal grievances are acknowledged within 24 hours and ordinarily resolved within 7 days.':
         'ইমরান আহমেদ। আনুষ্ঠানিক অভিযোগ ২৪ ঘণ্টার মধ্যে স্বীকার করা হয় এবং সাধারণত ৭ দিনের মধ্যে সমাধান করা হয়।',
@@ -443,6 +451,10 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'now': 'এখন',
   },
   'de': {
+    'LOCATION IN INDIA': 'WOHNORT IN INDIEN',
+    'Verifying city…': 'Stadt wird überprüft…',
+    'Choose a state, then optionally a city. This searches where members live and does not change your own profile.':
+        'Wähle einen Bundesstaat und optional eine Stadt. So wird nach dem Wohnort von Mitgliedern gesucht, ohne dein eigenes Profil zu ändern.',
     'Privacy Rights & Grievance Policy':
         'Datenschutzrechte- und Beschwerderichtlinie',
     'Imran Ahmed. Formal grievances are acknowledged within 24 hours and ordinarily resolved within 7 days.':
@@ -673,6 +685,10 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'now': 'Jetzt',
   },
   'fr': {
+    'LOCATION IN INDIA': 'LOCALISATION EN INDE',
+    'Verifying city…': 'Vérification de la ville…',
+    'Choose a state, then optionally a city. This searches where members live and does not change your own profile.':
+        'Choisissez un État, puis éventuellement une ville. Cette recherche porte sur le lieu de résidence des membres et ne modifie pas votre profil.',
     'Privacy Rights & Grievance Policy':
         'Politique relative aux droits à la vie privée et aux réclamations',
     'Imran Ahmed. Formal grievances are acknowledged within 24 hours and ordinarily resolved within 7 days.':
@@ -903,6 +919,10 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'now': 'maintenant',
   },
   'hi': {
+    'LOCATION IN INDIA': 'भारत में स्थान',
+    'Verifying city…': 'शहर सत्यापित किया जा रहा है…',
+    'Choose a state, then optionally a city. This searches where members live and does not change your own profile.':
+        'एक राज्य चुनें, फिर चाहें तो शहर चुनें। यह सदस्यों के रहने के स्थान को खोजता है और आपकी अपनी प्रोफ़ाइल नहीं बदलता।',
     'Privacy Rights & Grievance Policy': 'गोपनीयता अधिकार और शिकायत नीति',
     'Imran Ahmed. Formal grievances are acknowledged within 24 hours and ordinarily resolved within 7 days.':
         'इमरान अहमद। औपचारिक शिकायतों की पावती 24 घंटे में दी जाती है और सामान्यतः 7 दिनों में समाधान किया जाता है।',
@@ -1127,6 +1147,10 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'now': 'अब',
   },
   'id': {
+    'LOCATION IN INDIA': 'LOKASI DI INDIA',
+    'Verifying city…': 'Memverifikasi kota…',
+    'Choose a state, then optionally a city. This searches where members live and does not change your own profile.':
+        'Pilih negara bagian, lalu kota jika diinginkan. Ini mencari tempat tinggal anggota dan tidak mengubah profil Anda sendiri.',
     'Privacy Rights & Grievance Policy': 'Kebijakan Hak Privasi & Pengaduan',
     'Imran Ahmed. Formal grievances are acknowledged within 24 hours and ordinarily resolved within 7 days.':
         'Imran Ahmed. Pengaduan resmi diterima dalam 24 jam dan biasanya diselesaikan dalam 7 hari.',
@@ -1350,6 +1374,10 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'now': 'Sekarang',
   },
   'ms': {
+    'LOCATION IN INDIA': 'LOKASI DI INDIA',
+    'Verifying city…': 'Mengesahkan bandar…',
+    'Choose a state, then optionally a city. This searches where members live and does not change your own profile.':
+        'Pilih negeri, kemudian bandar jika mahu. Ini mencari tempat tinggal ahli dan tidak mengubah profil anda sendiri.',
     'Privacy Rights & Grievance Policy': 'Dasar Hak Privasi & Aduan',
     'Imran Ahmed. Formal grievances are acknowledged within 24 hours and ordinarily resolved within 7 days.':
         'Imran Ahmed. Aduan rasmi diakui dalam 24 jam dan biasanya diselesaikan dalam 7 hari.',
@@ -1575,6 +1603,10 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'now': 'sekarang',
   },
   'tr': {
+    'LOCATION IN INDIA': 'HİNDİSTAN\'DAKİ KONUM',
+    'Verifying city…': 'Şehir doğrulanıyor…',
+    'Choose a state, then optionally a city. This searches where members live and does not change your own profile.':
+        'Bir eyalet, ardından isteğe bağlı olarak bir şehir seçin. Bu, üyelerin yaşadığı yeri arar ve kendi profilinizi değiştirmez.',
     'Privacy Rights & Grievance Policy':
         'Gizlilik Hakları ve Şikâyet Politikası',
     'Imran Ahmed. Formal grievances are acknowledged within 24 hours and ordinarily resolved within 7 days.':
@@ -1798,6 +1830,10 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'now': 'Şimdi',
   },
   'ur': {
+    'LOCATION IN INDIA': 'بھارت میں مقام',
+    'Verifying city…': 'شہر کی تصدیق ہو رہی ہے…',
+    'Choose a state, then optionally a city. This searches where members live and does not change your own profile.':
+        'ایک ریاست منتخب کریں، پھر چاہیں تو شہر۔ یہ اراکین کی رہائش تلاش کرتا ہے اور آپ کی اپنی پروفائل تبدیل نہیں کرتا۔',
     'Privacy Rights & Grievance Policy': 'رازداری کے حقوق اور شکایات کی پالیسی',
     'Imran Ahmed. Formal grievances are acknowledged within 24 hours and ordinarily resolved within 7 days.':
         'عمران احمد۔ رسمی شکایات کی وصولی 24 گھنٹوں میں تسلیم کی جاتی ہے اور عام طور پر 7 دن میں حل کی جاتی ہیں۔',

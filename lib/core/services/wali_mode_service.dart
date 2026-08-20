@@ -1,9 +1,6 @@
 // SILARAH — Wali (Guardian) Mode Service
 //
-// Fixes Audit Finding 3.1 (Critical):
-//   Provides guardian link flow, mirrored chat access, realtime
-//   message subscription, and guardian dashboard for full in-app
-//   chat mirroring (Active Realtime Guardian).
+// Guardian configuration and linked-account operations.
 //
 // The guardian gets their own login to the app with a dedicated
 // dashboard showing all active chats their ward is engaged in.
@@ -19,9 +16,7 @@ import 'supabase_service.dart';
 /// - **Passive**: Guardian sees read-only chat transcripts in real-time
 /// - **Active**: Guardian can also send messages and approve matches
 ///
-/// The guardian has their own unique login and sees a dashboard of
-/// all active chats their ward is engaged in, with live message
-/// updates via Supabase Realtime.
+/// A linked guardian can see the guardian dashboard with live message updates.
 class WaliModeService {
   WaliModeService._();
   static final instance = WaliModeService._();
@@ -247,29 +242,13 @@ class WaliModeService {
       throw StateError('Sign in is required to save guardian settings.');
     }
 
-    final profile = await _supabase
-        .from('my_profile_private')
-        .select('id')
-        .eq('user_id', userId)
-        .maybeSingle();
-    final profileId = profile?['id'] as String?;
-    if (profileId == null) {
-      throw StateError('Profile was not found for guardian settings.');
-    }
-
-    await _supabase.rpc('set_my_guardian_settings', params: {
+    await _supabase.rpc('save_my_guardian_configuration', params: {
       'p_enabled': enabled,
       'p_can_reply': canReply,
       'p_name': guardianName.trim(),
       'p_relationship': _dbRelationship(relationship),
+      'p_phone': guardianPhone.trim().isEmpty ? null : guardianPhone.trim(),
     });
-
-    if (enabled && guardianPhone.trim().isNotEmpty) {
-      await _supabase.rpc('set_guardian_phone', params: {
-        'p_profile_id': profileId,
-        'p_phone': guardianPhone.trim(),
-      });
-    }
   }
 
   static String _dbRelationship(String label) {
@@ -298,7 +277,9 @@ class WaliModeService {
       final response = await _supabase
           .from('my_profile_private')
           .select(
-            'guardian_name, guardian_relationship, guardian_mode, guardian_user_id',
+            'guardian_name, guardian_relationship, guardian_mode, '
+            'guardian_user_id, guardian_phone_encrypted, '
+            'guardian_invitation_expires_at',
           )
           .eq('user_id', userId)
           .single();
@@ -313,6 +294,12 @@ class WaliModeService {
         relationship: response['guardian_relationship'] as String?,
         mode: response['guardian_mode'] as String,
         isLinked: response['guardian_user_id'] != null,
+        hasPhone: response['guardian_phone_encrypted'] != null,
+        invitationExpiresAt: response['guardian_invitation_expires_at'] == null
+            ? null
+            : DateTime.tryParse(
+                response['guardian_invitation_expires_at'].toString(),
+              )?.toLocal(),
       );
     } catch (e) {
       debugPrint('[WaliModeService] Error fetching guardian info: $e');
@@ -420,6 +407,8 @@ class GuardianInfo {
     this.relationship,
     required this.mode,
     required this.isLinked,
+    required this.hasPhone,
+    this.invitationExpiresAt,
   });
 
   final String name;
@@ -428,4 +417,6 @@ class GuardianInfo {
 
   /// Whether the guardian has created their own account and linked it.
   final bool isLinked;
+  final bool hasPhone;
+  final DateTime? invitationExpiresAt;
 }

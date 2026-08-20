@@ -20,6 +20,7 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
   bool get _isRealMode => SupabaseService.isInitialized;
   Timer? _persistDebounce;
   int _persistVersion = 0;
+  NotificationPrefsState _lastPersisted = const NotificationPrefsState();
 
   // Load prefs from DB on login
   /// Load notification preferences from Supabase for the current user.
@@ -41,100 +42,119 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
           .eq('user_id', userId)
           .maybeSingle();
 
-      if (row != null && !isClosed) {
-        emit(NotificationPrefsState(
-          newInterest: (row['new_interest'] as bool?) ?? true,
-          interestAccepted: (row['interest_accepted'] as bool?) ?? true,
-          newMessage: (row['new_message'] as bool?) ?? true,
-          profileView: (row['profile_view'] as bool?) ?? true,
-          profileLive: (row['profile_live'] as bool?) ?? true,
+      if (!isClosed) {
+        final data = row ?? const <String, dynamic>{};
+        final loaded = NotificationPrefsState(
+          newInterest: (data['new_interest'] as bool?) ?? true,
+          interestAccepted: (data['interest_accepted'] as bool?) ?? true,
+          newMessage: (data['new_message'] as bool?) ?? true,
+          profileView: (data['profile_view'] as bool?) ?? true,
+          profileLive: (data['profile_live'] as bool?) ?? true,
           newCompatibleProfiles:
-              (row['new_compatible_profiles'] as bool?) ?? true,
+              (data['new_compatible_profiles'] as bool?) ?? true,
           discoveryDigestFrequency: DiscoveryDigestFrequency.fromDb(
-            row['discovery_digest_frequency'],
+            data['discovery_digest_frequency'],
           ),
-          interestExpiring: (row['interest_expiring'] as bool?) ?? true,
-          inactiveNudge: (row['inactive_nudge'] as bool?) ?? true,
-          boostAvailable: (row['boost_available'] as bool?) ?? true,
-          quietStartHour: _timeToHour(row['quiet_start'] as String?),
-          quietEndHour: _timeToHour(row['quiet_end'] as String?),
-        ));
+          interestExpiring: (data['interest_expiring'] as bool?) ?? true,
+          inactiveNudge: (data['inactive_nudge'] as bool?) ?? true,
+          boostAvailable: (data['boost_available'] as bool?) ?? true,
+          quietStartHour: _timeToHour(data['quiet_start'] as String?, 23),
+          quietEndHour: _timeToHour(data['quiet_end'] as String?, 8),
+          isLoaded: true,
+        );
+        _lastPersisted = loaded;
+        emit(loaded);
       }
     } catch (e) {
       debugPrint('[NotificationPrefsCubit] Error loading prefs: $e');
+      if (!isClosed) {
+        emit(state.copyWith(
+          isLoaded: true,
+          isSaving: false,
+          syncError: 'Notification settings could not be loaded. Try again.',
+          syncEvent: state.syncEvent + 1,
+        ));
+      }
     }
   }
 
   // Toggle methods — one per DB column
   void toggleNewInterest(bool value) {
-    emit(state.copyWith(newInterest: value));
-    _schedulePersist();
+    _emitChange(state.copyWith(newInterest: value));
   }
 
   void toggleInterestAccepted(bool value) {
-    emit(state.copyWith(interestAccepted: value));
-    _schedulePersist();
+    _emitChange(state.copyWith(interestAccepted: value));
   }
 
   void toggleNewMessage(bool value) {
-    emit(state.copyWith(newMessage: value));
-    _schedulePersist();
+    _emitChange(state.copyWith(newMessage: value));
   }
 
   void toggleProfileView(bool value) {
-    emit(state.copyWith(profileView: value));
-    _schedulePersist();
+    _emitChange(state.copyWith(profileView: value));
   }
 
   void toggleProfileLive(bool value) {
-    emit(state.copyWith(profileLive: value));
-    _schedulePersist();
+    _emitChange(state.copyWith(profileLive: value));
   }
 
   void toggleNewCompatibleProfiles(bool value) {
-    emit(state.copyWith(newCompatibleProfiles: value));
-    _schedulePersist();
+    _emitChange(state.copyWith(
+      newCompatibleProfiles: value,
+      discoveryDigestFrequency:
+          value ? state.discoveryDigestFrequency : DiscoveryDigestFrequency.off,
+    ));
   }
 
   void setDiscoveryDigestFrequency(DiscoveryDigestFrequency value) {
-    emit(state.copyWith(discoveryDigestFrequency: value));
-    _schedulePersist();
+    _emitChange(state.copyWith(
+      discoveryDigestFrequency: value,
+      newCompatibleProfiles: value == DiscoveryDigestFrequency.off
+          ? state.newCompatibleProfiles
+          : true,
+    ));
   }
 
   void toggleInterestExpiring(bool value) {
-    emit(state.copyWith(interestExpiring: value));
-    _schedulePersist();
+    _emitChange(state.copyWith(interestExpiring: value));
   }
 
   void toggleInactiveNudge(bool value) {
-    emit(state.copyWith(inactiveNudge: value));
-    _schedulePersist();
+    _emitChange(state.copyWith(inactiveNudge: value));
   }
 
   void toggleBoostAvailable(bool value) {
-    emit(state.copyWith(boostAvailable: value));
-    _schedulePersist();
+    _emitChange(state.copyWith(boostAvailable: value));
   }
 
   // Quiet hours
   void setQuietHours({required int startHour, required int endHour}) {
-    emit(state.copyWith(
+    _emitChange(state.copyWith(
       quietStartHour: startHour,
       quietEndHour: endHour,
     ));
-    _schedulePersist();
   }
 
   // Reset all to defaults
   void resetToDefaults() {
-    emit(const NotificationPrefsState());
-    _schedulePersist();
+    _emitChange(const NotificationPrefsState(isLoaded: true));
   }
 
   void clear() {
     _persistDebounce?.cancel();
     _persistVersion++;
+    _lastPersisted = const NotificationPrefsState();
     if (!isClosed) emit(const NotificationPrefsState());
+  }
+
+  void _emitChange(NotificationPrefsState next) {
+    emit(next.copyWith(
+      isLoaded: true,
+      isSaving: true,
+      syncError: null,
+    ));
+    _schedulePersist();
   }
 
   // Persistence helper
@@ -176,17 +196,33 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
             '${snapshot.quietStartHour.toString().padLeft(2, '0')}:00',
         'quiet_end': '${snapshot.quietEndHour.toString().padLeft(2, '0')}:00',
       }, onConflict: 'user_id');
+      if (version != _persistVersion || isClosed) return;
+      final saved = snapshot.copyWith(
+        isLoaded: true,
+        isSaving: false,
+        syncError: null,
+      );
+      _lastPersisted = saved;
+      emit(saved);
     } catch (e) {
       debugPrint('[NotificationPrefsCubit] Error persisting prefs: $e');
+      if (version == _persistVersion && !isClosed) {
+        emit(_lastPersisted.copyWith(
+          isLoaded: true,
+          isSaving: false,
+          syncError: 'Notification settings were not saved. Try again.',
+          syncEvent: state.syncEvent + 1,
+        ));
+      }
     }
   }
 
   // Helpers
   /// Parse a time string like "23:00:00" → 23
-  int _timeToHour(String? timeStr) {
-    if (timeStr == null || timeStr.isEmpty) return 23;
+  int _timeToHour(String? timeStr, int fallback) {
+    if (timeStr == null || timeStr.isEmpty) return fallback;
     final parts = timeStr.split(':');
-    return int.tryParse(parts[0]) ?? 23;
+    return int.tryParse(parts[0]) ?? fallback;
   }
 
   @override

@@ -362,6 +362,10 @@ class FcmService {
       path = ownerId == null ? '/home?tab=1' : '/profile/$ownerId';
     } else if (type == 'profile_nudge') {
       path = '/edit-profile';
+    } else if (type == 'inactive_nudge') {
+      path = '/home?tab=0';
+    } else if (type == 'boost_ready' || type == 'boost_available') {
+      path = '/home?tab=3';
     } else if (type == 'subscription_active' ||
         type == 'subscription_renewed' ||
         type == 'subscription_updated' ||

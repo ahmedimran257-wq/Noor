@@ -189,7 +189,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // 2. NOTIFICATIONS
             _SectionHeader(l10n.settings_section_notifications,
                 key: _notificationsKey),
-            BlocBuilder<NotificationPrefsCubit, NotificationPrefsState>(
+            BlocConsumer<NotificationPrefsCubit, NotificationPrefsState>(
+              listenWhen: (previous, current) =>
+                  previous.syncEvent != current.syncEvent &&
+                  current.syncError != null,
+              listener: (context, prefs) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: UiText(prefs.syncError!)),
+                );
+              },
               builder: (context, prefs) => _SettingsCard(children: [
                 _ToggleTile(
                   icon: Icons.favorite_outline_rounded,
@@ -673,7 +681,8 @@ class _GuardianSection extends StatefulWidget {
 
 class _GuardianSectionState extends State<_GuardianSection> {
   bool _enabled = false;
-  bool _mirror = false;
+  bool _serverEnabled = false;
+  bool _isLinked = false;
   bool _canReply = false;
   String _relationship = 'Father';
   final _nameCtrl = TextEditingController();
@@ -710,12 +719,13 @@ class _GuardianSectionState extends State<_GuardianSection> {
     if (info == null) return;
     setState(() {
       _enabled = true;
-      _mirror = true;
+      _serverEnabled = true;
+      _isLinked = info.isLinked;
       _canReply = info.mode == 'active';
       _relationship = _relationLabelFromDb(info.relationship);
       _nameCtrl.text = info.name;
       _phoneCtrl.clear();
-      _hasGuardianPhoneOnServer = true;
+      _hasGuardianPhoneOnServer = info.hasPhone || info.isLinked;
     });
   }
 
@@ -767,6 +777,14 @@ class _GuardianSectionState extends State<_GuardianSection> {
       setState(() {
         _saving = false;
         _saved = true;
+        _serverEnabled = _enabled;
+        if (!_enabled) {
+          _isLinked = false;
+          _hasGuardianPhoneOnServer = false;
+        } else if (_phoneCtrl.text.trim().isNotEmpty) {
+          _hasGuardianPhoneOnServer = true;
+          _phoneCtrl.clear();
+        }
       });
     }
   }
@@ -819,11 +837,10 @@ class _GuardianSectionState extends State<_GuardianSection> {
           value: _enabled,
           onChanged: (v) => setState(() {
             _enabled = v;
-            if (v) _mirror = true;
             if (!v) {
-              _mirror = false;
               _canReply = false;
             }
+            _saved = false;
           }),
           activeThumbColor: AppColors.obsidianNight,
           activeTrackColor: AppColors.champagneGold,
@@ -863,6 +880,38 @@ class _GuardianSectionState extends State<_GuardianSection> {
                       ),
                     ),
                   ),
+                if (_serverEnabled) ...[
+                  const _DividerFull(),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(56, 10, 16, 10),
+                    child: Row(
+                      children: [
+                        Icon(
+                          _isLinked
+                              ? Icons.verified_user_outlined
+                              : Icons.schedule_send_outlined,
+                          color: _isLinked
+                              ? AppColors.verifiedTeal
+                              : AppColors.champagneGold,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: UiText(
+                            _isLinked
+                                ? 'Guardian account connected'
+                                : 'Guardian invitation is waiting for acceptance',
+                            style: AppTypography.caption.copyWith(
+                              color: _isLinked
+                                  ? AppColors.verifiedTeal
+                                  : AppColors.champagneGold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const _DividerFull(),
                 // Relationship dropdown
                 ListTile(
@@ -893,29 +942,6 @@ class _GuardianSectionState extends State<_GuardianSection> {
                   ),
                 ),
                 const _DividerFull(),
-                // Mirror messages toggle
-                ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                  leading: Icon(Icons.content_copy_outlined,
-                      color: AppColors.slateMist, size: 20),
-                  title: UiText(l10n.settings_guardian_mirror,
-                      style: AppTypography.body),
-                  subtitle: UiText(l10n.settings_guardian_mirror_sub,
-                      style: AppTypography.caption),
-                  trailing: Switch(
-                    value: _mirror,
-                    onChanged: (v) => setState(() {
-                      _mirror = v;
-                      if (!v) _canReply = false;
-                    }),
-                    activeThumbColor: AppColors.obsidianNight,
-                    activeTrackColor: AppColors.champagneGold,
-                    inactiveThumbColor: AppColors.slateMist,
-                    inactiveTrackColor: AppColors.surfaceGlassHover,
-                  ),
-                ),
-                const _DividerFull(),
                 // Guardian can reply toggle
                 ListTile(
                   contentPadding:
@@ -928,69 +954,70 @@ class _GuardianSectionState extends State<_GuardianSection> {
                       style: AppTypography.caption),
                   trailing: Switch(
                     value: _canReply,
-                    onChanged: (v) => setState(() {
-                      _canReply = v;
-                      if (v) _mirror = true;
-                    }),
+                    onChanged: (v) => setState(() => _canReply = v),
                     activeThumbColor: AppColors.obsidianNight,
                     activeTrackColor: AppColors.champagneGold,
                     inactiveThumbColor: AppColors.slateMist,
                     inactiveTrackColor: AppColors.surfaceGlassHover,
                   ),
                 ),
-                const _DividerFull(),
-                // Save button
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: AppDimensions.buttonHeightSmall,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.champagneGold,
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(AppDimensions.radiusButton),
-                        ),
-                      ),
-                      onPressed: _saving ? null : _save,
-                      child: AnimatedSwitcher(
-                        duration: AppDimensions.durationTransition,
-                        child: _saving
-                            ? SilarahPulseLoader(
-                                key: const ValueKey('saving'),
-                                size: 24,
-                                accentColor: AppColors.obsidianNight,
-                                highlightColor: AppColors.obsidianDeep,
-                                markColor: AppColors.champagneLight,
-                                coreGradientColors: [
-                                  AppColors.obsidianNight,
-                                  AppColors.obsidianDeep,
-                                ],
-                              )
-                            : _saved
-                                ? Row(
-                                    key: const ValueKey('saved'),
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.check_rounded,
-                                          color: AppColors.obsidianNight,
-                                          size: 16),
-                                      const SizedBox(width: 6),
-                                      UiText(l10n.settings_guardian_saved,
-                                          style: AppTypography.button),
-                                    ],
-                                  )
-                                : UiText(l10n.settings_guardian_save,
-                                    key: const ValueKey('save'),
-                                    style: AppTypography.button),
-                      ),
-                    ),
-                  ),
-                ),
               ])
             : const SizedBox.shrink(),
       ),
+      if (_enabled || _serverEnabled) ...[
+        const _DividerFull(),
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: SizedBox(
+            width: double.infinity,
+            height: AppDimensions.buttonHeightSmall,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.champagneGold,
+                shape: RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(AppDimensions.radiusButton),
+                ),
+              ),
+              onPressed: _saving ? null : _save,
+              child: AnimatedSwitcher(
+                duration: AppDimensions.durationTransition,
+                child: _saving
+                    ? SilarahPulseLoader(
+                        key: const ValueKey('saving'),
+                        size: 24,
+                        accentColor: AppColors.obsidianNight,
+                        highlightColor: AppColors.obsidianDeep,
+                        markColor: AppColors.champagneLight,
+                        coreGradientColors: [
+                          AppColors.obsidianNight,
+                          AppColors.obsidianDeep,
+                        ],
+                      )
+                    : _saved
+                        ? Row(
+                            key: const ValueKey('saved'),
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.check_rounded,
+                                  color: AppColors.obsidianNight, size: 16),
+                              const SizedBox(width: 6),
+                              UiText(l10n.settings_guardian_saved,
+                                  style: AppTypography.button),
+                            ],
+                          )
+                        : UiText(
+                            _enabled
+                                ? l10n.settings_guardian_save
+                                : 'Disconnect guardian',
+                            key: const ValueKey('save'),
+                            style: AppTypography.button,
+                          ),
+              ),
+            ),
+          ),
+        ),
+      ],
     ]);
   }
 }

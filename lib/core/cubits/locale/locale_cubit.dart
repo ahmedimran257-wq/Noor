@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../services/supabase_service.dart';
+
 class SupportedLanguage {
   const SupportedLanguage({
     required this.code,
@@ -116,5 +118,39 @@ class LocaleCubit extends Cubit<Locale> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kKey, code);
     if (!isClosed) emit(Locale(code));
+    await syncToServer();
+  }
+
+  /// Keeps server-generated notification copy aligned with the language the
+  /// member selected in the app. Local language selection remains usable when
+  /// offline and is reconciled on the next authenticated session.
+  Future<bool> syncToServer({String? countryCode}) async {
+    if (!SupabaseService.isInitialized ||
+        SupabaseService.client.auth.currentSession == null) {
+      return false;
+    }
+    try {
+      final normalizedCountry = countryCode?.trim().toUpperCase();
+      final fields = <String, dynamic>{
+        'preferred_language': state.languageCode,
+      };
+      // Silarah is currently India-only. Keep server-side quiet hours and
+      // notification scheduling in the member's launch-market timezone.
+      // When more countries are enabled this value should come from the
+      // selected launch market instead of a device offset.
+      if (normalizedCountry == 'IN' || normalizedCountry == 'IND') {
+        fields['timezone'] = 'Asia/Kolkata';
+      }
+      await SupabaseService.client.rpc(
+        'patch_my_user',
+        params: {
+          'p_fields': fields,
+        },
+      );
+      return true;
+    } catch (error) {
+      debugPrint('[LocaleCubit] Server language sync deferred: $error');
+      return false;
+    }
   }
 }

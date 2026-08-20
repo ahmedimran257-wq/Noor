@@ -25,6 +25,8 @@ enum DiscoveryDigestFrequency {
 }
 
 class NotificationPrefsState extends Equatable {
+  static const _unchanged = Object();
+
   final bool newInterest;
   final bool interestAccepted;
   final bool newMessage;
@@ -39,6 +41,10 @@ class NotificationPrefsState extends Equatable {
   /// Quiet hours — 23:00 to 08:00 (database defaults)
   final int quietStartHour; // 23
   final int quietEndHour; // 8
+  final bool isLoaded;
+  final bool isSaving;
+  final String? syncError;
+  final int syncEvent;
 
   const NotificationPrefsState({
     this.newInterest = true,
@@ -53,6 +59,10 @@ class NotificationPrefsState extends Equatable {
     this.boostAvailable = true,
     this.quietStartHour = 23,
     this.quietEndHour = 8,
+    this.isLoaded = false,
+    this.isSaving = false,
+    this.syncError,
+    this.syncEvent = 0,
   });
 
   NotificationPrefsState copyWith({
@@ -68,6 +78,10 @@ class NotificationPrefsState extends Equatable {
     bool? boostAvailable,
     int? quietStartHour,
     int? quietEndHour,
+    bool? isLoaded,
+    bool? isSaving,
+    Object? syncError = _unchanged,
+    int? syncEvent,
   }) {
     return NotificationPrefsState(
       newInterest: newInterest ?? this.newInterest,
@@ -84,6 +98,12 @@ class NotificationPrefsState extends Equatable {
       boostAvailable: boostAvailable ?? this.boostAvailable,
       quietStartHour: quietStartHour ?? this.quietStartHour,
       quietEndHour: quietEndHour ?? this.quietEndHour,
+      isLoaded: isLoaded ?? this.isLoaded,
+      isSaving: isSaving ?? this.isSaving,
+      syncError: identical(syncError, _unchanged)
+          ? this.syncError
+          : syncError as String?,
+      syncEvent: syncEvent ?? this.syncEvent,
     );
   }
 
@@ -101,5 +121,9 @@ class NotificationPrefsState extends Equatable {
         boostAvailable,
         quietStartHour,
         quietEndHour,
+        isLoaded,
+        isSaving,
+        syncError,
+        syncEvent,
       ];
 }
