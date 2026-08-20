@@ -271,6 +271,16 @@ class NotificationsCubit extends Cubit<NotificationsState> {
         return ('New interest', 'Someone is interested in your profile.');
       case 'interest_accepted':
         return ('Interest accepted', 'You can now start a conversation.');
+      case 'interest_expiring':
+        return (
+          'Interest expires soon',
+          'Open Interests to review it before the response window closes.'
+        );
+      case 'interest_expired':
+        return (
+          'Interest expired',
+          'The interest closed because no response was received in time.'
+        );
       case 'match_ended':
         return (
           'Match ended',
@@ -396,6 +406,8 @@ String? notificationPathFor(NotificationItem item) {
     case 'match_accepted':
     case 'interest_received':
     case 'interest_accepted':
+    case 'interest_expiring':
+    case 'interest_expired':
       return '/home?tab=1';
     case 'match_ended':
     case 'new_compatible_profiles':

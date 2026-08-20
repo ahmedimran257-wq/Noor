@@ -20,11 +20,15 @@ import '../../../core/cubits/subscription/subscription_cubit.dart';
 import '../../../core/services/discovery_filter_options_service.dart';
 import '../../../core/services/filter_preset_service.dart';
 import '../../../core/services/launch_configuration_service.dart';
+import '../../../core/services/country_context_service.dart';
+import '../../../core/services/location_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/overlays/silarah_bottom_sheet.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
+import '../../../core/widgets/inputs/city_search_field.dart';
+import '../../../core/widgets/inputs/region_search_field.dart';
 import '../screens/subscription_screen.dart';
 import '../../../core/data/country_data.dart';
 
@@ -75,6 +79,8 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
   bool _optionsLoading = true;
   bool _optionsLoadFailed = false;
   bool _singleCountryLaunch = true;
+  bool _cityResolving = false;
+  int _locationInputRevision = 0;
 
   // Section GlobalKeys for scroll-to
   final _genderKey = GlobalKey();
@@ -87,6 +93,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
   final _childrenKey = GlobalKey();
   final _verifiedKey = GlobalKey();
   final _distanceKey = GlobalKey();
+  final _locationKey = GlobalKey();
   final _tongueKey = GlobalKey();
   final _communityKey = GlobalKey();
   final _livingKey = GlobalKey();
@@ -168,6 +175,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
       'children' => _childrenKey,
       'verified' => _verifiedKey,
       'distance' => _distanceKey,
+      'location' => _locationKey,
       'diaspora' => _diasporaKey,
       'tongue' => _tongueKey,
       'community' => _communityKey,
@@ -253,7 +261,10 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
   }
 
   void _applyPreset(FilterPreset preset) {
-    setState(() => _draft = preset.filter);
+    setState(() {
+      _draft = preset.filter;
+      _locationInputRevision++;
+    });
   }
 
   void _apply() {
@@ -262,7 +273,61 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
   }
 
   void _clearAll() {
-    setState(() => _draft = DiscoveryFilter.empty);
+    setState(() {
+      _draft = DiscoveryFilter.empty;
+      _locationInputRevision++;
+    });
+  }
+
+  void _selectState(RegionResult region) {
+    setState(() {
+      _draft = _draft.copyWith(
+        stateName: region.name,
+        clearCity: true,
+        clearDistanceLabel: true,
+        clearMaxDistance: true,
+        diasporaMode: false,
+        clearDiasporaCountries: true,
+        clearBrowseCountries: true,
+      );
+      _locationInputRevision++;
+    });
+  }
+
+  Future<void> _selectCity(CityResult city) async {
+    if (_cityResolving) return;
+    setState(() => _cityResolving = true);
+    final resolution = await LocationService.resolveCity(city);
+    if (!mounted) return;
+    if (!resolution.isSuccess) {
+      setState(() {
+        _cityResolving = false;
+        _locationInputRevision++;
+      });
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(
+          content: UiText(
+            resolution.errorMessage ??
+                'That city could not be verified. Search and try again.',
+          ),
+        ));
+      return;
+    }
+    setState(() {
+      _cityResolving = false;
+      _draft = _draft.copyWith(
+        stateName: city.state.trim().isEmpty ? _draft.stateName : city.state,
+        cityId: resolution.cityId,
+        cityName: city.city,
+        clearDistanceLabel: true,
+        clearMaxDistance: true,
+        diasporaMode: false,
+        clearDiasporaCountries: true,
+        clearBrowseCountries: true,
+      );
+      _locationInputRevision++;
+    });
   }
 
   List<String> _withAny(List<String> values, {String? selected}) {
@@ -674,6 +739,8 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                                   maxDistanceKm: int.tryParse(radius ?? ''),
                                   clearDistanceLabel: v == null,
                                   clearMaxDistance: radius == null,
+                                  clearState: v != null,
+                                  clearCity: v != null,
                                   diasporaMode: false,
                                   clearDiasporaCountries: true,
                                   clearBrowseCountries: true,
@@ -701,11 +768,79 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                             _draft = _draft.copyWith(
                               maxDistanceKm: radius,
                               distanceLabel: '${radius}km',
+                              clearState: true,
+                              clearCity: true,
                             );
                           }),
                         ),
                       ],
                       const SizedBox(height: 20),
+
+                      if (_singleCountryLaunch) ...[
+                        _SectionLabel(
+                          key: _locationKey,
+                          label: 'LOCATION IN INDIA',
+                        ),
+                        const SizedBox(height: 8),
+                        _SubscriberGate(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              UiText(
+                                'Choose a state, then optionally a city. This searches where members live and does not change your own profile.',
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.slateMist,
+                                  height: 1.4,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              RegionSearchField(
+                                key: ValueKey(
+                                  'filter-state-${_draft.stateName}-$_locationInputRevision',
+                                ),
+                                countryCode: 'IN',
+                                initialValue: _draft.stateName,
+                                hint: 'Search any Indian state or UT',
+                                onSelected: _selectState,
+                                onCleared: () => setState(() {
+                                  _draft = _draft.copyWith(
+                                    clearState: true,
+                                    clearCity: true,
+                                  );
+                                  _locationInputRevision++;
+                                }),
+                              ),
+                              const SizedBox(height: 10),
+                              CitySearchField(
+                                key: ValueKey(
+                                  'filter-city-${_draft.cityId}-${_draft.stateName}-$_locationInputRevision',
+                                ),
+                                countryCode: 'IN',
+                                regionName: _draft.stateName,
+                                initialValue: _draft.cityName,
+                                hint: _draft.stateName == null
+                                    ? 'Search any Indian city'
+                                    : 'Search a city in ${_draft.stateName}',
+                                enabled: !_cityResolving,
+                                onSelected: _selectCity,
+                                onCleared: () => setState(() {
+                                  _draft = _draft.copyWith(clearCity: true);
+                                }),
+                              ),
+                              if (_cityResolving) ...[
+                                const SizedBox(height: 8),
+                                UiText(
+                                  'Verifying city…',
+                                  style: AppTypography.caption.copyWith(
+                                    color: AppColors.champagneGold,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
 
                       if (!_singleCountryLaunch) ...[
                         // GLOBAL COUNTRY CONTROLS (Premium)

@@ -477,6 +477,9 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         hasChildren: j['hasChildren'] as String?,
         educationMin: j['educationMin'] as String?,
         distanceLabel: j['distanceLabel'] as String?,
+        stateName: j['stateName'] as String?,
+        cityId: j['cityId'] as String?,
+        cityName: j['cityName'] as String?,
         motherTongue: j['motherTongue'] as String?,
         community: j['community'] as String?,
         livingExpectation: j['livingExpectation'] as String?,
@@ -519,6 +522,9 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         'hasChildren': f.hasChildren,
         'educationMin': f.educationMin,
         'distanceLabel': f.distanceLabel,
+        'stateName': f.stateName,
+        'cityId': f.cityId,
+        'cityName': f.cityName,
         'motherTongue': f.motherTongue,
         'community': f.community,
         'livingExpectation': f.livingExpectation,
@@ -598,6 +604,10 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
 
     return {
       'location_scope': f.locationScope,
+      if (f.stateName != null && f.stateName!.trim().isNotEmpty)
+        'state_name': f.stateName!.trim(),
+      if (f.cityId != null && f.cityId!.trim().isNotEmpty)
+        'city_id': f.cityId!.trim(),
       if (maxKm != null) 'max_distance_km': maxKm,
       if (f.distanceLabel == 'Same City') 'same_city': true,
       if (f.distanceLabel == 'Same State' ||

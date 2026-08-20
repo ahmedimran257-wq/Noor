@@ -338,6 +338,10 @@ class _NotificationTile extends StatelessWidget {
         return Icons.favorite_rounded;
       case 'interest_accepted':
         return Icons.check_circle_rounded;
+      case 'interest_expiring':
+        return Icons.schedule_rounded;
+      case 'interest_expired':
+        return Icons.history_toggle_off_rounded;
       case 'new_message':
         return Icons.chat_bubble_rounded;
       case 'boost_ready':
@@ -372,6 +376,10 @@ class _NotificationTile extends StatelessWidget {
         return AppColors.champagneGold;
       case 'interest_accepted':
         return AppColors.verifiedTeal;
+      case 'interest_expiring':
+        return AppColors.expiryAmber;
+      case 'interest_expired':
+        return AppColors.slateMist;
       case 'new_message':
         return AppColors.messageBlue;
       case 'boost_ready':

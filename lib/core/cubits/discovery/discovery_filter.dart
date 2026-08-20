@@ -22,6 +22,9 @@ class DiscoveryFilter {
     this.hasChildren,
     this.educationMin,
     this.distanceLabel,
+    this.stateName,
+    this.cityId,
+    this.cityName,
     this.motherTongue,
     this.community,
     this.livingExpectation,
@@ -51,6 +54,9 @@ class DiscoveryFilter {
   final String? hasChildren;
   final String? educationMin;
   final String? distanceLabel;
+  final String? stateName;
+  final String? cityId;
+  final String? cityName;
   final String? motherTongue; // e.g. 'Urdu', 'Arabic', 'Bengali'
   final String? community; // e.g. 'Syed', 'Pathan', 'Arab'
   final String?
@@ -112,6 +118,8 @@ class DiscoveryFilter {
       hasChildren != null ||
       educationMin != null ||
       distanceLabel != null ||
+      stateName != null ||
+      cityId != null ||
       motherTongue != null ||
       community != null ||
       livingExpectation != null ||
@@ -141,6 +149,7 @@ class DiscoveryFilter {
     if (hasChildren != null) count++;
     if (educationMin != null) count++;
     if (distanceLabel != null && effectiveMaxDistanceKm == null) count++;
+    if (stateName != null || cityId != null) count++;
     if (motherTongue != null) count++;
     if (community != null) count++;
     if (livingExpectation != null) count++;
@@ -171,6 +180,9 @@ class DiscoveryFilter {
     String? hasChildren,
     String? educationMin,
     String? distanceLabel,
+    String? stateName,
+    String? cityId,
+    String? cityName,
     String? motherTongue,
     String? community,
     String? livingExpectation,
@@ -192,6 +204,8 @@ class DiscoveryFilter {
     bool clearHasChildren = false,
     bool clearEducationMin = false,
     bool clearDistanceLabel = false,
+    bool clearState = false,
+    bool clearCity = false,
     bool clearMotherTongue = false,
     bool clearCommunity = false,
     bool clearLivingExpectation = false,
@@ -220,6 +234,9 @@ class DiscoveryFilter {
           clearEducationMin ? null : (educationMin ?? this.educationMin),
       distanceLabel:
           clearDistanceLabel ? null : (distanceLabel ?? this.distanceLabel),
+      stateName: clearState ? null : (stateName ?? this.stateName),
+      cityId: clearCity ? null : (cityId ?? this.cityId),
+      cityName: clearCity ? null : (cityName ?? this.cityName),
       motherTongue:
           clearMotherTongue ? null : (motherTongue ?? this.motherTongue),
       community: clearCommunity ? null : (community ?? this.community),

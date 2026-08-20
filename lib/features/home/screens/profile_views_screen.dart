@@ -10,10 +10,13 @@ import '../../../core/cubits/subscription/subscription_cubit.dart';
 import '../../../core/cubits/subscription/subscription_state.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/services/supabase_service.dart';
+import '../../../core/services/authorized_profile_service.dart';
+import '../../../core/services/profile_photo_service.dart';
 import '../../../core/models/discovery_profile.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/silarah_compute.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 // Viewer row model
@@ -63,51 +66,47 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
       );
 
       final List<dynamic> rows = response as List<dynamic>;
-      final List<_Viewer> viewersList = [];
-
-      for (final row in rows) {
-        final viewerData = Map<String, dynamic>.from(row as Map);
-        final viewedAt = DateTime.tryParse(
-              viewerData['viewed_at']?.toString() ?? '',
-            ) ??
+      final viewedAtByUser = <String, DateTime>{};
+      final orderedUserIds = <String>[];
+      for (final raw in rows) {
+        final row = Map<String, dynamic>.from(raw as Map);
+        final userId = row['viewer_user_id']?.toString().trim();
+        if (userId == null || userId.isEmpty) continue;
+        orderedUserIds.add(userId);
+        viewedAtByUser[userId] = DateTime.tryParse(
+              row['viewed_at']?.toString() ?? '',
+            )?.toLocal() ??
             DateTime.now();
-        final viewerUserId = (viewerData['viewer_user_id'] as String?)?.trim();
-        final firstName = (viewerData['first_name'] as String?)?.trim();
-        final dobStr = viewerData['date_of_birth']?.toString();
-        final dob = dobStr != null ? DateTime.tryParse(dobStr) : null;
-        final age = dob == null ? null : _ageFromDob(dob);
-        if (viewerUserId == null ||
-            viewerUserId.isEmpty ||
-            firstName == null ||
-            firstName.isEmpty ||
-            age == null ||
-            age < 18) {
-          continue;
-        }
-
-        final cityName = viewerData['city_name']?.toString().trim();
-
-        final lastName = (viewerData['last_name'] as String?)?.trim();
-
-        final profile = DiscoveryProfile(
-          id: viewerUserId,
-          firstName: firstName,
-          lastNameInitial:
-              lastName != null && lastName.isNotEmpty ? lastName[0] : '',
-          lastName: lastName,
-          age: age,
-          cityName: cityName == null || cityName.isEmpty
-              ? 'Location private'
-              : cityName,
-          sect: (viewerData['sect'] as String?)?.toUpperCase(),
-          deenLevel: viewerData['deen_level'] as String?,
-          isVerified: viewerData['is_verified'] as bool? ?? false,
-          bio: viewerData['bio'] as String? ?? '',
-          gender: viewerData['gender'] as String?,
-        );
-
-        viewersList.add(_Viewer(profile: profile, viewedAt: viewedAt));
       }
+
+      final results = await Future.wait<dynamic>([
+        AuthorizedProfileService.load(orderedUserIds),
+        ProfilePhotoService.instance.getAuthorizedPhotoUrls(
+          ownerUserIds: orderedUserIds,
+        ),
+      ]);
+      final profileRows = results[0] as List<Map<String, dynamic>>;
+      final signedPhotos = results[1] as Map<String, String>;
+      final profilesByUser = <String, DiscoveryProfile>{};
+      for (final raw in profileRows) {
+        final row = Map<String, dynamic>.from(raw);
+        final userId = row['user_id']?.toString();
+        if (userId == null || userId.isEmpty) continue;
+        row['photo_url'] = signedPhotos[userId];
+        try {
+          profilesByUser[userId] = mapDbRowToDiscoveryProfile(row);
+        } catch (error) {
+          debugPrint('[ProfileViewsScreen] Invalid viewer $userId: $error');
+        }
+      }
+      final viewersList = <_Viewer>[
+        for (final userId in orderedUserIds)
+          if (profilesByUser[userId] case final profile?)
+            _Viewer(
+              profile: profile,
+              viewedAt: viewedAtByUser[userId] ?? DateTime.now(),
+            ),
+      ];
 
       if (mounted) {
         setState(() {
@@ -133,16 +132,6 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
     if (diff.inHours < 24) return context.uiHoursAgo(diff.inHours);
     if (diff.inDays == 1) return context.uiCopy('Yesterday');
     return context.uiDaysAgo(diff.inDays);
-  }
-
-  int _ageFromDob(DateTime dob) {
-    final today = DateTime.now();
-    var years = today.year - dob.year;
-    if (today.month < dob.month ||
-        (today.month == dob.month && today.day < dob.day)) {
-      years--;
-    }
-    return years;
   }
 
   @override
@@ -215,6 +204,7 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
                                         interests.interactionWith(p.id) !=
                                             ProfileInteractionState.none;
                                     return _ViewerTile(
+                                      photoUrl: p.photoUrl,
                                       displayName: p.displayName,
                                       age: p.age,
                                       city: p.cityName,
@@ -222,6 +212,8 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
                                           _timeLabel(context, viewer.viewedAt),
                                       isVerified: p.isVerified,
                                       isInterestSent: sent,
+                                      onOpen: () =>
+                                          context.push('/profile/${p.id}'),
                                       onSendInterest: sent
                                           ? null
                                           : () async {
@@ -460,135 +452,166 @@ class _EmptyState extends StatelessWidget {
 // Viewer tile
 class _ViewerTile extends StatelessWidget {
   const _ViewerTile({
+    required this.photoUrl,
     required this.displayName,
     required this.age,
     required this.city,
     required this.timeLabel,
     required this.isVerified,
     required this.isInterestSent,
+    required this.onOpen,
     required this.onSendInterest,
   });
 
+  final String? photoUrl;
   final String displayName;
   final int age;
   final String city;
   final String timeLabel;
   final bool isVerified;
   final bool isInterestSent;
+  final VoidCallback onOpen;
   final VoidCallback? onSendInterest;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppDimensions.space16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceGlass,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onOpen,
         borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-        border: Border.all(color: AppColors.cardBorder),
-      ),
-      child: Row(
-        children: [
-          // Avatar circle
-          Stack(
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.surfaceGlassHover,
-                  border: Border.all(
-                    color: AppColors.goldBorder,
-                    width: 1.5,
-                  ),
-                ),
-                child: Icon(
-                  Icons.person_outline_rounded,
-                  color: AppColors.slateMist,
-                  size: 24,
-                ),
-              ),
-              if (isVerified)
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    width: 18,
-                    height: 18,
-                    decoration: BoxDecoration(
-                      color: AppColors.verifiedTeal,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.check_rounded,
-                        color: AppColors.pearlWhite, size: 12),
-                  ),
-                ),
-            ],
+        child: Container(
+          padding: const EdgeInsets.all(AppDimensions.space16),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceGlass,
+            borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+            border: Border.all(color: AppColors.cardBorder),
           ),
-          const SizedBox(width: AppDimensions.space14),
+          child: Row(
+            children: [
+              // Avatar circle
+              Stack(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.surfaceGlassHover,
+                      border: Border.all(
+                        color: AppColors.goldBorder,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: ClipOval(
+                      child: photoUrl == null || photoUrl!.isEmpty
+                          ? Icon(
+                              Icons.person_outline_rounded,
+                              color: AppColors.slateMist,
+                              size: 24,
+                            )
+                          : Image.network(
+                              photoUrl!,
+                              width: 52,
+                              height: 52,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Icon(
+                                Icons.person_outline_rounded,
+                                color: AppColors.slateMist,
+                                size: 24,
+                              ),
+                            ),
+                    ),
+                  ),
+                  if (isVerified)
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        width: 18,
+                        height: 18,
+                        decoration: BoxDecoration(
+                          color: AppColors.verifiedTeal,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.check_rounded,
+                            color: AppColors.pearlWhite, size: 12),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(width: AppDimensions.space14),
 
-          // Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                UiText(
-                  displayName,
-                  style: AppTypography.bodyMedium,
-                ),
-                const SizedBox(height: AppDimensions.space4),
-                UiText(
-                  '$age · $city',
-                  style: AppTypography.caption,
-                ),
-                const SizedBox(height: AppDimensions.space4),
-                Row(
+              // Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.remove_red_eye_outlined,
-                        size: 12, color: AppColors.slateMist),
-                    const SizedBox(width: 4),
-                    UiText(timeLabel, style: AppTypography.caption),
+                    UiText(
+                      displayName,
+                      style: AppTypography.bodyMedium,
+                    ),
+                    const SizedBox(height: AppDimensions.space4),
+                    UiText(
+                      '$age · $city',
+                      style: AppTypography.caption,
+                    ),
+                    const SizedBox(height: AppDimensions.space4),
+                    Row(
+                      children: [
+                        Icon(Icons.remove_red_eye_outlined,
+                            size: 12, color: AppColors.slateMist),
+                        const SizedBox(width: 4),
+                        UiText(timeLabel, style: AppTypography.caption),
+                      ],
+                    ),
                   ],
                 ),
-              ],
-            ),
-          ),
+              ),
 
-          // Interest button
-          const SizedBox(width: AppDimensions.space8),
-          AnimatedContainer(
-            duration: AppDimensions.durationTransition,
-            child: isInterestSent
-                ? Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppDimensions.space12,
-                        vertical: AppDimensions.space8),
-                    decoration: BoxDecoration(
-                      color: AppColors.champagneGold.withValues(alpha: 0.1),
-                      borderRadius:
-                          BorderRadius.circular(AppDimensions.radiusButton),
-                      border: Border.all(color: AppColors.goldBorder),
-                    ),
-                    child: Icon(Icons.favorite_rounded,
-                        color: AppColors.champagneGold, size: 18),
-                  )
-                : GestureDetector(
-                    onTap: onSendInterest,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: AppDimensions.space12,
-                          vertical: AppDimensions.space8),
-                      decoration: BoxDecoration(
-                        color: AppColors.champagneGold,
-                        borderRadius:
-                            BorderRadius.circular(AppDimensions.radiusButton),
+              // Interest button
+              const SizedBox(width: AppDimensions.space8),
+              AnimatedContainer(
+                duration: AppDimensions.durationTransition,
+                child: isInterestSent
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: AppDimensions.space12,
+                            vertical: AppDimensions.space8),
+                        decoration: BoxDecoration(
+                          color: AppColors.champagneGold.withValues(alpha: 0.1),
+                          borderRadius:
+                              BorderRadius.circular(AppDimensions.radiusButton),
+                          border: Border.all(color: AppColors.goldBorder),
+                        ),
+                        child: Icon(Icons.favorite_rounded,
+                            color: AppColors.champagneGold, size: 18),
+                      )
+                    : GestureDetector(
+                        onTap: onSendInterest,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: AppDimensions.space12,
+                              vertical: AppDimensions.space8),
+                          decoration: BoxDecoration(
+                            color: AppColors.champagneGold,
+                            borderRadius: BorderRadius.circular(
+                                AppDimensions.radiusButton),
+                          ),
+                          child: Icon(Icons.favorite_border_rounded,
+                              color: AppColors.obsidianNight, size: 18),
+                        ),
                       ),
-                      child: Icon(Icons.favorite_border_rounded,
-                          color: AppColors.obsidianNight, size: 18),
-                    ),
-                  ),
+              ),
+              const SizedBox(width: AppDimensions.space4),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.slateMist,
+                size: 18,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

@@ -131,15 +131,15 @@ class InterestsCubit extends Cubit<InterestsState> {
             .from('interests')
             .select('id, sender_id, note, status, created_at, expires_at')
             .eq('receiver_id', userId)
-            .inFilter('status', ['pending', 'accepted', 'declined'])
+            .inFilter('status', ['pending', 'accepted', 'declined', 'expired'])
             .order('created_at', ascending: false)
             .limit(_maxRowsPerSection),
         SupabaseService.client
             .from('interests')
             .select('id, receiver_id, note, status, created_at, expires_at')
             .eq('sender_id', userId)
-            .inFilter(
-                'status', ['pending', 'accepted', 'declined', 'withdrawn'])
+            .inFilter('status',
+                ['pending', 'accepted', 'declined', 'withdrawn', 'expired'])
             .order('created_at', ascending: false)
             .limit(_maxRowsPerSection),
         SupabaseService.client.rpc(
@@ -176,6 +176,8 @@ class InterestsCubit extends Cubit<InterestsState> {
           timeAgo: _timeAgoString(createdAt),
           sentAt: createdAt,
           createdAt: createdAt,
+          serverExpiresAt:
+              DateTime.tryParse(row['expires_at']?.toString() ?? '')?.toLocal(),
           status: _parseStatus(row['status'] as String),
           note: row['note'] as String?,
         ));
@@ -195,6 +197,8 @@ class InterestsCubit extends Cubit<InterestsState> {
           timeAgo: _timeAgoString(createdAt),
           sentAt: createdAt,
           createdAt: createdAt,
+          serverExpiresAt:
+              DateTime.tryParse(row['expires_at']?.toString() ?? '')?.toLocal(),
           status: _parseStatus(statusStr),
           note: row['note'] as String?,
         ));

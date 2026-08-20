@@ -776,15 +776,16 @@ class _ExpiryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hours = entry.hoursRemaining;
-    if (hours == null || hours > 72) return const SizedBox.shrink();
+    if (hours == null) return const SizedBox.shrink();
 
     final isUrgent = hours < 24;
     final color = isUrgent ? AppColors.softCoral : AppColors.expiryAmber;
     final icon =
         isUrgent ? Icons.warning_amber_rounded : Icons.access_time_rounded;
+    final days = entry.daysRemaining ?? 0;
     final text = isUrgent
         ? 'Expires today'
-        : 'Expires in ${entry.daysRemaining} day${entry.daysRemaining == 1 ? '' : 's'}';
+        : 'Expires in $days day${days == 1 ? '' : 's'}';
 
     return Padding(
       padding: const EdgeInsets.only(top: AppDimensions.space10),
@@ -886,6 +887,7 @@ class _SentTile extends StatelessWidget {
                 const SizedBox(height: AppDimensions.space2),
                 UiText('${p.age} · ${p.cityName}',
                     style: AppTypography.caption),
+                if (isPending) _ExpiryRow(entry: entry),
               ],
             ),
           ),

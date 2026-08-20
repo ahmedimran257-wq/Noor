@@ -2,7 +2,7 @@
 //
 //   PENDING → ACCEPTED → MATCH_CREATED (chat unlocked)
 //   PENDING → DECLINED
-//   PENDING → EXPIRED (14 days)
+//   PENDING → EXPIRED (server expires_at; currently 14 days)
 //   PENDING → WITHDRAWN (sender, silent)
 //
 import 'package:equatable/equatable.dart';
@@ -45,6 +45,7 @@ class InterestEntry extends Equatable {
     required this.timeAgo,
     required this.sentAt,
     required this.createdAt,
+    this.serverExpiresAt,
     this.status = InterestStatus.pending,
     this.note, // D1: optional interest note
   });
@@ -54,14 +55,16 @@ class InterestEntry extends Equatable {
   final String timeAgo;
   final DateTime sentAt;
   final DateTime createdAt;
+  final DateTime? serverExpiresAt;
   final InterestStatus status;
   final String? note; // D1: personal interest note
 
-  DateTime get expiresAt => createdAt.add(const Duration(days: 14));
+  DateTime get expiresAt =>
+      serverExpiresAt ?? createdAt.add(const Duration(days: 14));
 
   bool get isExpired =>
-      status == InterestStatus.pending &&
-      DateTime.now().difference(createdAt).inDays >= 14;
+      status == InterestStatus.expired ||
+      (status == InterestStatus.pending && !expiresAt.isAfter(DateTime.now()));
 
   /// Effective status (accounts for computed expiry)
   InterestStatus get effectiveStatus =>
@@ -70,13 +73,15 @@ class InterestEntry extends Equatable {
   int? get daysRemaining {
     if (effectiveStatus != InterestStatus.pending) return null;
     final remaining = expiresAt.difference(DateTime.now());
-    return remaining.inDays.clamp(0, 14);
+    if (remaining.isNegative) return 0;
+    return (remaining.inSeconds / Duration.secondsPerDay).ceil().clamp(0, 14);
   }
 
   int? get hoursRemaining {
     if (effectiveStatus != InterestStatus.pending) return null;
     final remaining = expiresAt.difference(DateTime.now());
-    return remaining.inHours.clamp(0, 336);
+    if (remaining.isNegative) return 0;
+    return (remaining.inSeconds / Duration.secondsPerHour).ceil().clamp(0, 336);
   }
 
   InterestEntry copyWith({
@@ -90,6 +95,7 @@ class InterestEntry extends Equatable {
       timeAgo: timeAgo ?? this.timeAgo,
       sentAt: sentAt,
       createdAt: createdAt,
+      serverExpiresAt: serverExpiresAt,
       status: status ?? this.status,
       note: note ?? this.note,
     );
@@ -97,7 +103,7 @@ class InterestEntry extends Equatable {
 
   @override
   List<Object?> get props =>
-      [id, profile, timeAgo, sentAt, createdAt, status, note];
+      [id, profile, timeAgo, sentAt, createdAt, serverExpiresAt, status, note];
 }
 
 class InterestsState extends Equatable {
@@ -136,7 +142,8 @@ class InterestsState extends Equatable {
   List<InterestEntry> get respondedReceived => received
       .where((e) =>
           e.effectiveStatus == InterestStatus.accepted ||
-          e.effectiveStatus == InterestStatus.declined)
+          e.effectiveStatus == InterestStatus.declined ||
+          e.effectiveStatus == InterestStatus.expired)
       .toList();
 
   /// Combined received for display: pending first, then responded

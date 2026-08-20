@@ -76,7 +76,7 @@ class DiscoveryFilterOptionsService {
 
   static Future<DiscoveryFilterOptions> _fetch(String userId) async {
     final response = await SupabaseService.client.rpc(
-      'get_discovery_filter_facets',
+      'get_india_discovery_filter_facets',
       params: {'p_viewer_id': userId},
     );
     final map = Map<String, dynamic>.from(response as Map);
