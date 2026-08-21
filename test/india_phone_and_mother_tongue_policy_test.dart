@@ -31,25 +31,46 @@ void main() {
 
   test('phone verification completes before paid Premium purchase starts', () {
     final purchaseStart = subscription.indexOf('Future<void> _startPurchase');
+    final paidGuard =
+        subscription.indexOf('if (entitlement.hasPaidPremium)', purchaseStart);
     final verification =
         subscription.indexOf('showPhoneVerificationSheet(', purchaseStart);
     final purchaseCall =
         subscription.indexOf('.purchase(planId)', purchaseStart);
     expect(purchaseStart, greaterThanOrEqualTo(0));
+    expect(paidGuard, greaterThan(purchaseStart));
+    expect(paidGuard, lessThan(purchaseCall));
     expect(verification, greaterThan(purchaseStart));
     expect(purchaseCall, greaterThan(verification));
     expect(subscription, contains('isBeforePurchase: true'));
     expect(subscription, contains('_purchaseFlowInProgress'));
   });
 
-  test('profile starts verification from checkout and protects number change',
+  test('profile recovers paid unverified accounts without another purchase',
       () {
+    final verificationStart =
+        profile.indexOf('Future<void> _startPhoneVerification');
+    final paidRecovery =
+        profile.indexOf('if (subscription.hasPaidPremium)', verificationStart);
+    final directOtp =
+        profile.indexOf('showPhoneVerificationSheet(', paidRecovery);
+    final checkout =
+        profile.indexOf('context.push(AppRoutes.subscription)', directOtp);
     expect(profile, contains('if (!_phoneVerified)'));
-    expect(profile, contains('if (!subscription.hasPaidPremium)'));
-    expect(profile, contains('context.push(AppRoutes.subscription)'));
+    expect(paidRecovery, greaterThan(verificationStart));
+    expect(directOtp, greaterThan(paidRecovery));
+    expect(checkout, greaterThan(directOtp));
     expect(profile, contains('isChangingNumber: _phoneVerified'));
     expect(profile, contains("? 'Change'"));
     expect(profile, contains("'Premium'"));
+  });
+
+  test('OTP entry has a localized, rate-limited resend cooldown', () {
+    expect(subscription, contains('Timer? _resendTimer'));
+    expect(subscription, contains('_resendSeconds = 60'));
+    expect(subscription, contains('l10n.auth_label_resendCodeIn'));
+    expect(subscription, contains('l10n.auth_label_resendCode'));
+    expect(subscription, contains('_resendTimer?.cancel()'));
   });
 
   test('phone picker is server-driven India-first and greys future markets',
@@ -131,16 +152,11 @@ void main() {
       'Verify phone before purchase',
       'Verify an India +91 number once, then your selected Premium purchase will continue. Your subscription remains tied to your account, not this phone number.',
       'Verify your phone with a one-time SMS code.',
-      'Premium is active — verify your phone',
-      'Your Premium purchase is complete. Verify an India +91 number by SMS to add the phone badge and, for men, enable sending messages.',
-      'Verify your phone with a one-time SMS code. Premium must be active before a number can be verified.',
+      'Confirmed by SMS. Change it with a new OTP; Premium expiry stays unchanged.',
+      'Confirmed by SMS. A paid Premium plan enables OTP-protected number changes.',
+      'Verified once when you continue with a paid Premium purchase. Women still message free.',
       'Coming later',
       'India launch: only +91 verification is available. Other countries are shown as coming later.',
-      'Premium is still activating. Wait a moment, then tap Verify again — your purchase is safe.',
-      'Confirmed by SMS verification code. Change it here with a new OTP; Premium expiry stays unchanged.',
-      'Your number remains verified. Activate Premium to change it with a new OTP.',
-      'Premium is active. Verify an India +91 number by SMS; women can still message without it.',
-      'Available after Premium activation. Women can still message free without phone verification.',
     ];
     for (final locale in const [
       'ar',

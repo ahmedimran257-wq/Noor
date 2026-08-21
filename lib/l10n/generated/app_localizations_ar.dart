@@ -48,7 +48,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get about_title_self => 'عنك';
 
   @override
-  String get appName => '?????';
+  String get appName => 'سيلارا';
 
   @override
   String get appTagline => 'ابدأ ببسم الله';
@@ -228,7 +228,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get chat_label_subscribeToMessage =>
-      'اشترك لفتح الرسائل. تقوم النساء دائمًا بإرسال رسائل مجانية على ?????.';
+      'اشترك لفتح الرسائل. تراسل النساء دائمًا مجانًا على سيلارا.';
 
   @override
   String get chat_matchClosed_banner => 'لقد تم إغلاق هذه المباراة بكل احترام.';
@@ -1055,16 +1055,16 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get onboarding_error_under18 =>
-      '????? مخصص لمن يبلغون 18 عامًا أو أكثر. لقد وضعنا هذا المطلب لحماية الجميع في مجتمعنا.';
+      'سيلارا مخصص لمن يبلغون 18 عامًا أو أكثر. لقد وضعنا هذا المطلب لحماية الجميع في مجتمعنا.';
 
   @override
   String onboarding_error_under18_guardian(String relation) {
-    return 'يجب أن يكون عمر $relation 18 عامًا أو أكثر لاستخدام ?????.';
+    return 'يجب أن يكون عمر $relation 18 عامًا أو أكثر لاستخدام سيلارا.';
   }
 
   @override
   String get onboarding_error_under18_self =>
-      'يجب أن يكون عمرك 18 عامًا أو أكثر لاستخدام ?????. ونحن نتطلع إلى الترحيب بكم بعد ذلك.';
+      'يجب أن يكون عمرك 18 عامًا أو أكثر لاستخدام سيلارا. ونحن نتطلع إلى الترحيب بك بعد ذلك.';
 
   @override
   String get onboarding_habit_frequently => 'مرارًا';
@@ -1872,7 +1872,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'الملفات الشخصية التي تبلغ نسبة اكتمالها 80%+ تحصل على 3 أضعاف الاهتمامات.';
 
   @override
-  String get settings_brand_credit => '????? (سيلارا) · في سبيل الله';
+  String get settings_brand_credit => 'Silarah (سيلارا) · في سبيل الله';
 
   @override
   String get settings_button_deleteAccount => 'حذف الحساب';
@@ -1943,11 +1943,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings_label_photoPrivacy => 'خصوصية الصور';
 
   @override
-  String get settings_label_rate => 'معدل ?????';
+  String get settings_label_rate => 'قيّم سيلارا';
 
   @override
   String get settings_label_rate_snackbar =>
-      'سيكون التقييم متاحًا بمجرد إطلاق ????? في متجر التطبيقات.';
+      'سيكون التقييم متاحًا بمجرد إطلاق سيلارا في متجر التطبيقات.';
 
   @override
   String get settings_label_reports => 'تقرير التاريخ';
@@ -2166,7 +2166,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get splash_referral_subtitle =>
-      'إذا دعاك أحد الأصدقاء إلى ?????، فأدخل رمز الإحالة المكون من 6 أحرف أدناه.';
+      'إذا دعاك أحد الأصدقاء إلى سيلارا، فأدخل رمز الإحالة المكون من 6 أحرف أدناه.';
 
   @override
   String get splash_referral_title => 'أدخل رمز الإحالة';

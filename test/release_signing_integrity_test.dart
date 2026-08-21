@@ -6,10 +6,12 @@ void main() {
   group('Android release signing integrity', () {
     late String gradle;
     late String workflow;
+    late String installScript;
 
     setUpAll(() {
       gradle = File('android/app/build.gradle.kts').readAsStringSync();
       workflow = File('.github/workflows/ci.yml').readAsStringSync();
+      installScript = File('tool/install_android.ps1').readAsStringSync();
     });
 
     test('production builds use a dedicated external signing identity', () {
@@ -33,6 +35,20 @@ void main() {
       expect(gradle, contains('tasks.register("verifyReleaseSigning")'));
       expect(gradle, contains('releaseStore == debugStore'));
       expect(gradle, contains('dependsOn("verifyReleaseSigning")'));
+    });
+
+    test('release builds discard registrants containing dev-only plugins', () {
+      expect(
+        installScript,
+        contains('GeneratedPluginRegistrant.java'),
+      );
+      expect(installScript, contains('Remove-Item -LiteralPath'));
+      expect(
+        workflow,
+        contains(
+          'rm -f android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java',
+        ),
+      );
     });
 
     test('CI exercises the guarded AAB path with a disposable identity', () {

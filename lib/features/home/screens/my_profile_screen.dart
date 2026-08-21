@@ -265,7 +265,23 @@ class _MyProfileScreenState extends State<MyProfileScreen>
 
   Future<void> _startPhoneVerification() async {
     final subscription = context.read<SubscriptionCubit>().state;
+    final authState = context.read<AuthCubit>().state;
+    final countryCode = authState is AuthAuthenticated
+        ? authState.countryCode
+        : context.read<OnboardingCubit>().currentData.countryCode;
+
     if (!_phoneVerified) {
+      // A restored or legacy paid entitlement may not yet have completed the
+      // current Firebase phone check. Recover it directly without ever
+      // offering another purchase.
+      if (subscription.hasPaidPremium) {
+        final verified = await showPhoneVerificationSheet(
+          context,
+          countryCode: countryCode,
+        );
+        if (verified == true && mounted) await _loadTrustState();
+        return;
+      }
       await context.push(AppRoutes.subscription);
       if (mounted) await _loadTrustState();
       return;
@@ -275,10 +291,6 @@ class _MyProfileScreenState extends State<MyProfileScreen>
       if (mounted) await _loadTrustState();
       return;
     }
-    final authState = context.read<AuthCubit>().state;
-    final countryCode = authState is AuthAuthenticated
-        ? authState.countryCode
-        : context.read<OnboardingCubit>().currentData.countryCode;
     final verified = await showPhoneVerificationSheet(
       context,
       countryCode: countryCode,

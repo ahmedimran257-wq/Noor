@@ -36,6 +36,17 @@ void main() {
     );
   });
 
+  test('paid members see entitlement management instead of purchase plans', () {
+    final paidBranch = subscription.indexOf('if (state.hasPaidPremium)');
+    final referralBranch = subscription.indexOf('if (state.isReferralOnly)');
+    final purchaseCta = subscription.indexOf('onTap: _startPurchase');
+    expect(paidBranch, greaterThanOrEqualTo(0));
+    expect(paidBranch, lessThan(referralBranch));
+    expect(paidBranch, lessThan(purchaseCta));
+    expect(subscription, contains('_PaidPremiumActiveView'));
+    expect(subscription, contains("context.uiCopy('Manage Subscription')"));
+  });
+
   test('profile exposes a prominent referral Premium banner', () {
     expect(profile, contains('_ReferralPremiumProfileBanner'));
     expect(profile, contains('subscription.isReferralOnly'));

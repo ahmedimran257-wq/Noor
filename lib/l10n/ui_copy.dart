@@ -437,7 +437,7 @@ class UiCopy {
       'Identifies as Muslim, celebrates occasions, may not pray regularly':
           'يُعرف بأنه مسلم، ويحتفل بالمناسبات، وقد لا يصلي بانتظام',
       'If a friend invited you to Silarah, enter their 6-character referral code below.':
-          'إذا دعاك أحد الأصدقاء إلى ?????، فأدخل رمز الإحالة المكون من 6 أحرف أدناه.',
+          'إذا دعاك أحد الأصدقاء إلى سيلارا، فأدخل رمز الإحالة المكون من 6 أحرف أدناه.',
       'Igbo': 'الإيغبو',
       'Inappropriate Photos': 'صور غير لائقة',
       'Income Bracket': 'شريحة الدخل',
@@ -451,7 +451,7 @@ class UiCopy {
       'Interests': 'الاهتمامات',
       'Interests (up to 6)': 'الاهتمامات (حتى 6)',
       'Invite your friends to SILARAH. When any eligible friend completes onboarding using your code, you both get 3 days of FREE Premium!':
-          'ادعُ أصدقاءك إلى سيلاراه. عندما يُكمل شخص من الجنس الآخر التسجيل باستخدام رمزك، تحصلان على 3 أيام مجانية من المزايا المميزة!',
+          'ادعُ أصدقاءك إلى سيلارا. عندما يُكمل أي صديق مؤهل التسجيل باستخدام رمزك، تحصلان على 3 أيام مجانية من Premium!',
       'Islamic Identity': 'الهوية الإسلامية',
       'Islamic Life': 'الحياة الإسلامية',
       'Islamic University': 'الجامعة الإسلامية',
@@ -724,9 +724,9 @@ class UiCopy {
       'Quran': 'القرآن',
       'Quran Memorization': 'حفظ القرآن',
       'Quran recitation': 'تلاوة القرآن',
-      'Rate Silarah': 'معدل ?????',
+      'Rate Silarah': 'قيّم سيلارا',
       'Rating will be available once Silarah launches on the app store.':
-          'سيكون التقييم متاحًا بمجرد إطلاق ????? في متجر التطبيقات.',
+          'سيكون التقييم متاحًا بمجرد إطلاق سيلارا في متجر التطبيقات.',
       'Reading': 'قراءة',
       'Received': 'تلقى',
       'Reconnection is automatic': 'ستتم إعادة الاتصال تلقائيًا',
@@ -852,9 +852,9 @@ class UiCopy {
       'Significant debt': 'ديون كبيرة',
       'Silarah': '<العلامة التجارية0/>',
       'Silarah (سيلارا) · For the sake of Allah':
-          '????? (سيلارا) · في سبيل الله',
+          'Silarah (سيلارا) · في سبيل الله',
       'Silarah is for those 18 and older. We\'ve made this requirement to protect everyone in our community.':
-          '????? مخصص لمن يبلغون 18 عامًا أو أكثر. لقد وضعنا هذا المطلب لحماية الجميع في مجتمعنا.',
+          'سيلارا مخصص لمن يبلغون 18 عامًا أو أكثر. لقد وضعنا هذا المطلب لحماية الجميع في مجتمعنا.',
       'Sindhi': 'السندية',
       'Sister': 'أخت',
       'Skip': 'يتخطى',
@@ -884,7 +884,7 @@ class UiCopy {
           'تقديم وثيقة صادرة عن الحكومة الحالية',
       'Submitted for a secure human review': 'تم تقديمه لمراجعة بشرية آمنة',
       'Subscribe to unlock messaging. Women always message free on Silarah.':
-          'اشترك لفتح الرسائل. تقوم النساء دائمًا بإرسال رسائل مجانية على ?????.',
+          'اشترك لفتح الرسائل. تراسل النساء دائمًا مجانًا على سيلارا.',
       'Subscribe to unlock profile boosts.': 'اشترك لفتح تعزيزات الملف الشخصي.',
       'Subscribers only': 'المشتركين فقط',
       'Substance Use': 'استخدام المادة',
@@ -1059,7 +1059,7 @@ class UiCopy {
       'You may delete your account and all data at any time.':
           'يمكنك حذف حسابك وجميع البيانات في أي وقت.',
       'You must be 18 or older to use Silarah. We look forward to welcoming you then.':
-          'يجب أن يكون عمرك 18 عامًا أو أكثر لاستخدام ?????. ونحن نتطلع إلى الترحيب بكم بعد ذلك.',
+          'يجب أن يكون عمرك 18 عامًا أو أكثر لاستخدام سيلارا. ونحن نتطلع إلى الترحيب بك بعد ذلك.',
       'You\'re all caught up': 'أنتم جميعًا محاصرون',
       'You\'ve browsed 15 profiles today.\nUpgrade to unlock unlimited browsing.':
           'لقد تصفحت 15 ملفًا شخصيًا اليوم.\nقم بالترقية لفتح تصفح غير محدود.',
@@ -1511,7 +1511,7 @@ class UiCopy {
       'Interests': 'আগ্রহ',
       'Interests (up to 6)': 'আগ্রহ (6 পর্যন্ত)',
       'Invite your friends to SILARAH. When any eligible friend completes onboarding using your code, you both get 3 days of FREE Premium!':
-          'বন্ধুদের SILARAH-এ আমন্ত্রণ জানান। বিপরীত লিঙ্গের কেউ আপনার কোড দিয়ে অনবোর্ডিং শেষ করলে আপনারা দুজনেই ৩ দিনের বিনামূল্যের প্রিমিয়াম পাবেন!',
+          'বন্ধুদের SILARAH-এ আমন্ত্রণ জানান। কোনো যোগ্য বন্ধু আপনার কোড দিয়ে অনবোর্ডিং শেষ করলে আপনারা দুজনেই ৩ দিনের বিনামূল্যের Premium পাবেন!',
       'Islamic Identity': 'ইসলামিক পরিচয়',
       'Islamic Life': 'ইসলামী জীবন',
       'Islamic University': 'ইসলামী বিশ্ববিদ্যালয়',
@@ -2587,7 +2587,7 @@ class UiCopy {
       'Interests': 'Interessen',
       'Interests (up to 6)': 'Interessen (bis zu 6)',
       'Invite your friends to SILARAH. When any eligible friend completes onboarding using your code, you both get 3 days of FREE Premium!':
-          'Lade Freunde zu SILARAH ein. Wenn eine Person des anderen Geschlechts mit deinem Code das Onboarding abschließt, erhaltet ihr beide 3 Tage Premium kostenlos!',
+          'Lade Freunde zu SILARAH ein. Wenn ein berechtigter Freund mit deinem Code das Onboarding abschließt, erhaltet ihr beide 3 Tage Premium kostenlos!',
       'Islamic Identity': 'Islamische Identität',
       'Islamic Life': 'Islamisches Leben',
       'Islamic University': 'Islamische Universität',
@@ -3671,7 +3671,7 @@ class UiCopy {
       'Interests': 'Intérêts',
       'Interests (up to 6)': 'Intérêts (jusqu\'à 6)',
       'Invite your friends to SILARAH. When any eligible friend completes onboarding using your code, you both get 3 days of FREE Premium!':
-          'Invitez vos amis sur SILARAH. Lorsqu’une personne du sexe opposé termine son inscription avec votre code, vous recevez tous les deux 3 jours de Premium gratuits !',
+          'Invitez vos amis sur SILARAH. Lorsqu’un ami éligible termine son inscription avec votre code, vous recevez tous les deux 3 jours de Premium gratuits !',
       'Islamic Identity': 'Identité islamique',
       'Islamic Life': 'La vie islamique',
       'Islamic University': 'Université islamique',
@@ -4756,7 +4756,7 @@ class UiCopy {
       'Interests': 'रुचियाँ',
       'Interests (up to 6)': 'रुचियाँ (6 तक)',
       'Invite your friends to SILARAH. When any eligible friend completes onboarding using your code, you both get 3 days of FREE Premium!':
-          'मित्रों को SILARAH पर बुलाएँ। विपरीत लिंग का कोई व्यक्ति आपके कोड से ऑनबोर्डिंग पूरी करे तो आप दोनों को 3 दिन का मुफ़्त प्रीमियम मिलेगा!',
+          'मित्रों को SILARAH पर बुलाएँ। कोई भी योग्य मित्र आपके कोड से ऑनबोर्डिंग पूरी करे तो आप दोनों को 3 दिन का मुफ़्त Premium मिलेगा!',
       'Islamic Identity': 'इस्लामी पहचान',
       'Islamic Life': 'इस्लामी जीवन',
       'Islamic University': 'इस्लामी विश्वविद्यालय',
@@ -5831,7 +5831,7 @@ class UiCopy {
       'Interests': 'Minat',
       'Interests (up to 6)': 'Minat (hingga 6)',
       'Invite your friends to SILARAH. When any eligible friend completes onboarding using your code, you both get 3 days of FREE Premium!':
-          'Ajak teman ke SILARAH. Saat seseorang dari gender berbeda menyelesaikan orientasi dengan kode Anda, kalian berdua mendapat Premium GRATIS selama 3 hari!',
+          'Ajak teman ke SILARAH. Saat teman yang memenuhi syarat menyelesaikan orientasi dengan kode Anda, kalian berdua mendapat Premium GRATIS selama 3 hari!',
       'Islamic Identity': 'Identitas Islam',
       'Islamic Life': 'Kehidupan Islami',
       'Islamic University': 'Universitas Islam',
@@ -6914,7 +6914,7 @@ class UiCopy {
       'Interests': 'minat',
       'Interests (up to 6)': 'Minat (sehingga 6)',
       'Invite your friends to SILARAH. When any eligible friend completes onboarding using your code, you both get 3 days of FREE Premium!':
-          'Jemput rakan ke SILARAH. Apabila seseorang berlainan jantina melengkapkan pengenalan menggunakan kod anda, anda berdua mendapat Premium PERCUMA selama 3 hari!',
+          'Jemput rakan ke SILARAH. Apabila rakan yang layak melengkapkan pengenalan menggunakan kod anda, anda berdua mendapat Premium PERCUMA selama 3 hari!',
       'Islamic Identity': 'Jati Diri Islam',
       'Islamic Life': 'Kehidupan Islam',
       'Islamic University': 'Universiti Islam',
@@ -7992,7 +7992,7 @@ class UiCopy {
       'Interests': 'İlgi alanları',
       'Interests (up to 6)': 'İlgi Alanları (en fazla 6)',
       'Invite your friends to SILARAH. When any eligible friend completes onboarding using your code, you both get 3 days of FREE Premium!':
-          'Arkadaşlarını SILARAH’a davet et. Karşı cinsten biri kodunla katılımı tamamladığında ikiniz de 3 gün ÜCRETSİZ Premium kazanırsınız!',
+          'Arkadaşlarını SILARAH’a davet et. Uygun bir arkadaşın kodunla katılımı tamamladığında ikiniz de 3 gün ÜCRETSİZ Premium kazanırsınız!',
       'Islamic Identity': 'İslami Kimlik',
       'Islamic Life': 'İslami Hayat',
       'Islamic University': 'İslam Üniversitesi',
@@ -9064,7 +9064,7 @@ class UiCopy {
       'Interests': 'دلچسپیاں',
       'Interests (up to 6)': 'دلچسپیاں (6 تک)',
       'Invite your friends to SILARAH. When any eligible friend completes onboarding using your code, you both get 3 days of FREE Premium!':
-          'اپنے دوستوں کو SILARAH پر بلائیں۔ مخالف جنس کا کوئی شخص آپ کے کوڈ سے آن بورڈنگ مکمل کرے تو آپ دونوں کو 3 دن کا مفت پریمیم ملے گا!',
+          'اپنے دوستوں کو SILARAH پر بلائیں۔ کوئی بھی اہل دوست آپ کے کوڈ سے آن بورڈنگ مکمل کرے تو آپ دونوں کو 3 دن کا مفت Premium ملے گا!',
       'Islamic Identity': 'اسلامی شناخت',
       'Islamic Life': 'اسلامی زندگی',
       'Islamic University': 'اسلامی یونیورسٹی',

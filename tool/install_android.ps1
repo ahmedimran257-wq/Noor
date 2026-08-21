@@ -73,6 +73,15 @@ if ($Mode -eq 'release') {
 
     & flutter pub get
     if ($LASTEXITCODE -ne 0) { throw 'Flutter dependency restore failed.' }
+
+    # Integration tests generate a registrant that can contain dev-only native
+    # plugins. Remove that ignored artifact after dependency restore so the
+    # release command generates a production-only registry.
+    $generatedRegistrant = Join-Path $workspace `
+        'android\app\src\main\java\io\flutter\plugins\GeneratedPluginRegistrant.java'
+    if (Test-Path -LiteralPath $generatedRegistrant) {
+        Remove-Item -LiteralPath $generatedRegistrant -Force
+    }
 }
 
 if ($Mode -eq 'release') {

@@ -134,6 +134,19 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         }
       },
       builder: (context, state) {
+        if (state.hasPaidPremium) {
+          return _safeBackShell(
+            context,
+            Scaffold(
+              backgroundColor: AppColors.obsidianNight,
+              appBar: _appBar(),
+              body: _PaidPremiumActiveView(
+                isFemale: isFemale,
+                onBackToProfile: _closeScreen,
+              ),
+            ),
+          );
+        }
         if (state.isReferralOnly) {
           return _safeBackShell(
             context,
@@ -272,6 +285,21 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     try {
       final status = await PhoneVerificationService.instance.currentStatus();
       if (!mounted) return;
+      final entitlement = context.read<SubscriptionCubit>().state;
+      if (entitlement.hasPaidPremium) {
+        if (!status.isVerified) {
+          final authState = context.read<AuthCubit>().state;
+          final countryCode =
+              authState is AuthAuthenticated ? authState.countryCode : null;
+          await showPhoneVerificationSheet(
+            context,
+            countryCode: countryCode,
+          );
+        } else {
+          _closeScreen();
+        }
+        return;
+      }
       if (!status.isVerified) {
         final authState = context.read<AuthCubit>().state;
         final countryCode =
@@ -322,6 +350,92 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         backgroundColor: AppColors.softCoral,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+}
+
+class _PaidPremiumActiveView extends StatelessWidget {
+  const _PaidPremiumActiveView({
+    required this.isFemale,
+    required this.onBackToProfile,
+  });
+
+  final bool isFemale;
+  final VoidCallback onBackToProfile;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppDimensions.space24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.champagneGold.withValues(alpha: 0.18),
+                  AppColors.verifiedTeal.withValues(alpha: 0.10),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+              border: Border.all(color: AppColors.goldBorder, width: 1.5),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.workspace_premium_rounded,
+                  color: AppColors.champagneGold,
+                  size: 62,
+                ),
+                const SizedBox(height: AppDimensions.space16),
+                UiText(
+                  l10n.appName,
+                  style: AppTypography.screenTitle.copyWith(fontSize: 26),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppDimensions.space8),
+                UiText(
+                  l10n.referral_premiumFeaturesUnlocked,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.verifiedTeal,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppDimensions.space24),
+          _IncludedFeatures(isFemale: isFemale, isSmallScreen: false),
+          const SizedBox(height: AppDimensions.space24),
+          SizedBox(
+            height: AppDimensions.buttonHeight,
+            child: OutlinedButton.icon(
+              onPressed: () => _SecondaryLinks._openBillingPortal(context),
+              icon: const Icon(Icons.settings_outlined),
+              label: UiText(
+                context.uiCopy('Manage Subscription'),
+                style: AppTypography.button,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppDimensions.space12),
+          SizedBox(
+            height: AppDimensions.buttonHeight,
+            child: ElevatedButton.icon(
+              onPressed: onBackToProfile,
+              icon: const Icon(Icons.person_outline_rounded),
+              label: UiText(
+                l10n.referral_premiumBackToProfile,
+                style: AppTypography.button,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -552,6 +666,8 @@ class _PremiumPhoneVerificationSheetState
   bool _loading = false;
   String? _error;
   String _rawDigits = '';
+  Timer? _resendTimer;
+  int _resendSeconds = 0;
 
   @override
   void initState() {
@@ -579,6 +695,7 @@ class _PremiumPhoneVerificationSheetState
 
   @override
   void dispose() {
+    _resendTimer?.cancel();
     _phoneCtrl.removeListener(_onPhoneChanged);
     _phoneCtrl.dispose();
     _otpCtrl.dispose();
@@ -627,7 +744,9 @@ class _PremiumPhoneVerificationSheetState
       setState(() {
         _codeSent = true;
         _loading = false;
+        _otpCtrl.clear();
       });
+      _startResendCooldown();
     } on PhoneVerificationException catch (error) {
       if (!mounted) return;
       setState(() {
@@ -641,6 +760,19 @@ class _PremiumPhoneVerificationSheetState
         _error = 'Could not send the SMS. Please try again.';
       });
     }
+  }
+
+  void _startResendCooldown() {
+    _resendTimer?.cancel();
+    setState(() => _resendSeconds = 60);
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted || _resendSeconds <= 1) {
+        timer.cancel();
+        if (mounted) setState(() => _resendSeconds = 0);
+        return;
+      }
+      setState(() => _resendSeconds--);
+    });
   }
 
   Future<void> _verifyCode() async {
@@ -679,6 +811,7 @@ class _PremiumPhoneVerificationSheetState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
@@ -815,6 +948,22 @@ class _PremiumPhoneVerificationSheetState
               enabled: _codeSent ? _otpReady : _phoneReady,
               onTap: _codeSent ? _verifyCode : _sendCode,
             ),
+            if (_codeSent) ...[
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: !_loading && _resendSeconds == 0 ? _sendCode : null,
+                child: UiText(
+                  _resendSeconds > 0
+                      ? l10n.auth_label_resendCodeIn(_resendSeconds)
+                      : l10n.auth_label_resendCode,
+                  style: AppTypography.caption.copyWith(
+                    color: _resendSeconds == 0
+                        ? AppColors.champagneGold
+                        : AppColors.slateMist,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),

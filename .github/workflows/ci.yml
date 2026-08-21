@@ -67,7 +67,9 @@ jobs:
         working-directory: android
         run: ./gradlew verifyReleaseSigning
       - name: Build Android release bundle
-        run: flutter build appbundle --release --dart-define-from-file=config/dart_defines.example.json
+        run: |
+          rm -f android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+          flutter build appbundle --release --dart-define-from-file=config/dart_defines.example.json
 
   admin:
     name: Admin lint, typecheck, build, audit

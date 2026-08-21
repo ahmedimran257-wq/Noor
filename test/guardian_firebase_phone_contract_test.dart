@@ -25,6 +25,9 @@ void main() {
   final ownershipMigration = File(
     'supabase/migrations/227_separate_guardian_ownership_and_oversight.sql',
   ).readAsStringSync();
+  final selfLinkDefense = File(
+    'supabase/migrations/229_guardian_self_link_defense.sql',
+  ).readAsStringSync();
   final runtimeRepair = File(
     'supabase/migrations/228_repair_phone_completion_and_guardian_acceptance.sql',
   ).readAsStringSync();
@@ -104,6 +107,16 @@ void main() {
     );
     expect(profileWriter, contains("'guardian_user_id': null"));
     expect(profileWriter, isNot(contains("guardian_user_id': _userId")));
+    expect(selfLinkDefense, contains('WHERE guardian_user_id = user_id'));
+    expect(
+      selfLinkDefense,
+      contains('guardian_user_id IS NULL OR guardian_user_id <> user_id'),
+    );
+    expect(
+      selfLinkDefense,
+      isNot(contains("NEW.profile_owner_type::text = 'guardian'")),
+      reason: 'The self-link invariant applies to every profile-owner type.',
+    );
   });
 
   test('public profiles disclose management without Guardian contact details',
