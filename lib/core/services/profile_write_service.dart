@@ -243,7 +243,7 @@ class ProfileWriteService {
         'p_profile_owner_type': _profileOwnerTypeForDb(data),
         'p_profile_creator_relation': _creatorRelationForDb(data),
         'p_ward_relationship': _wardRelationshipForDb(data),
-        'p_guardian_mode': isGuardian ? data.guardianMode ?? 'passive' : 'none',
+        'p_guardian_mode': isGuardian ? data.guardianMode ?? 'none' : 'none',
         'p_guardian_relationship': isGuardian
             ? _guardianRelationshipForDb(data.guardianRelationship)
             : null,
@@ -505,8 +505,8 @@ class ProfileWriteService {
           'profile_owner_type': _profileOwnerTypeForDb(data),
           'profile_creator_relation': dbRelation,
           'ward_relationship': _wardRelationshipForDb(data),
-          'guardian_mode': _isGuardianData(data) ? 'passive' : 'none',
-          'guardian_user_id': _isGuardianData(data) ? _userId : null,
+          'guardian_mode': 'none',
+          'guardian_user_id': null,
         });
 
       case OnboardingFlow.quickLocationStepIndex:
@@ -519,8 +519,8 @@ class ProfileWriteService {
           'profile_owner_type': _profileOwnerTypeForDb(data),
           'profile_creator_relation': _creatorRelationForDb(data),
           'ward_relationship': _wardRelationshipForDb(data),
-          'guardian_mode': isGuardian ? data.guardianMode ?? 'passive' : 'none',
-          'guardian_user_id': isGuardian ? _userId : null,
+          'guardian_mode': isGuardian ? data.guardianMode ?? 'none' : 'none',
+          'guardian_user_id': null,
           'guardian_relationship': isGuardian
               ? _guardianRelationshipForDb(data.guardianRelationship)
               : null,

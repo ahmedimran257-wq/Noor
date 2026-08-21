@@ -1,6 +1,11 @@
 /// Reviewed copy for the India-first Premium phone flow.
 const indiaLaunchUiCopy = <String, Map<String, String>>{
   'ar': {
+    'Verify phone before purchase': 'وثّق الهاتف قبل الشراء',
+    'Verify an India +91 number once, then your selected Premium purchase will continue. Your subscription remains tied to your account, not this phone number.':
+        'وثّق رقمًا هنديًا يبدأ بـ +91 مرة واحدة، ثم ستتابع عملية شراء Premium التي اخترتها. يظل اشتراكك مرتبطًا بحسابك وليس برقم الهاتف.',
+    'Verify your phone with a one-time SMS code.':
+        'وثّق هاتفك برمز يُرسل مرة واحدة عبر رسالة نصية.',
     'Premium is active — verify your phone': 'Premium نشط — وثّق هاتفك',
     'Your Premium purchase is complete. Verify an India +91 number by SMS to add the phone badge and, for men, enable sending messages.':
         'اكتمل شراء Premium. وثّق رقمًا هنديًا يبدأ بـ +91 عبر رسالة نصية لإضافة شارة الهاتف، ولتمكين الرجال من إرسال الرسائل.',
@@ -21,6 +26,11 @@ const indiaLaunchUiCopy = <String, Map<String, String>>{
         'متاح بعد تفعيل Premium. ويمكن للنساء المراسلة مجانًا دون توثيق الهاتف.',
   },
   'bn': {
+    'Verify phone before purchase': 'কেনার আগে ফোন যাচাই করুন',
+    'Verify an India +91 number once, then your selected Premium purchase will continue. Your subscription remains tied to your account, not this phone number.':
+        'একবার ভারতীয় +91 নম্বর যাচাই করুন, তারপর আপনার নির্বাচিত Premium কেনা চলবে। সাবস্ক্রিপশন ফোন নম্বরের নয়, আপনার অ্যাকাউন্টের সঙ্গে যুক্ত থাকবে।',
+    'Verify your phone with a one-time SMS code.':
+        'একবার ব্যবহারযোগ্য SMS কোড দিয়ে ফোন যাচাই করুন।',
     'Premium is active — verify your phone': 'Premium সক্রিয় — ফোন যাচাই করুন',
     'Your Premium purchase is complete. Verify an India +91 number by SMS to add the phone badge and, for men, enable sending messages.':
         'আপনার Premium কেনা সম্পন্ন হয়েছে। ফোন ব্যাজ যোগ করতে এবং পুরুষদের বার্তা পাঠানো চালু করতে SMS দিয়ে ভারতীয় +91 নম্বর যাচাই করুন।',
@@ -41,6 +51,11 @@ const indiaLaunchUiCopy = <String, Map<String, String>>{
         'Premium সক্রিয় হওয়ার পর উপলব্ধ। নারীরা ফোন যাচাই ছাড়াই বিনামূল্যে বার্তা পাঠাতে পারবেন।',
   },
   'de': {
+    'Verify phone before purchase': 'Telefon vor dem Kauf bestätigen',
+    'Verify an India +91 number once, then your selected Premium purchase will continue. Your subscription remains tied to your account, not this phone number.':
+        'Bestätige einmal eine indische +91-Nummer. Danach wird der gewählte Premium-Kauf fortgesetzt. Dein Abo bleibt mit deinem Konto verknüpft, nicht mit dieser Telefonnummer.',
+    'Verify your phone with a one-time SMS code.':
+        'Bestätige dein Telefon mit einem einmaligen SMS-Code.',
     'Premium is active — verify your phone':
         'Premium ist aktiv — Telefon bestätigen',
     'Your Premium purchase is complete. Verify an India +91 number by SMS to add the phone badge and, for men, enable sending messages.':
@@ -62,6 +77,11 @@ const indiaLaunchUiCopy = <String, Map<String, String>>{
         'Nach der Premium-Aktivierung verfügbar. Frauen können weiterhin kostenlos ohne Telefonbestätigung schreiben.',
   },
   'fr': {
+    'Verify phone before purchase': 'Vérifier le téléphone avant l’achat',
+    'Verify an India +91 number once, then your selected Premium purchase will continue. Your subscription remains tied to your account, not this phone number.':
+        'Vérifiez une fois un numéro indien +91, puis l’achat Premium sélectionné continuera. Votre abonnement reste lié à votre compte, et non à ce numéro de téléphone.',
+    'Verify your phone with a one-time SMS code.':
+        'Vérifiez votre téléphone avec un code SMS à usage unique.',
     'Premium is active — verify your phone':
         'Premium est actif — vérifiez votre téléphone',
     'Your Premium purchase is complete. Verify an India +91 number by SMS to add the phone badge and, for men, enable sending messages.':
@@ -83,6 +103,11 @@ const indiaLaunchUiCopy = <String, Map<String, String>>{
         'Disponible après l’activation de Premium. Les femmes peuvent toujours écrire gratuitement sans vérification du téléphone.',
   },
   'hi': {
+    'Verify phone before purchase': 'खरीद से पहले फ़ोन सत्यापित करें',
+    'Verify an India +91 number once, then your selected Premium purchase will continue. Your subscription remains tied to your account, not this phone number.':
+        'भारतीय +91 नंबर को एक बार सत्यापित करें, फिर आपकी चुनी हुई Premium खरीद जारी होगी। आपकी सदस्यता इस फ़ोन नंबर से नहीं, आपके खाते से जुड़ी रहेगी।',
+    'Verify your phone with a one-time SMS code.':
+        'एक बार के SMS कोड से अपना फ़ोन सत्यापित करें।',
     'Premium is active — verify your phone':
         'Premium सक्रिय है — अपना फ़ोन सत्यापित करें',
     'Your Premium purchase is complete. Verify an India +91 number by SMS to add the phone badge and, for men, enable sending messages.':
@@ -104,6 +129,11 @@ const indiaLaunchUiCopy = <String, Map<String, String>>{
         'Premium सक्रिय होने के बाद उपलब्ध। महिलाएँ फ़ोन सत्यापन के बिना भी मुफ़्त संदेश भेज सकती हैं।',
   },
   'id': {
+    'Verify phone before purchase': 'Verifikasi telepon sebelum membeli',
+    'Verify an India +91 number once, then your selected Premium purchase will continue. Your subscription remains tied to your account, not this phone number.':
+        'Verifikasi nomor India +91 satu kali, lalu pembelian Premium pilihan Anda akan dilanjutkan. Langganan tetap terhubung ke akun Anda, bukan ke nomor telepon ini.',
+    'Verify your phone with a one-time SMS code.':
+        'Verifikasi telepon dengan kode SMS sekali pakai.',
     'Premium is active — verify your phone':
         'Premium aktif — verifikasi telepon Anda',
     'Your Premium purchase is complete. Verify an India +91 number by SMS to add the phone badge and, for men, enable sending messages.':
@@ -125,6 +155,11 @@ const indiaLaunchUiCopy = <String, Map<String, String>>{
         'Tersedia setelah Premium aktif. Perempuan tetap dapat berkirim pesan gratis tanpa verifikasi telepon.',
   },
   'ms': {
+    'Verify phone before purchase': 'Sahkan telefon sebelum membeli',
+    'Verify an India +91 number once, then your selected Premium purchase will continue. Your subscription remains tied to your account, not this phone number.':
+        'Sahkan nombor India +91 sekali, kemudian pembelian Premium pilihan anda akan diteruskan. Langganan kekal terikat pada akaun anda, bukan nombor telefon ini.',
+    'Verify your phone with a one-time SMS code.':
+        'Sahkan telefon dengan kod SMS sekali guna.',
     'Premium is active — verify your phone':
         'Premium aktif — sahkan telefon anda',
     'Your Premium purchase is complete. Verify an India +91 number by SMS to add the phone badge and, for men, enable sending messages.':
@@ -146,6 +181,11 @@ const indiaLaunchUiCopy = <String, Map<String, String>>{
         'Tersedia selepas Premium diaktifkan. Wanita masih boleh menghantar mesej percuma tanpa pengesahan telefon.',
   },
   'tr': {
+    'Verify phone before purchase': 'Satın almadan önce telefonu doğrulayın',
+    'Verify an India +91 number once, then your selected Premium purchase will continue. Your subscription remains tied to your account, not this phone number.':
+        'Hindistan +91 numarasını bir kez doğrulayın; ardından seçtiğiniz Premium satın alımı devam eder. Aboneliğiniz bu telefon numarasına değil, hesabınıza bağlı kalır.',
+    'Verify your phone with a one-time SMS code.':
+        'Telefonunuzu tek kullanımlık SMS koduyla doğrulayın.',
     'Premium is active — verify your phone':
         'Premium etkin — telefonunuzu doğrulayın',
     'Your Premium purchase is complete. Verify an India +91 number by SMS to add the phone badge and, for men, enable sending messages.':
@@ -167,6 +207,11 @@ const indiaLaunchUiCopy = <String, Map<String, String>>{
         'Premium etkinleştirildikten sonra kullanılabilir. Kadınlar telefon doğrulaması olmadan ücretsiz mesajlaşmaya devam edebilir.',
   },
   'ur': {
+    'Verify phone before purchase': 'خرید سے پہلے فون کی تصدیق کریں',
+    'Verify an India +91 number once, then your selected Premium purchase will continue. Your subscription remains tied to your account, not this phone number.':
+        'بھارتی +91 نمبر کی ایک بار تصدیق کریں، پھر آپ کی منتخب Premium خرید جاری ہوگی۔ آپ کی رکنیت اس فون نمبر کے بجائے آپ کے اکاؤنٹ سے منسلک رہے گی۔',
+    'Verify your phone with a one-time SMS code.':
+        'ایک بار استعمال ہونے والے SMS کوڈ سے فون کی تصدیق کریں۔',
     'Premium is active — verify your phone':
         'Premium فعال ہے — اپنا فون تصدیق کریں',
     'Your Premium purchase is complete. Verify an India +91 number by SMS to add the phone badge and, for men, enable sending messages.':

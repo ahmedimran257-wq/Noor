@@ -13,6 +13,7 @@ import '../../../core/cubits/chat/chat_cubit.dart';
 import '../../../core/cubits/chat/chat_state.dart';
 import '../../../core/cubits/discovery/discovery_feed_cubit.dart';
 import '../../../core/cubits/interests/interests_cubit.dart';
+import '../../../core/cubits/subscription/subscription_cubit.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_curves.dart';
 import '../../../core/theme/app_dimensions.dart';
@@ -221,7 +222,11 @@ class _ChatScreenState extends State<ChatScreen>
     if (text.isEmpty) return;
     final authState = context.read<AuthCubit>().state;
     final gender = authState is AuthAuthenticated ? authState.gender : null;
-    if (MessagingAccessPolicy.requiresVerifiedPhoneToSend(gender)) {
+    final subscription = context.read<SubscriptionCubit>().state;
+    if (MessagingAccessPolicy.requiresVerifiedPhoneToSend(
+      gender,
+      referralOnly: subscription.isReferralOnly,
+    )) {
       final phone = await PhoneVerificationService.instance.currentStatus();
       if (!mounted) return;
       if (!phone.isVerified) {

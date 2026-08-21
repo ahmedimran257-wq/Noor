@@ -4575,7 +4575,7 @@ abstract class AppLocalizations {
   /// No description provided for @referral_body.
   ///
   /// In en, this message translates to:
-  /// **'Invite one eligible opposite-gender friend to SILARAH. Each account can claim one 3-day referral Premium reward in its lifetime. If you already claimed yours, your friend can still claim theirs.'**
+  /// **'Invite any eligible friend to SILARAH. Each account can claim one 3-day referral Premium reward in its lifetime. If you already claimed yours, your friend can still claim theirs.'**
   String get referral_body;
 
   /// No description provided for @referral_premiumActiveTitle.

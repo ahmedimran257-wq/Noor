@@ -2437,7 +2437,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get referral_body =>
-      'Invite one eligible opposite-gender friend to SILARAH. Each account can claim one 3-day referral Premium reward in its lifetime. If you already claimed yours, your friend can still claim theirs.';
+      'Invite any eligible friend to SILARAH. Each account can claim one 3-day referral Premium reward in its lifetime. If you already claimed yours, your friend can still claim theirs.';
 
   @override
   String get referral_premiumActiveTitle => 'Referral Premium is active';

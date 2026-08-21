@@ -2462,7 +2462,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get referral_body =>
-      'Invitez une personne éligible du sexe opposé sur SILARAH. Chaque compte peut recevoir une seule récompense de parrainage Premium de 3 jours. Si vous avez déjà reçu la vôtre, votre ami peut toujours recevoir la sienne.';
+      'Invitez toute personne éligible sur SILARAH. Chaque compte peut recevoir une seule récompense de parrainage Premium de 3 jours. Si vous avez déjà reçu la vôtre, votre ami peut toujours recevoir la sienne.';
 
   @override
   String get referral_premiumActiveTitle =>

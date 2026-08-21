@@ -155,10 +155,12 @@ Deno.serve(async (request) => {
   }
 
   if (purpose === "premium") {
-    const { error } = await userClient.rpc("assert_my_phone_country_enabled", {
+    const { error } = await userClient.rpc("assert_my_phone_verification_intent", {
       p_country_code: countryCode,
     });
-    if (error) return response(403, { error: "premium_required" });
+    if (error) {
+      return response(403, { error: "phone_verification_intent_required" });
+    }
   } else {
     const { error } = await userClient.rpc("assert_guardian_invitation_phone", {
       p_code: invitationCode,
@@ -170,21 +172,38 @@ Deno.serve(async (request) => {
   const service = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { data: updatedUser, error: updateError } = await service
-    .from("users")
-    .update({
-      phone,
-      phone_country_code: countryCode,
-      phone_verified_at: new Date().toISOString(),
-    })
-    .eq("id", authData.user.id)
-    .select("id")
-    .maybeSingle();
-  if (updateError || !updatedUser) {
-    const duplicate = updateError?.code === "23505";
-    return response(duplicate ? 409 : 500, {
-      error: duplicate ? "phone_already_in_use" : "phone_save_failed",
-    });
+  if (purpose === "premium") {
+    const { error: completeError } = await service.rpc(
+      "complete_paid_phone_verification",
+      {
+        p_user_id: authData.user.id,
+        p_country_code: countryCode,
+        p_phone: phone,
+      },
+    );
+    if (completeError) {
+      const duplicate = completeError.code === "23505";
+      return response(duplicate ? 409 : 500, {
+        error: duplicate ? "phone_already_in_use" : "phone_save_failed",
+      });
+    }
+  } else {
+    const { data: updatedUser, error: updateError } = await service
+      .from("users")
+      .update({
+        phone,
+        phone_country_code: countryCode,
+        phone_verified_at: new Date().toISOString(),
+      })
+      .eq("id", authData.user.id)
+      .select("id")
+      .maybeSingle();
+    if (updateError || !updatedUser) {
+      const duplicate = updateError?.code === "23505";
+      return response(duplicate ? 409 : 500, {
+        error: duplicate ? "phone_already_in_use" : "phone_save_failed",
+      });
+    }
   }
 
   return response(200, { verified: true, country_code: countryCode });

@@ -480,7 +480,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       wardRelationship: _isGuardianMode ? _candidateLabel : null,
       wardGender: _isGuardianMode ? _gender : null,
       isGuardianMode: _isGuardianMode,
-      guardianMode: _isGuardianMode ? 'passive' : 'none',
+      guardianMode: 'none',
       guardianEmail: _isGuardianMode ? _guardianEmailCtrl.text.trim() : null,
       guardianPhone:
           _isGuardianMode && guardianPhone.isNotEmpty ? guardianPhone : null,

@@ -14,6 +14,8 @@ void main() {
       'age': 27,
       'city_name': 'Hyderabad',
       'is_verified': true,
+      'guardian_connected': true,
+      'guardian_managed': true,
       'previous_match_at': '2026-07-12T10:30:00Z',
       'previous_match_ended_at': '2026-07-20T08:00:00Z',
       'prior_match_count': 2,
@@ -25,6 +27,8 @@ void main() {
     expect(profile.lastNameInitial, 'K');
     expect(profile.age, 27);
     expect(profile.cityName, 'Hyderabad');
+    expect(profile.guardianConnected, isTrue);
+    expect(profile.isGuardianProfile, isTrue);
     expect(profile.sect, isNull);
     expect(profile.deenLevel, isNull);
     expect(profile.occupation, isNull);

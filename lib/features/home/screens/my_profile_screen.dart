@@ -265,7 +265,12 @@ class _MyProfileScreenState extends State<MyProfileScreen>
 
   Future<void> _startPhoneVerification() async {
     final subscription = context.read<SubscriptionCubit>().state;
-    if (!subscription.isSubscribed) {
+    if (!_phoneVerified) {
+      await context.push(AppRoutes.subscription);
+      if (mounted) await _loadTrustState();
+      return;
+    }
+    if (!subscription.hasPaidPremium) {
       await context.push(AppRoutes.subscription);
       if (mounted) await _loadTrustState();
       return;
@@ -415,7 +420,8 @@ class _MyProfileScreenState extends State<MyProfileScreen>
       smokingHabit: data.smokingHabit,
       vapingHabit: data.vapingHabit,
       hookahHabit: data.hookahHabit,
-      isGuardianProfile: data.isGuardianMode,
+      isGuardianProfile: data.profileOwnerType == ProfileOwnerType.guardian ||
+          data.isGuardianMode,
       community: data.community,
       dietType: data.dietType,
       livingExpectation: data.livingExpectation,
@@ -564,6 +570,10 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final currentProfile = context.watch<OnboardingCubit>().currentData;
+    final guardianManaged =
+        currentProfile.profileOwnerType == ProfileOwnerType.guardian ||
+            currentProfile.isGuardianMode;
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -670,7 +680,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                   score: result.score,
                   nudge: result.nudge,
                   data: data,
-                  guardianEnabled: _guardianEnabled,
+                  guardianManaged: guardianManaged,
                   hasVerificationBadge: _hasVerificationBadge,
                   verificationLoading: _verificationLoading,
                   onVerify: _openVerification,
@@ -701,8 +711,9 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                 loading: _trustStateLoading,
                 photoStatus: _photoVerificationStatus,
                 phoneVerified: _phoneVerified,
-                premiumActive: subscription.isSubscribed,
+                premiumActive: subscription.hasPaidPremium,
                 guardianConnected: _guardianEnabled,
+                guardianManaged: guardianManaged,
                 establishedMember: _establishedMember,
                 email: _accountEmail,
                 emailVerified: _emailVerified,
@@ -1229,6 +1240,7 @@ class _TrustCenterCard extends StatelessWidget {
     required this.phoneVerified,
     required this.premiumActive,
     required this.guardianConnected,
+    required this.guardianManaged,
     required this.establishedMember,
     required this.email,
     required this.emailVerified,
@@ -1242,6 +1254,7 @@ class _TrustCenterCard extends StatelessWidget {
   final bool phoneVerified;
   final bool premiumActive;
   final bool guardianConnected;
+  final bool guardianManaged;
   final bool establishedMember;
   final String? email;
   final bool emailVerified;
@@ -1339,15 +1352,13 @@ class _TrustCenterCard extends StatelessWidget {
             title: 'Phone number',
             subtitle: phoneVerified
                 ? premiumActive
-                    ? 'Confirmed by SMS verification code. Change it here with a new OTP; Premium expiry stays unchanged.'
-                    : 'Your number remains verified. Activate Premium to change it with a new OTP.'
-                : premiumActive
-                    ? 'Premium is active. Verify an India +91 number by SMS; women can still message without it.'
-                    : 'Available after Premium activation. Women can still message free without phone verification.',
+                    ? 'Confirmed by SMS. Change it with a new OTP; Premium expiry stays unchanged.'
+                    : 'Confirmed by SMS. A paid Premium plan enables OTP-protected number changes.'
+                : 'Verified once when you continue with a paid Premium purchase. Women still message free.',
             status: phoneVerified && premiumActive
                 ? 'Change'
-                : premiumActive
-                    ? 'Verify'
+                : phoneVerified
+                    ? 'Verified'
                     : 'Premium',
             statusColor: phoneVerified
                 ? AppColors.verifiedTeal
@@ -1365,12 +1376,26 @@ class _TrustCenterCard extends StatelessWidget {
                 : AppColors.champagneGold,
           ),
           Divider(height: 1, indent: 56, color: AppColors.cardBorder),
+          if (guardianManaged) ...[
+            _TrustRow(
+              icon: Icons.manage_accounts_outlined,
+              title: 'Profile management',
+              subtitle: 'Managed by you for a family member',
+              status: 'Guardian-managed',
+              statusColor: AppColors.champagneGold,
+            ),
+            Divider(height: 1, indent: 56, color: AppColors.cardBorder),
+          ],
           _TrustRow(
             icon: Icons.family_restroom_rounded,
-            title: 'Guardian connection',
+            title: guardianManaged
+                ? 'Additional guardian oversight'
+                : 'Guardian connection',
             subtitle: guardianConnected
                 ? 'Guardian invitation accepted and connected'
-                : 'Optional consent-based guardian connection',
+                : guardianManaged
+                    ? 'Optional separate Guardian for chat oversight'
+                    : 'Optional consent-based guardian connection',
             status: guardianConnected ? 'Manage' : 'Set up',
             statusColor: guardianConnected
                 ? AppColors.verifiedTeal
@@ -2192,7 +2217,7 @@ class _ProfilePreviewCard extends StatelessWidget {
     required this.score,
     required this.nudge,
     required this.data,
-    required this.guardianEnabled,
+    required this.guardianManaged,
     required this.hasVerificationBadge,
     required this.verificationLoading,
     required this.onVerify,
@@ -2202,7 +2227,7 @@ class _ProfilePreviewCard extends StatelessWidget {
   final int score;
   final String? nudge;
   final OnboardingData data;
-  final bool guardianEnabled;
+  final bool guardianManaged;
   final bool hasVerificationBadge;
   final bool verificationLoading;
   final VoidCallback onVerify;
@@ -2278,7 +2303,7 @@ class _ProfilePreviewCard extends StatelessWidget {
                         style: AppTypography.userName.copyWith(fontSize: 20),
                       ),
                     ),
-                    if (guardianEnabled) ...[
+                    if (guardianManaged) ...[
                       const SizedBox(width: AppDimensions.space8),
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -2289,7 +2314,7 @@ class _ProfilePreviewCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(color: AppColors.goldBorder),
                         ),
-                        child: UiText(context.uiCopy('Guardian Mode'),
+                        child: UiText(context.uiCopy('Guardian-managed'),
                             style: AppTypography.caption.copyWith(
                               color: AppColors.champagneGold,
                               fontSize: 10,

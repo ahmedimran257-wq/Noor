@@ -2,6 +2,17 @@
 /// production locale ships the complete security-sensitive flow.
 const guardianUiCopy = <String, Map<String, String>>{
   'ar': {
+    'Additional guardian oversight': 'إشراف ولي إضافي',
+    'Guardian-managed': 'يديره ولي',
+    'Guardian-managed profile': 'ملف شخصي يديره ولي',
+    'Guardian connection': 'اتصال الولي',
+    'Guardian invitation accepted and connected': 'تم قبول دعوة الولي والاتصال',
+    'Managed by you for a family member': 'تديره أنت لأحد أفراد العائلة',
+    'Optional separate Guardian for chat oversight':
+        'ولي منفصل اختياري للإشراف على الدردشة',
+    'Optional consent-based guardian connection':
+        'اتصال اختياري بالولي قائم على الموافقة',
+    'Profile management': 'إدارة الملف الشخصي',
     'A new Guardian invitation could not be created.':
         'تعذر إنشاء دعوة ولي جديدة.',
     'Accept a Guardian invitation': 'قبول دعوة ولي',
@@ -33,6 +44,19 @@ const guardianUiCopy = <String, Map<String, String>>{
         'عرض المحادثات التي شاركها الأشخاص تحت ولايتك',
   },
   'bn': {
+    'Additional guardian oversight': 'অতিরিক্ত অভিভাবক তত্ত্বাবধান',
+    'Guardian-managed': 'অভিভাবক দ্বারা পরিচালিত',
+    'Guardian-managed profile': 'অভিভাবক-পরিচালিত প্রোফাইল',
+    'Guardian connection': 'অভিভাবক সংযোগ',
+    'Guardian invitation accepted and connected':
+        'অভিভাবক আমন্ত্রণ গৃহীত এবং সংযুক্ত',
+    'Managed by you for a family member':
+        'পরিবারের একজন সদস্যের জন্য আপনি পরিচালনা করছেন',
+    'Optional separate Guardian for chat oversight':
+        'চ্যাট তত্ত্বাবধানের জন্য ঐচ্ছিক পৃথক অভিভাবক',
+    'Optional consent-based guardian connection':
+        'সম্মতিভিত্তিক ঐচ্ছিক অভিভাবক সংযোগ',
+    'Profile management': 'প্রোফাইল ব্যবস্থাপনা',
     'A new Guardian invitation could not be created.':
         'নতুন অভিভাবক আমন্ত্রণ তৈরি করা যায়নি।',
     'Accept a Guardian invitation': 'অভিভাবক আমন্ত্রণ গ্রহণ করুন',
@@ -64,6 +88,19 @@ const guardianUiCopy = <String, Map<String, String>>{
         'আপনার তত্ত্বাবধানে থাকা সদস্যদের শেয়ার করা কথোপকথন দেখুন',
   },
   'de': {
+    'Additional guardian oversight': 'Zusätzliche Guardian-Aufsicht',
+    'Guardian-managed': 'Von Guardian verwaltet',
+    'Guardian-managed profile': 'Von einem Guardian verwaltetes Profil',
+    'Guardian connection': 'Guardian-Verbindung',
+    'Guardian invitation accepted and connected':
+        'Guardian-Einladung angenommen und verbunden',
+    'Managed by you for a family member':
+        'Von dir für ein Familienmitglied verwaltet',
+    'Optional separate Guardian for chat oversight':
+        'Optionaler separater Guardian für die Chat-Aufsicht',
+    'Optional consent-based guardian connection':
+        'Optionale einwilligungsbasierte Guardian-Verbindung',
+    'Profile management': 'Profilverwaltung',
     'A new Guardian invitation could not be created.':
         'Eine neue Guardian-Einladung konnte nicht erstellt werden.',
     'Accept a Guardian invitation': 'Guardian-Einladung annehmen',
@@ -95,6 +132,19 @@ const guardianUiCopy = <String, Map<String, String>>{
         'Von betreuten Mitgliedern geteilte Unterhaltungen ansehen',
   },
   'fr': {
+    'Additional guardian oversight': 'Supervision supplémentaire du tuteur',
+    'Guardian-managed': 'Géré par un tuteur',
+    'Guardian-managed profile': 'Profil géré par un tuteur',
+    'Guardian connection': 'Connexion du tuteur',
+    'Guardian invitation accepted and connected':
+        'Invitation du tuteur acceptée et connexion établie',
+    'Managed by you for a family member':
+        'Géré par vous pour un membre de votre famille',
+    'Optional separate Guardian for chat oversight':
+        'Tuteur distinct facultatif pour superviser les discussions',
+    'Optional consent-based guardian connection':
+        'Connexion facultative d’un tuteur avec consentement',
+    'Profile management': 'Gestion du profil',
     'A new Guardian invitation could not be created.':
         'Impossible de créer une nouvelle invitation de tuteur.',
     'Accept a Guardian invitation': 'Accepter une invitation de tuteur',
@@ -127,6 +177,19 @@ const guardianUiCopy = <String, Map<String, String>>{
         'Voir les conversations partagées par les membres suivis',
   },
   'hi': {
+    'Additional guardian oversight': 'अतिरिक्त अभिभावक निगरानी',
+    'Guardian-managed': 'अभिभावक द्वारा प्रबंधित',
+    'Guardian-managed profile': 'अभिभावक द्वारा प्रबंधित प्रोफ़ाइल',
+    'Guardian connection': 'अभिभावक कनेक्शन',
+    'Guardian invitation accepted and connected':
+        'अभिभावक आमंत्रण स्वीकार हुआ और जुड़ गया',
+    'Managed by you for a family member':
+        'परिवार के सदस्य के लिए आपके द्वारा प्रबंधित',
+    'Optional separate Guardian for chat oversight':
+        'चैट निगरानी के लिए वैकल्पिक अलग अभिभावक',
+    'Optional consent-based guardian connection':
+        'सहमति पर आधारित वैकल्पिक अभिभावक कनेक्शन',
+    'Profile management': 'प्रोफ़ाइल प्रबंधन',
     'A new Guardian invitation could not be created.':
         'नया अभिभावक आमंत्रण नहीं बनाया जा सका।',
     'Accept a Guardian invitation': 'अभिभावक आमंत्रण स्वीकार करें',
@@ -158,6 +221,18 @@ const guardianUiCopy = <String, Map<String, String>>{
         'आपकी देखरेख के सदस्यों की साझा बातचीत देखें',
   },
   'id': {
+    'Additional guardian oversight': 'Pengawasan Wali tambahan',
+    'Guardian-managed': 'Dikelola Wali',
+    'Guardian-managed profile': 'Profil yang dikelola Wali',
+    'Guardian connection': 'Koneksi Wali',
+    'Guardian invitation accepted and connected':
+        'Undangan Wali diterima dan terhubung',
+    'Managed by you for a family member': 'Anda kelola untuk anggota keluarga',
+    'Optional separate Guardian for chat oversight':
+        'Wali terpisah opsional untuk pengawasan chat',
+    'Optional consent-based guardian connection':
+        'Koneksi Wali opsional berbasis persetujuan',
+    'Profile management': 'Pengelolaan profil',
     'A new Guardian invitation could not be created.':
         'Undangan Wali baru tidak dapat dibuat.',
     'Accept a Guardian invitation': 'Terima undangan Wali',
@@ -189,6 +264,18 @@ const guardianUiCopy = <String, Map<String, String>>{
         'Lihat percakapan yang dibagikan anggota dalam pengawasan Anda',
   },
   'ms': {
+    'Additional guardian oversight': 'Pengawasan Wali tambahan',
+    'Guardian-managed': 'Diurus Wali',
+    'Guardian-managed profile': 'Profil yang diurus Wali',
+    'Guardian connection': 'Sambungan Wali',
+    'Guardian invitation accepted and connected':
+        'Jemputan Wali diterima dan disambungkan',
+    'Managed by you for a family member': 'Anda urus untuk ahli keluarga',
+    'Optional separate Guardian for chat oversight':
+        'Wali berasingan pilihan untuk pengawasan sembang',
+    'Optional consent-based guardian connection':
+        'Sambungan Wali pilihan berasaskan persetujuan',
+    'Profile management': 'Pengurusan profil',
     'A new Guardian invitation could not be created.':
         'Jemputan Wali baharu tidak dapat dibuat.',
     'Accept a Guardian invitation': 'Terima jemputan Wali',
@@ -220,6 +307,19 @@ const guardianUiCopy = <String, Map<String, String>>{
         'Lihat perbualan yang dikongsi oleh ahli jagaan anda',
   },
   'tr': {
+    'Additional guardian oversight': 'Ek Vasi gözetimi',
+    'Guardian-managed': 'Vasi tarafından yönetiliyor',
+    'Guardian-managed profile': 'Vasi tarafından yönetilen profil',
+    'Guardian connection': 'Vasi bağlantısı',
+    'Guardian invitation accepted and connected':
+        'Vasi daveti kabul edildi ve bağlandı',
+    'Managed by you for a family member':
+        'Bir aile üyesi için sizin tarafınızdan yönetiliyor',
+    'Optional separate Guardian for chat oversight':
+        'Sohbet gözetimi için isteğe bağlı ayrı Vasi',
+    'Optional consent-based guardian connection':
+        'Onaya dayalı isteğe bağlı Vasi bağlantısı',
+    'Profile management': 'Profil yönetimi',
     'A new Guardian invitation could not be created.':
         'Yeni bir Vasi daveti oluşturulamadı.',
     'Accept a Guardian invitation': 'Vasi davetini kabul et',
@@ -251,6 +351,19 @@ const guardianUiCopy = <String, Map<String, String>>{
         'Gözetiminizdeki üyelerin paylaştığı konuşmaları görüntüleyin',
   },
   'ur': {
+    'Additional guardian oversight': 'اضافی سرپرست نگرانی',
+    'Guardian-managed': 'سرپرست کے زیر انتظام',
+    'Guardian-managed profile': 'سرپرست کے زیر انتظام پروفائل',
+    'Guardian connection': 'سرپرست کنکشن',
+    'Guardian invitation accepted and connected':
+        'سرپرست کی دعوت قبول ہوئی اور کنکشن قائم ہے',
+    'Managed by you for a family member':
+        'خاندان کے فرد کے لیے آپ کے زیر انتظام',
+    'Optional separate Guardian for chat oversight':
+        'چیٹ کی نگرانی کے لیے اختیاری علیحدہ سرپرست',
+    'Optional consent-based guardian connection':
+        'رضامندی پر مبنی اختیاری سرپرست کنکشن',
+    'Profile management': 'پروفائل کا انتظام',
     'A new Guardian invitation could not be created.':
         'نیا سرپرست دعوت نامہ نہیں بنایا جا سکا۔',
     'Accept a Guardian invitation': 'سرپرست دعوت قبول کریں',

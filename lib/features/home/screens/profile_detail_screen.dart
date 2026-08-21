@@ -1592,6 +1592,10 @@ class _NameBlock extends StatelessWidget {
           ].join(' · '),
           style: AppTypography.body.copyWith(color: AppColors.slateMist),
         ),
+        if (profile.isGuardianProfile) ...[
+          const SizedBox(height: AppDimensions.space10),
+          const _GuardianManagedDetailPill(),
+        ],
         if (profile.previousMatchAt != null) ...[
           const SizedBox(height: AppDimensions.space10),
           Row(
@@ -1644,6 +1648,43 @@ class _VerifiedPill extends StatelessWidget {
             style: AppTypography.caption.copyWith(
               color: AppColors.verifiedTeal,
               fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GuardianManagedDetailPill extends StatelessWidget {
+  const _GuardianManagedDetailPill();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.space10,
+        vertical: AppDimensions.space6,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.champagneGold.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+        border: Border.all(color: AppColors.goldBorder),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.family_restroom_rounded,
+            color: AppColors.champagneGold,
+            size: 14,
+          ),
+          const SizedBox(width: AppDimensions.space6),
+          UiText(
+            context.uiCopy('Guardian-managed profile'),
+            style: AppTypography.caption.copyWith(
+              color: AppColors.champagneGold,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],

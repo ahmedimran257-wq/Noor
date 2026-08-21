@@ -2463,7 +2463,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get referral_body =>
-      'Undang satu teman lawan jenis yang memenuhi syarat ke SILARAH. Setiap akun hanya dapat menerima satu hadiah Premium referral 3 hari. Jika Anda sudah menerima hadiah, teman Anda tetap dapat menerima hadiahnya.';
+      'Undang teman mana pun yang memenuhi syarat ke SILARAH. Setiap akun hanya dapat menerima satu hadiah Premium referral 3 hari. Jika Anda sudah menerima hadiah, teman Anda tetap dapat menerima hadiahnya.';
 
   @override
   String get referral_premiumActiveTitle => 'Premium referral aktif';

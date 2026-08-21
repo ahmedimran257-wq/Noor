@@ -2464,7 +2464,7 @@ class AppLocalizationsMs extends AppLocalizations {
 
   @override
   String get referral_body =>
-      'Jemput seorang rakan berlainan jantina yang layak ke SILARAH. Setiap akaun hanya boleh menerima satu ganjaran Premium rujukan selama 3 hari. Jika anda sudah menerimanya, rakan anda masih boleh menerima ganjarannya.';
+      'Jemput mana-mana rakan yang layak ke SILARAH. Setiap akaun hanya boleh menerima satu ganjaran Premium rujukan selama 3 hari. Jika anda sudah menerimanya, rakan anda masih boleh menerima ganjarannya.';
 
   @override
   String get referral_premiumActiveTitle => 'Premium rujukan aktif';

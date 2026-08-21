@@ -48,7 +48,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   DisplayPricing _pricing = DisplayPricing.loading();
   StreamSubscription<DisplayPricing>? _pricingSub;
   Timer? _countdownTimer;
-  bool _postPurchasePhonePromptOpen = false;
+  bool _purchaseFlowInProgress = false;
 
   @override
   void initState() {
@@ -206,7 +206,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                     _CtaButton(
                       selectedPlan: _selectedPlan,
                       pricing: _pricing,
-                      isLoading: state.isLoading,
+                      isLoading: state.isLoading || _purchaseFlowInProgress,
                       isSmallScreen: isSmallScreen,
                       onTap: _startPurchase,
                     ),
@@ -261,36 +261,35 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   }
 
   Future<void> _startPurchase() async {
+    if (_purchaseFlowInProgress) return;
     final pricingReady = _pricing.isAvailable;
     if (!pricingReady) {
       _showError(context, 'Plans are not available right now.');
       return;
     }
 
-    final planId = _selectedPlan == 'annual'
-        ? SubscriptionCubit.annualProductId
-        : SubscriptionCubit.monthlyProductId;
-    final purchased = await context.read<SubscriptionCubit>().purchase(planId);
-    if (!mounted || !purchased) return;
-    await _offerPostPurchasePhoneVerification();
-  }
-
-  Future<void> _offerPostPurchasePhoneVerification() async {
-    if (_postPurchasePhonePromptOpen) return;
-    final status = await PhoneVerificationService.instance.currentStatus();
-    if (!mounted || status.isVerified) return;
-    _postPurchasePhonePromptOpen = true;
+    setState(() => _purchaseFlowInProgress = true);
     try {
-      final authState = context.read<AuthCubit>().state;
-      final countryCode =
-          authState is AuthAuthenticated ? authState.countryCode : null;
-      await showPhoneVerificationSheet(
-        context,
-        countryCode: countryCode,
-        isPostPurchase: true,
-      );
+      final status = await PhoneVerificationService.instance.currentStatus();
+      if (!mounted) return;
+      if (!status.isVerified) {
+        final authState = context.read<AuthCubit>().state;
+        final countryCode =
+            authState is AuthAuthenticated ? authState.countryCode : null;
+        final verified = await showPhoneVerificationSheet(
+          context,
+          countryCode: countryCode,
+          isBeforePurchase: true,
+        );
+        if (!mounted || verified != true) return;
+      }
+
+      final planId = _selectedPlan == 'annual'
+          ? SubscriptionCubit.annualProductId
+          : SubscriptionCubit.monthlyProductId;
+      await context.read<SubscriptionCubit>().purchase(planId);
     } finally {
-      _postPurchasePhonePromptOpen = false;
+      if (mounted) setState(() => _purchaseFlowInProgress = false);
     }
   }
 
@@ -509,7 +508,7 @@ Future<bool?> showPhoneVerificationSheet(
   BuildContext context, {
   String? countryCode,
   bool isChangingNumber = false,
-  bool isPostPurchase = false,
+  bool isBeforePurchase = false,
   String? guardianInvitationCode,
 }) {
   return showModalBottomSheet<bool>(
@@ -519,7 +518,7 @@ Future<bool?> showPhoneVerificationSheet(
     builder: (_) => _PremiumPhoneVerificationSheet(
       countryCode: countryCode,
       isChangingNumber: isChangingNumber,
-      isPostPurchase: isPostPurchase,
+      isBeforePurchase: isBeforePurchase,
       guardianInvitationCode: guardianInvitationCode,
     ),
   );
@@ -529,13 +528,13 @@ class _PremiumPhoneVerificationSheet extends StatefulWidget {
   const _PremiumPhoneVerificationSheet({
     this.countryCode,
     required this.isChangingNumber,
-    required this.isPostPurchase,
+    required this.isBeforePurchase,
     this.guardianInvitationCode,
   });
 
   final String? countryCode;
   final bool isChangingNumber;
-  final bool isPostPurchase;
+  final bool isBeforePurchase;
   final String? guardianInvitationCode;
 
   @override
@@ -621,6 +620,7 @@ class _PremiumPhoneVerificationSheetState
         purpose: widget.guardianInvitationCode == null
             ? PhoneVerificationPurpose.premium
             : PhoneVerificationPurpose.guardian,
+        isChangingNumber: widget.isChangingNumber,
         guardianInvitationCode: widget.guardianInvitationCode,
       );
       if (!mounted) return;
@@ -662,14 +662,6 @@ class _PremiumPhoneVerificationSheetState
       );
       if (!mounted) return;
       Navigator.of(context).pop(true);
-    } on PremiumActivationPendingException {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-        _error = context.uiCopy(
-          'Premium is still activating. Wait a moment, then tap Verify again — your purchase is safe.',
-        );
-      });
     } on PhoneVerificationException catch (error) {
       if (!mounted) return;
       setState(() {
@@ -715,8 +707,8 @@ class _PremiumPhoneVerificationSheetState
                         ? 'Change verified phone number'
                         : widget.guardianInvitationCode != null
                             ? 'Verify your Guardian phone'
-                            : widget.isPostPurchase
-                                ? 'Premium is active — verify your phone'
+                            : widget.isBeforePurchase
+                                ? 'Verify phone before purchase'
                                 : 'Verify phone to continue'),
                     style: AppTypography.bodyMedium,
                   ),
@@ -737,9 +729,9 @@ class _PremiumPhoneVerificationSheetState
                   ? 'Your new number becomes verified only after the SMS code succeeds. Changing it does not cancel Premium or alter its expiry date.'
                   : widget.guardianInvitationCode != null
                       ? 'Use the same India mobile number that the member entered for this Guardian invitation.'
-                      : widget.isPostPurchase
-                          ? 'Your Premium purchase is complete. Verify an India +91 number by SMS to add the phone badge and, for men, enable sending messages.'
-                          : 'Verify your phone with a one-time SMS code. Premium must be active before a number can be verified.'),
+                      : widget.isBeforePurchase
+                          ? 'Verify an India +91 number once, then your selected Premium purchase will continue. Your subscription remains tied to your account, not this phone number.'
+                          : 'Verify your phone with a one-time SMS code.'),
               style: AppTypography.caption.copyWith(color: AppColors.slateMist),
             ),
             const SizedBox(height: 18),

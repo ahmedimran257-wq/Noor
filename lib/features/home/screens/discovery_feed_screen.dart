@@ -420,6 +420,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
                     isPhotoPrivate: p.isPhotoPrivate,
                     isVerified: p.isVerified,
                     phoneVerified: p.phoneVerified,
+                    isGuardianManaged: p.isGuardianProfile,
                     lastActiveLabel:
                         _localizedLastActive(context, fp.lastActiveAt),
                     isFocused: true, // Scale handled externally now

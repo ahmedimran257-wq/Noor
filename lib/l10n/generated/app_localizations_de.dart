@@ -2460,7 +2460,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get referral_body =>
-      'Lade eine berechtigte Person des anderen Geschlechts zu SILARAH ein. Jedes Konto kann einmalig 3 Tage Empfehlungs-Premium erhalten. Hast du deine Prämie bereits erhalten, kann dein Freund seine weiterhin bekommen.';
+      'Lade eine beliebige berechtigte Person zu SILARAH ein. Jedes Konto kann einmalig 3 Tage Empfehlungs-Premium erhalten. Hast du deine Prämie bereits erhalten, kann dein Freund seine weiterhin bekommen.';
 
   @override
   String get referral_premiumActiveTitle => 'Empfehlungs-Premium ist aktiv';

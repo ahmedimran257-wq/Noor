@@ -1483,7 +1483,7 @@
   "referral_title": "Refer a Friend",
   "referral_loading": "Loading rewards",
   "referral_heading": "Spread the word, earn Premium!",
-  "referral_body": "Invite one eligible opposite-gender friend to SILARAH. Each account can claim one 3-day referral Premium reward in its lifetime. If you already claimed yours, your friend can still claim theirs.",
+  "referral_body": "Invite any eligible friend to SILARAH. Each account can claim one 3-day referral Premium reward in its lifetime. If you already claimed yours, your friend can still claim theirs.",
   "referral_premiumActiveTitle": "Referral Premium is active",
   "referral_premiumRemainingDaysHours": "{days}d {hours}h remaining",
   "@referral_premiumRemainingDaysHours": {"placeholders": {"days": {"type": "int"}, "hours": {"type": "int"}}},

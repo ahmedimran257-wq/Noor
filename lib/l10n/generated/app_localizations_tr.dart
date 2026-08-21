@@ -2442,7 +2442,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get referral_body =>
-      'Karşı cinsten uygun bir arkadaşını SILARAH’a davet et. Her hesap ömür boyu bir kez 3 günlük referans Premium ödülü alabilir. Sen ödülünü aldıysan arkadaşın yine de kendi ödülünü alabilir.';
+      'Uygun olan herhangi bir arkadaşını SILARAH’a davet et. Her hesap ömür boyu bir kez 3 günlük referans Premium ödülü alabilir. Sen ödülünü aldıysan arkadaşın yine de kendi ödülünü alabilir.';
 
   @override
   String get referral_premiumActiveTitle => 'Referans Premium etkin';

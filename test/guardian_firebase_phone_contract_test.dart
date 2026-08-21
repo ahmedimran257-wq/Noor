@@ -22,6 +22,18 @@ void main() {
   final phoneService = File(
     'lib/core/services/phone_verification_service.dart',
   ).readAsStringSync();
+  final ownershipMigration = File(
+    'supabase/migrations/227_separate_guardian_ownership_and_oversight.sql',
+  ).readAsStringSync();
+  final runtimeRepair = File(
+    'supabase/migrations/228_repair_phone_completion_and_guardian_acceptance.sql',
+  ).readAsStringSync();
+  final profileWriter = File(
+    'lib/core/services/profile_write_service.dart',
+  ).readAsStringSync();
+  final profileCard = File(
+    'lib/core/widgets/cards/silarah_profile_card.dart',
+  ).readAsStringSync();
 
   test('Guardian acceptance has complete pre-auth and member entry paths', () {
     expect(splash, contains('AppRoutes.guardianConnect'));
@@ -43,6 +55,11 @@ void main() {
     expect(migration, contains('guardian_invitation_locked_until'));
     expect(migration, contains('v_stored_phone IS DISTINCT FROM v_phone'));
     expect(migration, contains('guardian_user_id = v_guardian_id'));
+    expect(
+      runtimeRepair,
+      isNot(contains('updated_at = now()')),
+      reason: 'Guardian acceptance must match the public.users schema.',
+    );
   });
 
   test('Firebase SMS proof is validated server-side before phone trust', () {
@@ -64,5 +81,47 @@ void main() {
     expect(verifier, contains('.from("users")'));
     expect(verifier, contains('phone_verified_at'));
     expect(verifier, isNot(contains('auth.admin.updateUserById')));
+  });
+
+  test('guardian-managed ownership is separate from connected oversight', () {
+    expect(
+      ownershipMigration,
+      contains('guardian_user_id = user_id'),
+      reason: 'Existing self-links must be repaired.',
+    );
+    expect(
+      ownershipMigration,
+      contains('NEW.guardian_user_id := NULL'),
+      reason: 'Old clients cannot recreate a self-linked Guardian.',
+    );
+    expect(
+      ownershipMigration,
+      contains("p.profile_owner_type::text = 'guardian'"),
+    );
+    expect(
+      ownershipMigration,
+      contains('p.guardian_user_id <> p.user_id'),
+    );
+    expect(profileWriter, contains("'guardian_user_id': null"));
+    expect(profileWriter, isNot(contains("guardian_user_id': _userId")));
+  });
+
+  test('public profiles disclose management without Guardian contact details',
+      () {
+    expect(
+      ownershipMigration,
+      contains("'guardian_managed', p.profile_owner_type::text = 'guardian'"),
+    );
+    expect(profileCard, contains('Guardian-managed profile'));
+    final trustStart = ownershipMigration.indexOf(
+      'CREATE FUNCTION public.get_member_trust_summaries',
+    );
+    final trustEnd = ownershipMigration.indexOf(
+      'REVOKE ALL ON FUNCTION public.get_member_trust_summaries',
+    );
+    final trustProjection = ownershipMigration.substring(trustStart, trustEnd);
+    expect(trustProjection, isNot(contains('guardian_email')));
+    expect(trustProjection, isNot(contains('guardian_phone')));
+    expect(trustProjection, isNot(contains('guardian_name')));
   });
 }

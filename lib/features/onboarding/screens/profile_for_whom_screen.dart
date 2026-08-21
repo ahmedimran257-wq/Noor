@@ -132,7 +132,7 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
       gender: wardGender,
       profileCreatorRelation: relation,
       isGuardianMode: true,
-      guardianMode: 'passive',
+      guardianMode: 'none',
     ));
     if (mounted && context.read<OnboardingCubit>().currentStep == 0) {
       setState(() => _advancing = false);

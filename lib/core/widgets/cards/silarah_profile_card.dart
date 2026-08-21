@@ -30,6 +30,7 @@ class SilarahProfileCard extends StatelessWidget {
     this.isPhotoPrivate = false,
     this.isVerified = false,
     this.phoneVerified = false,
+    this.isGuardianManaged = false,
     this.isFocused = true, // Controls the scale focus effect
     this.onTap,
     this.onSendInterest,
@@ -54,6 +55,7 @@ class SilarahProfileCard extends StatelessWidget {
   final bool isPhotoPrivate;
   final bool isVerified;
   final bool phoneVerified;
+  final bool isGuardianManaged;
   final bool isFocused;
   final VoidCallback? onTap;
   final VoidCallback? onSendInterest;
@@ -227,6 +229,11 @@ class SilarahProfileCard extends StatelessWidget {
                               if (previousMatchLabel != null) ...[
                                 const SizedBox(height: AppDimensions.space8),
                                 _PreviousMatchPill(label: previousMatchLabel!),
+                              ],
+
+                              if (isGuardianManaged) ...[
+                                const SizedBox(height: AppDimensions.space8),
+                                const _GuardianManagedPill(),
                               ],
 
                               // Profession line
@@ -505,6 +512,47 @@ class _PhoneVerifiedBadge extends StatelessWidget {
               context.uiCopy('Phone'),
               style: AppTypography.caption.copyWith(
                 color: trustColor,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GuardianManagedPill extends StatelessWidget {
+  const _GuardianManagedPill();
+
+  @override
+  Widget build(BuildContext context) {
+    final color = AppColors.active.mode == SilarahThemeMode.blackWhite
+        ? AppColors.onMedia
+        : AppColors.champagneLight;
+    return Semantics(
+      label: context.uiCopy('Guardian-managed profile'),
+      excludeSemantics: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.space8,
+          vertical: AppDimensions.space4,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.overlayBlack55,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+          border: Border.all(color: color.withValues(alpha: 0.72)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.family_restroom_rounded, color: color, size: 13),
+            const SizedBox(width: AppDimensions.space4),
+            UiText(
+              context.uiCopy('Guardian-managed profile'),
+              style: AppTypography.caption.copyWith(
+                color: color,
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
               ),

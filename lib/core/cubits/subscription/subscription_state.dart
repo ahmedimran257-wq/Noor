@@ -56,6 +56,11 @@ class SubscriptionState extends Equatable {
       source == PremiumEntitlementSource.referral ||
       source == PremiumEntitlementSource.paidAndReferral;
 
+  bool get hasPaidPremium =>
+      isSubscribed &&
+      (source == PremiumEntitlementSource.paid ||
+          source == PremiumEntitlementSource.paidAndReferral);
+
   /// Premium features — require subscription for ALL users.
   bool canUseAdvancedFilters(String gender) => isActive;
   bool canBoostProfile(String gender) => isActive;

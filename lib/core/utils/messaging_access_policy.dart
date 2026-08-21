@@ -15,6 +15,9 @@ abstract final class MessagingAccessPolicy {
 
   /// Women do not need phone verification to send messages. Men complete SMS
   /// verification as part of the Premium messaging flow.
-  static bool requiresVerifiedPhoneToSend(String? gender) =>
-      !hasFreeMessaging(gender);
+  static bool requiresVerifiedPhoneToSend(
+    String? gender, {
+    bool referralOnly = false,
+  }) =>
+      !hasFreeMessaging(gender) && !referralOnly;
 }

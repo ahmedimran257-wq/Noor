@@ -18,6 +18,13 @@ void main() {
         MessagingAccessPolicy.requiresVerifiedPhoneToSend('female'), isFalse);
     expect(MessagingAccessPolicy.hasFreeMessaging('male'), isFalse);
     expect(MessagingAccessPolicy.requiresVerifiedPhoneToSend('male'), isTrue);
+    expect(
+      MessagingAccessPolicy.requiresVerifiedPhoneToSend(
+        'male',
+        referralOnly: true,
+      ),
+      isFalse,
+    );
     expect(MessagingAccessPolicy.hasFreeMessaging(null), isFalse);
     expect(MessagingAccessPolicy.requiresVerifiedPhoneToSend('other'), isTrue);
   });

@@ -148,7 +148,7 @@ void main() {
 
     expect(profile, contains('showPhoneVerificationSheet('));
     expect(profile, contains('onPhoneVerification: _startPhoneVerification'));
-    expect(profile, contains('if (!subscription.isSubscribed)'));
+    expect(profile, contains('if (!subscription.hasPaidPremium)'));
     expect(profile, contains('AppRoutes.subscription'));
     expect(profile, contains("SettingsScreen(initialSection: 'guardian')"));
     expect(profile, contains('onGuardianConnection: _openGuardianSettings'));

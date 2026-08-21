@@ -23,13 +23,6 @@ class PhoneVerificationStatus {
   final DateTime? verifiedAt;
 }
 
-class PremiumActivationPendingException implements Exception {
-  const PremiumActivationPendingException();
-
-  @override
-  String toString() => 'premium_activation_pending';
-}
-
 enum PhoneVerificationPurpose { premium, guardian }
 
 class PhoneVerificationException implements Exception {
@@ -85,6 +78,7 @@ class PhoneVerificationService {
     required CountryInfo country,
     required String nationalDigits,
     PhoneVerificationPurpose purpose = PhoneVerificationPurpose.premium,
+    bool isChangingNumber = false,
     String? guardianInvitationCode,
   }) async {
     final phone = _fullPhone(country, nationalDigits);
@@ -92,6 +86,7 @@ class PhoneVerificationService {
       country: country,
       phone: phone,
       purpose: purpose,
+      isChangingNumber: isChangingNumber,
       guardianInvitationCode: guardianInvitationCode,
     );
 
@@ -211,6 +206,7 @@ class PhoneVerificationService {
     required CountryInfo country,
     required String phone,
     required PhoneVerificationPurpose purpose,
+    required bool isChangingNumber,
     String? guardianInvitationCode,
   }) async {
     if (purpose == PhoneVerificationPurpose.guardian) {
@@ -229,30 +225,37 @@ class PhoneVerificationService {
       }
     }
 
-    // RevenueCat confirms the purchase on-device before its webhook may have
-    // updated our subscription row. Give that short server-sync window the
-    // same bounded retry as final OTP confirmation, without allowing OTP for
-    // accounts that never purchased Premium.
-    for (var attempt = 0; attempt < 5; attempt++) {
-      try {
-        await SupabaseService.client.rpc(
-          'assert_my_phone_country_enabled',
-          params: {'p_country_code': country.iso2},
+    try {
+      await SupabaseService.client.rpc(
+        'begin_my_paid_phone_verification',
+        params: {
+          'p_country_code': country.iso2,
+          'p_is_change': isChangingNumber,
+        },
+      );
+    } catch (error) {
+      final normalized = error.toString().toLowerCase();
+      if (normalized.contains('phone_verification_rate_limited')) {
+        throw const PhoneVerificationException(
+          'sms_rate_limited',
+          'Too many SMS attempts. Please try again tomorrow.',
         );
-        return;
-      } catch (error) {
-        if (!_isPremiumSyncPending(error)) rethrow;
-        if (attempt == 4) {
-          throw const PremiumActivationPendingException();
-        }
-        await Future<void>.delayed(const Duration(seconds: 2));
       }
+      if (normalized.contains('paid_subscription_required')) {
+        throw const PhoneVerificationException(
+          'paid_subscription_required',
+          'A paid Premium subscription is required to change this number.',
+        );
+      }
+      if (normalized.contains('completed_account_required')) {
+        throw const PhoneVerificationException(
+          'completed_account_required',
+          'Complete your profile before verifying a phone number.',
+        );
+      }
+      rethrow;
     }
-    throw const PremiumActivationPendingException();
   }
-
-  bool _isPremiumSyncPending(Object error) =>
-      error.toString().toLowerCase().contains('subscription_required');
 
   String _fullPhone(CountryInfo country, String nationalDigits) {
     final digits = nationalDigits.replaceAll(RegExp(r'\D'), '');
@@ -309,10 +312,10 @@ class PhoneVerificationService {
         'This phone number is already verified on another account.',
       );
     }
-    if (text.contains('premium_required')) {
+    if (text.contains('phone_verification_intent_required')) {
       return const PhoneVerificationException(
-        'premium_required',
-        'Premium must be active before phone verification.',
+        'phone_verification_intent_required',
+        'This verification request expired. Request a new SMS code.',
       );
     }
     if (text.contains('guardian_invitation_unavailable')) {

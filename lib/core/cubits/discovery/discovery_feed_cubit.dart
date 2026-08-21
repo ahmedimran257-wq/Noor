@@ -772,6 +772,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
           row['is_verified'] = trust['photo_verified'] ?? false;
           row['phone_verified'] = trust['phone_verified'] ?? false;
           row['guardian_connected'] = trust['guardian_connected'] ?? false;
+          row['guardian_managed'] = trust['guardian_managed'] ?? false;
           row['established_member'] = trust['established_member'] ?? false;
         }
       }
@@ -812,6 +813,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
           'photo_verified': row['photo_verified'] as bool? ?? false,
           'phone_verified': row['phone_verified'] as bool? ?? false,
           'guardian_connected': row['guardian_connected'] as bool? ?? false,
+          'guardian_managed': row['guardian_managed'] as bool? ?? false,
           'established_member': row['established_member'] as bool? ?? false,
         };
       }

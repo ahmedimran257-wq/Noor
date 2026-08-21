@@ -49,6 +49,7 @@ DiscoveryProfile mapDbRowToDiscoveryProfile(Map<String, dynamic> row) {
     isVerified: (row['is_verified'] as bool?) ?? false,
     phoneVerified: (row['phone_verified'] as bool?) ?? false,
     guardianConnected: (row['guardian_connected'] as bool?) ?? false,
+    isGuardianProfile: (row['guardian_managed'] as bool?) ?? false,
     establishedMember: (row['established_member'] as bool?) ?? false,
     occupation: _optionalText(row, 'profession'),
     education: _optionalText(row, 'education_level'),

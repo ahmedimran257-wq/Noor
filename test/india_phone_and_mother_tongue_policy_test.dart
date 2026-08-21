@@ -7,6 +7,12 @@ void main() {
   final migration = File(
     'supabase/migrations/210_india_phone_and_mother_tongue_catalogue.sql',
   ).readAsStringSync();
+  final phoneBeforePurchase = File(
+    'supabase/migrations/225_phone_before_paid_premium.sql',
+  ).readAsStringSync();
+  final runtimeRepair = File(
+    'supabase/migrations/228_repair_phone_completion_and_guardian_acceptance.sql',
+  ).readAsStringSync();
   final subscription = File(
     'lib/features/home/screens/subscription_screen.dart',
   ).readAsStringSync();
@@ -23,29 +29,24 @@ void main() {
     'supabase/functions/verify-firebase-phone/index.ts',
   ).readAsStringSync();
 
-  test('Premium purchase completes before phone verification is offered', () {
+  test('phone verification completes before paid Premium purchase starts', () {
     final purchaseStart = subscription.indexOf('Future<void> _startPurchase');
+    final verification =
+        subscription.indexOf('showPhoneVerificationSheet(', purchaseStart);
     final purchaseCall =
         subscription.indexOf('.purchase(planId)', purchaseStart);
-    final postPurchaseOffer = subscription.indexOf(
-      '_offerPostPurchasePhoneVerification()',
-      purchaseCall,
-    );
     expect(purchaseStart, greaterThanOrEqualTo(0));
-    expect(purchaseCall, greaterThan(purchaseStart));
-    expect(postPurchaseOffer, greaterThan(purchaseCall));
-    expect(
-      subscription.substring(purchaseStart, purchaseCall),
-      isNot(contains('showPhoneVerificationSheet')),
-    );
+    expect(verification, greaterThan(purchaseStart));
+    expect(purchaseCall, greaterThan(verification));
+    expect(subscription, contains('isBeforePurchase: true'));
+    expect(subscription, contains('_purchaseFlowInProgress'));
   });
 
-  test('profile phone row gates verification and change behind Premium', () {
-    final gate = profile.indexOf('if (!subscription.isSubscribed)');
-    final verification = profile.indexOf('showPhoneVerificationSheet(', gate);
-    expect(gate, greaterThanOrEqualTo(0));
-    expect(profile.substring(gate, verification),
-        contains('AppRoutes.subscription'));
+  test('profile starts verification from checkout and protects number change',
+      () {
+    expect(profile, contains('if (!_phoneVerified)'));
+    expect(profile, contains('if (!subscription.hasPaidPremium)'));
+    expect(profile, contains('context.push(AppRoutes.subscription)'));
     expect(profile, contains('isChangingNumber: _phoneVerified'));
     expect(profile, contains("? 'Change'"));
     expect(profile, contains("'Premium'"));
@@ -59,20 +60,40 @@ void main() {
         contains('enabled: widget.enabledCountryCodes.contains(c.iso2)'));
     expect(subscription, contains("context.uiCopy('Coming later')"));
     expect(subscription, contains("country.iso2 == 'IN'"));
-    expect(phoneService, contains("'assert_my_phone_country_enabled'"));
+    expect(phoneService, contains("'begin_my_paid_phone_verification'"));
     expect(migration, contains('FROM public.launch_countries lc'));
     expect(migration, contains('AND lc.enabled'));
-    expect(migration, contains("RAISE EXCEPTION 'subscription_required'"));
+    expect(phoneBeforePurchase, contains('phone_verification_intents'));
+    expect(phoneBeforePurchase, contains("interval '15 minutes'"));
+    expect(phoneBeforePurchase,
+        contains("RAISE EXCEPTION 'phone_verification_rate_limited'"));
   });
 
-  test('Firebase phone confirmation cannot bypass Premium authorization', () {
+  test('Firebase phone confirmation requires a server checkout intent', () {
     expect(firebaseVerifier,
-        contains('userClient.rpc("assert_my_phone_country_enabled"'));
+        contains('userClient.rpc("assert_my_phone_verification_intent"'));
     expect(firebaseVerifier,
         contains('claims.firebase?.sign_in_provider !== "phone"'));
     expect(firebaseVerifier, contains('claims.aud !== FIREBASE_PROJECT_ID'));
-    expect(phoneService, contains('PremiumActivationPendingException'));
-    expect(phoneService, contains('const Duration(seconds: 2)'));
+    expect(phoneBeforePurchase,
+        contains('public.begin_my_paid_phone_verification'));
+    expect(phoneBeforePurchase,
+        contains('public.assert_my_phone_verification_intent'));
+    expect(phoneBeforePurchase,
+        contains('public.complete_paid_phone_verification'));
+    expect(phoneBeforePurchase,
+        contains('DELETE FROM private.phone_verification_intents'));
+    expect(firebaseVerifier, contains('"complete_paid_phone_verification"'));
+    expect(runtimeRepair, contains("auth.role() <> 'service_role'"));
+    expect(phoneBeforePurchase, contains('p_is_change'));
+    expect(phoneBeforePurchase, contains('paid_subscription_required'));
+  });
+
+  test('women remain free and referral-only men do not consume paid SMS', () {
+    expect(phoneBeforePurchase, contains("IF v_gender = 'female' THEN"));
+    expect(phoneBeforePurchase, contains('v_referral_active'));
+    expect(phoneBeforePurchase,
+        contains('IF v_paid_active AND v_phone_verified_at IS NULL THEN'));
   });
 
   test('catalogue covers all 28 states and 8 union territories', () {
@@ -107,6 +128,9 @@ void main() {
 
   test('new India phone copy is complete in every production locale', () {
     const sources = <String>[
+      'Verify phone before purchase',
+      'Verify an India +91 number once, then your selected Premium purchase will continue. Your subscription remains tied to your account, not this phone number.',
+      'Verify your phone with a one-time SMS code.',
       'Premium is active — verify your phone',
       'Your Premium purchase is complete. Verify an India +91 number by SMS to add the phone badge and, for men, enable sending messages.',
       'Verify your phone with a one-time SMS code. Premium must be active before a number can be verified.',

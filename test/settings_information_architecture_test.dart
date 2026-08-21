@@ -69,7 +69,7 @@ void main() {
       expect(profile, contains('Profile photo check'));
       expect(
           profile, contains('Captures delete after review or within 48 hours'));
-      expect(profile, contains('Confirmed by SMS verification code'));
+      expect(profile, contains('Confirmed by SMS.'));
       expect(profile, contains('showPhoneVerificationSheet('));
       expect(profile, contains("SettingsScreen(initialSection: 'guardian')"));
       expect(profile, isNot(contains('Government ID check')));

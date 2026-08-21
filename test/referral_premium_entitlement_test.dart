@@ -7,6 +7,7 @@ import 'package:silarah/core/cubits/subscription/subscription_state.dart';
 void main() {
   late String migration;
   late String runtimeMigration;
+  late String genderNeutralMigration;
   late String subscriptionCubit;
   late String referralService;
 
@@ -16,6 +17,9 @@ void main() {
     ).readAsStringSync();
     runtimeMigration = File(
       'supabase/migrations/216_referral_premium_runtime_integrity.sql',
+    ).readAsStringSync();
+    genderNeutralMigration = File(
+      'supabase/migrations/226_gender_neutral_referral_rewards.sql',
     ).readAsStringSync();
     subscriptionCubit = File(
       'lib/core/cubits/subscription/subscription_cubit.dart',
@@ -47,6 +51,25 @@ void main() {
       contains("THEN '3_days_premium_referred_only'"),
     );
     expect(runtimeMigration, isNot(contains('max(g.expires_at)')));
+  });
+
+  test('completed referrals qualify regardless of gender without stacking', () {
+    expect(
+      genderNeutralMigration,
+      contains('deliberately not an eligibility condition'),
+    );
+    expect(
+      genderNeutralMigration,
+      isNot(contains('v_referrer_gender = v_referred_gender')),
+    );
+    expect(
+      genderNeutralMigration,
+      contains("r.reward_type = 'same_gender_no_reward'"),
+    );
+    expect(
+      genderNeutralMigration,
+      contains('private.grant_referral_premium('),
+    );
   });
 
   test('daily profile limit consumes the combined entitlement', () {
@@ -120,6 +143,11 @@ void main() {
       expect(body, isNot(contains('٧')), reason: file.path);
       expect(body, isNot(contains('۷')), reason: file.path);
       expect(body, isNot(contains('৭')), reason: file.path);
+      expect(
+        body.toLowerCase(),
+        isNot(contains('opposite')),
+        reason: file.path,
+      );
     }
   });
 
