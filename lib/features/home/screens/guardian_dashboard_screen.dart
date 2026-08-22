@@ -9,6 +9,8 @@
 //   • Read-only or interactive chat access
 //
 // This is SILARAH's biggest competitive moat against Muzz/Salams.
+import 'dart:async';
+
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -136,8 +138,13 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
     }
   }
 
-  Future<void> _handleMarkSeen(GuardianDashboardItem chat) async {
-    await _loadDashboard(markSeenWardId: chat.wardUserId);
+  Future<void> _openTranscript(GuardianDashboardItem chat) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => _GuardianTranscriptScreen(chat: chat),
+      ),
+    );
+    if (mounted) await _loadDashboard(markSeenWardId: chat.wardUserId);
   }
 
   @override
@@ -225,7 +232,7 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
                       final chat = _chats[index];
                       return _ChatTile(
                         chat: chat,
-                        onTap: () => _handleMarkSeen(chat),
+                        onTap: () => unawaited(_openTranscript(chat)),
                         onApprove: chat.needsApproval
                             ? () => _handleApproveMatch(chat)
                             : null,
@@ -238,6 +245,432 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
 }
 
 enum _GuardianAccountAction { acceptAnother, help, delete, signOut }
+
+class _GuardianTranscriptScreen extends StatefulWidget {
+  const _GuardianTranscriptScreen({required this.chat});
+
+  final GuardianDashboardItem chat;
+
+  @override
+  State<_GuardianTranscriptScreen> createState() =>
+      _GuardianTranscriptScreenState();
+}
+
+class _GuardianTranscriptScreenState extends State<_GuardianTranscriptScreen> {
+  final _service = WaliModeService.instance;
+  final _composer = TextEditingController();
+  final _scrollController = ScrollController();
+  final List<GuardianTranscriptMessage> _messages = [];
+  StreamSubscription<Map<String, dynamic>>? _messageSubscription;
+  late GuardianDashboardItem _chat;
+  bool _loading = true;
+  bool _loadingOlder = false;
+  bool _hasOlder = true;
+  bool _sending = false;
+  bool _approving = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _chat = widget.chat;
+    _scrollController.addListener(_maybeLoadOlder);
+    _messageSubscription = _service.messageStream.listen((event) {
+      if (event['match_id']?.toString() == _chat.matchId) {
+        unawaited(_loadLatest());
+      }
+    });
+    unawaited(_loadLatest());
+  }
+
+  @override
+  void dispose() {
+    _messageSubscription?.cancel();
+    _scrollController
+      ..removeListener(_maybeLoadOlder)
+      ..dispose();
+    _composer.dispose();
+    super.dispose();
+  }
+
+  void _maybeLoadOlder() {
+    if (!_scrollController.hasClients ||
+        _scrollController.position.extentAfter > 180 ||
+        _loadingOlder ||
+        !_hasOlder) {
+      return;
+    }
+    unawaited(_loadOlder());
+  }
+
+  Future<void> _loadLatest() async {
+    try {
+      final loaded = await _service.getTranscript(matchId: _chat.matchId);
+      if (!mounted) return;
+      final existing = {for (final message in _messages) message.id: message};
+      for (final message in loaded) {
+        existing[message.id] = message;
+      }
+      final merged = existing.values.toList()
+        ..sort((a, b) {
+          final byTime = b.createdAt.compareTo(a.createdAt);
+          return byTime != 0 ? byTime : b.id.compareTo(a.id);
+        });
+      setState(() {
+        _messages
+          ..clear()
+          ..addAll(merged);
+        _hasOlder = loaded.length == 50;
+        _loading = false;
+        _error = null;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = 'Conversation could not be loaded. Please try again.';
+      });
+    }
+  }
+
+  Future<void> _loadOlder() async {
+    if (_messages.isEmpty) return;
+    setState(() => _loadingOlder = true);
+    try {
+      final loaded = await _service.getTranscript(
+        matchId: _chat.matchId,
+        before: _messages.last,
+      );
+      if (!mounted) return;
+      final known = _messages.map((message) => message.id).toSet();
+      setState(() {
+        _messages.addAll(loaded.where((message) => known.add(message.id)));
+        _hasOlder = loaded.length == 50;
+        _loadingOlder = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _loadingOlder = false);
+    }
+  }
+
+  Future<void> _approve() async {
+    if (_approving) return;
+    setState(() => _approving = true);
+    try {
+      await _service.approveMatch(_chat.matchId);
+      final dashboard = await _service.getDashboard();
+      final refreshed =
+          dashboard.where((item) => item.matchId == _chat.matchId).firstOrNull;
+      if (!mounted) return;
+      setState(() {
+        if (refreshed != null) _chat = refreshed;
+        _approving = false;
+        _error = null;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _approving = false;
+        _error = 'Approval could not be saved. Please try again.';
+      });
+    }
+  }
+
+  Future<void> _send() async {
+    final text = _composer.text.trim();
+    if (text.isEmpty || _sending || !_chat.canSendMessages) return;
+    setState(() => _sending = true);
+    try {
+      await _service.sendMessageAsGuardian(
+        matchId: _chat.matchId,
+        content: text,
+      );
+      _composer.clear();
+      await _loadLatest();
+    } catch (_) {
+      if (mounted) {
+        setState(() =>
+            _error = 'Message could not be sent. Review it and try again.');
+      }
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.obsidianNight,
+      appBar: AppBar(
+        backgroundColor: AppColors.obsidianNight,
+        titleSpacing: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            UiText(
+              _chat.otherPartyName,
+              style: AppTypography.bodyMedium,
+            ),
+            UiText(
+              '${_chat.wardName} · ${_chat.guardianMode == 'active' ? 'Active Guardian' : 'Read-only Guardian'}',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.slateMist,
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            _GuardianAccessBanner(
+              chat: _chat,
+              approving: _approving,
+              onApprove: _chat.needsApproval ? _approve : null,
+            ),
+            if (_error != null)
+              MaterialBanner(
+                content: UiText(context.uiCopy(_error!)),
+                backgroundColor: AppColors.errorRed.withValues(alpha: 0.14),
+                actions: [
+                  TextButton(
+                    onPressed: _loadLatest,
+                    child: UiText(context.uiCopy('Try again')),
+                  ),
+                ],
+              ),
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _messages.isEmpty
+                      ? Center(
+                          child: UiText(
+                            context.uiCopy('No messages yet'),
+                            style: AppTypography.body.copyWith(
+                              color: AppColors.slateMist,
+                            ),
+                          ),
+                        )
+                      : ListView.builder(
+                          reverse: true,
+                          controller: _scrollController,
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                          itemCount: _messages.length + (_loadingOlder ? 1 : 0),
+                          itemBuilder: (context, index) {
+                            if (index == _messages.length) {
+                              return const Padding(
+                                padding: EdgeInsets.all(12),
+                                child: Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            }
+                            return _GuardianMessageBubble(
+                              message: _messages[index],
+                              wardName: _chat.wardName,
+                              otherPartyName: _chat.otherPartyName,
+                            );
+                          },
+                        ),
+            ),
+            if (_chat.canSendMessages)
+              _GuardianComposer(
+                controller: _composer,
+                sending: _sending,
+                onSend: _send,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GuardianAccessBanner extends StatelessWidget {
+  const _GuardianAccessBanner({
+    required this.chat,
+    required this.approving,
+    this.onApprove,
+  });
+
+  final GuardianDashboardItem chat;
+  final bool approving;
+  final VoidCallback? onApprove;
+
+  @override
+  Widget build(BuildContext context) {
+    final copy = chat.guardianMode == 'passive'
+        ? 'Read-only oversight · messages cannot be sent from this account.'
+        : !chat.guardianHasApproved
+            ? 'Approve this match before messaging can begin.'
+            : !chat.allGuardiansApproved
+                ? 'Your approval is saved. Waiting for the other connected Guardian.'
+                : 'Active oversight · Guardian messages are clearly labelled.';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      color: AppColors.goldGlow,
+      child: Row(
+        children: [
+          Icon(Icons.shield_outlined, color: AppColors.champagneGold, size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: UiText(
+              context.uiCopy(copy),
+              style: AppTypography.caption.copyWith(
+                color: AppColors.pearlWhite,
+              ),
+            ),
+          ),
+          if (onApprove != null)
+            TextButton(
+              onPressed: approving ? null : onApprove,
+              child: approving
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : UiText(context.uiCopy('Approve')),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GuardianMessageBubble extends StatelessWidget {
+  const _GuardianMessageBubble({
+    required this.message,
+    required this.wardName,
+    required this.otherPartyName,
+  });
+
+  final GuardianTranscriptMessage message;
+  final String wardName;
+  final String otherPartyName;
+
+  @override
+  Widget build(BuildContext context) {
+    final alignRight = message.isFromWard;
+    final sender = message.sentByGuardian
+        ? 'You, as $wardName'
+        : alignRight
+            ? wardName
+            : otherPartyName;
+    final time = TimeOfDay.fromDateTime(message.createdAt).format(context);
+    return Align(
+      alignment: alignRight ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 330),
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 9),
+        decoration: BoxDecoration(
+          color: alignRight ? AppColors.goldGlow : AppColors.surfaceGlass,
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(18),
+            topRight: const Radius.circular(18),
+            bottomLeft: Radius.circular(alignRight ? 18 : 5),
+            bottomRight: Radius.circular(alignRight ? 5 : 18),
+          ),
+          border: Border.all(
+            color: message.sentByGuardian
+                ? AppColors.champagneGold
+                : AppColors.cardBorder,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            UiText(
+              sender,
+              style: AppTypography.caption.copyWith(
+                color: message.sentByGuardian
+                    ? AppColors.champagneGold
+                    : AppColors.slateMist,
+                fontWeight: FontWeight.w600,
+                fontSize: 10,
+              ),
+            ),
+            const SizedBox(height: 4),
+            UiText(message.content, style: AppTypography.body),
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerRight,
+              child: UiText(
+                time,
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.slateMist,
+                  fontSize: 9,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GuardianComposer extends StatelessWidget {
+  const _GuardianComposer({
+    required this.controller,
+    required this.sending,
+    required this.onSend,
+  });
+
+  final TextEditingController controller;
+  final bool sending;
+  final VoidCallback onSend;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        12,
+        10,
+        12,
+        10 + MediaQuery.viewPaddingOf(context).bottom,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceDark,
+        border: Border(top: BorderSide(color: AppColors.cardBorder)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: controller,
+              enabled: !sending,
+              minLines: 1,
+              maxLines: 4,
+              maxLength: 2000,
+              buildCounter: (_,
+                      {required currentLength,
+                      required isFocused,
+                      maxLength}) =>
+                  null,
+              decoration: InputDecoration(
+                hintText: context.uiCopy('Message as Guardian'),
+              ),
+              onSubmitted: (_) => onSend(),
+            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton.filled(
+            onPressed: sending ? null : onSend,
+            icon: sending
+                ? const SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.arrow_upward_rounded),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 // Realtime Connection Indicator
 class _RealtimeIndicator extends StatelessWidget {

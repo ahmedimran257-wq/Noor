@@ -110,10 +110,26 @@ enabled = true
 # Typed location data is proxied through an authenticated, rate-limited
 # boundary instead of being disclosed directly from the member's device.
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.health-probe]
 # Exact, content-validated connectivity probe under Silarah's backend.
 verify_jwt = false
+import_map = "./functions/deno.json"
+
+[functions.get-signed-url]
+# The gateway and function both authenticate the member before private media
+# grants are created.
+verify_jwt = true
+import_map = "./functions/deno.json"
+
+[functions.translate-message]
+verify_jwt = true
+import_map = "./functions/deno.json"
+
+[functions.validate-photo-upload]
+verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.dispatch-notifications]
 # Private pg_cron calls authenticate with the Vault-backed x-cron-secret;
@@ -130,10 +146,12 @@ import_map = "./functions/deno.json"
 [functions.brevo-key-keepalive]
 # pg_cron authenticates with the private Vault-backed cron credential.
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.photo-verification]
 # Member JWT is revalidated inside the function before private upload grants.
 verify_jwt = true
+import_map = "./functions/deno.json"
 
 [functions.verify-firebase-phone]
 # A valid Silarah JWT is required at the gateway and revalidated in-function
@@ -144,11 +162,14 @@ import_map = "./functions/deno.json"
 [functions.purge-photo-verification-captures]
 # Private pg_cron request authenticated by the Vault-backed cron credential.
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.storage-lifecycle-worker]
 # Private pg_cron request authenticated by the Vault-backed cron credential.
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.admin-purge-deleted-users]
 # Private pg_cron request authenticated by the Vault-backed cron credential.
 verify_jwt = false
+import_map = "./functions/deno.json"

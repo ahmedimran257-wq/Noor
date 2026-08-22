@@ -34,7 +34,8 @@ void main() {
     expect(matrix, contains('const PROFILE_COUNT = 200'));
     expect(matrix, contains('gender.male === 100'));
     expect(matrix, contains('gender.female === 100'));
-    expect(matrix, contains('Refusing to create 200 test profiles in production'));
+    expect(
+        matrix, contains('Refusing to create 200 test profiles in production'));
     expect(matrix, contains('KNOWN_PRODUCTION_REF'));
     expect(matrix, contains('finally'));
     expect(matrix, contains('/auth/v1/admin/users/'));

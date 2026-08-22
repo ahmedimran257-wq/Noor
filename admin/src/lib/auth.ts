@@ -21,11 +21,13 @@ export async function requireStaffSession(): Promise<CurrentAdmin> {
   const tokenPayload = session?.access_token
     ? decodeJwtPayload(session.access_token)
     : undefined;
-  const issuedAt = typeof tokenPayload?.iat === "number"
-    ? tokenPayload.iat * 1000
-    : 0;
-  const maxSessionMs = 12 * 60 * 60 * 1000;
-  if (!issuedAt || Date.now() - issuedAt > maxSessionMs) {
+  const sessionId = tokenPayload?.session_id;
+  const { data: sessionAllowed, error: sessionBoundaryError } = sessionId
+    ? await supabase.rpc("assert_admin_session_boundary", {
+        p_session_id: sessionId,
+      })
+    : { data: false, error: null };
+  if (sessionBoundaryError || sessionAllowed !== true) {
     await supabase.auth.signOut();
     redirect("/login?error=Session+expired.+Please+sign+in+again.");
   }
@@ -47,14 +49,14 @@ export async function requireStaffSession(): Promise<CurrentAdmin> {
   };
 }
 
-function decodeJwtPayload(token: string): { iat?: number } | undefined {
+function decodeJwtPayload(token: string): { session_id?: string } | undefined {
   try {
     const payload = token.split(".")[1];
     if (!payload) return undefined;
     return JSON.parse(
       Buffer.from(payload.replace(/-/g, "+").replace(/_/g, "/"), "base64")
         .toString("utf8"),
-    ) as { iat?: number };
+    ) as { session_id?: string };
   } catch {
     return undefined;
   }

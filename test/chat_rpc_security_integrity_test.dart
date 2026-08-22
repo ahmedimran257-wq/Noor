@@ -34,10 +34,17 @@ void main() {
     ).readAsStringSync();
 
     expect(cubit, contains("'get_chat_inbox'"));
-    expect(cubit, contains("'get_chat_messages'"));
+    expect(cubit, contains("'get_chat_messages_v2'"));
     expect(cubit, contains("'send_chat_message'"));
     expect(cubit, contains("'mark_chat_read'"));
     expect(cubit, isNot(contains(".from('messages')")));
     expect(cubit, isNot(contains(".from('matches')")));
+
+    final stablePagination = File(
+      'supabase/migrations/243_stable_chat_message_pagination.sql',
+    ).readAsStringSync();
+    expect(stablePagination, contains('p_before_created_at timestamptz'));
+    expect(stablePagination, contains('p_before_id uuid'));
+    expect(stablePagination, contains('(msg.created_at, msg.id) <'));
   });
 }

@@ -26,8 +26,9 @@ void main() {
   test('RevenueCat billing email is server-only, durable, and idempotent', () {
     final config = source('supabase/config.toml');
     final functionConfig = RegExp(
-      r'\[functions\.revenuecat-webhook\][\s\S]*?(?=\r?\n\[functions\.|\z)',
-    ).firstMatch(config)?.group(0) ?? '';
+          r'\[functions\.revenuecat-webhook\][\s\S]*?(?=\r?\n\[functions\.|\z)',
+        ).firstMatch(config)?.group(0) ??
+        '';
     final webhook = source('supabase/functions/revenuecat-webhook/index.ts');
     final migration = source(
       'supabase/migrations/127_transactional_subscription_email_outbox.sql',

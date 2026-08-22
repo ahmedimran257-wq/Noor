@@ -31,6 +31,9 @@ void main() {
   final runtimeRepair = File(
     'supabase/migrations/228_repair_phone_completion_and_guardian_acceptance.sql',
   ).readAsStringSync();
+  final atomicAcceptance = File(
+    'supabase/migrations/241_atomic_guardian_phone_acceptance.sql',
+  ).readAsStringSync();
   final profileWriter = File(
     'lib/core/services/profile_write_service.dart',
   ).readAsStringSync();
@@ -44,7 +47,8 @@ void main() {
     expect(guardianScreen, contains('rememberPendingInvitation(code)'));
     expect(guardianScreen, contains('AppRoutes.legal'));
     expect(guardianScreen, contains('mode=signin'));
-    expect(guardianScreen, contains('acceptInvitation(code)'));
+    expect(guardianScreen, contains('Continue without Guardian'));
+    expect(verifier, contains('"complete_guardian_phone_and_accept"'));
     expect(router, contains('guardianInvitationPending'));
     expect(router, contains('authState.isGuardianOnly'));
   });
@@ -75,14 +79,17 @@ void main() {
     expect(verifier, contains('crypto.subtle.verify'));
     expect(verifier, contains('https://securetoken.google.com/'));
     expect(verifier, contains('sign_in_provider !== "phone"'));
-    expect(verifier, contains('assert_guardian_invitation_phone'));
+    expect(verifier, contains('"check_guardian_invitation_phone"'));
+    expect(atomicAcceptance, contains('guardian_invitation_attempts'));
     expect(verifier, contains(r'/^\+91[6-9][0-9]{9}$/'));
   });
 
   test('Firebase identity is temporary and Supabase remains authoritative', () {
     expect(phoneService, contains('credential.user?.delete()'));
-    expect(verifier, contains('.from("users")'));
-    expect(verifier, contains('phone_verified_at'));
+    expect(verifier, isNot(contains('.from("users")')));
+    expect(verifier, contains('"complete_paid_phone_verification"'));
+    expect(verifier, contains('"complete_guardian_phone_and_accept"'));
+    expect(atomicAcceptance, contains('phone_verified_at = now()'));
     expect(verifier, isNot(contains('auth.admin.updateUserById')));
   });
 

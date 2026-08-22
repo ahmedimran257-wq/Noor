@@ -89,7 +89,8 @@ void main() {
     expect(sitemap, contains('https://silarah.com/child-safety/'));
   });
 
-  test('public homepage uses honest campaign imagery and a restrained favicon', () {
+  test('public homepage uses honest campaign imagery and a restrained favicon',
+      () {
     expect(home, isNot(contains('silarah-icon')));
     expect(home, contains('class="brand"'));
     expect(home, contains('<img'));

@@ -506,13 +506,14 @@ async function createAuthorizedProfilePhotoGalleryReadUrls(
   const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
-  const { data: photos, error: photoError } = await adminClient.rpc(
-    "get_authorized_photo_gallery_paths",
-    {
+  const { data: photos, error: photoError } = viewerUserId === ownerUserId
+    ? await adminClient.rpc("get_my_photo_management_paths", {
+      p_user_id: viewerUserId,
+    })
+    : await adminClient.rpc("get_authorized_photo_gallery_paths", {
       p_viewer_user_id: viewerUserId,
       p_owner_user_id: ownerUserId,
-    },
-  );
+    });
   if (photoError) {
     throw new Error(`Photo authorization failed: ${photoError.message}`);
   }

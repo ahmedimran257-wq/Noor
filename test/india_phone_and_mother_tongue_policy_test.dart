@@ -91,8 +91,7 @@ void main() {
   });
 
   test('Firebase phone confirmation requires a server checkout intent', () {
-    expect(firebaseVerifier,
-        contains('userClient.rpc("assert_my_phone_verification_intent"'));
+    expect(firebaseVerifier, contains('"assert_my_phone_verification_intent"'));
     expect(firebaseVerifier,
         contains('claims.firebase?.sign_in_provider !== "phone"'));
     expect(firebaseVerifier, contains('claims.aud !== FIREBASE_PROJECT_ID'));

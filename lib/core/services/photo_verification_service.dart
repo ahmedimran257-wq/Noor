@@ -147,45 +147,65 @@ class PhotoVerificationService {
     required Map<String, File> captures,
     required bool accessibilityFallback,
   }) async {
-    final session = await start(
-      accessibilityFallback: accessibilityFallback,
-    );
-    for (final kind in const ['neutral', 'smile', 'blink']) {
-      final source = captures[kind];
-      final target = session.uploads[kind];
-      if (source == null || target == null) {
-        throw StateError('All three guided captures are required.');
-      }
-      final bytes = await FlutterImageCompress.compressWithFile(
-        source.path,
-        minWidth: 900,
-        minHeight: 900,
-        quality: 78,
-        format: CompressFormat.jpeg,
+    PhotoVerificationUpload? session;
+    try {
+      session = await start(
+        accessibilityFallback: accessibilityFallback,
       );
-      if (bytes == null ||
-          bytes.length < 10000 ||
-          bytes.length > 2 * 1024 * 1024) {
-        throw StateError('A clear verification photo could not be prepared.');
+      for (final kind in const ['neutral', 'smile', 'blink']) {
+        final source = captures[kind];
+        final target = session.uploads[kind];
+        if (source == null || target == null) {
+          throw StateError('All three guided captures are required.');
+        }
+        final bytes = await FlutterImageCompress.compressWithFile(
+          source.path,
+          minWidth: 900,
+          minHeight: 900,
+          quality: 78,
+          format: CompressFormat.jpeg,
+        );
+        if (bytes == null ||
+            bytes.length < 10000 ||
+            bytes.length > 2 * 1024 * 1024) {
+          throw StateError('A clear verification photo could not be prepared.');
+        }
+        await SupabaseService.client.storage
+            .from(_bucket)
+            .uploadBinaryToSignedUrl(
+              target.path,
+              target.token,
+              bytes,
+              const FileOptions(contentType: 'image/jpeg', upsert: false),
+            );
       }
-      await SupabaseService.client.storage
-          .from(_bucket)
-          .uploadBinaryToSignedUrl(
-            target.path,
-            target.token,
-            bytes,
-            const FileOptions(contentType: 'image/jpeg', upsert: false),
-          );
+      final submitted = await SupabaseService.client.functions.invoke(
+        'photo-verification',
+        body: {'action': 'submit', 'submission_id': session.submissionId},
+      );
+      final payload = _payload(
+        submitted,
+        'Unable to submit photo verification for review.',
+      );
+      return _date(payload['review_deadline']) ?? session.reviewDeadline;
+    } catch (_) {
+      if (session != null) {
+        await _abandon(session.submissionId);
+      }
+      rethrow;
     }
-    final submitted = await SupabaseService.client.functions.invoke(
-      'photo-verification',
-      body: {'action': 'submit', 'submission_id': session.submissionId},
-    );
-    final payload = _payload(
-      submitted,
-      'Unable to submit photo verification for review.',
-    );
-    return _date(payload['review_deadline']) ?? session.reviewDeadline;
+  }
+
+  Future<void> _abandon(String submissionId) async {
+    try {
+      await SupabaseService.client.functions.invoke(
+        'photo-verification',
+        body: {'action': 'abandon', 'submission_id': submissionId},
+      );
+    } catch (_) {
+      // A later start supersedes any unfinished upload server-side, so a
+      // cleanup network failure never locks the member out of retrying.
+    }
   }
 
   Map<String, dynamic> _payload(

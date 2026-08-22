@@ -18,6 +18,10 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
 
   StreamSubscription<DisplayPricing>? _pricingSub;
   int _entitlementRefreshId = 0;
+  CustomerInfoUpdateListener? _customerInfoListener;
+  Timer? _expiryTimer;
+  Future<void>? _logoutInFlight;
+  String? _loggedInUserId;
 
   Future<void> initialize() async {
     emit(state.copyWith(isLoading: true));
@@ -47,6 +51,12 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
   Future<void> loginUser(String userId) async {
     if (!SupabaseService.isInitialized) return;
 
+    final pendingLogout = _logoutInFlight;
+    if (pendingLogout != null) await pendingLogout;
+    _detachCustomerInfoListener();
+    _expiryTimer?.cancel();
+    _loggedInUserId = userId;
+
     emit(state.copyWith(isLoading: true));
 
     CustomerInfo? customerInfo;
@@ -67,10 +77,12 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
     await _refreshEffectiveEntitlement(customerInfo, isLoading: false);
 
     if (revenueCatReady) {
-      Purchases.addCustomerInfoUpdateListener((info) {
-        if (isClosed) return;
+      final listenerUserId = userId;
+      _customerInfoListener = (info) {
+        if (isClosed || _loggedInUserId != listenerUserId) return;
         unawaited(_refreshEffectiveEntitlement(info));
-      });
+      };
+      Purchases.addCustomerInfoUpdateListener(_customerInfoListener!);
     }
   }
 
@@ -190,7 +202,36 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
 
   void clear() {
     _entitlementRefreshId++;
+    _expiryTimer?.cancel();
+    _detachCustomerInfoListener();
+    _loggedInUserId = null;
+    SubscriptionService.instance.clearUser();
     if (!isClosed) emit(const SubscriptionState());
+  }
+
+  Future<void> logoutUser() {
+    clear();
+    final operation = _performRevenueCatLogout();
+    _logoutInFlight = operation;
+    return operation.whenComplete(() {
+      if (identical(_logoutInFlight, operation)) _logoutInFlight = null;
+    });
+  }
+
+  Future<void> _performRevenueCatLogout() async {
+    try {
+      await Purchases.logOut();
+    } catch (error) {
+      // Logging out an already-anonymous RevenueCat identity is harmless.
+      debugPrint('[SubscriptionCubit] RevenueCat logout skipped: $error');
+    }
+  }
+
+  void _detachCustomerInfoListener() {
+    final listener = _customerInfoListener;
+    if (listener == null) return;
+    Purchases.removeCustomerInfoUpdateListener(listener);
+    _customerInfoListener = null;
   }
 
   Future<void> _refreshEffectiveEntitlement(
@@ -211,6 +252,17 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
 
     final server = await _loadServerEntitlement();
     if (isClosed || refreshId != _entitlementRefreshId) return;
+
+    // A transient Supabase failure must not revoke an unexpired promotional
+    // entitlement already proven by the server on this session.
+    if (!server.isAvailable &&
+        !revenueCatActive &&
+        state.isSubscribed &&
+        (state.expiresAt == null || state.expiresAt!.isAfter(DateTime.now()))) {
+      emit(state.copyWith(isLoading: isLoading ?? false));
+      _armExpiryRefresh(state.expiresAt);
+      return;
+    }
 
     final active = revenueCatActive || server.isActive;
     final hasIndefiniteEntitlement =
@@ -233,6 +285,21 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
       clearExpiresAt: expiry == null,
       successMessage: successMessage,
     ));
+    _armExpiryRefresh(expiry);
+  }
+
+  void _armExpiryRefresh(DateTime? expiresAt) {
+    _expiryTimer?.cancel();
+    if (expiresAt == null || _loggedInUserId == null) return;
+    final delay = expiresAt.difference(DateTime.now());
+    _expiryTimer = Timer(
+      delay.isNegative ? const Duration(milliseconds: 250) : delay,
+      () {
+        if (!isClosed && _loggedInUserId != null) {
+          unawaited(refreshEntitlement());
+        }
+      },
+    );
   }
 
   Future<_ServerPremiumEntitlement> _loadServerEntitlement() async {
@@ -245,9 +312,12 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
         final Map<dynamic, dynamic> value => Map<String, dynamic>.from(value),
         _ => null,
       };
-      if (row == null) return const _ServerPremiumEntitlement();
+      if (row == null) {
+        return const _ServerPremiumEntitlement(isAvailable: true);
+      }
 
       return _ServerPremiumEntitlement(
+        isAvailable: true,
         isActive: row['is_active'] == true,
         source: PremiumEntitlementSource.fromServer(row['source']?.toString()),
         expiresAt: DateTime.tryParse(row['expires_at']?.toString() ?? ''),
@@ -282,17 +352,21 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
   @override
   Future<void> close() {
     _pricingSub?.cancel();
+    _expiryTimer?.cancel();
+    _detachCustomerInfoListener();
     return super.close();
   }
 }
 
 class _ServerPremiumEntitlement {
   const _ServerPremiumEntitlement({
+    this.isAvailable = false,
     this.isActive = false,
     this.source = PremiumEntitlementSource.none,
     this.expiresAt,
   });
 
+  final bool isAvailable;
   final bool isActive;
   final PremiumEntitlementSource source;
   final DateTime? expiresAt;

@@ -117,27 +117,16 @@ class SubscriptionService {
   static const _maxRetries = 3;
   static const _retryInterval = Duration(seconds: 30);
 
-  String? _userId;
   String? _countryCode;
   String? _pricingTier;
   Offering? _activeOffering;
 
   Future<void> initialize({required String userId}) async {
     try {
-      _userId = userId;
-      await Purchases.logIn(userId);
+      _retryTimer?.cancel();
+      _retryCount = 0;
       await _syncSubscriberAttributes(userId);
-
-      _customerInfo = await Purchases.getCustomerInfo();
-      _isSubscribed = _customerInfo != null &&
-          SubscriptionEntitlements.isPremiumActive(_customerInfo!);
-
       await _refreshPricing();
-
-      Purchases.addCustomerInfoUpdateListener((info) {
-        _customerInfo = info;
-        _isSubscribed = SubscriptionEntitlements.isPremiumActive(info);
-      });
     } catch (e) {
       debugPrint('[SubscriptionService] RevenueCat init error: $e');
       _setPricingUnavailable();
@@ -192,12 +181,21 @@ class SubscriptionService {
     _pricingController.close();
   }
 
+  /// Clears all user-derived pricing and entitlement snapshots on account
+  /// change. RevenueCat identity ownership remains in SubscriptionCubit.
+  void clearUser() {
+    _retryTimer?.cancel();
+    _retryCount = 0;
+    _countryCode = null;
+    _pricingTier = null;
+    _activeOffering = null;
+    _customerInfo = null;
+    _isSubscribed = false;
+    _currentPricing = null;
+  }
+
   Future<void> _refreshPricing() async {
     try {
-      if (_userId != null) {
-        await _syncSubscriberAttributes(_userId!);
-      }
-
       final offerings = await Purchases.syncAttributesAndOfferingsIfNeeded();
       final offering = _selectOffering(offerings);
       if (offering == null) {

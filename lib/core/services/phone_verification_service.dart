@@ -12,12 +12,14 @@ import 'supabase_service.dart';
 class PhoneVerificationStatus {
   const PhoneVerificationStatus({
     required this.isVerified,
+    this.isTrustBadgeActive = false,
     this.phone,
     this.countryCode,
     this.verifiedAt,
   });
 
   final bool isVerified;
+  final bool isTrustBadgeActive;
   final String? phone;
   final String? countryCode;
   final DateTime? verifiedAt;
@@ -52,7 +54,8 @@ class PhoneVerificationService {
     try {
       final row = await SupabaseService.client
           .from('users')
-          .select('phone, phone_country_code, phone_verified_at')
+          .select(
+              'phone, phone_country_code, phone_verified_at, phone_trust_activated_at')
           .eq('id', SupabaseService.currentUserId!)
           .maybeSingle();
 
@@ -63,6 +66,8 @@ class PhoneVerificationService {
             phone.isNotEmpty &&
             verifiedAtRaw != null &&
             verifiedAtRaw.isNotEmpty,
+        isTrustBadgeActive:
+            (row?['phone_trust_activated_at'] as String?)?.isNotEmpty == true,
         phone: phone,
         countryCode: row?['phone_country_code'] as String?,
         verifiedAt:
@@ -212,11 +217,19 @@ class PhoneVerificationService {
     if (purpose == PhoneVerificationPurpose.guardian) {
       final code = guardianInvitationCode?.trim().toUpperCase() ?? '';
       try {
-        await SupabaseService.client.rpc(
-          'assert_guardian_invitation_phone',
+        final allowed = await SupabaseService.client.rpc(
+          'check_guardian_invitation_phone',
           params: {'p_code': code, 'p_phone': phone},
         );
+        if (allowed != true) {
+          throw const PhoneVerificationException(
+            'guardian_invitation_unavailable',
+            'The invitation code or phone number does not match, or the invitation has expired.',
+          );
+        }
         return;
+      } on PhoneVerificationException {
+        rethrow;
       } catch (_) {
         throw const PhoneVerificationException(
           'guardian_invitation_unavailable',

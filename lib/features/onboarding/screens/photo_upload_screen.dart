@@ -83,10 +83,10 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(PhotoModerationService.warmUp().catchError((_) {}));
     });
-    if (widget.returnToPreviousOnSave) {
-      _loadingExisting = true;
-      unawaited(_loadExistingPhotos());
-    }
+    // Also load during onboarding. This recovers the exact case where secure
+    // upload finalization succeeded but the step-advance response was lost.
+    _loadingExisting = true;
+    unawaited(_loadExistingPhotos());
   }
 
   @override
@@ -478,8 +478,11 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       if (_paths[i] != null) localSlots[i] = _paths[i]!;
     }
     final paths = localSlots.values.toList(growable: false);
+    final persistedPhotoMarkers = _remoteUrls.whereType<String>().toList();
     final data = context.read<OnboardingCubit>().currentData.copyWith(
-          photoLocalPaths: paths,
+          // Signed URLs are never persisted as profile data. They are only a
+          // non-empty validation marker for an already finalized remote slot.
+          photoLocalPaths: paths.isNotEmpty ? paths : persistedPhotoMarkers,
           photoPrivacy: _privacy,
         );
     setState(() => _uploading = true);
@@ -517,7 +520,15 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         );
         Navigator.pop(context, true);
       } else {
-        await cubit.saveAndAdvance(data);
+        final advanced = await cubit.saveAndAdvance(data);
+        if (!advanced) {
+          final state = cubit.state;
+          throw StateError(
+            state is OnboardingError
+                ? state.message
+                : 'Could not save. Please try again.',
+          );
+        }
       }
       _deleteAllTemporaryPhotos();
     } catch (e) {

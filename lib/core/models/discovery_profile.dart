@@ -60,6 +60,7 @@ class DiscoveryProfile {
     this.previousMatchEndedAt,
     this.priorMatchCount = 0,
     this.rematchAvailableAt,
+    this.relationshipState = 'none',
   }) : _id = id;
 
   final String? _id;
@@ -138,6 +139,7 @@ class DiscoveryProfile {
   final DateTime? previousMatchEndedAt;
   final int priorMatchCount;
   final DateTime? rematchAvailableAt;
+  final String relationshipState;
 
   bool get isRematchCandidate => previousMatchAt != null && priorMatchCount > 0;
 
@@ -233,6 +235,7 @@ class DiscoveryProfile {
     DateTime? previousMatchEndedAt,
     int? priorMatchCount,
     DateTime? rematchAvailableAt,
+    String? relationshipState,
     bool clearPhotoUrl = false,
     bool clearPreviousMatchAt = false,
     bool clearPreviousMatchEndedAt = false,
@@ -300,6 +303,7 @@ class DiscoveryProfile {
       rematchAvailableAt: clearRematchAvailableAt
           ? null
           : (rematchAvailableAt ?? this.rematchAvailableAt),
+      relationshipState: relationshipState ?? this.relationshipState,
     );
   }
 

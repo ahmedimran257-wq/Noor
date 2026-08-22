@@ -20,12 +20,12 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/loaders/silarah_shimmer.dart';
 
 class ReportBottomSheet {
-  static Future<void> show(
+  static Future<bool> show(
     BuildContext context, {
     required String reportedUserId,
     required String reportedName,
   }) {
-    return showModalBottomSheet<void>(
+    return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -36,7 +36,7 @@ class ReportBottomSheet {
           reportedName: reportedName,
         ),
       ),
-    );
+    ).then((value) => value ?? false);
   }
 }
 
@@ -65,16 +65,26 @@ class _ReportContentState extends State<_ReportContent> {
     super.dispose();
   }
 
-  void _onSubmit(BuildContext context) {
-    context.read<BlockReportCubit>().reportUser(
-          reportedUserId: widget.reportedUserId,
-          reportedName: widget.reportedName,
-          reason: _selected!,
-          description: _selected == ReportReason.other
-              ? _descController.text.trim()
-              : null,
-        );
-    setState(() => _step = 3);
+  Future<void> _onSubmit() async {
+    final cubit = context.read<BlockReportCubit>();
+    if (cubit.state.isSubmitting) return;
+    final submitted = await cubit.reportUser(
+      reportedUserId: widget.reportedUserId,
+      reportedName: widget.reportedName,
+      reason: _selected!,
+      description:
+          _selected == ReportReason.other ? _descController.text.trim() : null,
+    );
+    if (!mounted) return;
+    if (submitted) {
+      setState(() => _step = 3);
+      return;
+    }
+    final message =
+        cubit.state.error ?? 'Report could not be submitted. Please retry.';
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: UiText(context.uiCopy(message))));
   }
 
   @override
@@ -120,12 +130,13 @@ class _ReportContentState extends State<_ReportContent> {
                         key: const ValueKey(1),
                         reportedName: widget.reportedName,
                         selected: _selected,
+                        isLoading: state.isSubmitting,
                         onSelect: (r) => setState(() => _selected = r),
                         onNext: () {
                           if (_selected == ReportReason.other) {
                             setState(() => _step = 2);
                           } else {
-                            _onSubmit(context);
+                            _onSubmit();
                           }
                         },
                       )
@@ -135,12 +146,12 @@ class _ReportContentState extends State<_ReportContent> {
                             controller: _descController,
                             isLoading: state.isSubmitting,
                             onBack: () => setState(() => _step = 1),
-                            onSubmit: () => _onSubmit(context),
+                            onSubmit: _onSubmit,
                           )
                         : _Step3(
                             key: const ValueKey(3),
                             reportedName: widget.reportedName,
-                            onDone: () => Navigator.pop(context),
+                            onDone: () => Navigator.pop(context, true),
                           ),
               ),
             ],
@@ -156,6 +167,7 @@ class _Step1 extends StatelessWidget {
   final String reportedName;
   final ReportReason? selected;
   final ValueChanged<ReportReason> onSelect;
+  final bool isLoading;
   final VoidCallback onNext;
 
   const _Step1({
@@ -163,6 +175,7 @@ class _Step1 extends StatelessWidget {
     required this.reportedName,
     required this.selected,
     required this.onSelect,
+    required this.isLoading,
     required this.onNext,
   });
 
@@ -206,26 +219,37 @@ class _Step1 extends StatelessWidget {
 
         // Next / Submit button
         GestureDetector(
-          onTap: selected == null ? null : onNext,
+          onTap: selected == null || isLoading ? null : onNext,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             height: 52,
             width: double.infinity,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              color: selected == null
+              color: selected == null || isLoading
                   ? AppColors.surfaceGlass
                   : AppColors.softCoral,
             ),
             alignment: Alignment.center,
-            child: UiText(
-              selected == ReportReason.other ? 'Next' : 'Submit Report',
-              style: AppTypography.button.copyWith(
-                color: selected == null
-                    ? AppColors.slateMist
-                    : AppColors.pearlWhite,
-              ),
-            ),
+            child: isLoading
+                ? SilarahPulseLoader(
+                    size: 24,
+                    accentColor: AppColors.pearlWhite,
+                    highlightColor: AppColors.pearlWhite,
+                    markColor: AppColors.softCoral,
+                    coreGradientColors: [
+                      AppColors.pearlWhite,
+                      AppColors.pearlWhite,
+                    ],
+                  )
+                : UiText(
+                    selected == ReportReason.other ? 'Next' : 'Submit Report',
+                    style: AppTypography.button.copyWith(
+                      color: selected == null
+                          ? AppColors.slateMist
+                          : AppColors.pearlWhite,
+                    ),
+                  ),
           ),
         ),
 

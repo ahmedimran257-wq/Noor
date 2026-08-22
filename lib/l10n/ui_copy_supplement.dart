@@ -1,6 +1,15 @@
-﻿// GENERATED FILE. Source strings are audited by localization_quality_test.dart.
+// GENERATED FILE. Source strings are audited by localization_quality_test.dart.
 const supplementalUiCopy = <String, Map<String, String>>{
   'ar': {
+    'Continue without Guardian': 'المتابعة بدون ولي',
+    'Could not end this match. Check your connection and retry.':
+        'تعذر إنهاء هذا التطابق. تحقق من اتصالك وحاول مرة أخرى.',
+    'Message as Guardian': 'إرسال رسالة بصفة ولي',
+    'No messages yet': 'لا توجد رسائل بعد',
+    'The interest could not be declined. Please retry.':
+        'تعذر رفض الاهتمام. يرجى المحاولة مرة أخرى.',
+    'The interest could not be withdrawn. Please retry.':
+        'تعذر سحب الاهتمام. يرجى المحاولة مرة أخرى.',
     'LOCATION IN INDIA': 'الموقع في الهند',
     'Verifying city…': 'جارٍ التحقق من المدينة…',
     'Choose a state, then optionally a city. This searches where members live and does not change your own profile.':
@@ -225,6 +234,15 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'now': 'الآن',
   },
   'bn': {
+    'Continue without Guardian': 'অভিভাবক ছাড়াই চালিয়ে যান',
+    'Could not end this match. Check your connection and retry.':
+        'এই ম্যাচটি শেষ করা যায়নি। সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।',
+    'Message as Guardian': 'অভিভাবক হিসেবে বার্তা দিন',
+    'No messages yet': 'এখনও কোনো বার্তা নেই',
+    'The interest could not be declined. Please retry.':
+        'আগ্রহটি প্রত্যাখ্যান করা যায়নি। আবার চেষ্টা করুন।',
+    'The interest could not be withdrawn. Please retry.':
+        'আগ্রহটি প্রত্যাহার করা যায়নি। আবার চেষ্টা করুন।',
     'LOCATION IN INDIA': 'ভারতে অবস্থান',
     'Verifying city…': 'শহর যাচাই করা হচ্ছে…',
     'Choose a state, then optionally a city. This searches where members live and does not change your own profile.':
@@ -451,6 +469,15 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'now': 'এখন',
   },
   'de': {
+    'Continue without Guardian': 'Ohne Guardian fortfahren',
+    'Could not end this match. Check your connection and retry.':
+        'Dieses Match konnte nicht beendet werden. Prüfe deine Verbindung und versuche es erneut.',
+    'Message as Guardian': 'Als Guardian schreiben',
+    'No messages yet': 'Noch keine Nachrichten',
+    'The interest could not be declined. Please retry.':
+        'Das Interesse konnte nicht abgelehnt werden. Bitte erneut versuchen.',
+    'The interest could not be withdrawn. Please retry.':
+        'Das Interesse konnte nicht zurückgezogen werden. Bitte erneut versuchen.',
     'LOCATION IN INDIA': 'WOHNORT IN INDIEN',
     'Verifying city…': 'Stadt wird überprüft…',
     'Choose a state, then optionally a city. This searches where members live and does not change your own profile.':
@@ -685,6 +712,15 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'now': 'Jetzt',
   },
   'fr': {
+    'Continue without Guardian': 'Continuer sans tuteur',
+    'Could not end this match. Check your connection and retry.':
+        'Impossible de mettre fin à cette correspondance. Vérifiez votre connexion et réessayez.',
+    'Message as Guardian': 'Écrire en tant que tuteur',
+    'No messages yet': 'Aucun message pour le moment',
+    'The interest could not be declined. Please retry.':
+        'L’intérêt n’a pas pu être refusé. Veuillez réessayer.',
+    'The interest could not be withdrawn. Please retry.':
+        'L’intérêt n’a pas pu être retiré. Veuillez réessayer.',
     'LOCATION IN INDIA': 'LOCALISATION EN INDE',
     'Verifying city…': 'Vérification de la ville…',
     'Choose a state, then optionally a city. This searches where members live and does not change your own profile.':
@@ -919,6 +955,15 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'now': 'maintenant',
   },
   'hi': {
+    'Continue without Guardian': 'अभिभावक के बिना जारी रखें',
+    'Could not end this match. Check your connection and retry.':
+        'यह मैच समाप्त नहीं हो सका। अपना कनेक्शन जाँचें और फिर प्रयास करें।',
+    'Message as Guardian': 'अभिभावक के रूप में संदेश भेजें',
+    'No messages yet': 'अभी कोई संदेश नहीं है',
+    'The interest could not be declined. Please retry.':
+        'रुचि अस्वीकार नहीं की जा सकी। फिर प्रयास करें।',
+    'The interest could not be withdrawn. Please retry.':
+        'रुचि वापस नहीं ली जा सकी। फिर प्रयास करें।',
     'LOCATION IN INDIA': 'भारत में स्थान',
     'Verifying city…': 'शहर सत्यापित किया जा रहा है…',
     'Choose a state, then optionally a city. This searches where members live and does not change your own profile.':
@@ -1147,6 +1192,15 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'now': 'अब',
   },
   'id': {
+    'Continue without Guardian': 'Lanjutkan tanpa Wali',
+    'Could not end this match. Check your connection and retry.':
+        'Kecocokan ini tidak dapat diakhiri. Periksa koneksi lalu coba lagi.',
+    'Message as Guardian': 'Kirim pesan sebagai Wali',
+    'No messages yet': 'Belum ada pesan',
+    'The interest could not be declined. Please retry.':
+        'Minat tidak dapat ditolak. Silakan coba lagi.',
+    'The interest could not be withdrawn. Please retry.':
+        'Minat tidak dapat ditarik. Silakan coba lagi.',
     'LOCATION IN INDIA': 'LOKASI DI INDIA',
     'Verifying city…': 'Memverifikasi kota…',
     'Choose a state, then optionally a city. This searches where members live and does not change your own profile.':
@@ -1374,6 +1428,15 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'now': 'Sekarang',
   },
   'ms': {
+    'Continue without Guardian': 'Teruskan tanpa Wali',
+    'Could not end this match. Check your connection and retry.':
+        'Padanan ini tidak dapat ditamatkan. Semak sambungan dan cuba lagi.',
+    'Message as Guardian': 'Hantar mesej sebagai Wali',
+    'No messages yet': 'Belum ada mesej',
+    'The interest could not be declined. Please retry.':
+        'Minat tidak dapat ditolak. Sila cuba lagi.',
+    'The interest could not be withdrawn. Please retry.':
+        'Minat tidak dapat ditarik balik. Sila cuba lagi.',
     'LOCATION IN INDIA': 'LOKASI DI INDIA',
     'Verifying city…': 'Mengesahkan bandar…',
     'Choose a state, then optionally a city. This searches where members live and does not change your own profile.':
@@ -1603,6 +1666,15 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'now': 'sekarang',
   },
   'tr': {
+    'Continue without Guardian': 'Vasi olmadan devam et',
+    'Could not end this match. Check your connection and retry.':
+        'Bu eşleşme sonlandırılamadı. Bağlantınızı kontrol edip tekrar deneyin.',
+    'Message as Guardian': 'Vasi olarak mesaj gönder',
+    'No messages yet': 'Henüz mesaj yok',
+    'The interest could not be declined. Please retry.':
+        'İlgi reddedilemedi. Lütfen tekrar deneyin.',
+    'The interest could not be withdrawn. Please retry.':
+        'İlgi geri çekilemedi. Lütfen tekrar deneyin.',
     'LOCATION IN INDIA': 'HİNDİSTAN\'DAKİ KONUM',
     'Verifying city…': 'Şehir doğrulanıyor…',
     'Choose a state, then optionally a city. This searches where members live and does not change your own profile.':
@@ -1830,6 +1902,15 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'now': 'Şimdi',
   },
   'ur': {
+    'Continue without Guardian': 'سرپرست کے بغیر جاری رکھیں',
+    'Could not end this match. Check your connection and retry.':
+        'یہ میچ ختم نہیں ہو سکا۔ اپنا کنکشن چیک کریں اور دوبارہ کوشش کریں۔',
+    'Message as Guardian': 'سرپرست کی حیثیت سے پیغام بھیجیں',
+    'No messages yet': 'ابھی کوئی پیغام نہیں',
+    'The interest could not be declined. Please retry.':
+        'دلچسپی مسترد نہیں کی جا سکی۔ دوبارہ کوشش کریں۔',
+    'The interest could not be withdrawn. Please retry.':
+        'دلچسپی واپس نہیں لی جا سکی۔ دوبارہ کوشش کریں۔',
     'LOCATION IN INDIA': 'بھارت میں مقام',
     'Verifying city…': 'شہر کی تصدیق ہو رہی ہے…',
     'Choose a state, then optionally a city. This searches where members live and does not change your own profile.':

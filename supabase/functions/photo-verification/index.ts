@@ -11,7 +11,7 @@ const BUCKET = "photo-verification-captures";
 const MAX_CAPTURE_BYTES = 2 * 1024 * 1024;
 const URL_TTL_SECONDS = 300;
 
-type Action = "start" | "submit";
+type Action = "start" | "submit" | "abandon";
 // The service-role client intentionally has no generated schema binding in
 // Edge Functions; authorization is enforced by the private RPC boundary.
 // deno-lint-ignore no-explicit-any
@@ -61,7 +61,7 @@ Deno.serve(async (request: Request) => {
       guidance_mode?: "smile_blink_v1" | "manual_accessibility_v1";
     };
     const action = body.action;
-    if (action !== "start" && action !== "submit") {
+    if (action !== "start" && action !== "submit" && action !== "abandon") {
       return response(400, { error: "Unsupported verification action." });
     }
 
@@ -94,6 +94,9 @@ Deno.serve(async (request: Request) => {
         body.guidance_mode ?? "smile_blink_v1",
       );
     }
+    if (action === "abandon") {
+      return await abandonSubmission(admin, userId, body.submission_id);
+    }
     return await submitForReview(admin, userId, body.submission_id);
   } catch (error) {
     console.error(`[photo-verification] ${correlationId}`, error);
@@ -109,6 +112,18 @@ async function startSubmission(
   userId: string,
   guidanceMode: "smile_blink_v1" | "manual_accessibility_v1",
 ): Promise<Response> {
+  // Starting again always supersedes an unfinished upload. This makes the
+  // flow recoverable after a process death, background interruption or lost
+  // connection instead of imposing a timer lock on the member.
+  const { data: abandoned, error: abandonError } = await admin.rpc(
+    "abandon_photo_verification_upload",
+    { p_user_id: userId, p_submission_id: null },
+  );
+  if (abandonError) {
+    throw new Error(`submission_cleanup_failed:${abandonError.message}`);
+  }
+  await removeCapturePaths(admin, abandoned);
+
   const paths = {
     neutral: `${userId}/${crypto.randomUUID()}.jpg`,
     smile: `${userId}/${crypto.randomUUID()}.jpg`,
@@ -160,6 +175,35 @@ async function startSubmission(
     uploads,
     expires_in: URL_TTL_SECONDS,
   });
+}
+
+async function abandonSubmission(
+  admin: AdminClient,
+  userId: string,
+  submissionId: string | undefined,
+): Promise<Response> {
+  if (!submissionId || !isUuid(submissionId)) {
+    return response(400, { error: "A valid submission is required." });
+  }
+  const { data: paths, error } = await admin.rpc(
+    "abandon_photo_verification_upload",
+    { p_user_id: userId, p_submission_id: submissionId },
+  );
+  if (error) throw new Error(`submission_abandon_failed:${error.message}`);
+  await removeCapturePaths(admin, paths);
+  return response(200, { status: "abandoned" });
+}
+
+async function removeCapturePaths(
+  admin: AdminClient,
+  value: unknown,
+): Promise<void> {
+  const paths = Array.isArray(value)
+    ? value.filter((path): path is string => typeof path === "string")
+    : [];
+  if (paths.length === 0) return;
+  const { error } = await admin.storage.from(BUCKET).remove(paths);
+  if (error) console.warn("photo_verification_capture_cleanup_failed", error);
 }
 
 async function submitForReview(

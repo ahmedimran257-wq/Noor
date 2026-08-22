@@ -30,6 +30,7 @@ import 'core/services/bookmark_service.dart';
 import 'core/services/filter_preset_service.dart';
 import 'core/services/legal_consent_service.dart';
 import 'core/services/auth_callback_service.dart';
+import 'core/services/referral_service.dart';
 import 'core/cubits/auth/auth_cubit.dart';
 import 'core/cubits/auth/auth_state.dart';
 import 'core/cubits/onboarding/onboarding_cubit.dart';
@@ -37,6 +38,7 @@ import 'core/cubits/interests/interests_cubit.dart';
 import 'core/cubits/discovery/discovery_feed_cubit.dart';
 import 'core/cubits/chat/chat_cubit.dart';
 import 'core/cubits/subscription/subscription_cubit.dart';
+import 'core/cubits/subscription/subscription_state.dart';
 import 'core/cubits/notification_prefs/notification_prefs_cubit.dart';
 import 'core/cubits/block_report/block_report_cubit.dart';
 import 'core/cubits/notifications/notifications_cubit.dart';
@@ -403,6 +405,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
   late final Future<void> _revenueCatReady;
   StreamSubscription<bool>? _connectivitySubscription;
   StreamSubscription<NotificationItem>? _notificationRefreshSubscription;
+  StreamSubscription<SubscriptionState>? _entitlementRefreshSubscription;
   ConnectivityService? _connectivityService;
   _StartupNetworkState _startupNetworkState = _StartupNetworkState.checking;
   BackendConnectionQuality _startupConnectionQuality =
@@ -434,6 +437,17 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
     _localeCubit = LocaleCubit();
     _themeCubit = ThemeCubit(initialMode: widget.initialTheme);
     _accountStandingCubit = AccountStandingCubit();
+
+    var entitlementFingerprint =
+        _entitlementFingerprint(_subscriptionCubit.state);
+    _entitlementRefreshSubscription = _subscriptionCubit.stream.listen((next) {
+      final nextFingerprint = _entitlementFingerprint(next);
+      if (nextFingerprint == entitlementFingerprint) return;
+      entitlementFingerprint = nextFingerprint;
+      if (_activeSessionUserId != null) {
+        unawaited(_reconcileEntitlementDependents());
+      }
+    });
 
     _notificationRefreshSubscription =
         _notificationsCubit.inAppNotifications.listen((item) {
@@ -665,15 +679,35 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
     await _discoveryFeedCubit.refreshAfterViewerPublication();
   }
 
-  void _clearUserScopedState({String? departingUserId}) {
+  String _entitlementFingerprint(SubscriptionState value) =>
+      '${value.status.name}|${value.source.name}|'
+      '${value.expiresAt?.toUtc().millisecondsSinceEpoch ?? 0}';
+
+  Future<void> _reconcileEntitlementDependents() async {
+    await Future.wait<void>([
+      _interestsCubit.refreshQuota(),
+      _discoveryFeedCubit.refreshForEntitlementChange(),
+      _chatCubit.refreshForEntitlementChange(),
+    ]);
+  }
+
+  void _clearUserScopedState({
+    String? departingUserId,
+    bool logoutStoreIdentity = false,
+  }) {
     BookmarkService.clearCache();
+    ReferralService.instance.clearCache();
     _chatCubit.clear();
     _notificationsCubit.clear();
     _notificationPrefsCubit.clear();
     _discoveryFeedCubit.clear();
     _interestsCubit.clear();
     _blockReportCubit.clear();
-    _subscriptionCubit.clear();
+    if (logoutStoreIdentity) {
+      unawaited(_subscriptionCubit.logoutUser());
+    } else {
+      _subscriptionCubit.clear();
+    }
     unawaited(_accountStandingCubit.stop());
     unawaited(OnboardingCubit.clearSensitiveDeviceState(
       userId: departingUserId,
@@ -696,6 +730,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_connectivitySubscription?.cancel());
     unawaited(_notificationRefreshSubscription?.cancel());
+    unawaited(_entitlementRefreshSubscription?.cancel());
     PresenceService.instance.stop();
     // Dispose Cubits
     _authCubit.close();
@@ -752,7 +787,10 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
                 _activeSessionUserId = null;
                 _onboardingPublicationSyncedUserId = null;
                 PresenceService.instance.stop();
-                _clearUserScopedState(departingUserId: departingUserId);
+                _clearUserScopedState(
+                  departingUserId: departingUserId,
+                  logoutStoreIdentity: true,
+                );
               }
               if (state is AuthAuthenticated &&
                   _activeSessionUserId != null &&
@@ -803,11 +841,6 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
                     unawaited(_synchronizePublishedProfile(state.userId));
                   }
                 }
-                _interestsCubit.setDailyLimitForGender(
-                  gender: state.gender ?? 'male',
-                  isSubscribed:
-                      context.read<SubscriptionCubit>().state.isSubscribed,
-                );
               }
             },
             child: BlocBuilder<LocaleCubit, Locale>(

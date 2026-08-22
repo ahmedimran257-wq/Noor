@@ -1207,6 +1207,9 @@ class _PrivacySectionState extends State<_PrivacySection> {
   bool _exportingData = false;
   // Animated save checkmark
   final Map<String, bool> _savedIndicators = {};
+  Future<void> _photoPrivacyMutationQueue = Future<void>.value();
+  String _confirmedPhotoVisibility = 'Everyone';
+  int _photoPrivacyRevision = 0;
 
   @override
   void initState() {
@@ -1238,7 +1241,30 @@ class _PrivacySectionState extends State<_PrivacySection> {
     if (!mounted) return;
     setState(() {
       _photoVisibility = photoVisibility;
+      _confirmedPhotoVisibility = photoVisibility;
       _profilePaused = profilePaused;
+    });
+  }
+
+  void _selectPhotoVisibility(String value) {
+    if (_photoVisibility == value) return;
+    final revision = ++_photoPrivacyRevision;
+    setState(() {
+      _photoVisibility = value;
+      _savedIndicators[_kPhotoVisibility] = false;
+    });
+    _photoPrivacyMutationQueue = _photoPrivacyMutationQueue.then((_) async {
+      final backendError = await _persistBackend(_kPhotoVisibility, value);
+      if (backendError == null) _confirmedPhotoVisibility = value;
+      if (!mounted || revision != _photoPrivacyRevision) return;
+      if (backendError != null) {
+        setState(() => _photoVisibility = _confirmedPhotoVisibility);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: UiText(backendError)),
+        );
+        return;
+      }
+      setState(() => _savedIndicators[_kPhotoVisibility] = true);
     });
   }
 
@@ -1511,37 +1537,17 @@ class _PrivacySectionState extends State<_PrivacySection> {
           _RadioRow(
             label: _photoPrivacyLabel(l10n, 'Everyone'),
             selected: _photoVisibility == 'Everyone',
-            onTap: () {
-              final previous = _photoVisibility;
-              setState(() => _photoVisibility = 'Everyone');
-              _persist(_kPhotoVisibility, 'Everyone', previousValue: previous);
-            },
+            onTap: () => _selectPhotoVisibility('Everyone'),
           ),
           _RadioRow(
             label: _photoPrivacyLabel(l10n, 'Accepted interests only'),
             selected: _photoVisibility == 'Accepted interests only',
-            onTap: () {
-              final previous = _photoVisibility;
-              setState(() => _photoVisibility = 'Accepted interests only');
-              _persist(
-                _kPhotoVisibility,
-                'Accepted interests only',
-                previousValue: previous,
-              );
-            },
+            onTap: () => _selectPhotoVisibility('Accepted interests only'),
           ),
           _RadioRow(
             label: _photoPrivacyLabel(l10n, 'Request to view'),
             selected: _photoVisibility == 'Request to view',
-            onTap: () {
-              final previous = _photoVisibility;
-              setState(() => _photoVisibility = 'Request to view');
-              _persist(
-                _kPhotoVisibility,
-                'Request to view',
-                previousValue: previous,
-              );
-            },
+            onTap: () => _selectPhotoVisibility('Request to view'),
           ),
           Divider(color: AppColors.cardBorder, height: 24),
           Semantics(

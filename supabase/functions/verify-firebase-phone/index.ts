@@ -113,7 +113,9 @@ Deno.serve(async (request) => {
   if (request.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
-  if (request.method !== "POST") return response(405, { error: "method_not_allowed" });
+  if (request.method !== "POST") {
+    return response(405, { error: "method_not_allowed" });
+  }
 
   const authorization = request.headers.get("authorization");
   if (!authorization?.toLowerCase().startsWith("bearer ")) {
@@ -138,7 +140,8 @@ Deno.serve(async (request) => {
   const firebaseIdToken = String(body.firebase_id_token ?? "").trim();
   const purpose = body.purpose === "guardian" ? "guardian" : "premium";
   const countryCode = String(body.country_code ?? "").trim().toUpperCase();
-  const invitationCode = String(body.invitation_code ?? "").trim().toUpperCase();
+  const invitationCode = String(body.invitation_code ?? "").trim()
+    .toUpperCase();
   if (!firebaseIdToken || countryCode !== "IN") {
     return response(400, { error: "invalid_request" });
   }
@@ -155,18 +158,26 @@ Deno.serve(async (request) => {
   }
 
   if (purpose === "premium") {
-    const { error } = await userClient.rpc("assert_my_phone_verification_intent", {
-      p_country_code: countryCode,
-    });
+    const { error } = await userClient.rpc(
+      "assert_my_phone_verification_intent",
+      {
+        p_country_code: countryCode,
+      },
+    );
     if (error) {
       return response(403, { error: "phone_verification_intent_required" });
     }
   } else {
-    const { error } = await userClient.rpc("assert_guardian_invitation_phone", {
-      p_code: invitationCode,
-      p_phone: phone,
-    });
-    if (error) return response(403, { error: "guardian_invitation_unavailable" });
+    const { data: allowed, error } = await userClient.rpc(
+      "check_guardian_invitation_phone",
+      {
+        p_code: invitationCode,
+        p_phone: phone,
+      },
+    );
+    if (error || allowed !== true) {
+      return response(403, { error: "guardian_invitation_unavailable" });
+    }
   }
 
   const service = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -188,20 +199,23 @@ Deno.serve(async (request) => {
       });
     }
   } else {
-    const { data: updatedUser, error: updateError } = await service
-      .from("users")
-      .update({
-        phone,
-        phone_country_code: countryCode,
-        phone_verified_at: new Date().toISOString(),
-      })
-      .eq("id", authData.user.id)
-      .select("id")
-      .maybeSingle();
-    if (updateError || !updatedUser) {
-      const duplicate = updateError?.code === "23505";
-      return response(duplicate ? 409 : 500, {
-        error: duplicate ? "phone_already_in_use" : "phone_save_failed",
+    const { error: activationError } = await service.rpc(
+      "complete_guardian_phone_and_accept",
+      {
+        p_guardian_id: authData.user.id,
+        p_code: invitationCode,
+        p_phone: phone,
+      },
+    );
+    if (activationError) {
+      const duplicate = activationError.code === "23505";
+      const unavailable = activationError.message.includes("invitation");
+      return response(duplicate ? 409 : unavailable ? 403 : 500, {
+        error: duplicate
+          ? "phone_already_in_use"
+          : unavailable
+          ? "guardian_invitation_unavailable"
+          : "phone_save_failed",
       });
     }
   }

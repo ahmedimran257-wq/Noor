@@ -99,7 +99,9 @@ void main() {
     expect(phoneService, contains('getIdToken(true)'));
     expect(phoneService, contains("'verify-firebase-phone'"));
     expect(phoneService, contains("'p_country_code': country.iso2"));
-    expect(verifier, contains('phone_verified_at: new Date().toISOString()'));
+    expect(verifier, contains('"complete_paid_phone_verification"'));
+    expect(verifier, contains('p_phone: phone'));
+    expect(verifier, isNot(contains('.from("users")')));
     expect(verifier, isNot(contains('subscription_status')));
     expect(verifier, isNot(contains('subscription_expires_at')));
   });

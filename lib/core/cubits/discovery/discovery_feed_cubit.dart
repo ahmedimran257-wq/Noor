@@ -36,7 +36,10 @@ class _ProfileViewQuota {
 class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   DiscoveryFeedCubit() : super(const DiscoveryFeedState());
 
-  static const _batchSize = 8;
+  // Each page otherwise repeats the database ranking and three bounded
+  // enrichment calls. Twenty cards materially lowers requests per viewed
+  // profile while staying below every batch RPC's 50-ID safety cap.
+  static const _batchSize = 20;
   static const _kFilterKey = 'discovery_active_filter';
 
   double? _backendCursorScore;
@@ -48,6 +51,8 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   String? _loadedRevisionToken;
   String? _pendingRevisionToken;
   DateTime? _lastRevisionCheckAt;
+  String? _lastInventoryFingerprint;
+  DateTime? _lastInventorySyncAt;
   static const _viewerReadinessFreshness = Duration(minutes: 10);
   static const _revisionCheckFreshness = Duration(seconds: 90);
 
@@ -187,8 +192,28 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
     _loadedRevisionToken = null;
     _pendingRevisionToken = null;
     _lastRevisionCheckAt = null;
+    _lastInventoryFingerprint = null;
+    _lastInventorySyncAt = null;
 
     if (isClosed || state.status == FeedStatus.initial) return;
+    await loadInitial(force: true);
+  }
+
+  /// Reconciles quota, persisted Premium filters, and page inventory after the
+  /// effective entitlement changes. Subscription state is deliberately not
+  /// part of the shared discovery revision token, so a revision-only refresh
+  /// would retain the old free/Premium page until another catalog mutation.
+  Future<void> refreshForEntitlementChange() async {
+    _loadedRevisionToken = null;
+    _pendingRevisionToken = null;
+    _lastRevisionCheckAt = null;
+
+    if (isClosed || state.status == FeedStatus.initial) return;
+    if (state.status == FeedStatus.loading ||
+        state.status == FeedStatus.refreshing ||
+        state.status == FeedStatus.loadingMore) {
+      return;
+    }
     await loadInitial(force: true);
   }
 
@@ -429,7 +454,14 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   Future<DiscoveryFilter> _enforceLocationFilterAccess(
     DiscoveryFilter filter,
   ) async {
-    if (filter.locationScope == 'global') return filter;
+    final hasPremiumFilter = filter.locationScope != 'global' ||
+        filter.trustFilter != null ||
+        filter.stateName != null ||
+        filter.cityId != null ||
+        filter.motherTongue != null ||
+        filter.community != null ||
+        filter.livingExpectation != null;
+    if (!hasPremiumFilter) return filter;
     if (!SupabaseService.isInitialized) {
       throw StateError('Location filters require a Supabase connection.');
     }
@@ -450,6 +482,12 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       clearBrowseCountries: true,
       clearDistanceLabel: true,
       clearMaxDistance: true,
+      clearTrustFilter: true,
+      clearState: true,
+      clearCity: true,
+      clearMotherTongue: true,
+      clearCommunity: true,
+      clearLivingExpectation: true,
     );
   }
 
@@ -629,7 +667,10 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       if (f.trustFilter != null) 'trust_filter': f.trustFilter,
       if (familyType != null) 'family_type': familyType,
       if (maritalStatus != null) 'marital_status': maritalStatus,
-      'open_to_divorced': f.openToDivorced,
+      // Marital status is an explicit filter below. A broad Discovery query
+      // must remain inclusive; the member's partner preference influences
+      // ranking and compatibility rather than silently removing every
+      // divorced/widowed profile from inventory.
       if (_educationRank(f.educationMin) != null)
         'education_min': _educationRank(f.educationMin),
       if (f.motherTongue != null && f.motherTongue != 'Any')
@@ -655,6 +696,17 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         SupabaseService.currentUserId == null) {
       return;
     }
+    final fingerprint = jsonEncode({
+      'user': SupabaseService.currentUserId,
+      'has_profiles': hasProfiles,
+      'filters': _mapFilterToJson(filter),
+    });
+    final lastSync = _lastInventorySyncAt;
+    if (_lastInventoryFingerprint == fingerprint &&
+        lastSync != null &&
+        DateTime.now().difference(lastSync) < const Duration(minutes: 5)) {
+      return;
+    }
     try {
       await SupabaseService.client.rpc(
         'record_discovery_inventory',
@@ -663,6 +715,8 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
           'p_has_profiles': hasProfiles,
         },
       );
+      _lastInventoryFingerprint = fingerprint;
+      _lastInventorySyncAt = DateTime.now();
     } catch (error) {
       // Notification state is an optimization and must never delay or replace
       // a successfully loaded Discovery feed.
@@ -728,13 +782,8 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       // or overwrite a newer filter/load request.
       if (!_isCurrentRequest(requestVersion)) return const [];
       _updateBackendCursor(rows);
-      final publicPhotoOwners = rows
-          .where((row) {
-            final privacy = row['photo_privacy']?.toString();
-            return ((row['photo_count'] as num?)?.toInt() ?? 0) > 0 &&
-                privacy != 'mutual_only' &&
-                privacy != 'request_only';
-          })
+      final photoOwners = rows
+          .where((row) => ((row['photo_count'] as num?)?.toInt() ?? 0) > 0)
           .map((row) => row['user_id']?.toString())
           .whereType<String>()
           .where((id) => id.isNotEmpty)
@@ -750,9 +799,9 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       // from cold Discovery without increasing request count or egress.
       final enrichment = await Future.wait<dynamic>([
         _attachPriorMatchContext(rows),
-        publicPhotoOwners.isEmpty
+        photoOwners.isEmpty
             ? Future<Map<String, String>>.value(const {})
-            : _loadPublicPhotoUrls(publicPhotoOwners),
+            : _loadPublicPhotoUrls(photoOwners),
         candidateIds.isEmpty
             ? Future<Map<String, Map<String, bool>>>.value(const {})
             : _loadTrustSummaries(candidateIds),
@@ -894,10 +943,19 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         .toList(growable: false);
     if (candidateIds.isEmpty) return;
 
-    final response = await SupabaseService.client.rpc(
-      'get_prior_match_context',
-      params: {'p_candidate_user_ids': candidateIds},
-    );
+    dynamic response;
+    try {
+      response = await SupabaseService.client.rpc(
+        'get_prior_match_context',
+        params: {'p_candidate_user_ids': candidateIds},
+      );
+    } catch (error) {
+      // Relationship context is optional enrichment. The primary feed RPC has
+      // already enforced safety visibility, so a transient context failure
+      // must not replace valid profiles with a full-screen error.
+      debugPrint('DiscoveryFeedCubit: card context unavailable: $error');
+      return;
+    }
     final contextByUser = <String, Map<String, dynamic>>{
       for (final raw in response as List<dynamic>)
         if ((raw as Map)['candidate_user_id'] != null)
@@ -964,6 +1022,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
             previousMatchEndedAt: endedAt,
             priorMatchCount: (prior['prior_match_count'] as num?)?.toInt() ?? 0,
             rematchAvailableAt: availableAt,
+            relationshipState: prior['relationship_state']?.toString(),
             clearPreviousMatchAt: previousAt == null,
             clearPreviousMatchEndedAt: endedAt == null,
             clearRematchAvailableAt: availableAt == null,

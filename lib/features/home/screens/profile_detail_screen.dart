@@ -418,11 +418,14 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                   lastInitial: widget.profile.lastNameInitial,
                 );
           },
-          onReport: () => ReportBottomSheet.show(
-            context,
-            reportedUserId: widget.profile.id,
-            reportedName: widget.profile.firstName,
-          ),
+          onReport: () async {
+            final reported = await ReportBottomSheet.show(
+              context,
+              reportedUserId: widget.profile.id,
+              reportedName: widget.profile.firstName,
+            );
+            if (reported && mounted) Navigator.of(context).pop();
+          },
         ),
       ),
     );
@@ -2268,7 +2271,7 @@ class _ReportBlockSheet extends StatelessWidget {
 
   final DiscoveryProfile profile;
   final Future<bool> Function() onBlock;
-  final VoidCallback onReport;
+  final Future<void> Function() onReport;
 
   @override
   Widget build(BuildContext context) {
@@ -2305,7 +2308,7 @@ class _ReportBlockSheet extends StatelessWidget {
             onTap: () {
               Navigator.pop(context);
               // Small delay so first sheet fully closes before second opens
-              Future.microtask(onReport);
+              unawaited(Future<void>.microtask(onReport));
             },
           ),
           const SizedBox(height: AppDimensions.space4),

@@ -98,7 +98,23 @@ Deno.serve(async (req: Request) => {
     case "INITIAL_PURCHASE":
     case "RENEWAL":
     case "PRODUCT_CHANGE":
+    case "UNCANCELLATION":
+    case "SUBSCRIPTION_PAUSED":
+    case "SUBSCRIPTION_EXTENDED":
+    case "REFUND_REVERSED":
+      newStatus = "active";
+      newExpiresAt = expiresAt;
+      break;
     case "CANCELLATION":
+      // RevenueCat sends BILLING_ISSUE and a BILLING_ERROR cancellation
+      // together. The billing issue carries the authoritative grace expiry;
+      // allowing the cancellation to overwrite it can revoke access early.
+      if (event.cancel_reason === "BILLING_ERROR") {
+        console.log(
+          `[revenuecat-webhook] Billing-error cancellation deferred to BILLING_ISSUE for ${supabaseUserId}`,
+        );
+        return new Response("OK", { status: 200 });
+      }
       newStatus = "active";
       newExpiresAt = expiresAt;
       break;
@@ -119,6 +135,12 @@ Deno.serve(async (req: Request) => {
     default:
       console.log(`[revenuecat-webhook] Unhandled event type: ${event.type}`);
       return new Response("OK", { status: 200 });
+  }
+
+  if (newStatus !== "none" && !newExpiresAt) {
+    return new Response("Bad Request: missing authoritative expiry", {
+      status: 400,
+    });
   }
 
   // Race fix: this RPC locks users.id, compares event_timestamp_ms, writes the

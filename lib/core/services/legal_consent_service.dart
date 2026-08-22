@@ -83,7 +83,7 @@ class LegalConsentService {
     if (transactionId == null) return false;
 
     try {
-      await SupabaseService.client.rpc<void>(
+      await SupabaseService.client.rpc(
         'finalize_signup_consents',
         params: {'p_transaction_id': transactionId},
       );
@@ -97,6 +97,30 @@ class LegalConsentService {
 
   Future<bool> requireAndFlushPendingOnboardingConsents() {
     return flushPendingOnboardingConsents();
+  }
+
+  Future<bool> finalizeSignupAndProvision() async {
+    if (!SupabaseService.isInitialized ||
+        SupabaseService.currentUserId == null) {
+      return false;
+    }
+    final transactionId = await _validTransactionId();
+    if (transactionId == null) return false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await SupabaseService.client.rpc<void>(
+        'finalize_signup_and_provision_my_user',
+        params: {
+          'p_transaction_id': transactionId,
+          'p_country_code': prefs.getString('user_country_code'),
+        },
+      );
+      await clearPendingTransaction();
+      return true;
+    } catch (e) {
+      debugPrint('LegalConsentService: atomic signup finalization failed: $e');
+      return false;
+    }
   }
 
   Future<void> clearPendingTransaction() async {

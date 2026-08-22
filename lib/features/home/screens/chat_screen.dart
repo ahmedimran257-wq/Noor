@@ -346,14 +346,14 @@ class _ChatScreenState extends State<ChatScreen>
           final chatCubit = context.read<ChatCubit>();
           final interestsCubit = context.read<InterestsCubit>();
           final discoveryCubit = context.read<DiscoveryFeedCubit>();
-          Navigator.pop(context);
           final closed =
               await chatCubit.closeMatch(widget.conversationId, message);
-          if (!mounted || !closed) return;
+          if (!mounted || !closed) return false;
           interestsCubit.markMatchClosed(widget.conversationId);
           await discoveryCubit.refreshIfChanged(forceCheck: true);
-          if (!mounted) return;
+          if (!mounted) return false;
           _scrollToBottom(animated: true);
+          return true;
         },
       ),
     );
@@ -530,6 +530,16 @@ class _ChatScreenState extends State<ChatScreen>
             backgroundColor: AppColors.obsidianNight,
             body:
                 const Center(child: SilarahPulseLoader(label: 'Opening chat')),
+          );
+        }
+
+        if (conv.contentLocked) {
+          return _ChatAccessGate(
+            decision: const ChatAccessDecision(
+              ChatAccessReason.subscriptionRequired,
+            ),
+            onRetry: _authorizeAndOpen,
+            onViewPlans: () => PaywallGateSheet.show(context),
           );
         }
 
@@ -780,7 +790,7 @@ class _SuspendedInputBar extends StatelessWidget {
 // End Match Bottom Sheet
 class _EndMatchSheet extends StatefulWidget {
   const _EndMatchSheet({required this.onConfirm});
-  final ValueChanged<String> onConfirm;
+  final Future<bool> Function(String) onConfirm;
 
   @override
   State<_EndMatchSheet> createState() => _EndMatchSheetState();
@@ -869,9 +879,23 @@ class _EndMatchSheetState extends State<_EndMatchSheet> {
             height: AppDimensions.buttonHeight,
             child: ElevatedButton(
               onPressed: _selected != null && !_submitting
-                  ? () {
+                  ? () async {
                       setState(() => _submitting = true);
-                      widget.onConfirm(_kClosureMessages[_selected!]);
+                      final closed =
+                          await widget.onConfirm(_kClosureMessages[_selected!]);
+                      if (!context.mounted) return;
+                      if (closed) {
+                        Navigator.pop(context);
+                        return;
+                      }
+                      setState(() => _submitting = false);
+                      ScaffoldMessenger.of(context)
+                        ..clearSnackBars()
+                        ..showSnackBar(SnackBar(
+                          content: UiText(context.uiCopy(
+                            'Could not end this match. Check your connection and retry.',
+                          )),
+                        ));
                     }
                   : null,
               style: ElevatedButton.styleFrom(
@@ -1076,6 +1100,11 @@ class _ChatAccessGate extends StatelessWidget {
           'Messaging temporarily restricted',
           'This account cannot send messages right now. Review your account status for details.',
           Icons.shield_outlined,
+        ),
+      ChatAccessReason.guardianApprovalRequired => (
+          'Waiting for Guardian approval',
+          'An active Guardian must approve this match before messaging opens. Your match remains safely saved.',
+          Icons.family_restroom_rounded,
         ),
       ChatAccessReason.closed => (
           'Conversation ended',

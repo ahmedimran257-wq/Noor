@@ -40,10 +40,10 @@ void main() {
 
     test('feed signs every public profile that reports approved photos', () {
       final signing = discoveryCubit.substring(
-        discoveryCubit.indexOf('final publicPhotoOwners = rows'),
+        discoveryCubit.indexOf('final photoOwners = rows'),
       );
       expect(signing, contains("row['photo_count']"));
-      expect(signing, contains("privacy != 'mutual_only'"));
+      expect(signing, contains('_loadPublicPhotoUrls(photoOwners)'));
       expect(signing, contains('Future.wait<dynamic>'));
       expect(signing, contains("row.remove('photo_url')"));
       expect(photoService, contains('return result;'));

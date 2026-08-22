@@ -18,6 +18,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/cubits/auth/auth_state.dart';
+import '../../../core/cubits/block_report/block_report_cubit.dart';
 import '../../../core/cubits/discovery/discovery_feed_cubit.dart';
 import '../../../core/cubits/discovery/discovery_feed_state.dart';
 import '../../../core/cubits/interests/interests_cubit.dart';
@@ -131,11 +132,14 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
     _currentPage = page;
     // Trigger pagination when 2 cards from the end
     final feedState = context.read<DiscoveryFeedCubit>().state;
-    final profiles = feedState.profiles;
+    final hidden = context.read<BlockReportCubit>().state.hiddenProfileIds;
+    final profiles = feedState.profiles
+        .where((entry) => !hidden.contains(entry.profile.id))
+        .toList(growable: false);
     if (page >= 0 && page < profiles.length) {
       _recordVisibleProfileView(profiles[page].profile.id);
     }
-    final total = feedState.profiles.length;
+    final total = profiles.length;
     if (page >= total - 2 && feedState.status == FeedStatus.loaded) {
       context.read<DiscoveryFeedCubit>().loadMore();
     }
@@ -262,6 +266,9 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
     final canMessage = context.select<SubscriptionCubit, bool>(
       (cubit) => cubit.state.canMessage(gender),
     );
+    final hiddenProfileIds = context.select<BlockReportCubit, Set<String>>(
+      (cubit) => cubit.state.hiddenProfileIds,
+    );
     return BlocConsumer<DiscoveryFeedCubit, DiscoveryFeedState>(
       listenWhen: (previous, current) =>
           previous.activeFilter != current.activeFilter ||
@@ -328,7 +335,12 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
               // Card carousel
               SliverFillRemaining(
                 hasScrollBody: true,
-                child: _buildCarousel(feedState, interests, canMessage),
+                child: _buildCarousel(
+                  feedState,
+                  interests,
+                  canMessage,
+                  hiddenProfileIds,
+                ),
               ),
             ],
           ),
@@ -341,6 +353,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
     DiscoveryFeedState feedState,
     InterestsState interests,
     bool canMessage,
+    Set<String> hiddenProfileIds,
   ) {
     // Full-screen skeleton on initial load
     if (feedState.status == FeedStatus.initial ||
@@ -376,7 +389,17 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
       );
     }
 
-    final profiles = feedState.profiles;
+    final profiles = feedState.profiles
+        .where((entry) => !hiddenProfileIds.contains(entry.profile.id))
+        .toList(growable: false);
+    if (profiles.isEmpty) {
+      return _EmptyFeed(
+        hasActiveFilters: feedState.activeFilter.isActive,
+        onRefresh: () =>
+            context.read<DiscoveryFeedCubit>().loadInitial(force: true),
+        onClearFilters: () => context.read<DiscoveryFeedCubit>().clearFilters(),
+      );
+    }
     final isLoadingMore = feedState.status == FeedStatus.loadingMore;
 
     final itemCount = profiles.length + (isLoadingMore ? 1 : 0);
@@ -508,7 +531,25 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
     if (_interestWritesInFlight.contains(profile.profile.id)) {
       return const _DiscoveryProfileAction(label: 'Sending...');
     }
-    final interaction = interests.interactionWith(profile.profile.id);
+    var interaction = interests.interactionWith(profile.profile.id);
+    final hasLocalRelationshipRecord = interests.matches.any(
+          (entry) => entry.profile.id == profile.profile.id,
+        ) ||
+        interests.received.any(
+          (entry) => entry.profile.id == profile.profile.id,
+        ) ||
+        interests.sent.any(
+          (entry) => entry.profile.id == profile.profile.id,
+        );
+    if (interaction == ProfileInteractionState.none &&
+        !hasLocalRelationshipRecord) {
+      interaction = switch (profile.profile.relationshipState) {
+        'pending_sent' => ProfileInteractionState.pendingSent,
+        'pending_received' => ProfileInteractionState.pendingReceived,
+        'matched' => ProfileInteractionState.matched,
+        _ => ProfileInteractionState.none,
+      };
+    }
     switch (interaction) {
       case ProfileInteractionState.pendingSent:
         return const _DiscoveryProfileAction(label: 'Interest Sent');

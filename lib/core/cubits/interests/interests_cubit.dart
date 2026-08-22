@@ -446,8 +446,8 @@ class InterestsCubit extends Cubit<InterestsState> {
   }
 
   /// Decline an incoming interest.
-  void declineInterest(String id) async {
-    if (!SupabaseService.isInitialized) return;
+  Future<bool> declineInterest(String id) async {
+    if (!SupabaseService.isInitialized) return false;
 
     if (SupabaseService.isInitialized) {
       try {
@@ -457,16 +457,17 @@ class InterestsCubit extends Cubit<InterestsState> {
         });
       } catch (e) {
         debugPrint('[InterestsCubit] Error declining interest: $e');
-        return;
+        return false;
       }
     }
 
     final updated = List<InterestEntry>.from(state.received);
     final idx = updated.indexWhere((e) => e.id == id);
-    if (idx == -1) return;
+    if (idx == -1) return false;
 
     updated[idx] = updated[idx].copyWith(status: InterestStatus.declined);
     emit(state.copyWith(received: updated));
+    return true;
   }
 
   // Sent actions
@@ -580,8 +581,8 @@ class InterestsCubit extends Cubit<InterestsState> {
   }
 
   /// Withdraw a pending sent interest (silent — no notification to recipient).
-  void withdrawInterest(String id) async {
-    if (!SupabaseService.isInitialized) return;
+  Future<bool> withdrawInterest(String id) async {
+    if (!SupabaseService.isInitialized) return false;
 
     if (SupabaseService.isInitialized) {
       try {
@@ -589,16 +590,17 @@ class InterestsCubit extends Cubit<InterestsState> {
             .rpc('withdraw_interest', params: {'p_interest_id': id});
       } catch (e) {
         debugPrint('[InterestsCubit] Error withdrawing interest: $e');
-        return;
+        return false;
       }
     }
 
     final updated = List<InterestEntry>.from(state.sent);
     final idx = updated.indexWhere((e) => e.id == id);
-    if (idx == -1) return;
+    if (idx == -1) return false;
 
     updated[idx] = updated[idx].copyWith(status: InterestStatus.withdrawn);
     emit(state.copyWith(sent: updated));
+    return true;
   }
 
   // Helpers

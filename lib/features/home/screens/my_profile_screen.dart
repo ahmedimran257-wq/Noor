@@ -116,6 +116,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   PhotoVerificationStatus _photoVerificationStatus =
       const PhotoVerificationStatus.notStarted();
   bool _phoneVerified = false;
+  bool _phoneTrustBadgeActive = false;
   bool _establishedMember = false;
   String? _accountEmail;
   String? _primaryPhotoUrl;
@@ -486,6 +487,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
         _photoVerificationStatus = photo;
         _hasVerificationBadge = photo.isApproved;
         _phoneVerified = phone.isVerified;
+        _phoneTrustBadgeActive = phone.isTrustBadgeActive;
         _accountEmail = authUser?.email;
         _emailVerified = authUser?.emailConfirmedAt != null;
         _establishedMember = accountCreatedAt != null &&
@@ -723,6 +725,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                 loading: _trustStateLoading,
                 photoStatus: _photoVerificationStatus,
                 phoneVerified: _phoneVerified,
+                phoneTrustBadgeActive: _phoneTrustBadgeActive,
                 premiumActive: subscription.hasPaidPremium,
                 guardianConnected: _guardianEnabled,
                 guardianManaged: guardianManaged,
@@ -1250,6 +1253,7 @@ class _TrustCenterCard extends StatelessWidget {
     required this.loading,
     required this.photoStatus,
     required this.phoneVerified,
+    required this.phoneTrustBadgeActive,
     required this.premiumActive,
     required this.guardianConnected,
     required this.guardianManaged,
@@ -1264,6 +1268,7 @@ class _TrustCenterCard extends StatelessWidget {
   final bool loading;
   final PhotoVerificationStatus photoStatus;
   final bool phoneVerified;
+  final bool phoneTrustBadgeActive;
   final bool premiumActive;
   final bool guardianConnected;
   final bool guardianManaged;
@@ -1363,16 +1368,18 @@ class _TrustCenterCard extends StatelessWidget {
             icon: Icons.phone_iphone_rounded,
             title: 'Phone number',
             subtitle: phoneVerified
-                ? premiumActive
+                ? phoneTrustBadgeActive
                     ? 'Confirmed by SMS. Change it with a new OTP; Premium expiry stays unchanged.'
-                    : 'Confirmed by SMS. A paid Premium plan enables OTP-protected number changes.'
+                    : 'SMS confirmed. Your public phone badge activates only after the paid purchase succeeds.'
                 : 'Verified once when you continue with a paid Premium purchase. Women still message free.',
             status: phoneVerified && premiumActive
                 ? 'Change'
-                : phoneVerified
+                : phoneTrustBadgeActive
                     ? 'Verified'
-                    : 'Premium',
-            statusColor: phoneVerified
+                    : phoneVerified
+                        ? 'Ready'
+                        : 'Premium',
+            statusColor: phoneTrustBadgeActive
                 ? AppColors.verifiedTeal
                 : AppColors.champagneGold,
             onTap: loading ? null : onPhoneVerification,

@@ -8,7 +8,8 @@ void main() {
       'android/app/src/main/AndroidManifest.xml',
     ).readAsStringSync();
 
-    expect(manifest, contains('xmlns:tools="http://schemas.android.com/tools"'));
+    expect(
+        manifest, contains('xmlns:tools="http://schemas.android.com/tools"'));
     for (final permission in <String>[
       'android.permission.RECORD_AUDIO',
       'android.permission.READ_EXTERNAL_STORAGE',

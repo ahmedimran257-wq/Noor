@@ -20,6 +20,7 @@ class ReferralService {
   }
 
   String? _cachedCode;
+  String? _cachedUserId;
 
   /// The current user's referral code. Null until [getOrCreateCode] is called.
   String? get referralCode => _cachedCode;
@@ -29,16 +30,24 @@ class ReferralService {
   /// The code is a 6-character alphanumeric uppercase string.
   /// Idempotent: calling multiple times returns the same code.
   Future<String> getOrCreateCode() async {
-    if (_cachedCode != null) return _cachedCode!;
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) throw StateError('Not authenticated');
+    if (_cachedUserId == userId && _cachedCode != null) return _cachedCode!;
 
     try {
       final response = await _supabase.rpc('generate_referral_code');
       _cachedCode = response as String;
+      _cachedUserId = userId;
       return _cachedCode!;
     } catch (e) {
       debugPrint('[ReferralService] Error generating code: $e');
       rethrow;
     }
+  }
+
+  void clearCache() {
+    _cachedCode = null;
+    _cachedUserId = null;
   }
 
   /// Applies a referral code during onboarding.

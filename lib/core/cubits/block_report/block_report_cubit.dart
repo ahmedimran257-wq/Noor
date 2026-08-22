@@ -227,19 +227,22 @@ class BlockReportCubit extends Cubit<BlockReportState> {
   // Report
 
   /// Report a user with a predefined reason.
-  Future<void> reportUser({
+  Future<bool> reportUser({
     required String reportedUserId,
     required String reportedName,
     required ReportReason reason,
     String? description,
   }) async {
-    if (!_isRealMode) return;
+    if (!_isRealMode || state.isSubmitting) return false;
 
     emit(state.copyWith(isSubmitting: true, clearError: true));
     final activeUserId = SupabaseService.currentUserId;
     if (activeUserId == null) {
-      emit(state.copyWith(isSubmitting: false));
-      return;
+      emit(state.copyWith(
+        isSubmitting: false,
+        error: 'Please sign in again before submitting this report.',
+      ));
+      return false;
     }
 
     String? reportId;
@@ -255,15 +258,26 @@ class BlockReportCubit extends Cubit<BlockReportState> {
         reportId = result?.toString();
       } catch (e) {
         debugPrint('[BlockReportCubit] Error reporting user: $e');
-        emit(state.copyWith(isSubmitting: false));
-        return;
+        emit(state.copyWith(
+          isSubmitting: false,
+          error:
+              'Report could not be submitted. Check your connection and retry.',
+        ));
+        return false;
       }
     }
 
-    if (isClosed) return;
+    if (isClosed) return false;
+    if (reportId == null || reportId.trim().isEmpty) {
+      emit(state.copyWith(
+        isSubmitting: false,
+        error: 'Report could not be confirmed. Please retry.',
+      ));
+      return false;
+    }
 
     final entry = ReportEntry(
-      reportId: reportId!,
+      reportId: reportId,
       reportedUserId: reportedUserId,
       reportedName: reportedName,
       reason: reason,
@@ -280,6 +294,7 @@ class BlockReportCubit extends Cubit<BlockReportState> {
       successMessage:
           'Report submitted. JazakAllah for keeping the community safe.',
     ));
+    return true;
   }
 
   void clearMessages() {

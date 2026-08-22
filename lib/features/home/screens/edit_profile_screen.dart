@@ -21,6 +21,7 @@ import '../../../core/cubits/onboarding/onboarding_state.dart';
 import '../../../core/data/country_data.dart';
 import '../../../core/models/onboarding_data.dart';
 import '../../../core/services/country_context_service.dart';
+import '../../../core/services/location_service.dart';
 import '../../../core/services/profile_photo_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
@@ -234,16 +235,38 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _saveProfile() async {
     if (_isSaving) return;
+    final firstName = _firstNameCtrl.text.trim();
+    final lastName = _lastNameCtrl.text.trim();
+    if (firstName.isEmpty || lastName.isEmpty) {
+      _showSaveError('First and last name are required.');
+      return;
+    }
     if (_locationChanged && _selectedCity == null) {
       _showSaveError('Select a city from the verified search results.');
       return;
     }
     setState(() => _isSaving = true);
     HapticFeedback.mediumImpact();
+
+    String? resolvedCityId;
+    if (_locationChanged) {
+      final resolution = await LocationService.resolveCity(_selectedCity!);
+      if (!mounted) return;
+      if (!resolution.isSuccess) {
+        setState(() => _isSaving = false);
+        _showSaveError(
+          resolution.errorMessage ??
+              'We could not verify that city. Please select it again.',
+        );
+        return;
+      }
+      resolvedCityId = resolution.cityId;
+    }
+
     final cubit = context.read<OnboardingCubit>();
     var updated = cubit.currentData.copyWith(
-      firstName: _firstNameCtrl.text.trim(),
-      lastName: _lastNameCtrl.text.trim(),
+      firstName: firstName,
+      lastName: lastName,
       profession: _professionCtrl.text.trim(),
       bio: _bioCtrl.text.trim(),
       sect: _sect,
@@ -274,7 +297,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ? city.city.trim()
           : '${city.city.trim()}, $stateName';
       updated = updated.copyWith(
-        cityId: '',
+        cityId: resolvedCityId,
         cityName: displayCity,
         stateName: stateName,
         countryCode: _country.iso2,

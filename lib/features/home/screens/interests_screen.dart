@@ -87,6 +87,7 @@ class _InterestsScreenState extends State<InterestsScreen>
     with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   late final TabController _tabCtrl;
   final Set<String> _acceptingInterestIds = <String>{};
+  final Set<String> _processingInterestIds = <String>{};
 
   @override
   bool get wantKeepAlive => true;
@@ -220,7 +221,24 @@ class _InterestsScreenState extends State<InterestsScreen>
     _showMutualMatchModal(entry.profile);
   }
 
+  Future<void> _declineInterest(InterestEntry entry) async {
+    if (_processingInterestIds.contains(entry.id)) return;
+    setState(() => _processingInterestIds.add(entry.id));
+    final declined =
+        await context.read<InterestsCubit>().declineInterest(entry.id);
+    if (!mounted) return;
+    setState(() => _processingInterestIds.remove(entry.id));
+    if (!declined) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: UiText(context.uiCopy(
+          'The interest could not be declined. Please retry.',
+        )),
+      ));
+    }
+  }
+
   void _showWithdrawDialog(InterestEntry entry) {
+    if (_processingInterestIds.contains(entry.id)) return;
     HapticFeedback.selectionClick();
     showDialog(
       context: context,
@@ -245,9 +263,21 @@ class _InterestsScreenState extends State<InterestsScreen>
                     AppTypography.caption.copyWith(color: AppColors.slateMist)),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              context.read<InterestsCubit>().withdrawInterest(entry.id);
+              setState(() => _processingInterestIds.add(entry.id));
+              final withdrawn = await context
+                  .read<InterestsCubit>()
+                  .withdrawInterest(entry.id);
+              if (!mounted) return;
+              setState(() => _processingInterestIds.remove(entry.id));
+              if (!withdrawn) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: UiText(context.uiCopy(
+                    'The interest could not be withdrawn. Please retry.',
+                  )),
+                ));
+              }
             },
             child: UiText(context.uiCopy('Withdraw'),
                 style: AppTypography.bodyMedium
@@ -359,12 +389,9 @@ class _InterestsScreenState extends State<InterestsScreen>
                       : _ReceivedList(
                           entries: state.displayReceived,
                           acceptingIds: _acceptingInterestIds,
+                          processingIds: _processingInterestIds,
                           onAccept: _acceptInterest,
-                          onDecline: (entry) {
-                            context
-                                .read<InterestsCubit>()
-                                .declineInterest(entry.id);
-                          },
+                          onDecline: _declineInterest,
                         ),
 
                   // Sent tab
@@ -529,11 +556,13 @@ class _ReceivedList extends StatelessWidget {
     required this.onAccept,
     required this.onDecline,
     required this.acceptingIds,
+    required this.processingIds,
   });
   final List<InterestEntry> entries;
   final ValueChanged<InterestEntry> onAccept;
   final ValueChanged<InterestEntry> onDecline;
   final Set<String> acceptingIds;
+  final Set<String> processingIds;
 
   @override
   Widget build(BuildContext context) {
@@ -550,6 +579,7 @@ class _ReceivedList extends StatelessWidget {
         return _ReceivedTile(
           entry: entry,
           accepting: acceptingIds.contains(entry.id),
+          processing: processingIds.contains(entry.id),
           onAccept: () => onAccept(entry),
           onDecline: () => onDecline(entry),
         );
@@ -564,11 +594,13 @@ class _ReceivedTile extends StatelessWidget {
     required this.onAccept,
     required this.onDecline,
     required this.accepting,
+    required this.processing,
   });
   final InterestEntry entry;
   final VoidCallback onAccept;
   final VoidCallback onDecline;
   final bool accepting;
+  final bool processing;
 
   @override
   Widget build(BuildContext context) {
@@ -693,10 +725,12 @@ class _ReceivedTile extends StatelessWidget {
                             BorderRadius.circular(AppDimensions.radiusButton),
                       ),
                     ),
-                    onPressed: () {
-                      HapticFeedback.selectionClick();
-                      onDecline();
-                    },
+                    onPressed: accepting || processing
+                        ? null
+                        : () {
+                            HapticFeedback.selectionClick();
+                            onDecline();
+                          },
                     child: UiText(
                         AppLocalizations.of(context).interests_button_decline,
                         style: AppTypography.bodyMuted),
@@ -714,7 +748,7 @@ class _ReceivedTile extends StatelessWidget {
                       ),
                       elevation: 0,
                     ),
-                    onPressed: accepting
+                    onPressed: accepting || processing
                         ? null
                         : () {
                             HapticFeedback.mediumImpact();

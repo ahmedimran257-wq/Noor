@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../services/supabase_service.dart';
 import '../../services/relationship_revision_service.dart';
@@ -14,6 +15,7 @@ import 'chat_state.dart';
 enum ChatAccessReason {
   allowed,
   subscriptionRequired,
+  guardianApprovalRequired,
   suspended,
   closed,
   notFound,
@@ -44,6 +46,7 @@ class ChatCubit extends Cubit<ChatState> {
   DateTime? _lastRelationshipRevisionCheckAt;
   final Set<String> _messageLoadsInFlight = {};
   final Set<String> _exhaustedMessagePages = {};
+  final Map<String, String> _closureOperationIds = {};
 
   // Responsive enough for a live typing indicator while reducing Realtime
   // broadcast volume by more than half versus the previous 1.4-second loop.
@@ -87,6 +90,8 @@ class ChatCubit extends Cubit<ChatState> {
       }
       return ChatAccessDecision(switch (row['reason']?.toString()) {
         'subscription_required' => ChatAccessReason.subscriptionRequired,
+        'guardian_approval_required' =>
+          ChatAccessReason.guardianApprovalRequired,
         'suspended' => ChatAccessReason.suspended,
         'closed' => ChatAccessReason.closed,
         'not_found' => ChatAccessReason.notFound,
@@ -221,6 +226,14 @@ class ChatCubit extends Cubit<ChatState> {
     await loadConversations(showLoading: false, force: true);
   }
 
+  /// Entitlement is not part of the relationship revision token. Force one
+  /// authoritative inbox read so newly unlocked chats open immediately and
+  /// expired/revoked chats redact any history retained in memory.
+  Future<void> refreshForEntitlementChange() async {
+    _lastInboxLoadedAt = null;
+    await loadConversations(showLoading: false, force: true);
+  }
+
   /// Coalesces overlapping Realtime, notification-table and FCM recovery
   /// signals into at most one inbox reconciliation per short event burst.
   void scheduleInboxReconciliation() {
@@ -253,12 +266,15 @@ class ChatCubit extends Cubit<ChatState> {
       final before = older && conv.messages.isNotEmpty
           ? conv.messages.first.sentAt.toUtc().toIso8601String()
           : null;
+      final beforeId =
+          older && conv.messages.isNotEmpty ? conv.messages.first.id : null;
       final rows = _asRows(await SupabaseService.client.rpc(
-        'get_chat_messages',
+        'get_chat_messages_v2',
         params: {
           'p_match_id': conversationId,
           'p_limit': _messagePageSize,
-          if (before != null) 'p_before': before,
+          if (before != null) 'p_before_created_at': before,
+          if (beforeId != null) 'p_before_id': beforeId,
         },
       ));
 
@@ -453,14 +469,20 @@ class ChatCubit extends Cubit<ChatState> {
     if (conv == null || conv.isMatchClosed) return false;
 
     try {
-      await sendMessage(conversationId, message);
-      await SupabaseService.client.rpc(
-        'close_chat_match',
+      final operationId = _closureOperationIds.putIfAbsent(
+        conversationId,
+        () => const Uuid().v4(),
+      );
+      final response = await SupabaseService.client.rpc(
+        'send_and_close_match',
         params: {
           'p_match_id': conversationId,
           'p_closure_reason': message,
+          'p_operation_id': operationId,
         },
       );
+      if (response is! Map || response['closed'] != true) return false;
+      _closureOperationIds.remove(conversationId);
       await loadConversations(force: true);
       return true;
     } catch (e) {
@@ -569,6 +591,7 @@ class ChatCubit extends Cubit<ChatState> {
     _loadVersion++;
     _messageLoadsInFlight.clear();
     _exhaustedMessagePages.clear();
+    _closureOperationIds.clear();
     _loadedUserId = null;
     _lastInboxLoadedAt = null;
     _inboxLoadInFlight = false;
@@ -955,7 +978,10 @@ class ChatCubit extends Cubit<ChatState> {
       byId[message.id] = message;
     }
     final merged = byId.values.toList()
-      ..sort((a, b) => a.sentAt.compareTo(b.sentAt));
+      ..sort((a, b) {
+        final byTime = a.sentAt.compareTo(b.sentAt);
+        return byTime != 0 ? byTime : a.id.compareTo(b.id);
+      });
     return merged;
   }
 
@@ -975,6 +1001,9 @@ class ChatCubit extends Cubit<ChatState> {
 
   Conversation _mergeConversation(Conversation? current, Conversation loaded) {
     if (current == null) return loaded;
+    if (loaded.contentLocked) {
+      return loaded.copyWith(messages: const <ChatMessage>[]);
+    }
     return loaded.copyWith(
       messages: _mergeMessagesById(current.messages, loaded.messages),
       unreadCount: loaded.unreadCount,

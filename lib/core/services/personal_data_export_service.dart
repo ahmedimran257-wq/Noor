@@ -36,11 +36,6 @@ class PersonalDataExportService {
 
   static const _maxPhotoBytes = 15 * 1024 * 1024;
 
-  File? _recentArchive;
-  DateTime? _recentArchiveCreatedAt;
-  String? _recentArchiveUserId;
-  int _recentPhotoCount = 0;
-
   Future<PersonalDataExportResult> createAndShare({
     Rect? sharePositionOrigin,
   }) async {
@@ -51,20 +46,6 @@ class PersonalDataExportService {
     if (userId == null) {
       throw StateError('Please sign in again to download your data.');
     }
-    final recent = _recentArchive;
-    final recentAt = _recentArchiveCreatedAt;
-    if (recent != null &&
-        recentAt != null &&
-        _recentArchiveUserId == userId &&
-        await recent.exists() &&
-        DateTime.now().difference(recentAt) < const Duration(minutes: 10)) {
-      return _shareArchive(
-        recent,
-        photoCount: _recentPhotoCount,
-        sharePositionOrigin: sharePositionOrigin,
-      );
-    }
-
     final package = await PackageInfo.fromPlatform();
     final response = await SupabaseService.client.rpc(
       'download_my_data',
@@ -125,16 +106,19 @@ class PersonalDataExportService {
     );
     await file.writeAsBytes(zipBytes, flush: true);
 
-    _recentArchive = file;
-    _recentArchiveCreatedAt = DateTime.now();
-    _recentArchiveUserId = userId;
-    _recentPhotoCount = photoCount;
-
-    return _shareArchive(
-      file,
-      photoCount: photoCount,
-      sharePositionOrigin: sharePositionOrigin,
-    );
+    try {
+      return await _shareArchive(
+        file,
+        photoCount: photoCount,
+        sharePositionOrigin: sharePositionOrigin,
+      );
+    } finally {
+      // Share targets receive a content-URI copy. The clear-text local ZIP is
+      // not a cache and must not survive after the platform sheet returns.
+      try {
+        if (await file.exists()) await file.delete();
+      } catch (_) {}
+    }
   }
 
   Future<PersonalDataExportResult> _shareArchive(

@@ -9,6 +9,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'profile_photo_service.dart';
 import 'supabase_service.dart';
 
 /// Manages Wali (Guardian) mode operations.
@@ -122,20 +123,28 @@ class WaliModeService {
   }) async {
     try {
       final response = await _supabase.rpc(
-        'get_guardian_dashboard',
+        'get_guardian_dashboard_v2',
         params: {'p_mark_seen_ward_id': markSeenWardId},
       );
       final rows = response as List<dynamic>;
+      final ownerIds = rows
+          .map((row) => (row as Map)['other_party_user_id']?.toString() ?? '')
+          .where((id) => id.isNotEmpty)
+          .toList(growable: false);
+      final signedPhotos = await ProfilePhotoService.instance
+          .getAuthorizedPhotoUrls(ownerUserIds: ownerIds);
 
       return rows.map((row) {
         final r = row as Map<String, dynamic>;
+        final otherPartyUserId = r['other_party_user_id'] as String;
         return GuardianDashboardItem(
           wardName: _requiredText(r, 'ward_name'),
           wardProfileId: r['ward_profile_id'] as String,
           wardUserId: r['ward_user_id'] as String,
           matchId: r['match_id'] as String,
+          otherPartyUserId: otherPartyUserId,
           otherPartyName: _requiredText(r, 'other_party_name'),
-          otherPartyPhoto: r['other_party_photo'] as String?,
+          otherPartyPhoto: signedPhotos[otherPartyUserId],
           lastMessage: r['last_message'] as String?,
           lastMessageAt: r['last_message_at'] != null
               ? DateTime.parse(r['last_message_at'] as String)
@@ -143,7 +152,8 @@ class WaliModeService {
           unreadCount: (r['unread_count'] as num?)?.toInt() ?? 0,
           guardianMode: r['guardian_mode'] as String,
           matchStatus: r['match_status'] as String,
-          guardianApproved: r['guardian_approved'] as bool?,
+          guardianHasApproved: r['guardian_has_approved'] as bool? ?? false,
+          allGuardiansApproved: r['all_guardians_approved'] as bool? ?? false,
           matchCreatedAt: r['match_created_at'] != null
               ? DateTime.parse(r['match_created_at'] as String)
               : null,
@@ -153,6 +163,32 @@ class WaliModeService {
       debugPrint('[WaliModeService] Dashboard fetch error: $e');
       rethrow;
     }
+  }
+
+  Future<List<GuardianTranscriptMessage>> getTranscript({
+    required String matchId,
+    GuardianTranscriptMessage? before,
+  }) async {
+    final response = await _supabase.rpc(
+      'get_guardian_match_messages',
+      params: {
+        'p_match_id': matchId,
+        'p_before_created_at': before?.createdAt.toUtc().toIso8601String(),
+        'p_before_id': before?.id,
+        'p_limit': 50,
+      },
+    );
+    return (response as List<dynamic>).map((row) {
+      final r = Map<String, dynamic>.from(row as Map);
+      return GuardianTranscriptMessage(
+        id: r['message_id'] as String,
+        content: _requiredText(r, 'content'),
+        createdAt: DateTime.parse(r['created_at'] as String).toLocal(),
+        isFromWard: r['is_from_ward'] as bool? ?? false,
+        sentByGuardian: r['sent_by_guardian'] as bool? ?? false,
+        deliveryStatus: r['delivery_status']?.toString() ?? 'sent',
+      );
+    }).toList(growable: false);
   }
 
   // Realtime Subscription
@@ -211,8 +247,6 @@ class WaliModeService {
   /// the ward informing them.
   Future<void> sendMessageAsGuardian({
     required String matchId,
-    required String wardId,
-    required String receiverId,
     required String content,
   }) async {
     try {
@@ -221,7 +255,7 @@ class WaliModeService {
         'p_content': content,
       });
 
-      debugPrint('[WaliModeService] Message sent as guardian for ward $wardId');
+      debugPrint('[WaliModeService] Guardian message sent for match $matchId');
     } catch (e) {
       debugPrint('[WaliModeService] Send message error: $e');
       rethrow;
@@ -391,6 +425,7 @@ class GuardianDashboardItem {
     required this.wardProfileId,
     required this.wardUserId,
     required this.matchId,
+    required this.otherPartyUserId,
     required this.otherPartyName,
     this.otherPartyPhoto,
     this.lastMessage,
@@ -398,7 +433,8 @@ class GuardianDashboardItem {
     required this.unreadCount,
     required this.guardianMode,
     required this.matchStatus,
-    this.guardianApproved,
+    required this.guardianHasApproved,
+    required this.allGuardiansApproved,
     this.matchCreatedAt,
   });
 
@@ -406,6 +442,7 @@ class GuardianDashboardItem {
   final String wardProfileId;
   final String wardUserId;
   final String matchId;
+  final String otherPartyUserId;
   final String otherPartyName;
   final String? otherPartyPhoto;
   final String? lastMessage;
@@ -413,14 +450,34 @@ class GuardianDashboardItem {
   final int unreadCount;
   final String guardianMode; // 'passive' or 'active'
   final String matchStatus;
-  final bool? guardianApproved;
+  final bool guardianHasApproved;
+  final bool allGuardiansApproved;
   final DateTime? matchCreatedAt;
 
   bool get canSendMessages =>
-      guardianMode == 'active' && matchStatus == 'active';
-  bool get needsApproval =>
-      guardianMode == 'active' && guardianApproved != true;
+      guardianMode == 'active' &&
+      matchStatus == 'active' &&
+      allGuardiansApproved;
+  bool get needsApproval => guardianMode == 'active' && !guardianHasApproved;
   bool get hasUnread => unreadCount > 0;
+}
+
+class GuardianTranscriptMessage {
+  const GuardianTranscriptMessage({
+    required this.id,
+    required this.content,
+    required this.createdAt,
+    required this.isFromWard,
+    required this.sentByGuardian,
+    required this.deliveryStatus,
+  });
+
+  final String id;
+  final String content;
+  final DateTime createdAt;
+  final bool isFromWard;
+  final bool sentByGuardian;
+  final String deliveryStatus;
 }
 
 /// Represents a mirrored chat visible to a guardian.

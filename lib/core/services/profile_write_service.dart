@@ -415,21 +415,25 @@ class ProfileWriteService {
 
       final fields = _fullProfileFields(effectiveData);
       if (locationChanged) {
-        // Location is committed last through update_profile_location(), which
-        // updates users + profiles and resets the discovery point atomically.
+        // The dedicated bundle RPC commits profile fields, preferences, user
+        // resume location and the discovery point in one transaction.
         fields.remove('city_id');
         fields.remove('country_code');
       }
       final prefFields = _preferenceFields(effectiveData);
-      await SupabaseService.client.rpc('save_my_profile_bundle', params: {
-        'p_profile_fields': fields,
-        'p_preference_fields': prefFields,
-      });
-
       if (locationChanged) {
-        final committedLocation = await _commitProfileLocation(effectiveData);
+        final committedLocation = await _saveProfileBundleWithLocation(
+          effectiveData,
+          profileFields: fields,
+          preferenceFields: prefFields,
+        );
         if (committedLocation == null) return null;
         effectiveData = committedLocation;
+      } else {
+        await SupabaseService.client.rpc('save_my_profile_bundle', params: {
+          'p_profile_fields': fields,
+          'p_preference_fields': prefFields,
+        });
       }
 
       return effectiveData;
@@ -438,17 +442,21 @@ class ProfileWriteService {
     }
   }
 
-  static Future<OnboardingData?> _commitProfileLocation(
-    OnboardingData data,
-  ) async {
+  static Future<OnboardingData?> _saveProfileBundleWithLocation(
+    OnboardingData data, {
+    required Map<String, dynamic> profileFields,
+    required Map<String, dynamic> preferenceFields,
+  }) async {
     final cityId = int.tryParse(data.cityId ?? '');
     final countryCode = _normalCountryCode(data.countryCode);
     if (cityId == null || countryCode == null) return null;
 
     try {
       final response = await SupabaseService.client.rpc(
-        'update_profile_location',
+        'save_my_profile_bundle_with_location',
         params: {
+          'p_profile_fields': profileFields,
+          'p_preference_fields': preferenceFields,
           'p_city_id': cityId,
           'p_country_code': countryCode,
           'p_postal_code': _cleanText(data.postalCode),
@@ -987,10 +995,9 @@ class ProfileWriteService {
     final ownerTypeRaw = p['profile_owner_type'] as String?;
     final creatorRel = p['profile_creator_relation'] as String?;
     final guardianMode = p['guardian_mode'] as String?;
-    final isGuardian = ownerTypeRaw == 'guardian' ||
-        (creatorRel != 'self' &&
-            guardianMode != null &&
-            guardianMode != 'none');
+    // Profile ownership and Guardian oversight are separate concepts. A
+    // self-owned member remains self-owned after connecting a Guardian.
+    final isGuardian = ownerTypeRaw == 'guardian';
 
     // Parse date of birth
     DateTime? dob;

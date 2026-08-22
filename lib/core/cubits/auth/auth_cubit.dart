@@ -49,6 +49,7 @@ class AuthCubit extends Cubit<AuthState> {
   int _verifyOtpRequestId = 0;
   StreamSubscription<supabase.AuthState>? _authSubscription;
   String? _hydratedSessionUserId;
+  String? _deletionRecoveryUserId;
   bool _checkingSession = false;
 
   @override
@@ -116,6 +117,7 @@ class AuthCubit extends Cubit<AuthState> {
     if (event == AuthChangeEvent.signedOut) {
       if (_checkingSession) return;
       _hydratedSessionUserId = null;
+      _deletionRecoveryUserId = null;
       emit(const AuthUnauthenticated());
       return;
     }
@@ -161,6 +163,7 @@ class AuthCubit extends Cubit<AuthState> {
 
     final prefs = await SharedPreferences.getInstance();
     final countryCode = prefs.getString('user_country_code');
+    await _recoverPendingDeletionForSession(userId);
     final authData = await _loadUserProfile(userId);
     final guardianInvitationPending =
         await WaliModeService.instance.pendingInvitation() != null;
@@ -324,14 +327,15 @@ class AuthCubit extends Cubit<AuthState> {
           return;
         }
 
-        await _ensurePublicUser(user.id, email);
         if (_pendingAuthMode == 'signup') {
-          final consentSaved = await LegalConsentService.instance
-              .requireAndFlushPendingOnboardingConsents();
+          final consentSaved =
+              await LegalConsentService.instance.finalizeSignupAndProvision();
           if (!consentSaved) {
             await SupabaseService.client.auth.signOut();
             throw StateError('required_legal_consent_save_failed');
           }
+        } else {
+          await _ensurePublicUser(user.id, email);
         }
         await _applyPendingReferral();
 
@@ -384,6 +388,7 @@ class AuthCubit extends Cubit<AuthState> {
     }
 
     emit(const AuthUnauthenticated());
+    _deletionRecoveryUserId = null;
     await _clearPendingOtp();
   }
 
@@ -717,9 +722,11 @@ class AuthCubit extends Cubit<AuthState> {
         hasUserRow = true;
         gender = userRow['gender'] as String?;
         onboardingStep = (userRow['onboarding_step'] as int?) ?? 0;
+        // The legacy is_guardian_path flag recorded how onboarding was
+        // entered, not who currently owns the profile. A member who later
+        // connects a Guardian must continue through the member experience.
         isGuardianPath =
-            (userRow['profile_owner_type'] as String?) == 'guardian' ||
-                (userRow['is_guardian_path'] as bool? ?? false);
+            (userRow['profile_owner_type'] as String?) == 'guardian';
         onboardingCompleted = userRow['onboarding_completed'] as bool? ?? false;
         accountRole = userRow['account_role'] as String? ?? 'member';
       }
@@ -727,7 +734,7 @@ class AuthCubit extends Cubit<AuthState> {
       final profileRow = await SupabaseService.client
           .from('my_profile_private')
           .select(
-              'onboarding_step, profile_owner_type, guardian_mode, gender, onboarding_completed')
+              'onboarding_step, profile_owner_type, gender, onboarding_completed')
           .eq('user_id', userId)
           .maybeSingle();
 
@@ -735,10 +742,11 @@ class AuthCubit extends Cubit<AuthState> {
         hasProfileRow = true;
         onboardingStep =
             (profileRow['onboarding_step'] as int?) ?? onboardingStep;
-        final guardianMode = profileRow['guardian_mode'] as String?;
-        isGuardianPath =
-            (profileRow['profile_owner_type'] as String?) == 'guardian' ||
-                (guardianMode != null && guardianMode != 'none');
+        // Profile ownership and Guardian oversight are separate concepts.
+        // Enabling a Guardian connection on a self-owned profile must never
+        // resume that member inside the guardian-managed onboarding path.
+        isGuardianPath = isGuardianPath ||
+            (profileRow['profile_owner_type'] as String?) == 'guardian';
         gender ??= profileRow['gender'] as String?;
         onboardingCompleted =
             profileRow['onboarding_completed'] as bool? ?? onboardingCompleted;
@@ -757,6 +765,20 @@ class AuthCubit extends Cubit<AuthState> {
       onboardingCompleted: onboardingCompleted,
       accountRole: accountRole,
     );
+  }
+
+  Future<void> _recoverPendingDeletionForSession(String userId) async {
+    if (_deletionRecoveryUserId == userId) return;
+    try {
+      await SupabaseService.client.rpc('cancel_my_account_deletion');
+      _deletionRecoveryUserId = userId;
+    } catch (error) {
+      // Do not falsely route a pending-deletion account into onboarding or the
+      // normal app. Hydration will retry when connectivity/backend recovery
+      // succeeds, preserving the user's 30-day recovery promise.
+      debugPrint('AuthCubit: account deletion recovery failed: $error');
+      rethrow;
+    }
   }
 
   Future<void> refreshAuthenticatedProfile() async {

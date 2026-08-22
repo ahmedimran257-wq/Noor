@@ -26,6 +26,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   static const String _kCacheKey = 'onboarding_data_cache';
   bool _saveInFlight = false;
   bool _refreshInFlight = false;
+  Future<void>? _initializationInFlight;
   DateTime? _lastProfileLoadAt;
   static const _profileFreshness = Duration(minutes: 5);
 
@@ -33,6 +34,24 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   /// Called after auth succeeds. Loads the saved step from backend.
   /// Also restores saved data from Supabase/SharedPreferences to preserve state.
   Future<void> initialize({int startStep = 0}) async {
+    final activeInitialization = _initializationInFlight;
+    if (activeInitialization != null) {
+      await activeInitialization;
+      if (!isClosed) syncRouteStep(startStep);
+      return;
+    }
+    final operation = _initializeOnce(startStep: startStep);
+    _initializationInFlight = operation;
+    try {
+      await operation;
+    } finally {
+      if (identical(_initializationInFlight, operation)) {
+        _initializationInFlight = null;
+      }
+    }
+  }
+
+  Future<void> _initializeOnce({required int startStep}) async {
     OnboardingData data = const OnboardingData();
 
     // 1. Attempt to load from Supabase if real mode is enabled
@@ -75,17 +94,17 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       );
     }
 
-    emit(OnboardingActive(step: resolvedStep, data: data));
+    if (!isClosed) emit(OnboardingActive(step: resolvedStep, data: data));
   }
 
   // Step Advance
   /// Saves the partial data for the current step and advances to next.
   /// In production: writes to Supabase profiles table via ProfileWriteService.
   /// Requires Supabase persistence.
-  Future<void> saveAndAdvance(OnboardingData updatedData) async {
+  Future<bool> saveAndAdvance(OnboardingData updatedData) async {
     // Race fix: block double taps/slow retries from advancing the same step
     // more than once.
-    if (_saveInFlight) return;
+    if (_saveInFlight) return false;
     _saveInFlight = true;
     final currentStep = _currentStep;
     try {
@@ -101,7 +120,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
           data: updatedData,
           message: validationMessage,
         ));
-        return;
+        return false;
       }
 
       // Cache locally so transitions keep entered data; Supabase remains the
@@ -122,7 +141,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
             data: updatedData,
             message: 'Could not save. Please try again.',
           ));
-          return;
+          return false;
         }
       } else if (currentStep == OnboardingFlow.quickLocationStepIndex) {
         final success =
@@ -133,7 +152,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
             data: updatedData,
             message: 'Could not save. Please try again.',
           ));
-          return;
+          return false;
         }
       } else if (currentStep >= OnboardingFlow.basicIdentityStep) {
         final success = await ProfileWriteService.saveStep(
@@ -148,7 +167,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
             data: updatedData,
             message: 'Could not save. Please try again.',
           ));
-          return;
+          return false;
         }
       }
 
@@ -167,7 +186,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
           data: updatedData,
           message: 'Could not save. Please try again.',
         ));
-        return;
+        return false;
       }
 
       // Completion threshold: fast-start v3 completes after 5 steps.
@@ -181,7 +200,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
             data: updatedData,
             message: 'Could not save. Please try again.',
           ));
-          return;
+          return false;
         }
         _authCubit.updateOnboardingStep(
           nextStep,
@@ -194,13 +213,15 @@ class OnboardingCubit extends Cubit<OnboardingState> {
             isGuardianPath: isGuardianPath);
         emit(OnboardingSaved(step: nextStep, data: updatedData));
       }
+      return true;
     } finally {
       _saveInFlight = false;
     }
   }
 
   /// Moves back one step (local-only, but writes to DB to preserve step).
-  void goBack() async {
+  Future<void> goBack() async {
+    if (_saveInFlight) return;
     final current = state;
     int? newStep;
     OnboardingData? data;
@@ -214,21 +235,23 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     } else if (current is OnboardingLoading && current.step > 0) {
       newStep = current.step - 1;
       data = current.data;
+    } else if (current is OnboardingError && current.step > 0) {
+      newStep = current.step - 1;
+      data = current.data;
     }
 
     if (newStep != null && data != null) {
       final isGuardianPath = data.profileFor == ProfileFor.guardian;
-      // Update AuthCubit so the router redirect navigates to the previous screen
+      // Back is a local navigation action and must remain usable during a
+      // transient connection loss. Persist the resume marker afterwards; a
+      // later forward save is still server-authoritative and monotonic.
       _authCubit.updateOnboardingStep(
         newStep,
         isGuardianPath: isGuardianPath,
         allowRegression: true,
       );
-
-      // Explicit back navigation is the only allowed step regression.
-      await ProfileWriteService.setOnboardingStepForBack(newStep);
-
       emit(OnboardingActive(step: newStep, data: data));
+      await ProfileWriteService.setOnboardingStepForBack(newStep);
     }
   }
 

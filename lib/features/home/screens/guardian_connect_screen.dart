@@ -95,7 +95,9 @@ class _GuardianConnectScreenState extends State<GuardianConnectScreen> {
       if (verified != true || !mounted) return;
       setState(() => _loading = true);
 
-      await WaliModeService.instance.acceptInvitation(code);
+      // The Firebase verification boundary commits the verified phone and
+      // Guardian link atomically. A second client-side acceptance call would
+      // race the already-consumed one-time invitation.
       await WaliModeService.instance.clearPendingInvitation();
       if (!mounted) return;
       await context.read<AuthCubit>().refreshAuthenticatedProfile();
@@ -108,6 +110,26 @@ class _GuardianConnectScreenState extends State<GuardianConnectScreen> {
         _error =
             'The invitation could not be accepted. Confirm the code and use the exact mobile number chosen by the member.';
       });
+    }
+  }
+
+  Future<void> _continueWithoutGuardian() async {
+    if (_loading) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    await WaliModeService.instance.clearPendingInvitation();
+    if (!mounted) return;
+    await context.read<AuthCubit>().refreshAuthenticatedProfile();
+    if (!mounted) return;
+    final auth = context.read<AuthCubit>().state;
+    if (auth is AuthAuthenticated && auth.isOnboardingComplete) {
+      context.go(AppRoutes.home);
+    } else if (auth is AuthAuthenticated) {
+      context.go(onboardingPathForStep(auth.onboardingStep));
+    } else {
+      context.go(AppRoutes.splash);
     }
   }
 
@@ -192,9 +214,19 @@ class _GuardianConnectScreenState extends State<GuardianConnectScreen> {
                   if (_loading)
                     const Center(child: SilarahPulseLoader(size: 30))
                   else if (authenticated)
-                    SilarahPrimaryButton(
-                      label: context.uiCopy('Verify phone & connect'),
-                      onTap: _verifyAndAccept,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        SilarahPrimaryButton(
+                          label: context.uiCopy('Verify phone & connect'),
+                          onTap: _verifyAndAccept,
+                        ),
+                        const SizedBox(height: 12),
+                        SilarahSecondaryButton(
+                          label: context.uiCopy('Continue without Guardian'),
+                          onTap: _continueWithoutGuardian,
+                        ),
+                      ],
                     )
                   else ...[
                     SilarahPrimaryButton(
