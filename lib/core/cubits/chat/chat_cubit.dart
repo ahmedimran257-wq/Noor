@@ -19,6 +19,7 @@ enum ChatAccessReason {
   suspended,
   closed,
   notFound,
+  memberUnavailableReadOnly,
   unavailable,
 }
 
@@ -26,7 +27,10 @@ class ChatAccessDecision {
   const ChatAccessDecision(this.reason);
 
   final ChatAccessReason reason;
-  bool get allowed => reason == ChatAccessReason.allowed;
+  bool get allowed =>
+      reason == ChatAccessReason.allowed ||
+      reason == ChatAccessReason.memberUnavailableReadOnly;
+  bool get readOnly => reason == ChatAccessReason.memberUnavailableReadOnly;
   bool get requiresSubscription =>
       reason == ChatAccessReason.subscriptionRequired;
 }
@@ -85,6 +89,12 @@ class ChatCubit extends Cubit<ChatState> {
         return const ChatAccessDecision(ChatAccessReason.unavailable);
       }
       final row = Map<String, dynamic>.from(rows.first as Map);
+      if (row['allowed'] == true &&
+          row['reason']?.toString() == 'member_unavailable_read_only') {
+        return const ChatAccessDecision(
+          ChatAccessReason.memberUnavailableReadOnly,
+        );
+      }
       if (row['allowed'] == true) {
         return const ChatAccessDecision(ChatAccessReason.allowed);
       }
@@ -304,18 +314,14 @@ class ChatCubit extends Cubit<ChatState> {
     String matchName,
     String lastInitial,
   ) async {
-    final existing = state.conversations.where((c) {
-      if (c.otherUserId != null && c.otherUserId == otherUserId) return true;
-      return c.otherUserId == null &&
-          c.matchName.toLowerCase() == matchName.toLowerCase();
-    });
-    if (existing.isNotEmpty) return existing.first.id;
+    final active = state.activeConversationWith(otherUserId);
+    if (active != null) return active.id;
 
     if (!_isRealMode) return '';
+    // A cached closed cycle is not proof that no active rematch exists. Force
+    // one bounded inbox reconciliation before resolving the current match.
     await loadConversations(force: true).timeout(const Duration(seconds: 5));
-    final afterLoad =
-        state.conversations.where((c) => c.otherUserId == otherUserId);
-    return afterLoad.isNotEmpty ? afterLoad.first.id : '';
+    return state.activeConversationWith(otherUserId)?.id ?? '';
   }
 
   Future<bool> sendMessage(String conversationId, String text) async {
@@ -850,7 +856,9 @@ class ChatCubit extends Cubit<ChatState> {
       isMatchClosed: status == 'closed' ||
           status == 'expired' ||
           status == 'blocked' ||
-          status == 'reported',
+          status == 'reported' ||
+          row['member_unavailable'] == true,
+      memberUnavailable: row['member_unavailable'] == true,
       closureMessage: row['closure_reason'] as String?,
       closedByMe: row['closed_by'] == null ? null : row['closed_by'] == me,
       contentLocked: row['content_locked'] == true,
@@ -861,6 +869,7 @@ class ChatCubit extends Cubit<ChatState> {
     List<Map<String, dynamic>> inboxRows,
   ) async {
     final ownerIds = inboxRows
+        .where((row) => row['member_unavailable'] != true)
         .map((row) => row['other_user_id']?.toString())
         .whereType<String>()
         .where((id) => id.isNotEmpty)

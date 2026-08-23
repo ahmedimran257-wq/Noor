@@ -23,7 +23,7 @@ class _DuplicateAccountAuthCubit extends AuthCubit {
 
 void main() {
   testWidgets(
-    'account-found recovery stays keyboard-safe on compact screens',
+    'account existence errors stay generic and keyboard-safe',
     (tester) async {
       tester.view.devicePixelRatio = 2;
       tester.view.physicalSize = const Size(720, 1280);
@@ -58,7 +58,14 @@ void main() {
       await tester.tap(find.text('Send verification code'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Account found'), findsOneWidget);
+      expect(find.text('Account found'), findsNothing);
+      expect(find.text('No account yet'), findsNothing);
+      expect(
+        find.text(
+          'We could not send a verification code. Check the address or try again shortly.',
+        ),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
     },
   );

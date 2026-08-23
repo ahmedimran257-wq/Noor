@@ -13,6 +13,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'firebase_options.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -64,8 +65,25 @@ final ValueNotifier<_BootstrapStage> _bootstrapStage =
 String _bootstrapInitialLocation = AppRoutes.boot;
 SilarahThemeMode _bootstrapInitialTheme = SilarahThemeMode.blackWhite;
 
+/// Firebase launches this callback in a separate Dart isolate for background
+/// data messages. Android renders notification payloads itself, so the handler
+/// intentionally performs no UI work and cannot create duplicate banners.
+@pragma('vm:entry-point')
+Future<void> silarahFirebaseMessagingBackgroundHandler(
+  RemoteMessage message,
+) async {
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+    FirebaseMessaging.onBackgroundMessage(
+      silarahFirebaseMessagingBackgroundHandler,
+    );
+  }
   final startupStartedAt = DateTime.now();
 
   // Give Flutter ownership of the screen immediately. The launch sequence

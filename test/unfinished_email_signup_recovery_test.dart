@@ -30,6 +30,17 @@ void main() {
     );
   });
 
+  test('member UI never discloses whether an email is registered', () {
+    final screen = File(
+      'lib/features/onboarding/screens/email_verification_screen.dart',
+    ).readAsStringSync();
+    expect(screen, isNot(contains('Account found')));
+    expect(screen, isNot(contains('No account yet')));
+    expect(screen, isNot(contains('_AuthPivotReason')));
+    expect(authCubit, isNot(contains('This email is already registered')));
+    expect(authCubit, isNot(contains('No account found')));
+  });
+
   test('concurrent submit events are coalesced before the OTP request', () {
     expect(authCubit, contains('OtpRequestCoalescer _otpRequests'));
     expect(authCubit, contains('return _otpRequests.run('));

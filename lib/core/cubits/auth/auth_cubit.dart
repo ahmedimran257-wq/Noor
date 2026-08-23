@@ -640,7 +640,7 @@ class AuthCubit extends Cubit<AuthState> {
 
     if (upperCode == 'EMAIL_ALREADY_REGISTERED' ||
         raw.contains('User already registered')) {
-      return 'This email is already registered. Please sign in instead.';
+      return 'We could not send a verification code. Check the address or try again shortly.';
     }
     final normalized = raw.toLowerCase();
     if (normalized.contains('invalid-verification-code') ||
@@ -682,7 +682,7 @@ class AuthCubit extends Cubit<AuthState> {
     if (raw.contains('No user found') ||
         raw.contains('User not found') ||
         raw.contains('Signups not allowed')) {
-      return 'No account found. Please create an account first.';
+      return 'We could not send a verification code. Check the address or try again shortly.';
     }
 
     return 'Authentication failed. Please try again.';

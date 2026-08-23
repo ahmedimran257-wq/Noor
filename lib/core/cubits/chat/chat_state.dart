@@ -79,6 +79,7 @@ class Conversation extends Equatable {
     this.closureMessage,
     this.closedByMe,
     this.contentLocked = false,
+    this.memberUnavailable = false,
   });
 
   final String id;
@@ -93,6 +94,7 @@ class Conversation extends Equatable {
   final String? closureMessage; // the pre-written closing message
   final bool? closedByMe; // null for automatic expiry / legacy rows
   final bool contentLocked; // authoritative server-side Premium read gate
+  final bool memberUnavailable; // neutral read-only moderation/deletion state
 
   String get displayName {
     final surname = matchLastInitial.trim();
@@ -102,6 +104,7 @@ class Conversation extends Equatable {
   ChatMessage? get lastMessage => messages.isEmpty ? null : messages.last;
 
   String get lastMessagePreview {
+    if (memberUnavailable) return 'This profile is unavailable right now.';
     if (contentLocked) return 'Unlock Premium to read messages';
     final m = lastMessage;
     if (m == null) return 'Say Assalamu Alaikum!';
@@ -126,6 +129,7 @@ class Conversation extends Equatable {
     String? photoUrl,
     bool? closedByMe,
     bool? contentLocked,
+    bool? memberUnavailable,
   }) {
     return Conversation(
       id: id,
@@ -140,6 +144,7 @@ class Conversation extends Equatable {
       closureMessage: closureMessage ?? this.closureMessage,
       closedByMe: closedByMe ?? this.closedByMe,
       contentLocked: contentLocked ?? this.contentLocked,
+      memberUnavailable: memberUnavailable ?? this.memberUnavailable,
     );
   }
 
@@ -157,6 +162,7 @@ class Conversation extends Equatable {
         closureMessage,
         closedByMe,
         contentLocked,
+        memberUnavailable,
       ];
 }
 
@@ -187,6 +193,21 @@ class ChatState extends Equatable {
 
   bool isUserTyping(String conversationId) =>
       typingConversationIds.contains(conversationId);
+
+  /// Returns only the current writable match cycle for a member. A pair can
+  /// have multiple historical conversations after a respectful rematch, so a
+  /// closed cycle must never win merely because it was already cached.
+  Conversation? activeConversationWith(String otherUserId) {
+    final normalizedUserId = otherUserId.trim();
+    if (normalizedUserId.isEmpty) return null;
+    for (final conversation in conversations) {
+      if (conversation.otherUserId == normalizedUserId &&
+          !conversation.isMatchClosed) {
+        return conversation;
+      }
+    }
+    return null;
+  }
 
   /// Sorted: newest message first
   List<Conversation> get sortedConversations {

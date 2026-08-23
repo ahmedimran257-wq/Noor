@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:silarah/core/cubits/chat/chat_state.dart';
 
 void main() {
   test('active match projection cannot classify closed history as chat', () {
@@ -15,6 +16,29 @@ void main() {
         contains('CREATE OR REPLACE FUNCTION public.get_my_matches'));
     expect(interests, contains("row as Map)['status'] == 'active'"));
     expect(interests, contains('void markMatchClosed(String matchId)'));
+  });
+
+  test('rematch chat selection skips an older closed conversation', () {
+    const otherUserId = 'other-user';
+    const closed = Conversation(
+      id: 'closed-cycle',
+      matchName: 'Member',
+      matchLastInitial: '',
+      messages: [],
+      otherUserId: otherUserId,
+      isMatchClosed: true,
+    );
+    const active = Conversation(
+      id: 'active-cycle',
+      matchName: 'Member',
+      matchLastInitial: '',
+      messages: [],
+      otherUserId: otherUserId,
+    );
+
+    const state = ChatState(conversations: [closed, active]);
+
+    expect(state.activeConversationWith(otherUserId)?.id, 'active-cycle');
   });
 
   test('relationship changes refresh card context without feed or photo reload',

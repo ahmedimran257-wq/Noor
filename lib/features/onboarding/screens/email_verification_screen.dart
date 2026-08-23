@@ -22,8 +22,6 @@ import '../../../l10n/generated/app_localizations.dart';
 
 enum EmailAuthMode { signIn, signUp }
 
-enum _AuthPivotReason { accountExists, accountMissing }
-
 class EmailVerificationScreen extends StatefulWidget {
   const EmailVerificationScreen({
     super.key,
@@ -41,7 +39,6 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   final _emailCtrl = TextEditingController();
   final _emailFocus = FocusNode();
   late EmailAuthMode _mode;
-  _AuthPivotReason? _pivotReason;
   bool _otpSent = false;
   int _resendSecs = 60;
   int _otpResetNonce = 0;
@@ -67,12 +64,11 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
 
   void _onEmailChanged() {
     if (!mounted) return;
-    setState(() => _pivotReason = null);
+    setState(() {});
   }
 
   void _sendOtp() {
     HapticFeedback.lightImpact();
-    setState(() => _pivotReason = null);
     final authMode = _mode == EmailAuthMode.signUp ? 'signup' : 'signin';
     context.read<AuthCubit>().sendOtp(_email, mode: authMode);
   }
@@ -97,7 +93,6 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   void _changeEmail() {
     setState(() {
       _otpSent = false;
-      _pivotReason = null;
     });
     _resendTimer?.cancel();
     WidgetsBinding.instance.addPostFrameCallback(
@@ -105,16 +100,11 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     );
   }
 
-  void _switchMode(
-    EmailAuthMode mode, {
-    _AuthPivotReason? reason,
-    bool focusEmail = true,
-  }) {
+  void _switchMode(EmailAuthMode mode, {bool focusEmail = true}) {
     _resendTimer?.cancel();
     setState(() {
       _mode = mode;
       _otpSent = false;
-      _pivotReason = reason;
       _otpResetNonce++;
       _resendSecs = 60;
     });
@@ -125,17 +115,6 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     }
   }
 
-  bool _isAccountExistsError(String message) {
-    final lower = message.toLowerCase();
-    return lower.contains('already exists') ||
-        lower.contains('already registered');
-  }
-
-  bool _isMissingAccountError(String message) {
-    final lower = message.toLowerCase();
-    return lower.contains('no account found');
-  }
-
   @override
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
@@ -143,40 +122,22 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
         if (state is AuthOtpSent) {
           setState(() {
             _otpSent = true;
-            _pivotReason = null;
             _resendSecs = 60;
           });
           _emailFocus.unfocus();
           _startResendTimer();
         }
         if (state is AuthError) {
-          if (_mode == EmailAuthMode.signUp &&
-              _isAccountExistsError(state.message)) {
-            HapticFeedback.selectionClick();
-            _switchMode(
-              EmailAuthMode.signIn,
-              reason: _AuthPivotReason.accountExists,
-            );
-            return;
-          }
-
-          if (_mode == EmailAuthMode.signIn &&
-              _isMissingAccountError(state.message)) {
-            HapticFeedback.selectionClick();
-            _switchMode(
-              EmailAuthMode.signUp,
-              reason: _AuthPivotReason.accountMissing,
-            );
-            return;
-          }
-
+          final visibleMessage = _otpSent
+              ? state.message
+              : 'We could not send a verification code. Check the address or try again shortly.';
           if (_otpSent) {
             setState(() => _otpResetNonce++);
           }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: UiText(
-                state.message,
+                visibleMessage,
                 style: TextStyle(
                   color: AppColors.readableOn(AppColors.softCoral),
                 ),
@@ -223,11 +184,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                             controller: _emailCtrl,
                             focusNode: _emailFocus,
                             mode: _mode,
-                            pivotReason: _pivotReason,
-                            onModeChanged: (mode) => _switchMode(
-                              mode,
-                              reason: null,
-                            ),
+                            onModeChanged: _switchMode,
                             onSend: _sendOtp,
                             isComplete: true,
                           ),
@@ -338,7 +295,6 @@ class _EmailView extends StatelessWidget {
     required this.controller,
     required this.focusNode,
     required this.mode,
-    required this.pivotReason,
     required this.onModeChanged,
     required this.onSend,
     required this.isComplete,
@@ -347,7 +303,6 @@ class _EmailView extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final EmailAuthMode mode;
-  final _AuthPivotReason? pivotReason;
   final ValueChanged<EmailAuthMode> onModeChanged;
   final VoidCallback onSend;
   final bool isComplete;
@@ -409,20 +364,6 @@ class _EmailView extends StatelessWidget {
                 onSubmitted: isComplete ? onSend : null,
               ),
             ),
-          ),
-          AnimatedSize(
-            duration: const Duration(milliseconds: 240),
-            curve: Curves.easeOutCubic,
-            alignment: Alignment.topCenter,
-            child: pivotReason == null
-                ? const SizedBox.shrink()
-                : Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
-                    child: _AuthPivotNoticeCard(
-                      reason: pivotReason!,
-                      onTap: onSend,
-                    ),
-                  ),
           ),
           const Spacer(),
           Padding(
@@ -504,102 +445,6 @@ class _KeyboardSafeScroll extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _AuthPivotNoticeCard extends StatelessWidget {
-  const _AuthPivotNoticeCard({
-    required this.reason,
-    required this.onTap,
-  });
-
-  final _AuthPivotReason reason;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final accountExists = reason == _AuthPivotReason.accountExists;
-    final title = accountExists ? 'Account found' : 'No account yet';
-    final message = accountExists
-        ? 'This email is already registered. Continue by signing in here.'
-        : 'This email is not registered yet. Create your profile here.';
-    final actionLabel = accountExists ? 'Send sign-in code' : 'Create profile';
-    final icon = accountExists
-        ? Icons.verified_user_outlined
-        : Icons.person_add_alt_1_rounded;
-
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.96, end: 1),
-      duration: const Duration(milliseconds: 260),
-      curve: Curves.easeOutCubic,
-      builder: (context, scale, child) => Transform.scale(
-        scale: scale,
-        alignment: Alignment.topCenter,
-        child: child,
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: AppColors.champagneGold.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: AppColors.champagneGold.withValues(alpha: 0.36),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.champagneGold.withValues(alpha: 0.08),
-              blurRadius: 22,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: AppColors.champagneGold.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: AppColors.champagneGold.withValues(alpha: 0.28),
-                ),
-              ),
-              child: Icon(icon, color: AppColors.champagneGold, size: 19),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  UiText(
-                    title,
-                    style: AppTypography.body.copyWith(
-                      color: AppColors.pearlWhite,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  UiText(message, style: AppTypography.caption),
-                  const SizedBox(height: 10),
-                  SilarahPressable(
-                    onTap: onTap,
-                    child: UiText(
-                      actionLabel,
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.champagneGold,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

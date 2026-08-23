@@ -308,9 +308,10 @@ void main() {
 
     final mainSource = File('lib/main.dart').readAsStringSync();
     expect(mainSource, contains('SilarahLaunchSequence'));
+    final mainEntryPoint = mainSource.indexOf('void main()');
     expect(
       mainSource.indexOf('runApp('),
-      lessThan(mainSource.indexOf('Firebase.initializeApp(')),
+      lessThan(mainSource.indexOf('Firebase.initializeApp(', mainEntryPoint)),
       reason: 'Core SDK startup must not hold Android\'s static splash.',
     );
     expect(mainSource, isNot(contains('precacheImage(')));

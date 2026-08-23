@@ -577,6 +577,7 @@ class _ChatScreenState extends State<ChatScreen>
                   _ClosedBanner(
                     name: conv.matchName,
                     closedByMe: conv.closedByMe,
+                    memberUnavailable: conv.memberUnavailable,
                   ),
 
                 // Suspended banner
@@ -670,9 +671,14 @@ class _ChatScreenState extends State<ChatScreen>
 
 // Closed Banner
 class _ClosedBanner extends StatelessWidget {
-  const _ClosedBanner({required this.name, required this.closedByMe});
+  const _ClosedBanner({
+    required this.name,
+    required this.closedByMe,
+    required this.memberUnavailable,
+  });
   final String name;
   final bool? closedByMe;
+  final bool memberUnavailable;
 
   @override
   Widget build(BuildContext context) {
@@ -688,11 +694,13 @@ class _ClosedBanner extends StatelessWidget {
         const SizedBox(width: AppDimensions.space8),
         Expanded(
             child: UiText(
-          switch (closedByMe) {
-            true => 'You ended this match.',
-            false => '$name ended this match.',
-            null => 'This match has ended.',
-          },
+          memberUnavailable
+              ? context.uiCopy('This profile is unavailable right now.')
+              : switch (closedByMe) {
+                  true => 'You ended this match.',
+                  false => '$name ended this match.',
+                  null => 'This match has ended.',
+                },
           style: AppTypography.caption.copyWith(color: AppColors.softCoral),
         )),
       ]),
