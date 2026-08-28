@@ -45,9 +45,12 @@ opencode.json
 /coverage/
 /.wrangler/
 /audit_artifacts/
+/.codex-audit/
+/.codex-remote-attachments/
 /tmp/
 /tmp_hardcoded.txt
 /firebase-debug.log
+/supabase/.temp/
 
 # Local device-test captures and Android UI hierarchy dumps.
 /*.png

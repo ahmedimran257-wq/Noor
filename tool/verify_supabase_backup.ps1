@@ -65,10 +65,37 @@ if (-not (Test-Path -LiteralPath $PgRestorePath -PathType Leaf)) {
     $PgRestorePath = $pgRestore.Source
 }
 
-$archivePath = Join-Path $resolvedBackup 'public.dump'
+$archiveName = if (Test-Path -LiteralPath (Join-Path $resolvedBackup 'app.dump')) {
+    'app.dump'
+} else {
+    'public.dump'
+}
+$archivePath = Join-Path $resolvedBackup $archiveName
 $archiveEntries = & $PgRestorePath --list $archivePath 2>&1
 if ($LASTEXITCODE -ne 0 -or -not ($archiveEntries | Select-String 'TABLE')) {
     throw 'The custom-format archive catalogue could not be read.'
+}
+
+$formatVersion = if ($null -eq $manifest.format_version) {
+    1
+} else {
+    [int]$manifest.format_version
+}
+if ($formatVersion -ge 2) {
+    if ($archiveName -ne 'app.dump' -or
+        -not $manifest.table_rows -or
+        $manifest.table_rows.Count -lt 1 -or
+        -not $manifest.archive_inventory -or
+        $manifest.archive_inventory.Count -lt 1) {
+        throw 'The version 2 app-owned backup manifest is incomplete.'
+    }
+    foreach ($table in $manifest.table_rows) {
+        if ([string]$table.schema -notmatch '^(public|private|api_private)$' -or
+            [string]$table.table -notmatch '^[a-z_][a-z0-9_]*$' -or
+            [int64]$table.rows -lt 0) {
+            throw 'The backup table-row inventory contains an invalid entry.'
+        }
+    }
 }
 
 Write-Output "Backup verified: $resolvedBackup"

@@ -16,19 +16,23 @@
 Silarah is a private Muslim matrimony experience for adults who are approaching
 marriage with intention.
 
+This Android release is available only to adults in India. Registration,
+discovery, +91 phone verification and billing are not offered outside India in
+this release.
+
 Create a detailed profile, choose the qualities that matter to you and discover
-relevant people across your city, country or the wider diaspora. Photo privacy
+relevant people across Indian states and cities. Photo privacy
 controls let you decide whether photos are visible to everyone, revealed after
 mutual interest or shared only after approval.
 
 Built for serious introductions:
 
 - Thoughtful filters for faith, family, education and marriage intentions
-- City, country and global diaspora discovery
+- India-wide state, city and distance discovery
 - Interests before conversation, with clear consent from both people
 - Real-time messages and typing presence after a connection is accepted
 - On-device photo safety checks before publishing
-- Optional profile-photo and identity verification
+- Optional profile-photo verification with human review
 - Blocking, reporting and account-standing controls
 - Guardian-aware profile choices
 - Pause discovery or permanently delete your account at any time
@@ -36,9 +40,9 @@ Built for serious introductions:
 Subscriptions unlock the benefits shown in the app. Prices, billing periods,
 trials and renewal terms are always presented by Google Play before purchase.
 Women can read and message accepted connections without a paid subscription or
-phone verification. Premium is purchased first; India +91 phone verification
-then becomes available. Men need active Premium and complete SMS verification
-before sending. While Premium is active, a verified number can be changed with
+phone verification. Men verify an India +91 number before a paid Premium
+purchase starts, and need both active Premium and that verified number before
+sending. While Premium is active, a verified number can be changed with
 a new OTP without shortening the store subscription. Other access and daily
 interest limits follow the entitlement shown in the app.
 

@@ -9,6 +9,9 @@ void main() {
   final migration = source(
     'supabase/migrations/205_compatible_discovery_notifications.sql',
   );
+  final indiaWakeFix = source(
+    'supabase/migrations/250_india_inventory_and_availability_wake.sql',
+  );
 
   test('zero-to-available alerts are exact, private, and bounded', () {
     expect(migration, contains('private.discovery_notification_state'));
@@ -91,6 +94,17 @@ void main() {
     expect(availability, greaterThanOrEqualTo(0));
     expect(checkout, greaterThan(availability));
     expect(worker, contains('Discovery availability batch failed'));
+  });
+
+  test('India inventory keys and coalesced transitions stay wired', () {
+    expect(indiaWakeFix, contains("''state_name'', ''city_id''"));
+    expect(indiaWakeFix, contains('AFTER INSERT OR UPDATE OF event_at'));
+    expect(indiaWakeFix, contains('FOR EACH STATEMENT'));
+    expect(
+      indiaWakeFix,
+      isNot(contains('UPDATE OF cursor_user_id')),
+      reason: 'Worker progress must not recursively wake itself.',
+    );
   });
 
   test('settings expose master alert and digest frequency controls', () {

@@ -124,7 +124,7 @@ void main() {
     expect(filters, contains('Phone verified'));
     expect(filters, contains('Photo + phone'));
     expect(filters, contains('Guardian connected'));
-    expect(filters, contains('Anywhere in India'));
+    expect(filters, contains('All India'));
     expect(filterBar, contains("label: 'Trust checks'"));
     expect(filterBar, contains("scrollToSection: 'verified'"));
     expect(filterBar, isNot(contains('Verified Only')));

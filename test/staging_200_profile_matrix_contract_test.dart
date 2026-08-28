@@ -41,6 +41,22 @@ void main() {
     expect(matrix, contains('/auth/v1/admin/users/'));
     expect(matrix, contains('/storage/v1/object/profile-photos'));
     expect(matrix, contains('report.cleanup.completed = true'));
+    expect(matrix, contains('fixtureCityIds'));
+    expect(matrix, contains('deletedFixtureCities'));
+  });
+
+  test('matrix exercises the India-only release location contract', () {
+    expect(matrix, contains('India is missing from the staging catalogue'));
+    expect(matrix, contains('countryCode: "IN"'));
+    expect(matrix, contains('timezone: "Asia/Kolkata"'));
+    expect(matrix, contains('state_name: premiumMale.region.name'));
+    expect(matrix, contains('city_id: String(premiumMale.city.id)'));
+    expect(matrix, contains('statesAndUnionTerritoriesVerified'));
+    expect(matrix, contains('location_scope: "same_city"'));
+    expect(matrix, contains('removeStaleMatrixFixtures'));
+    expect(matrix, contains('Matrix Auth fixtures remain after cleanup'));
+    expect(matrix, isNot(contains('diaspora_countries: [diasporaCode]')));
+    expect(matrix, isNot(contains('location_scope: "anywhere"')));
   });
 
   test('matrix covers filters, quotas, media, relationships and notifications',

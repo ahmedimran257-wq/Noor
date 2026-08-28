@@ -38,13 +38,6 @@ class ProfileWriteService {
     is_revert, polygamy_status, polygamy_acceptance, special_needs
   ''';
 
-  static const _preferenceRestoreColumns = '''
-    preferred_age_min, preferred_age_max, location_preference, diaspora_mode,
-    sect_preference, deen_preference, min_education_rank, open_to_divorced,
-    open_to_widowed, open_to_has_children, open_to_diaspora,
-    preferred_living_expectation
-  ''';
-
   static const _userRestoreColumns = '''
     email, phone, country_code, is_guardian_path, profile_owner_type,
     onboarding_profile_for, onboarding_profile_creator_relation, onboarding_city_id,
@@ -436,7 +429,20 @@ class ProfileWriteService {
         });
       }
 
-      return effectiveData;
+      // A successful transport response is not enough: Edit Profile must
+      // reopen from the server-authoritative values it just committed. This
+      // also prevents a stale in-memory snapshot from replacing fresh edits
+      // when the profile screen refreshes immediately after navigation pops.
+      final committedData = await loadProfile();
+      if (committedData == null ||
+          !_preferenceFieldsMatch(effectiveData, committedData)) {
+        OperationalTelemetryService.record(
+          'profile_write',
+          'preference_readback_mismatch',
+        );
+        return null;
+      }
+      return committedData;
     } catch (_) {
       return null;
     }
@@ -755,6 +761,12 @@ class ProfileWriteService {
   ) =>
       _fullProfileFields(data);
 
+  @visibleForTesting
+  static Map<String, dynamic> buildEditPreferenceFieldsForTest(
+    OnboardingData data,
+  ) =>
+      _preferenceFields(data);
+
   static Map<String, dynamic> _locationFields(OnboardingData data) {
     return _compactMap({
       'city_id':
@@ -937,6 +949,15 @@ class ProfileWriteService {
     });
   }
 
+  static bool _preferenceFieldsMatch(
+    OnboardingData requested,
+    OnboardingData committed,
+  ) {
+    final expected = _preferenceFields(requested);
+    final actual = _preferenceFields(committed);
+    return expected.entries.every((entry) => actual[entry.key] == entry.value);
+  }
+
   static String? _creatorRelationForDb(OnboardingData data) {
     final relation = data.wardRelationship ??
         data.profileCreatorRelation ??
@@ -970,15 +991,15 @@ class ProfileWriteService {
 
       if (profileRes == null) return _mapUserResumeToOnboardingData(userRes);
 
-      // 3. Fetch profile_preferences table row if it exists
-      Map<String, dynamic>? prefRes;
-      try {
-        prefRes = await SupabaseService.client
-            .from('profile_preferences')
-            .select(_preferenceRestoreColumns)
-            .eq('profile_id', profileRes['id'])
-            .maybeSingle();
-      } catch (_) {}
+      // 3. Fetch private preferences through the owner-scoped SECURITY
+      // DEFINER read boundary. Direct table reads are intentionally revoked;
+      // an RLS policy that joins profiles cannot work without re-granting the
+      // wider profiles table, which would weaken the member privacy boundary.
+      final preferenceResponse =
+          await SupabaseService.client.rpc('get_my_profile_preferences');
+      final prefRes = preferenceResponse is Map
+          ? Map<String, dynamic>.from(preferenceResponse)
+          : null;
 
       // 4. Construct and return OnboardingData
       return _mapDbToOnboardingData(profileRes, prefRes, userRes);

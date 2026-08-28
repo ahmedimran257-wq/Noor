@@ -74,11 +74,14 @@ void main() {
       expect(harness, contains('STAGING_PROJECT_REF'));
       expect(harness, contains('productionProjectRef'));
       expect(harness, contains('Safety stop: production'));
-      expect(harness, contains('p(95)<1000'));
+      expect(harness, contains('isStressProbe = maxVus > 25'));
+      expect(harness, contains('isStressProbe ? 1500 : 1000'));
+      expect(harness, contains('isStressProbe ? 2000 : 1500'));
       expect(harness, contains('Math.min(Math.max(Number(__ENV.MAX_VUS'));
       expect(harness, contains('sleep(iterationSleepSeconds)'));
       expect(runner, contains('Refusing to run load automation against'));
       expect(runner, contains('/auth/v1/admin/users'));
+      expect(runner, contains('AbortSignal.timeout(timeoutMs)'));
       expect(runner, contains('finally'));
       expect(runner, contains('Promise.all(fixtures.map(deleteFixture))'));
     });

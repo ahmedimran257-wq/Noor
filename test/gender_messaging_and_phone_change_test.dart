@@ -25,6 +25,13 @@ void main() {
       ),
       isFalse,
     );
+    expect(
+      MessagingAccessPolicy.requiresVerifiedPhoneToSend(
+        'male',
+        testOnly: true,
+      ),
+      isFalse,
+    );
     expect(MessagingAccessPolicy.hasFreeMessaging(null), isFalse);
     expect(MessagingAccessPolicy.requiresVerifiedPhoneToSend('other'), isTrue);
   });
@@ -46,7 +53,7 @@ void main() {
     final second = PaywallGateSheet.show(context);
     await tester.pumpAndSettle();
 
-    expect(find.text('Subscribe to Unlock Messaging'), findsOneWidget);
+    expect(find.text('Continue your conversation'), findsOneWidget);
     Navigator.of(context).pop();
     await tester.pumpAndSettle();
     await Future.wait([first, second]);

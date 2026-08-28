@@ -2377,11 +2377,11 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settings_theme_oledDesc => 'OLED اسکرین کے لیے حقیقی سیاہ';
 
   @override
-  String get settings_theme_prism => 'پرزم لکس';
+  String get settings_theme_ivory => 'ہاتھی دانت اور زمرد';
 
   @override
-  String get settings_theme_prismDesc =>
-      'روشن جواہراتی رنگوں کے ساتھ آدھی رات کی گہرائی';
+  String get settings_theme_ivoryDesc =>
+      'گرم ہاتھی دانت، گہرا زمرد اور قدیم سنہرا';
 
   @override
   String get settings_guardian_backendRequired =>

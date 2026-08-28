@@ -9,6 +9,8 @@ import { dirname, resolve } from "node:path";
 
 const PROFILE_COUNT = 200;
 const KNOWN_PRODUCTION_REF = "jukpscfxzwttgtxvrbmj";
+const FIXTURE_DOMAIN = "@staging.silarah.invalid";
+const STALE_FIXTURE_AGE_MS = 6 * 60 * 60 * 1000;
 const required = [
   "STAGING_SUPABASE_URL",
   "STAGING_SUPABASE_ANON_KEY",
@@ -52,6 +54,7 @@ const created = {
   authUserIds: [],
   profileIds: [],
   storagePaths: [],
+  fixtureCityIds: [],
 };
 const report = {
   runId,
@@ -217,7 +220,49 @@ async function deleteWhere(table, query) {
     apiKey: service,
     method: "DELETE",
     prefer: "return=minimal",
-  }).catch(() => undefined);
+  });
+}
+
+async function listAuthUsers() {
+  const users = [];
+  for (let page = 1; page <= 20; page += 1) {
+    const data = await request(`/auth/v1/admin/users?page=${page}&per_page=1000`, {
+      apiKey: service,
+    });
+    const batch = Array.isArray(data) ? data : (data?.users ?? []);
+    users.push(...batch);
+    if (batch.length < 1000) return users;
+  }
+  throw new Error("Auth fixture scan exceeded the 20,000-user safety bound");
+}
+
+function isMatrixFixture(user) {
+  return Boolean(
+    user?.id &&
+      user?.email?.toLowerCase().endsWith(FIXTURE_DOMAIN) &&
+      user?.user_metadata?.staging_matrix_run,
+  );
+}
+
+async function removeStaleMatrixFixtures() {
+  const cutoff = Date.now() - STALE_FIXTURE_AGE_MS;
+  const stale = (await listAuthUsers()).filter((user) => {
+    const createdAt = Date.parse(user.created_at ?? "");
+    return isMatrixFixture(user) && Number.isFinite(createdAt) && createdAt < cutoff;
+  });
+  for (const ids of chunks(stale.map((user) => user.id), 25)) {
+    await deleteWhere("users", `id=in.(${ids.join(",")})`);
+  }
+  await mapConcurrent(stale, 10, async (user) => {
+    await request(`/auth/v1/admin/users/${user.id}`, {
+      apiKey: service,
+      method: "DELETE",
+    });
+  });
+  const staleIds = new Set(stale.map((user) => user.id));
+  const remaining = (await listAuthUsers()).filter((user) => staleIds.has(user.id));
+  assert(remaining.length === 0, "Stale matrix fixtures remain after cleanup");
+  return stale.length;
 }
 
 async function createAuthUser(member) {
@@ -247,12 +292,28 @@ async function signIn(member) {
 }
 
 async function uploadFixture(path) {
-  await request(`/storage/v1/object/profile-photos/${path}`, {
-    apiKey: service,
-    method: "POST",
-    body: fixtureImageBytes,
-    contentType: "image/jpeg",
-  });
+  let lastError;
+  for (let attempt = 1; attempt <= 4; attempt += 1) {
+    try {
+      await request(`/storage/v1/object/profile-photos/${path}`, {
+        apiKey: service,
+        method: "POST",
+        body: fixtureImageBytes,
+        contentType: "image/jpeg",
+      });
+      lastError = null;
+      break;
+    } catch (error) {
+      lastError = error;
+      const transient = error?.status === 429 ||
+        (error?.status >= 500 && /40P01|deadlock|database error/i.test(error.message));
+      if (!transient || attempt === 4) throw error;
+      await new Promise((resolveDelay) =>
+        setTimeout(resolveDelay, 150 * 2 ** (attempt - 1))
+      );
+    }
+  }
+  if (lastError) throw lastError;
   created.storagePaths.push(path);
 }
 
@@ -268,6 +329,28 @@ async function feed(actor, filters = {}, page = {}) {
       p_filters: filters,
     },
   });
+}
+
+async function feedLocationRows(rows) {
+  const userIds = [...new Set(rows.map((row) => row.user_id).filter(Boolean))];
+  if (userIds.length === 0) return [];
+  const profiles = await request(
+    `/rest/v1/profiles?user_id=in.(${userIds.join(",")})&select=user_id,city_id`,
+    { apiKey: service },
+  );
+  const cityIds = [...new Set(profiles.map((row) => row.city_id).filter(Boolean))];
+  const cities = cityIds.length === 0
+    ? []
+    : await request(
+      `/rest/v1/cities?id=in.(${cityIds.join(",")})&select=id,region_id`,
+      { apiKey: service },
+    );
+  const cityRegion = new Map(cities.map((row) => [row.id, row.region_id]));
+  return profiles.map((row) => ({
+    userId: row.user_id,
+    cityId: row.city_id,
+    regionId: cityRegion.get(row.city_id),
+  }));
 }
 
 async function rpc(actor, name, body = {}) {
@@ -312,7 +395,7 @@ async function cleanup() {
         apiKey: service,
         method: "DELETE",
         body: { prefixes: batch },
-      }).catch(() => undefined);
+      });
     }
   }
 
@@ -332,70 +415,114 @@ async function cleanup() {
     await request(`/auth/v1/admin/users/${id}`, {
       apiKey: service,
       method: "DELETE",
-    }).catch(() => undefined);
+    });
   });
+  if (created.fixtureCityIds.length > 0) {
+    for (const ids of chunks(created.fixtureCityIds, 100)) {
+      await deleteWhere("cities", `id=in.(${ids.join(",")})`);
+    }
+  }
+  const createdIds = new Set(created.authUserIds);
+  const authLeft = (await listAuthUsers()).filter((user) => createdIds.has(user.id));
+  assert(authLeft.length === 0, "Matrix Auth fixtures remain after cleanup");
+  for (const ids of chunks(created.authUserIds, 25)) {
+    const publicLeft = await request(
+      `/rest/v1/users?id=in.(${ids.join(",")})&select=id`,
+      { apiKey: service },
+    );
+    assert(publicLeft.length === 0, "Matrix public users remain after cleanup");
+  }
+  if (created.fixtureCityIds.length > 0) {
+    const cityLeft = await request(
+      `/rest/v1/cities?id=in.(${created.fixtureCityIds.join(",")})&select=id`,
+      { apiKey: service },
+    );
+    assert(cityLeft.length === 0, "Matrix city fixtures remain after cleanup");
+  }
   report.cleanup.completed = true;
   report.cleanup.deletedAuthUsers = created.authUserIds.length;
   report.cleanup.deletedStorageObjects = created.storagePaths.length;
+  report.cleanup.deletedFixtureCities = created.fixtureCityIds.length;
 }
 
 let failure;
 let members = [];
 
 try {
-  const countries = await request(
-    "/rest/v1/countries?select=iso_code,name&order=display_priority.desc.nullslast,name.asc&limit=100",
+  await test("remove stale staging matrix fixtures", async () => ({
+    removed: await removeStaleMatrixFixtures(),
+  }), { continueOnFailure: false });
+
+  const india = await request(
+    "/rest/v1/countries?iso_code=eq.IN&select=iso_code,name&limit=1",
+    { apiKey: service },
+  );
+  assert(india.length === 1, "India is missing from the staging catalogue");
+
+  const regions = await request(
+    "/rest/v1/regions?country_code=eq.IN&select=id,name,country_code&order=name.asc&limit=100",
     { apiKey: service },
   );
   assert(
-    countries.length >= 5,
-    "Staging needs at least five configured countries",
+    regions.length >= 36,
+    `Expected the India state/UT catalogue, found ${regions.length}`,
   );
 
-  const cities = await request(
-    "/rest/v1/cities?select=id,name,region_id,latitude,longitude&latitude=not.is.null&longitude=not.is.null&limit=200",
+  const regionIds = regions.map((region) => region.id);
+  const existingCities = await request(
+    `/rest/v1/cities?region_id=in.(${regionIds.join(",")})&select=id,name,region_id,latitude,longitude&limit=5000`,
     { apiKey: service },
   );
-  const regionIds = [
-    ...new Set(cities.map((city) => city.region_id).filter(Boolean)),
-  ];
-  const regions = regionIds.length
-    ? await request(
-      `/rest/v1/regions?id=in.(${regionIds.join(",")})&select=id,country_code`,
-      { apiKey: service },
-    )
-    : [];
-  const regionCountry = new Map(
-    regions.map((
-      region,
-    ) => [region.id, String(region.country_code).toUpperCase()]),
-  );
-  const cityByCountry = new Map();
-  for (const city of cities) {
-    const code = regionCountry.get(city.region_id);
-    if (code && !cityByCountry.has(code)) cityByCountry.set(code, city);
+  const cityByRegion = new Map();
+  for (const city of existingCities) {
+    if (!cityByRegion.has(city.region_id)) cityByRegion.set(city.region_id, city);
   }
-
-  const allCountryCodes = countries.map((row) =>
-    String(row.iso_code).toUpperCase()
+  const missingRegionCities = regions
+    .filter((region) => !cityByRegion.has(region.id))
+    .map((region, index) => ({
+      region_id: region.id,
+      name: `Matrix Fixture ${runId} ${index + 1}`,
+      // Disposable staging-only coordinates distributed inside India. They
+      // exercise PostGIS/state/city paths and are deleted in finally.
+      latitude: 8.0 + (index % 20) * 1.2,
+      longitude: 68.0 + (index % 18) * 1.8,
+    }));
+  if (missingRegionCities.length > 0) {
+    const insertedCities = await insertRows("cities", missingRegionCities, {
+      returning: true,
+    });
+    for (const city of insertedCities) {
+      cityByRegion.set(city.region_id, city);
+      created.fixtureCityIds.push(city.id);
+    }
+  }
+  const locationFixtures = regions.map((region) => ({
+    region,
+    city: cityByRegion.get(region.id),
+  }));
+  assert(
+    locationFixtures.every((location) => location.city),
+    "Every Indian state/UT needs a disposable city fixture",
   );
-  const locationCountry = allCountryCodes.find((code) =>
-    cityByCountry.has(code)
-  );
-  const countryCodes = [
-    ...(locationCountry ? [locationCountry] : []),
-    ...allCountryCodes.filter((code) => code !== locationCountry),
-  ].slice(0, 10);
-  assert(countryCodes.length >= 5, "Could not select five staging countries");
 
   const seeds = Array.from({ length: PROFILE_COUNT }, (_, index) => {
     const gender = index % 2 === 0 ? "male" : "female";
-    const premium = index % 8 === 0 || index % 8 === 1;
+    // The shared-city cohort is Premium so the notification test exercises
+    // the same entitlement path sold to customers. The remainder preserves a
+    // mixed free/Premium population for quota and paywall coverage.
+    const premium = index < 30 || index % 8 === 0 || index % 8 === 1;
+    // Keep a bounded same-city cohort for the new-compatible-member alert,
+    // then distribute the remaining members across every Indian state/UT.
+    const location = index < 30
+      ? locationFixtures[0]
+      : locationFixtures[1 + (Math.floor((index - 30) / 2) % (locationFixtures.length - 1))];
     return {
       index,
       gender,
       premium,
-      countryCode: countryCodes[Math.floor(index / 20) % countryCodes.length],
+      countryCode: "IN",
+      region: location.region,
+      city: location.city,
       email: `matrix.${runId}.${
         String(index).padStart(3, "0")
       }@staging.silarah.invalid`,
@@ -423,7 +550,7 @@ try {
     country_code: member.countryCode,
     gender: member.gender,
     preferred_language: ["en", "ur", "ar", "hi"][member.index % 4],
-    timezone: "UTC",
+    timezone: "Asia/Kolkata",
     subscription_status: member.premium ? "active" : "none",
     subscription_expires_at: member.premium
       ? new Date(now.getTime() + 30 * 86_400_000).toISOString()
@@ -437,8 +564,28 @@ try {
   const deenLevels = ["practicing", "moderate", "cultural"];
   const familyTypes = ["nuclear", "joint", "extended"];
   const maritalStatuses = ["no", "divorced", "widowed"];
-  const tongues = ["English", "Urdu", "Arabic", "Hindi"];
-  const communities = ["South Asian", "Arab", "African", "European"];
+  const tongues = [
+    "Hindi",
+    "Urdu",
+    "Bengali",
+    "Telugu",
+    "Marathi",
+    "Tamil",
+    "Gujarati",
+    "Kannada",
+    "Malayalam",
+    "English",
+  ];
+  const communities = [
+    "Syed",
+    "Sheikh",
+    "Ansari",
+    "Pathan",
+    "Deccan Muslim",
+    "Bengali Muslim",
+    "Mappila",
+    "Lebbai",
+  ];
   const living = ["separate", "with_inlaws", "open_to_discussion"];
   const quran = ["none", "some_surahs", "partial", "hafiz"];
   const timelines = ["asap", "6_months", "1_year", "2_plus_years"];
@@ -446,7 +593,7 @@ try {
 
   const profileRows = members.map((member) => {
     const group = Math.floor(member.index / 2);
-    const city = cityByCountry.get(member.countryCode);
+    const city = member.city;
     const recent = group % 4 !== 3;
     return {
       user_id: member.id,
@@ -517,14 +664,14 @@ try {
       profile_id: member.profileId,
       preferred_age_min: 22,
       preferred_age_max: 45,
-      preferred_countries: countryCodes.slice(0, 2),
+      preferred_countries: ["IN"],
       sect_preference: "any",
       deen_preference: "any",
       min_education_rank: 1,
       open_to_divorced: true,
       open_to_widowed: true,
       open_to_has_children: true,
-      open_to_diaspora: true,
+      open_to_diaspora: false,
       preferred_mother_tongue: [],
       preferred_community: [],
       preferred_marriage_timeline: "no_preference",
@@ -543,7 +690,10 @@ try {
     nsfw_cleared: true,
     moderation_status: "approved",
   }));
-  await mapConcurrent(photoRows, 10, async (photo) => {
+  // Storage metadata inserts can contend on a small Supabase staging tier.
+  // Four workers exercise concurrency without manufacturing deadlocks that a
+  // real client population naturally spreads over time.
+  await mapConcurrent(photoRows, 4, async (photo) => {
     await uploadFixture(photo.storage_path);
   });
   await insertRows("photos", photoRows);
@@ -551,6 +701,7 @@ try {
   report.distribution = {
     gender: groupCount(members, (member) => member.gender),
     country: groupCount(members, (member) => member.countryCode),
+    state: groupCount(members, (member) => member.region.name),
     entitlement: groupCount(
       members,
       (member) => member.premium ? "premium" : "free",
@@ -663,8 +814,8 @@ try {
       ],
       [
         "community",
-        { community: "South Asian" },
-        (row) => row.community === "South Asian",
+        { community: "Syed" },
+        (row) => row.community === "Syed",
       ],
       [
         "living",
@@ -710,7 +861,7 @@ try {
     return { filtersVerified: cases.length };
   });
 
-  await test("free location filters are rejected and Premium scopes work", async () => {
+  await test("free location filters are rejected and India Premium scopes work", async () => {
     await expectRejected(
       () => feed(freeMale, { location_scope: "same_country" }),
       "premium_filter_required",
@@ -727,28 +878,26 @@ try {
       sameCountry.every((row) => row.country_code === premiumMale.countryCode),
       "Premium same-country filter crossed countries",
     );
-    for (const code of countryCodes) {
-      const rows = await feed(premiumMale, {
-        location_scope: "countries",
-        country_codes: [code],
-      });
-      assert(rows.length > 0, `Country ${code} returned no profiles`);
-      assert(
-        rows.every((row) => row.country_code === code),
-        `${code} filter leaked another country`,
-      );
-    }
-    const diasporaCode = countryCodes.find(
-      (code) => code !== premiumMale.countryCode,
-    );
-    const diaspora = await feed(premiumMale, {
-      location_scope: "diaspora",
-      diaspora_countries: [diasporaCode],
+    const stateRows = await feed(premiumMale, {
+      state_name: premiumMale.region.name,
     });
-    assert(diaspora.length > 0, "Premium diaspora filter returned no profiles");
+    assert(stateRows.length > 0, "Premium state filter returned no profiles");
+    const stateLocations = await feedLocationRows(stateRows);
     assert(
-      diaspora.every((row) => row.country_code === diasporaCode),
-      "Premium diaspora filter crossed countries",
+      stateLocations.length === stateRows.length &&
+        stateLocations.every((row) => row.regionId === premiumMale.region.id),
+      "Premium state filter crossed Indian states/UTs",
+    );
+    const cityRows = await feed(premiumMale, {
+      state_name: premiumMale.region.name,
+      city_id: String(premiumMale.city.id),
+    });
+    assert(cityRows.length > 0, "Premium city filter returned no profiles");
+    const cityLocations = await feedLocationRows(cityRows);
+    assert(
+      cityLocations.length === cityRows.length &&
+        cityLocations.every((row) => row.cityId === premiumMale.city.id),
+      "Premium city filter crossed cities",
     );
     if (premiumMale.profile.city_id) {
       for (const scope of ["same_city", "same_region", "radius"]) {
@@ -759,7 +908,10 @@ try {
         assert(rows.length > 0, `Premium ${scope} filter returned no profiles`);
       }
     }
-    return { countriesVerified: countryCodes.length };
+    return {
+      launchCountry: "IN",
+      statesAndUnionTerritoriesVerified: regions.length,
+    };
   });
 
   await test(
@@ -767,8 +919,8 @@ try {
     async () => {
       const premiumPreferences = [
         { verified_only: true },
-        { mother_tongue: "English" },
-        { community: "South Asian" },
+        { mother_tongue: "Hindi" },
+        { community: "Syed" },
         { living_expectation: "separate" },
       ];
       for (const filters of premiumPreferences) {
@@ -831,7 +983,10 @@ try {
   await test(
     "compatible-profile notifications are exact, localized, private, deduplicated, and optional",
     async () => {
-      const candidate = femalePremiumMembers.at(-1);
+      const candidate = femalePremiumMembers.find(
+        (member) => member.city.id === locationFixtures[0].city.id,
+      );
+      assert(candidate, "Same-city notification candidate is missing");
       const originalTongue = candidate.profile.mother_tongue;
       const uniqueTongue = `Availability-${runId}`;
       const localeCodes = [
@@ -846,14 +1001,21 @@ try {
         "tr",
         "ur",
       ];
-      const cohortMembers = malePremiumMembers.slice(3, 15);
+      const cohortMembers = members
+        .filter(
+          (member) =>
+            member.gender === "male" &&
+            member.city.id === candidate.city.id &&
+            Date.parse(member.profile.last_active_at) >
+              now.getTime() - 30 * 86_400_000,
+        )
+        .slice(0, 12);
       assert(cohortMembers.length === 12, "Notification cohort is incomplete");
       const cohort = await mapConcurrent(cohortMembers, 6, signIn);
       const optedIn = cohort.slice(0, 10);
       const optedOut = cohort.slice(10);
       const filters = {
-        location_scope: "anywhere",
-        anywhere: true,
+        location_scope: "same_city",
         gender_pref: "female",
         mother_tongue: uniqueTongue,
       };
@@ -867,6 +1029,34 @@ try {
         body: { visibility: "paused", mother_tongue: uniqueTongue },
         prefer: "return=minimal",
       });
+
+      // The bulk population legitimately enqueues one bounded availability
+      // event per newly-live profile. Drain those staging-only events before
+      // establishing the empty-inventory cohort so an older cursor cannot
+      // race or partially consume the single transition under test.
+      let completedDrainPasses = 0;
+      let drainAttempts = 0;
+      while (
+        completedDrainPasses < PROFILE_COUNT + 10 &&
+        drainAttempts < (PROFILE_COUNT + 10) * 3
+      ) {
+        drainAttempts += 1;
+        const result = await request(
+          "/rest/v1/rpc/process_discovery_availability_notifications",
+          {
+            apiKey: service,
+            method: "POST",
+            body: { p_batch_size: 40 },
+          },
+        );
+        if (!result?.busy) completedDrainPasses += 1;
+        else await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+      assert(
+        completedDrainPasses >= PROFILE_COUNT + 10,
+        "Availability queue could not be drained without lock contention",
+      );
+
       for (let index = 0; index < cohort.length; index += 1) {
         const actor = cohort[index];
         const isOptedIn = index < optedIn.length;
@@ -905,7 +1095,21 @@ try {
       });
 
       let notificationRows = [];
+      const availabilityWorkerResults = [];
+      // Explicitly invoke the same bounded production worker so the assertion
+      // does not depend on pg_net or cron scheduling latency.
       for (let attempt = 0; attempt < 30; attempt += 1) {
+        const workerResult = await request(
+          "/rest/v1/rpc/process_discovery_availability_notifications",
+          {
+            apiKey: service,
+            method: "POST",
+            body: { p_batch_size: 40 },
+          },
+        );
+        if (workerResult?.queued || workerResult?.busy) {
+          availabilityWorkerResults.push(workerResult);
+        }
         notificationRows = await request(
           `/rest/v1/notifications?user_id=in.(${
             cohort.map((actor) => actor.id).join(",")
@@ -913,10 +1117,38 @@ try {
           { apiKey: service },
         );
         if (notificationRows.length >= optedIn.length) break;
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 100));
       }
 
       const notifiedIds = new Set(notificationRows.map((row) => row.user_id));
+      if (notificationRows.length !== optedIn.length) {
+        const missingActors = optedIn.filter((actor) => !notifiedIds.has(actor.id));
+        const missingDiagnostics = [];
+        for (const actor of missingActors) {
+          const [exactRows, prefs, account] = await Promise.all([
+            feed(actor, filters),
+            request(
+              `/rest/v1/notification_prefs?user_id=eq.${actor.id}&select=new_compatible_profiles`,
+              { apiKey: service },
+            ),
+            request(
+              `/rest/v1/users?id=eq.${actor.id}&select=subscription_status,subscription_expires_at,is_banned,is_shadowbanned`,
+              { apiKey: service },
+            ),
+          ]);
+          missingDiagnostics.push({
+            fixtureIndex: actor.index,
+            userId: actor.id,
+            exactFeedContainsCandidate: exactRows.some((row) => row.user_id === candidate.id),
+            preference: prefs[0]?.new_compatible_profiles,
+            account: account[0],
+          });
+        }
+        console.error(JSON.stringify({
+          availabilityWorkerResults,
+          missingDiagnostics,
+        }));
+      }
       assert(
         notificationRows.length === optedIn.length,
         `Expected ${optedIn.length} availability alerts, received ${notificationRows.length}`,
@@ -930,7 +1162,11 @@ try {
         "An opted-out viewer received an availability notification",
       );
       const candidateName = candidate.profile.first_name.toLowerCase();
-      const candidateCountry = candidate.countryCode.toLowerCase();
+      const candidateLocation = [
+        candidate.city.name,
+        candidate.region.name,
+        "india",
+      ].filter(Boolean).map((value) => value.toLowerCase());
       for (const row of notificationRows) {
         const copy = `${row.title} ${row.body}`.toLowerCase();
         assert(
@@ -942,8 +1178,8 @@ try {
           "Availability copy leaked a member name",
         );
         assert(
-          !copy.includes(candidateCountry),
-          "Availability copy leaked a country",
+          candidateLocation.every((value) => !copy.includes(value)),
+          "Availability copy leaked a member location",
         );
       }
       assert(

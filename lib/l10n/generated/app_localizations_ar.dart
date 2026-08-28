@@ -2347,10 +2347,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings_theme_oledDesc => 'أسود حقيقي مضبوط لشاشات OLED';
 
   @override
-  String get settings_theme_prism => 'بريزم لوكس';
+  String get settings_theme_ivory => 'عاجي وزمردي';
 
   @override
-  String get settings_theme_prismDesc => 'عمق ليلي بألوان جوهرية مضيئة';
+  String get settings_theme_ivoryDesc => 'عاجي دافئ مع زمردي عميق وذهبي عتيق';
 
   @override
   String get settings_guardian_backendRequired =>

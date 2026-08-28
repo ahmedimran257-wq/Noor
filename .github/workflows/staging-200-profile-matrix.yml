@@ -7,6 +7,9 @@ concurrency:
   group: staging-200-profile-matrix
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   matrix:
     name: Verify discovery, quotas, Premium, matching and safety

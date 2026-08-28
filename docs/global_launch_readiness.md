@@ -1,4 +1,4 @@
-# Silarah India launch and future global readiness
+# Silarah India release gate and post-launch market backlog
 
 Last technical review: 11 August 2026
 
@@ -41,7 +41,7 @@ been legally cleared, registered, taxed, priced or store-tested there.
   Indian lawyer should still review the final production policies and actual
   operations; engineering controls cannot guarantee legal immunity.
 
-## Future global blockers requiring owner or counsel input
+## Post-launch country-expansion blockers requiring owner or counsel input
 
 1. If the operator, address or business form changes, update Google Play, Terms,
    Privacy Policy, invoices and grievance disclosures together.

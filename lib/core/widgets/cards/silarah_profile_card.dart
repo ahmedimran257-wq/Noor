@@ -70,9 +70,9 @@ class SilarahProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final frameColor = AppColors.active.mode == SilarahThemeMode.blackWhite
-        ? AppColors.champagneLight.withValues(alpha: 0.9)
-        : AppColors.champagneLight.withValues(alpha: 0.82);
+    final frameColor = isFocused
+        ? AppColors.champagneGold.withValues(alpha: .88)
+        : AppColors.onMedia.withValues(alpha: .28);
 
     return Transform.scale(
       scale: cardScale,
@@ -111,9 +111,7 @@ class SilarahProfileCard extends StatelessWidget {
             foregroundDecoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
               border: Border.all(
-                color: isFocused
-                    ? frameColor
-                    : AppColors.onMedia.withValues(alpha: 0.28),
+                color: frameColor,
                 width: 1.5,
               ),
             ),
@@ -237,7 +235,9 @@ class SilarahProfileCard extends StatelessWidget {
                               ],
 
                               // Profession line
-                              if (profession != null) ...[
+                              if (profession != null &&
+                                  previousMatchLabel == null &&
+                                  !isGuardianManaged) ...[
                                 const SizedBox(height: AppDimensions.space8),
                                 Row(
                                   children: [
@@ -283,30 +283,42 @@ class SilarahProfileCard extends StatelessWidget {
                               const SizedBox(height: AppDimensions.space14),
 
                               // Action row: bookmark + send interest
-                              Row(
-                                children: [
-                                  // Bookmark
-                                  _IconActionButton(
-                                    icon: isBookmarked
-                                        ? Icons.bookmark_rounded
-                                        : Icons.bookmark_outline_rounded,
-                                    isActive: isBookmarked,
-                                    onTap: onBookmark,
-                                    tooltip: isBookmarked
-                                        ? 'Remove saved profile'
-                                        : 'Save profile',
+                              Container(
+                                padding: const EdgeInsets.all(5),
+                                decoration: BoxDecoration(
+                                  color: AppColors.overlayBlack87,
+                                  borderRadius: BorderRadius.circular(
+                                    AppDimensions.radiusButton + 4,
                                   ),
-                                  const SizedBox(width: AppDimensions.space12),
-
-                                  // Send Interest — fills remaining space
-                                  Expanded(
-                                    child: _SendInterestButton(
-                                      label: interestActionLabel,
-                                      enabled: isInterestActionEnabled,
-                                      onTap: onSendInterest,
+                                  border: Border.all(
+                                    color: AppColors.onMedia
+                                        .withValues(alpha: .18),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    _IconActionButton(
+                                      icon: isBookmarked
+                                          ? Icons.bookmark_rounded
+                                          : Icons.bookmark_outline_rounded,
+                                      isActive: isBookmarked,
+                                      onTap: onBookmark,
+                                      tooltip: isBookmarked
+                                          ? 'Remove saved profile'
+                                          : 'Save profile',
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(
+                                      width: AppDimensions.space8,
+                                    ),
+                                    Expanded(
+                                      child: _SendInterestButton(
+                                        label: interestActionLabel,
+                                        enabled: isInterestActionEnabled,
+                                        onTap: onSendInterest,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
@@ -774,19 +786,15 @@ class _SendInterestButton extends StatelessWidget {
     final isSending = label == 'Sending...';
     final isConfirmed = label == 'Interest Sent';
     final isInteractive = enabled && onTap != null;
-    final enabledColors = AppColors.active.mode == SilarahThemeMode.blackWhite
-        ? const [Color(0xFFFFFFFF), Color(0xFFE7E7E7)]
-        : [
-            AppColors.champagneLight,
-            AppColors.champagneGold,
-            AppColors.antiqueGold,
-          ];
+    final enabledColors = [
+      AppColors.champagneLight,
+      AppColors.champagneGold,
+      AppColors.antiqueGold,
+    ];
     final foreground = isInteractive
         ? AppColors.readableOn(enabledColors[1])
-        : AppColors.onMedia.withValues(alpha: 0.64);
-    final glowColor = AppColors.active.mode == SilarahThemeMode.blackWhite
-        ? AppColors.onMedia.withValues(alpha: 0.24)
-        : AppColors.champagneGold.withValues(alpha: 0.38);
+        : AppColors.onMedia.withValues(alpha: 0.88);
+    final glowColor = AppColors.champagneGold.withValues(alpha: 0.3);
 
     return SilarahPressable(
       onTap: onTap,
@@ -796,12 +804,13 @@ class _SendInterestButton extends StatelessWidget {
         key: const Key('discovery_interest_action'),
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeOutCubic,
-        height: 52,
+        height: 50,
         decoration: BoxDecoration(
           gradient: !isInteractive
               ? const LinearGradient(
                   colors: [
-                    AppColors.overlayBlack55,
+                    Color(0xFF323235),
+                    Color(0xFF202023),
                     AppColors.overlayBlack87,
                   ],
                 )
@@ -814,9 +823,7 @@ class _SendInterestButton extends StatelessWidget {
           border: Border.all(
             color: !isInteractive
                 ? AppColors.onMedia.withValues(alpha: 0.22)
-                : AppColors.active.mode == SilarahThemeMode.blackWhite
-                    ? AppColors.onMedia
-                    : AppColors.champagneLight.withValues(alpha: 0.92),
+                : AppColors.champagneLight.withValues(alpha: 0.92),
             width: 1.25,
           ),
           boxShadow: !isInteractive
@@ -915,8 +922,8 @@ class _IconActionButton extends StatelessWidget {
       onTap: onTap,
       semanticLabel: tooltip,
       child: Container(
-        width: 52,
-        height: 52,
+        width: 50,
+        height: 50,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -938,13 +945,6 @@ class _IconActionButton extends StatelessWidget {
                 : AppColors.onMedia.withValues(alpha: 0.72),
             width: AppDimensions.borderThin,
           ),
-          boxShadow: const [
-            BoxShadow(
-              color: AppColors.overlayBlack55,
-              blurRadius: 14,
-              offset: Offset(0, 7),
-            ),
-          ],
         ),
         child: Icon(
           icon,

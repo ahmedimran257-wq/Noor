@@ -2398,11 +2398,11 @@ class AppLocalizationsMs extends AppLocalizations {
       'Hitam sebenar yang ditala untuk paparan OLED';
 
   @override
-  String get settings_theme_prism => 'Prism Luxe';
+  String get settings_theme_ivory => 'Gading & Zamrud';
 
   @override
-  String get settings_theme_prismDesc =>
-      'Kedalaman malam dengan warna permata bercahaya';
+  String get settings_theme_ivoryDesc =>
+      'Gading hangat dengan zamrud pekat dan emas antik';
 
   @override
   String get settings_guardian_backendRequired =>

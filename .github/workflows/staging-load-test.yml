@@ -24,6 +24,9 @@ concurrency:
   group: staging-bounded-load-test
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   load:
     name: Exercise authenticated read paths

@@ -95,6 +95,14 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
       ));
       return false;
     }
+    if (state.isTestOnly) {
+      emit(state.copyWith(
+        isLoading: false,
+        error:
+            'Test Premium is active on this device. Store purchases are disabled until the test grant ends or is revoked.',
+      ));
+      return false;
+    }
 
     emit(state.copyWith(isLoading: true, clearError: true));
 

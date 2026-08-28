@@ -2376,11 +2376,11 @@ class AppLocalizationsTr extends AppLocalizations {
       'OLED ekranlar için ayarlanmış gerçek siyah';
 
   @override
-  String get settings_theme_prism => 'Prism Luxe';
+  String get settings_theme_ivory => 'Fildişi ve Zümrüt';
 
   @override
-  String get settings_theme_prismDesc =>
-      'Işıltılı mücevher renkleriyle gece yarısı derinliği';
+  String get settings_theme_ivoryDesc =>
+      'Sıcak fildişi, derin zümrüt ve antik altın';
 
   @override
   String get settings_guardian_backendRequired =>

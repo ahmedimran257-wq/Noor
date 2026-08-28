@@ -2383,11 +2383,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get settings_theme_oledDesc => 'OLED स्क्रीन के लिए असली काला';
 
   @override
-  String get settings_theme_prism => 'प्रिज़्म लक्स';
+  String get settings_theme_ivory => 'आइवरी और एमराल्ड';
 
   @override
-  String get settings_theme_prismDesc =>
-      'चमकदार रत्न रंगों के साथ आधी रात की गहराई';
+  String get settings_theme_ivoryDesc =>
+      'गर्म आइवरी, गहरा एमराल्ड और एंटीक गोल्ड';
 
   @override
   String get settings_guardian_backendRequired =>

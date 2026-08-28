@@ -226,6 +226,7 @@ class _ChatScreenState extends State<ChatScreen>
     if (MessagingAccessPolicy.requiresVerifiedPhoneToSend(
       gender,
       referralOnly: subscription.isReferralOnly,
+      testOnly: subscription.isTestOnly,
     )) {
       final phone = await PhoneVerificationService.instance.currentStatus();
       if (!mounted) return;

@@ -1,4 +1,4 @@
-name: Staging global readiness
+name: Staging India readiness
 
 on:
   workflow_dispatch:
@@ -6,12 +6,15 @@ on:
     - cron: "41 2 * * 1"
 
 concurrency:
-  group: staging-global-readiness
+  group: staging-india-readiness
   cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
   readiness:
-    name: Verify global metadata, functions, locations and push queue
+    name: Verify India metadata, functions, locations and push queue
     runs-on: ubuntu-latest
     environment: staging
     timeout-minutes: 15
@@ -20,20 +23,20 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: "20.19.5"
-      - name: Run live staging global-readiness checks
+      - name: Run live staging India-readiness checks
         env:
           STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
           STAGING_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
           STAGING_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
           STAGING_PROJECT_REF: ${{ secrets.STAGING_PROJECT_REF }}
           PRODUCTION_PROJECT_REF: ${{ secrets.PRODUCTION_PROJECT_REF }}
-          STAGING_GLOBAL_REPORT_PATH: build/staging-global-readiness.json
+          STAGING_INDIA_REPORT_PATH: build/staging-india-readiness.json
         run: node tool/staging_global_readiness.mjs
       - name: Upload readiness evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: staging-global-readiness
-          path: build/staging-global-readiness.json
+          name: staging-india-readiness
+          path: build/staging-india-readiness.json
           if-no-files-found: error
           retention-days: 30

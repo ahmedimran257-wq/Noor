@@ -173,6 +173,17 @@ void main() {
         expect(copy[source], isNotNull, reason: '$locale: $source');
         expect(copy[source], isNot(source), reason: '$locale: $source');
       }
+      for (final obsolete in const [
+        'Premium is active — verify your phone',
+        'Your Premium purchase is complete. Verify an India +91 number by SMS to add the phone badge and, for men, enable sending messages.',
+        'Verify your phone with a one-time SMS code. Premium must be active before a number can be verified.',
+        'Premium is still activating. Wait a moment, then tap Verify again — your purchase is safe.',
+        'Premium is active. Verify an India +91 number by SMS; women can still message without it.',
+        'Available after Premium activation. Women can still message free without phone verification.',
+      ]) {
+        expect(copy, isNot(contains(obsolete)),
+            reason: '$locale retains a post-purchase phone flow');
+      }
     }
   });
 }

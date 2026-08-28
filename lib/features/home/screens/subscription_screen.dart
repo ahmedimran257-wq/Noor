@@ -68,7 +68,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       if (!mounted) return;
       final subscription = context.read<SubscriptionCubit>().state;
       final expiry = subscription.expiresAt;
-      if (subscription.isReferralOnly &&
+      if (subscription.isTemporaryPromotional &&
           expiry != null &&
           !expiry.isAfter(DateTime.now())) {
         unawaited(
@@ -76,7 +76,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         );
         return;
       }
-      if (subscription.isReferralOnly) setState(() {});
+      if (subscription.isTemporaryPromotional) setState(() {});
     });
   }
 
@@ -156,6 +156,21 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
               body: _ReferralPremiumActiveView(
                 expiresAt: state.expiresAt,
                 isFemale: isFemale,
+                onBackToProfile: _closeScreen,
+              ),
+            ),
+          );
+        }
+        if (state.isTestOnly) {
+          return _safeBackShell(
+            context,
+            Scaffold(
+              backgroundColor: AppColors.obsidianNight,
+              appBar: _appBar(),
+              body: _ReferralPremiumActiveView(
+                expiresAt: state.expiresAt,
+                isFemale: isFemale,
+                isTest: true,
                 onBackToProfile: _closeScreen,
               ),
             ),
@@ -446,11 +461,13 @@ class _ReferralPremiumActiveView extends StatelessWidget {
     required this.expiresAt,
     required this.isFemale,
     required this.onBackToProfile,
+    this.isTest = false,
   });
 
   final DateTime? expiresAt;
   final bool isFemale;
   final VoidCallback onBackToProfile;
+  final bool isTest;
 
   @override
   Widget build(BuildContext context) {
@@ -505,7 +522,9 @@ class _ReferralPremiumActiveView extends StatelessWidget {
                 ),
                 const SizedBox(height: AppDimensions.space16),
                 UiText(
-                  l10n.referral_premiumActiveTitle,
+                  isTest
+                      ? context.uiCopy('Test Premium is active')
+                      : l10n.referral_premiumActiveTitle,
                   style: AppTypography.screenTitle.copyWith(fontSize: 26),
                   textAlign: TextAlign.center,
                 ),
@@ -547,7 +566,11 @@ class _ReferralPremiumActiveView extends StatelessWidget {
                 const SizedBox(width: AppDimensions.space12),
                 Expanded(
                   child: UiText(
-                    l10n.referral_premiumNoPayment,
+                    isTest
+                        ? context.uiCopy(
+                            'Temporary owner-supervised access. No purchase, renewal, referral reward or phone trust badge was created.',
+                          )
+                        : l10n.referral_premiumNoPayment,
                     style: AppTypography.bodyMuted,
                   ),
                 ),
@@ -572,7 +595,11 @@ class _ReferralPremiumActiveView extends StatelessWidget {
                 const SizedBox(width: AppDimensions.space12),
                 Expanded(
                   child: UiText(
-                    l10n.referral_premiumPlansAfter,
+                    isTest
+                        ? context.uiCopy(
+                            'All Premium feature gates are enabled for testing until this countdown ends or the grant is revoked.',
+                          )
+                        : l10n.referral_premiumPlansAfter,
                     style: AppTypography.caption,
                   ),
                 ),
@@ -1490,13 +1517,13 @@ class _IncludedFeatures extends StatelessWidget {
     (Icons.favorite_rounded, '25 interests per day'),
     (Icons.chat_bubble_outline_rounded, 'Full messaging access'),
     (Icons.visibility_rounded, 'See everyone who viewed your profile'),
-    (Icons.tune_rounded, 'Advanced filters — income & distance'),
+    (Icons.travel_explore_rounded, 'All India, state, city & trust filters'),
     (Icons.rocket_launch_outlined, 'One profile boost per week'),
   ];
 
   static const _femaleFeatures = [
     (Icons.favorite_rounded, '25 interests per day'),
-    (Icons.tune_rounded, 'Advanced filters (distance, income)'),
+    (Icons.travel_explore_rounded, 'All India, state, city & trust filters'),
     (Icons.rocket_launch_outlined, 'Weekly profile boost'),
     (Icons.visibility_rounded, 'See everyone who viewed your profile'),
     (Icons.bookmark_border_rounded, 'Save multiple filter presets'),
@@ -1557,7 +1584,7 @@ class _FeatureRow extends StatelessWidget {
           ),
           SizedBox(width: isSmallScreen ? 8 : 12),
           Expanded(
-            child: UiText(label,
+            child: UiText(context.uiCopy(label),
                 style: AppTypography.body
                     .copyWith(fontSize: isSmallScreen ? 12 : 14)),
           ),

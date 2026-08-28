@@ -285,15 +285,21 @@ select extensions.ok(
   'blocked members cannot discover who blocked them'
 );
 select extensions.ok(
-  not has_function_privilege(
-    'anon',
-    'public.email_registration_status(text)',
-    'EXECUTE'
+  (
+    to_regprocedure('public.email_registration_status(text)') is null
+    or not has_function_privilege(
+      'anon',
+      'public.email_registration_status(text)',
+      'EXECUTE'
+    )
   )
-  and not has_function_privilege(
-    'anon',
-    'public.email_is_registered(text)',
-    'EXECUTE'
+  and (
+    to_regprocedure('public.email_is_registered(text)') is null
+    or not has_function_privilege(
+      'anon',
+      'public.email_is_registered(text)',
+      'EXECUTE'
+    )
   ),
   'email registration oracles are unavailable'
 );

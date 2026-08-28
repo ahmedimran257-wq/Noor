@@ -2371,11 +2371,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings_theme_oledDesc => 'True black tuned for OLED displays';
 
   @override
-  String get settings_theme_prism => 'Prism Luxe';
+  String get settings_theme_ivory => 'Ivory & Emerald';
 
   @override
-  String get settings_theme_prismDesc =>
-      'Midnight depth with luminous jewel colour';
+  String get settings_theme_ivoryDesc =>
+      'Warm ivory with deep emerald and antique gold';
 
   @override
   String get settings_guardian_backendRequired =>

@@ -23,8 +23,10 @@ each run. Test the signed release build—not a debug build.
 
 ## Core product
 
-- [ ] Discovery returns eligible same-city/country profiles.
-- [ ] Country/global/diaspora filters return only authoritative matches.
+- [ ] Discovery returns eligible same-city and India-wide profiles.
+- [ ] Same city, same state, explicit state/city, radius and View all India
+      filters return only authoritative matches; outside-India controls remain
+      unavailable in this release.
 - [ ] Filter and bottom-tab transitions remain smooth under repeated use.
 - [ ] Interest limits, reset time and premium prompt match server entitlements.
 - [ ] Accepted connection opens chat; messages, realtime insert, unread count and
@@ -37,7 +39,8 @@ each run. Test the signed release build—not a debug build.
 ## Safety, billing and lifecycle
 
 - [ ] Report, block, pause, resume, suspend/ban/shadowban standing UI and appeals work.
-- [ ] Manual KYC queue exposes only the evidence required for a reviewer decision.
+- [ ] Human profile-photo review exposes only the temporary look/smile/blink
+      evidence required for a reviewer decision and enforces the 48-hour limit.
 - [ ] RevenueCat Test Store purchase, renewal, cancellation, restore and expiry update
       both app entitlement and Supabase webhook state exactly once.
 - [ ] Transactional purchase email is sent once per event.

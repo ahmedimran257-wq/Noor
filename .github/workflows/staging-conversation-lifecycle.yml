@@ -10,6 +10,9 @@ concurrency:
   group: staging-conversation-lifecycle
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   lifecycle:
     name: Verify two-account Premium transition

@@ -1,13 +1,16 @@
 #!/usr/bin/env node
 
-// Live, disposable verification of the staging project's global data and
-// backend boundaries. This script refuses production and never creates fake
-// members outside the staging project.
+// Live, disposable verification of the India-only staging release and backend
+// boundaries. This script refuses production and never calls a worldwide city
+// provider or creates synthetic members outside the staging project.
 
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
 const KNOWN_PRODUCTION_REF = "jukpscfxzwttgtxvrbmj";
+const FIXTURE_DOMAIN = "@staging.silarah.invalid";
+const FIXTURE_METADATA_KEY = "staging_india_readiness_run";
+const STALE_FIXTURE_AGE_MS = 6 * 60 * 60 * 1000;
 const required = [
   "STAGING_SUPABASE_URL",
   "STAGING_SUPABASE_ANON_KEY",
@@ -27,14 +30,16 @@ if (
   env.STAGING_PROJECT_REF === KNOWN_PRODUCTION_REF ||
   stagingHost !== `${env.STAGING_PROJECT_REF}.supabase.co`
 ) {
-  throw new Error("Safety stop: global readiness may run only on staging");
+  throw new Error("Safety stop: India readiness may run only on staging");
 }
 
 const anon = env.STAGING_SUPABASE_ANON_KEY;
 const service = env.STAGING_SUPABASE_SERVICE_ROLE_KEY;
 const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 const reportPath = resolve(
-  env.STAGING_GLOBAL_REPORT_PATH ?? "build/staging-global-readiness.json",
+  env.STAGING_INDIA_REPORT_PATH ??
+    env.STAGING_GLOBAL_REPORT_PATH ??
+    "build/staging-india-readiness.json",
 );
 const report = {
   runId,
@@ -43,11 +48,11 @@ const report = {
   status: "running",
   tests: [],
   externalGates: {
-    devicePush: "requires a real Android and iOS FCM registration token",
+    devicePush: "requires a real Android FCM registration token",
     storePayments:
-      "requires Play Store and App Store sandbox accounts in each pricing region",
+      "requires a Google Play licensed tester in the India billing region",
     legalApproval:
-      "requires the legal entity details and qualified counsel for each launch jurisdiction",
+      "requires India release-policy and developer-identity approval",
   },
 };
 const failures = [];
@@ -99,6 +104,67 @@ async function request(
   return { status: response.status, data, headers: response.headers };
 }
 
+function authUsers(data) {
+  if (Array.isArray(data)) return data;
+  return Array.isArray(data?.users) ? data.users : [];
+}
+
+function fixtureRun(user) {
+  return (user?.user_metadata ?? user?.raw_user_meta_data ?? {})[
+    FIXTURE_METADATA_KEY
+  ];
+}
+
+async function listAuthUsers() {
+  const users = [];
+  for (let page = 1; page <= 20; page += 1) {
+    const response = await request(
+      `/auth/v1/admin/users?page=${page}&per_page=1000`,
+      { apiKey: service },
+    );
+    const batch = authUsers(response.data);
+    users.push(...batch);
+    if (batch.length < 1000) return users;
+  }
+  throw new Error("Auth fixture scan exceeded the 20,000-user safety bound");
+}
+
+function isMarkedFixture(user) {
+  return Boolean(
+    user?.id &&
+      user?.email?.toLowerCase().endsWith(FIXTURE_DOMAIN) &&
+      fixtureRun(user),
+  );
+}
+
+async function deleteMarkedFixture(user) {
+  assert(isMarkedFixture(user), "Refused to delete an unmarked staging member");
+  await request(`/rest/v1/users?id=eq.${user.id}`, {
+    apiKey: service,
+    method: "DELETE",
+    prefer: "return=minimal",
+    expectedStatuses: [204],
+  });
+  await request(`/auth/v1/admin/users/${user.id}`, {
+    apiKey: service,
+    method: "DELETE",
+    expectedStatuses: [200],
+  });
+}
+
+async function removeStaleFixtures() {
+  const cutoff = Date.now() - STALE_FIXTURE_AGE_MS;
+  const stale = (await listAuthUsers()).filter((user) => {
+    const createdAt = Date.parse(user.created_at ?? "");
+    return isMarkedFixture(user) && Number.isFinite(createdAt) && createdAt < cutoff;
+  });
+  for (const user of stale) await deleteMarkedFixture(user);
+  const staleIds = new Set(stale.map((user) => user.id));
+  const remaining = (await listAuthUsers()).filter((user) => staleIds.has(user.id));
+  assert(remaining.length === 0, "Stale India-readiness fixtures remain after janitor");
+  return stale.length;
+}
+
 async function test(name, action) {
   const started = performance.now();
   try {
@@ -123,12 +189,17 @@ async function test(name, action) {
 }
 
 async function createFixture() {
-  const email = `global.${runId}@staging.silarah.invalid`;
+  const email = `india-readiness.${runId}${FIXTURE_DOMAIN}`;
   const password = `G-${crypto.randomUUID()}-aA7!`;
   const auth = await request("/auth/v1/admin/users", {
     apiKey: service,
     method: "POST",
-    body: { email, password, email_confirm: true },
+    body: {
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { [FIXTURE_METADATA_KEY]: runId },
+    },
     expectedStatuses: [200],
   });
   fixture = { id: auth.data.id, email, password };
@@ -140,9 +211,9 @@ async function createFixture() {
     body: {
       id: fixture.id,
       email,
-      country_code: "US",
+      country_code: "IN",
       gender: "male",
-      timezone: "UTC",
+      timezone: "Asia/Kolkata",
       onboarding_step: 5,
       onboarding_completed: true,
     },
@@ -157,26 +228,20 @@ async function createFixture() {
 
 async function cleanupFixture() {
   if (!fixture) return;
-  await request(`/rest/v1/users?id=eq.${fixture.id}`, {
-    apiKey: service,
-    method: "DELETE",
-    prefer: "return=minimal",
-    expectedStatuses: [204],
-  }).catch(() => undefined);
-  await request(`/auth/v1/admin/users/${fixture.id}`, {
-    apiKey: service,
-    method: "DELETE",
-    expectedStatuses: [200],
-  }).catch(() => undefined);
-}
-
-function localCountryCodes() {
-  const source = readFileSync("lib/core/data/country_data.dart", "utf8");
-  return [
-    ...new Set(
-      [...source.matchAll(/iso2:\s*'([A-Z]{2})'/g)].map((match) => match[1]),
-    ),
-  ].sort();
+  await deleteMarkedFixture({
+    id: fixture.id,
+    email: fixture.email,
+    user_metadata: { [FIXTURE_METADATA_KEY]: runId },
+  });
+  const authLeft = (await listAuthUsers()).filter(
+    (user) => fixtureRun(user) === runId,
+  );
+  const publicLeft = await request(
+    `/rest/v1/users?id=eq.${fixture.id}&select=id`,
+    { apiKey: service },
+  );
+  assert(authLeft.length === 0, "India-readiness Auth fixture was not removed");
+  assert(publicLeft.data.length === 0, "India-readiness public fixture was not removed");
 }
 
 function verifyArbCatalog() {
@@ -184,7 +249,10 @@ function verifyArbCatalog() {
   const catalogs = Object.fromEntries(
     locales.map((locale) => {
       const data = JSON.parse(
-        readFileSync(`lib/l10n/app_${locale}.arb`, "utf8"),
+        // Dart accepts a UTF-8 BOM in ARB files. Strip it so the Node release
+        // gate validates the same catalogues instead of reporting a false
+        // localization failure on Windows-generated files.
+        readFileSync(`lib/l10n/app_${locale}.arb`, "utf8").replace(/^\uFEFF/, ""),
       );
       const keys = Object.keys(data).filter(
         (key) => !key.startsWith("@") && key !== "@@locale",
@@ -211,33 +279,36 @@ function verifyArbCatalog() {
 }
 
 try {
+  await test("stale India-readiness fixtures are removed safely", async () => ({
+    removed: await removeStaleFixtures(),
+  }));
+
   await test("ten UI locale catalogs have complete key coverage", async () =>
     verifyArbCatalog());
 
-  await test("all 198 app countries have complete server metadata", async () => {
-    const codes = localCountryCodes();
-    assert(codes.length === 198, `App catalog contains ${codes.length}, expected 198`);
+  await test("India launch metadata and state catalogue are complete", async () => {
     const response = await request(
-      "/rest/v1/countries?select=iso_code,name,dialing_code,currency,default_lang,pricing_tier&limit=300",
+      "/rest/v1/countries?iso_code=eq.IN&select=iso_code,name,dialing_code,currency,default_lang,pricing_tier",
       { apiKey: service },
     );
     const rows = response.data;
-    assert(Array.isArray(rows), "Country response was not an array");
-    const byCode = new Map(rows.map((row) => [row.iso_code, row]));
-    const missing = codes.filter((code) => !byCode.has(code));
-    assert(missing.length === 0, `Server is missing countries: ${missing.join(", ")}`);
-    for (const code of codes) {
-      const row = byCode.get(code);
-      assert(row.name?.trim(), `${code} has no name`);
-      assert(row.dialing_code?.trim(), `${code} has no dialing code`);
-      assert(/^[A-Z]{3}$/.test(row.currency ?? ""), `${code} has invalid currency`);
-      assert(row.default_lang?.trim(), `${code} has no default language`);
-      assert(
-        ["tier_1", "tier_2", "tier_3", "premium"].includes(row.pricing_tier),
-        `${code} has invalid pricing tier`,
-      );
-    }
-    return { appCountries: codes.length, serverCountries: rows.length };
+    assert(Array.isArray(rows) && rows.length === 1, "India metadata is missing");
+    const india = rows[0];
+    assert(india.name === "India", "IN has an unexpected country name");
+    assert(india.dialing_code === "+91", "India dialing code is not +91");
+    assert(india.currency === "INR", "India currency is not INR");
+    assert(india.default_lang?.trim(), "India has no default language");
+    assert(india.pricing_tier?.trim(), "India has no pricing tier");
+    const regions = await request(
+      "/rest/v1/regions?country_code=eq.IN&select=id,name,country_code&limit=100",
+      { apiKey: service },
+    );
+    assert(regions.data.length >= 36, `India has only ${regions.data.length} states/UTs`);
+    assert(
+      regions.data.every((region) => region.country_code === "IN" && region.name?.trim()),
+      "India state/UT metadata is malformed",
+    );
+    return { launchCountry: "IN", statesAndUnionTerritories: regions.data.length };
   });
 
   await test("public health probe is live and branded", async () => {
@@ -284,47 +355,20 @@ try {
     return { workerProject: env.STAGING_PROJECT_REF };
   });
 
-  await test("global city provider returns signed results across regions", async () => {
-    const samples = [
-      ["New York", "US"],
-      ["Delhi", "IN"],
-      ["Lahore", "PK"],
-      ["Istanbul", "TR"],
-      ["London", "GB"],
-      ["Toronto", "CA"],
-      ["Cairo", "EG"],
-      ["Jakarta", "ID"],
-      ["Kuala Lumpur", "MY"],
-      ["Sydney", "AU"],
-    ];
-    const resolved = [];
-    for (const [query, countryCode] of samples) {
-      const search = await request("/functions/v1/location-search", {
-        token: fixture.token,
-        method: "POST",
-        body: { query, country_code: countryCode, mode: "city", limit: 15 },
-      });
-      const features = Array.isArray(search.data?.features)
-        ? search.data.features
-        : [];
-      const feature = features.find(
-        (candidate) =>
-          candidate?.properties?.countrycode?.toUpperCase() === countryCode &&
-          candidate?.silarah_resolution_token,
-      );
-      assert(feature, `${query}/${countryCode} returned no signed in-country result`);
-      const resolution = await request("/functions/v1/location-search", {
-        token: fixture.token,
-        method: "POST",
-        body: {
-          mode: "resolve",
-          resolution_token: feature.silarah_resolution_token,
-        },
-      });
-      assert(Number.isInteger(resolution.data?.city_id), `${query} did not resolve`);
-      resolved.push(countryCode);
-    }
-    return { samples: resolved };
+  await test("cached India city metadata is usable without provider egress", async () => {
+    const cities = await request(
+      "/rest/v1/cities?select=id,name,region_id,latitude,longitude,regions!inner(country_code)&regions.country_code=eq.IN&limit=20",
+      { apiKey: service },
+    );
+    assert(Array.isArray(cities.data) && cities.data.length > 0, "No cached India city exists");
+    assert(
+      cities.data.every((city) =>
+        Number.isFinite(Number(city.latitude)) &&
+        Number.isFinite(Number(city.longitude)) &&
+        city.name?.trim()),
+      "A cached India city is malformed",
+    );
+    return { cachedIndiaCitiesSampled: cities.data.length, providerCalls: 0 };
   });
 
   await test("tokenless push queue completes as durable in-app delivery", async () => {
@@ -363,7 +407,11 @@ try {
     return { deliveryStatus: row.delivery_status };
   });
 } finally {
-  await cleanupFixture();
+  try {
+    await cleanupFixture();
+  } catch (error) {
+    failures.push({ name: "strict fixture cleanup", error: errorMessage(error) });
+  }
   report.finishedAt = new Date().toISOString();
   report.status = failures.length === 0 ? "passed" : "failed";
   report.failures = failures;
@@ -373,5 +421,5 @@ try {
 }
 
 if (failures.length > 0) {
-  throw new Error(`${failures.length} global readiness check(s) failed`);
+  throw new Error(`${failures.length} India readiness check(s) failed`);
 }

@@ -40,6 +40,15 @@ void main() {
       'same_country',
     );
     expect(
+      const DiscoveryFilter(distanceLabel: 'All India').locationScope,
+      'same_country',
+    );
+    expect(
+      const DiscoveryFilter(distanceLabel: 'Anywhere in India').locationScope,
+      'same_country',
+      reason: 'Saved filters from older builds must migrate safely.',
+    );
+    expect(
       const DiscoveryFilter(maxDistanceKm: 100).locationScope,
       'radius',
     );

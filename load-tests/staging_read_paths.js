@@ -12,6 +12,14 @@ const tokens = (__ENV.TEST_USER_TOKENS || "")
   .filter(Boolean);
 const maxVus = Math.min(Math.max(Number(__ENV.MAX_VUS || 25), 1), 50);
 const smokeMode = (__ENV.SMOKE_MODE || "").trim().toLowerCase() === "true";
+// The default 25-VU gate represents normal concurrent use and keeps the
+// sub-second target. The opt-in 50-VU run is a Nano-tier saturation probe: it
+// deliberately launches six unrelated authenticated reads per virtual user,
+// far more often than the cache-aware app does. Keep it strict, but classify
+// it against a separate stress SLO instead of weakening the normal-load gate.
+const isStressProbe = maxVus > 25;
+const p95TargetMs = isStressProbe ? 1500 : 1000;
+const p99TargetMs = isStressProbe ? 2000 : 1500;
 const iterationSleepSeconds = Math.min(
   Math.max(Number(__ENV.ITERATION_SLEEP_SECONDS || 1), 0.2),
   5,
@@ -39,13 +47,16 @@ export const options = {
   thresholds: {
     checks: ["rate>0.99"],
     http_req_failed: ["rate<0.01"],
-    http_req_duration: ["p(95)<1000", "p(99)<1500"],
-    "http_req_duration{route:auth_user}": ["p(95)<1000"],
-    "http_req_duration{route:interest_quota}": ["p(95)<1000"],
-    "http_req_duration{route:profile_view_quota}": ["p(95)<1000"],
-    "http_req_duration{route:filter_access}": ["p(95)<1000"],
-    "http_req_duration{route:notification_inbox}": ["p(95)<1000"],
-    "http_req_duration{route:country_catalog}": ["p(95)<1000"],
+    http_req_duration: [
+      `p(95)<${p95TargetMs}`,
+      `p(99)<${p99TargetMs}`,
+    ],
+    "http_req_duration{route:auth_user}": [`p(95)<${p95TargetMs}`],
+    "http_req_duration{route:interest_quota}": [`p(95)<${p95TargetMs}`],
+    "http_req_duration{route:profile_view_quota}": [`p(95)<${p95TargetMs}`],
+    "http_req_duration{route:filter_access}": [`p(95)<${p95TargetMs}`],
+    "http_req_duration{route:notification_inbox}": [`p(95)<${p95TargetMs}`],
+    "http_req_duration{route:country_catalog}": [`p(95)<${p95TargetMs}`],
   },
   noConnectionReuse: false,
   summaryTrendStats: ["avg", "min", "med", "max", "p(90)", "p(95)", "p(99)"],

@@ -3,18 +3,21 @@ param(
     [string]$ProjectRef,
     [string]$OutputRoot = '',
     [string]$PgDumpPath = (Join-Path $env:LOCALAPPDATA 'Silarah\postgresql-17.10\pgsql\bin\pg_dump.exe'),
+    [string]$PgRestorePath = (Join-Path $env:LOCALAPPDATA 'Silarah\postgresql-17.10\pgsql\bin\pg_restore.exe'),
     [string]$SupabaseCliPath = (Join-Path $env:LOCALAPPDATA 'Silarah\supabase\supabase.exe')
 )
 
 $ErrorActionPreference = 'Stop'
+$repository = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
-    $OutputRoot = Join-Path $PSScriptRoot '..\supabase\backups'
+    $OutputRoot = Join-Path $repository 'supabase\backups'
 }
-$runLogDirectory = Join-Path $PSScriptRoot '..\supabase\backups\logs'
+$runLogDirectory = Join-Path $OutputRoot 'logs'
 $runLogPath = Join-Path $runLogDirectory 'weekly-task.log'
 New-Item -ItemType Directory -Force -Path $runLogDirectory | Out-Null
 "[$((Get-Date).ToUniversalTime().ToString('o'))] Backup started." |
     Set-Content -LiteralPath $runLogPath -Encoding UTF8
+
 trap {
     "[$((Get-Date).ToUniversalTime().ToString('o'))] Backup failed: $($_.Exception.Message)" |
         Add-Content -LiteralPath $runLogPath -Encoding UTF8
@@ -26,91 +29,110 @@ function Get-DryRunSetting {
         [Parameter(Mandatory = $true)][string]$Text,
         [Parameter(Mandatory = $true)][string]$Name
     )
-
-    $pattern = '(?m)(?:^|\s)' + [regex]::Escape($Name) + '=(?:"(?<double>[^"]*)"|''(?<single>[^'']*)''|(?<bare>\S+))'
+    $pattern = '(?m)(?:^|\s)' + [regex]::Escape($Name) +
+        '=(?:"(?<double>[^"]*)"|''(?<single>[^'']*)''|(?<bare>\S+))'
     $match = [regex]::Match($Text, $pattern)
     if (-not $match.Success) {
-        throw "Supabase CLI did not provide $Name in its temporary connection command."
+        throw "Supabase CLI did not provide temporary $Name credentials."
     }
-
     foreach ($groupName in @('double', 'single', 'bare')) {
         if ($match.Groups[$groupName].Success) {
             return $match.Groups[$groupName].Value
         }
     }
-
     throw "Supabase CLI returned an empty $Name setting."
 }
 
-function Invoke-PgDump {
+function Resolve-RequiredTool {
     param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][string]$CommandName
+    )
+    if (Test-Path -LiteralPath $Path -PathType Leaf) {
+        return (Resolve-Path -LiteralPath $Path).Path
+    }
+    $command = Get-Command $CommandName -ErrorAction SilentlyContinue
+    if (-not $command) { throw "$CommandName was not found." }
+    return $command.Source
+}
+
+function Invoke-NativeChecked {
+    param(
+        [Parameter(Mandatory = $true)][string]$Executable,
         [Parameter(Mandatory = $true)][string[]]$Arguments,
         [Parameter(Mandatory = $true)][string]$Description
     )
-
-    & $script:ResolvedPgDump @Arguments
+    & $Executable @Arguments
     if ($LASTEXITCODE -ne 0) {
         throw "$Description failed with exit code $LASTEXITCODE."
     }
 }
 
-$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$linkedRefPath = Join-Path $repoRoot 'supabase\.temp\project-ref'
-
-if (-not (Test-Path -LiteralPath $SupabaseCliPath -PathType Leaf)) {
-    $supabaseCommand = Get-Command supabase.exe -ErrorAction SilentlyContinue
-    if (-not $supabaseCommand) {
-        throw 'supabase.exe was not found. Install the standalone Supabase CLI or pass -SupabaseCliPath.'
-    }
-    $SupabaseCliPath = $supabaseCommand.Source
-}
-$resolvedSupabaseCli = (Resolve-Path -LiteralPath $SupabaseCliPath).Path
-
-Push-Location $repoRoot
-try {
-    if ($ProjectRef) {
-        $linkedRef = if (Test-Path $linkedRefPath) {
-            (Get-Content -LiteralPath $linkedRefPath -Raw).Trim()
-        } else {
-            ''
-        }
-        if ($linkedRef -ne $ProjectRef) {
-            & $resolvedSupabaseCli link --project-ref $ProjectRef
-            if ($LASTEXITCODE -ne 0) {
-                throw "Could not link Supabase project $ProjectRef."
+function Get-ArchiveTableRows {
+    param([Parameter(Mandatory = $true)][string]$DataSqlPath)
+    $rows = [ordered]@{}
+    $activeKey = $null
+    foreach ($line in [System.IO.File]::ReadLines($DataSqlPath)) {
+        if ($null -eq $activeKey) {
+            $match = [regex]::Match(
+                $line,
+                '^COPY (?<schema>[a-z_][a-z0-9_]*)\.(?<table>[a-z_][a-z0-9_]*) \(.*\) FROM stdin;$'
+            )
+            if ($match.Success) {
+                $activeKey = "$($match.Groups['schema'].Value).$($match.Groups['table'].Value)"
+                $rows[$activeKey] = [int64]0
             }
+            continue
         }
-    } elseif (Test-Path $linkedRefPath) {
-        $ProjectRef = (Get-Content -LiteralPath $linkedRefPath -Raw).Trim()
-    }
-
-    if (-not $ProjectRef) {
-        throw 'Pass -ProjectRef or link the repository to a Supabase project first.'
-    }
-
-    if (-not (Test-Path -LiteralPath $PgDumpPath -PathType Leaf)) {
-        $pgDumpCommand = Get-Command pg_dump.exe -ErrorAction SilentlyContinue
-        if (-not $pgDumpCommand) {
-            throw 'pg_dump.exe was not found. Install PostgreSQL 17 client tools or pass -PgDumpPath.'
+        if ($line -eq '\.') {
+            $activeKey = $null
+        } else {
+            $rows[$activeKey] = [int64]$rows[$activeKey] + 1
         }
-        $PgDumpPath = $pgDumpCommand.Source
     }
-    $script:ResolvedPgDump = (Resolve-Path -LiteralPath $PgDumpPath).Path
+    if ($null -ne $activeKey) { throw 'The archive data export ended inside a COPY block.' }
+    return $rows
+}
 
-    # Windows PowerShell 5 wraps any native stderr line as an ErrorRecord when
-    # stderr is captured. Supabase writes harmless progress there, so judge the
-    # command by its exit code and still retain the generated connection line.
-    $previousErrorActionPreference = $ErrorActionPreference
-    $ErrorActionPreference = 'Continue'
-    $dryRunOutput = (& $resolvedSupabaseCli db dump --linked --dry-run 2>&1 | Out-String)
-    $dryRunExitCode = $LASTEXITCODE
-    $ErrorActionPreference = $previousErrorActionPreference
-    if ($dryRunExitCode -ne 0) {
-        throw 'Supabase CLI could not create temporary backup credentials.'
+$resolvedSupabaseCli = Resolve-RequiredTool -Path $SupabaseCliPath -CommandName 'supabase.exe'
+$resolvedPgDump = Resolve-RequiredTool -Path $PgDumpPath -CommandName 'pg_dump.exe'
+$resolvedPgRestore = Resolve-RequiredTool -Path $PgRestorePath -CommandName 'pg_restore.exe'
+$linkedRefPath = Join-Path $repository 'supabase\.temp\project-ref'
+$previousLinkedRef = if (Test-Path -LiteralPath $linkedRefPath) {
+    (Get-Content -LiteralPath $linkedRefPath -Raw).Trim()
+} else { '' }
+$linkChanged = $false
+$connectionNames = @('PGHOST', 'PGPORT', 'PGUSER', 'PGPASSWORD', 'PGDATABASE')
+$previousEnvironment = @{}
+$environmentApplied = $false
+
+try {
+    Push-Location $repository
+    try {
+        if ([string]::IsNullOrWhiteSpace($ProjectRef)) {
+            $ProjectRef = $previousLinkedRef
+        }
+        if ($ProjectRef -notmatch '^[a-z]{20}$') {
+            throw 'Pass a valid 20-character Supabase project reference.'
+        }
+        if ($previousLinkedRef -ne $ProjectRef) {
+            & $resolvedSupabaseCli link --project-ref $ProjectRef
+            if ($LASTEXITCODE -ne 0) { throw "Could not link Supabase project $ProjectRef." }
+            $linkChanged = $true
+        }
+
+        $previousErrorActionPreference = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        $dryRunOutput = (& $resolvedSupabaseCli db dump --linked --dry-run 2>&1 | Out-String)
+        $dryRunExitCode = $LASTEXITCODE
+        $ErrorActionPreference = $previousErrorActionPreference
+        if ($dryRunExitCode -ne 0) {
+            throw 'Supabase CLI could not create temporary backup credentials.'
+        }
+    } finally {
+        Pop-Location
     }
 
-    $connectionNames = @('PGHOST', 'PGPORT', 'PGUSER', 'PGPASSWORD', 'PGDATABASE')
-    $previousEnvironment = @{}
     foreach ($name in $connectionNames) {
         $previousEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
         [Environment]::SetEnvironmentVariable(
@@ -119,60 +141,95 @@ try {
             'Process'
         )
     }
+    $environmentApplied = $true
 
-    try {
-        $timestamp = (Get-Date).ToUniversalTime().ToString('yyyyMMddTHHmmssZ')
-        $backupDirectory = Join-Path (Join-Path $OutputRoot $ProjectRef) $timestamp
-        New-Item -ItemType Directory -Force -Path $backupDirectory | Out-Null
+    $timestamp = (Get-Date).ToUniversalTime().ToString('yyyyMMddTHHmmssZ')
+    $backupDirectory = Join-Path (Join-Path $OutputRoot $ProjectRef) $timestamp
+    New-Item -ItemType Directory -Force -Path $backupDirectory | Out-Null
+    $archivePath = Join-Path $backupDirectory 'app.dump'
+    $schemaPath = Join-Path $backupDirectory 'app_schema.sql'
+    $dataPath = Join-Path $backupDirectory 'app_data.sql'
 
-        $archivePath = Join-Path $backupDirectory 'public.dump'
-        $schemaPath = Join-Path $backupDirectory 'public_schema.sql'
-        $dataPath = Join-Path $backupDirectory 'public_data.sql'
-
-        Invoke-PgDump -Description 'Custom-format public schema backup' -Arguments @(
-            '--format=custom', '--schema=public', '--role=postgres',
-            '--no-owner', '--no-privileges',
+    Invoke-NativeChecked -Executable $resolvedPgDump `
+        -Description 'Custom-format app-owned database backup' `
+        -Arguments @(
+            '--format=custom', '--role=postgres', '--no-owner', '--no-privileges',
+            '--schema=public', '--schema=private', '--schema=api_private',
+            '--exclude-table-data=public.spatial_ref_sys',
             "--file=$archivePath"
         )
-        Invoke-PgDump -Description 'Readable public schema export' -Arguments @(
-            '--schema-only', '--schema=public', '--role=postgres',
-            '--no-owner', '--no-privileges', '--clean', '--if-exists',
-            "--file=$schemaPath"
-        )
-        Invoke-PgDump -Description 'Readable public data export' -Arguments @(
-            '--data-only', '--schema=public', '--role=postgres',
-            '--no-owner', '--no-privileges', "--file=$dataPath"
-        )
+    Invoke-NativeChecked -Executable $resolvedPgRestore `
+        -Description 'Readable app-owned schema extraction' `
+        -Arguments @('--schema-only', '--no-owner', '--no-privileges', "--file=$schemaPath", $archivePath)
+    Invoke-NativeChecked -Executable $resolvedPgRestore `
+        -Description 'Readable app-owned data extraction' `
+        -Arguments @('--data-only', '--no-owner', '--no-privileges', "--file=$dataPath", $archivePath)
 
-        $files = @($archivePath, $schemaPath, $dataPath) | ForEach-Object {
-            $item = Get-Item -LiteralPath $_
-            $hash = Get-FileHash -LiteralPath $_ -Algorithm SHA256
-            [ordered]@{
-                name = $item.Name
-                bytes = $item.Length
-                sha256 = $hash.Hash.ToLowerInvariant()
-            }
+    $tableRows = Get-ArchiveTableRows -DataSqlPath $dataPath
+    if ($tableRows.Count -lt 1) { throw 'The archive contains no app-owned table data sections.' }
+    $archiveCatalogue = @(& $resolvedPgRestore --list $archivePath 2>&1)
+    if ($LASTEXITCODE -ne 0) { throw 'Could not read the custom archive catalogue.' }
+    $catalogueKinds = [ordered]@{}
+    foreach ($line in $archiveCatalogue) {
+        if ([string]$line -match '^\d+; \d+ \d+ (?<kind>.+?) (?<schema>public|private|api_private) ') {
+            $kind = $matches['kind']
+            if (-not $catalogueKinds.Contains($kind)) { $catalogueKinds[$kind] = 0 }
+            $catalogueKinds[$kind] = [int]$catalogueKinds[$kind] + 1
         }
+    }
 
-        $manifest = [ordered]@{
-            created_at_utc = (Get-Date).ToUniversalTime().ToString('o')
-            project_ref = $ProjectRef
-            scope = 'public schema and data; Supabase-managed auth/storage schemas and Storage objects require separate procedures'
-            pg_dump_version = (& $script:ResolvedPgDump --version | Out-String).Trim()
-            files = $files
+    $files = @($archivePath, $schemaPath, $dataPath) | ForEach-Object {
+        $item = Get-Item -LiteralPath $_
+        $hash = Get-FileHash -LiteralPath $_ -Algorithm SHA256
+        [ordered]@{
+            name = $item.Name
+            bytes = $item.Length
+            sha256 = $hash.Hash.ToLowerInvariant()
         }
-        $manifestPath = Join-Path $backupDirectory 'manifest.json'
-        $manifest | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $manifestPath -Encoding UTF8
+    }
+    $rowManifest = @($tableRows.GetEnumerator() | Sort-Object Name | ForEach-Object {
+        $parts = $_.Name.Split('.', 2)
+        [ordered]@{ schema = $parts[0]; table = $parts[1]; rows = [int64]$_.Value }
+    })
+    $inventoryManifest = @($catalogueKinds.GetEnumerator() | Sort-Object Name | ForEach-Object {
+        [ordered]@{ kind = $_.Name; count = [int]$_.Value }
+    })
+    $manifest = [ordered]@{
+        format_version = 2
+        created_at_utc = (Get-Date).ToUniversalTime().ToString('o')
+        project_ref = $ProjectRef
+        scope = 'app-owned public, private, and api_private schemas; managed Auth, Storage metadata/objects, Vault secrets, and platform extensions require Supabase-managed recovery procedures'
+        pg_dump_version = (& $resolvedPgDump --version | Out-String).Trim()
+        table_rows = $rowManifest
+        archive_inventory = $inventoryManifest
+        files = $files
+    }
+    $manifestPath = Join-Path $backupDirectory 'manifest.json'
+    $manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $manifestPath -Encoding UTF8
 
-        Write-Output "Backup completed: $backupDirectory"
-        Write-Output "Manifest: $manifestPath"
-        "[$((Get-Date).ToUniversalTime().ToString('o'))] Backup completed: $backupDirectory" |
-            Add-Content -LiteralPath $runLogPath -Encoding UTF8
-    } finally {
+    Write-Output "Backup completed: $backupDirectory"
+    Write-Output "Manifest: $manifestPath"
+    Write-Output "Snapshot inventory: $($rowManifest.Count) app-owned tables"
+    "[$((Get-Date).ToUniversalTime().ToString('o'))] Backup completed: $backupDirectory" |
+        Add-Content -LiteralPath $runLogPath -Encoding UTF8
+} finally {
+    if ($environmentApplied) {
         foreach ($name in $connectionNames) {
             [Environment]::SetEnvironmentVariable($name, $previousEnvironment[$name], 'Process')
         }
     }
-} finally {
-    Pop-Location
+    if ($linkChanged) {
+        Push-Location $repository
+        try {
+            if ($previousLinkedRef -match '^[a-z]{20}$') {
+                & $resolvedSupabaseCli link --project-ref $previousLinkedRef | Out-Null
+                if ($LASTEXITCODE -ne 0) { throw 'Could not restore the previous Supabase project link.' }
+            } else {
+                & $resolvedSupabaseCli unlink --yes | Out-Null
+                if ($LASTEXITCODE -ne 0) { throw 'Could not remove the temporary Supabase project link.' }
+            }
+        } finally {
+            Pop-Location
+        }
+    }
 }

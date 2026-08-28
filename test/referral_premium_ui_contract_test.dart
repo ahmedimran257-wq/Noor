@@ -49,7 +49,8 @@ void main() {
 
   test('profile exposes a prominent referral Premium banner', () {
     expect(profile, contains('_ReferralPremiumProfileBanner'));
-    expect(profile, contains('subscription.isReferralOnly'));
+    expect(profile, contains('subscription.isTemporaryPromotional'));
+    expect(profile, contains('subscription.isTestOnly'));
     expect(profile, contains('referral_premiumFeaturesUnlocked'));
   });
 

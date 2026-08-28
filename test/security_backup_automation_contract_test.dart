@@ -33,6 +33,11 @@ void main() {
     expect(ignore, contains('/supabase/backups/'));
     expect(backup, contains("'--format=custom'"));
     expect(backup, contains("'--role=postgres'"));
+    expect(backup, contains("'--schema=public'"));
+    expect(backup, contains("'--schema=private'"));
+    expect(backup, contains("'--schema=api_private'"));
+    expect(backup, contains('Get-ArchiveTableRows'));
+    expect(backup, contains('format_version = 2'));
     expect(backup, contains('Get-FileHash'));
     expect(backup, contains('manifest.json'));
     expect(backup, contains('previousEnvironment'));

@@ -118,10 +118,17 @@ void main() {
       status: SubscriptionStatus.active,
       source: PremiumEntitlementSource.paid,
     );
+    const deviceTest = SubscriptionState(
+      status: SubscriptionStatus.active,
+      source: PremiumEntitlementSource.test,
+    );
 
     expect(referral.isReferralOnly, isTrue);
     expect(referral.includesReferral, isTrue);
     expect(paid.isReferralOnly, isFalse);
+    expect(deviceTest.isTestOnly, isTrue);
+    expect(deviceTest.hasPaidPremium, isFalse);
+    expect(deviceTest.includesReferral, isFalse);
   });
 
   test('every locale promises three days to both users', () {

@@ -13,11 +13,13 @@ import '../../core/cubits/interests/interests_cubit.dart';
 import '../../core/cubits/interests/interests_state.dart';
 import '../../core/router/app_router.dart';
 import '../../core/services/connectivity_service.dart';
+import '../../core/services/coach_mark_service.dart';
 import '../../core/services/policy_reminder_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/buttons/silarah_pressable.dart';
+import '../../core/widgets/silarah_coach_mark.dart';
 import 'screens/discovery_feed_screen.dart';
 import 'screens/interests_screen.dart';
 import 'screens/chat_list_screen.dart';
@@ -39,12 +41,16 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   late final List<Widget?> _tabCache;
   int _profileRefreshToken = 0;
   bool _policyReminderChecked = false;
+  late final CoachMarkService _coachMarks;
+  int? _coachTab;
+  bool _coachCheckInFlight = false;
   static const _tabCount = 4;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _coachMarks = CoachMarkService();
     if (widget.initialTab != null) {
       _currentTab = widget.initialTab!;
     }
@@ -59,8 +65,38 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (_policyReminderChecked) return;
     _policyReminderChecked = true;
     final state = await PolicyReminderService.instance.getState();
-    if (!mounted || !state.isDue) return;
-    await PolicyReminderSheet.show(context);
+    if (!mounted) return;
+    if (state.isDue) {
+      await PolicyReminderSheet.show(context);
+    }
+    if (mounted) await _showCoachMarkIfNeeded(_currentTab);
+  }
+
+  Future<void> _showCoachMarkIfNeeded(int tab) async {
+    if (_coachCheckInFlight || _coachTab != null) return;
+    _coachCheckInFlight = true;
+    final shouldShow = await _coachMarks.shouldShow(_coachTips[tab].id);
+    if (!mounted) return;
+    _coachCheckInFlight = false;
+    if (tab != _currentTab) {
+      await _showCoachMarkIfNeeded(_currentTab);
+      return;
+    }
+    if (!shouldShow || _coachTab != null) return;
+
+    // Marking on presentation prevents a tip from repeatedly returning when a
+    // member navigates away without pressing a button.
+    await _coachMarks.markSeen(_coachTips[tab].id);
+    if (mounted && tab == _currentTab) setState(() => _coachTab = tab);
+  }
+
+  void _dismissCoachMark() {
+    if (_coachTab != null) setState(() => _coachTab = null);
+  }
+
+  Future<void> _disableCoachMarks() async {
+    await _coachMarks.disableAll();
+    if (mounted) _dismissCoachMark();
   }
 
   @override
@@ -94,9 +130,11 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       if (index == 3) {
         _tabCache[3] = MyProfileScreen(refreshToken: ++_profileRefreshToken);
       }
+      _coachTab = null;
       _currentTab = index;
     });
     _refreshTabData(index);
+    _showCoachMarkIfNeeded(index);
   }
 
   void _selectTab(int index) {
@@ -109,9 +147,11 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       if (index == 3) {
         _tabCache[3] = MyProfileScreen(refreshToken: ++_profileRefreshToken);
       }
+      _coachTab = null;
       _currentTab = index;
     });
     _refreshTabData(index);
+    _showCoachMarkIfNeeded(index);
   }
 
   void _refreshTabData(int index) {
@@ -182,20 +222,55 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ),
               ),
               Expanded(
-                child: IndexedStack(
-                  index: _currentTab,
-                  children: List.generate(
-                    _tabCount,
-                    (index) => TickerMode(
-                      enabled: index == _currentTab,
-                      child: ExcludeSemantics(
-                        excluding: index != _currentTab,
-                        child: RepaintBoundary(
-                          child: _tabCache[index] ?? const SizedBox.shrink(),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    IndexedStack(
+                      index: _currentTab,
+                      children: List.generate(
+                        _tabCount,
+                        (index) => TickerMode(
+                          enabled: index == _currentTab,
+                          child: ExcludeSemantics(
+                            excluding: index != _currentTab,
+                            child: RepaintBoundary(
+                              child:
+                                  _tabCache[index] ?? const SizedBox.shrink(),
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                    PositionedDirectional(
+                      start: 12,
+                      end: 12,
+                      bottom: 12,
+                      child: AnimatedSwitcher(
+                        duration: AppDimensions.durationReveal,
+                        switchInCurve: Curves.easeOutCubic,
+                        switchOutCurve: Curves.easeInCubic,
+                        child: _coachTab != null
+                            ? Align(
+                                key: ValueKey(
+                                  'coach-${_coachTips[_coachTab!].id}',
+                                ),
+                                alignment: Alignment.bottomCenter,
+                                child: SilarahCoachMark(
+                                  icon: _coachTips[_coachTab!].icon,
+                                  title: context
+                                      .uiCopy(_coachTips[_coachTab!].title),
+                                  message: context
+                                      .uiCopy(_coachTips[_coachTab!].message),
+                                  onDismiss: _dismissCoachMark,
+                                  onDisableAll: _disableCoachMarks,
+                                ),
+                              )
+                            : const SizedBox.shrink(
+                                key: ValueKey('coach-hidden'),
+                              ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -210,6 +285,51 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 }
+
+class _CoachTip {
+  const _CoachTip({
+    required this.id,
+    required this.icon,
+    required this.title,
+    required this.message,
+  });
+
+  final String id;
+  final IconData icon;
+  final String title;
+  final String message;
+}
+
+const _coachTips = <_CoachTip>[
+  _CoachTip(
+    id: 'discover',
+    icon: Icons.tune_rounded,
+    title: 'Shape your discovery',
+    message:
+        'Use All Filters to refine compatibility. Premium members can browse eligible profiles across India without loading them all at once.',
+  ),
+  _CoachTip(
+    id: 'interests',
+    icon: Icons.favorite_outline_rounded,
+    title: 'Keep every interest clear',
+    message:
+        'Sent interests stay visible with their current status, so you can withdraw or follow their progress without losing the profile.',
+  ),
+  _CoachTip(
+    id: 'chat',
+    icon: Icons.forum_outlined,
+    title: 'Conversations begin after acceptance',
+    message:
+        'Women message their matches free. Men unlock messaging with Premium; ended conversations remain available as read-only history.',
+  ),
+  _CoachTip(
+    id: 'profile',
+    icon: Icons.verified_user_outlined,
+    title: 'Build trust at your pace',
+    message:
+        'Complete your profile and optional trust checks to help serious members understand who you are before connecting.',
+  ),
+];
 
 class _ConnectivityStatusBanner extends StatelessWidget {
   const _ConnectivityStatusBanner();

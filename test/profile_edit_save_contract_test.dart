@@ -54,6 +54,50 @@ void main() {
     expect(fields['bio'], 'Ready for marriage');
   });
 
+  test('Edit Profile sends every partner preference including false values',
+      () {
+    final fields = ProfileWriteService.buildEditPreferenceFieldsForTest(
+      const OnboardingData(
+        preferredAgeMin: 23,
+        preferredAgeMax: 37,
+        openToDivorced: true,
+        openToWidowed: false,
+        openToWithChildren: true,
+        openToDiaspora: false,
+      ),
+    );
+
+    expect(fields['preferred_age_min'], 23);
+    expect(fields['preferred_age_max'], 37);
+    expect(fields['open_to_divorced'], isTrue);
+    expect(fields['open_to_widowed'], isFalse);
+    expect(fields['open_to_has_children'], isTrue);
+    expect(fields['open_to_diaspora'], isFalse);
+  });
+
+  test('private preferences reload through the owner-scoped RPC', () {
+    final service = File(
+      'lib/core/services/profile_write_service.dart',
+    ).readAsStringSync();
+    final migration = File(
+      'supabase/migrations/248_owner_profile_preference_readback.sql',
+    ).readAsStringSync();
+
+    expect(service, contains("rpc('get_my_profile_preferences')"));
+    expect(service, isNot(contains(".from('profile_preferences')")));
+    expect(migration, contains('SECURITY DEFINER'));
+    expect(migration, contains('private.assert_authenticated()'));
+    expect(
+      migration,
+      contains('GRANT EXECUTE ON FUNCTION public.get_my_profile_preferences()'),
+    );
+    expect(
+      migration,
+      isNot(contains('GRANT SELECT ON public.profiles')),
+      reason: 'The fix must not reopen the private profiles table.',
+    );
+  });
+
   test('server remains compatible with legacy Edit Profile payloads', () {
     final migration = File(
       'supabase/migrations/198_profile_edit_contract_compatibility.sql',

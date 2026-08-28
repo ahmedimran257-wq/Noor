@@ -45,14 +45,14 @@ String _themeLabel(AppLocalizations l10n, SilarahThemeMode mode) =>
     switch (mode) {
       SilarahThemeMode.blackWhite => l10n.settings_theme_blackWhite,
       SilarahThemeMode.oled => l10n.settings_theme_oled,
-      SilarahThemeMode.prismLuxe => l10n.settings_theme_prism,
+      SilarahThemeMode.ivoryEmerald => l10n.settings_theme_ivory,
     };
 
 String _themeDescription(AppLocalizations l10n, SilarahThemeMode mode) =>
     switch (mode) {
       SilarahThemeMode.blackWhite => l10n.settings_theme_blackWhiteDesc,
       SilarahThemeMode.oled => l10n.settings_theme_oledDesc,
-      SilarahThemeMode.prismLuxe => l10n.settings_theme_prismDesc,
+      SilarahThemeMode.ivoryEmerald => l10n.settings_theme_ivoryDesc,
     };
 
 // Guardian prefs keys
@@ -2212,8 +2212,14 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(4, 24, 0, 8),
-        child: UiText(label, style: AppTypography.sectionLabel),
+        padding: const EdgeInsets.fromLTRB(4, 28, 0, 10),
+        child: UiText(
+          label,
+          style: AppTypography.sectionLabel.copyWith(
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.7,
+          ),
+        ),
       );
 }
 
@@ -2223,11 +2229,14 @@ class _SettingsCard extends StatelessWidget {
   const _SettingsCard({required this.children, this.borderColor});
 
   @override
-  Widget build(BuildContext context) => Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
-          color: AppColors.surfaceGlass,
-          border: Border.all(color: borderColor ?? AppColors.cardBorder),
+  Widget build(BuildContext context) => Material(
+        color: AppColors.surfaceElevated,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(
+            color: borderColor ?? AppColors.cardBorder.withValues(alpha: .72),
+          ),
         ),
         child: Column(children: children),
       );
@@ -2238,7 +2247,7 @@ class _Divider extends StatelessWidget {
   Widget build(BuildContext context) => Divider(
         color: AppColors.divider,
         height: 1,
-        indent: 52,
+        indent: 62,
         endIndent: 16,
       );
 }
@@ -2270,8 +2279,11 @@ class _NavTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListTile(
         onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-        leading: Icon(icon, color: iconColor ?? AppColors.slateMist, size: 20),
+        visualDensity: const VisualDensity(vertical: -1),
+        minVerticalPadding: 8,
+        minLeadingWidth: 38,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+        leading: _SettingsIcon(icon: icon, color: iconColor),
         title: UiText(label,
             style: AppTypography.body.copyWith(color: labelColor)),
         trailing: Row(
@@ -2309,8 +2321,11 @@ class _ToggleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-        leading: Icon(icon, color: AppColors.slateMist, size: 20),
+        visualDensity: const VisualDensity(vertical: -1),
+        minVerticalPadding: 8,
+        minLeadingWidth: 38,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+        leading: _SettingsIcon(icon: icon),
         title: UiText(label, style: AppTypography.body),
         subtitle: caption != null
             ? UiText(caption!, style: AppTypography.caption)
@@ -2318,13 +2333,18 @@ class _ToggleTile extends StatelessWidget {
         trailing: Semantics(
           label: label,
           toggled: value,
-          child: Switch(
-            value: value,
-            onChanged: onChanged,
-            activeThumbColor: AppColors.obsidianNight,
-            activeTrackColor: AppColors.champagneGold,
-            inactiveThumbColor: AppColors.slateMist,
-            inactiveTrackColor: AppColors.surfaceGlassHover,
+          child: Transform.scale(
+            scale: .82,
+            child: Switch(
+              value: value,
+              onChanged: onChanged,
+              activeThumbColor: AppColors.readableOn(
+                AppColors.champagneGold,
+              ),
+              activeTrackColor: AppColors.champagneGold,
+              inactiveThumbColor: AppColors.slateMist,
+              inactiveTrackColor: AppColors.surfaceGlassHover,
+            ),
           ),
         ),
       );
@@ -2339,8 +2359,11 @@ class _InfoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-        leading: Icon(icon, color: AppColors.slateMist, size: 20),
+        visualDensity: const VisualDensity(vertical: -1),
+        minVerticalPadding: 8,
+        minLeadingWidth: 38,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+        leading: _SettingsIcon(icon: icon),
         title: UiText(label, style: AppTypography.body),
         trailing:
             value != null ? UiText(value!, style: AppTypography.caption) : null,
@@ -2361,8 +2384,11 @@ class _TextFieldTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-        leading: Icon(icon, color: AppColors.slateMist, size: 20),
+        visualDensity: const VisualDensity(vertical: -1),
+        minVerticalPadding: 8,
+        minLeadingWidth: 38,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+        leading: _SettingsIcon(icon: icon),
         title: TextField(
           controller: controller,
           keyboardType: keyboardType,
@@ -2384,6 +2410,27 @@ class _TextFieldTile extends StatelessWidget {
           ),
         ),
       );
+}
+
+class _SettingsIcon extends StatelessWidget {
+  const _SettingsIcon({required this.icon, this.color});
+
+  final IconData icon;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final resolved = color ?? AppColors.champagneGold;
+    return Container(
+      width: 34,
+      height: 34,
+      decoration: BoxDecoration(
+        color: resolved.withValues(alpha: .09),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Icon(icon, color: resolved, size: 18),
+    );
+  }
 }
 
 // Report History Sheet

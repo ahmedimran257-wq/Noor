@@ -86,6 +86,8 @@ class DiscoveryFilter {
       case 'Same State / Region':
         return 'same_region';
       case 'Same Country':
+      case 'All India':
+      case 'Anywhere in India':
         return 'same_country';
       default:
         return 'global';

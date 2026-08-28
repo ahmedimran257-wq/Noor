@@ -71,7 +71,7 @@ class SilarahBottomNav extends StatelessWidget {
                 top: false,
                 minimum: const EdgeInsets.only(bottom: 4),
                 child: SizedBox(
-                  height: 72,
+                  height: 68,
                   child: Row(
                     children: List.generate(_items.length, (index) {
                       final badge = switch (index) {
@@ -85,10 +85,6 @@ class SilarahBottomNav extends StatelessWidget {
                             item: _items[index],
                             isActive: index == currentIndex,
                             badgeCount: badge,
-                            accent: AppColors.spectrum(index),
-                            secondaryAccent: AppColors.isChromatic
-                                ? AppColors.spectrum(index + 1)
-                                : AppColors.midnightPlum,
                             onTap: () {
                               if (index == currentIndex) return;
                               HapticFeedback.selectionClick();
@@ -127,16 +123,12 @@ class _NavTab extends StatelessWidget {
     required this.item,
     required this.isActive,
     required this.badgeCount,
-    required this.accent,
-    required this.secondaryAccent,
     required this.onTap,
   });
 
   final _NavItem item;
   final bool isActive;
   final int badgeCount;
-  final Color accent;
-  final Color secondaryAccent;
   final VoidCallback onTap;
 
   @override
@@ -144,56 +136,23 @@ class _NavTab extends StatelessWidget {
     return SilarahPressable(
       onTap: onTap,
       haptic: false,
-      child: AnimatedContainer(
-        duration: AppDimensions.durationTransition,
-        curve: Curves.easeOutCubic,
-        margin: const EdgeInsets.symmetric(
-          horizontal: 3,
-          vertical: 4,
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusButton - 2),
-          gradient: isActive
-              ? LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    accent.withValues(alpha: 0.17),
-                    secondaryAccent.withValues(alpha: 0.22),
-                    AppColors.surfaceGlassHover,
-                  ],
-                )
-              : null,
-          border: Border.all(
-            color: isActive
-                ? accent.withValues(alpha: 0.68)
-                : AppColors.transparent,
-          ),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 3),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Gold underline indicator (top)
+            // A precise brand line replaces the previous oversized gradient
+            // box, keeping navigation quiet while preserving clear state.
             AnimatedContainer(
               duration: AppDimensions.durationTransition,
               curve: Curves.easeOutCubic,
-              width: isActive ? 18.0 : 4.0,
-              height: 3.0,
-              margin: const EdgeInsets.only(bottom: AppDimensions.space2),
+              width: isActive ? 24.0 : 0.0,
+              height: 2.5,
+              margin: const EdgeInsets.only(bottom: 4),
               decoration: BoxDecoration(
-                gradient: isActive
-                    ? LinearGradient(
-                        colors: [
-                          accent,
-                          AppColors.isChromatic
-                              ? secondaryAccent
-                              : AppColors.champagneLight,
-                        ],
-                      )
-                    : null,
-                color: isActive ? null : AppColors.transparent,
+                color:
+                    isActive ? AppColors.champagneGold : AppColors.transparent,
                 borderRadius: BorderRadius.circular(AppDimensions.radiusTiny),
               ),
             ),
@@ -202,14 +161,22 @@ class _NavTab extends StatelessWidget {
             Stack(
               clipBehavior: Clip.none,
               children: [
-                Icon(
-                  isActive ? item.activeIcon : item.icon,
-                  color: isActive
-                      ? accent
-                      : AppColors.isChromatic
-                          ? accent.withValues(alpha: .68)
-                          : AppColors.slateMist,
-                  size: 22,
+                AnimatedContainer(
+                  duration: AppDimensions.durationTransition,
+                  width: 34,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color:
+                        isActive ? AppColors.goldGlow : AppColors.transparent,
+                    borderRadius: BorderRadius.circular(11),
+                  ),
+                  child: Icon(
+                    isActive ? item.activeIcon : item.icon,
+                    color: isActive
+                        ? AppColors.champagneGold
+                        : AppColors.slateMist,
+                    size: 21,
+                  ),
                 ),
 
                 // Badge — only visible when count > 0
@@ -217,7 +184,7 @@ class _NavTab extends StatelessWidget {
                   Positioned(
                     top: -4,
                     right: -6,
-                    child: _Badge(count: badgeCount, accent: accent),
+                    child: _Badge(count: badgeCount),
                   ),
               ],
             ),
@@ -228,7 +195,7 @@ class _NavTab extends StatelessWidget {
             AnimatedDefaultTextStyle(
               duration: AppDimensions.durationTransition,
               style: AppTypography.caption.copyWith(
-                color: isActive ? accent : AppColors.slateMist,
+                color: isActive ? AppColors.champagneGold : AppColors.slateMist,
                 fontSize: 10,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
                 height: 1.0,
@@ -252,9 +219,8 @@ class _NavTab extends StatelessWidget {
 
 // Badge bubble
 class _Badge extends StatelessWidget {
-  const _Badge({required this.count, required this.accent});
+  const _Badge({required this.count});
   final int count;
-  final Color accent;
 
   @override
   Widget build(BuildContext context) {
@@ -263,32 +229,19 @@ class _Badge extends StatelessWidget {
       constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            accent,
-            AppColors.isChromatic
-                ? AppColors.spectrum(4)
-                : AppColors.champagneLight,
-          ],
-        ),
+        color: AppColors.premiumGold,
         borderRadius: BorderRadius.circular(AppDimensions.radiusTiny),
         border: Border.all(
           color: AppColors.obsidianNight,
           width: 1.5,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: accent.withValues(alpha: 0.28),
-            blurRadius: 8,
-          ),
-        ],
       ),
       child: Center(
         child: UiText(
           label,
           style: AppTypography.badge.copyWith(
             fontSize: 9,
-            color: AppColors.obsidianNight,
+            color: AppColors.readableOn(AppColors.premiumGold),
             fontWeight: FontWeight.w800,
             height: 1.0,
           ),

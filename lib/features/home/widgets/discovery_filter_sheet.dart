@@ -92,6 +92,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
   final _maritalKey = GlobalKey();
   final _childrenKey = GlobalKey();
   final _verifiedKey = GlobalKey();
+  final _allIndiaKey = GlobalKey();
   final _distanceKey = GlobalKey();
   final _locationKey = GlobalKey();
   final _tongueKey = GlobalKey();
@@ -174,6 +175,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
       'marital' => _maritalKey,
       'children' => _childrenKey,
       'verified' => _verifiedKey,
+      'all_india' => _allIndiaKey,
       'distance' => _distanceKey,
       'location' => _locationKey,
       'diaspora' => _diasporaKey,
@@ -704,6 +706,37 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                       ),
                       const SizedBox(height: 20),
 
+                      if (_singleCountryLaunch) ...[
+                        _SectionLabel(
+                          key: _allIndiaKey,
+                          label: context.uiCopy('DISCOVERY SCOPE'),
+                        ),
+                        const SizedBox(height: 8),
+                        _SubscriberGate(
+                          child: _AllIndiaScopeTile(
+                            selected: _draft.distanceLabel == 'All India' ||
+                                _draft.distanceLabel == 'Anywhere in India',
+                            onTap: () => setState(() {
+                              final alreadySelected = _draft.distanceLabel ==
+                                      'All India' ||
+                                  _draft.distanceLabel == 'Anywhere in India';
+                              _draft = _draft.copyWith(
+                                distanceLabel:
+                                    alreadySelected ? null : 'All India',
+                                clearDistanceLabel: alreadySelected,
+                                clearMaxDistance: true,
+                                clearState: true,
+                                clearCity: true,
+                                diasporaMode: false,
+                                clearDiasporaCountries: true,
+                                clearBrowseCountries: true,
+                              );
+                            }),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+
                       // DISTANCE (Premium)
                       _SectionLabel(key: _distanceKey, label: 'DISTANCE'),
                       const SizedBox(height: 8),
@@ -711,7 +744,6 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                         child: _MultiChipGroup(
                           options: _singleCountryLaunch
                               ? const [
-                                  'Anywhere in India',
                                   'Same City',
                                   'Same State / Region',
                                   '25km',
@@ -1743,6 +1775,118 @@ class _SubscriberGate extends StatelessWidget {
                 color: AppColors.champagneGold,
                 size: AppDimensions.iconSizeMedium),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AllIndiaScopeTile extends StatelessWidget {
+  const _AllIndiaScopeTile({
+    required this.selected,
+    required this.onTap,
+  });
+
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: context.uiCopy('View all profiles from India'),
+      child: SilarahPressable(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.all(AppDimensions.space14),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.goldGlow : AppColors.surfaceGlassHover,
+            borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+            border: Border.all(
+              color: selected ? AppColors.champagneGold : AppColors.cardBorder,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: selected
+                      ? AppColors.champagneGold
+                      : AppColors.surfaceGlass,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.travel_explore_rounded,
+                  color: selected
+                      ? AppColors.readableOn(AppColors.champagneGold)
+                      : AppColors.champagneGold,
+                  size: 21,
+                ),
+              ),
+              const SizedBox(width: AppDimensions.space12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: UiText(
+                            context.uiCopy('All India'),
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: AppColors.pearlWhite,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.premiumGold.withValues(alpha: .14),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: UiText(
+                            context.uiCopy('PREMIUM'),
+                            style: AppTypography.badge.copyWith(
+                              color: AppColors.premiumGold,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: .7,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    UiText(
+                      context.uiCopy(
+                        'Browse eligible profiles across every Indian state and Union Territory. Safety, gender, block and visibility rules still apply.',
+                      ),
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.slateMist,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                selected
+                    ? Icons.check_circle_rounded
+                    : Icons.radio_button_unchecked_rounded,
+                color: selected ? AppColors.champagneGold : AppColors.slateMist,
+                size: 21,
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -30,7 +30,7 @@ Register-ScheduledTask `
     -Action $action `
     -Trigger $trigger `
     -Settings $settings `
-    -Description 'Creates an ignored, checksummed logical backup of the Silarah Supabase public schema and data.' `
+    -Description 'Creates an ignored, checksummed logical backup of Silarah app-owned database schemas and data.' `
     -Force | Out-Null
 
 $registered = Get-ScheduledTask -TaskName $TaskName

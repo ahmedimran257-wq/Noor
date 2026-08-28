@@ -4458,17 +4458,17 @@ abstract class AppLocalizations {
   /// **'True black tuned for OLED displays'**
   String get settings_theme_oledDesc;
 
-  /// No description provided for @settings_theme_prism.
+  /// No description provided for @settings_theme_ivory.
   ///
   /// In en, this message translates to:
-  /// **'Prism Luxe'**
-  String get settings_theme_prism;
+  /// **'Ivory & Emerald'**
+  String get settings_theme_ivory;
 
-  /// No description provided for @settings_theme_prismDesc.
+  /// No description provided for @settings_theme_ivoryDesc.
   ///
   /// In en, this message translates to:
-  /// **'Midnight depth with luminous jewel colour'**
-  String get settings_theme_prismDesc;
+  /// **'Warm ivory with deep emerald and antique gold'**
+  String get settings_theme_ivoryDesc;
 
   /// No description provided for @settings_guardian_backendRequired.
   ///

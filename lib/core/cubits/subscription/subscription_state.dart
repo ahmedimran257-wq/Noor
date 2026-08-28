@@ -8,11 +8,13 @@ enum PremiumEntitlementSource {
   none,
   paid,
   referral,
+  test,
   paidAndReferral;
 
   static PremiumEntitlementSource fromServer(String? value) => switch (value) {
         'paid' => PremiumEntitlementSource.paid,
         'referral' => PremiumEntitlementSource.referral,
+        'test' => PremiumEntitlementSource.test,
         'paid_and_referral' => PremiumEntitlementSource.paidAndReferral,
         _ => PremiumEntitlementSource.none,
       };
@@ -51,6 +53,13 @@ class SubscriptionState extends Equatable {
 
   bool get isReferralOnly =>
       isSubscribed && source == PremiumEntitlementSource.referral;
+
+  /// Owner-supervised, server-expiring physical-device QA access. It is not
+  /// a store purchase, referral reward, or public trust signal.
+  bool get isTestOnly =>
+      isSubscribed && source == PremiumEntitlementSource.test;
+
+  bool get isTemporaryPromotional => isReferralOnly || isTestOnly;
 
   bool get includesReferral =>
       source == PremiumEntitlementSource.referral ||

@@ -12,7 +12,7 @@ void main() {
   test('homepage has a real primary conversion path', () {
     expect(home, contains('href="https://app.silarah.com/"'));
     expect(home, contains('Get Silarah'));
-    expect(home, contains('See how it works'));
+    expect(home, contains('Explore the experience'));
     expect(home, isNot(contains('Visit Help Center')));
   });
 
@@ -91,7 +91,6 @@ void main() {
 
   test('public homepage uses honest campaign imagery and a restrained favicon',
       () {
-    expect(home, isNot(contains('silarah-icon')));
     expect(home, contains('class="brand"'));
     expect(home, contains('<img'));
     expect(home, contains('fictional AI-generated models'));

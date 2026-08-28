@@ -21,11 +21,12 @@ void main() {
   test('theme modes have stable persistence identities', () {
     expect(
       SilarahThemeMode.values.map((mode) => mode.storageValue).toSet(),
-      {'black_white', 'oled', 'prism_luxe'},
+      {'black_white', 'oled', 'ivory_emerald'},
     );
     expect(
       SilarahThemeMode.fromStorage('prism_luxe'),
-      SilarahThemeMode.prismLuxe,
+      SilarahThemeMode.oled,
+      reason: 'The retired dark identity migrates without a bright flash.',
     );
     expect(
       SilarahThemeMode.fromStorage('unknown'),
@@ -54,21 +55,21 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final cubit = ThemeCubit();
 
-    await cubit.applyMode(SilarahThemeMode.prismLuxe);
-    expect(cubit.state.activeMode, SilarahThemeMode.prismLuxe);
-    expect(cubit.state.selectedMode, SilarahThemeMode.prismLuxe);
-    expect(AppColors.active.mode, SilarahThemeMode.prismLuxe);
+    await cubit.applyMode(SilarahThemeMode.ivoryEmerald);
+    expect(cubit.state.activeMode, SilarahThemeMode.ivoryEmerald);
+    expect(cubit.state.selectedMode, SilarahThemeMode.ivoryEmerald);
+    expect(AppColors.active.mode, SilarahThemeMode.ivoryEmerald);
     expect(
       (await SharedPreferences.getInstance())
           .getString(ThemeCubit.preferenceKey),
-      'prism_luxe',
+      'ivory_emerald',
     );
     await cubit.close();
 
     final restored = ThemeCubit();
     await restored.ready;
-    expect(restored.state.activeMode, SilarahThemeMode.prismLuxe);
-    expect(AppColors.active.mode, SilarahThemeMode.prismLuxe);
+    expect(restored.state.activeMode, SilarahThemeMode.ivoryEmerald);
+    expect(AppColors.active.mode, SilarahThemeMode.ivoryEmerald);
     await restored.close();
   });
 
@@ -126,16 +127,16 @@ void main() {
       reason: 'Pure OLED navigation pixels must also switch off.',
     );
     expect(
-      SilarahPalette.prismLuxe.background,
-      const Color(0xFF080914),
-      reason: 'Prism Luxe keeps jewel colour grounded in a midnight canvas.',
+      SilarahPalette.ivoryEmerald.background,
+      const Color(0xFFF7F3EA),
+      reason: 'Ivory & Emerald uses a deliberately warm paper canvas.',
     );
-    expect(SilarahThemeMode.prismLuxe.isDark, isTrue);
-    expect(SilarahThemeMode.prismLuxe.isChromatic, isTrue);
+    expect(SilarahThemeMode.ivoryEmerald.isDark, isFalse);
+    expect(SilarahThemeMode.ivoryEmerald.isChromatic, isFalse);
     expect(
-      SilarahPalette.prismLuxe.spectrum.toSet(),
+      SilarahPalette.ivoryEmerald.spectrum.toSet(),
       hasLength(6),
-      reason: 'The chromatic identity must not collapse into repeated accents.',
+      reason: 'Semantic accents remain distinct without becoming rainbow UI.',
     );
     const monochrome = SilarahPalette.blackWhite;
     final monochromeColors = <Color>[

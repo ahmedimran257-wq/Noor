@@ -39,6 +39,14 @@ void main() {
 
     test('release builds discard registrants containing dev-only plugins', () {
       expect(
+        gradle,
+        contains('removeDevOnlyGeneratedPluginRegistrant'),
+      );
+      expect(
+        gradle,
+        contains('dependsOn(removeDevOnlyGeneratedPluginRegistrant)'),
+      );
+      expect(
         installScript,
         contains('GeneratedPluginRegistrant.java'),
       );

@@ -6,6 +6,7 @@ import 'package:silarah/l10n/india_launch_ui_copy.dart';
 import 'package:silarah/l10n/legal_access_ui_copy.dart';
 import 'package:silarah/l10n/messaging_policy_ui_copy.dart';
 import 'package:silarah/l10n/photo_guide_ui_copy.dart';
+import 'package:silarah/l10n/premium_discovery_ui_copy.dart';
 import 'package:silarah/l10n/trust_ui_copy.dart';
 import 'package:silarah/l10n/translation_privacy_ui_copy.dart';
 import 'package:silarah/l10n/guardian_ui_copy.dart';
@@ -27,6 +28,7 @@ class UiCopy {
         legalAccessUiCopy[languageCode]?[source] ??
         messagingPolicyUiCopy[languageCode]?[source] ??
         photoGuideUiCopy[languageCode]?[source] ??
+        premiumDiscoveryUiCopy[languageCode]?[source] ??
         trustUiCopy[languageCode]?[source] ??
         translationPrivacyUiCopy[languageCode]?[source] ??
         guardianUiCopy[languageCode]?[source] ??
@@ -42,6 +44,7 @@ class UiCopy {
       legalAccessUiCopy[languageCode]?.containsKey(source) == true ||
       messagingPolicyUiCopy[languageCode]?.containsKey(source) == true ||
       photoGuideUiCopy[languageCode]?.containsKey(source) == true ||
+      premiumDiscoveryUiCopy[languageCode]?.containsKey(source) == true ||
       trustUiCopy[languageCode]?.containsKey(source) == true ||
       translationPrivacyUiCopy[languageCode]?.containsKey(source) == true ||
       guardianUiCopy[languageCode]?.containsKey(source) == true ||
@@ -9757,7 +9760,10 @@ extension UiCopyBuildContext on BuildContext {
   String uiProfileCompleteness(int percent) =>
       _uiL10n.profile_label_completeness(percent);
   String uiAgeRange(Object minimum, Object maximum) =>
-      _uiL10n.preferences_label_age_range(minimum, maximum);
+      // gen_l10n orders positional placeholders alphabetically (`max`, then
+      // `min`), while this public helper intentionally keeps the semantic
+      // minimum/maximum order used by every screen.
+      _uiL10n.preferences_label_age_range(maximum, minimum);
   String uiYesterdayTime(String time) => _uiL10n.ui_yesterdayTime(time);
   String uiMinutesAgo(int count) => _uiL10n.ui_minutesAgo(count);
   String uiHoursAgo(int count) => _uiL10n.ui_hoursAgo(count);

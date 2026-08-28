@@ -2394,11 +2394,11 @@ class AppLocalizationsDe extends AppLocalizations {
       'Echtes Schwarz, optimiert für OLED-Displays';
 
   @override
-  String get settings_theme_prism => 'Prism Luxe';
+  String get settings_theme_ivory => 'Elfenbein & Smaragd';
 
   @override
-  String get settings_theme_prismDesc =>
-      'Mitternachtstiefe mit leuchtenden Juwelenfarben';
+  String get settings_theme_ivoryDesc =>
+      'Warmes Elfenbein mit tiefem Smaragd und Antikgold';
 
   @override
   String get settings_guardian_backendRequired =>

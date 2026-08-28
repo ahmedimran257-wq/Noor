@@ -17,6 +17,7 @@ import '../../../core/cubits/auth/auth_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/messaging_access_policy.dart';
+import '../../../core/widgets/buttons/silarah_pressable.dart';
 import 'subscription_screen.dart';
 
 class PaywallGateSheet {
@@ -84,27 +85,27 @@ class _PaywallGateContent extends StatelessWidget {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 20),
 
-          // Lock icon with gold ring
+          // Product-specific premium seal rather than a generic lock screen.
           Container(
-            width: 72,
-            height: 72,
+            width: 58,
+            height: 58,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(18),
               color: AppColors.goldGlow,
               border: Border.all(color: AppColors.goldBorder, width: 1.5),
             ),
             child: Icon(
-              Icons.lock_outline_rounded,
+              Icons.workspace_premium_rounded,
               color: AppColors.champagneGold,
-              size: 32,
+              size: 28,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           UiText(
-            context.uiCopy('Subscribe to Unlock Messaging'),
+            context.uiCopy('Continue your conversation'),
             style: AppTypography.screenTitle.copyWith(fontSize: 22),
             textAlign: TextAlign.center,
           ),
@@ -112,10 +113,26 @@ class _PaywallGateContent extends StatelessWidget {
 
           UiText(
             'Women can message their matches at no cost.\nMen unlock conversations with Silarah Premium.',
-            style: AppTypography.bodyMuted.copyWith(height: 1.6),
+            style: AppTypography.bodyMuted.copyWith(height: 1.45),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 14),
+
+          const _PremiumProofRow(
+            icon: Icons.forum_outlined,
+            label: 'Full match messaging',
+          ),
+          const SizedBox(height: 7),
+          const _PremiumProofRow(
+            icon: Icons.travel_explore_rounded,
+            label: 'All India discovery and advanced filters',
+          ),
+          const SizedBox(height: 7),
+          const _PremiumProofRow(
+            icon: Icons.visibility_outlined,
+            label: 'Profile viewers and weekly boost',
+          ),
+          const SizedBox(height: 14),
 
           // Price highlight
           Container(
@@ -132,10 +149,11 @@ class _PaywallGateContent extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 28),
+          const SizedBox(height: 20),
 
           // Subscribe CTA
-          GestureDetector(
+          SilarahPressable(
+            semanticLabel: context.uiCopy('See Plans'),
             onTap: () {
               Navigator.of(context).pop();
               Navigator.of(context).push(
@@ -173,6 +191,30 @@ class _PaywallGateContent extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _PremiumProofRow extends StatelessWidget {
+  const _PremiumProofRow({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: AppColors.champagneGold, size: 17),
+        const SizedBox(width: 8),
+        Flexible(
+          child: UiText(
+            context.uiCopy(label),
+            style: AppTypography.captionMedium,
+          ),
+        ),
+      ],
     );
   }
 }

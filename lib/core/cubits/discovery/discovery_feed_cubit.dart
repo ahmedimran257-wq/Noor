@@ -651,7 +651,10 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       if (f.distanceLabel == 'Same State' ||
           f.distanceLabel == 'Same State / Region')
         'same_region': true,
-      if (f.distanceLabel == 'Same Country') 'same_country': true,
+      if (f.distanceLabel == 'Same Country' ||
+          f.distanceLabel == 'All India' ||
+          f.distanceLabel == 'Anywhere in India')
+        'same_country': true,
       if (f.distanceLabel == 'Anywhere') 'anywhere': true,
       if (f.browseCountries != null && f.browseCountries!.isNotEmpty)
         'country_codes': f.browseCountries,

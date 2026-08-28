@@ -124,6 +124,24 @@ tasks.register("verifyReleaseSigning") {
     }
 }
 
+// Flutter integration tests can leave a legacy source-tree registrant that
+// references the dev-only integration_test plugin. Modern Flutter builds own
+// plugin registration, so remove that ignored generated file before Android
+// snapshots Java sources. This keeps direct local release builds as reliable
+// as CI and the device-install script.
+val removeDevOnlyGeneratedPluginRegistrant =
+    tasks.register<Delete>("removeDevOnlyGeneratedPluginRegistrant") {
+        delete(
+            layout.projectDirectory.file(
+                "src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java",
+            ),
+        )
+    }
+
+tasks.matching { it.name == "preBuild" }.configureEach {
+    dependsOn(removeDevOnlyGeneratedPluginRegistrant)
+}
+
 tasks.matching {
     it.name == "bundleRelease" || it.name == "assembleRelease"
 }.configureEach {

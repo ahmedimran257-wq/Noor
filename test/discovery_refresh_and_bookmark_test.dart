@@ -231,11 +231,7 @@ void main() {
         label.style?.color,
         AppColors.readableOn(actionGradient.colors[1]),
       );
-      if (mode == SilarahThemeMode.blackWhite) {
-        expect(actionGradient.colors.first, Colors.white);
-      } else {
-        expect(actionGradient.colors.first, AppColors.champagneLight);
-      }
+      expect(actionGradient.colors.first, AppColors.champagneLight);
       expect(tester.takeException(), isNull);
     });
   }

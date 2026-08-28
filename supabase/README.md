@@ -236,14 +236,18 @@ Before major backend changes:
 .\tool\backup_supabase.ps1 -ProjectRef <production-project-ref>
 ```
 
-This writes a custom-format public database archive, readable schema/data
-exports, and a SHA-256 manifest to the Git-ignored `supabase/backups/`
-directory. Register the weekly local job with:
+This writes one custom-format archive for the app-owned `public`, `private`,
+and `api_private` schemas, derives readable schema/data exports from that same
+snapshot, and records checksums plus per-table row counts in a Git-ignored
+manifest under `supabase/backups/`. Register the weekly local job with:
 
 ```powershell
 .\tool\register_supabase_backup_task.ps1 -ProjectRef <production-project-ref>
 ```
 
-Storage objects and Supabase-managed schemas require separate backup
-procedures. Restore drills should use a temporary Supabase project, never
-production.
+Storage objects, Auth recovery, Vault secrets and other Supabase-managed
+schemas still require the platform's separate recovery/export procedures. The
+checked-in restore drill can load an app-owned archive into a uniquely named
+ephemeral database on the staging cluster, validate every archived table count,
+and remove that database. It never restores into the staging `postgres`
+database and refuses the production project as its host.

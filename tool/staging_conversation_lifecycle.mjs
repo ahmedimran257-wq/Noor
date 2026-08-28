@@ -95,7 +95,12 @@ async function createAuthUser(email, password) {
   return request("/auth/v1/admin/users", {
     apiKey: service,
     method: "POST",
-    body: { email, password, email_confirm: true },
+    body: {
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { staging_conversation_run: runId },
+    },
   });
 }
 
@@ -104,11 +109,26 @@ async function deleteWhere(table, query) {
     apiKey: service,
     method: "DELETE",
     prefer: "return=minimal",
-  }).catch(() => undefined);
+  });
+}
+
+async function listAuthUsers() {
+  const users = [];
+  for (let page = 1; page <= 20; page += 1) {
+    const data = await request(`/auth/v1/admin/users?page=${page}&per_page=1000`, {
+      apiKey: service,
+    });
+    const batch = Array.isArray(data) ? data : (data?.users ?? []);
+    users.push(...batch);
+    if (batch.length < 1000) return users;
+  }
+  throw new Error("Auth fixture scan exceeded the safety bound");
 }
 
 const service = env.STAGING_SUPABASE_SERVICE_ROLE_KEY;
 const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+const fixtureDomain = "@staging.silarah.invalid";
+const staleFixtureAgeMs = 6 * 60 * 60 * 1000;
 const femaleEmail = `female.${runId}@staging.silarah.invalid`;
 const maleEmail = `male.${runId}@staging.silarah.invalid`;
 const femalePassword = `F-${crypto.randomUUID()}-aA7!`;
@@ -119,7 +139,36 @@ let maleId;
 let femaleProfileId;
 let maleProfileId;
 
+function isConversationFixture(user) {
+  return Boolean(
+    user?.id &&
+      user?.email?.toLowerCase().endsWith(fixtureDomain) &&
+      user?.user_metadata?.staging_conversation_run,
+  );
+}
+
+async function removeStaleConversationFixtures() {
+  const cutoff = Date.now() - staleFixtureAgeMs;
+  const stale = (await listAuthUsers()).filter((user) => {
+    const createdAt = Date.parse(user.created_at ?? "");
+    return isConversationFixture(user) &&
+      Number.isFinite(createdAt) &&
+      createdAt < cutoff;
+  });
+  for (const user of stale) {
+    await deleteWhere("users", `id=eq.${user.id}`);
+    await request(`/auth/v1/admin/users/${user.id}`, {
+      apiKey: service,
+      method: "DELETE",
+    });
+  }
+  const staleIds = new Set(stale.map((user) => user.id));
+  const remaining = (await listAuthUsers()).filter((user) => staleIds.has(user.id));
+  assert(remaining.length === 0, "Stale conversation fixtures remain");
+}
+
 try {
+  await removeStaleConversationFixtures();
   const country = await request(
     "/rest/v1/countries?iso_code=eq.IN&select=iso_code",
     { apiKey: service },
@@ -778,8 +827,9 @@ try {
 
   console.log("PASS: complete disposable two-account staging lifecycle");
 } finally {
-  if (femaleId && maleId) {
-    const pair = `(${femaleId},${maleId})`;
+  const fixtureIds = [femaleId, maleId].filter(Boolean);
+  if (fixtureIds.length > 0) {
+    const pair = `(${fixtureIds.join(",")})`;
     await deleteWhere("message_reports", `reporter_id=in.${pair}`);
     await deleteWhere("reports", `reporter_id=in.${pair}`);
     await deleteWhere("blocks", `blocker_id=in.${pair}`);
@@ -790,11 +840,20 @@ try {
     await deleteWhere("profiles", `user_id=in.${pair}`);
     await deleteWhere("users", `id=in.${pair}`);
   }
-  for (const userId of [femaleId, maleId]) {
-    if (!userId) continue;
+  for (const userId of fixtureIds) {
     await request(`/auth/v1/admin/users/${userId}`, {
       apiKey: service,
       method: "DELETE",
-    }).catch(() => undefined);
+    });
+  }
+  const fixtureIdSet = new Set(fixtureIds);
+  const authLeft = (await listAuthUsers()).filter((user) => fixtureIdSet.has(user.id));
+  assert(authLeft.length === 0, "Conversation Auth fixtures remain after cleanup");
+  if (fixtureIds.length > 0) {
+    const publicLeft = await request(
+      `/rest/v1/users?id=in.(${fixtureIds.join(",")})&select=id`,
+      { apiKey: service },
+    );
+    assert(publicLeft.length === 0, "Conversation public fixtures remain after cleanup");
   }
 }

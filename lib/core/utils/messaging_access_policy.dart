@@ -18,6 +18,7 @@ abstract final class MessagingAccessPolicy {
   static bool requiresVerifiedPhoneToSend(
     String? gender, {
     bool referralOnly = false,
+    bool testOnly = false,
   }) =>
-      !hasFreeMessaging(gender) && !referralOnly;
+      !hasFreeMessaging(gender) && !referralOnly && !testOnly;
 }

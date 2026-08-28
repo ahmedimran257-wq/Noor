@@ -6,13 +6,40 @@
 // staging matrix signs actors in and always self-cleans; this tool creates
 // persistent, non-login test inventory for supervised UI/filter testing.
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const DEFAULT_PROFILE_COUNT = 500;
 const MAX_PROFILE_COUNT = 500;
 const KNOWN_PRODUCTION_REF = "jukpscfxzwttgtxvrbmj";
 const PRODUCTION_ACK = "confirmed-by-owner";
+// Minimal neutral JPEG fixture. Each photo row needs its own object key because
+// production enforces globally unique photo storage paths. At this size, all
+// 500 objects together remain well below one megabyte.
+const TEST_IMAGE_BYTES = Buffer.from(
+  "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////2wBDAf//////////////////////////////////////////////////////////////////////////////////////wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAX/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAF//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABBQJ//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAwEBPwF//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAgEBPwF//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQAGPwJ//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPyF//9oADAMBAAIAAwAAABAf/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAwEBPxB//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAgEBPxB//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxB//9k=",
+  "base64",
+);
+// Database-driven fixture coverage for India filters. These are real city
+// centres, but rows are inserted only when absent and registered on the batch
+// for safe removal after the fixture profiles are deleted.
+const INDIA_TEST_CITY_CENTRES = [
+  ["Guwahati", "Assam", 26.1445, 91.7362],
+  ["Patna", "Bihar", 25.5941, 85.1376],
+  ["Delhi", "Delhi", 28.6139, 77.2090],
+  ["Ahmedabad", "Gujarat", 23.0225, 72.5714],
+  ["Srinagar", "Jammu and Kashmir", 34.0837, 74.7973],
+  ["Bengaluru", "Karnataka", 12.9716, 77.5946],
+  ["Kochi", "Kerala", 9.9312, 76.2673],
+  ["Bhopal", "Madhya Pradesh", 23.2599, 77.4126],
+  ["Mumbai", "Maharashtra", 19.0760, 72.8777],
+  ["Bhubaneswar", "Odisha", 20.2961, 85.8245],
+  ["Jaipur", "Rajasthan", 26.9124, 75.7873],
+  ["Chennai", "Tamil Nadu", 13.0827, 80.2707],
+  ["Hyderabad", "Telangana", 17.3850, 78.4867],
+  ["Lucknow", "Uttar Pradesh", 26.8467, 80.9462],
+  ["Kolkata", "West Bengal", 22.5726, 88.3639],
+];
 const command = process.argv[2] ?? "status";
 const options = Object.fromEntries(
   process.argv.slice(3).map((value) => {
@@ -83,20 +110,30 @@ async function request(
 ) {
   let lastError;
   for (let attempt = 0; attempt < 6; attempt += 1) {
-    const response = await fetch(`${baseUrl}${path}`, {
-      method,
-      headers: {
-        apikey: service,
-        Authorization: `Bearer ${service}`,
-        "Content-Type": contentType,
-        ...(prefer ? { Prefer: prefer } : {}),
-      },
-      body: body === undefined
-        ? undefined
-        : contentType === "application/json"
-        ? JSON.stringify(body)
-        : body,
-    });
+    let response;
+    try {
+      response = await fetch(`${baseUrl}${path}`, {
+        method,
+        headers: {
+          apikey: service,
+          Authorization: `Bearer ${service}`,
+          "Content-Type": contentType,
+          ...(prefer ? { Prefer: prefer } : {}),
+        },
+        body: body === undefined
+          ? undefined
+          : contentType === "application/json"
+          ? JSON.stringify(body)
+          : body,
+      });
+    } catch (error) {
+      lastError = error;
+      if (attempt === 5) throw error;
+      await new Promise((resolveDelay) =>
+        setTimeout(resolveDelay, Math.min(8000, 350 * 2 ** attempt))
+      );
+      continue;
+    }
     const raw = await response.text();
     let data = null;
     if (raw) {
@@ -122,13 +159,24 @@ async function request(
   throw lastError;
 }
 
-async function insertRows(table, rows, { returning = false } = {}) {
+async function insertRows(
+  table,
+  rows,
+  { returning = false, onConflict, mergeDuplicates = false } = {},
+) {
   const inserted = [];
   for (const batch of chunks(rows, 40)) {
-    const data = await request(`/rest/v1/${table}`, {
+    const conflictQuery = onConflict
+      ? `?on_conflict=${encodeURIComponent(onConflict)}`
+      : "";
+    const preferences = [
+      mergeDuplicates ? "resolution=merge-duplicates" : null,
+      returning ? "return=representation" : "return=minimal",
+    ].filter(Boolean).join(",");
+    const data = await request(`/rest/v1/${table}${conflictQuery}`, {
       method: "POST",
       body: batch,
-      prefer: returning ? "return=representation" : "return=minimal",
+      prefer: preferences,
     });
     if (returning && Array.isArray(data)) inserted.push(...data);
   }
@@ -241,20 +289,53 @@ async function createAuthMember(seed, batchId) {
 }
 
 async function uploadTestImage(storagePath) {
-  const imageBytes = readFileSync(resolve("assets/icon/app_icon.png"));
   await request(`/storage/v1/object/profile-photos/${storagePath}`, {
     method: "POST",
-    body: imageBytes,
-    contentType: "image/png",
+    body: TEST_IMAGE_BYTES,
+    contentType: "image/jpeg",
   });
 }
 
 async function removeStorageObject(storagePath) {
   if (!storagePath) return;
-  await request("/storage/v1/object/profile-photos", {
-    method: "DELETE",
-    body: { prefixes: [storagePath] },
-  }).catch(() => undefined);
+  assert(
+    /^test-fixtures\/production-discovery-\d+-\d+$/.test(storagePath),
+    "Refusing to remove an unrecognized fixture storage path",
+  );
+
+  const objects = await request("/storage/v1/object/list/profile-photos", {
+    method: "POST",
+    body: {
+      prefix: storagePath,
+      limit: MAX_PROFILE_COUNT + 1,
+      offset: 0,
+      sortBy: { column: "name", order: "asc" },
+    },
+  });
+  assert(
+    objects.length <= MAX_PROFILE_COUNT,
+    "Fixture storage contains more objects than the protected batch limit",
+  );
+
+  const exactPaths = objects.map((object) => {
+    assert(
+      /^profile-\d{3}\.jpg$/.test(object?.name ?? ""),
+      "Fixture storage contains an unrecognized object name",
+    );
+    return `${storagePath}/${object.name}`;
+  });
+  for (const paths of chunks(exactPaths, 100)) {
+    await request("/storage/v1/object/profile-photos", {
+      method: "DELETE",
+      body: { prefixes: paths },
+    });
+  }
+
+  const remaining = await request("/storage/v1/object/list/profile-photos", {
+    method: "POST",
+    body: { prefix: storagePath, limit: 1, offset: 0 },
+  });
+  assert(remaining.length === 0, "Fixture storage cleanup was incomplete");
 }
 
 async function removeBatch(batchId, { failureReason } = {}) {
@@ -264,7 +345,10 @@ async function removeBatch(batchId, { failureReason } = {}) {
   );
   const batch = batchRows[0];
   if (!batch) throw new Error(`Unknown fixture batch: ${batchId}`);
-  if (batch.status === "removed") return { batchId, removed: 0 };
+  if (batch.status === "removed") {
+    await removeStorageObject(batch.storage_path);
+    return { batchId, removed: 0 };
+  }
 
   await patchWhere(
     "test_fixture_batches",
@@ -296,6 +380,20 @@ async function removeBatch(batchId, { failureReason } = {}) {
   }
 
   await removeStorageObject(batch.storage_path);
+  const fixtureCityIds = Array.isArray(batch.metadata?.fixture_city_ids)
+    ? batch.metadata.fixture_city_ids.filter(Number.isInteger)
+    : [];
+  if (fixtureCityIds.length > 0) {
+    const occupied = await request(
+      `/rest/v1/profiles?city_id=${inFilter(fixtureCityIds)}` +
+        "&select=city_id&limit=500",
+    );
+    const occupiedIds = new Set(occupied.map((row) => row.city_id));
+    const removableIds = fixtureCityIds.filter((id) => !occupiedIds.has(id));
+    for (const ids of chunks(removableIds, 35)) {
+      await deleteWhere("cities", `id=${inFilter(ids)}`);
+    }
+  }
   await patchWhere(
     "test_fixture_batches",
     `batch_id=eq.${encodeURIComponent(batchId)}`,
@@ -340,7 +438,7 @@ async function create() {
 
   const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
   const batchId = `production-discovery-${count}-${timestamp}`;
-  const storagePath = `test-fixtures/${batchId}/silarah-test-profile.png`;
+  const storagePath = `test-fixtures/${batchId}`;
   const reportPath = resolve(
     options.report === true || !options.report
       ? "build/production-test-profile-report.json"
@@ -369,6 +467,41 @@ async function create() {
     );
     assert(regions.length >= 1, "India region catalogue is empty");
     const regionIds = regions.map((region) => region.id);
+    const regionByName = new Map(regions.map((region) => [region.name, region]));
+    const existingCities = await request(
+      `/rest/v1/cities?region_id=${inFilter(regionIds)}` +
+      "&select=id,name,region_id,latitude,longitude&latitude=not.is.null" +
+      "&longitude=not.is.null&order=region_id.asc,id.asc&limit=500",
+    );
+    const existingCityKeys = new Set(
+      existingCities.map((city) => `${city.region_id}:${city.name.toLowerCase()}`),
+    );
+    const missingFixtureCities = INDIA_TEST_CITY_CENTRES
+      .map(([name, regionName, latitude, longitude]) => ({
+        name,
+        region_id: regionByName.get(regionName)?.id,
+        latitude,
+        longitude,
+      }))
+      .filter((city) => city.region_id &&
+        !existingCityKeys.has(`${city.region_id}:${city.name.toLowerCase()}`));
+    const createdFixtureCities = missingFixtureCities.length > 0
+      ? await insertRows("cities", missingFixtureCities, { returning: true })
+      : [];
+    const fixtureCityIds = createdFixtureCities.map((city) => city.id);
+    await patchWhere(
+      "test_fixture_batches",
+      `batch_id=eq.${encodeURIComponent(batchId)}`,
+      {
+        metadata: {
+          purpose: "Owner-supervised Premium, discovery and filter testing",
+          test_only: true,
+          sends_email: false,
+          authenticates_fixture_accounts: false,
+          fixture_city_ids: fixtureCityIds,
+        },
+      },
+    );
     const cities = await request(
       `/rest/v1/cities?region_id=${inFilter(regionIds)}` +
         "&select=id,name,region_id,latitude,longitude&latitude=not.is.null" +
@@ -492,29 +625,42 @@ async function create() {
     members = members.map((member) => ({ ...member, profileId: profileByUser.get(member.id)?.id }));
     assert(members.every((member) => member.profileId), "Profile ID mapping is incomplete");
 
-    await insertRows("profile_preferences", members.map((member) => ({
-      profile_id: member.profileId,
-      preferred_age_min: 21,
-      preferred_age_max: 55,
-      preferred_countries: ["IN"],
-      sect_preference: "any",
-      deen_preference: "any",
-      min_education_rank: 1,
-      open_to_divorced: true,
-      open_to_widowed: true,
-      open_to_has_children: true,
-      open_to_diaspora: false,
-      preferred_mother_tongue: [],
-      preferred_community: [],
-      preferred_marriage_timeline: "no_preference",
-      preferred_relocation: "no_preference",
-      preferred_living_expectation: "no_preference",
-    })));
+    await insertRows(
+      "profile_preferences",
+      members.map((member) => ({
+        profile_id: member.profileId,
+        preferred_age_min: 21,
+        preferred_age_max: 55,
+        preferred_countries: ["IN"],
+        sect_preference: "any",
+        deen_preference: "any",
+        min_education_rank: 1,
+        open_to_divorced: true,
+        open_to_widowed: true,
+        open_to_has_children: true,
+        open_to_diaspora: false,
+        preferred_mother_tongue: [],
+        preferred_community: [],
+        preferred_marriage_timeline: "no_preference",
+        preferred_relocation: "no_preference",
+        preferred_living_expectation: "no_preference",
+      })),
+      {
+        onConflict: "profile_id",
+        mergeDuplicates: true,
+      },
+    );
 
-    await uploadTestImage(storagePath);
-    await insertRows("photos", members.map((member) => ({
-      profile_id: member.profileId,
-      storage_path: storagePath,
+    const fixturePhotos = members.map((member) => ({
+      member,
+      storagePath: `${storagePath}/profile-${String(member.index).padStart(3, "0")}.jpg`,
+    }));
+    await mapConcurrent(fixturePhotos, 12, async (fixture) => {
+      await uploadTestImage(fixture.storagePath);
+    });
+    await insertRows("photos", fixturePhotos.map((fixture) => ({
+      profile_id: fixture.member.profileId,
+      storage_path: fixture.storagePath,
       status: "active",
       order_index: 0,
       admin_approved: true,
@@ -582,9 +728,10 @@ async function create() {
           test_only: true,
           sends_email: false,
           authenticates_fixture_accounts: false,
+          fixture_city_ids: fixtureCityIds,
           male: count / 2,
           female: count / 2,
-          shared_storage_objects: 1,
+          storage_objects: count,
           photo_verified: photoVerified.length + bothVerified.length,
           phone_verified: phoneVerified.length + bothVerified.length,
           guardian_connected: guardianConnected.length,
@@ -617,7 +764,10 @@ async function create() {
       "Not every available India city is represented",
     );
     assert(new Set(live.map((row) => row.mother_tongue)).size >= 20, "Mother-tongue diversity is too low");
-    assert(new Set(photos.map((row) => row.storage_path)).size === 1, "Expected one shared test image object");
+    assert(
+      new Set(photos.map((row) => row.storage_path)).size === count,
+      "Expected one unique storage path per test profile",
+    );
 
     const report = {
       batchId,
@@ -629,7 +779,7 @@ async function create() {
       motherTongues: new Set(live.map((row) => row.mother_tongue)).size,
       communities: new Set(live.map((row) => row.community)).size,
       livingExpectations: new Set(live.map((row) => row.living_expectation)).size,
-      storageObjects: 1,
+      storageObjects: count,
       fakeAccountsSignedIn: 0,
       notificationFanoutSuppressed: true,
       cleanupCommand: `node tool/manage_production_test_profiles.mjs remove --batch=${batchId}`,

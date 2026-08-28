@@ -410,19 +410,35 @@ class _ConversationTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasUnread = conversation.unreadCount > 0;
+    final isClosed = conversation.isMatchClosed;
+    final closedLabel = conversation.closedByMe == true
+        ? context.uiCopy('Ended by you')
+        : conversation.closedByMe == false
+            ? context.uiCopy('Ended by them')
+            : context.uiCopy('Conversation ended');
 
     // ClipRRect + Stack solves the Flutter limitation where non-uniform border
     // widths (left=3, others=1) combined with borderRadius prevent children
     // from painting. The gold left accent is now a Positioned strip in a Stack.
-    return GestureDetector(
+    return SilarahPressable(
       onTap: onTap,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+        borderRadius: BorderRadius.circular(16),
         child: AnimatedContainer(
           duration: AppDimensions.durationTransition,
           decoration: BoxDecoration(
-            color: AppColors.surfaceGlass,
-            border: Border.all(color: AppColors.cardBorder),
+            color: hasUnread
+                ? AppColors.surfaceElevated
+                : isClosed
+                    ? AppColors.surfaceMid
+                    : AppColors.surfaceGlass,
+            border: Border.all(
+              color: hasUnread
+                  ? AppColors.champagneGold.withValues(alpha: .6)
+                  : isClosed
+                      ? AppColors.divider
+                      : AppColors.cardBorder.withValues(alpha: .7),
+            ),
           ),
           child: Stack(
             children: [
@@ -509,6 +525,38 @@ class _ConversationTile extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
+                          if (isClosed) ...[
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfacePressed,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.history_rounded,
+                                    color: AppColors.slateMist,
+                                    size: 12,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  UiText(
+                                    closedLabel,
+                                    style: AppTypography.badge.copyWith(
+                                      color: AppColors.slateMist,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),

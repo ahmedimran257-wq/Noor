@@ -667,13 +667,14 @@ class _MyProfileScreenState extends State<MyProfileScreen>
 
           BlocBuilder<SubscriptionCubit, SubscriptionState>(
             builder: (context, subscription) {
-              if (!subscription.isReferralOnly) {
+              if (!subscription.isTemporaryPromotional) {
                 return const SizedBox.shrink();
               }
               return Padding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
                 child: _ReferralPremiumProfileBanner(
                   expiresAt: subscription.expiresAt,
+                  isTest: subscription.isTestOnly,
                   onTap: () => context.push(AppRoutes.subscription),
                 ),
               );
@@ -1905,10 +1906,12 @@ class _ReferralPremiumProfileBanner extends StatelessWidget {
   const _ReferralPremiumProfileBanner({
     required this.expiresAt,
     required this.onTap,
+    this.isTest = false,
   });
 
   final DateTime? expiresAt;
   final VoidCallback onTap;
+  final bool isTest;
 
   @override
   Widget build(BuildContext context) {
@@ -1967,7 +1970,9 @@ class _ReferralPremiumProfileBanner extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   UiText(
-                    l10n.referral_premiumActiveTitle,
+                    isTest
+                        ? context.uiCopy('Test Premium is active')
+                        : l10n.referral_premiumActiveTitle,
                     style: AppTypography.bodyMedium.copyWith(
                       color: AppColors.champagneGold,
                     ),
@@ -2008,7 +2013,9 @@ class _SubscriptionCard extends StatelessWidget {
 
     return BlocBuilder<SubscriptionCubit, SubscriptionState>(
       builder: (context, state) {
-        if (gender == 'female' && !state.includesReferral) {
+        if (gender == 'female' &&
+            !state.includesReferral &&
+            !state.isTestOnly) {
           return const SizedBox.shrink();
         }
         return switch (state.status) {
@@ -2024,6 +2031,8 @@ class _SubscriptionCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final expiry = state.expiresAt;
     final referralOnly = state.isReferralOnly;
+    final testOnly = state.isTestOnly;
+    final temporary = referralOnly || testOnly;
     return _CardShell(
       borderColor: AppColors.verifiedTeal,
       glowColor: AppColors.verifiedTeal.withValues(alpha: 0.1),
@@ -2036,21 +2045,23 @@ class _SubscriptionCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             UiText(
-                referralOnly
-                    ? l10n.referral_premiumActiveTitle
-                    : 'SILARAH Premium · Active',
+                testOnly
+                    ? context.uiCopy('Test Premium is active')
+                    : referralOnly
+                        ? l10n.referral_premiumActiveTitle
+                        : 'SILARAH Premium · Active',
                 style: AppTypography.bodyMedium
                     .copyWith(color: AppColors.verifiedTeal)),
             if (expiry != null)
               UiText(
-                  referralOnly
+                  temporary
                       ? l10n.referral_premiumEndsAt(_fmtDate(expiry))
                       : context.uiRenewsDate(_fmtDate(expiry)),
                   style: AppTypography.caption),
           ],
         )),
         TextButton(
-          onPressed: referralOnly
+          onPressed: temporary
               ? () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
                       builder: (_) => const SubscriptionScreen(),
@@ -2059,7 +2070,7 @@ class _SubscriptionCard extends StatelessWidget {
               : () => _manageSubscription(context),
           child: UiText(
             context.uiCopy(
-              referralOnly
+              temporary
                   ? l10n.referral_premiumViewReward
                   : 'Manage Subscription',
             ),

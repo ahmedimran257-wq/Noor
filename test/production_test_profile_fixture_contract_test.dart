@@ -51,6 +51,8 @@ void main() {
     expect(manager, contains(r'await deleteWhere("users", `id=${list}`)'));
     expect(manager, contains('/auth/v1/admin/users/'));
     expect(manager, contains('removedProfiles'));
+    expect(manager, contains('fixture_city_ids'));
+    expect(manager, contains('occupiedIds'));
     expect(manager, isNot(contains('email=like')));
   });
 
@@ -76,10 +78,18 @@ void main() {
       'previously_married',
       'children_count',
       'education_rank',
-      'storageObjects: 1',
-      'Expected one shared test image object',
+      'INDIA_TEST_CITY_CENTRES',
+      'storageObjects: count',
+      'contentType: "image/jpeg"',
+      'Expected one unique storage path per test profile',
     ]) {
       expect(manager, contains(contract), reason: 'Missing $contract');
     }
+  });
+
+  test('fixture preferences merge with the profile bootstrap trigger', () {
+    expect(manager, contains('onConflict: "profile_id"'));
+    expect(manager, contains('mergeDuplicates: true'));
+    expect(manager, contains('resolution=merge-duplicates'));
   });
 }

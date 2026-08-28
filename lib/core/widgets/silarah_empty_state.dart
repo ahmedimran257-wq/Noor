@@ -107,8 +107,8 @@ class _SilarahEmptyStateState extends State<SilarahEmptyState>
                 label: widget.title,
                 child: RepaintBoundary(
                   child: SizedBox(
-                    width: 208,
-                    height: 132,
+                    width: 176,
+                    height: 112,
                     child: AnimatedBuilder(
                       animation: _motion,
                       builder: (context, _) => CustomPaint(
@@ -122,15 +122,15 @@ class _SilarahEmptyStateState extends State<SilarahEmptyState>
                   ),
                 ),
               ),
-              const SizedBox(height: AppDimensions.space24),
+              const SizedBox(height: AppDimensions.space16),
               UiText(
                 widget.title,
-                style: AppTypography.screenTitle.copyWith(fontSize: 21),
+                style: AppTypography.screenTitle.copyWith(fontSize: 20),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppDimensions.space10),
               ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 360),
+                constraints: const BoxConstraints(maxWidth: 340),
                 child: UiText(
                   widget.subtitle,
                   style: AppTypography.bodyMuted.copyWith(height: 1.55),
@@ -138,7 +138,7 @@ class _SilarahEmptyStateState extends State<SilarahEmptyState>
                 ),
               ),
               if (widget.ctaLabel != null && widget.onCta != null) ...[
-                const SizedBox(height: AppDimensions.space24),
+                const SizedBox(height: AppDimensions.space20),
                 SilarahPressable(
                   semanticLabel: widget.ctaLabel,
                   onTap: widget.onCta,
@@ -201,23 +201,30 @@ class _EmptyScenePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    _paintAtmosphere(canvas, size);
+    const designSize = Size(208, 132);
+    canvas.save();
+    canvas.scale(
+      size.width / designSize.width,
+      size.height / designSize.height,
+    );
+    _paintAtmosphere(canvas, designSize);
     switch (visual) {
       case SilarahEmptyVisual.discovery:
-        _paintDiscovery(canvas, size);
+        _paintDiscovery(canvas, designSize);
       case SilarahEmptyVisual.interests:
-        _paintInterests(canvas, size, sent: false);
+        _paintInterests(canvas, designSize, sent: false);
       case SilarahEmptyVisual.sentInterests:
-        _paintInterests(canvas, size, sent: true);
+        _paintInterests(canvas, designSize, sent: true);
       case SilarahEmptyVisual.conversations:
-        _paintConversation(canvas, size);
+        _paintConversation(canvas, designSize);
       case SilarahEmptyVisual.savedProfiles:
-        _paintSavedProfiles(canvas, size);
+        _paintSavedProfiles(canvas, designSize);
       case SilarahEmptyVisual.connection:
-        _paintConnection(canvas, size);
+        _paintConnection(canvas, designSize);
       case SilarahEmptyVisual.neutral:
-        _paintNeutral(canvas, size);
+        _paintNeutral(canvas, designSize);
     }
+    canvas.restore();
   }
 
   void _paintAtmosphere(Canvas canvas, Size size) {

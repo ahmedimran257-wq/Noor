@@ -2379,10 +2379,11 @@ class AppLocalizationsBn extends AppLocalizations {
   String get settings_theme_oledDesc => 'OLED পর্দার জন্য প্রকৃত কালো';
 
   @override
-  String get settings_theme_prism => 'প্রিজম লাক্স';
+  String get settings_theme_ivory => 'হাতির দাঁত ও পান্না';
 
   @override
-  String get settings_theme_prismDesc => 'উজ্জ্বল রত্নরঙে মধ্যরাতের গভীরতা';
+  String get settings_theme_ivoryDesc =>
+      'উষ্ণ হাতির দাঁত, গাঢ় পান্না ও প্রাচীন সোনা';
 
   @override
   String get settings_guardian_backendRequired =>

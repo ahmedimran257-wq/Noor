@@ -11,10 +11,10 @@ enum SilarahThemeMode {
     'Pure white, absolute black, no colour',
   ),
   oled('oled', 'Pure OLED', 'Absolute black and precision contrast'),
-  prismLuxe(
-    'prism_luxe',
-    'Prism Luxe',
-    'Midnight depth with luminous jewel colour',
+  ivoryEmerald(
+    'ivory_emerald',
+    'Ivory & Emerald',
+    'Warm ivory with deep emerald and antique gold',
   );
 
   const SilarahThemeMode(this.storageValue, this.label, this.description);
@@ -23,12 +23,18 @@ enum SilarahThemeMode {
   final String label;
   final String description;
 
-  bool get isDark =>
-      this == SilarahThemeMode.oled || this == SilarahThemeMode.prismLuxe;
-  bool get isChromatic => this == SilarahThemeMode.prismLuxe;
+  bool get isDark => this == SilarahThemeMode.oled;
+
+  /// Retained for older widgets that distinguish a single-accent identity
+  /// from a multi-accent one. The current identities intentionally use one
+  /// disciplined brand accent, so this is false for every supported mode.
+  bool get isChromatic => false;
 
   static SilarahThemeMode fromStorage(String? value) => switch (value) {
-        'prism_luxe' => SilarahThemeMode.prismLuxe,
+        'ivory_emerald' => SilarahThemeMode.ivoryEmerald,
+        // Prism Luxe was a dark identity. Migrate it to OLED so an existing
+        // member is not unexpectedly moved from dark mode to a light canvas.
+        'prism_luxe' => SilarahThemeMode.oled,
         'oled' => SilarahThemeMode.oled,
         'black_white' => SilarahThemeMode.blackWhite,
         // Removed light identities and unknown values migrate to the new
@@ -217,60 +223,59 @@ class SilarahPalette {
     ],
   );
 
-  /// A chromatic dark identity built from luminous jewel tones rather than a
-  /// single repeated accent. Deep blue-black surfaces keep the spectrum
-  /// elegant while violet, pink, cyan, emerald, gold and coral own distinct
-  /// interaction roles.
-  static const prismLuxe = SilarahPalette(
-    mode: SilarahThemeMode.prismLuxe,
-    background: Color(0xFF080914),
-    backgroundDeep: Color(0xFF11142A),
-    accent: Color(0xFFB99CFF),
-    accentHighlight: Color(0xFFFF7DB8),
-    accentPressed: Color(0xFF57D7E8),
-    complementary: Color(0xFF57D7E8),
-    decorativeDepth: Color(0xFF21174F),
-    contentPrimary: Color(0xFFF9F7FF),
-    contentSecondary: Color(0xFFBBBBD5),
-    surface: Color(0xFF111429),
-    surfaceInteractive: Color(0xFF1A1E3B),
-    input: Color(0xFF12162D),
-    border: Color(0xFF30365E),
-    accentBorder: Color(0xB3B99CFF),
-    accentGlow: Color(0x38B99CFF),
-    success: Color(0xFF63E0AE),
-    danger: Color(0xFFFF7895),
-    messageReceived: Color(0xFF171C39),
-    progressTrack: Color(0xFF2D3358),
-    divider: Color(0xFF242946),
-    surfaceElevated: Color(0xFF171A34),
-    surfaceMid: Color(0xFF0E1123),
-    surfaceDark: Color(0xFF090B19),
-    surfacePressed: Color(0xFF23294A),
-    surfacePanelTop: Color(0xFF1A1D39),
-    premium: Color(0xFFFFD166),
-    online: Color(0xFF63E0AE),
-    message: Color(0xFF65B8FF),
-    warning: Color(0xFFFFBC66),
-    gradientCore: Color(0xFF211247),
-    dropdown: Color(0xFF181B35),
-    snackbar: Color(0xFF1B1E39),
-    navBar: Color(0xFA0B0D1D),
-    navBorder: Color(0xFF2B3053),
+  /// A calm matrimonial identity: paper-like ivory surfaces, authoritative
+  /// emerald controls and restrained antique-gold premium cues. The palette
+  /// avoids the generic neon-gradient language common in social apps.
+  static const ivoryEmerald = SilarahPalette(
+    mode: SilarahThemeMode.ivoryEmerald,
+    background: Color(0xFFF7F3EA),
+    backgroundDeep: Color(0xFFEFE8DA),
+    accent: Color(0xFF175C45),
+    accentHighlight: Color(0xFF23775A),
+    accentPressed: Color(0xFF104936),
+    complementary: Color(0xFFB08D57),
+    decorativeDepth: Color(0xFFE3D7C3),
+    contentPrimary: Color(0xFF18211C),
+    contentSecondary: Color(0xFF59615C),
+    surface: Color(0xFFFFFDF8),
+    surfaceInteractive: Color(0xFFF0EADF),
+    input: Color(0xFFFBF8F1),
+    border: Color(0xFFD9D0C0),
+    accentBorder: Color(0xB3175C45),
+    accentGlow: Color(0x24175C45),
+    success: Color(0xFF1D6B50),
+    danger: Color(0xFFA33D4D),
+    messageReceived: Color(0xFFEDE7DB),
+    progressTrack: Color(0xFFDCD4C5),
+    divider: Color(0xFFE6DED1),
+    surfaceElevated: Color(0xFFFFFFFF),
+    surfaceMid: Color(0xFFF4EFE5),
+    surfaceDark: Color(0xFFE9E1D4),
+    surfacePressed: Color(0xFFE1D9CB),
+    surfacePanelTop: Color(0xFFFFFCF5),
+    premium: Color(0xFF8A682F),
+    online: Color(0xFF257157),
+    message: Color(0xFF315F78),
+    warning: Color(0xFF8A682F),
+    gradientCore: Color(0xFFE4D7C2),
+    dropdown: Color(0xFFFFFDF8),
+    snackbar: Color(0xFF17251F),
+    navBar: Color(0xFCFFFDF8),
+    navBorder: Color(0xFFDDD4C5),
     spectrum: [
-      Color(0xFFB99CFF),
-      Color(0xFFFF7DB8),
-      Color(0xFF57D7E8),
-      Color(0xFF63E0AE),
-      Color(0xFFFFD166),
-      Color(0xFFFF8B76),
+      Color(0xFF175C45),
+      Color(0xFF23775A),
+      Color(0xFF8A682F),
+      Color(0xFF59615C),
+      Color(0xFF315F78),
+      Color(0xFF7B5845),
     ],
   );
 
   static SilarahPalette forMode(SilarahThemeMode mode) => switch (mode) {
         SilarahThemeMode.blackWhite => blackWhite,
         SilarahThemeMode.oled => oled,
-        SilarahThemeMode.prismLuxe => prismLuxe,
+        SilarahThemeMode.ivoryEmerald => ivoryEmerald,
       };
 }
 
