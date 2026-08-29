@@ -77,21 +77,15 @@ void main() {
       'supabase/migrations/134_versioned_legal_policy_consents.sql',
     ).readAsStringSync();
     final currentConsentMigration = File(
-      'supabase/migrations/214_policy_230_subscription_and_privacy_consents.sql',
+      'supabase/migrations/252_policy_240_premium_relationship_privacy.sql',
     ).readAsStringSync();
 
     expect(settings, contains('LegalDocuments.all'));
     expect(legalGate, contains('community-guidelines'));
     expect(consentService, contains('LegalDocuments.version'));
     expect(originalConsentMigration, contains("'community_guidelines'"));
-    expect(
-        currentConsentMigration,
-        contains(
-            "trim(coalesce(p_policy_version, '')) <> '${LegalDocuments.version}'"));
-    expect(currentConsentMigration,
-        contains("VALUES ('${LegalDocuments.version}', p_acceptances)"));
-    expect(currentConsentMigration,
-        contains("to_jsonb('${LegalDocuments.version}'::text)"));
+    expect(currentConsentMigration, contains("'2.3.0', '2.4.0'"));
+    expect(currentConsentMigration, contains(LegalDocuments.version));
     expect(LegalDocuments.operatorName, 'Imran Ahmed');
     expect(LegalDocuments.grievanceOfficerName, 'Imran Ahmed');
   });

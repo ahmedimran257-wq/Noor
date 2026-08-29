@@ -75,6 +75,9 @@ class SubscriptionState extends Equatable {
   bool canBoostProfile(String gender) => isActive;
   bool canSaveMultipleFilterPresets(String gender) => isActive;
   bool canSeeFullViewersList(String gender) => isActive;
+  bool get canViewCompatibilityInsights => isActive;
+  bool get canOrganizeShortlists => isActive;
+  bool get canUseIncognito => isActive;
 
   /// Basic viewer count (not full list) is free for all.
   bool canSeeViewerCount(String gender) => true;

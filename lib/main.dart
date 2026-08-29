@@ -28,6 +28,9 @@ import 'core/services/wali_mode_service.dart';
 import 'core/services/fcm_service.dart';
 import 'core/services/presence_service.dart';
 import 'core/services/bookmark_service.dart';
+import 'core/services/compatibility_service.dart';
+import 'core/services/incognito_service.dart';
+import 'core/services/shortlist_service.dart';
 import 'core/services/filter_preset_service.dart';
 import 'core/services/legal_consent_service.dart';
 import 'core/services/auth_callback_service.dart';
@@ -714,6 +717,9 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
     bool logoutStoreIdentity = false,
   }) {
     BookmarkService.clearCache();
+    CompatibilityService.instance.clearCache();
+    IncognitoService.instance.clearCache();
+    ShortlistService.instance.clearCache();
     ReferralService.instance.clearCache();
     _chatCubit.clear();
     _notificationsCubit.clear();

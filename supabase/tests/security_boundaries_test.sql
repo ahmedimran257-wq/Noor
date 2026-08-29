@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select extensions.plan(47);
+select extensions.plan(55);
 
 select extensions.ok(
   not has_table_privilege('authenticated', 'public.users', 'INSERT,UPDATE,DELETE'),
@@ -421,6 +421,118 @@ select extensions.ok(
       and p.oid = 'public.apply_referral_code(text)'::regprocedure
   ),
   'referral application uses the idempotent checked definer boundary'
+);
+
+select extensions.ok(
+  not has_table_privilege(
+    'authenticated',
+    'private.premium_shortlist_details',
+    'SELECT,INSERT,UPDATE,DELETE'
+  )
+  and not has_table_privilege(
+    'authenticated',
+    'private.premium_privacy_settings',
+    'SELECT,INSERT,UPDATE,DELETE'
+  ),
+  'Premium relationship metadata has no direct member table access'
+);
+select extensions.ok(
+  has_function_privilege(
+    'authenticated',
+    'public.get_premium_compatibility_insight(uuid)',
+    'EXECUTE'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.get_my_premium_shortlist_details()',
+    'EXECUTE'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.set_my_incognito(boolean)',
+    'EXECUTE'
+  ),
+  'members use checked Premium relationship RPCs'
+);
+select extensions.ok(
+  not has_function_privilege(
+    'anon',
+    'public.get_premium_compatibility_insight(uuid)',
+    'EXECUTE'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.get_my_premium_shortlist_details()',
+    'EXECUTE'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.set_my_incognito(boolean)',
+    'EXECUTE'
+  ),
+  'anonymous callers cannot use Premium relationship RPCs'
+);
+select extensions.ok(
+  position(
+    'private.can_access_incognito_profile(p_viewer_id, dp.user_id)'
+    in pg_get_functiondef(
+      'public.get_discovery_feed(uuid,double precision,uuid,integer,jsonb)'::regprocedure
+    )
+  ) > 0
+  and position(
+    'private.can_access_incognito_profile(p_viewer_id, p.user_id)'
+    in pg_get_functiondef(
+      'public.search_profiles_by_name_city(uuid,text,integer)'::regprocedure
+    )
+  ) > 0,
+  'Incognito is enforced in discovery and search projections'
+);
+select extensions.ok(
+  position(
+    'private.can_access_incognito_profile(v_sender, p_receiver_id)'
+    in pg_get_functiondef('public.send_interest(uuid,text)'::regprocedure)
+  ) > 0
+  and position(
+    'private.can_access_incognito_profile(v_me, p_viewed_user_id)'
+    in pg_get_functiondef('public.record_profile_view(uuid,boolean)'::regprocedure)
+  ) > 0,
+  'Incognito cannot be bypassed by direct interest or view actions'
+);
+select extensions.ok(
+  position(
+    'r.interests, NULL::integer, NULL::integer'
+    in pg_get_functiondef(
+      'public.get_discovery_feed(uuid,double precision,uuid,integer,jsonb)'::regprocedure
+    )
+  ) > 0,
+  'raw candidate preferences are never projected to discovery clients'
+);
+select extensions.ok(
+  exists (
+    select 1 from cron.job
+    where jobname = 'process_premium_feature_maintenance_hourly'
+      and schedule = '17 * * * *'
+  )
+  and position(
+    'LIMIT v_limit'
+    in pg_get_functiondef(
+      'private.process_premium_feature_maintenance(integer)'::regprocedure
+    )
+  ) > 0,
+  'Premium reminders and expiry use one bounded hourly job'
+);
+select extensions.ok(
+  position(
+    '2.4.0'
+    in pg_get_functiondef(
+      'public.begin_signup_consent_transaction(text,jsonb)'::regprocedure
+    )
+  ) > 0
+  and position(
+    '''private_shortlist_details'''
+    in pg_get_functiondef('public.download_my_data(text)'::regprocedure)
+  ) > 0,
+  'current consent and personal-data export include the new Premium metadata'
 );
 
 select * from extensions.finish();

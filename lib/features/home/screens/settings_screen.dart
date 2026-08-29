@@ -31,13 +31,17 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/loaders/silarah_shimmer.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/cubits/account_standing/account_standing_cubit.dart';
+import '../../../core/cubits/subscription/subscription_cubit.dart';
+import '../../../core/cubits/subscription/subscription_state.dart';
 import '../../../core/models/onboarding_data.dart';
 import '../../../core/services/profile_photo_service.dart';
 import '../../../core/services/personal_data_export_service.dart';
+import '../../../core/services/incognito_service.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/services/wali_mode_service.dart';
 import '../../../core/legal/legal_documents.dart';
 import 'legal_doc_screen.dart';
+import 'subscription_screen.dart';
 
 const _kLanguages = LocaleCubit.supportedLanguages;
 
@@ -1205,6 +1209,9 @@ class _PrivacySectionState extends State<_PrivacySection> {
   String _profileVisibility = 'visible';
   String? _visibilityBlockReason;
   bool _exportingData = false;
+  IncognitoSetting? _incognito;
+  bool _incognitoLoading = true;
+  bool _incognitoSaving = false;
   // Animated save checkmark
   final Map<String, bool> _savedIndicators = {};
   Future<void> _photoPrivacyMutationQueue = Future<void>.value();
@@ -1244,6 +1251,57 @@ class _PrivacySectionState extends State<_PrivacySection> {
       _confirmedPhotoVisibility = photoVisibility;
       _profilePaused = profilePaused;
     });
+    try {
+      final setting = await IncognitoService.instance.load(force: true);
+      if (mounted) setState(() => _incognito = setting);
+    } catch (_) {
+      // The card stays retryable; unrelated privacy settings remain usable.
+    } finally {
+      if (mounted) setState(() => _incognitoLoading = false);
+    }
+  }
+
+  Future<void> _toggleIncognito(bool value) async {
+    if (_incognitoSaving) return;
+    final subscription = context.read<SubscriptionCubit>().state;
+    if (value && !subscription.canUseIncognito) {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(builder: (_) => const SubscriptionScreen()),
+      );
+      if (mounted) {
+        await context.read<SubscriptionCubit>().refreshEntitlement();
+        setState(() => _incognitoLoading = true);
+        try {
+          final setting = await IncognitoService.instance.load(force: true);
+          if (mounted) setState(() => _incognito = setting);
+        } finally {
+          if (mounted) setState(() => _incognitoLoading = false);
+        }
+      }
+      return;
+    }
+    setState(() => _incognitoSaving = true);
+    try {
+      final setting = await IncognitoService.instance.setEnabled(value);
+      if (!mounted) return;
+      setState(() => _incognito = setting);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: UiText(context.uiCopy(
+            setting.enabled
+                ? 'Incognito Discovery is on.'
+                : 'Incognito Discovery is off.',
+          )),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: UiText(_settingsErrorMessage(error.toString()))),
+      );
+    } finally {
+      if (mounted) setState(() => _incognitoSaving = false);
+    }
   }
 
   void _selectPhotoVisibility(String value) {
@@ -1602,6 +1660,79 @@ class _PrivacySectionState extends State<_PrivacySection> {
             ),
           ),
         ]),
+      ),
+      const SizedBox(height: AppDimensions.space8),
+
+      BlocBuilder<SubscriptionCubit, SubscriptionState>(
+        builder: (context, subscription) {
+          final enabled = _incognito?.enabled == true;
+          final requested = _incognito?.requested == true;
+          return _PrivacyCard(
+            label: context.uiCopy('Incognito Discovery'),
+            subtitle: context.uiCopy(
+                'Browse privately. Your profile appears only to people you contact or already know.'),
+            saved: enabled,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: AppColors.champagneGold.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        enabled
+                            ? Icons.visibility_off_rounded
+                            : Icons.visibility_outlined,
+                        color: AppColors.champagneGold,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: UiText(
+                        context.uiCopy(subscription.canUseIncognito
+                            ? enabled
+                                ? 'Hidden from general discovery'
+                                : 'Visible in general discovery'
+                            : requested
+                                ? 'Paused until Premium is active again'
+                                : 'Premium privacy control'),
+                        style: AppTypography.bodyMedium,
+                      ),
+                    ),
+                    if (_incognitoLoading || _incognitoSaving)
+                      const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    else if (subscription.canUseIncognito || requested)
+                      _PrivacyToggle(
+                        value:
+                            subscription.canUseIncognito ? enabled : requested,
+                        onChanged: _toggleIncognito,
+                      )
+                    else
+                      TextButton(
+                        onPressed: () => _toggleIncognito(true),
+                        child: UiText(context.uiCopy('Unlock')),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                UiText(
+                  context.uiCopy(
+                      'Existing interests, matches, chats and Guardian access remain available. Incognito does not erase prior interactions.'),
+                  style: AppTypography.caption.copyWith(height: 1.45),
+                ),
+              ],
+            ),
+          );
+        },
       ),
       const SizedBox(height: AppDimensions.space8),
 

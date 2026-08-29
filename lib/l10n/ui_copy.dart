@@ -7,6 +7,7 @@ import 'package:silarah/l10n/legal_access_ui_copy.dart';
 import 'package:silarah/l10n/messaging_policy_ui_copy.dart';
 import 'package:silarah/l10n/photo_guide_ui_copy.dart';
 import 'package:silarah/l10n/premium_discovery_ui_copy.dart';
+import 'package:silarah/l10n/premium_relationship_ui_copy.dart';
 import 'package:silarah/l10n/trust_ui_copy.dart';
 import 'package:silarah/l10n/translation_privacy_ui_copy.dart';
 import 'package:silarah/l10n/guardian_ui_copy.dart';
@@ -29,6 +30,7 @@ class UiCopy {
         messagingPolicyUiCopy[languageCode]?[source] ??
         photoGuideUiCopy[languageCode]?[source] ??
         premiumDiscoveryUiCopy[languageCode]?[source] ??
+        premiumRelationshipUiCopy[languageCode]?[source] ??
         trustUiCopy[languageCode]?[source] ??
         translationPrivacyUiCopy[languageCode]?[source] ??
         guardianUiCopy[languageCode]?[source] ??
@@ -45,6 +47,7 @@ class UiCopy {
       messagingPolicyUiCopy[languageCode]?.containsKey(source) == true ||
       photoGuideUiCopy[languageCode]?.containsKey(source) == true ||
       premiumDiscoveryUiCopy[languageCode]?.containsKey(source) == true ||
+      premiumRelationshipUiCopy[languageCode]?.containsKey(source) == true ||
       trustUiCopy[languageCode]?.containsKey(source) == true ||
       translationPrivacyUiCopy[languageCode]?.containsKey(source) == true ||
       guardianUiCopy[languageCode]?.containsKey(source) == true ||

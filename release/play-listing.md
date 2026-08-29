@@ -35,6 +35,9 @@ Built for serious introductions:
 - Optional profile-photo verification with human review
 - Blocking, reporting and account-standing controls
 - Guardian-aware profile choices
+- Premium mutual compatibility insights based on stated preferences
+- Premium private shortlists, notes and one-time reminders
+- Premium Incognito Discovery that preserves existing connections
 - Pause discovery or permanently delete your account at any time
 
 Subscriptions unlock the benefits shown in the app. Prices, billing periods,
@@ -45,6 +48,13 @@ purchase starts, and need both active Premium and that verified number before
 sending. While Premium is active, a verified number can be changed with
 a new OTP without shortening the store subscription. Other access and daily
 interest limits follow the entitlement shown in the app.
+
+Compatibility insights explain stated preference alignment; they are not a
+character, safety or marriage-outcome assessment and do not expose another
+member's raw preference values. Private shortlist notes and reminders are
+visible only to their author. Incognito removes a profile from general
+discovery and search while Premium remains active, while existing interests,
+matches, approved photo access and guardian relationships remain available.
 
 Silarah is for adults aged 18 and over. Verification improves trust but is not a
 guarantee of character, compatibility or safety. Keep conversations on-platform,

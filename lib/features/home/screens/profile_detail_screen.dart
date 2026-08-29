@@ -10,6 +10,7 @@
 //   • Compatibility indicator: "You match N of their M preferences"
 //   • Sticky bottom bar: bookmark + gold "Send Interest"
 import 'package:silarah/l10n/ui_copy.dart';
+import 'package:silarah/l10n/premium_relationship_ui_copy.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -23,9 +24,10 @@ import '../../../core/cubits/block_report/block_report_cubit.dart';
 import '../../../core/cubits/chat/chat_cubit.dart';
 import '../../../core/cubits/interests/interests_cubit.dart';
 import '../../../core/cubits/interests/interests_state.dart';
-import '../../../core/cubits/onboarding/onboarding_cubit.dart';
+import '../../../core/cubits/subscription/subscription_cubit.dart';
 import '../../../core/services/compatibility_service.dart';
 import '../../../core/services/bookmark_service.dart';
+import '../../../core/services/shortlist_service.dart';
 import '../../../core/services/photo_access_service.dart';
 import '../../../core/services/profile_photo_service.dart';
 import '../../../core/services/profile_view_service.dart';
@@ -40,6 +42,7 @@ import '../widgets/interest_note_sheet.dart';
 import '../widgets/report_bottom_sheet.dart';
 import 'chat_screen.dart';
 import 'paywall_gate_screen.dart';
+import 'shortlist_screen.dart';
 
 class ProfileDetailScreen extends StatefulWidget {
   const ProfileDetailScreen({
@@ -66,6 +69,8 @@ class ProfileDetailScreen extends StatefulWidget {
 class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   bool _bookmarked = false;
   bool _bookmarkUpdating = false;
+  ShortlistDetail? _shortlistDetail;
+  bool _shortlistLoading = false;
   int _photoPage = 0;
   late final PageController _photoController;
   late List<String?> _photoUrls;
@@ -112,6 +117,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
         setState(() => _bookmarked = ids.contains(widget.profile.id));
       }
     }).catchError((_) {});
+    unawaited(_loadShortlistDetail());
   }
 
   Future<void> _loadPhotoAccessContext() async {
@@ -335,7 +341,10 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
       final ids =
           await BookmarkService.setSaved(widget.profile.id, _bookmarked);
       if (mounted) {
-        setState(() => _bookmarked = ids.contains(widget.profile.id));
+        setState(() {
+          _bookmarked = ids.contains(widget.profile.id);
+          if (!_bookmarked) _shortlistDetail = null;
+        });
       }
     } catch (_) {
       if (mounted) {
@@ -350,6 +359,53 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
       }
     } finally {
       _bookmarkUpdating = false;
+    }
+  }
+
+  Future<void> _loadShortlistDetail({bool force = false}) async {
+    final subscription = context.read<SubscriptionCubit?>()?.state;
+    if (subscription?.canOrganizeShortlists != true) return;
+    try {
+      final details = await ShortlistService.instance.load(force: force);
+      if (mounted) {
+        setState(() => _shortlistDetail = details[widget.profile.id]);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _openShortlistEditor() async {
+    final subscription = context.read<SubscriptionCubit?>()?.state;
+    if (subscription?.canOrganizeShortlists != true) {
+      await PaywallGateSheet.show(context);
+      return;
+    }
+    if (_shortlistLoading) return;
+    setState(() => _shortlistLoading = true);
+    try {
+      if (!_bookmarked) {
+        final ids = await BookmarkService.setSaved(widget.profile.id, true);
+        if (!mounted) return;
+        setState(() => _bookmarked = ids.contains(widget.profile.id));
+      }
+      if (!mounted || !_bookmarked) return;
+      final result = await showShortlistEditor(
+        context,
+        savedUserId: widget.profile.id,
+        firstName: widget.profile.firstName,
+        initial: _shortlistDetail,
+      );
+      if (result != null && mounted) {
+        setState(() => _shortlistDetail = result);
+      }
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: UiText(error.toString().replaceFirst('Bad state: ', '')),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _shortlistLoading = false);
     }
   }
 
@@ -534,6 +590,14 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                       _OwnProfilePreviewNotice(photoCount: _totalPhotos)
                     else
                       _CompatibilityIndicator(profile: p),
+                    if (!widget.isOwnProfile) ...[
+                      const SizedBox(height: AppDimensions.space12),
+                      _PrivateShortlistCard(
+                        detail: _shortlistDetail,
+                        loading: _shortlistLoading,
+                        onTap: _openShortlistEditor,
+                      ),
+                    ],
                     const SizedBox(height: AppDimensions.space28),
 
                     // About — bio in italic Playfair Display
@@ -670,23 +734,6 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                             .toList(),
                       ),
                       const SizedBox(height: AppDimensions.space28),
-                    ],
-
-                    // Looking For — blueprint section 6 of 6
-                    if (p.partnerAgeMin != null || p.partnerAgeMax != null) ...[
-                      const _SectionHeader(label: 'Looking For'),
-                      const SizedBox(height: AppDimensions.space12),
-                      _DetailGrid(items: [
-                        if (p.partnerAgeMin != null && p.partnerAgeMax != null)
-                          _DetailItem(
-                            label: 'Age Range',
-                            value: '${p.partnerAgeMin} – ${p.partnerAgeMax}',
-                          ),
-                        if (p.sect != null)
-                          _DetailItem(
-                              label: 'Sect Preference',
-                              value: 'Same (${p.sect})'),
-                      ]),
                     ],
                   ]),
                 ),
@@ -1894,24 +1941,203 @@ class _OwnProfileAction extends StatelessWidget {
   }
 }
 
-class _CompatibilityIndicator extends StatelessWidget {
+class _CompatibilityIndicator extends StatefulWidget {
   const _CompatibilityIndicator({required this.profile});
   final DiscoveryProfile profile;
 
   @override
+  State<_CompatibilityIndicator> createState() =>
+      _CompatibilityIndicatorState();
+}
+
+class _CompatibilityIndicatorState extends State<_CompatibilityIndicator> {
+  Future<CompatibilityInsight>? _future;
+
+  Future<CompatibilityInsight> _load({bool force = false}) =>
+      CompatibilityService.instance.load(widget.profile.id, force: force);
+
+  @override
   Widget build(BuildContext context) {
-    final myData = context.read<OnboardingCubit>().currentData;
-    final compatibility = calculateCompatibility(
-      viewer: myData,
-      candidate: profile,
+    final premium = context
+            .watch<SubscriptionCubit?>()
+            ?.state
+            .canViewCompatibilityInsights ??
+        false;
+    if (!premium) return _locked(context);
+    _future ??= _load();
+    return FutureBuilder<CompatibilityInsight>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return _shell(
+            context,
+            child: Row(
+              children: [
+                const SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: UiText(
+                    context.uiCopy('Reading mutual preferences…'),
+                    style: AppTypography.bodyMedium,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+        if (snapshot.hasError || snapshot.data == null) {
+          return _shell(
+            context,
+            child: Row(
+              children: [
+                Icon(Icons.sync_problem_rounded, color: AppColors.softCoral),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: UiText(
+                    context.uiCopy(
+                        'Compatibility details are temporarily unavailable.'),
+                    style: AppTypography.caption,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => setState(() => _future = _load(force: true)),
+                  child: UiText(context.uiCopy('Try again')),
+                ),
+              ],
+            ),
+          );
+        }
+        final insight = snapshot.data!;
+        return _shell(
+          context,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        CircularProgressIndicator(
+                          value: insight.fraction,
+                          backgroundColor: AppColors.surfaceGlassHover,
+                          color: AppColors.champagneGold,
+                          strokeWidth: 3.5,
+                        ),
+                        Icon(Icons.auto_awesome_rounded,
+                            color: AppColors.champagneGold, size: 18),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        UiText(
+                          context.uiCopy('Mutual compatibility insights'),
+                          style: AppTypography.bodyMedium,
+                        ),
+                        const SizedBox(height: 3),
+                        UiText(
+                          insight.totalCount == 0
+                              ? context.uiCopy(
+                                  'Add more partner preferences to unlock a clearer comparison.')
+                              : premiumCompatibilitySummary(
+                                  Localizations.localeOf(context).languageCode,
+                                  insight.matchedCount,
+                                  insight.totalCount,
+                                ),
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.champagneGold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  _PremiumPill(),
+                ],
+              ),
+              if (insight.criteria.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: insight.criteria
+                      .map((criterion) => _CompatibilityCriterionChip(
+                            criterion: criterion,
+                          ))
+                      .toList(growable: false),
+                ),
+              ],
+              const SizedBox(height: 12),
+              UiText(
+                context.uiCopy(
+                    'Based only on preferences both members chose to share. This is not a safety or marriage-outcome guarantee.'),
+                style: AppTypography.caption.copyWith(height: 1.4),
+              ),
+            ],
+          ),
+        );
+      },
     );
-    final totalPrefs = compatibility.total;
-    final matched = compatibility.matched;
+  }
 
-    if (totalPrefs == 0) return const SizedBox.shrink();
+  Widget _locked(BuildContext context) => Semantics(
+        button: true,
+        label: context.uiCopy('Unlock mutual compatibility insights'),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+          onTap: () => PaywallGateSheet.show(context),
+          child: _shell(
+            context,
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.champagneGold.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child:
+                      Icon(Icons.hub_outlined, color: AppColors.champagneGold),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      UiText(
+                        context.uiCopy('Mutual compatibility insights'),
+                        style: AppTypography.bodyMedium,
+                      ),
+                      const SizedBox(height: 3),
+                      UiText(
+                        context.uiCopy(
+                            'See where both members’ stated preferences align.'),
+                        style: AppTypography.caption,
+                      ),
+                    ],
+                  ),
+                ),
+                _PremiumPill(),
+                const SizedBox(width: 4),
+                Icon(Icons.chevron_right_rounded, color: AppColors.slateMist),
+              ],
+            ),
+          ),
+        ),
+      );
 
-    final fraction = compatibility.fraction;
-
+  Widget _shell(BuildContext context, {required Widget child}) {
     return Container(
       padding: const EdgeInsets.all(AppDimensions.space16),
       decoration: BoxDecoration(
@@ -1919,54 +2145,148 @@ class _CompatibilityIndicator extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
         border: Border.all(color: AppColors.goldBorder),
       ),
+      child: child,
+    );
+  }
+}
+
+class _CompatibilityCriterionChip extends StatelessWidget {
+  const _CompatibilityCriterionChip({required this.criterion});
+  final CompatibilityCriterion criterion;
+
+  @override
+  Widget build(BuildContext context) {
+    final aligned = criterion.status == 'aligned';
+    final partial = criterion.status == 'partial';
+    final color = aligned
+        ? AppColors.verifiedTeal
+        : partial
+            ? AppColors.champagneGold
+            : AppColors.slateMist;
+    final label = switch (criterion.key) {
+      'age' => 'Age',
+      'sect' => 'Sect',
+      'deen' => 'Deen',
+      'education' => 'Education',
+      'mother_tongue' => 'Mother tongue',
+      'community' => 'Community',
+      'height' => 'Height',
+      'marriage_timeline' => 'Marriage timeline',
+      'relocation' => 'Relocation',
+      'living_expectation' => 'Living plans',
+      _ => criterion.key,
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Progress arc ring
-          SizedBox(
-            width: 44,
-            height: 44,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CircularProgressIndicator(
-                  value: fraction,
-                  backgroundColor: AppColors.surfaceGlassHover,
-                  color: AppColors.champagneGold,
-                  strokeWidth: 3,
-                ),
-                UiText(
-                  '${(fraction * 100).round()}%',
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.champagneGold,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
+          Icon(
+            aligned
+                ? Icons.check_circle_outline_rounded
+                : partial
+                    ? Icons.circle_outlined
+                    : Icons.remove_circle_outline_rounded,
+            size: 14,
+            color: color,
           ),
-          const SizedBox(width: AppDimensions.space16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                UiText(
-                  'You match $matched of their $totalPrefs preferences',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.champagneGold,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: AppDimensions.space4),
-                UiText(
-                  context.uiCopy(
-                      'Based on sect, deen, education & age preferences'),
-                  style: AppTypography.caption,
-                ),
-              ],
-            ),
+          const SizedBox(width: 5),
+          UiText(
+            context.uiCopy(label),
+            style: AppTypography.captionMedium.copyWith(color: color),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _PremiumPill extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppColors.champagneGold.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: UiText(
+          context.uiCopy('PREMIUM'),
+          style: AppTypography.badge.copyWith(color: AppColors.champagneGold),
+        ),
+      );
+}
+
+class _PrivateShortlistCard extends StatelessWidget {
+  const _PrivateShortlistCard({
+    required this.detail,
+    required this.loading,
+    required this.onTap,
+  });
+  final ShortlistDetail? detail;
+  final bool loading;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final premium =
+        context.watch<SubscriptionCubit?>()?.state.canOrganizeShortlists ??
+            false;
+    final subtitle = !premium
+        ? context.uiCopy('Organize profiles with private notes and reminders.')
+        : detail == null
+            ? context.uiCopy('Add a private category, family note or reminder.')
+            : '${context.uiCopy(shortlistCategoryLabel(detail!.category))}${detail!.hasPendingReminder ? ' · ${context.uiCopy('Reminder set')}' : ''}';
+    return Semantics(
+      button: true,
+      label: context.uiCopy('Private shortlist'),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+        onTap: loading ? null : onTap,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceGlass,
+            borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+            border: Border.all(color: AppColors.cardBorder),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                detail == null ? Icons.bookmark_add_outlined : Icons.bookmarks,
+                color: AppColors.champagneGold,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    UiText(context.uiCopy('Private shortlist'),
+                        style: AppTypography.bodyMedium),
+                    const SizedBox(height: 2),
+                    UiText(subtitle, style: AppTypography.caption),
+                  ],
+                ),
+              ),
+              if (!premium) _PremiumPill(),
+              if (loading)
+                const Padding(
+                  padding: EdgeInsets.only(left: 8),
+                  child: SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              else
+                Icon(Icons.chevron_right_rounded, color: AppColors.slateMist),
+            ],
+          ),
+        ),
       ),
     );
   }

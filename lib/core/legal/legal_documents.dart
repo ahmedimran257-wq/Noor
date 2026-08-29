@@ -27,8 +27,8 @@ class LegalDocument {
 }
 
 abstract final class LegalDocuments {
-  static const version = '2.3.0';
-  static const effectiveDate = '13 August 2026';
+  static const version = '2.4.0';
+  static const effectiveDate = '28 August 2026';
   static const operatorName = 'Imran Ahmed';
   static const grievanceOfficerName = 'Imran Ahmed';
   static const supportEmail = 'support@silarah.com';
@@ -61,7 +61,7 @@ abstract final class LegalDocuments {
       ),
       LegalSection(
         '5. Discovery, interests and communication',
-        'Discovery and compatibility results are recommendations, not promises. Limits on interests, messages, boosts and other features may vary by plan, gender-based product rules, safety state and region, and are displayed in the app before use or purchase. A match or accepted interest does not establish endorsement, identity certainty, compatibility or consent to off-platform contact. Respect blocks, withdrawals and requests to stop communicating.',
+        'Discovery and compatibility results are recommendations based on information and preferences members state; they are not personality, character, safety or marriage-outcome assessments. Compatibility explanations may omit criteria that either member did not specify and do not reveal another member’s private preference values. Limits on interests, messages, boosts and other features may vary by plan, gender-based product rules, safety state and region, and are displayed in the app before use or purchase. A match or accepted interest does not establish endorsement, identity certainty, compatibility or consent to off-platform contact. Respect blocks, withdrawals and requests to stop communicating.',
       ),
       LegalSection(
         '6. Verification and guardians',
@@ -69,7 +69,7 @@ abstract final class LegalDocuments {
       ),
       LegalSection(
         '7. Subscriptions, renewal and cancellation',
-        'Paid plans, included features, total price, currency, billing period, trial (if any) and renewal terms are shown before purchase. Google Play subscriptions renew automatically at the price and frequency displayed by Google Play until cancelled there. Use the in-app Manage Subscription link or Google Play Subscription Center before the renewal date shown in Google Play. Removing the app, pausing a profile, changing a phone number or deleting a Silarah account does not cancel store billing. Cancellation stops future renewal and ordinarily leaves access until the paid period ends; it does not automatically refund the current period. Refund eligibility is governed by applicable consumer law, Google Play’s rules and our Refund Policy. Premium improves access to stated features but never guarantees an interest, match, response, meeting or marriage.',
+        'Paid plans, included features, total price, currency, billing period, trial (if any) and renewal terms are shown before purchase. Premium features may include explainable compatibility insights, private shortlist organization and Incognito Discovery. Incognito limits appearance in general discovery and search while it is enabled and Premium remains active; it does not hide you from people with whom you already interacted, matched, shared photo access or established a guardian relationship. Google Play subscriptions renew automatically at the price and frequency displayed by Google Play until cancelled there. Use the in-app Manage Subscription link or Google Play Subscription Center before the renewal date shown in Google Play. Removing the app, pausing a profile, changing a phone number or deleting a Silarah account does not cancel store billing. Cancellation stops future renewal and ordinarily leaves access until the paid period ends; it does not automatically refund the current period. Refund eligibility is governed by applicable consumer law, Google Play’s rules and our Refund Policy. Premium improves access to stated features but never guarantees an interest, match, response, meeting or marriage.',
       ),
       LegalSection(
         '8. Prohibited conduct',
@@ -115,7 +115,7 @@ abstract final class LegalDocuments {
       ),
       LegalSection(
         '2. Data you provide',
-        'We collect account identifiers and contact details; date of birth, gender, marital and family information; city, region, country and optional approximate device location; education, occupation, income-range and lifestyle information; biography, partner preferences and matrimonial timeline; religious information such as sect and practice; photos and verification submissions; interests, blocks, reports, support messages and guardian details; and content you send through chat. Do not submit information you do not have authority to provide.',
+        'We collect account identifiers and contact details; date of birth, gender, marital and family information; city, region, country and optional approximate device location; education, occupation, income-range and lifestyle information; biography, partner preferences and matrimonial timeline; religious information such as sect and practice; photos and verification submissions; interests, bookmarks, private shortlist categories, private notes and reminder dates; blocks, reports, support messages and guardian details; and content you send through chat. Shortlist notes are visible only to the account that writes them. Do not place passwords, OTPs, payment details, government identifiers, private contact details or information you do not have authority to provide in a note or profile.',
       ),
       LegalSection(
         '3. Data generated when you use Silarah',
@@ -127,11 +127,11 @@ abstract final class LegalDocuments {
       ),
       LegalSection(
         '5. Purposes and legal bases',
-        'We use data to create and secure accounts; provide discovery, interests, messaging, photo privacy, guardian and subscription features; personalize results; perform verification and moderation; deliver service and safety notifications; prevent abuse and fraud; provide support; maintain records; diagnose failures; and comply with law. Depending on your location, we rely on performance of our contract, consent (including explicit consent for sensitive data), legitimate interests in operating and protecting the Service, and legal obligations. You may withdraw consent prospectively, although some features may then be unavailable.',
+        'We use data to create and secure accounts; provide discovery, explainable compatibility, interests, messaging, private shortlists and reminders, Incognito, photo privacy, guardian and subscription features; personalize results; perform verification and moderation; deliver service and safety notifications; prevent abuse and fraud; provide support; maintain records; diagnose failures; and comply with law. Compatibility uses stated profile and preference fields and returns only a criterion-level explanation, not another member’s raw preferences. Depending on your location, we rely on performance of our contract, consent (including explicit consent for sensitive data), legitimate interests in operating and protecting the Service, and legal obligations. You may withdraw consent prospectively, although some features may then be unavailable.',
       ),
       LegalSection(
         '6. Visibility to other members and guardians',
-        'Profile fields you choose to publish are visible to eligible registered members according to discovery and privacy settings. Photos follow your selected mode: public, visible after mutual interest, or request-to-view. Messages are visible to conversation participants and may be visible to a properly linked guardian where guardian chat mirroring is enabled. Reports disclose necessary content to authorized safety staff, not to the reported member except as needed for a fair process.',
+        'Profile fields you choose to publish are visible to eligible registered members according to discovery and privacy settings. Incognito removes a profile from general discovery and name/city search while the setting is effective, but it cannot make prior interactions anonymous: people with an existing interest, match, permitted photo-access relationship or connected guardian relationship may continue to access the profile as needed for that relationship. Photos follow your selected mode: public, visible after mutual interest, or request-to-view. Private shortlist categories, notes and reminders are visible only to their author and are never shown to the saved member or that member’s guardian. Messages are visible to conversation participants and may be visible to a properly linked guardian where guardian chat mirroring is enabled. Reports disclose necessary content to authorized safety staff, not to the reported member except as needed for a fair process.',
       ),
       LegalSection(
         '7. Service providers and disclosures',
@@ -143,7 +143,7 @@ abstract final class LegalDocuments {
       ),
       LegalSection(
         '9. Retention',
-        'Active-account profile, preference, photo, match and message data is retained while needed to provide the Service. A requested account enters a 30-day recovery period before purge. Temporary photo-verification captures are deleted from active verification storage after review and no later than 48 hours after submission. We retain the decision, date, reviewer audit and deletion result without retaining the captures. Information and removed content that applicable intermediary rules require us to preserve may be retained for 180 days, or longer when a lawful order requires it. Reports, blocks, transaction records, consent records, security logs and backups may otherwise remain only for applicable limitation, tax, payment, abuse-prevention and legal periods, then be deleted or de-identified. Backup deletion completes through normal provider rotation. We periodically review retention and avoid keeping identifiable data merely because it may be useful.',
+        'Active-account profile, preference, photo, match and message data is retained while needed to provide the Service. Private shortlist metadata is deleted when its bookmark is removed or the account is deleted; a one-shot reminder is marked as sent and is not repeatedly queued. Incognito preference metadata is retained with the active account so the setting can be enforced consistently across devices. A requested account enters a 30-day recovery period before purge. Temporary photo-verification captures are deleted from active verification storage after review and no later than 48 hours after submission. We retain the decision, date, reviewer audit and deletion result without retaining the captures. Information and removed content that applicable intermediary rules require us to preserve may be retained for 180 days, or longer when a lawful order requires it. Reports, blocks, transaction records, consent records, security logs and backups may otherwise remain only for applicable limitation, tax, payment, abuse-prevention and legal periods, then be deleted or de-identified. Backup deletion completes through normal provider rotation. We periodically review retention and avoid keeping identifiable data merely because it may be useful.',
       ),
       LegalSection(
         '10. Security',

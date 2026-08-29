@@ -80,15 +80,18 @@ void main() {
   test('quarterly policy reminder and signup consent use one policy version',
       () {
     final migration = File(
-      'supabase/migrations/214_policy_230_subscription_and_privacy_consents.sql',
+      'supabase/migrations/252_policy_240_premium_relationship_privacy.sql',
     ).readAsStringSync();
     final legalDocuments =
         File('lib/core/legal/legal_documents.dart').readAsStringSync();
     final home = File('lib/features/home/home_screen.dart').readAsStringSync();
 
-    expect(legalDocuments, contains("static const version = '2.3.0'"));
-    expect(migration, contains("v_tx.policy_version <> '2.3.0'"));
-    expect(migration, contains("interval '3 months'"));
+    expect(legalDocuments, contains("static const version = '2.4.0'"));
+    expect(migration, contains("'2.3.0', '2.4.0'"));
+    final priorReminderMigration = File(
+      'supabase/migrations/214_policy_230_subscription_and_privacy_consents.sql',
+    ).readAsStringSync();
+    expect(priorReminderMigration, contains("interval '3 months'"));
     expect(migration, contains('get_my_policy_reminder_state'));
     expect(migration, contains('acknowledge_policy_reminder'));
     expect(home, contains('PolicyReminderService.instance.getState()'));

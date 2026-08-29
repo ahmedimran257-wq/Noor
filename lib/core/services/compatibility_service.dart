@@ -1,76 +1,123 @@
-import '../models/discovery_profile.dart';
-import '../models/onboarding_data.dart';
+import 'supabase_service.dart';
 
-class CompatibilityResult {
-  const CompatibilityResult({required this.matched, required this.total});
+class CompatibilityCriterion {
+  const CompatibilityCriterion({
+    required this.key,
+    required this.matchedCount,
+    required this.totalCount,
+    required this.status,
+  });
 
-  final int matched;
-  final int total;
+  factory CompatibilityCriterion.fromJson(Map<String, dynamic> json) =>
+      CompatibilityCriterion(
+        key: json['key']?.toString() ?? '',
+        matchedCount: (json['matched_count'] as num?)?.toInt() ?? 0,
+        totalCount: (json['total_count'] as num?)?.toInt() ?? 0,
+        status: json['status']?.toString() ?? 'not_aligned',
+      );
 
-  double get fraction => total == 0 ? 0 : matched / total;
+  final String key;
+  final int matchedCount;
+  final int totalCount;
+  final String status;
 }
 
-/// Compares the viewer's real profile fields with the candidate's stated
-/// partner preferences. Candidate traits are never treated as preferences.
-CompatibilityResult calculateCompatibility({
-  required OnboardingData viewer,
-  required DiscoveryProfile candidate,
-  DateTime? today,
-}) {
-  final checks = <bool>[];
+class CompatibilityInsight {
+  const CompatibilityInsight({
+    required this.matchedCount,
+    required this.totalCount,
+    required this.criteria,
+    required this.disclaimer,
+  });
 
-  if (candidate.partnerAgeMin != null && candidate.partnerAgeMax != null) {
-    final dob = viewer.dateOfBirth;
-    checks.add(dob != null &&
-        _ageOn(dob, today ?? DateTime.now()) >= candidate.partnerAgeMin! &&
-        _ageOn(dob, today ?? DateTime.now()) <= candidate.partnerAgeMax!);
+  factory CompatibilityInsight.fromJson(Map<String, dynamic> json) {
+    final rawCriteria = json['criteria'];
+    return CompatibilityInsight(
+      matchedCount: (json['matched_count'] as num?)?.toInt() ?? 0,
+      totalCount: (json['total_count'] as num?)?.toInt() ?? 0,
+      criteria: rawCriteria is List
+          ? rawCriteria
+              .whereType<Map>()
+              .map((item) => CompatibilityCriterion.fromJson(
+                    Map<String, dynamic>.from(item),
+                  ))
+              .toList(growable: false)
+          : const [],
+      disclaimer: json['disclaimer']?.toString() ?? '',
+    );
   }
 
-  final sectPreference = _normalize(candidate.partnerSect);
-  if (!_isUnrestricted(sectPreference)) {
-    final viewerSect = _normalize(viewer.sect?.name);
-    final expectedSect = sectPreference == 'sameasmine'
-        ? _normalize(candidate.sect)
-        : sectPreference;
-    checks.add(viewerSect.isNotEmpty && viewerSect == expectedSect);
-  }
+  final int matchedCount;
+  final int totalCount;
+  final List<CompatibilityCriterion> criteria;
+  final String disclaimer;
 
-  final deenPreference = _normalize(candidate.partnerDeenLevel);
-  if (!_isUnrestricted(deenPreference)) {
-    final viewerDeen = _normalizeDeen(viewer.deenLevel?.name);
-    final expectedDeen = deenPreference == 'sameasmine'
-        ? _normalizeDeen(candidate.deenLevel)
-        : _normalizeDeen(deenPreference);
-    checks.add(viewerDeen.isNotEmpty && viewerDeen == expectedDeen);
-  }
-
-  final minimumEducation = candidate.partnerEducationMinRank;
-  if (minimumEducation != null && minimumEducation > 1) {
-    checks.add(viewer.educationRank != null &&
-        viewer.educationRank! >= minimumEducation);
-  }
-
-  return CompatibilityResult(
-    matched: checks.where((check) => check).length,
-    total: checks.length,
-  );
+  double get fraction => totalCount == 0 ? 0 : matchedCount / totalCount;
 }
 
-int _ageOn(DateTime dateOfBirth, DateTime today) {
-  var age = today.year - dateOfBirth.year;
-  final birthdayPassed = today.month > dateOfBirth.month ||
-      (today.month == dateOfBirth.month && today.day >= dateOfBirth.day);
-  if (!birthdayPassed) age--;
-  return age;
+/// Loads one explainable mutual-preference summary after a Premium member
+/// opens a profile. Discovery cards never trigger this RPC.
+class CompatibilityService {
+  CompatibilityService._();
+
+  static final instance = CompatibilityService._();
+  static const _freshness = Duration(minutes: 5);
+
+  String? _cachedUserId;
+  final Map<String, ({CompatibilityInsight value, DateTime loadedAt})> _cache =
+      {};
+  final Map<String, Future<CompatibilityInsight>> _inFlight = {};
+
+  Future<CompatibilityInsight> load(
+    String candidateUserId, {
+    bool force = false,
+  }) async {
+    final userId = await SupabaseService.currentUserIdOrRefresh();
+    if (!SupabaseService.isInitialized || userId == null) {
+      throw StateError('Please sign in again to view compatibility.');
+    }
+    if (_cachedUserId != userId) {
+      _cachedUserId = userId;
+      _cache.clear();
+      _inFlight.clear();
+    }
+
+    final cached = _cache[candidateUserId];
+    if (!force &&
+        cached != null &&
+        DateTime.now().difference(cached.loadedAt) < _freshness) {
+      return cached.value;
+    }
+    final active = _inFlight[candidateUserId];
+    if (active != null) return active;
+
+    final request = _loadFromServer(candidateUserId);
+    _inFlight[candidateUserId] = request;
+    try {
+      final value = await request;
+      _cache[candidateUserId] = (value: value, loadedAt: DateTime.now());
+      return value;
+    } finally {
+      if (identical(_inFlight[candidateUserId], request)) {
+        _inFlight.remove(candidateUserId);
+      }
+    }
+  }
+
+  Future<CompatibilityInsight> _loadFromServer(String candidateUserId) async {
+    final raw = await SupabaseService.client.rpc(
+      'get_premium_compatibility_insight',
+      params: {'p_candidate_user_id': candidateUserId},
+    );
+    if (raw is! Map) {
+      throw StateError('Compatibility details are temporarily unavailable.');
+    }
+    return CompatibilityInsight.fromJson(Map<String, dynamic>.from(raw));
+  }
+
+  void clearCache() {
+    _cachedUserId = null;
+    _cache.clear();
+    _inFlight.clear();
+  }
 }
-
-String _normalize(String? value) =>
-    (value ?? '').toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
-
-String _normalizeDeen(String? value) {
-  final normalized = _normalize(value);
-  return normalized == 'culturalmuslim' ? 'cultural' : normalized;
-}
-
-bool _isUnrestricted(String value) =>
-    value.isEmpty || value == 'any' || value == 'nopreference';

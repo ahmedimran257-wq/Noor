@@ -1,78 +1,44 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:silarah/core/models/discovery_profile.dart';
-import 'package:silarah/core/models/onboarding_data.dart';
 import 'package:silarah/core/services/compatibility_service.dart';
 
 void main() {
-  const candidateBase = DiscoveryProfile(
-    firstName: 'A',
-    lastNameInitial: 'B',
-    age: 28,
-    cityName: 'Hyderabad',
-    sect: 'sunni',
-    deenLevel: 'practicing',
-  );
+  test('parses an explainable mutual compatibility response', () {
+    final insight = CompatibilityInsight.fromJson({
+      'matched_count': 3,
+      'total_count': 4,
+      'criteria': [
+        {
+          'key': 'age',
+          'matched_count': 2,
+          'total_count': 2,
+          'status': 'aligned',
+        },
+        {
+          'key': 'sect',
+          'matched_count': 1,
+          'total_count': 2,
+          'status': 'partial',
+        },
+      ],
+      'disclaimer': 'Stated preferences only.',
+    });
 
-  test('uses candidate preferences instead of candidate traits', () {
-    final candidate = candidateBase.copyWith(
-      partnerSect: 'shia',
-      partnerDeenLevel: 'moderate',
-      partnerEducationMinRank: 6,
-    );
-    const viewer = OnboardingData(
-      sect: Sect.sunni,
-      deenLevel: DeenLevel.practicing,
-      educationRank: 5,
-    );
-
-    final result = calculateCompatibility(
-      viewer: viewer,
-      candidate: candidate,
-    );
-
-    expect(result.total, 3);
-    expect(result.matched, 0);
+    expect(insight.matchedCount, 3);
+    expect(insight.totalCount, 4);
+    expect(insight.fraction, .75);
+    expect(insight.criteria, hasLength(2));
+    expect(insight.criteria.first.status, 'aligned');
   });
 
-  test('matches age, same-as-mine, deen, and minimum education', () {
-    final candidate = candidateBase.copyWith(
-      partnerAgeMin: 24,
-      partnerAgeMax: 30,
-      partnerSect: 'Same as mine',
-      partnerDeenLevel: 'practicing',
-      partnerEducationMinRank: 5,
-    );
-    final viewer = OnboardingData(
-      dateOfBirth: DateTime(2000, 7, 1),
-      sect: Sect.sunni,
-      deenLevel: DeenLevel.practicing,
-      educationRank: 5,
-    );
+  test('handles a profile pair with no stated preferences', () {
+    final insight = CompatibilityInsight.fromJson({
+      'matched_count': 0,
+      'total_count': 0,
+      'criteria': <Map<String, dynamic>>[],
+      'disclaimer': 'Stated preferences only.',
+    });
 
-    final result = calculateCompatibility(
-      viewer: viewer,
-      candidate: candidate,
-      today: DateTime(2026, 6, 22),
-    );
-
-    expect(result.total, 4);
-    expect(result.matched, 4);
-    expect(result.fraction, 1);
-  });
-
-  test('does not invent checks for unrestricted preferences', () {
-    final candidate = candidateBase.copyWith(
-      partnerSect: 'Any',
-      partnerDeenLevel: 'No preference',
-      partnerEducationMinRank: 1,
-    );
-
-    final result = calculateCompatibility(
-      viewer: const OnboardingData(),
-      candidate: candidate,
-    );
-
-    expect(result.total, 0);
-    expect(result.matched, 0);
+    expect(insight.fraction, 0);
+    expect(insight.criteria, isEmpty);
   });
 }

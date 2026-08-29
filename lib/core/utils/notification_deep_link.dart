@@ -23,6 +23,7 @@ String? notificationPathFromDeepLink(String? deepLink) {
     return id.isEmpty ? '/home?tab=3' : '/profile/$id';
   }
   if (host == 'profile-views') return '/profile-views';
+  if (host == 'shortlist') return '/shortlist';
   if (host == 'photo-requests') return '/photo-requests';
   if (host == 'notifications') return '/notifications';
   if (host == 'verify') return '/badge-verification';

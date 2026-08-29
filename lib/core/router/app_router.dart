@@ -37,6 +37,7 @@ import '../../features/home/screens/referral_screen.dart';
 import '../../features/home/screens/help_support_screen.dart';
 import '../../features/home/screens/photo_access_requests_screen.dart';
 import '../../features/home/screens/profile_route_screen.dart';
+import '../../features/home/screens/shortlist_screen.dart';
 import '../../features/verification/screens/badge_verification_screen.dart';
 import '../widgets/loaders/silarah_shimmer.dart';
 
@@ -63,6 +64,7 @@ abstract final class AppRoutes {
   static const badgeVerification = '/badge-verification';
   static const helpSupport = '/help-support';
   static const photoRequests = '/photo-requests';
+  static const shortlist = '/shortlist';
 }
 
 // Screen index → route path mapping
@@ -165,6 +167,7 @@ GoRouter buildAppRouter(
             return null;
           }
           if (location == AppRoutes.photoRequests ||
+              location == AppRoutes.shortlist ||
               location.startsWith('/profile/')) {
             return null;
           }
@@ -311,6 +314,13 @@ GoRouter buildAppRouter(
         pageBuilder: (context, state) => _slidePage(
           key: state.pageKey,
           child: const SubscriptionScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.shortlist,
+        pageBuilder: (context, state) => _slidePage(
+          key: state.pageKey,
+          child: const ShortlistScreen(),
         ),
       ),
       GoRoute(

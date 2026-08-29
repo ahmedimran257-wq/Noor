@@ -1,3 +1,6 @@
+import '../models/discovery_profile.dart';
+import '../utils/silarah_compute.dart';
+import 'profile_photo_service.dart';
 import 'supabase_service.dart';
 
 /// Reads the server's explicit member projection. The RPC proves that each
@@ -27,5 +30,64 @@ class AuthorizedProfileService {
       }
       return Map<String, dynamic>.from(item as Map);
     }).toList(growable: false);
+  }
+
+  /// Resolves a bounded set of authorized members and their approved primary
+  /// photos in three batched calls. Shortlists and saved-profile surfaces use
+  /// this method so they never issue one profile or signing request per card.
+  static Future<List<DiscoveryProfile>> loadDiscoveryProfiles(
+    Iterable<String> userIds,
+  ) async {
+    final mappedRows = await load(userIds);
+    if (mappedRows.isEmpty) return const [];
+
+    final profileIds = mappedRows
+        .map((row) => row['id']?.toString())
+        .whereType<String>()
+        .toList(growable: false);
+    if (profileIds.isEmpty) return const [];
+
+    final photos = await SupabaseService.client
+        .from('photos')
+        .select('profile_id, blurhash')
+        .inFilter('profile_id', profileIds)
+        .eq('status', 'active')
+        .eq('admin_approved', true)
+        .eq('nsfw_cleared', true)
+        .order('order_index');
+
+    final photosByProfile = <String, List<Map<String, dynamic>>>{};
+    for (final photo in (photos as List<dynamic>).whereType<Map>()) {
+      final mapped = Map<String, dynamic>.from(photo);
+      final profileId = mapped['profile_id']?.toString();
+      if (profileId == null) continue;
+      photosByProfile.putIfAbsent(profileId, () => []).add(mapped);
+    }
+
+    final ownersWithPhotos = mappedRows
+        .where(
+            (row) => photosByProfile[row['id']?.toString()]?.isNotEmpty == true)
+        .map((row) => row['user_id']?.toString())
+        .whereType<String>()
+        .toList(growable: false);
+    final signedUrls =
+        await ProfilePhotoService.instance.getAuthorizedPhotoUrls(
+      ownerUserIds: ownersWithPhotos,
+    );
+
+    for (final row in mappedRows) {
+      final profileId = row['id']?.toString();
+      final profilePhotos =
+          profileId == null ? null : photosByProfile[profileId];
+      row['photo_count'] = profilePhotos?.length ?? 0;
+      if (profilePhotos?.isNotEmpty == true) {
+        final ownerUserId = row['user_id']?.toString();
+        if (ownerUserId != null && ownerUserId.isNotEmpty) {
+          row['photo_url'] = signedUrls[ownerUserId];
+          row['blurhash'] = profilePhotos!.first['blurhash'];
+        }
+      }
+    }
+    return mappedRows.map(mapDbRowToDiscoveryProfile).toList(growable: false);
   }
 }

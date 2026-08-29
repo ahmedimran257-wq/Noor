@@ -22,6 +22,7 @@ import '../../../core/services/bookmark_service.dart';
 import '../../../core/services/billing_portal_service.dart';
 import '../../../core/services/connectivity_service.dart';
 import '../../../core/services/authorized_profile_service.dart';
+import '../../../core/services/incognito_service.dart';
 import '../../../core/services/photo_verification_service.dart';
 import '../../../core/services/phone_verification_service.dart';
 import '../../../core/theme/app_colors.dart';
@@ -40,7 +41,6 @@ import '../../../core/services/supabase_service.dart';
 import '../../../core/services/profile_photo_service.dart';
 import '../../../core/services/profile_view_service.dart';
 import '../../../core/services/wali_mode_service.dart';
-import '../../../core/utils/silarah_compute.dart';
 import '../../onboarding/screens/photo_upload_screen.dart';
 import '../widgets/notification_bell_button.dart';
 
@@ -124,6 +124,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   bool _photoRefreshInFlight = false;
   bool _profilePreviewOpening = false;
   bool _profileRefreshInFlight = false;
+  IncognitoSetting? _incognito;
   DateTime? _lastProfileRefreshAt;
   static const _profileFreshness = Duration(minutes: 5);
 
@@ -154,6 +155,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     if (state == AppLifecycleState.resumed) {
       unawaited(_refreshProfileFromDb());
       unawaited(_loadViewsCount());
+      unawaited(_loadIncognito(force: true));
     }
   }
 
@@ -179,54 +181,8 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     }
 
     try {
-      final mappedRows = await AuthorizedProfileService.load(ids.take(20));
-
-      final profileIds =
-          mappedRows.map((row) => row['id']?.toString()).whereType<String>();
-      if (profileIds.isNotEmpty) {
-        final photos = await SupabaseService.client
-            .from('photos')
-            .select('profile_id, blurhash')
-            .inFilter('profile_id', profileIds.toList())
-            .eq('status', 'active')
-            .eq('admin_approved', true)
-            .eq('nsfw_cleared', true)
-            .order('order_index');
-
-        final photosByProfile = <String, List<Map<String, dynamic>>>{};
-        for (final photo in photos as List<dynamic>) {
-          final mapped = Map<String, dynamic>.from(photo as Map);
-          final profileId = mapped['profile_id']?.toString();
-          if (profileId == null) continue;
-          photosByProfile.putIfAbsent(profileId, () => []).add(mapped);
-        }
-
-        final ownersWithPhotos = mappedRows
-            .where((row) =>
-                photosByProfile[row['id']?.toString()]?.isNotEmpty == true)
-            .map((row) => row['user_id']?.toString())
-            .whereType<String>()
-            .toList(growable: false);
-        final signedUrls =
-            await ProfilePhotoService.instance.getAuthorizedPhotoUrls(
-          ownerUserIds: ownersWithPhotos,
-        );
-        for (final row in mappedRows) {
-          final profileId = row['id']?.toString();
-          final profilePhotos =
-              profileId == null ? null : photosByProfile[profileId];
-          row['photo_count'] = profilePhotos?.length ?? 0;
-          if (profilePhotos?.isNotEmpty == true) {
-            final ownerUserId = row['user_id']?.toString();
-            if (ownerUserId != null && ownerUserId.isNotEmpty) {
-              row['photo_url'] = signedUrls[ownerUserId];
-              row['blurhash'] = profilePhotos!.first['blurhash'];
-            }
-          }
-        }
-      }
-
-      final profiles = mappedRows.map(mapDbRowToDiscoveryProfile).toList();
+      final profiles =
+          await AuthorizedProfileService.loadDiscoveryProfiles(ids.take(20));
       if (mounted) setState(() => _savedProfiles = profiles);
     } catch (_) {
       if (mounted) setState(() => _savedProfiles = []);
@@ -238,6 +194,13 @@ class _MyProfileScreenState extends State<MyProfileScreen>
       final info = await WaliModeService.instance.getMyGuardianInfo();
       if (mounted) setState(() => _guardianEnabled = info?.isLinked == true);
     }
+  }
+
+  Future<void> _loadIncognito({bool force = false}) async {
+    try {
+      final setting = await IncognitoService.instance.load(force: force);
+      if (mounted) setState(() => _incognito = setting);
+    } catch (_) {}
   }
 
   Future<void> _loadVerificationBadge() async {
@@ -517,6 +480,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
         _loadGuardian(),
         _loadVerificationBadge(),
         _loadTrustState(),
+        _loadIncognito(force: force),
       ]);
       _lastProfileRefreshAt = DateTime.now();
     } finally {
@@ -627,6 +591,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                     if (!context.mounted) return;
                     await context.read<AccountStandingCubit>().refresh();
                     await _loadTrustState();
+                    await _loadIncognito(force: true);
                   },
                   child: Container(
                     width: AppDimensions.minTouchTarget,
@@ -655,6 +620,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
             child: BlocBuilder<AccountStandingCubit, AccountStandingState>(
               builder: (context, standing) => _ProfileLifecycleCard(
                 standing: standing,
+                incognitoEnabled: _incognito?.enabled == true,
                 onResume: () =>
                     context.read<AccountStandingCubit>().resumeProfile(),
                 onContactSupport: () => context.push(AppRoutes.helpSupport),
@@ -896,6 +862,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
             child: _SavedProfilesSection(
               savedProfiles: _savedProfiles,
               onChanged: _loadBookmarks,
+              onManage: () => context.push(AppRoutes.shortlist),
             ),
           ),
           const SizedBox(height: AppDimensions.space20),
@@ -1053,12 +1020,14 @@ class _ProfileLifecycleCard extends StatelessWidget {
     required this.onResume,
     required this.onContactSupport,
     required this.onManagePhotos,
+    required this.incognitoEnabled,
   });
 
   final AccountStandingState standing;
   final VoidCallback onResume;
   final VoidCallback onContactSupport;
   final VoidCallback onManagePhotos;
+  final bool incognitoEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -1084,7 +1053,9 @@ class _ProfileLifecycleCard extends StatelessWidget {
                     ? Icons.pause_circle_outline_rounded
                     : needsPhoto
                         ? Icons.add_photo_alternate_outlined
-                        : Icons.public_rounded;
+                        : incognitoEnabled
+                            ? Icons.visibility_off_rounded
+                            : Icons.public_rounded;
     final title = isBanned
         ? 'Account banned'
         : isSuspended
@@ -1096,7 +1067,9 @@ class _ProfileLifecycleCard extends StatelessWidget {
                     : needsPhoto
                         ? 'Primary photo required'
                         : isActive
-                            ? 'Live in discovery'
+                            ? incognitoEnabled
+                                ? 'Incognito discovery'
+                                : 'Live in discovery'
                             : 'Checking account status';
     final body = isBanned
         ? 'An enforced account restriction is active. Your profile is not shown and protected actions are unavailable. You can contact Support to appeal.'
@@ -1111,7 +1084,9 @@ class _ProfileLifecycleCard extends StatelessWidget {
                     : needsPhoto
                         ? 'Add a primary photo that passes the safety scan to publish your profile.'
                         : isActive
-                            ? 'Your profile is visible and eligible to appear in discovery.'
+                            ? incognitoEnabled
+                                ? 'You are hidden from general discovery and remain visible only to people you contact or already know.'
+                                : 'Your profile is visible and eligible to appear in discovery.'
                             : 'We are confirming your current visibility with Silarah.';
     final actionLabel = isRestricted
         ? 'Contact support'
@@ -1160,7 +1135,9 @@ class _ProfileLifecycleCard extends StatelessWidget {
                     isRestricted
                         ? 'RESTRICTED'
                         : isActive && !needsPhoto
-                            ? 'ACTIVE'
+                            ? incognitoEnabled
+                                ? 'PRIVATE'
+                                : 'ACTIVE'
                             : 'ATTENTION',
                     style: AppTypography.badge.copyWith(color: color),
                   ),
@@ -2499,17 +2476,30 @@ class _SavedProfilesSection extends StatelessWidget {
   const _SavedProfilesSection({
     required this.savedProfiles,
     required this.onChanged,
+    required this.onManage,
   });
   final List<DiscoveryProfile> savedProfiles;
   final VoidCallback onChanged;
+  final VoidCallback onManage;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        UiText(context.uiCopy('SAVED PROFILES'),
-            style: AppTypography.sectionLabel),
+        Row(
+          children: [
+            Expanded(
+              child: UiText(context.uiCopy('SAVED PROFILES'),
+                  style: AppTypography.sectionLabel),
+            ),
+            TextButton.icon(
+              onPressed: onManage,
+              icon: const Icon(Icons.lock_outline_rounded, size: 15),
+              label: UiText(context.uiCopy('Organize')),
+            ),
+          ],
+        ),
         const SizedBox(height: AppDimensions.space12),
         if (savedProfiles.isEmpty)
           const SilarahEmptyState(
