@@ -530,7 +530,9 @@ select extensions.ok(
   ) > 0
   and position(
     '''private_shortlist_details'''
-    in pg_get_functiondef('public.download_my_data(text)'::regprocedure)
+    in pg_get_functiondef(
+      'private.build_personal_data_export(text)'::regprocedure
+    )
   ) > 0,
   'current consent and personal-data export include the new Premium metadata'
 );

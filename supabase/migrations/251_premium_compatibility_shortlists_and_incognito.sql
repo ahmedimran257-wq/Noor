@@ -1264,7 +1264,11 @@ SELECT cron.schedule(
 -- Include member-owned Premium metadata in the existing privacy archive.
 DO $migration$
 DECLARE
-  v_signature regprocedure := 'public.download_my_data(text)'::regprocedure;
+  -- Migration 214 moved the audited export builder into private and left a
+  -- small public policy-version wrapper. Extend the builder so the public
+  -- endpoint keeps its existing rate limit and version behavior.
+  v_signature regprocedure :=
+    'private.build_personal_data_export(text)'::regprocedure;
   v_definition text;
   v_anchor text := $anchor$    'bookmarks', coalesce((
       SELECT jsonb_agg(to_jsonb(pb) ORDER BY pb.created_at)
