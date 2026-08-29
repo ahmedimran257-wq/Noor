@@ -529,6 +529,10 @@ select extensions.ok(
     )
   ) > 0
   and position(
+    '2.4.0'
+    in pg_get_functiondef('public.sync_my_user(text,text)'::regprocedure)
+  ) > 0
+  and position(
     '''private_shortlist_details'''
     in pg_get_functiondef(
       'private.build_personal_data_export(text)'::regprocedure

@@ -17,7 +17,7 @@ DECLARE
     'public.finalize_signup_consents(uuid)',
     'public.get_my_policy_reminder_state()',
     'public.acknowledge_policy_reminder(text)',
-    'public.finalize_signup_and_provision_my_user(uuid,text)',
+    'public.sync_my_user(text,text)',
     'public.download_my_data(text)'
   ];
 BEGIN
