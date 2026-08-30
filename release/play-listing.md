@@ -17,7 +17,7 @@ Silarah is a private Muslim matrimony experience for adults who are approaching
 marriage with intention.
 
 This Android release is available only to adults in India. Registration,
-discovery, +91 phone verification and billing are not offered outside India in
+discovery and billing are not offered outside India in
 this release.
 
 Create a detailed profile, choose the qualities that matter to you and discover
@@ -42,12 +42,10 @@ Built for serious introductions:
 
 Subscriptions unlock the benefits shown in the app. Prices, billing periods,
 trials and renewal terms are always presented by Google Play before purchase.
-Women can read and message accepted connections without a paid subscription or
-phone verification. Men verify an India +91 number before a paid Premium
-purchase starts, and need both active Premium and that verified number before
-sending. While Premium is active, a verified number can be changed with
-a new OTP without shortening the store subscription. Other access and daily
-interest limits follow the entitlement shown in the app.
+Women can read and message accepted connections without a paid subscription.
+Men need active Premium to send. Accounts use verified email; Silarah does not
+collect phone numbers or require KYC. Other access and daily interest limits
+follow the entitlement shown in the app.
 
 Compatibility insights explain stated preference alignment; they are not a
 character, safety or marriage-outcome assessment and do not expose another

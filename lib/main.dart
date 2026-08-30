@@ -12,6 +12,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -107,6 +108,13 @@ void main() async {
       ),
     ]);
     final prefs = startupDependencies.first as SharedPreferences;
+    await FirebaseAppCheck.instance.activate(
+      androidProvider:
+          kReleaseMode ? AndroidProvider.playIntegrity : AndroidProvider.debug,
+      appleProvider:
+          kReleaseMode ? AppleProvider.appAttest : AppleProvider.debug,
+    );
+    await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
     final introCompleted = prefs.getBool('silarah_intro_completed') ?? false;
     _bootstrapInitialLocation =
         introCompleted ? AppRoutes.boot : AppRoutes.languageSelect;

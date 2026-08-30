@@ -185,7 +185,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Verification is unavailable until you are signed in.':
         'التحقق غير متاح حتى تقوم بتسجيل الدخول.',
     'Verified': 'تم التحقق منه',
-    'Verify phone to continue': 'التحقق من الهاتف للمتابعة',
     'Verify photo': 'التحقق من الصورة',
     'WHAT\'S INCLUDED': 'ما هو مدرج',
     'We could not save that city. Please try again.':
@@ -420,7 +419,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Verification is unavailable until you are signed in.':
         'আপনি সাইন ইন না হওয়া পর্যন্ত যাচাইকরণ অনুপলব্ধ৷',
     'Verified': 'যাচাই করা হয়েছে',
-    'Verify phone to continue': 'চালিয়ে যেতে ফোন যাচাই করুন',
     'Verify photo': 'ফটো যাচাই করুন',
     'WHAT\'S INCLUDED': 'কি অন্তর্ভুক্ত',
     'We could not save that city. Please try again.':
@@ -662,7 +660,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Verification is unavailable until you are signed in.':
         'Die Verifizierung ist erst möglich, wenn Sie angemeldet sind.',
     'Verified': 'Verifiziert',
-    'Verify phone to continue': 'Bestätigen Sie das Telefon, um fortzufahren',
     'Verify photo': 'Foto überprüfen',
     'WHAT\'S INCLUDED': 'WAS IST INBEGRIFFEN',
     'We could not save that city. Please try again.':
@@ -905,7 +902,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Verification is unavailable until you are signed in.':
         'La vérification n\'est pas disponible tant que vous n\'êtes pas connecté.',
     'Verified': 'Vérifié',
-    'Verify phone to continue': 'Vérifiez le téléphone pour continuer',
     'Verify photo': 'Vérifier la photo',
     'WHAT\'S INCLUDED': 'CE QUI EST INCLUS',
     'We could not save that city. Please try again.':
@@ -1143,7 +1139,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Verification is unavailable until you are signed in.':
         'जब तक आप साइन इन नहीं होते तब तक सत्यापन उपलब्ध नहीं है।',
     'Verified': 'सत्यापित',
-    'Verify phone to continue': 'जारी रखने के लिए फ़ोन सत्यापित करें',
     'Verify photo': 'फ़ोटो सत्यापित करें',
     'WHAT\'S INCLUDED': 'क्या शामिल है',
     'We could not save that city. Please try again.':
@@ -1379,7 +1374,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Verification is unavailable until you are signed in.':
         'Verifikasi tidak tersedia sampai Anda masuk.',
     'Verified': 'Terverifikasi',
-    'Verify phone to continue': 'Verifikasi telepon untuk melanjutkan',
     'Verify photo': 'Verifikasi foto',
     'WHAT\'S INCLUDED': 'APA YANG TERMASUK',
     'We could not save that city. Please try again.':
@@ -1617,7 +1611,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Verification is unavailable until you are signed in.':
         'Pengesahan tidak tersedia sehingga anda log masuk.',
     'Verified': 'Disahkan',
-    'Verify phone to continue': 'Sahkan telefon untuk meneruskan',
     'Verify photo': 'Sahkan foto',
     'WHAT\'S INCLUDED': 'APA YANG TERMASUK',
     'We could not save that city. Please try again.':
@@ -1854,7 +1847,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Verification is unavailable until you are signed in.':
         'Oturum açana kadar doğrulama yapılamaz.',
     'Verified': 'Doğrulandı',
-    'Verify phone to continue': 'Devam etmek için telefonu doğrulayın',
     'Verify photo': 'Fotoğrafı doğrula',
     'WHAT\'S INCLUDED': 'NELER DAHİL',
     'We could not save that city. Please try again.':
@@ -2090,7 +2082,6 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Verification is unavailable until you are signed in.':
         'آپ کے سائن ان ہونے تک توثیق دستیاب نہیں ہے۔',
     'Verified': 'تصدیق شدہ',
-    'Verify phone to continue': 'جاری رکھنے کے لیے فون کی تصدیق کریں۔',
     'Verify photo': 'تصویر کی تصدیق کریں۔',
     'WHAT\'S INCLUDED': 'کیا شامل ہے۔',
     'We could not save that city. Please try again.':

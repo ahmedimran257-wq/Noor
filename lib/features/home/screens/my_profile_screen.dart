@@ -24,7 +24,6 @@ import '../../../core/services/connectivity_service.dart';
 import '../../../core/services/authorized_profile_service.dart';
 import '../../../core/services/incognito_service.dart';
 import '../../../core/services/photo_verification_service.dart';
-import '../../../core/services/phone_verification_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
@@ -115,8 +114,6 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   bool _emailVerified = false;
   PhotoVerificationStatus _photoVerificationStatus =
       const PhotoVerificationStatus.notStarted();
-  bool _phoneVerified = false;
-  bool _phoneTrustBadgeActive = false;
   bool _establishedMember = false;
   String? _accountEmail;
   String? _primaryPhotoUrl;
@@ -225,42 +222,6 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     await context.push(AppRoutes.badgeVerification);
     if (!mounted) return;
     await Future.wait([_loadVerificationBadge(), _loadTrustState()]);
-  }
-
-  Future<void> _startPhoneVerification() async {
-    final subscription = context.read<SubscriptionCubit>().state;
-    final authState = context.read<AuthCubit>().state;
-    final countryCode = authState is AuthAuthenticated
-        ? authState.countryCode
-        : context.read<OnboardingCubit>().currentData.countryCode;
-
-    if (!_phoneVerified) {
-      // A restored or legacy paid entitlement may not yet have completed the
-      // current Firebase phone check. Recover it directly without ever
-      // offering another purchase.
-      if (subscription.hasPaidPremium) {
-        final verified = await showPhoneVerificationSheet(
-          context,
-          countryCode: countryCode,
-        );
-        if (verified == true && mounted) await _loadTrustState();
-        return;
-      }
-      await context.push(AppRoutes.subscription);
-      if (mounted) await _loadTrustState();
-      return;
-    }
-    if (!subscription.hasPaidPremium) {
-      await context.push(AppRoutes.subscription);
-      if (mounted) await _loadTrustState();
-      return;
-    }
-    final verified = await showPhoneVerificationSheet(
-      context,
-      countryCode: countryCode,
-      isChangingNumber: _phoneVerified,
-    );
-    if (verified == true && mounted) await _loadTrustState();
   }
 
   Future<void> _openGuardianSettings() async {
@@ -435,12 +396,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     if (userId == null) return;
 
     try {
-      final results = await Future.wait<dynamic>([
-        PhotoVerificationService.instance.fetchStatus(),
-        PhoneVerificationService.instance.currentStatus(),
-      ]);
-      final photo = results[0] as PhotoVerificationStatus;
-      final phone = results[1] as PhoneVerificationStatus;
+      final photo = await PhotoVerificationService.instance.fetchStatus();
       final authUser = SupabaseService.client.auth.currentUser;
       final accountCreatedAt = authUser == null
           ? null
@@ -449,8 +405,6 @@ class _MyProfileScreenState extends State<MyProfileScreen>
       setState(() {
         _photoVerificationStatus = photo;
         _hasVerificationBadge = photo.isApproved;
-        _phoneVerified = phone.isVerified;
-        _phoneTrustBadgeActive = phone.isTrustBadgeActive;
         _accountEmail = authUser?.email;
         _emailVerified = authUser?.emailConfirmedAt != null;
         _establishedMember = accountCreatedAt != null &&
@@ -687,22 +641,16 @@ class _MyProfileScreenState extends State<MyProfileScreen>
 
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: BlocBuilder<SubscriptionCubit, SubscriptionState>(
-              builder: (context, subscription) => _TrustCenterCard(
-                loading: _trustStateLoading,
-                photoStatus: _photoVerificationStatus,
-                phoneVerified: _phoneVerified,
-                phoneTrustBadgeActive: _phoneTrustBadgeActive,
-                premiumActive: subscription.hasPaidPremium,
-                guardianConnected: _guardianEnabled,
-                guardianManaged: guardianManaged,
-                establishedMember: _establishedMember,
-                email: _accountEmail,
-                emailVerified: _emailVerified,
-                onPhotoVerification: _openVerification,
-                onPhoneVerification: _startPhoneVerification,
-                onGuardianConnection: _openGuardianSettings,
-              ),
+            child: _TrustCenterCard(
+              loading: _trustStateLoading,
+              photoStatus: _photoVerificationStatus,
+              guardianConnected: _guardianEnabled,
+              guardianManaged: guardianManaged,
+              establishedMember: _establishedMember,
+              email: _accountEmail,
+              emailVerified: _emailVerified,
+              onPhotoVerification: _openVerification,
+              onGuardianConnection: _openGuardianSettings,
             ),
           ),
 
@@ -1230,31 +1178,23 @@ class _TrustCenterCard extends StatelessWidget {
   const _TrustCenterCard({
     required this.loading,
     required this.photoStatus,
-    required this.phoneVerified,
-    required this.phoneTrustBadgeActive,
-    required this.premiumActive,
     required this.guardianConnected,
     required this.guardianManaged,
     required this.establishedMember,
     required this.email,
     required this.emailVerified,
     required this.onPhotoVerification,
-    required this.onPhoneVerification,
     required this.onGuardianConnection,
   });
 
   final bool loading;
   final PhotoVerificationStatus photoStatus;
-  final bool phoneVerified;
-  final bool phoneTrustBadgeActive;
-  final bool premiumActive;
   final bool guardianConnected;
   final bool guardianManaged;
   final bool establishedMember;
   final String? email;
   final bool emailVerified;
   final VoidCallback onPhotoVerification;
-  final VoidCallback onPhoneVerification;
   final VoidCallback onGuardianConnection;
 
   @override
@@ -1340,27 +1280,6 @@ class _TrustCenterCard extends StatelessWidget {
             onTap: photoStatus.isApproved || photoStatus.isPending || loading
                 ? null
                 : onPhotoVerification,
-          ),
-          Divider(height: 1, indent: 56, color: AppColors.cardBorder),
-          _TrustRow(
-            icon: Icons.phone_iphone_rounded,
-            title: 'Phone number',
-            subtitle: phoneVerified
-                ? phoneTrustBadgeActive
-                    ? 'Confirmed by SMS. Change it with a new OTP; Premium expiry stays unchanged.'
-                    : 'SMS confirmed. Your public phone badge activates only after the paid purchase succeeds.'
-                : 'Verified once when you continue with a paid Premium purchase. Women still message free.',
-            status: phoneVerified && premiumActive
-                ? 'Change'
-                : phoneTrustBadgeActive
-                    ? 'Verified'
-                    : phoneVerified
-                        ? 'Ready'
-                        : 'Premium',
-            statusColor: phoneTrustBadgeActive
-                ? AppColors.verifiedTeal
-                : AppColors.champagneGold,
-            onTap: loading ? null : onPhoneVerification,
           ),
           Divider(height: 1, indent: 56, color: AppColors.cardBorder),
           _TrustRow(

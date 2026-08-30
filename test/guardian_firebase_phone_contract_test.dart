@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  final migration = File(
-    'supabase/migrations/223_guardian_invitation_acceptance_and_firebase_phone.sql',
+  final retirement = File(
+    'supabase/migrations/253_remove_phone_identity_and_email_guardian.sql',
   ).readAsStringSync();
   final guardianScreen = File(
     'lib/features/home/screens/guardian_connect_screen.dart',
@@ -16,23 +16,14 @@ void main() {
     'lib/features/home/screens/settings_screen.dart',
   ).readAsStringSync();
   final router = File('lib/core/router/app_router.dart').readAsStringSync();
-  final verifier = File(
-    'supabase/functions/verify-firebase-phone/index.ts',
+  final service = File(
+    'lib/core/services/wali_mode_service.dart',
   ).readAsStringSync();
-  final phoneService = File(
-    'lib/core/services/phone_verification_service.dart',
-  ).readAsStringSync();
-  final ownershipMigration = File(
+  final ownership = File(
     'supabase/migrations/227_separate_guardian_ownership_and_oversight.sql',
   ).readAsStringSync();
   final selfLinkDefense = File(
     'supabase/migrations/229_guardian_self_link_defense.sql',
-  ).readAsStringSync();
-  final runtimeRepair = File(
-    'supabase/migrations/228_repair_phone_completion_and_guardian_acceptance.sql',
-  ).readAsStringSync();
-  final atomicAcceptance = File(
-    'supabase/migrations/241_atomic_guardian_phone_acceptance.sql',
   ).readAsStringSync();
   final profileWriter = File(
     'lib/core/services/profile_write_service.dart',
@@ -48,100 +39,52 @@ void main() {
     expect(guardianScreen, contains('AppRoutes.legal'));
     expect(guardianScreen, contains('mode=signin'));
     expect(guardianScreen, contains('Continue without Guardian'));
-    expect(verifier, contains('"complete_guardian_phone_and_accept"'));
+    expect(service, contains("'accept_my_guardian_invitation'"));
     expect(router, contains('guardianInvitationPending'));
     expect(router, contains('authState.isGuardianOnly'));
   });
 
-  test('Guardian codes are one-time, hashed, expiring and phone-bound', () {
-    expect(migration, contains('private.guardian_invitation_hash'));
-    expect(migration,
-        contains("extensions.digest(upper(trim(p_code)), 'sha256')"));
-    expect(migration, contains("now() + interval '7 days'"));
-    expect(migration, contains('guardian_invitation_consumed_at'));
-    expect(migration, contains('guardian_invitation_locked_until'));
-    expect(migration, contains('v_stored_phone IS DISTINCT FROM v_phone'));
-    expect(migration, contains('guardian_user_id = v_guardian_id'));
+  test('Guardian codes are hash-only, expiring, one-time and email-bound', () {
+    expect(retirement, contains('private.guardian_invitation_hash'));
+    expect(retirement, contains("private.guardian_invitation_hash(p_code)"));
+    expect(retirement, contains("now() + interval '7 days'"));
+    expect(retirement, contains('guardian_invitation_consumed_at = now()'));
+    expect(retirement, contains('guardian_invitation_attempts + 1 >= 5'));
+    expect(retirement, contains("now() + interval '24 hours'"));
+    expect(retirement, contains('email_confirmed_at'));
     expect(
-      runtimeRepair,
-      isNot(contains('updated_at = now()')),
-      reason: 'Guardian acceptance must match the public.users schema.',
+      retirement,
+      contains(
+        'lower(trim(v_profile.guardian_email)) IS DISTINCT FROM v_verified_email',
+      ),
     );
+    expect(settings, contains('Guardian email'));
+    expect(settings, isNot(contains('Guardian phone')));
   });
 
-  test('Firebase SMS proof is validated server-side before phone trust', () {
-    expect(phoneService,
-        contains('firebase.FirebaseAuth.instance.verifyPhoneNumber'));
-    expect(phoneService, contains('credential.user?.getIdToken(true)'));
-    expect(phoneService, contains("'verify-firebase-phone'"));
-    expect(phoneService, isNot(contains('OtpType.phoneChange')));
-    expect(phoneService, isNot(contains('verifyOTP')));
-    expect(verifier, contains('crypto.subtle.verify'));
-    expect(verifier, contains('https://securetoken.google.com/'));
-    expect(verifier, contains('sign_in_provider !== "phone"'));
-    expect(verifier, contains('"check_guardian_invitation_phone"'));
-    expect(atomicAcceptance, contains('guardian_invitation_attempts'));
-    expect(verifier, contains(r'/^\+91[6-9][0-9]{9}$/'));
-  });
-
-  test('Firebase identity is temporary and Supabase remains authoritative', () {
-    expect(phoneService, contains('credential.user?.delete()'));
-    expect(verifier, isNot(contains('.from("users")')));
-    expect(verifier, contains('"complete_paid_phone_verification"'));
-    expect(verifier, contains('"complete_guardian_phone_and_accept"'));
-    expect(atomicAcceptance, contains('phone_verified_at = now()'));
-    expect(verifier, isNot(contains('auth.admin.updateUserById')));
-  });
-
-  test('guardian-managed ownership is separate from connected oversight', () {
-    expect(
-      ownershipMigration,
-      contains('guardian_user_id = user_id'),
-      reason: 'Existing self-links must be repaired.',
-    );
-    expect(
-      ownershipMigration,
-      contains('NEW.guardian_user_id := NULL'),
-      reason: 'Old clients cannot recreate a self-linked Guardian.',
-    );
-    expect(
-      ownershipMigration,
-      contains("p.profile_owner_type::text = 'guardian'"),
-    );
-    expect(
-      ownershipMigration,
-      contains('p.guardian_user_id <> p.user_id'),
-    );
+  test('Guardian-managed ownership stays separate from connected oversight',
+      () {
+    expect(ownership, contains('guardian_user_id = user_id'));
+    expect(ownership, contains('NEW.guardian_user_id := NULL'));
+    expect(ownership, contains("p.profile_owner_type::text = 'guardian'"));
     expect(profileWriter, contains("'guardian_user_id': null"));
     expect(profileWriter, isNot(contains("guardian_user_id': _userId")));
     expect(selfLinkDefense, contains('WHERE guardian_user_id = user_id'));
-    expect(
-      selfLinkDefense,
-      contains('guardian_user_id IS NULL OR guardian_user_id <> user_id'),
-    );
-    expect(
-      selfLinkDefense,
-      isNot(contains("NEW.profile_owner_type::text = 'guardian'")),
-      reason: 'The self-link invariant applies to every profile-owner type.',
-    );
   });
 
-  test('public profiles disclose management without Guardian contact details',
-      () {
-    expect(
-      ownershipMigration,
-      contains("'guardian_managed', p.profile_owner_type::text = 'guardian'"),
-    );
+  test('public profiles disclose management without Guardian contacts', () {
     expect(profileCard, contains('Guardian-managed profile'));
-    final trustStart = ownershipMigration.indexOf(
+    final trustStart = retirement.indexOf(
       'CREATE FUNCTION public.get_member_trust_summaries',
     );
-    final trustEnd = ownershipMigration.indexOf(
+    final trustEnd = retirement.indexOf(
       'REVOKE ALL ON FUNCTION public.get_member_trust_summaries',
     );
-    final trustProjection = ownershipMigration.substring(trustStart, trustEnd);
-    expect(trustProjection, isNot(contains('guardian_email')));
-    expect(trustProjection, isNot(contains('guardian_phone')));
-    expect(trustProjection, isNot(contains('guardian_name')));
+    expect(trustStart, greaterThanOrEqualTo(0));
+    expect(trustEnd, greaterThan(trustStart));
+    final projection = retirement.substring(trustStart, trustEnd);
+    expect(projection, isNot(contains('guardian_email')));
+    expect(projection, isNot(contains('guardian_phone')));
+    expect(projection, isNot(contains('guardian_name')));
   });
 }

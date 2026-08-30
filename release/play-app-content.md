@@ -47,7 +47,8 @@ photos. Do not describe the app as child-accessible or as guaranteeing identity.
 
 ## Declarations to verify in Console
 
-- [ ] Data safety answers match the exact MSG91/Firebase/Brevo architecture in
+- [ ] Data safety answers match Firebase App Check/Play Integrity, push,
+      Crashlytics and the exact transactional-email architecture in
       the submitted build.
 - [ ] Ads declaration says no ads.
 - [ ] Target audience is 18+ only.

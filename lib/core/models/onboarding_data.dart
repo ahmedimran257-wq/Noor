@@ -131,12 +131,9 @@ class OnboardingData {
 
     // Meta
     this.email,
-    this.phone,
     this.guardianName,
     this.guardianRelationship,
     this.isGuardianMode = false,
-    this.guardianPhone,
-    this.guardianPhoneCountryCode,
     this.profileCreatorRelation,
     this.guardianEmail,
     this.guardianAuthorityScope, // 'full','advisory','limited'
@@ -259,12 +256,9 @@ class OnboardingData {
 
   // Meta
   final String? email;
-  final String? phone;
   final String? guardianName;
   final String? guardianRelationship;
   final bool isGuardianMode;
-  final String? guardianPhone;
-  final String? guardianPhoneCountryCode;
   final String?
       profileCreatorRelation; // 'self','son','daughter','brother','sister'
   final String? guardianEmail;
@@ -355,12 +349,9 @@ class OnboardingData {
     String? debtStatus,
     String? religiousLeadership,
     String? email,
-    String? phone,
     String? guardianName,
     String? guardianRelationship,
     bool? isGuardianMode,
-    String? guardianPhone,
-    String? guardianPhoneCountryCode,
     String? profileCreatorRelation,
     String? guardianEmail,
     String? guardianAuthorityScope,
@@ -450,13 +441,9 @@ class OnboardingData {
       debtStatus: debtStatus ?? this.debtStatus,
       religiousLeadership: religiousLeadership ?? this.religiousLeadership,
       email: email ?? this.email,
-      phone: phone ?? this.phone,
       guardianName: guardianName ?? this.guardianName,
       guardianRelationship: guardianRelationship ?? this.guardianRelationship,
       isGuardianMode: isGuardianMode ?? this.isGuardianMode,
-      guardianPhone: guardianPhone ?? this.guardianPhone,
-      guardianPhoneCountryCode:
-          guardianPhoneCountryCode ?? this.guardianPhoneCountryCode,
       profileCreatorRelation:
           profileCreatorRelation ?? this.profileCreatorRelation,
       guardianEmail: guardianEmail ?? this.guardianEmail,
@@ -581,12 +568,9 @@ class OnboardingData {
       'debtStatus': debtStatus,
       'religiousLeadership': religiousLeadership,
       'email': email,
-      'phone': phone,
       'guardianName': guardianName,
       'guardianRelationship': guardianRelationship,
       'isGuardianMode': isGuardianMode,
-      'guardianPhone': guardianPhone,
-      'guardianPhoneCountryCode': guardianPhoneCountryCode,
       'profileCreatorRelation': profileCreatorRelation,
       'guardianEmail': guardianEmail,
       'guardianAuthorityScope': guardianAuthorityScope,
@@ -707,12 +691,9 @@ class OnboardingData {
       debtStatus: json['debtStatus'] as String?,
       religiousLeadership: json['religiousLeadership'] as String?,
       email: json['email'] as String?,
-      phone: json['phone'] as String?,
       guardianName: json['guardianName'] as String?,
       guardianRelationship: json['guardianRelationship'] as String?,
       isGuardianMode: (json['isGuardianMode'] as bool?) ?? false,
-      guardianPhone: json['guardianPhone'] as String?,
-      guardianPhoneCountryCode: json['guardianPhoneCountryCode'] as String?,
       profileCreatorRelation: json['profileCreatorRelation'] as String?,
       guardianEmail: json['guardianEmail'] as String?,
       guardianAuthorityScope: json['guardianAuthorityScope'] as String?,

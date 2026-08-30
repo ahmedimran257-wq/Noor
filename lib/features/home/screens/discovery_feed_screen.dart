@@ -442,7 +442,6 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
                     photoCount: p.photoCount,
                     isPhotoPrivate: p.isPhotoPrivate,
                     isVerified: p.isVerified,
-                    phoneVerified: p.phoneVerified,
                     isGuardianManaged: p.isGuardianProfile,
                     lastActiveLabel:
                         _localizedLastActive(context, fp.lastActiveAt),

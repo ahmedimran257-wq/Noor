@@ -17,7 +17,6 @@ void main() {
         guardianRelationship: 'father',
         guardianEmail: 'guardian@example.test',
         guardianAuthorityScope: 'full',
-        guardianPhoneCountryCode: '+91',
         photoPrivacy: PhotoPrivacy.requestOnly,
         firstName: 'Member',
         lastName: 'Profile',
@@ -44,7 +43,6 @@ void main() {
       'relationship_to_ward',
       'guardian_email',
       'guardian_authority_scope',
-      'guardian_phone_country_code',
       'photo_privacy',
     };
 

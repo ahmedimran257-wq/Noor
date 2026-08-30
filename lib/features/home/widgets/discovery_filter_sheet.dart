@@ -684,15 +684,11 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
                           options: const [
                             null,
                             'photo',
-                            'phone',
-                            'both',
                             'guardian',
                           ],
                           labels: const [
                             'Any trust level',
                             'Photo verified',
-                            'Phone verified',
-                            'Photo + phone',
                             'Guardian connected',
                           ],
                           value: _draft.trustFilter,

@@ -4,8 +4,8 @@
 const premiumDiscoveryUiCopy = <String, Map<String, String>>{
   'ar': {
     'Test Premium is active': 'اشتراك Premium التجريبي نشط',
-    'Temporary owner-supervised access. No purchase, renewal, referral reward or phone trust badge was created.':
-        'وصول مؤقت بإشراف المالك. لم يتم إنشاء عملية شراء أو تجديد أو مكافأة إحالة أو شارة ثقة للهاتف.',
+    'Temporary owner-supervised access. No purchase, renewal or referral reward was created.':
+        'وصول مؤقت بإشراف المالك. لم يتم إنشاء عملية شراء أو تجديد أو مكافأة إحالة.',
     'All Premium feature gates are enabled for testing until this countdown ends or the grant is revoked.':
         'جميع ميزات Premium مفعّلة للاختبار حتى انتهاء العد التنازلي أو إلغاء المنحة.',
     'All India': 'جميع أنحاء الهند',
@@ -43,8 +43,8 @@ const premiumDiscoveryUiCopy = <String, Map<String, String>>{
   },
   'bn': {
     'Test Premium is active': 'টেস্ট Premium সক্রিয় আছে',
-    'Temporary owner-supervised access. No purchase, renewal, referral reward or phone trust badge was created.':
-        'মালিকের তত্ত্বাবধানে অস্থায়ী অ্যাক্সেস। কোনো ক্রয়, নবায়ন, রেফারেল পুরস্কার বা ফোন ট্রাস্ট ব্যাজ তৈরি হয়নি।',
+    'Temporary owner-supervised access. No purchase, renewal or referral reward was created.':
+        'মালিকের তত্ত্বাবধানে অস্থায়ী অ্যাক্সেস। কোনো ক্রয়, নবায়ন বা রেফারেল পুরস্কার তৈরি হয়নি।',
     'All Premium feature gates are enabled for testing until this countdown ends or the grant is revoked.':
         'এই কাউন্টডাউন শেষ হওয়া বা অনুমতি বাতিল হওয়া পর্যন্ত পরীক্ষার জন্য সব Premium ফিচার চালু আছে।',
     'All India': 'সমগ্র ভারত',
@@ -82,8 +82,8 @@ const premiumDiscoveryUiCopy = <String, Map<String, String>>{
   },
   'de': {
     'Test Premium is active': 'Test-Premium ist aktiv',
-    'Temporary owner-supervised access. No purchase, renewal, referral reward or phone trust badge was created.':
-        'Vorübergehender, beaufsichtigter Zugang. Es wurden weder Kauf noch Verlängerung, Empfehlungsprämie oder Telefon-Vertrauensabzeichen angelegt.',
+    'Temporary owner-supervised access. No purchase, renewal or referral reward was created.':
+        'Vorübergehender, beaufsichtigter Zugang. Es wurden weder Kauf noch Verlängerung oder Empfehlungsprämie angelegt.',
     'All Premium feature gates are enabled for testing until this countdown ends or the grant is revoked.':
         'Alle Premium-Funktionen sind zum Testen aktiviert, bis der Countdown endet oder der Zugang widerrufen wird.',
     'All India': 'Ganz Indien',
@@ -123,8 +123,8 @@ const premiumDiscoveryUiCopy = <String, Map<String, String>>{
   },
   'fr': {
     'Test Premium is active': 'Premium de test est actif',
-    'Temporary owner-supervised access. No purchase, renewal, referral reward or phone trust badge was created.':
-        "Accès temporaire supervisé par le propriétaire. Aucun achat, renouvellement, parrainage ni badge de confiance téléphonique n’a été créé.",
+    'Temporary owner-supervised access. No purchase, renewal or referral reward was created.':
+        "Accès temporaire supervisé par le propriétaire. Aucun achat, renouvellement ni avantage de parrainage n’a été créé.",
     'All Premium feature gates are enabled for testing until this countdown ends or the grant is revoked.':
         "Toutes les fonctions Premium sont activées pour les tests jusqu’à la fin du compte à rebours ou la révocation de l’accès.",
     'All India': "Toute l'Inde",
@@ -164,8 +164,8 @@ const premiumDiscoveryUiCopy = <String, Map<String, String>>{
   },
   'hi': {
     'Test Premium is active': 'टेस्ट Premium सक्रिय है',
-    'Temporary owner-supervised access. No purchase, renewal, referral reward or phone trust badge was created.':
-        'मालिक की निगरानी वाला अस्थायी एक्सेस। कोई खरीद, नवीनीकरण, रेफ़रल पुरस्कार या फ़ोन ट्रस्ट बैज नहीं बनाया गया है।',
+    'Temporary owner-supervised access. No purchase, renewal or referral reward was created.':
+        'मालिक की निगरानी वाला अस्थायी एक्सेस। कोई खरीदारी, नवीनीकरण या रेफ़रल पुरस्कार नहीं बनाया गया।',
     'All Premium feature gates are enabled for testing until this countdown ends or the grant is revoked.':
         'इस काउंटडाउन के समाप्त होने या अनुमति रद्द होने तक परीक्षण के लिए सभी Premium सुविधाएँ चालू हैं।',
     'All India': 'पूरा भारत',
@@ -204,8 +204,8 @@ const premiumDiscoveryUiCopy = <String, Map<String, String>>{
   },
   'id': {
     'Test Premium is active': 'Premium Uji Coba aktif',
-    'Temporary owner-supervised access. No purchase, renewal, referral reward or phone trust badge was created.':
-        'Akses sementara dalam pengawasan pemilik. Tidak ada pembelian, perpanjangan, hadiah referal, atau lencana kepercayaan telepon yang dibuat.',
+    'Temporary owner-supervised access. No purchase, renewal or referral reward was created.':
+        'Akses sementara dalam pengawasan pemilik. Tidak ada pembelian, perpanjangan, atau hadiah referal yang dibuat.',
     'All Premium feature gates are enabled for testing until this countdown ends or the grant is revoked.':
         'Semua fitur Premium diaktifkan untuk pengujian hingga hitung mundur berakhir atau akses dicabut.',
     'All India': 'Seluruh India',
@@ -244,8 +244,8 @@ const premiumDiscoveryUiCopy = <String, Map<String, String>>{
   },
   'ms': {
     'Test Premium is active': 'Premium Ujian aktif',
-    'Temporary owner-supervised access. No purchase, renewal, referral reward or phone trust badge was created.':
-        'Akses sementara di bawah seliaan pemilik. Tiada pembelian, pembaharuan, ganjaran rujukan atau lencana kepercayaan telefon dibuat.',
+    'Temporary owner-supervised access. No purchase, renewal or referral reward was created.':
+        'Akses sementara di bawah seliaan pemilik. Tiada pembelian, pembaharuan atau ganjaran rujukan dibuat.',
     'All Premium feature gates are enabled for testing until this countdown ends or the grant is revoked.':
         'Semua ciri Premium diaktifkan untuk ujian sehingga kira detik tamat atau akses dibatalkan.',
     'All India': 'Seluruh India',
@@ -285,8 +285,8 @@ const premiumDiscoveryUiCopy = <String, Map<String, String>>{
   },
   'tr': {
     'Test Premium is active': 'Test Premium etkin',
-    'Temporary owner-supervised access. No purchase, renewal, referral reward or phone trust badge was created.':
-        'Sahibin gözetiminde geçici erişim. Satın alma, yenileme, davet ödülü veya telefon güven rozeti oluşturulmadı.',
+    'Temporary owner-supervised access. No purchase, renewal or referral reward was created.':
+        'Sahibin gözetiminde geçici erişim. Satın alma, yenileme veya davet ödülü oluşturulmadı.',
     'All Premium feature gates are enabled for testing until this countdown ends or the grant is revoked.':
         'Geri sayım bitene veya erişim iptal edilene kadar tüm Premium özellikleri test için etkindir.',
     'All India': 'Tüm Hindistan',
@@ -325,8 +325,8 @@ const premiumDiscoveryUiCopy = <String, Map<String, String>>{
   },
   'ur': {
     'Test Premium is active': 'ٹیسٹ Premium فعال ہے',
-    'Temporary owner-supervised access. No purchase, renewal, referral reward or phone trust badge was created.':
-        'مالک کی نگرانی میں عارضی رسائی۔ کوئی خریداری، تجدید، ریفرل انعام یا فون ٹرسٹ بیج نہیں بنایا گیا۔',
+    'Temporary owner-supervised access. No purchase, renewal or referral reward was created.':
+        'مالک کی نگرانی میں عارضی رسائی۔ کوئی خریداری، تجدید یا ریفرل انعام نہیں بنایا گیا۔',
     'All Premium feature gates are enabled for testing until this countdown ends or the grant is revoked.':
         'اس الٹی گنتی کے ختم ہونے یا رسائی منسوخ ہونے تک تمام Premium فیچرز ٹیسٹنگ کے لیے فعال ہیں۔',
     'All India': 'پورا بھارت',

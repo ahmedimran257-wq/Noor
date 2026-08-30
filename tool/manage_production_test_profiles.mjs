@@ -668,7 +668,7 @@ async function create() {
       moderation_status: "approved",
     })));
 
-    // Deliberately varied trust states make every paid trust filter testable.
+    // Deliberately varied retained trust states make paid trust filters testable.
     const photoVerified = members.filter((member) => member.index % 4 === 0);
     for (const part of chunks(photoVerified.map((member) => member.profileId), 35)) {
       await patchWhere("profiles", `id=${inFilter(part)}`, {
@@ -682,15 +682,8 @@ async function create() {
         is_verified: true,
       });
     }
-    const phoneVerified = members.filter((member) => member.index % 4 === 1);
-    for (const part of chunks(phoneVerified.map((member) => member.id), 35)) {
-      await patchWhere("users", `id=${inFilter(part)}`, {
-        phone_country_code: "IN",
-        phone_verified_at: now.toISOString(),
-      });
-    }
-    const bothVerified = members.filter((member) => member.index % 8 === 2);
-    for (const part of chunks(bothVerified.map((member) => member.profileId), 35)) {
+    const additionalPhotoVerified = members.filter((member) => member.index % 8 === 2);
+    for (const part of chunks(additionalPhotoVerified.map((member) => member.profileId), 35)) {
       await patchWhere("profiles", `id=${inFilter(part)}`, {
         photo_verified_at: now.toISOString(),
         photo_verification_paused_at: null,
@@ -700,12 +693,6 @@ async function create() {
         verification_challenge: "test_fixture_only",
         verified_at: now.toISOString(),
         is_verified: true,
-      });
-    }
-    for (const part of chunks(bothVerified.map((member) => member.id), 35)) {
-      await patchWhere("users", `id=${inFilter(part)}`, {
-        phone_country_code: "IN",
-        phone_verified_at: now.toISOString(),
       });
     }
     const guardianConnected = members.filter((member) => member.index % 10 === 3);
@@ -732,8 +719,7 @@ async function create() {
           male: count / 2,
           female: count / 2,
           storage_objects: count,
-          photo_verified: photoVerified.length + bothVerified.length,
-          phone_verified: phoneVerified.length + bothVerified.length,
+          photo_verified: photoVerified.length + additionalPhotoVerified.length,
           guardian_connected: guardianConnected.length,
         },
       },

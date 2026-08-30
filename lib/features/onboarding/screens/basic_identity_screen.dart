@@ -63,7 +63,6 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
   final _firstNameCtrl = TextEditingController();
   final _lastNameCtrl = TextEditingController();
   final _guardianEmailCtrl = TextEditingController();
-  final _guardianPhoneCtrl = TextEditingController();
   DateTime? _dob;
   Gender? _gender;
   String _dobError = '';
@@ -98,7 +97,6 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
     _firstNameCtrl.addListener(_refreshCtaState);
     _lastNameCtrl.addListener(_refreshCtaState);
     _guardianEmailCtrl.addListener(_refreshCtaState);
-    _guardianPhoneCtrl.addListener(_refreshCtaState);
     final data = context.read<OnboardingCubit>().currentData;
     final authState = context.read<AuthCubit>().state;
     _isGuardianMode = data.profileOwnerType == ProfileOwnerType.guardian ||
@@ -110,7 +108,6 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
     final authEmail = authState is AuthAuthenticated ? authState.email : null;
     _guardianEmailCtrl.text =
         data.guardianEmail ?? data.email ?? authEmail ?? '';
-    _guardianPhoneCtrl.text = data.guardianPhone ?? '';
 
     _gender = _isGuardianMode
         ? data.wardGender ??
@@ -244,11 +241,9 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
     _firstNameCtrl.removeListener(_refreshCtaState);
     _lastNameCtrl.removeListener(_refreshCtaState);
     _guardianEmailCtrl.removeListener(_refreshCtaState);
-    _guardianPhoneCtrl.removeListener(_refreshCtaState);
     _firstNameCtrl.dispose();
     _lastNameCtrl.dispose();
     _guardianEmailCtrl.dispose();
-    _guardianPhoneCtrl.dispose();
     super.dispose();
   }
 
@@ -471,8 +466,6 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
     _dismissKeyboard();
     final authCubit = context.read<AuthCubit>();
     final onboardingCubit = context.read<OnboardingCubit>();
-    final guardianPhone = _guardianPhoneCtrl.text.trim();
-
     final data = onboardingCubit.currentData.copyWith(
       profileFor: _isGuardianMode ? ProfileFor.guardian : ProfileFor.myself,
       profileOwnerType:
@@ -482,8 +475,6 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       isGuardianMode: _isGuardianMode,
       guardianMode: 'none',
       guardianEmail: _isGuardianMode ? _guardianEmailCtrl.text.trim() : null,
-      guardianPhone:
-          _isGuardianMode && guardianPhone.isNotEmpty ? guardianPhone : null,
       firstName: _firstNameCtrl.text.trim(),
       lastName: _lastNameCtrl.text.trim(),
       dateOfBirth: _dob,
@@ -591,15 +582,6 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                   textInputAction: TextInputAction.next,
                   prefixIcon: Icons.email_outlined,
                   readOnly: true,
-                ),
-                const SizedBox(height: AppDimensions.space12),
-                SilarahTextField(
-                  controller: _guardianPhoneCtrl,
-                  label: 'Guardian phone (optional)',
-                  keyboardType: TextInputType.phone,
-                  textInputAction: TextInputAction.next,
-                  prefixIcon: Icons.phone_outlined,
-                  onChanged: (_) => setState(() {}),
                 ),
                 const SizedBox(height: AppDimensions.space28),
               ],

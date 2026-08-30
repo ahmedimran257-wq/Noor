@@ -41,7 +41,7 @@ class DiscoveryFilter {
   final String? sect;
   final String? deenLevel;
 
-  /// null | photo | phone | both | guardian
+  /// null | photo | guardian
   final String? trustFilter;
   final bool activeRecentlyOnly;
   final int? maxDistanceKm;

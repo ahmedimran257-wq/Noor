@@ -66,17 +66,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get auth_button_verifyOtp => 'Vérifier';
 
   @override
-  String get auth_hint_phoneNumber => 'Numéro de téléphone';
-
-  @override
   String get auth_label_changeNumber => 'Mauvais numéro ? Changez-le';
 
   @override
   String get auth_label_enterOtp =>
       'Entrez le code de vérification à 6 chiffres envoyé à';
-
-  @override
-  String get auth_label_phoneNumber => 'Numéro de téléphone';
 
   @override
   String get auth_label_resendCode => 'Renvoyer le code de vérification';
@@ -612,18 +606,6 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get guardian_details_phone_hint => 'Numéro de téléphone';
-
-  @override
-  String get guardian_details_phone_subtitle =>
-      'Pour la vérification du compte. Non affiché sur le profil.';
-
-  @override
-  String guardian_details_privacy_note(Object relation) {
-    return 'Votre numéro de téléphone est crypté et n\'est jamais affiché publiquement. Les correspondances potentielles verront \"$relation\'s Guardian\" sur le profil.';
-  }
-
-  @override
   String get guardian_details_search_hint => 'Recherche';
 
   @override
@@ -638,9 +620,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get guardian_details_your_name => 'VOTRE NOM';
-
-  @override
-  String get guardian_details_your_phone => 'VOTRE NUMÉRO DE TÉLÉPHONE';
 
   @override
   String get interest_cat_creative => 'Créatif';
@@ -1923,9 +1902,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settings_guardian_name_hint => 'Nom du tuteur';
 
   @override
-  String get settings_guardian_phone_hint => 'Téléphone du tuteur';
-
-  @override
   String get settings_guardian_relationship => 'Relation';
 
   @override
@@ -1968,13 +1944,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get settings_label_language => 'Langue';
-
-  @override
-  String get settings_label_phoneCannotChange =>
-      'Le numéro de téléphone ne peut pas être modifié. Contactez le support pour obtenir de l\'aide.';
-
-  @override
-  String get settings_label_phoneNumber => 'Numéro de téléphone';
 
   @override
   String get settings_label_photoPrivacy => 'Confidentialité des photos';

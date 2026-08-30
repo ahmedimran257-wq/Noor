@@ -14,7 +14,6 @@ import '../../../core/widgets/buttons/silarah_primary_button.dart';
 import '../../../core/widgets/buttons/silarah_secondary_button.dart';
 import '../../../core/widgets/loaders/silarah_shimmer.dart';
 import '../../../l10n/ui_copy.dart';
-import 'subscription_screen.dart';
 
 class GuardianConnectScreen extends StatefulWidget {
   const GuardianConnectScreen({super.key});
@@ -71,7 +70,7 @@ class _GuardianConnectScreenState extends State<GuardianConnectScreen> {
     );
   }
 
-  Future<void> _verifyAndAccept() async {
+  Future<void> _acceptInvitation() async {
     final code = _validatedCode();
     if (code == null || _loading) return;
     FocusManager.instance.primaryFocus?.unfocus();
@@ -83,32 +82,19 @@ class _GuardianConnectScreenState extends State<GuardianConnectScreen> {
 
     try {
       await WaliModeService.instance.rememberPendingInvitation(code);
-      // Guardian acceptance always requires a fresh SMS challenge. A previous
-      // Premium verification must not silently authorize access to a ward.
-      if (!mounted) return;
-      setState(() => _loading = false);
-      final verified = await showPhoneVerificationSheet(
-        context,
-        countryCode: 'IN',
-        guardianInvitationCode: code,
-      );
-      if (verified != true || !mounted) return;
-      setState(() => _loading = true);
-
-      // The Firebase verification boundary commits the verified phone and
-      // Guardian link atomically. A second client-side acceptance call would
-      // race the already-consumed one-time invitation.
+      await WaliModeService.instance.acceptInvitation(code);
       await WaliModeService.instance.clearPendingInvitation();
       if (!mounted) return;
       await context.read<AuthCubit>().refreshAuthenticatedProfile();
       if (!mounted) return;
       context.go(AppRoutes.guardianDashboard);
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error =
-            'The invitation could not be accepted. Confirm the code and use the exact mobile number chosen by the member.';
+        _error = error.toString().contains('guardian_email_mismatch')
+            ? 'Sign in with the verified email address selected by the member.'
+            : 'The invitation could not be accepted. Confirm the code, email account, and expiry date.';
       });
     }
   }
@@ -185,7 +171,7 @@ class _GuardianConnectScreenState extends State<GuardianConnectScreen> {
                   const SizedBox(height: 10),
                   UiText(
                     context.uiCopy(
-                      'Enter the private code shared by the member. Your phone must match their invitation before any conversations become visible.',
+                      'Enter the private code shared by the member. You must be signed in with the verified email address selected for this invitation.',
                     ),
                     style: AppTypography.bodyMuted,
                   ),
@@ -204,7 +190,8 @@ class _GuardianConnectScreenState extends State<GuardianConnectScreen> {
                       counterText: '',
                       labelText: context.uiCopy('Guardian invitation code'),
                       hintText: _guardianCodeExample,
-                      errorText: _error,
+                      errorText:
+                          _error == null ? null : context.uiCopy(_error!),
                     ),
                     onChanged: (_) {
                       if (_error != null) setState(() => _error = null);
@@ -218,8 +205,8 @@ class _GuardianConnectScreenState extends State<GuardianConnectScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         SilarahPrimaryButton(
-                          label: context.uiCopy('Verify phone & connect'),
-                          onTap: _verifyAndAccept,
+                          label: context.uiCopy('Accept invitation'),
+                          onTap: _acceptInvitation,
                         ),
                         const SizedBox(height: 12),
                         SilarahSecondaryButton(
@@ -242,7 +229,7 @@ class _GuardianConnectScreenState extends State<GuardianConnectScreen> {
                   const SizedBox(height: 20),
                   UiText(
                     context.uiCopy(
-                      'The code expires after 7 days and works once. Silarah never reveals the registered phone number.',
+                      'The code expires after 7 days and works once. It can only be accepted by the invited verified email account.',
                     ),
                     textAlign: TextAlign.center,
                     style: AppTypography.caption,

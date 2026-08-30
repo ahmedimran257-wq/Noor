@@ -91,12 +91,6 @@ uri = "pg-functions://postgres/public/hook_before_user_created"
 enroll_enabled = true
 verify_enabled = true
 
-[auth.sms]
-# Signup uses Supabase email OTP. SMS is disabled and reserved for later
-# premium phone verification/trust checks outside the signup flow.
-enable_signup = false
-enable_confirmations = false
-
 [realtime]
 enabled = true
 # Broadcast channels used for chat (match:{match_id})
@@ -150,12 +144,6 @@ import_map = "./functions/deno.json"
 
 [functions.photo-verification]
 # Member JWT is revalidated inside the function before private upload grants.
-verify_jwt = true
-import_map = "./functions/deno.json"
-
-[functions.verify-firebase-phone]
-# A valid Silarah JWT is required at the gateway and revalidated in-function
-# before the Firebase phone proof can update the authoritative user row.
 verify_jwt = true
 import_map = "./functions/deno.json"
 

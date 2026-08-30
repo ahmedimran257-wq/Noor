@@ -67,17 +67,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get auth_button_verifyOtp => 'Verify';
 
   @override
-  String get auth_hint_phoneNumber => 'Phone number';
-
-  @override
   String get auth_label_changeNumber => 'Wrong number? Change it';
 
   @override
   String get auth_label_enterOtp =>
       'Enter the 6-digit verification code sent to';
-
-  @override
-  String get auth_label_phoneNumber => 'Phone Number';
 
   @override
   String get auth_label_resendCode => 'Resend verification code';
@@ -605,18 +599,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get guardian_details_phone_hint => 'Phone number';
-
-  @override
-  String get guardian_details_phone_subtitle =>
-      'For account verification. Not shown on the profile.';
-
-  @override
-  String guardian_details_privacy_note(Object relation) {
-    return 'Your phone number is encrypted and never shown publicly. Potential matches will see \"$relation\'s Guardian\" on the profile.';
-  }
-
-  @override
   String get guardian_details_search_hint => 'Search';
 
   @override
@@ -631,9 +613,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get guardian_details_your_name => 'YOUR NAME';
-
-  @override
-  String get guardian_details_your_phone => 'YOUR PHONE NUMBER';
 
   @override
   String get interest_cat_creative => 'Creative';
@@ -1907,9 +1886,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings_guardian_name_hint => 'Guardian Name';
 
   @override
-  String get settings_guardian_phone_hint => 'Guardian Phone';
-
-  @override
   String get settings_guardian_relationship => 'Relationship';
 
   @override
@@ -1951,13 +1927,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settings_label_language => 'Language';
-
-  @override
-  String get settings_label_phoneCannotChange =>
-      'Phone number cannot be changed. Contact support for help.';
-
-  @override
-  String get settings_label_phoneNumber => 'Phone Number';
 
   @override
   String get settings_label_photoPrivacy => 'Photo Privacy';

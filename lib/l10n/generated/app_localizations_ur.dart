@@ -67,17 +67,11 @@ class AppLocalizationsUr extends AppLocalizations {
   String get auth_button_verifyOtp => 'تصدیق کریں۔';
 
   @override
-  String get auth_hint_phoneNumber => 'فون نمبر';
-
-  @override
   String get auth_label_changeNumber => 'غلط نمبر؟ اسے تبدیل کریں۔';
 
   @override
   String get auth_label_enterOtp =>
       '6 ہندسوں کا تصدیقی کوڈ درج کریں جس پر بھیجا گیا ہے۔';
-
-  @override
-  String get auth_label_phoneNumber => 'فون نمبر';
 
   @override
   String get auth_label_resendCode => 'تصدیقی کوڈ دوبارہ بھیجیں۔';
@@ -608,18 +602,6 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get guardian_details_phone_hint => 'فون نمبر';
-
-  @override
-  String get guardian_details_phone_subtitle =>
-      'اکاؤنٹ کی تصدیق کے لیے۔ پروفائل پر نہیں دکھایا گیا ہے۔';
-
-  @override
-  String guardian_details_privacy_note(Object relation) {
-    return 'آپ کا فون نمبر خفیہ کردہ ہے اور عوامی طور پر کبھی نہیں دکھایا گیا ہے۔ ممکنہ مماثلتیں پروفائل پر \"$relation\'s Guardian\" دیکھیں گی۔';
-  }
-
-  @override
   String get guardian_details_search_hint => 'تلاش کریں۔';
 
   @override
@@ -634,9 +616,6 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get guardian_details_your_name => 'آپ کا نام';
-
-  @override
-  String get guardian_details_your_phone => 'آپ کا فون نمبر';
 
   @override
   String get interest_cat_creative => 'تخلیقی';
@@ -1911,9 +1890,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settings_guardian_name_hint => 'سرپرست کا نام';
 
   @override
-  String get settings_guardian_phone_hint => 'گارڈین فون';
-
-  @override
   String get settings_guardian_relationship => 'رشتہ';
 
   @override
@@ -1956,13 +1932,6 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get settings_label_language => 'زبان';
-
-  @override
-  String get settings_label_phoneCannotChange =>
-      'فون نمبر تبدیل نہیں کیا جا سکتا۔ مدد کے لیے سپورٹ سے رابطہ کریں۔';
-
-  @override
-  String get settings_label_phoneNumber => 'فون نمبر';
 
   @override
   String get settings_label_photoPrivacy => 'تصویر کی رازداری';

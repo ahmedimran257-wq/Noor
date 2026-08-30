@@ -1,6 +1,6 @@
 // SILARAH — Settings Screen
 // Sections:
-//   1. ACCOUNT   — phone, photo privacy
+//   1. ACCOUNT   — identity and photo privacy
 //   2. NOTIFICATIONS — per-category toggles
 //   3. GUARDIAN  — wali and guardian details
 //   4. PRIVACY   — profile and photo visibility
@@ -60,8 +60,8 @@ String _themeDescription(AppLocalizations l10n, SilarahThemeMode mode) =>
     };
 
 // Guardian prefs keys
-const _kGuardianPhoneUnavailable =
-    'Saved securely. Re-enter only if you need to change it.';
+const _kGuardianEmailHelp =
+    'Only this verified email account can accept the one-time invitation.';
 
 // Privacy prefs keys
 const _kPhotoVisibility = 'privacy_photo_visibility';
@@ -650,7 +650,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   // Helper snackbar
-  // Phone masking helper
   static String _maskEmail(String? email) {
     if (email == null || email.isEmpty) return 'Add email';
     final parts = email.split('@');
@@ -659,17 +658,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final domain = parts.last;
     if (name.length == 1) return '${name[0]}***@$domain';
     return '${name[0]}***${name[name.length - 1]}@$domain';
-  }
-
-  // ignore: unused_element
-  static String maskPhone(String? phone) {
-    if (phone == null || phone.isEmpty) return '•••• ••••';
-    final digits = phone.replaceAll(RegExp(r'[^\d+]'), '');
-    if (digits.length <= 4) return '•••• ••••';
-    final last4 = digits.substring(digits.length - 4);
-    final prefix = digits.substring(0, digits.length - 4);
-    final masked = prefix.replaceAll(RegExp(r'\d'), '•');
-    return '$masked$last4';
   }
 
   // Support dialog
@@ -691,10 +679,10 @@ class _GuardianSectionState extends State<_GuardianSection> {
   bool _canReply = false;
   String _relationship = 'Father';
   final _nameCtrl = TextEditingController();
-  final _phoneCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
   bool _saved = false;
   bool _saving = false;
-  bool _hasGuardianPhoneOnServer = false;
+  bool _hasGuardianEmailOnServer = false;
   bool _renewingInvitation = false;
   bool _hasDashboardAccess = false;
 
@@ -706,6 +694,10 @@ class _GuardianSectionState extends State<_GuardianSection> {
     'Other'
   ];
 
+  bool _isValidGuardianEmail(String value) => RegExp(
+        r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
+      ).hasMatch(value.trim().toLowerCase());
+
   @override
   void initState() {
     super.initState();
@@ -715,7 +707,7 @@ class _GuardianSectionState extends State<_GuardianSection> {
   @override
   void dispose() {
     _nameCtrl.dispose();
-    _phoneCtrl.dispose();
+    _emailCtrl.dispose();
     super.dispose();
   }
 
@@ -734,8 +726,8 @@ class _GuardianSectionState extends State<_GuardianSection> {
       _canReply = info.mode == 'active';
       _relationship = _relationLabelFromDb(info.relationship);
       _nameCtrl.text = info.name;
-      _phoneCtrl.clear();
-      _hasGuardianPhoneOnServer = info.hasPhone || info.isLinked;
+      _emailCtrl.text = info.email ?? '';
+      _hasGuardianEmailOnServer = info.hasEmail || info.isLinked;
     });
   }
 
@@ -743,11 +735,13 @@ class _GuardianSectionState extends State<_GuardianSection> {
     final l10n = AppLocalizations.of(context);
     if (_enabled &&
         (_nameCtrl.text.trim().isEmpty ||
-            (!_hasGuardianPhoneOnServer && _phoneCtrl.text.trim().isEmpty))) {
+            !_isValidGuardianEmail(_emailCtrl.text))) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: UiText(
-            '${l10n.settings_guardian_name_hint} and ${l10n.settings_guardian_phone_hint} are required.',
+            context.uiCopy(
+              'Guardian name and a valid Guardian email are required.',
+            ),
           ),
         ),
       );
@@ -769,7 +763,7 @@ class _GuardianSectionState extends State<_GuardianSection> {
       invitation = await WaliModeService.instance.saveMyGuardianSettings(
         enabled: _enabled,
         guardianName: _nameCtrl.text,
-        guardianPhone: _phoneCtrl.text,
+        guardianEmail: _emailCtrl.text,
         relationship: _relationship,
         canReply: _canReply,
       );
@@ -791,10 +785,9 @@ class _GuardianSectionState extends State<_GuardianSection> {
         _serverEnabled = _enabled;
         if (!_enabled) {
           _isLinked = false;
-          _hasGuardianPhoneOnServer = false;
-        } else if (_phoneCtrl.text.trim().isNotEmpty) {
-          _hasGuardianPhoneOnServer = true;
-          _phoneCtrl.clear();
+          _hasGuardianEmailOnServer = false;
+        } else {
+          _hasGuardianEmailOnServer = true;
         }
       });
       if (invitation != null) await _showInvitation(invitation);
@@ -831,10 +824,13 @@ class _GuardianSectionState extends State<_GuardianSection> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              UiText('Guardian invitation', style: AppTypography.screenTitle),
+              UiText(context.uiCopy('Guardian invitation'),
+                  style: AppTypography.screenTitle),
               const SizedBox(height: 8),
               UiText(
-                'Share this one-time code only with your chosen Guardian. They must verify the same India mobile number within 7 days.',
+                context.uiCopy(
+                  'Share this one-time code only with your chosen Guardian. They must sign in with the invited verified email within 7 days.',
+                ),
                 style: AppTypography.bodyMuted,
               ),
               const SizedBox(height: 18),
@@ -876,12 +872,15 @@ class _GuardianSectionState extends State<_GuardianSection> {
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () => SharePlus.instance.share(ShareParams(
-                      subject: 'Silarah Guardian invitation',
-                      text:
-                          'You are invited as my Guardian on Silarah. Install or open Silarah, choose “I have a Guardian invitation”, and enter code ${invitation.code}. Use the India mobile number I registered. This code expires in 7 days.',
+                      subject: context.uiCopy('Silarah Guardian invitation'),
+                      text: context
+                          .uiCopy(
+                            'You are invited as my Guardian on Silarah. Install or open Silarah, sign in with the invited email, choose “I have a Guardian invitation”, and enter code {code}. This code expires in 7 days.',
+                          )
+                          .replaceAll('{code}', invitation.code),
                     )),
                     icon: const Icon(Icons.ios_share_rounded),
-                    label: const UiText('Share securely'),
+                    label: UiText(context.uiCopy('Share securely')),
                   ),
                 ),
               ]),
@@ -1013,18 +1012,18 @@ class _GuardianSectionState extends State<_GuardianSection> {
                   controller: _nameCtrl,
                 ),
                 const _DividerFull(),
-                // Guardian phone
+                // Guardian email
                 _TextFieldTile(
-                  icon: Icons.phone_outlined,
-                  hint: l10n.settings_guardian_phone_hint,
-                  controller: _phoneCtrl,
-                  keyboardType: TextInputType.phone,
+                  icon: Icons.alternate_email_rounded,
+                  hint: context.uiCopy('Guardian email'),
+                  controller: _emailCtrl,
+                  keyboardType: TextInputType.emailAddress,
                 ),
-                if (_hasGuardianPhoneOnServer && _phoneCtrl.text.isEmpty)
+                if (_hasGuardianEmailOnServer)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(56, 0, 16, 8),
                     child: UiText(
-                      _kGuardianPhoneUnavailable,
+                      context.uiCopy(_kGuardianEmailHelp),
                       style: AppTypography.caption.copyWith(
                         color: AppColors.slateMist,
                       ),

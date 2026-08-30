@@ -34,12 +34,12 @@ class ProfileWriteService {
     marriage_timeline, willing_to_relocate, niqab_preference, mahr_expectation,
     willing_to_work_after_marriage, mahr_budget, can_provide_housing,
     can_provide_maintenance, debt_status, religious_leadership, guardian_name,
-    guardian_phone_country_code, guardian_email, guardian_authority_scope,
+    guardian_email, guardian_authority_scope,
     is_revert, polygamy_status, polygamy_acceptance, special_needs
   ''';
 
   static const _userRestoreColumns = '''
-    email, phone, country_code, is_guardian_path, profile_owner_type,
+    email, country_code, is_guardian_path, profile_owner_type,
     onboarding_profile_for, onboarding_profile_creator_relation, onboarding_city_id,
     onboarding_city_name, onboarding_state_name, onboarding_postal_code,
     onboarding_lat, onboarding_lng
@@ -71,11 +71,6 @@ class ProfileWriteService {
           isGuardianPath: isGuardianPath,
         );
         if (!saved) return false;
-
-        if (isGuardianPath &&
-            dataToWrite.guardianPhone?.trim().isNotEmpty == true) {
-          await _saveGuardianPhone(dataToWrite);
-        }
 
         return true;
       }
@@ -271,22 +266,6 @@ class ProfileWriteService {
       );
       return false;
     }
-  }
-
-  static Future<void> _saveGuardianPhone(OnboardingData data) async {
-    final profileRes = await SupabaseService.client
-        .from('my_profile_private')
-        .select('id')
-        .eq('user_id', _userId!)
-        .single();
-
-    // Guardian contact is never deferred to device-global storage. If the
-    // server invitation cannot be created, the step fails and this same user
-    // must retry explicitly.
-    await SupabaseService.client.rpc('set_guardian_phone', params: {
-      'p_profile_id': profileRes['id'],
-      'p_phone': data.guardianPhone!.trim(),
-    });
   }
 
   static Future<OnboardingData?> _ensureLocationRows(
@@ -1266,11 +1245,9 @@ class ProfileWriteService {
       debtStatus: p['debt_status'] as String?,
       religiousLeadership: p['religious_leadership'] as String?,
       email: u?['email'] as String?,
-      phone: u?['phone'] as String?,
       guardianName: p['guardian_name'] as String?,
       guardianRelationship: guardianRelationship,
       isGuardianMode: isGuardian,
-      guardianPhoneCountryCode: p['guardian_phone_country_code'] as String?,
       profileCreatorRelation: profileCreatorRelation,
       guardianEmail: p['guardian_email'] as String?,
       guardianAuthorityScope: p['guardian_authority_scope'] as String?,
@@ -1325,7 +1302,6 @@ class ProfileWriteService {
           : null,
       profileCreatorRelation: wardRelationship,
       email: u['email'] as String?,
-      phone: u['phone'] as String?,
       countryCode: countryCode,
       cityId: u['onboarding_city_id']?.toString(),
       cityName: cityName,

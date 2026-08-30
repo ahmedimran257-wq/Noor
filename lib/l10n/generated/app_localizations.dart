@@ -216,12 +216,6 @@ abstract class AppLocalizations {
   /// **'Verify'**
   String get auth_button_verifyOtp;
 
-  /// No description provided for @auth_hint_phoneNumber.
-  ///
-  /// In en, this message translates to:
-  /// **'Phone number'**
-  String get auth_hint_phoneNumber;
-
   /// No description provided for @auth_label_changeNumber.
   ///
   /// In en, this message translates to:
@@ -233,12 +227,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter the 6-digit verification code sent to'**
   String get auth_label_enterOtp;
-
-  /// No description provided for @auth_label_phoneNumber.
-  ///
-  /// In en, this message translates to:
-  /// **'Phone Number'**
-  String get auth_label_phoneNumber;
 
   /// No description provided for @auth_label_resendCode.
   ///
@@ -1164,24 +1152,6 @@ abstract class AppLocalizations {
   /// **'You are creating a profile for your {relation}. All profile details on the next screens will describe them, not you.'**
   String guardian_details_notice(Object relation);
 
-  /// No description provided for @guardian_details_phone_hint.
-  ///
-  /// In en, this message translates to:
-  /// **'Phone number'**
-  String get guardian_details_phone_hint;
-
-  /// No description provided for @guardian_details_phone_subtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'For account verification. Not shown on the profile.'**
-  String get guardian_details_phone_subtitle;
-
-  /// No description provided for @guardian_details_privacy_note.
-  ///
-  /// In en, this message translates to:
-  /// **'Your phone number is encrypted and never shown publicly. Potential matches will see \"{relation}\'s Guardian\" on the profile.'**
-  String guardian_details_privacy_note(Object relation);
-
   /// No description provided for @guardian_details_search_hint.
   ///
   /// In en, this message translates to:
@@ -1211,12 +1181,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'YOUR NAME'**
   String get guardian_details_your_name;
-
-  /// No description provided for @guardian_details_your_phone.
-  ///
-  /// In en, this message translates to:
-  /// **'YOUR PHONE NUMBER'**
-  String get guardian_details_your_phone;
 
   /// No description provided for @interest_cat_creative.
   ///
@@ -3606,12 +3570,6 @@ abstract class AppLocalizations {
   /// **'Guardian Name'**
   String get settings_guardian_name_hint;
 
-  /// No description provided for @settings_guardian_phone_hint.
-  ///
-  /// In en, this message translates to:
-  /// **'Guardian Phone'**
-  String get settings_guardian_phone_hint;
-
   /// No description provided for @settings_guardian_relationship.
   ///
   /// In en, this message translates to:
@@ -3689,18 +3647,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Language'**
   String get settings_label_language;
-
-  /// No description provided for @settings_label_phoneCannotChange.
-  ///
-  /// In en, this message translates to:
-  /// **'Phone number cannot be changed. Contact support for help.'**
-  String get settings_label_phoneCannotChange;
-
-  /// No description provided for @settings_label_phoneNumber.
-  ///
-  /// In en, this message translates to:
-  /// **'Phone Number'**
-  String get settings_label_phoneNumber;
 
   /// No description provided for @settings_label_photoPrivacy.
   ///

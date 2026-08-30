@@ -47,7 +47,6 @@ DiscoveryProfile mapDbRowToDiscoveryProfile(Map<String, dynamic> row) {
         photoPrivacy == 'mutual_only' || photoPrivacy == 'request_only',
     photoPrivacy: photoPrivacy ?? 'public',
     isVerified: (row['is_verified'] as bool?) ?? false,
-    phoneVerified: (row['phone_verified'] as bool?) ?? false,
     guardianConnected: (row['guardian_connected'] as bool?) ?? false,
     isGuardianProfile: (row['guardian_managed'] as bool?) ?? false,
     establishedMember: (row['established_member'] as bool?) ?? false,

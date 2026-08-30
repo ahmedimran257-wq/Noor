@@ -2,14 +2,13 @@ import 'package:flutter/widgets.dart';
 import 'package:silarah/l10n/generated/app_localizations.dart';
 import 'package:silarah/l10n/generated/app_localizations_en.dart';
 import 'package:silarah/l10n/billing_legal_ui_copy.dart';
-import 'package:silarah/l10n/india_launch_ui_copy.dart';
 import 'package:silarah/l10n/legal_access_ui_copy.dart';
-import 'package:silarah/l10n/messaging_policy_ui_copy.dart';
 import 'package:silarah/l10n/photo_guide_ui_copy.dart';
 import 'package:silarah/l10n/premium_discovery_ui_copy.dart';
 import 'package:silarah/l10n/premium_relationship_ui_copy.dart';
 import 'package:silarah/l10n/trust_ui_copy.dart';
 import 'package:silarah/l10n/translation_privacy_ui_copy.dart';
+import 'package:silarah/l10n/email_guardian_ui_copy.dart';
 import 'package:silarah/l10n/guardian_ui_copy.dart';
 import 'package:silarah/l10n/ui_copy_supplement.dart';
 
@@ -25,14 +24,13 @@ class UiCopy {
   static String localize(BuildContext context, String source) {
     final languageCode = Localizations.localeOf(context).languageCode;
     return billingLegalUiCopy[languageCode]?[source] ??
-        indiaLaunchUiCopy[languageCode]?[source] ??
         legalAccessUiCopy[languageCode]?[source] ??
-        messagingPolicyUiCopy[languageCode]?[source] ??
         photoGuideUiCopy[languageCode]?[source] ??
         premiumDiscoveryUiCopy[languageCode]?[source] ??
         premiumRelationshipUiCopy[languageCode]?[source] ??
         trustUiCopy[languageCode]?[source] ??
         translationPrivacyUiCopy[languageCode]?[source] ??
+        emailGuardianUiCopy[languageCode]?[source] ??
         guardianUiCopy[languageCode]?[source] ??
         supplementalUiCopy[languageCode]?[source] ??
         _translations[languageCode]?[source] ??
@@ -42,14 +40,13 @@ class UiCopy {
   static bool hasTranslation(String languageCode, String source) =>
       languageCode == 'en' ||
       billingLegalUiCopy[languageCode]?.containsKey(source) == true ||
-      indiaLaunchUiCopy[languageCode]?.containsKey(source) == true ||
       legalAccessUiCopy[languageCode]?.containsKey(source) == true ||
-      messagingPolicyUiCopy[languageCode]?.containsKey(source) == true ||
       photoGuideUiCopy[languageCode]?.containsKey(source) == true ||
       premiumDiscoveryUiCopy[languageCode]?.containsKey(source) == true ||
       premiumRelationshipUiCopy[languageCode]?.containsKey(source) == true ||
       trustUiCopy[languageCode]?.containsKey(source) == true ||
       translationPrivacyUiCopy[languageCode]?.containsKey(source) == true ||
+      emailGuardianUiCopy[languageCode]?.containsKey(source) == true ||
       guardianUiCopy[languageCode]?.containsKey(source) == true ||
       supplementalUiCopy[languageCode]?.containsKey(source) == true ||
       _translations[languageCode]?.containsKey(source) == true;
@@ -376,11 +373,9 @@ class UiCopy {
       'Guardian / Wali Policy': 'سياسة الوصي/ الوالي',
       'Guardian Mode': 'وضع الجارديان',
       'Guardian Name': 'اسم الوصي',
-      'Guardian Phone': 'هاتف الجارديان',
       'Guardian email': 'البريد الإلكتروني للوصي',
       'Guardian may participate in conversations':
           'يجوز للوصي المشاركة في المحادثات',
-      'Guardian phone (optional)': 'هاتف الوصي (اختياري)',
       'Guardian settings require a secure connection.':
           'تتطلب إعدادات الولي اتصالًا آمنًا.',
       'Gujarati': 'الغوجاراتية',
@@ -648,10 +643,6 @@ class UiCopy {
       'Permanent resident': 'مقيم دائم',
       'Persian': 'الفارسية',
       'PhD only': 'دكتوراه فقط',
-      'Phone Number': 'رقم التليفون',
-      'Phone number': 'رقم التليفون',
-      'Phone number cannot be changed. Contact support for help.':
-          'لا يمكن تغيير رقم الهاتف. اتصل بالدعم للحصول على المساعدة.',
       'Photo 2': 'الصورة 2',
       'Photo 3': 'الصورة 3',
       'Photo 4': 'الصورة 4',
@@ -1053,7 +1044,6 @@ class UiCopy {
       'Wrong number? Change it': 'رقم خاطئ؟ تغييره',
       'YOUR BIO': 'سيرتك الذاتية',
       'YOUR NAME': 'اسمك',
-      'YOUR PHONE NUMBER': 'رقم هاتفك',
       'YOUR REFERRAL CODE': 'رمز الإحالة الخاص بك',
       'Yes': 'نعم',
       'Yes, I plan to work': 'نعم، أخطط للعمل',
@@ -1435,11 +1425,9 @@ class UiCopy {
       'Guardian / Wali Policy': 'অভিভাবক/ওয়ালী নীতি',
       'Guardian Mode': 'অভিভাবক মোড',
       'Guardian Name': 'অভিভাবকের নাম',
-      'Guardian Phone': 'অভিভাবক ফোন',
       'Guardian email': 'অভিভাবক ইমেল',
       'Guardian may participate in conversations':
           'অভিভাবক কথোপকথনে অংশগ্রহণ করতে পারেন',
-      'Guardian phone (optional)': 'অভিভাবক ফোন (ঐচ্ছিক)',
       'Guardian settings require a secure connection.':
           'অভিভাবক সেটিংসের জন্য নিরাপদ সংযোগ প্রয়োজন।',
       'Gujarati': 'গুজরাটি',
@@ -1712,10 +1700,6 @@ class UiCopy {
       'Permanent resident': 'স্থায়ী বাসিন্দা',
       'Persian': 'ফার্সি',
       'PhD only': 'শুধুমাত্র পিএইচডি',
-      'Phone Number': 'ফোন নম্বর',
-      'Phone number': 'ফোন নম্বর',
-      'Phone number cannot be changed. Contact support for help.':
-          'ফোন নম্বর পরিবর্তন করা যাবে না. সাহায্যের জন্য সহায়তার সাথে যোগাযোগ করুন।',
       'Photo 2': 'ছবি 2',
       'Photo 3': 'ছবি 3',
       'Photo 4': 'ছবি ৪',
@@ -2125,7 +2109,6 @@ class UiCopy {
       'Wrong number? Change it': 'ভুল নম্বর? এটি পরিবর্তন করুন',
       'YOUR BIO': 'আপনার বায়ো',
       'YOUR NAME': 'আপনার নাম',
-      'YOUR PHONE NUMBER': 'আপনার ফোন নম্বর',
       'YOUR REFERRAL CODE': 'আপনার রেফারেল কোড',
       'Yes': 'হ্যাঁ',
       'Yes, I plan to work': 'হ্যাঁ, আমি কাজ করার পরিকল্পনা করছি',
@@ -2509,11 +2492,9 @@ class UiCopy {
       'Guardian / Wali Policy': 'Richtlinien für Vormund/Wali',
       'Guardian Mode': 'Wächtermodus',
       'Guardian Name': 'Name des Wächters',
-      'Guardian Phone': 'Wächtertelefon',
       'Guardian email': 'E-Mail des Erziehungsberechtigten',
       'Guardian may participate in conversations':
           'Der Erziehungsberechtigte darf an Gesprächen teilnehmen',
-      'Guardian phone (optional)': 'Wächtertelefon (optional)',
       'Guardian settings require a secure connection.':
           'Für Vormund-Einstellungen ist eine sichere Verbindung erforderlich.',
       'Gujarati': 'Gujarati',
@@ -2788,10 +2769,6 @@ class UiCopy {
       'Permanent resident': 'Daueraufenthalt',
       'Persian': 'persisch',
       'PhD only': 'Nur Doktortitel',
-      'Phone Number': 'Telefonnummer',
-      'Phone number': 'Telefonnummer',
-      'Phone number cannot be changed. Contact support for help.':
-          'Die Telefonnummer kann nicht geändert werden. Wenden Sie sich an den Support, um Hilfe zu erhalten.',
       'Photo 2': 'Foto 2',
       'Photo 3': 'Foto 3',
       'Photo 4': 'Foto 4',
@@ -3206,7 +3183,6 @@ class UiCopy {
       'Wrong number? Change it': 'Falsche Nummer? Ändere es',
       'YOUR BIO': 'DEINE BIO',
       'YOUR NAME': 'IHR NAME',
-      'YOUR PHONE NUMBER': 'IHRE TELEFONNUMMER',
       'YOUR REFERRAL CODE': 'DEIN EMPFEHLUNGSCODE',
       'Yes': 'Ja',
       'Yes, I plan to work': 'Ja, ich habe vor zu arbeiten',
@@ -3595,11 +3571,9 @@ class UiCopy {
       'Guardian / Wali Policy': 'Politique du Gardien/Wali',
       'Guardian Mode': 'Mode Gardien',
       'Guardian Name': 'Nom du tuteur',
-      'Guardian Phone': 'Téléphone du tuteur',
       'Guardian email': 'E-mail du tuteur',
       'Guardian may participate in conversations':
           'Le tuteur peut participer aux conversations',
-      'Guardian phone (optional)': 'Téléphone du tuteur (facultatif)',
       'Guardian settings require a secure connection.':
           'Les paramètres du tuteur nécessitent une connexion sécurisée.',
       'Gujarati': 'gujarati',
@@ -3874,10 +3848,6 @@ class UiCopy {
       'Permanent resident': 'Résident(e) permanent(e)',
       'Persian': 'persan',
       'PhD only': 'Doctorat uniquement',
-      'Phone Number': 'Numéro de téléphone',
-      'Phone number': 'Numéro de téléphone',
-      'Phone number cannot be changed. Contact support for help.':
-          'Le numéro de téléphone ne peut pas être modifié. Contactez le support pour obtenir de l\'aide.',
       'Photo 2': 'Photo 2',
       'Photo 3': 'Photo 3',
       'Photo 4': 'Photo 4',
@@ -4293,7 +4263,6 @@ class UiCopy {
       'Wrong number? Change it': 'Mauvais numéro ? Changez-le',
       'YOUR BIO': 'VOTRE BIO',
       'YOUR NAME': 'VOTRE NOM',
-      'YOUR PHONE NUMBER': 'VOTRE NUMÉRO DE TÉLÉPHONE',
       'YOUR REFERRAL CODE': 'VOTRE CODE DE PARRAINAGE',
       'Yes': 'Oui',
       'Yes, I plan to work': 'Oui, j\'ai l\'intention de travailler',
@@ -4680,11 +4649,9 @@ class UiCopy {
       'Guardian / Wali Policy': 'संरक्षक/वाली नीति',
       'Guardian Mode': 'संरक्षक मोड',
       'Guardian Name': 'संरक्षक का नाम',
-      'Guardian Phone': 'अभिभावक का फ़ोन',
       'Guardian email': 'अभिभावक ईमेल',
       'Guardian may participate in conversations':
           'अभिभावक बातचीत में भाग ले सकते हैं',
-      'Guardian phone (optional)': 'अभिभावक का फ़ोन (वैकल्पिक)',
       'Guardian settings require a secure connection.':
           'अभिभावक सेटिंग के लिए सुरक्षित कनेक्शन आवश्यक है।',
       'Gujarati': 'गुजराती',
@@ -4957,10 +4924,6 @@ class UiCopy {
       'Permanent resident': 'स्थायी निवासी',
       'Persian': 'फ़ारसी',
       'PhD only': 'केवल पीएचडी',
-      'Phone Number': 'फ़ोन नंबर',
-      'Phone number': 'फ़ोन नंबर',
-      'Phone number cannot be changed. Contact support for help.':
-          'फ़ोन नंबर बदला नहीं जा सकता. सहायता के लिए समर्थन से संपर्क करें.',
       'Photo 2': 'फोटो 2',
       'Photo 3': 'फोटो 3',
       'Photo 4': 'फ़ोटो 4',
@@ -5371,7 +5334,6 @@ class UiCopy {
       'Wrong number? Change it': 'गलत संख्या? बदल दें',
       'YOUR BIO': 'आपका बायो',
       'YOUR NAME': 'आपका नाम',
-      'YOUR PHONE NUMBER': 'आपका फोन नंबर',
       'YOUR REFERRAL CODE': 'आपका रेफ़रल कोड',
       'Yes': 'हाँ',
       'Yes, I plan to work': 'हाँ, मैं काम करने की योजना बना रहा हूँ',
@@ -5755,11 +5717,9 @@ class UiCopy {
       'Guardian / Wali Policy': 'Kebijakan Wali/Wali',
       'Guardian Mode': 'Modus Penjaga',
       'Guardian Name': 'Nama Wali',
-      'Guardian Phone': 'Telepon Wali',
       'Guardian email': 'Email wali',
       'Guardian may participate in conversations':
           'Wali dapat berpartisipasi dalam percakapan',
-      'Guardian phone (optional)': 'Telepon Wali (opsional)',
       'Guardian settings require a secure connection.':
           'Pengaturan wali memerlukan koneksi aman.',
       'Gujarati': 'Gujarati',
@@ -6034,10 +5994,6 @@ class UiCopy {
       'Permanent resident': 'Penduduk tetap',
       'Persian': 'Persia',
       'PhD only': 'PhD saja',
-      'Phone Number': 'Nomor telepon',
-      'Phone number': 'Nomor telepon',
-      'Phone number cannot be changed. Contact support for help.':
-          'Nomor telepon tidak dapat diubah. Hubungi dukungan untuk mendapatkan bantuan.',
       'Photo 2': 'Foto 2',
       'Photo 3': 'Foto 3',
       'Photo 4': 'Foto 4',
@@ -6449,7 +6405,6 @@ class UiCopy {
       'Wrong number? Change it': 'Nomor yang salah? Ubah itu',
       'YOUR BIO': 'BIO ANDA',
       'YOUR NAME': 'NAMA ANDA',
-      'YOUR PHONE NUMBER': 'NOMOR TELEPON ANDA',
       'YOUR REFERRAL CODE': 'KODE REFERAL ANDA',
       'Yes': 'Ya',
       'Yes, I plan to work': 'Ya, saya berencana untuk bekerja',
@@ -6837,11 +6792,9 @@ class UiCopy {
       'Guardian / Wali Policy': 'Dasar Penjaga / Wali',
       'Guardian Mode': 'Mod Penjaga',
       'Guardian Name': 'Nama Penjaga',
-      'Guardian Phone': 'Telefon Penjaga',
       'Guardian email': 'E-mel penjaga',
       'Guardian may participate in conversations':
           'Penjaga boleh mengambil bahagian dalam perbualan',
-      'Guardian phone (optional)': 'Telefon penjaga (pilihan)',
       'Guardian settings require a secure connection.':
           'Tetapan penjaga memerlukan sambungan selamat.',
       'Gujarati': 'Gujerat',
@@ -7117,10 +7070,6 @@ class UiCopy {
       'Permanent resident': 'Penduduk tetap',
       'Persian': 'Parsi',
       'PhD only': 'PhD sahaja',
-      'Phone Number': 'Nombor Telefon',
-      'Phone number': 'Nombor telefon',
-      'Phone number cannot be changed. Contact support for help.':
-          'Nombor telefon tidak boleh ditukar. Hubungi sokongan untuk mendapatkan bantuan.',
       'Photo 2': 'Foto 2',
       'Photo 3': 'Foto 3',
       'Photo 4': 'Foto 4',
@@ -7532,7 +7481,6 @@ class UiCopy {
       'Wrong number? Change it': 'salah nombor? Tukarlah',
       'YOUR BIO': 'BIO ANDA',
       'YOUR NAME': 'NAMA ANDA',
-      'YOUR PHONE NUMBER': 'NOMBOR TELEFON ANDA',
       'YOUR REFERRAL CODE': 'KOD RUJUKAN ANDA',
       'Yes': 'ya',
       'Yes, I plan to work': 'Ya, saya bercadang untuk bekerja',
@@ -7917,11 +7865,9 @@ class UiCopy {
       'Guardian / Wali Policy': 'Vasi / Wali Politikası',
       'Guardian Mode': 'Gözetmen Modu',
       'Guardian Name': 'Veli Adı',
-      'Guardian Phone': 'Koruyucu Telefon',
       'Guardian email': 'Veli e-postası',
       'Guardian may participate in conversations':
           'Vasi görüşmelere katılabilir',
-      'Guardian phone (optional)': 'Koruyucu telefon (isteğe bağlı)',
       'Guardian settings require a secure connection.':
           'Veli ayarları için güvenli bağlantı gerekir.',
       'Gujarati': 'Gujarati dili',
@@ -8189,10 +8135,6 @@ class UiCopy {
       'Permanent resident': 'Daimî ikamet sahibi',
       'Persian': 'Farsça',
       'PhD only': 'Yalnızca doktora',
-      'Phone Number': 'Telefon Numarası',
-      'Phone number': 'Telefon numarası',
-      'Phone number cannot be changed. Contact support for help.':
-          'Telefon numarası değiştirilemez. Yardım için desteğe başvurun.',
       'Photo 2': 'Fotoğraf 2',
       'Photo 3': 'Fotoğraf 3',
       'Photo 4': 'Fotoğraf 4',
@@ -8601,7 +8543,6 @@ class UiCopy {
       'Wrong number? Change it': 'Yanlış numara mı? Değiştir onu',
       'YOUR BIO': 'BİYOLOJİNİZ',
       'YOUR NAME': 'ADINIZ',
-      'YOUR PHONE NUMBER': 'TELEFON NUMARANIZ',
       'YOUR REFERRAL CODE': 'DAVET KODUN',
       'Yes': 'Evet',
       'Yes, I plan to work': 'Evet çalışmayı planlıyorum',
@@ -8988,11 +8929,9 @@ class UiCopy {
       'Guardian / Wali Policy': 'سرپرست/ولی پالیسی',
       'Guardian Mode': 'گارڈین موڈ',
       'Guardian Name': 'سرپرست کا نام',
-      'Guardian Phone': 'گارڈین فون',
       'Guardian email': 'گارڈین ای میل',
       'Guardian may participate in conversations':
           'سرپرست بات چیت میں حصہ لے سکتا ہے۔',
-      'Guardian phone (optional)': 'گارڈین فون (اختیاری)',
       'Guardian settings require a secure connection.':
           'سرپرست کی ترتیبات کے لیے محفوظ کنکشن درکار ہے۔',
       'Gujarati': 'گجراتی',
@@ -9264,10 +9203,6 @@ class UiCopy {
       'Permanent resident': 'مستقل رہائشی',
       'Persian': 'فارسی',
       'PhD only': 'صرف پی ایچ ڈی',
-      'Phone Number': 'فون نمبر',
-      'Phone number': 'فون نمبر',
-      'Phone number cannot be changed. Contact support for help.':
-          'فون نمبر تبدیل نہیں کیا جا سکتا۔ مدد کے لیے سپورٹ سے رابطہ کریں۔',
       'Photo 2': 'تصویر 2',
       'Photo 3': 'تصویر 3',
       'Photo 4': 'تصویر 4',
@@ -9675,7 +9610,6 @@ class UiCopy {
       'Wrong number? Change it': 'غلط نمبر؟ اسے تبدیل کریں۔',
       'YOUR BIO': 'آپ کا بائیو',
       'YOUR NAME': 'آپ کا نام',
-      'YOUR PHONE NUMBER': 'آپ کا فون نمبر',
       'YOUR REFERRAL CODE': 'آپ کا ریفرل کوڈ',
       'Yes': 'جی ہاں',
       'Yes, I plan to work': 'ہاں، میں کام کرنے کا ارادہ رکھتا ہوں۔',

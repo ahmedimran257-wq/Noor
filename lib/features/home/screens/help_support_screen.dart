@@ -72,7 +72,7 @@ class HelpSupportScreen extends StatelessWidget {
           const _FaqTile(
             question: 'Why can I not message someone?',
             answer:
-                'Messaging opens after a mutual interest. Women read and send messages free without phone verification. Men need active Premium and complete SMS verification before sending. Changing a verified number requires a new OTP and does not shorten an existing subscription.',
+                'Messaging opens after a mutual interest. Women read and send messages free. Men need active Premium to send. No phone number or KYC is required.',
           ),
           const _FaqTile(
             question: 'How does verification work?',

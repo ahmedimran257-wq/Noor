@@ -67,17 +67,11 @@ class AppLocalizationsMs extends AppLocalizations {
   String get auth_button_verifyOtp => 'Sahkan';
 
   @override
-  String get auth_hint_phoneNumber => 'Nombor telefon';
-
-  @override
   String get auth_label_changeNumber => 'salah nombor? Tukarlah';
 
   @override
   String get auth_label_enterOtp =>
       'Masukkan kod pengesahan 6 digit yang dihantar ke';
-
-  @override
-  String get auth_label_phoneNumber => 'Nombor Telefon';
 
   @override
   String get auth_label_resendCode => 'Hantar semula kod pengesahan';
@@ -615,18 +609,6 @@ class AppLocalizationsMs extends AppLocalizations {
   }
 
   @override
-  String get guardian_details_phone_hint => 'Nombor telefon';
-
-  @override
-  String get guardian_details_phone_subtitle =>
-      'Untuk pengesahan akaun. Tidak ditunjukkan pada profil.';
-
-  @override
-  String guardian_details_privacy_note(Object relation) {
-    return 'Nombor telefon anda disulitkan dan tidak pernah ditunjukkan secara terbuka. Perlawanan yang berpotensi akan melihat \"Penjaga$relation\" pada profil.';
-  }
-
-  @override
   String get guardian_details_search_hint => 'Cari';
 
   @override
@@ -641,9 +623,6 @@ class AppLocalizationsMs extends AppLocalizations {
 
   @override
   String get guardian_details_your_name => 'NAMA ANDA';
-
-  @override
-  String get guardian_details_your_phone => 'NOMBOR TELEFON ANDA';
 
   @override
   String get interest_cat_creative => 'Kreatif';
@@ -1929,9 +1908,6 @@ class AppLocalizationsMs extends AppLocalizations {
   String get settings_guardian_name_hint => 'Nama Penjaga';
 
   @override
-  String get settings_guardian_phone_hint => 'Telefon Penjaga';
-
-  @override
   String get settings_guardian_relationship => 'Perhubungan';
 
   @override
@@ -1973,13 +1949,6 @@ class AppLocalizationsMs extends AppLocalizations {
 
   @override
   String get settings_label_language => 'Bahasa';
-
-  @override
-  String get settings_label_phoneCannotChange =>
-      'Nombor telefon tidak boleh ditukar. Hubungi sokongan untuk mendapatkan bantuan.';
-
-  @override
-  String get settings_label_phoneNumber => 'Nombor Telefon';
 
   @override
   String get settings_label_photoPrivacy => 'Privasi Foto';

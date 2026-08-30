@@ -67,17 +67,11 @@ class AppLocalizationsId extends AppLocalizations {
   String get auth_button_verifyOtp => 'Memeriksa';
 
   @override
-  String get auth_hint_phoneNumber => 'Nomor telepon';
-
-  @override
   String get auth_label_changeNumber => 'Nomor yang salah? Ubah itu';
 
   @override
   String get auth_label_enterOtp =>
       'Masukkan 6 digit kode verifikasi yang dikirimkan ke';
-
-  @override
-  String get auth_label_phoneNumber => 'Nomor telepon';
 
   @override
   String get auth_label_resendCode => 'Kirim ulang kode verifikasi';
@@ -614,18 +608,6 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get guardian_details_phone_hint => 'Nomor telepon';
-
-  @override
-  String get guardian_details_phone_subtitle =>
-      'Untuk verifikasi akun. Tidak ditampilkan di profil.';
-
-  @override
-  String guardian_details_privacy_note(Object relation) {
-    return 'Nomor telepon Anda dienkripsi dan tidak pernah ditampilkan secara publik. Potensi kecocokan akan melihat \"$relation\'s Guardian\" di profil.';
-  }
-
-  @override
   String get guardian_details_search_hint => 'Mencari';
 
   @override
@@ -640,9 +622,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get guardian_details_your_name => 'NAMA ANDA';
-
-  @override
-  String get guardian_details_your_phone => 'NOMOR TELEPON ANDA';
 
   @override
   String get interest_cat_creative => 'Kreatif';
@@ -1926,9 +1905,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get settings_guardian_name_hint => 'Nama Wali';
 
   @override
-  String get settings_guardian_phone_hint => 'Telepon Wali';
-
-  @override
   String get settings_guardian_relationship => 'Hubungan';
 
   @override
@@ -1971,13 +1947,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get settings_label_language => 'Bahasa';
-
-  @override
-  String get settings_label_phoneCannotChange =>
-      'Nomor telepon tidak dapat diubah. Hubungi dukungan untuk mendapatkan bantuan.';
-
-  @override
-  String get settings_label_phoneNumber => 'Nomor telepon';
 
   @override
   String get settings_label_photoPrivacy => 'Privasi Foto';

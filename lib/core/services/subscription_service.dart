@@ -288,30 +288,22 @@ class SubscriptionService {
     if (context.email != null && context.email!.isNotEmpty) {
       await Purchases.setEmail(context.email!);
     }
-    if (context.verifiedPhone != null && context.verifiedPhone!.isNotEmpty) {
-      await Purchases.setPhoneNumber(context.verifiedPhone!);
-    }
   }
 
   Future<_PricingContext> _loadPricingContext(String userId) async {
     String? countryCode;
     String? email;
-    String? verifiedPhone;
     String? pricingTier;
 
     if (SupabaseService.isInitialized) {
       try {
         final user = await SupabaseService.client
             .from('users')
-            .select('email, phone, phone_verified_at, country_code')
+            .select('email, country_code')
             .eq('id', userId)
             .maybeSingle();
         countryCode = (user?['country_code'] as String?)?.toUpperCase();
         email = user?['email'] as String?;
-        final phoneVerifiedAt = user?['phone_verified_at'] as String?;
-        if (phoneVerifiedAt != null && phoneVerifiedAt.isNotEmpty) {
-          verifiedPhone = user?['phone'] as String?;
-        }
       } catch (e) {
         debugPrint('[SubscriptionService] user context error: $e');
       }
@@ -343,7 +335,6 @@ class SubscriptionService {
       countryCode: countryCode,
       pricingTier: pricingTier,
       email: email,
-      verifiedPhone: verifiedPhone,
     );
   }
 
@@ -367,11 +358,9 @@ class _PricingContext {
     this.countryCode,
     this.pricingTier,
     this.email,
-    this.verifiedPhone,
   });
 
   final String? countryCode;
   final String? pricingTier;
   final String? email;
-  final String? verifiedPhone;
 }

@@ -70,7 +70,6 @@ void main() {
       'community',
       'living_expectation',
       'photo_verified_at',
-      'phone_verified_at',
       'guardian_user_id',
       'marriage_timeline',
       'willing_to_relocate',
@@ -85,6 +84,7 @@ void main() {
     ]) {
       expect(manager, contains(contract), reason: 'Missing $contract');
     }
+    expect(manager, isNot(contains('phone_verified_at')));
   });
 
   test('fixture preferences merge with the profile bootstrap trigger', () {

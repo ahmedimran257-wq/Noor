@@ -37,14 +37,26 @@ void main() {
       expect(gradle, contains('dependsOn("verifyReleaseSigning")'));
     });
 
-    test('release builds discard registrants containing dev-only plugins', () {
+    test('Flutter regenerates registrants before Android snapshots sources', () {
       expect(
         gradle,
-        contains('removeDevOnlyGeneratedPluginRegistrant'),
+        isNot(contains('removeDevOnlyGeneratedPluginRegistrant')),
       );
       expect(
         gradle,
-        contains('dependsOn(removeDevOnlyGeneratedPluginRegistrant)'),
+        contains('sanitizeReleasePluginRegistrant'),
+      );
+      expect(
+        gradle,
+        contains('compileReleaseJavaWithJavac'),
+      );
+      expect(
+        gradle,
+        contains('GeneratedPluginRegistrant.java'),
+      );
+      expect(
+        gradle,
+        contains('Could not remove the dev-only integration_test registration.'),
       );
       expect(
         installScript,

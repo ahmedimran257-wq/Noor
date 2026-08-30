@@ -46,37 +46,6 @@ class WaliModeService {
   /// Whether the Realtime channel is currently connected.
   bool get isRealtimeConnected => _isRealtimeConnected;
 
-  /// Activates guardian mode by linking the current user as a guardian
-  /// to a ward's profile.
-  ///
-  /// The caller must be authenticated as the guardian.
-  /// [wardProfileId] is the profile UUID of the person being guarded.
-  /// [guardianPhone] is the phone number to verify against the stored
-  /// encrypted guardian phone.
-  ///
-  /// Returns a map with activation status and mode.
-  Future<Map<String, dynamic>> activateGuardian({
-    required String wardProfileId,
-    required String guardianPhone,
-  }) async {
-    try {
-      final response = await _supabase.rpc(
-        'activate_guardian',
-        params: {
-          'p_ward_profile_id': wardProfileId,
-          'p_guardian_phone': guardianPhone,
-        },
-      );
-
-      final result = response as Map<String, dynamic>;
-      debugPrint('[WaliModeService] Guardian activated: $result');
-      return result;
-    } catch (e) {
-      debugPrint('[WaliModeService] Activation error: $e');
-      rethrow;
-    }
-  }
-
   Future<Map<String, dynamic>> acceptInvitation(String code) async {
     final normalized = code.trim().toUpperCase();
     if (!RegExp(r'^[A-F0-9]{10}$').hasMatch(normalized)) {
@@ -86,7 +55,11 @@ class WaliModeService {
       'accept_my_guardian_invitation',
       params: {'p_code': normalized},
     );
-    return Map<String, dynamic>.from(response as Map);
+    final result = Map<String, dynamic>.from(response as Map);
+    if (result['status'] != 'activated') {
+      throw StateError('guardian_invitation_unavailable');
+    }
+    return result;
   }
 
   Future<void> rememberPendingInvitation(String code) async {
@@ -297,13 +270,12 @@ class WaliModeService {
     }
   }
 
-  /// Saves the ward's guardian settings on the profile row and encrypts the
-  /// phone through the existing SECURITY DEFINER RPC. SharedPreferences should
-  /// only be used by callers as a UI cache, never as the source of truth.
+  /// Saves the ward's guardian settings. The invitation is bound to a verified
+  /// Supabase email account and never relies on device-local state.
   Future<GuardianInvitation?> saveMyGuardianSettings({
     required bool enabled,
     required String guardianName,
-    required String guardianPhone,
+    required String guardianEmail,
     required String relationship,
     required bool canReply,
   }) async {
@@ -318,7 +290,7 @@ class WaliModeService {
       'p_can_reply': canReply,
       'p_name': guardianName.trim(),
       'p_relationship': _dbRelationship(relationship),
-      'p_phone': guardianPhone.trim().isEmpty ? null : guardianPhone.trim(),
+      'p_email': guardianEmail.trim().toLowerCase(),
     });
     final result = Map<String, dynamic>.from(response as Map);
     return GuardianInvitation.fromResponse(result);
@@ -362,7 +334,7 @@ class WaliModeService {
           .from('my_profile_private')
           .select(
             'guardian_name, guardian_relationship, guardian_mode, '
-            'guardian_user_id, guardian_phone_encrypted, '
+            'guardian_user_id, guardian_email, '
             'guardian_invitation_expires_at',
           )
           .eq('user_id', userId)
@@ -375,10 +347,11 @@ class WaliModeService {
 
       return GuardianInfo(
         name: response['guardian_name'] as String,
+        email: response['guardian_email'] as String?,
         relationship: response['guardian_relationship'] as String?,
         mode: response['guardian_mode'] as String,
         isLinked: response['guardian_user_id'] != null,
-        hasPhone: response['guardian_phone_encrypted'] != null,
+        hasEmail: response['guardian_email'] != null,
         invitationExpiresAt: response['guardian_invitation_expires_at'] == null
             ? null
             : DateTime.tryParse(
@@ -511,20 +484,22 @@ class GuardianMirroredChat {
 class GuardianInfo {
   const GuardianInfo({
     required this.name,
+    this.email,
     this.relationship,
     required this.mode,
     required this.isLinked,
-    required this.hasPhone,
+    required this.hasEmail,
     this.invitationExpiresAt,
   });
 
   final String name;
+  final String? email;
   final String? relationship;
   final String mode; // 'passive' or 'active'
 
   /// Whether the guardian has created their own account and linked it.
   final bool isLinked;
-  final bool hasPhone;
+  final bool hasEmail;
   final DateTime? invitationExpiresAt;
 }
 

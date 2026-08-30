@@ -66,17 +66,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get auth_button_verifyOtp => 'يؤكد';
 
   @override
-  String get auth_hint_phoneNumber => 'رقم التليفون';
-
-  @override
   String get auth_label_changeNumber => 'رقم خاطئ؟ تغييره';
 
   @override
   String get auth_label_enterOtp =>
       'أدخل رمز التحقق المكون من 6 أرقام المرسل إليه';
-
-  @override
-  String get auth_label_phoneNumber => 'رقم التليفون';
 
   @override
   String get auth_label_resendCode => 'إعادة إرسال رمز التحقق';
@@ -597,18 +591,6 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get guardian_details_phone_hint => 'رقم التليفون';
-
-  @override
-  String get guardian_details_phone_subtitle =>
-      'للتحقق من الحساب. لا يظهر في الملف الشخصي.';
-
-  @override
-  String guardian_details_privacy_note(Object relation) {
-    return 'رقم هاتفك مشفر ولا يظهر للعامة أبدًا. ستظهر المطابقات المحتملة \"$relation\'s Guardian\" في الملف الشخصي.';
-  }
-
-  @override
   String get guardian_details_search_hint => 'يبحث';
 
   @override
@@ -622,9 +604,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get guardian_details_your_name => 'اسمك';
-
-  @override
-  String get guardian_details_your_phone => 'رقم هاتفك';
 
   @override
   String get interest_cat_creative => 'مبدع';
@@ -1888,9 +1867,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings_guardian_name_hint => 'اسم الوصي';
 
   @override
-  String get settings_guardian_phone_hint => 'هاتف الجارديان';
-
-  @override
   String get settings_guardian_relationship => 'علاقة';
 
   @override
@@ -1931,13 +1907,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get settings_label_language => 'لغة';
-
-  @override
-  String get settings_label_phoneCannotChange =>
-      'لا يمكن تغيير رقم الهاتف. اتصل بالدعم للحصول على المساعدة.';
-
-  @override
-  String get settings_label_phoneNumber => 'رقم التليفون';
 
   @override
   String get settings_label_photoPrivacy => 'خصوصية الصور';

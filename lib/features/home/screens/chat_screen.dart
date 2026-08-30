@@ -13,7 +13,6 @@ import '../../../core/cubits/chat/chat_cubit.dart';
 import '../../../core/cubits/chat/chat_state.dart';
 import '../../../core/cubits/discovery/discovery_feed_cubit.dart';
 import '../../../core/cubits/interests/interests_cubit.dart';
-import '../../../core/cubits/subscription/subscription_cubit.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_curves.dart';
 import '../../../core/theme/app_dimensions.dart';
@@ -22,13 +21,8 @@ import '../../../core/widgets/animations/silarah_motion.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
 import '../../../core/widgets/loaders/silarah_blur_image.dart';
 import '../../../core/widgets/loaders/silarah_shimmer.dart';
-import '../../../core/services/phone_verification_service.dart';
-import '../../../core/cubits/auth/auth_cubit.dart';
-import '../../../core/cubits/auth/auth_state.dart';
-import '../../../core/utils/messaging_access_policy.dart';
 import 'paywall_gate_screen.dart';
 import 'profile_route_screen.dart';
-import 'subscription_screen.dart' show showPhoneVerificationSheet;
 
 /// G12: Profile-aware openers — include the match's name.
 List<String> _buildOpeners(String name) => [
@@ -220,26 +214,6 @@ class _ChatScreenState extends State<ChatScreen>
   Future<void> _sendMessage() async {
     final text = _inputCtrl.text.trim();
     if (text.isEmpty) return;
-    final authState = context.read<AuthCubit>().state;
-    final gender = authState is AuthAuthenticated ? authState.gender : null;
-    final subscription = context.read<SubscriptionCubit>().state;
-    if (MessagingAccessPolicy.requiresVerifiedPhoneToSend(
-      gender,
-      referralOnly: subscription.isReferralOnly,
-      testOnly: subscription.isTestOnly,
-    )) {
-      final phone = await PhoneVerificationService.instance.currentStatus();
-      if (!mounted) return;
-      if (!phone.isVerified) {
-        final countryCode =
-            authState is AuthAuthenticated ? authState.countryCode : null;
-        final verified = await showPhoneVerificationSheet(
-          context,
-          countryCode: countryCode,
-        );
-        if (!mounted || verified != true) return;
-      }
-    }
     _inputCtrl.clear();
     _chatCubit.updateTyping(widget.conversationId, isTyping: false);
     HapticFeedback.selectionClick();

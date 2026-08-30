@@ -12,10 +12,6 @@ const trustUiCopy = <String, Map<String, String>>{
     'Keep normal glasses or hijab on. Smile guidance is optional when your face covering hides your mouth.':
         'يمكنك إبقاء النظارات العادية أو الحجاب. إرشاد الابتسامة اختياري إذا كان غطاء الوجه يحجب فمك.',
     'Keep the app open for a moment.': 'أبقِ التطبيق مفتوحًا للحظة.',
-    'Phone': 'الهاتف',
-    'Phone number verified by SMS': 'تم التحقق من رقم الهاتف برسالة نصية',
-    'Verify your phone with a one-time SMS code. A purchase does not verify your number.':
-        'تحقق من هاتفك برمز SMS لمرة واحدة. لا يؤدي الشراء إلى التحقق من رقمك.',
     'Photo': 'الصورة',
     'Photo check not submitted': 'لم يتم إرسال فحص الصورة',
     'Photo review in progress': 'مراجعة الصورة جارية',
@@ -50,10 +46,6 @@ const trustUiCopy = <String, Map<String, String>>{
     'Keep normal glasses or hijab on. Smile guidance is optional when your face covering hides your mouth.':
         'সাধারণ চশমা বা হিজাব পরে থাকুন। মুখ ঢাকা থাকলে হাসির নির্দেশনা ঐচ্ছিক।',
     'Keep the app open for a moment.': 'অ্যাপটি কিছুক্ষণ খোলা রাখুন।',
-    'Phone': 'ফোন',
-    'Phone number verified by SMS': 'এসএমএস দিয়ে ফোন নম্বর যাচাই করা হয়েছে',
-    'Verify your phone with a one-time SMS code. A purchase does not verify your number.':
-        'একবার ব্যবহারযোগ্য SMS কোড দিয়ে আপনার ফোন যাচাই করুন। কোনো কেনাকাটা আপনার নম্বর যাচাই করে না।',
     'Photo': 'ছবি',
     'Photo check not submitted': 'ছবি যাচাই জমা হয়নি',
     'Photo review in progress': 'ছবি পর্যালোচনা চলছে',
@@ -90,10 +82,6 @@ const trustUiCopy = <String, Map<String, String>>{
         'Normale Brille oder Hijab können aufbleiben. Die Lächel-Anleitung ist optional, wenn Ihre Gesichtsbedeckung den Mund verdeckt.',
     'Keep the app open for a moment.':
         'Lassen Sie die App einen Moment geöffnet.',
-    'Phone': 'Telefon',
-    'Phone number verified by SMS': 'Telefonnummer per SMS bestätigt',
-    'Verify your phone with a one-time SMS code. A purchase does not verify your number.':
-        'Bestätigen Sie Ihr Telefon mit einem einmaligen SMS-Code. Ein Kauf bestätigt Ihre Nummer nicht.',
     'Photo': 'Foto',
     'Photo check not submitted': 'Fotoprüfung nicht eingereicht',
     'Photo review in progress': 'Fotoprüfung läuft',
@@ -130,10 +118,6 @@ const trustUiCopy = <String, Map<String, String>>{
         'Gardez vos lunettes habituelles ou votre hijab. Le sourire est facultatif si votre voile couvre votre bouche.',
     'Keep the app open for a moment.':
         'Gardez l’application ouverte un instant.',
-    'Phone': 'Téléphone',
-    'Phone number verified by SMS': 'Numéro de téléphone vérifié par SMS',
-    'Verify your phone with a one-time SMS code. A purchase does not verify your number.':
-        'Vérifiez votre téléphone avec un code SMS à usage unique. Un achat ne vérifie pas votre numéro.',
     'Photo': 'Photo',
     'Photo check not submitted': 'Vérification photo non envoyée',
     'Photo review in progress': 'Examen de la photo en cours',
@@ -169,10 +153,6 @@ const trustUiCopy = <String, Map<String, String>>{
     'Keep normal glasses or hijab on. Smile guidance is optional when your face covering hides your mouth.':
         'सामान्य चश्मा या हिजाब पहने रखें। यदि चेहरा ढकने से मुँह छिपा है तो मुस्कान वैकल्पिक है।',
     'Keep the app open for a moment.': 'ऐप को कुछ देर खुला रखें।',
-    'Phone': 'फ़ोन',
-    'Phone number verified by SMS': 'फ़ोन नंबर SMS से सत्यापित',
-    'Verify your phone with a one-time SMS code. A purchase does not verify your number.':
-        'एक बार इस्तेमाल होने वाले SMS कोड से अपना फ़ोन सत्यापित करें। खरीदारी आपके नंबर को सत्यापित नहीं करती।',
     'Photo': 'फ़ोटो',
     'Photo check not submitted': 'फ़ोटो जाँच जमा नहीं हुई',
     'Photo review in progress': 'फ़ोटो की समीक्षा जारी है',
@@ -208,10 +188,6 @@ const trustUiCopy = <String, Map<String, String>>{
     'Keep normal glasses or hijab on. Smile guidance is optional when your face covering hides your mouth.':
         'Tetap kenakan kacamata biasa atau hijab. Panduan senyum bersifat opsional jika penutup wajah menyembunyikan mulut.',
     'Keep the app open for a moment.': 'Biarkan aplikasi terbuka sebentar.',
-    'Phone': 'Telepon',
-    'Phone number verified by SMS': 'Nomor telepon diverifikasi melalui SMS',
-    'Verify your phone with a one-time SMS code. A purchase does not verify your number.':
-        'Verifikasi telepon dengan kode SMS sekali pakai. Pembelian tidak memverifikasi nomor Anda.',
     'Photo': 'Foto',
     'Photo check not submitted': 'Pemeriksaan foto belum dikirim',
     'Photo review in progress': 'Tinjauan foto sedang berlangsung',
@@ -246,10 +222,6 @@ const trustUiCopy = <String, Map<String, String>>{
     'Keep normal glasses or hijab on. Smile guidance is optional when your face covering hides your mouth.':
         'Kekalkan cermin mata biasa atau hijab. Panduan senyuman adalah pilihan jika penutup muka menyembunyikan mulut.',
     'Keep the app open for a moment.': 'Biarkan aplikasi dibuka sebentar.',
-    'Phone': 'Telefon',
-    'Phone number verified by SMS': 'Nombor telefon disahkan melalui SMS',
-    'Verify your phone with a one-time SMS code. A purchase does not verify your number.':
-        'Sahkan telefon anda dengan kod SMS sekali guna. Pembelian tidak mengesahkan nombor anda.',
     'Photo': 'Foto',
     'Photo check not submitted': 'Semakan foto belum dihantar',
     'Photo review in progress': 'Semakan foto sedang berjalan',
@@ -283,10 +255,6 @@ const trustUiCopy = <String, Map<String, String>>{
     'Keep normal glasses or hijab on. Smile guidance is optional when your face covering hides your mouth.':
         'Normal gözlüğünüzü veya başörtünüzü çıkarmayın. Yüz örtünüz ağzınızı kapatıyorsa gülümseme isteğe bağlıdır.',
     'Keep the app open for a moment.': 'Uygulamayı kısa bir süre açık tutun.',
-    'Phone': 'Telefon',
-    'Phone number verified by SMS': 'Telefon numarası SMS ile doğrulandı',
-    'Verify your phone with a one-time SMS code. A purchase does not verify your number.':
-        'Telefonunuzu tek kullanımlık SMS koduyla doğrulayın. Satın alma işlemi numaranızı doğrulamaz.',
     'Photo': 'Fotoğraf',
     'Photo check not submitted': 'Fotoğraf kontrolü gönderilmedi',
     'Photo review in progress': 'Fotoğraf incelemesi sürüyor',
@@ -322,10 +290,6 @@ const trustUiCopy = <String, Map<String, String>>{
     'Keep normal glasses or hijab on. Smile guidance is optional when your face covering hides your mouth.':
         'عام چشمہ یا حجاب پہنے رکھیں۔ اگر چہرے کا پردہ منہ چھپاتا ہے تو مسکراہٹ اختیاری ہے۔',
     'Keep the app open for a moment.': 'ایپ کو کچھ دیر کھلا رکھیں۔',
-    'Phone': 'فون',
-    'Phone number verified by SMS': 'فون نمبر SMS سے تصدیق شدہ',
-    'Verify your phone with a one-time SMS code. A purchase does not verify your number.':
-        'ایک بار استعمال ہونے والے SMS کوڈ سے اپنے فون کی تصدیق کریں۔ خریداری آپ کے نمبر کی تصدیق نہیں کرتی۔',
     'Photo': 'تصویر',
     'Photo check not submitted': 'تصویر کی جانچ جمع نہیں ہوئی',
     'Photo review in progress': 'تصویر کا جائزہ جاری ہے',

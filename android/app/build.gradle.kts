@@ -124,28 +124,46 @@ tasks.register("verifyReleaseSigning") {
     }
 }
 
-// Flutter integration tests can leave a legacy source-tree registrant that
-// references the dev-only integration_test plugin. Modern Flutter builds own
-// plugin registration, so remove that ignored generated file before Android
-// snapshots Java sources. This keeps direct local release builds as reliable
-// as CI and the device-install script.
-val removeDevOnlyGeneratedPluginRegistrant =
-    tasks.register<Delete>("removeDevOnlyGeneratedPluginRegistrant") {
-        delete(
-            layout.projectDirectory.file(
-                "src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java",
-            ),
-        )
-    }
-
-tasks.matching { it.name == "preBuild" }.configureEach {
-    dependsOn(removeDevOnlyGeneratedPluginRegistrant)
-}
-
 tasks.matching {
     it.name == "bundleRelease" || it.name == "assembleRelease"
 }.configureEach {
     dependsOn("verifyReleaseSigning")
+}
+
+// Flutter's generated registry includes the dev-only integration_test plugin
+// whenever integration_test is present in pubspec. That Android implementation
+// is intentionally absent from release dependencies. Keep the complete
+// generated registry, but remove only that one generated registration block
+// immediately before release Java compilation. Deleting the whole registry
+// breaks every production plugin at runtime.
+val sanitizeReleasePluginRegistrant = tasks.register("sanitizeReleasePluginRegistrant") {
+    doLast {
+        val registrant = layout.projectDirectory.file(
+            "src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java",
+        ).asFile
+        if (!registrant.isFile) {
+            throw GradleException(
+                "Flutter did not generate GeneratedPluginRegistrant.java.",
+            )
+        }
+
+        val source = registrant.readText()
+        val integrationTestBlock = Regex(
+            """(?ms)\R    try \{\R      flutterEngine\.getPlugins\(\)\.add\(new dev\.flutter\.plugins\.integration_test\.IntegrationTestPlugin\(\)\);\R    \} catch \(Exception e\) \{\R      Log\.e\(TAG, \"Error registering plugin integration_test, dev\.flutter\.plugins\.integration_test\.IntegrationTestPlugin\", e\);\R    \}""",
+        )
+        val sanitized = source.replace(integrationTestBlock, "")
+        if (sanitized.contains("IntegrationTestPlugin") ||
+            sanitized.contains("plugin integration_test")) {
+            throw GradleException(
+                "Could not remove the dev-only integration_test registration.",
+            )
+        }
+        registrant.writeText(sanitized)
+    }
+}
+
+tasks.matching { it.name == "compileReleaseJavaWithJavac" }.configureEach {
+    dependsOn(sanitizeReleasePluginRegistrant)
 }
 
 flutter {

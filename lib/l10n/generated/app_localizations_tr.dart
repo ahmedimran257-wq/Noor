@@ -66,17 +66,11 @@ class AppLocalizationsTr extends AppLocalizations {
   String get auth_button_verifyOtp => 'Doğrulamak';
 
   @override
-  String get auth_hint_phoneNumber => 'Telefon numarası';
-
-  @override
   String get auth_label_changeNumber => 'Yanlış numara mı? Değiştir onu';
 
   @override
   String get auth_label_enterOtp =>
       'Gönderilen 6 haneli doğrulama kodunu girin';
-
-  @override
-  String get auth_label_phoneNumber => 'Telefon Numarası';
 
   @override
   String get auth_label_resendCode => 'Doğrulama kodunu yeniden gönder';
@@ -608,18 +602,6 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get guardian_details_phone_hint => 'Telefon numarası';
-
-  @override
-  String get guardian_details_phone_subtitle =>
-      'Hesap doğrulaması için. Profilde görünmüyor.';
-
-  @override
-  String guardian_details_privacy_note(Object relation) {
-    return 'Telefon numaranız şifrelenir ve asla kamuya açıklanmaz. Potansiyel eşleşmeler profilde \"$relation\'nin Muhafızı\" ifadesini görecek.';
-  }
-
-  @override
   String get guardian_details_search_hint => 'Aramak';
 
   @override
@@ -634,9 +616,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get guardian_details_your_name => 'ADINIZ';
-
-  @override
-  String get guardian_details_your_phone => 'TELEFON NUMARANIZ';
 
   @override
   String get interest_cat_creative => 'Yaratıcı';
@@ -1909,9 +1888,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settings_guardian_name_hint => 'Veli Adı';
 
   @override
-  String get settings_guardian_phone_hint => 'Koruyucu Telefon';
-
-  @override
   String get settings_guardian_relationship => 'İlişki';
 
   @override
@@ -1953,13 +1929,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get settings_label_language => 'Dil';
-
-  @override
-  String get settings_label_phoneCannotChange =>
-      'Telefon numarası değiştirilemez. Yardım için desteğe başvurun.';
-
-  @override
-  String get settings_label_phoneNumber => 'Telefon Numarası';
 
   @override
   String get settings_label_photoPrivacy => 'Fotoğraf Gizliliği';

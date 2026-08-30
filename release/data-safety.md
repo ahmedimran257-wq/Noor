@@ -22,7 +22,6 @@ wording immediately before submission.
 | --- | --- | --- | --- | --- | --- |
 | Name | First/last name, profile identity | Yes | Service providers | Account, matching, safety | Yes |
 | Email address | Sign-in and service contact | Yes | Supabase, Brevo | Authentication, account, transactional messages | Yes |
-| Phone number | When phone verification is enabled | Conditional | Firebase/Supabase | Authentication, fraud prevention | Optional/conditional |
 | User IDs | Supabase user/profile/device IDs | Yes | Service providers | Account, security, analytics-free operations | Yes |
 | Address/location | City, state, country, coordinates | Yes | Supabase; location lookup provider receives query/location | Matching, app functionality | City/country required; precise device location optional |
 | Photos | Profile photos and temporary optional photo-check captures | Yes | Supabase; on-device ML does not upload model input | Profile, safety, verification | Profile photo required; photo check optional |
@@ -31,7 +30,7 @@ wording immediately before submission.
 | Purchase history | Product, entitlement, transaction status, price/currency metadata | Yes | Google Play, RevenueCat, Supabase | Purchases, entitlement, support, fraud prevention | Purchase-dependent |
 | App activity | Interests, matches, profile views, saved profiles, notification state | Yes | Supabase | App functionality, personalization, security | Feature-dependent |
 | App info/performance | Crash traces, device/app diagnostics | Yes | Firebase Crashlytics | Stability and security | Automatically collected in production |
-| Device or other IDs | FCM token, installation/device identifier | Yes | Firebase/Supabase | Notifications, security, abuse prevention | Notification/device dependent |
+| Device or other IDs | FCM token, installation and Play Integrity/App Check identifiers | Yes | Firebase/Supabase | Notifications, security, abuse prevention | Automatically or device dependent |
 
 ## Handling notes for Console answers
 

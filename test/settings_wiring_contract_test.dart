@@ -40,13 +40,19 @@ void main() {
   test('guardian enable, update, and disable use one atomic backend call', () {
     final service = source('lib/core/services/wali_mode_service.dart');
     final settings = source('lib/features/home/screens/settings_screen.dart');
-    expect(migration, contains('save_my_guardian_configuration'));
-    expect(migration, contains('PERFORM public.set_my_guardian_settings'));
-    expect(migration, contains('PERFORM public.set_guardian_phone'));
+    final retirement = source(
+      'supabase/migrations/253_remove_phone_identity_and_email_guardian.sql',
+    );
+    expect(retirement, contains('save_my_guardian_configuration'));
+    expect(retirement, contains('PERFORM public.set_my_guardian_settings'));
+    expect(retirement, contains("lower(trim(p_email))"));
     expect(service, contains("rpc('save_my_guardian_configuration'"));
     expect(service, isNot(contains("rpc('set_guardian_phone'")));
+    expect(service, contains("'p_email': guardianEmail"));
     expect(settings, contains('if (_enabled || _serverEnabled)'));
     expect(settings, contains("'Disconnect guardian'"));
+    expect(settings, contains('Guardian email'));
+    expect(settings, isNot(contains('Guardian phone')));
     expect(settings, isNot(contains('value: _mirror')));
   });
 

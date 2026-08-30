@@ -92,21 +92,21 @@ void main() {
     expect(File('assets/models/mobilefacenet.tflite').existsSync(), false);
   });
 
-  test('outgoing chat delegates gender-aware phone policy to migration 208',
-      () {
+  test('outgoing chat delegates the gender-aware Premium policy to server', () {
     final chat = File(
       'lib/features/home/screens/chat_screen.dart',
     ).readAsStringSync();
-    final genderPolicy = File(
+    final policy = File(
+      'supabase/migrations/253_remove_phone_identity_and_email_guardian.sql',
+    ).readAsStringSync();
+    expect(chat, isNot(contains('PhoneVerificationService')));
+    expect(chat, isNot(contains('showPhoneVerificationSheet')));
+    expect(policy, contains("IF v_gender = 'female' THEN"));
+    expect(policy, contains("RAISE EXCEPTION 'subscription_required'"));
+    final triggerMigration = File(
       'supabase/migrations/208_gender_messaging_and_verified_phone_change.sql',
     ).readAsStringSync();
-    expect(chat, contains('PhoneVerificationService.instance.currentStatus()'));
-    expect(chat, contains('showPhoneVerificationSheet'));
-    expect(chat, contains('MessagingAccessPolicy.requiresVerifiedPhoneToSend'));
-    expect(genderPolicy, contains("IF v_gender = 'female' THEN"));
-    expect(genderPolicy,
-        contains("RAISE EXCEPTION 'phone_verification_required'"));
-    expect(genderPolicy,
+    expect(triggerMigration,
         contains('private.assert_outgoing_chat_entitlement(v_me)'));
   });
 
@@ -121,24 +121,26 @@ void main() {
       'lib/core/cubits/discovery/discovery_filter.dart',
     ).readAsStringSync();
     expect(filters, contains('Photo verified'));
-    expect(filters, contains('Phone verified'));
-    expect(filters, contains('Photo + phone'));
+    expect(filters, isNot(contains('Phone verified')));
+    expect(filters, isNot(contains('Photo + phone')));
     expect(filters, contains('Guardian connected'));
     expect(filters, contains('All India'));
     expect(filterBar, contains("label: 'Trust checks'"));
     expect(filterBar, contains("scrollToSection: 'verified'"));
     expect(filterBar, isNot(contains('Verified Only')));
     expect(filterModel, isNot(contains('verifiedOnly')));
-    expect(
-        migration,
-        contains(
-            "v_trust_filter NOT IN ('photo', 'phone', 'both', 'guardian')"));
+    final retirement = File(
+      'supabase/migrations/253_remove_phone_identity_and_email_guardian.sql',
+    ).readAsStringSync();
+    expect(retirement,
+        contains("lower(trim(p_filters->>'trust_filter')) = 'photo'"));
+    expect(retirement,
+        contains("lower(trim(p_filters->>'trust_filter')) = 'guardian'"));
     expect(migration,
         contains("v_features := array_append(v_features, 'trust_filter')"));
   });
 
-  test('profile trust row gates phone by Premium and starts guardian directly',
-      () {
+  test('profile trust row starts photo and Guardian checks directly', () {
     final profile = File(
       'lib/features/home/screens/my_profile_screen.dart',
     ).readAsStringSync();
@@ -146,10 +148,9 @@ void main() {
       'lib/features/home/screens/settings_screen.dart',
     ).readAsStringSync();
 
-    expect(profile, contains('showPhoneVerificationSheet('));
-    expect(profile, contains('onPhoneVerification: _startPhoneVerification'));
-    expect(profile, contains('if (!subscription.hasPaidPremium)'));
-    expect(profile, contains('AppRoutes.subscription'));
+    expect(profile, isNot(contains('showPhoneVerificationSheet(')));
+    expect(profile, isNot(contains('onPhoneVerification')));
+    expect(profile, contains('AppRoutes.badgeVerification'));
     expect(profile, contains("SettingsScreen(initialSection: 'guardian')"));
     expect(profile, contains('onGuardianConnection: _openGuardianSettings'));
     expect(settings, contains("case 'guardian':"));
