@@ -85,6 +85,9 @@ void main() {
     final legalDocuments =
         File('lib/core/legal/legal_documents.dart').readAsStringSync();
     final home = File('lib/features/home/home_screen.dart').readAsStringSync();
+    final reminder = File(
+      'lib/features/home/widgets/policy_reminder_sheet.dart',
+    ).readAsStringSync();
 
     expect(legalDocuments, contains("static const version = '2.4.0'"));
     expect(migration, contains("'2.3.0', '2.4.0'"));
@@ -96,6 +99,10 @@ void main() {
     expect(migration, contains('acknowledge_policy_reminder'));
     expect(home, contains('PolicyReminderService.instance.getState()'));
     expect(home, contains('PolicyReminderSheet.show(context)'));
+    expect(reminder, contains('barrierColor: Colors.black'));
+    expect(reminder, contains('_ReminderHero('));
+    expect(reminder, contains('_ReminderRulesPanel('));
+    expect(reminder, contains('_LegalAction('));
   });
 
   test('retired government-ID copy cannot return to active localization', () {

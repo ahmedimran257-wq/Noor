@@ -475,6 +475,13 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     } catch (_) {}
   }
 
+  Future<void> _openProfileViews() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const ProfileViewsScreen()),
+    );
+    if (mounted) await _loadViewsCount();
+  }
+
   Future<void> _loadApprovedPhotoCount() async {
     try {
       final myUserId = await SupabaseService.currentUserIdOrRefresh();
@@ -567,7 +574,19 @@ class _MyProfileScreenState extends State<MyProfileScreen>
             ),
           ),
 
-          const SizedBox(height: AppDimensions.space28),
+          const SizedBox(height: AppDimensions.space20),
+
+          // Profile activity is intentionally first: it is time-sensitive,
+          // personally relevant and one of the strongest reasons to return.
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: _ProfileViewsSpotlight(
+              viewCount: _viewCount,
+              onTap: _openProfileViews,
+            ),
+          ),
+
+          const SizedBox(height: AppDimensions.space16),
 
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -656,78 +675,6 @@ class _MyProfileScreenState extends State<MyProfileScreen>
 
           const SizedBox(height: AppDimensions.space16),
 
-          // Profile Views row
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: SilarahPressable(
-              onTap: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const ProfileViewsScreen(),
-                  ),
-                );
-                if (mounted) await _loadViewsCount();
-              },
-              child: Container(
-                padding: const EdgeInsets.all(AppDimensions.space16),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceGlass,
-                  borderRadius:
-                      BorderRadius.circular(AppDimensions.radiusButton),
-                  border: Border.all(color: AppColors.cardBorder),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(AppDimensions.space8),
-                      decoration: BoxDecoration(
-                        color: AppColors.champagneGold.withValues(alpha: 0.12),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.goldBorder),
-                      ),
-                      child: Icon(
-                        Icons.remove_red_eye_outlined,
-                        color: AppColors.champagneGold,
-                        size: AppDimensions.iconSizeMedium,
-                      ),
-                    ),
-                    const SizedBox(width: AppDimensions.space12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          UiText(context.uiCopy('Profile Views'),
-                              style: AppTypography.bodyMedium),
-                          UiText(context.uiCopy('This week'),
-                              style: AppTypography.caption),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.champagneGold,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: UiText(
-                        '$_viewCount',
-                        style: AppTypography.captionMedium
-                            .copyWith(color: AppColors.obsidianNight),
-                      ),
-                    ),
-                    const SizedBox(width: AppDimensions.space8),
-                    Icon(Icons.chevron_right_rounded,
-                        color: AppColors.slateMist,
-                        size: AppDimensions.iconSizeMedium),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: AppDimensions.space16),
-
           // Subscription card
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -736,10 +683,32 @@ class _MyProfileScreenState extends State<MyProfileScreen>
 
           const SizedBox(height: AppDimensions.space16),
 
-          // Referral Card
+          // Boost Section
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: _BoostSection(),
+          ),
+
+          const SizedBox(height: AppDimensions.space16),
+
+          // Saved profiles section — always shown (empty state if none)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: _SavedProfilesSection(
+              savedProfiles: _savedProfiles,
+              onChanged: _loadBookmarks,
+              onManage: () => context.push(AppRoutes.shortlist),
+            ),
+          ),
+
+          const SizedBox(height: AppDimensions.space16),
+
+          // Referral is intentionally below personal activity tools. It is a
+          // growth action, not part of the member's primary profile workflow.
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: SilarahPressable(
+              semanticLabel: context.uiCopy('Refer a Friend'),
               onTap: () => context.push(AppRoutes.referral),
               child: Container(
                 padding: const EdgeInsets.all(AppDimensions.space16),
@@ -748,7 +717,8 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                   borderRadius:
                       BorderRadius.circular(AppDimensions.radiusButton),
                   border: Border.all(
-                      color: AppColors.goldBorder.withValues(alpha: 0.5)),
+                    color: AppColors.goldBorder.withValues(alpha: 0.5),
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: AppColors.champagneGold.withValues(alpha: 0.02),
@@ -777,42 +747,28 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          UiText(context.uiCopy('Refer a Friend'),
-                              style: AppTypography.bodyMedium),
                           UiText(
-                              context.uiCopy('Get 3 days of Premium for free'),
-                              style: AppTypography.caption),
+                            context.uiCopy('Refer a Friend'),
+                            style: AppTypography.bodyMedium,
+                          ),
+                          UiText(
+                            context.uiCopy('Get 3 days of Premium for free'),
+                            style: AppTypography.caption,
+                          ),
                         ],
                       ),
                     ),
-                    Icon(Icons.chevron_right_rounded,
-                        color: AppColors.slateMist,
-                        size: AppDimensions.iconSizeMedium),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.slateMist,
+                      size: AppDimensions.iconSizeMedium,
+                    ),
                   ],
                 ),
               ),
             ),
           ),
 
-          const SizedBox(height: AppDimensions.space16),
-
-          // Boost Section
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: _BoostSection(),
-          ),
-
-          const SizedBox(height: AppDimensions.space16),
-
-          // Saved profiles section — always shown (empty state if none)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: _SavedProfilesSection(
-              savedProfiles: _savedProfiles,
-              onChanged: _loadBookmarks,
-              onManage: () => context.push(AppRoutes.shortlist),
-            ),
-          ),
           const SizedBox(height: AppDimensions.space20),
 
           Padding(
@@ -958,6 +914,143 @@ class _ProfilePrimaryActions extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ProfileViewsSpotlight extends StatelessWidget {
+  const _ProfileViewsSpotlight({
+    required this.viewCount,
+    required this.onTap,
+  });
+
+  final int viewCount;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = context.uiCopy('Profile Views');
+    final period = context.uiCopy('This week');
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 420),
+      curve: Curves.easeOutCubic,
+      tween: Tween(begin: 0, end: 1),
+      builder: (context, progress, child) => Opacity(
+        opacity: progress,
+        child: Transform.translate(
+          offset: Offset(0, 8 * (1 - progress)),
+          child: child,
+        ),
+      ),
+      child: SilarahPressable(
+        semanticLabel: '$title, $viewCount, $period',
+        onTap: onTap,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppDimensions.space16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: AlignmentDirectional.topStart,
+              end: AlignmentDirectional.bottomEnd,
+              colors: [
+                AppColors.champagneGold.withValues(alpha: 0.18),
+                AppColors.surfacePanelTop,
+              ],
+            ),
+            borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+            border: Border.all(color: AppColors.goldBorder),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.champagneGold.withValues(alpha: 0.10),
+                blurRadius: 24,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: AppColors.champagneGold,
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusButton),
+                    ),
+                    child: Icon(
+                      Icons.visibility_rounded,
+                      color: AppColors.readableOn(AppColors.champagneGold),
+                      size: AppDimensions.iconSizeLarge,
+                    ),
+                  ),
+                  if (viewCount > 0)
+                    PositionedDirectional(
+                      top: -3,
+                      end: -3,
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: AppColors.softCoral,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.surfaceElevated,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(width: AppDimensions.space14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    UiText(title, style: AppTypography.bodyMedium),
+                    const SizedBox(height: AppDimensions.space4),
+                    UiText(
+                      context.uiCopy('Your weekly count stays visible'),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.caption,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppDimensions.space12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  UiText(
+                    '$viewCount',
+                    style: AppTypography.screenTitle.copyWith(
+                      color: AppColors.champagneGold,
+                      height: 1,
+                    ),
+                  ),
+                  const SizedBox(height: AppDimensions.space4),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      UiText(period, style: AppTypography.caption),
+                      const SizedBox(width: AppDimensions.space4),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        color: AppColors.champagneGold,
+                        size: AppDimensions.iconSizeSmall,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

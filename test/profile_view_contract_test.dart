@@ -46,4 +46,19 @@ void main() {
     expect(paywall, isNot(contains('liked your profile')));
     expect(paywall, contains('See everyone who viewed your profile'));
   });
+
+  test('profile activity has priority over account and growth tools', () {
+    final spotlight = profile.indexOf('_ProfileViewsSpotlight(');
+    final accountStanding = profile.indexOf('_ProfileLifecycleCard(');
+    final trustCenter = profile.indexOf('_TrustCenterCard(');
+    final boost = profile.indexOf('_BoostSection(');
+    final saved = profile.indexOf('_SavedProfilesSection(');
+    final referral = profile.indexOf("context.push(AppRoutes.referral)");
+
+    expect(spotlight, greaterThanOrEqualTo(0));
+    expect(spotlight, lessThan(accountStanding));
+    expect(accountStanding, lessThan(trustCenter));
+    expect(boost, lessThan(saved));
+    expect(saved, lessThan(referral));
+  });
 }
