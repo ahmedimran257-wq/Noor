@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify reviewed Dart defines match both native Firebase applications."""
+"""Verify the reviewed release config matches both native Firebase apps."""
 
 from __future__ import annotations
 
@@ -87,7 +87,7 @@ def main() -> None:
         ios["BUNDLE_ID"],
         require(defines, "FIREBASE_IOS_BUNDLE_ID"),
     )
-    print("Firebase Dart and native configurations match.")
+    print("Reviewed release and native Firebase configurations match.")
 
 
 if __name__ == "__main__":

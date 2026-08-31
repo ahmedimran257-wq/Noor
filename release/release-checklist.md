@@ -3,14 +3,15 @@
 ## Automated and repository gates
 
 - [x] `flutter analyze` has zero findings.
-- [x] CI-equivalent Flutter suite passes (453 tests on 30 August 2026).
+- [x] CI-equivalent Flutter suite passes (453 tests on 31 August 2026).
 - [x] Admin lint, typecheck, Next.js build, OpenNext Cloudflare build and
       production dependency audit pass.
 - [x] Supabase migration validation and Edge Function tests pass.
 - [x] Secret scan passes; no production secrets or signing material are tracked.
 - [x] Release-signed APK smoke test updates and launches on the OnePlus without
-      Flutter plugin-registration, Firebase Messaging or Shared Preferences
-      startup errors (local test build `32028`; not a store artifact).
+      Flutter plugin-registration, Firebase Messaging, App Check or Shared
+      Preferences startup errors (ABI-split local test build `34029`; not a
+      store artifact). Offline cold start and automatic online recovery pass.
 - [ ] Rebuild the final release AAB with the permanent upload certificate;
       the previous AAB predates the latest Gradle/source changes and is invalid.
 - [ ] Review the size and signature of that exact final AAB.

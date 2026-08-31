@@ -16,7 +16,6 @@ import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
-import 'firebase_options.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/config/app_config.dart';
 
@@ -76,9 +75,25 @@ SilarahThemeMode _bootstrapInitialTheme = SilarahThemeMode.blackWhite;
 Future<void> silarahFirebaseMessagingBackgroundHandler(
   RemoteMessage message,
 ) async {
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp();
+}
+
+Future<void> _activateFirebaseAppCheck() async {
+  try {
+    await FirebaseAppCheck.instance.activate(
+      androidProvider:
+          kReleaseMode ? AndroidProvider.playIntegrity : AndroidProvider.debug,
+      appleProvider:
+          kReleaseMode ? AppleProvider.appAttest : AppleProvider.debug,
+    );
+    await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
+  } catch (error, stack) {
+    // App Check is intentionally monitor-only until genuine Play/App Store
+    // release traffic has been verified. A provider-registration outage must
+    // not brick an otherwise correctly configured native application. Once
+    // enforcement is enabled, protected backends still fail closed.
+    debugPrint('[main] App Check activation deferred: $error\n$stack');
+  }
 }
 
 void main() async {
@@ -103,18 +118,13 @@ void main() async {
   try {
     final startupDependencies = await Future.wait<Object>([
       SharedPreferences.getInstance(),
-      Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      ),
+      // Android and iOS load their reviewed Firebase configuration from the
+      // native files bundled into the signed app. The release build scripts
+      // verify those files against config/prod.local.json before compilation.
+      Firebase.initializeApp(),
     ]);
     final prefs = startupDependencies.first as SharedPreferences;
-    await FirebaseAppCheck.instance.activate(
-      androidProvider:
-          kReleaseMode ? AndroidProvider.playIntegrity : AndroidProvider.debug,
-      appleProvider:
-          kReleaseMode ? AppleProvider.appAttest : AppleProvider.debug,
-    );
-    await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
+    await _activateFirebaseAppCheck();
     final introCompleted = prefs.getBool('silarah_intro_completed') ?? false;
     _bootstrapInitialLocation =
         introCompleted ? AppRoutes.boot : AppRoutes.languageSelect;

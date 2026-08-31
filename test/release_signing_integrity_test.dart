@@ -37,6 +37,14 @@ void main() {
       expect(gradle, contains('dependsOn("verifyReleaseSigning")'));
     });
 
+    test('device release builds verify reviewed native Firebase config', () {
+      expect(installScript, contains('tool/verify_firebase_config.py'));
+      expect(
+        installScript,
+        contains('Firebase release configuration verification failed.'),
+      );
+    });
+
     test('Flutter regenerates registrants before Android snapshots sources', () {
       expect(
         gradle,

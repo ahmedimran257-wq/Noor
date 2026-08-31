@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('registers an entry-point-safe Firebase background handler', () {
+  test('registers an entry-point-safe native Firebase background handler', () {
     final source = File('lib/main.dart').readAsStringSync();
 
     expect(
@@ -20,7 +20,8 @@ void main() {
     );
     expect(
       source,
-      contains('options: DefaultFirebaseOptions.currentPlatform'),
+      contains('await Firebase.initializeApp();'),
     );
+    expect(source, isNot(contains('DefaultFirebaseOptions.currentPlatform')));
   });
 }

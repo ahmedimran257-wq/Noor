@@ -2,7 +2,8 @@ param(
     [ValidateSet('debug', 'release')]
     [string]$Mode = 'release',
     [string]$Config = 'config/prod.local.json',
-    [string]$Device = ''
+    [string]$Device = '',
+    [int]$BuildNumber = 0
 )
 
 $ErrorActionPreference = 'Stop'
@@ -58,6 +59,11 @@ if ('com.silarah.app' -notin $firebasePackages) {
     throw 'Firebase configuration does not contain com.silarah.app. Build cancelled.'
 }
 
+& python 'tool/verify_firebase_config.py' $configPath
+if ($LASTEXITCODE -ne 0) {
+    throw 'Firebase release configuration verification failed. Build cancelled.'
+}
+
 $deviceArgs = @()
 if (-not [string]::IsNullOrWhiteSpace($Device)) {
     $deviceArgs = @('-d', $Device)
@@ -88,10 +94,25 @@ if ($Mode -eq 'release') {
     # Never ship/install a universal release APK containing every CPU runtime.
     # Play distributes equivalent ABI splits from an AAB; local release
     # installs should use the same per-device footprint.
-    & flutter build apk "--$Mode" --split-per-abi "--dart-define-from-file=$configPath"
+    $buildArgs = @(
+        'build',
+        'apk',
+        "--$Mode",
+        '--split-per-abi',
+        "--dart-define-from-file=$configPath"
+    )
 } else {
-    & flutter build apk "--$Mode" "--dart-define-from-file=$configPath"
+    $buildArgs = @(
+        'build',
+        'apk',
+        "--$Mode",
+        "--dart-define-from-file=$configPath"
+    )
 }
+if ($BuildNumber -gt 0) {
+    $buildArgs += "--build-number=$BuildNumber"
+}
+& flutter @buildArgs
 if ($LASTEXITCODE -ne 0) { throw 'Flutter build failed.' }
 
 Write-Host 'Installing APK without clearing app data...'
