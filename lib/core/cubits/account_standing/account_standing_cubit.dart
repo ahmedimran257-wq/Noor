@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -7,7 +5,7 @@ import '../../services/supabase_service.dart';
 import '../../services/connectivity_service.dart';
 import 'account_standing_state.dart';
 
-/// One authoritative, realtime account-standing source for the whole app.
+/// One authoritative account-standing source for the whole app.
 ///
 /// Deliberately does not read or expose shadowban fields. A shadowban is a
 /// silent abuse-control mechanism; user-visible enforcement belongs in the
@@ -16,11 +14,10 @@ class AccountStandingCubit extends Cubit<AccountStandingState> {
   AccountStandingCubit() : super(const AccountStandingState());
 
   String? _userId;
-  RealtimeChannel? _channel;
   int _loadVersion = 0;
 
   Future<void> start(String userId) async {
-    if (_userId == userId && _channel != null) {
+    if (_userId == userId) {
       await refresh();
       return;
     }
@@ -28,24 +25,9 @@ class AccountStandingCubit extends Cubit<AccountStandingState> {
     _userId = userId;
     emit(const AccountStandingState(loading: true));
 
-    // Subscribe before the initial read and include INSERT events. A newly
-    // authenticated member may not have a profiles row yet; subscribing only
-    // to UPDATE after the read can permanently cache that temporary absence as
-    // "paused" until a manual refresh.
-    _channel = SupabaseService.client
-        .channel('account_standing_$userId')
-        .onPostgresChanges(
-          event: PostgresChangeEvent.all,
-          schema: 'public',
-          table: 'profiles',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'user_id',
-            value: userId,
-          ),
-          callback: (_) => unawaited(refresh()),
-        )
-        .subscribe();
+    // Account changes are reconciled after publication, foreground FCM,
+    // reconnect and app resume. Avoiding an always-on database channel keeps
+    // idle members from consuming scarce Realtime connections.
     await refresh();
   }
 
@@ -146,9 +128,6 @@ class AccountStandingCubit extends Cubit<AccountStandingState> {
   Future<void> stop() async {
     _userId = null;
     _loadVersion++;
-    final channel = _channel;
-    _channel = null;
-    if (channel != null) await channel.unsubscribe();
     if (!isClosed) emit(const AccountStandingState());
   }
 

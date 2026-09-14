@@ -9,6 +9,9 @@ void main() {
   final deliveryMigration = File(
     'supabase/migrations/186_relationship_and_push_delivery_integrity.sql',
   ).readAsStringSync();
+  final activityMigration = File(
+    'supabase/migrations/260_profile_view_unread_activity.sql',
+  ).readAsStringSync();
   final service = File(
     'lib/core/services/profile_view_service.dart',
   ).readAsStringSync();
@@ -39,7 +42,29 @@ void main() {
     expect(migration, contains('count(DISTINCT pv.viewer_profile_id)'));
     expect(migration, contains('public.has_active_premium(auth.uid())'));
     expect(migration, contains("RAISE EXCEPTION 'premium_required'"));
-    expect(profile, contains('weeklyDistinctCount'));
+    expect(service, contains('weeklyDistinctCount'));
+    expect(service, contains('activitySummary'));
+    expect(activityMigration,
+        contains('count(DISTINCT pv.viewer_profile_id)::bigint'));
+  });
+
+  test('unseen activity has an authoritative read cursor', () {
+    final notifications = File(
+      'lib/core/cubits/notifications/notifications_cubit.dart',
+    ).readAsStringSync();
+    final viewsScreen = File(
+      'lib/features/home/screens/profile_views_screen.dart',
+    ).readAsStringSync();
+
+    expect(activityMigration, contains('profile_view_activity_state'));
+    expect(activityMigration, contains('unseen_viewer_count'));
+    expect(activityMigration, contains('mark_profile_views_seen'));
+    expect(activityMigration, contains("type = 'profile_view'"));
+    expect(activityMigration, contains('ENABLE ROW LEVEL SECURITY'));
+    expect(service, contains("rpc('mark_profile_views_seen')"));
+    expect(viewsScreen, contains('reconcileProfileViewsSeen'));
+    expect(notifications, contains('bellUnreadCount'));
+    expect(notifications, contains("n.type != 'profile_view'"));
   });
 
   test('paywall never promises a nonexistent like action', () {
@@ -48,15 +73,16 @@ void main() {
   });
 
   test('profile activity has priority over account and growth tools', () {
-    final spotlight = profile.indexOf('_ProfileViewsSpotlight(');
+    final activityRail = profile.indexOf('ProfileHeaderActionRail(');
     final accountStanding = profile.indexOf('_ProfileLifecycleCard(');
     final trustCenter = profile.indexOf('_TrustCenterCard(');
     final boost = profile.indexOf('_BoostSection(');
     final saved = profile.indexOf('_SavedProfilesSection(');
     final referral = profile.indexOf("context.push(AppRoutes.referral)");
 
-    expect(spotlight, greaterThanOrEqualTo(0));
-    expect(spotlight, lessThan(accountStanding));
+    expect(activityRail, greaterThanOrEqualTo(0));
+    expect(activityRail, lessThan(accountStanding));
+    expect(profile, isNot(contains('_ProfileViewsSpotlight')));
     expect(accountStanding, lessThan(trustCenter));
     expect(boost, lessThan(saved));
     expect(saved, lessThan(referral));

@@ -9,6 +9,17 @@ class AppLocalizationsDe extends AppLocalizations {
   AppLocalizationsDe([String locale = 'de']) : super(locale);
 
   @override
+  String get guide_optional_details => 'Weitere Angaben (optional)';
+
+  @override
+  String get guide_optional_details_body =>
+      'Du kannst diese Angaben später in deinem Profil ergänzen.';
+
+  @override
+  String get guide_profile_ownership =>
+      'Dieses Profil beschreibt die Person, die heiraten möchte. Ein separater Guardian kann später zur Begleitung der Gespräche eingeladen werden.';
+
+  @override
   String get about_button_later => 'Ich mache das später';
 
   @override
@@ -2184,6 +2195,11 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String subscription_button_monthly(String price) {
     return 'Abonnieren – $price/Monat';
+  }
+
+  @override
+  String subscription_button_three_month(String price) {
+    return 'Abonnieren – $price/3 Monate';
   }
 
   @override

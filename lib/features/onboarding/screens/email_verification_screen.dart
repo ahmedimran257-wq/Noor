@@ -11,6 +11,7 @@ import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/cubits/auth/auth_state.dart';
 import '../../../core/services/email_address_validation.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_curves.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
@@ -844,9 +845,9 @@ class _OtpBoxState extends State<_OtpBox> with TickerProviderStateMixin {
   late final AnimationController _entryCtrl;
   late final Animation<double> _entryScale;
   late final Animation<double> _entryFade;
-  AnimationController? _bounceCtrl;
-  Animation<double>? _bounceScale;
-  Animation<double>? _bounceFade;
+  AnimationController? _digitUpdateCtrl;
+  Animation<double>? _digitUpdateScale;
+  Animation<double>? _digitUpdateFade;
   Timer? _entryTimer;
   String? _prevDigit;
 
@@ -857,8 +858,8 @@ class _OtpBoxState extends State<_OtpBox> with TickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 350),
     );
-    _entryScale = Tween<double>(begin: 0.85, end: 1.0).animate(
-      CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOutBack),
+    _entryScale = Tween<double>(begin: .975, end: 1.0).animate(
+      CurvedAnimation(parent: _entryCtrl, curve: AppCurves.reveal),
     );
     _entryFade = CurvedAnimation(
       parent: _entryCtrl,
@@ -873,32 +874,32 @@ class _OtpBoxState extends State<_OtpBox> with TickerProviderStateMixin {
   void didUpdateWidget(covariant _OtpBox oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.digit != null && widget.digit != _prevDigit) {
-      _triggerBounce();
+      _animateDigitUpdate();
     }
     _prevDigit = widget.digit;
   }
 
-  void _triggerBounce() {
-    _bounceCtrl?.dispose();
-    _bounceCtrl = AnimationController(
+  void _animateDigitUpdate() {
+    _digitUpdateCtrl?.dispose();
+    _digitUpdateCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 250),
     );
-    _bounceScale = Tween<double>(begin: 0.4, end: 1.0).animate(
-      CurvedAnimation(parent: _bounceCtrl!, curve: Curves.easeOutBack),
+    _digitUpdateScale = Tween<double>(begin: .96, end: 1.0).animate(
+      CurvedAnimation(parent: _digitUpdateCtrl!, curve: AppCurves.tactile),
     );
-    _bounceFade = CurvedAnimation(
-      parent: _bounceCtrl!,
+    _digitUpdateFade = CurvedAnimation(
+      parent: _digitUpdateCtrl!,
       curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
     );
-    _bounceCtrl!.forward();
+    _digitUpdateCtrl!.forward();
   }
 
   @override
   void dispose() {
     _entryTimer?.cancel();
     _entryCtrl.dispose();
-    _bounceCtrl?.dispose();
+    _digitUpdateCtrl?.dispose();
     super.dispose();
   }
 
@@ -906,11 +907,11 @@ class _OtpBoxState extends State<_OtpBox> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final hasDigit = widget.digit != null;
     final Widget digitWidget;
-    if (hasDigit && _bounceScale != null && _bounceFade != null) {
+    if (hasDigit && _digitUpdateScale != null && _digitUpdateFade != null) {
       digitWidget = ScaleTransition(
-        scale: _bounceScale!,
+        scale: _digitUpdateScale!,
         child: FadeTransition(
-          opacity: _bounceFade!,
+          opacity: _digitUpdateFade!,
           child: _DigitText(widget.digit!),
         ),
       );

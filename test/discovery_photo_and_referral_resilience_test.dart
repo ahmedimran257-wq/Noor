@@ -50,7 +50,7 @@ void main() {
     });
 
     test('referral submission cannot double-pop or use a disposed sheet', () {
-      expect(referralEntry, contains('showModalBottomSheet<bool>'));
+      expect(referralEntry, contains('showSilarahBottomSheet<bool>'));
       expect(
         referralEntry,
         matches(RegExp(r'onPressed:\s+isSaving\s+\? null')),

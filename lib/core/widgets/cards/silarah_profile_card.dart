@@ -11,10 +11,12 @@
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_curves.dart';
 import '../../theme/app_dimensions.dart';
 import '../../theme/app_typography.dart';
 import '../buttons/silarah_pressable.dart';
 import '../loaders/silarah_blur_image.dart';
+import '../loaders/silarah_shimmer.dart';
 
 class SilarahProfileCard extends StatelessWidget {
   const SilarahProfileCard({
@@ -41,6 +43,7 @@ class SilarahProfileCard extends StatelessWidget {
     this.previousMatchLabel,
     this.cardScale = 1.0,
     this.blurhash,
+    this.photoHeroTag,
   });
 
   final String displayName;
@@ -65,6 +68,7 @@ class SilarahProfileCard extends StatelessWidget {
   final String? previousMatchLabel;
   final double cardScale; // Continuous scale driven by scroll offset
   final String? blurhash;
+  final Object? photoHeroTag;
 
   @override
   Widget build(BuildContext context) {
@@ -118,12 +122,22 @@ class SilarahProfileCard extends StatelessWidget {
               fit: StackFit.expand,
               children: [
                 // Photo Layer
-                if (photoUrl != null && !isPhotoPrivate)
-                  _PhotoLayer(url: photoUrl!, blurhash: blurhash)
+                if (photoHeroTag != null)
+                  Hero(
+                    tag: photoHeroTag!,
+                    child: _ProfileCardPhoto(
+                      photoUrl: photoUrl,
+                      blurhash: blurhash,
+                      photoCount: photoCount,
+                      isPhotoPrivate: isPhotoPrivate,
+                    ),
+                  )
                 else
-                  _PrivatePhotoPlaceholder(
+                  _ProfileCardPhoto(
+                    photoUrl: photoUrl,
+                    blurhash: blurhash,
                     photoCount: photoCount,
-                    isPrivate: isPhotoPrivate,
+                    isPhotoPrivate: isPhotoPrivate,
                   ),
 
                 // ── Gradient Overlay (always on top of photo)
@@ -348,6 +362,31 @@ class SilarahProfileCard extends StatelessWidget {
       default:
         return raw;
     }
+  }
+}
+
+class _ProfileCardPhoto extends StatelessWidget {
+  const _ProfileCardPhoto({
+    required this.photoUrl,
+    required this.blurhash,
+    required this.photoCount,
+    required this.isPhotoPrivate,
+  });
+
+  final String? photoUrl;
+  final String? blurhash;
+  final int photoCount;
+  final bool isPhotoPrivate;
+
+  @override
+  Widget build(BuildContext context) {
+    if (photoUrl != null && !isPhotoPrivate) {
+      return _PhotoLayer(url: photoUrl!, blurhash: blurhash);
+    }
+    return _PrivatePhotoPlaceholder(
+      photoCount: photoCount,
+      isPrivate: isPhotoPrivate,
+    );
   }
 }
 
@@ -797,24 +836,23 @@ class _SendInterestButton extends StatelessWidget {
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 360),
             reverseDuration: const Duration(milliseconds: 180),
-            switchInCurve: Curves.easeOutBack,
-            switchOutCurve: Curves.easeInCubic,
+            switchInCurve: AppCurves.tactile,
+            switchOutCurve: AppCurves.dismiss,
             transitionBuilder: (child, animation) => FadeTransition(
               opacity: animation,
-              child: ScaleTransition(scale: animation, child: child),
+              child: ScaleTransition(
+                scale: Tween<double>(begin: .975, end: 1).animate(animation),
+                child: child,
+              ),
             ),
             child: Row(
               key: ValueKey(label),
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (isSending) ...[
-                  SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(foreground),
-                    ),
+                  SilarahActivityIndicator(
+                    size: 16,
+                    color: foreground,
                   ),
                   const SizedBox(width: AppDimensions.space8),
                 ] else if (isConfirmed) ...[

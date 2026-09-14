@@ -4,7 +4,7 @@
 //
 // Pricing is fetched exclusively from RevenueCat Offerings.
 // No hardcoded fallback — shows error state if unavailable.
-// Dynamic "Best value — save X%" on annual card.
+// Dynamic "Best value — save X%" on three-month card.
 import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -32,7 +32,7 @@ class SubscriptionScreen extends StatefulWidget {
 
 class _SubscriptionScreenState extends State<SubscriptionScreen>
     with SingleTickerProviderStateMixin {
-  // 'monthly' or 'annual'
+  // 'monthly' or 'threeMonth'
   String _selectedPlan = 'monthly';
 
   late final AnimationController _headerAnim;
@@ -299,8 +299,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         return;
       }
 
-      final planId = _selectedPlan == 'annual'
-          ? SubscriptionCubit.annualProductId
+      final planId = _selectedPlan == 'threeMonth'
+          ? SubscriptionCubit.threeMonthProductId
           : SubscriptionCubit.monthlyProductId;
       await context.read<SubscriptionCubit>().purchase(planId);
     } finally {
@@ -780,16 +780,16 @@ class _PlanCards extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: _PlanCard(
-            planId: 'annual',
-            label: 'Annual',
-            price: pricing.annualPrice,
-            period: 'per year',
-            billing: 'Billed annually',
+            planId: 'threeMonth',
+            label: '3 Months',
+            price: pricing.threeMonthPrice,
+            period: 'for 3 months',
+            billing: 'Billed every 3 months',
             isBest: true,
             savings: pricing.savingsPercent,
-            isSelected: selectedPlan == 'annual',
+            isSelected: selectedPlan == 'threeMonth',
             isSmallScreen: isSmallScreen,
-            onTap: () => onSelect('annual'),
+            onTap: () => onSelect('threeMonth'),
           ),
         ),
       ],
@@ -881,7 +881,7 @@ class _PlanCard extends StatelessWidget {
             const SizedBox(height: 2),
             UiText(period, style: AppTypography.caption.copyWith(fontSize: 10)),
             const SizedBox(height: 4),
-            // Billing note (Billed annually / monthly)
+            // Billing note (monthly / every three months)
             UiText(
               billing,
               style: AppTypography.caption.copyWith(
@@ -1035,8 +1035,10 @@ class _CtaButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label =
-        selectedPlan == 'annual' ? pricing.annualCta : pricing.monthlyCta;
+    final l10n = AppLocalizations.of(context);
+    final label = selectedPlan == 'threeMonth'
+        ? l10n.subscription_button_three_month(pricing.threeMonthPrice)
+        : l10n.subscription_button_monthly(pricing.monthlyPrice);
 
     return GestureDetector(
       onTap: isLoading ? null : onTap,

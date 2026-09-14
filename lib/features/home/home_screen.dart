@@ -12,13 +12,16 @@ import '../../core/cubits/discovery/discovery_feed_cubit.dart';
 import '../../core/cubits/interests/interests_cubit.dart';
 import '../../core/cubits/interests/interests_state.dart';
 import '../../core/router/app_router.dart';
+import '../../core/router/notification_navigation.dart';
 import '../../core/services/connectivity_service.dart';
 import '../../core/services/coach_mark_service.dart';
 import '../../core/services/policy_reminder_service.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_curves.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/buttons/silarah_pressable.dart';
+import '../../core/widgets/loaders/silarah_shimmer.dart';
 import '../../core/widgets/silarah_coach_mark.dart';
 import 'screens/discovery_feed_screen.dart';
 import 'screens/interests_screen.dart';
@@ -51,6 +54,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _coachMarks = CoachMarkService();
+    CoachMarkService.replayRevision.addListener(_replayCoachMarks);
     if (widget.initialTab != null) {
       _currentTab = widget.initialTab!;
     }
@@ -75,7 +79,16 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Future<void> _showCoachMarkIfNeeded(int tab) async {
     if (_coachCheckInFlight || _coachTab != null) return;
     _coachCheckInFlight = true;
-    final shouldShow = await _coachMarks.shouldShow(_coachTips[tab].id);
+    final interests = context.read<InterestsCubit>().state;
+    final alreadyUsed = switch (tab) {
+      1 => interests.sent.isNotEmpty || interests.respondedReceived.isNotEmpty,
+      2 => context.read<ChatCubit>().state.conversations.isNotEmpty,
+      _ => false,
+    };
+    final shouldShow = await _coachMarks.shouldShow(
+      _coachTips[tab].id,
+      alreadyUsed: alreadyUsed,
+    );
     if (!mounted) return;
     _coachCheckInFlight = false;
     if (tab != _currentTab) {
@@ -94,6 +107,12 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (_coachTab != null) setState(() => _coachTab = null);
   }
 
+  void _replayCoachMarks() {
+    if (!mounted) return;
+    _dismissCoachMark();
+    _showCoachMarkIfNeeded(_currentTab);
+  }
+
   Future<void> _disableCoachMarks() async {
     await _coachMarks.disableAll();
     if (mounted) _dismissCoachMark();
@@ -101,6 +120,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    CoachMarkService.replayRevision.removeListener(_replayCoachMarks);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -140,6 +160,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void _selectTab(int index) {
     if (index == _currentTab) {
       _refreshTabData(index);
+      _showCoachMarkIfNeeded(index);
       return;
     }
     setState(() {
@@ -159,7 +180,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       case 0:
         context.read<DiscoveryFeedCubit>().refreshIfChanged();
       case 1:
-        context.read<InterestsCubit>().refreshIfChanged();
+        // Selecting Interests is an explicit freshness boundary. This performs
+        // one tiny revision check and reloads the bounded lists only on change.
+        context.read<InterestsCubit>().refreshIfChanged(forceCheck: true);
       case 2:
         context.read<ChatCubit>().refreshIfChanged();
     }
@@ -176,111 +199,108 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<InterestsCubit, InterestsState>(
-      listenWhen: (previous, current) =>
-          (!previous.limitError && current.limitError) ||
-          (!previous.quotaUnavailable && current.quotaUnavailable),
-      listener: (context, quota) {
-        if (quota.limitError) {
-          InterestQuotaSheet.show(context, quota: quota);
-          context.read<InterestsCubit>().clearLimitError();
-          return;
-        }
-        ScaffoldMessenger.of(context)
-          ..clearSnackBars()
-          ..showSnackBar(SnackBar(
-            content: UiText(
-              context.uiCopy(
-                  'We could not verify your daily allowance. Check your connection and try again.'),
-            ),
-            behavior: SnackBarBehavior.floating,
-          ));
-        context.read<InterestsCubit>().clearQuotaUnavailable();
-      },
-      child: Scaffold(
-        backgroundColor: AppColors.obsidianNight,
-        body: SafeArea(
-          bottom: false,
-          child: Column(
-            children: [
-              const _ConnectivityStatusBanner(),
-              BlocBuilder<AccountStandingCubit, AccountStandingState>(
-                buildWhen: (previous, current) =>
-                    previous.kind != current.kind ||
-                    previous.updating != current.updating ||
-                    previous.errorMessage != current.errorMessage,
-                builder: (context, standing) => AnimatedSwitcher(
-                  duration: AppDimensions.durationReveal,
-                  switchInCurve: Curves.easeOutCubic,
-                  switchOutCurve: Curves.easeInCubic,
-                  child: standing.showsPersistentNotice
-                      ? _PersistentStandingBanner(
-                          key: ValueKey(standing.kind),
-                          standing: standing,
-                        )
-                      : const SizedBox.shrink(key: ValueKey('standing-clear')),
-                ),
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    return HomeTabBackScope(
+      currentTab: _currentTab,
+      onReturnToPrimaryTab: () => _selectTab(0),
+      child: BlocListener<InterestsCubit, InterestsState>(
+        listenWhen: (previous, current) =>
+            (!previous.limitError && current.limitError) ||
+            (!previous.quotaUnavailable && current.quotaUnavailable),
+        listener: (context, quota) {
+          if (quota.limitError) {
+            InterestQuotaSheet.show(context, quota: quota);
+            context.read<InterestsCubit>().clearLimitError();
+            return;
+          }
+          ScaffoldMessenger.of(context)
+            ..clearSnackBars()
+            ..showSnackBar(SnackBar(
+              content: UiText(
+                context.uiCopy(
+                    'We could not verify your daily allowance. Check your connection and try again.'),
               ),
-              Expanded(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    IndexedStack(
-                      index: _currentTab,
-                      children: List.generate(
-                        _tabCount,
-                        (index) => TickerMode(
-                          enabled: index == _currentTab,
-                          child: ExcludeSemantics(
-                            excluding: index != _currentTab,
-                            child: RepaintBoundary(
-                              child:
-                                  _tabCache[index] ?? const SizedBox.shrink(),
-                            ),
+              behavior: SnackBarBehavior.floating,
+            ));
+          context.read<InterestsCubit>().clearQuotaUnavailable();
+        },
+        child: Scaffold(
+          backgroundColor: AppColors.obsidianNight,
+          body: SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                const _ConnectivityStatusBanner(),
+                BlocBuilder<AccountStandingCubit, AccountStandingState>(
+                  buildWhen: (previous, current) =>
+                      previous.kind != current.kind ||
+                      previous.updating != current.updating ||
+                      previous.errorMessage != current.errorMessage,
+                  builder: (context, standing) => AnimatedSwitcher(
+                    duration: reduceMotion
+                        ? Duration.zero
+                        : AppDimensions.durationReveal,
+                    switchInCurve: AppCurves.reveal,
+                    switchOutCurve: AppCurves.dismiss,
+                    child: standing.showsPersistentNotice
+                        ? _PersistentStandingBanner(
+                            key: ValueKey(standing.kind),
+                            standing: standing,
+                          )
+                        : const SizedBox.shrink(
+                            key: ValueKey('standing-clear')),
+                  ),
+                ),
+                Expanded(
+                  child: IndexedStack(
+                    index: _currentTab,
+                    children: List.generate(
+                      _tabCount,
+                      (index) => TickerMode(
+                        enabled: index == _currentTab,
+                        child: ExcludeSemantics(
+                          excluding: index != _currentTab,
+                          child: RepaintBoundary(
+                            child: _tabCache[index] ?? const SizedBox.shrink(),
                           ),
                         ),
                       ),
                     ),
-                    PositionedDirectional(
-                      start: 12,
-                      end: 12,
-                      bottom: 12,
-                      child: AnimatedSwitcher(
-                        duration: AppDimensions.durationReveal,
-                        switchInCurve: Curves.easeOutCubic,
-                        switchOutCurve: Curves.easeInCubic,
-                        child: _coachTab != null
-                            ? Align(
-                                key: ValueKey(
-                                  'coach-${_coachTips[_coachTab!].id}',
-                                ),
-                                alignment: Alignment.bottomCenter,
-                                child: SilarahCoachMark(
-                                  icon: _coachTips[_coachTab!].icon,
-                                  title: context
-                                      .uiCopy(_coachTips[_coachTab!].title),
-                                  message: context
-                                      .uiCopy(_coachTips[_coachTab!].message),
-                                  onDismiss: _dismissCoachMark,
-                                  onDisableAll: _disableCoachMarks,
-                                ),
-                              )
-                            : const SizedBox.shrink(
-                                key: ValueKey('coach-hidden'),
-                              ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
+              ],
+            ),
+          ),
+          bottomNavigationBar: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // A dedicated dock cannot obscure bookmark, interest, or chat
+              // actions. Large-text tips scroll independently above navigation.
+              if (_coachTab case final int tab)
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: 560,
+                    maxHeight: MediaQuery.sizeOf(context).height * .34,
+                  ),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                    child: SilarahCoachMark(
+                      icon: _coachTips[tab].icon,
+                      title: context.uiCopy(_coachTips[tab].title),
+                      message: context.uiCopy(_coachTips[tab].message),
+                      onDismiss: _dismissCoachMark,
+                      onDisableAll: _disableCoachMarks,
+                    ),
+                  ),
+                ),
+              SilarahBottomNav(
+                currentIndex: _currentTab,
+                onTabSelected: _selectTab,
               ),
             ],
           ),
+          resizeToAvoidBottomInset: false,
         ),
-        bottomNavigationBar: SilarahBottomNav(
-          currentIndex: _currentTab,
-          onTabSelected: _selectTab,
-        ),
-        resizeToAvoidBottomInset: false,
       ),
     );
   }
@@ -306,28 +326,28 @@ const _coachTips = <_CoachTip>[
     icon: Icons.tune_rounded,
     title: 'Shape your discovery',
     message:
-        'Use All Filters to refine compatibility. Premium members can browse eligible profiles across India without loading them all at once.',
+        'Use filters to focus on age, location, practice, and trust signals. Save a profile when you want time to consider it.',
   ),
   _CoachTip(
     id: 'interests',
     icon: Icons.favorite_outline_rounded,
     title: 'Keep every interest clear',
     message:
-        'Sent interests stay visible with their current status, so you can withdraw or follow their progress without losing the profile.',
+        'Every interest keeps a clear status. Open Sent to review, withdraw, or follow its progress without losing the profile.',
   ),
   _CoachTip(
     id: 'chat',
     icon: Icons.forum_outlined,
     title: 'Conversations begin after acceptance',
     message:
-        'Women message their matches free. Men unlock messaging with Premium; ended conversations remain available as read-only history.',
+        'A conversation opens after an interest is accepted. Women message free; men use Premium to send.',
   ),
   _CoachTip(
     id: 'profile',
-    icon: Icons.verified_user_outlined,
+    icon: Icons.visibility_outlined,
     title: 'Build trust at your pace',
     message:
-        'Complete your profile and optional trust checks to help serious members understand who you are before connecting.',
+        'The activity eye shows profile visits. Your profile, photo controls, and optional trust checks stay together here.',
   ),
 ];
 
@@ -493,13 +513,9 @@ class _PersistentStandingBanner extends StatelessWidget {
                   border: Border.all(color: accent),
                 ),
                 child: standing.updating
-                    ? SizedBox(
-                        width: 17,
-                        height: 17,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: restricted ? accent : AppColors.obsidianNight,
-                        ),
+                    ? SilarahActivityIndicator(
+                        size: 17,
+                        color: restricted ? accent : AppColors.obsidianNight,
                       )
                     : UiText(
                         restricted ? 'Get help' : 'Resume',

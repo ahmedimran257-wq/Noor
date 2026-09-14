@@ -1,57 +1,92 @@
-"""Generate launcher artwork from the same visual contract as the website.
+"""Generate every web brand asset from the signed Android app icon.
 
-Requires Pillow. The committed PNGs are the production outputs; this script
-exists so the clean black-and-gold icon cannot accidentally be replaced by the
-retired glossy mark.
+The canonical source is ``assets/icon/app_icon.png``: the black handwritten
+Silarah wordmark on white. Keeping one source prevents the marketing site,
+Flutter web shell, and installed Android app from drifting into different
+brands again.
 """
 
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageChops
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SIZE = 1024
-BACKGROUND = "#0A0A0D"
-GOLD = "#D8AF55"
-FONT_PATH = Path("C:/Windows/Fonts/arial.ttf")
+MASTER = ROOT / "assets/icon/app_icon.png"
 
 
-def wordmark_s(*, transparent: bool) -> Image.Image:
-    image = Image.new(
-        "RGBA",
-        (SIZE, SIZE),
-        (0, 0, 0, 0) if transparent else BACKGROUND,
-    )
-    draw = ImageDraw.Draw(image)
-    font = ImageFont.truetype(str(FONT_PATH), 690)
-    bounds = draw.textbbox((0, 0), "S", font=font, stroke_width=0)
-    width = bounds[2] - bounds[0]
-    height = bounds[3] - bounds[1]
-    position = (
-        (SIZE - width) / 2 - bounds[0],
-        (SIZE - height) / 2 - bounds[1] - 8,
-    )
-    draw.text(position, "S", font=font, fill=GOLD)
+def load_master() -> Image.Image:
+    image = Image.open(MASTER).convert("RGBA")
+    if image.width != image.height:
+        raise ValueError("The canonical Silarah app icon must be square.")
     return image
 
 
-def save_resized(source: Image.Image, relative_path: str, size: int) -> None:
+def save_square(source: Image.Image, relative_path: str, size: int) -> None:
     destination = ROOT / relative_path
     destination.parent.mkdir(parents=True, exist_ok=True)
     source.resize((size, size), Image.Resampling.LANCZOS).save(destination)
 
 
+def transparent_wordmark(source: Image.Image) -> Image.Image:
+    luminance = source.convert("RGB").convert("L")
+    alpha = ImageChops.invert(luminance)
+    # Remove faint antialiasing residue in the white field while retaining the
+    # smooth edge of the handwritten mark.
+    alpha = alpha.point(lambda value: 0 if value < 8 else value)
+    ink = Image.new("RGBA", source.size, (15, 22, 18, 0))
+    ink.putalpha(alpha)
+    bounds = alpha.getbbox()
+    if bounds is None:
+        raise ValueError("The canonical app icon contains no visible wordmark.")
+    cropped = ink.crop(bounds)
+    padding = max(16, cropped.height // 12)
+    output = Image.new(
+        "RGBA",
+        (cropped.width + padding * 2, cropped.height + padding * 2),
+        (0, 0, 0, 0),
+    )
+    output.alpha_composite(cropped, (padding, padding))
+    return output
+
+
+def save_wordmark(source: Image.Image, relative_path: str, width: int) -> None:
+    height = round(source.height * (width / source.width))
+    destination = ROOT / relative_path
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    source.resize((width, height), Image.Resampling.LANCZOS).save(destination)
+
+
+def save_favicon(source: Image.Image, relative_path: str) -> None:
+    destination = ROOT / relative_path
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    source.save(destination, sizes=[(16, 16), (32, 32), (48, 48)])
+
+
 def main() -> None:
-    icon = wordmark_s(transparent=False)
-    foreground = wordmark_s(transparent=True)
-    save_resized(icon, "assets/icon/app_icon.png", SIZE)
-    save_resized(foreground, "assets/icon/app_icon_foreground.png", SIZE)
-    save_resized(icon, "web/favicon.png", 96)
-    save_resized(icon, "web/icons/Icon-192.png", 192)
-    save_resized(icon, "web/icons/Icon-512.png", 512)
-    save_resized(icon, "web/icons/Icon-maskable-192.png", 192)
-    save_resized(icon, "web/icons/Icon-maskable-512.png", 512)
+    master = load_master()
+    wordmark = transparent_wordmark(master)
+
+    for relative_path, size in (
+        ("site/assets/silarah-app-icon-v2.png", 512),
+        ("site/favicon-48.png", 48),
+        ("site/favicon-96.png", 96),
+        ("site/apple-touch-icon.png", 180),
+        ("web/favicon.png", 96),
+        ("web/icons/Icon-192.png", 192),
+        ("web/icons/Icon-512.png", 512),
+        ("web/icons/Icon-maskable-192.png", 192),
+        ("web/icons/Icon-maskable-512.png", 512),
+        ("site-app/assets/silarah-app-icon-v2.png", 512),
+        ("site-app/favicon-48.png", 48),
+        ("site-app/apple-touch-icon.png", 180),
+    ):
+        save_square(master, relative_path, size)
+
+    save_wordmark(wordmark, "site/assets/silarah-wordmark-v2.png", 640)
+    save_wordmark(wordmark, "site-app/assets/silarah-wordmark-v2.png", 640)
+    save_favicon(master, "site/favicon.ico")
+    save_favicon(master, "site-app/favicon.ico")
 
 
 if __name__ == "__main__":

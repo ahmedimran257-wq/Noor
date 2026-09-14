@@ -1,23 +1,28 @@
-// SILARAH Design DNA — Motion Manifesto
-// "No linear animations. Everything must have weight and momentum."
+// SILARAH motion language.
+//
+// These curves deliberately avoid stock bounce/back easing. Motion should
+// clarify hierarchy and state change without calling attention to itself.
 import 'package:flutter/material.dart';
 
 abstract final class AppCurves {
-  /// "The Reveal" — elements entering the screen.
-  /// Fast start, soft landing. Used for 300–500ms durations.
-  static const Curve reveal = Curves.easeOutCubic;
+  /// Decisive entrance with a long, controlled settle.
+  static const Curve reveal = Cubic(0.16, 1.0, 0.3, 1.0);
 
-  /// "The Transition" — state changes (chip color, tab switch).
-  /// Used for 200–300ms durations.
-  static const Curve transition = Curves.easeInOutQuart;
+  /// Balanced state change for selection, layout and colour transitions.
+  static const Curve transition = Cubic(0.65, 0.0, 0.35, 1.0);
 
-  /// "The Tactile Pop" — micro-interactions (heart icon, checkmark).
-  /// Used for 300–400ms durations.
-  static const Curve tactile = Curves.easeOutBack;
+  /// Restrained emphasis for confirmations and small state changes.
+  static const Curve tactile = Cubic(0.2, 0.8, 0.2, 1.0);
 
-  /// Button press scale — snappy feel.
-  static const Curve buttonPress = Curves.easeInOut;
+  /// Immediate compression without a rebound or novelty overshoot.
+  static const Curve buttonPress = Cubic(0.2, 0.0, 0.0, 1.0);
 
-  /// Shimmer sweep — linear for smooth shimmer effect.
+  /// Clean acceleration used when content leaves the interface.
+  static const Curve dismiss = Cubic(0.4, 0.0, 1.0, 1.0);
+
+  /// Quiet periodic motion for loaders and ambient placeholders.
+  static const Curve breathe = Cubic(0.37, 0.0, 0.63, 1.0);
+
+  /// A travelling highlight must remain velocity-stable.
   static const Curve shimmer = Curves.linear;
 }

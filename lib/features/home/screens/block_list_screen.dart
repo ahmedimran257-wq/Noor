@@ -13,6 +13,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/silarah_empty_state.dart';
+import '../../../core/widgets/overlays/silarah_dialog.dart';
 
 class BlockListScreen extends StatefulWidget {
   const BlockListScreen({super.key});
@@ -68,7 +69,7 @@ class _BlockListScreenState extends State<BlockListScreen> {
 
   void _showUnblockDialog(BuildContext context, BlockedUser user) {
     HapticFeedback.selectionClick();
-    showDialog(
+    showSilarahDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surfaceElevated,

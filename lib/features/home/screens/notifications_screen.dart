@@ -3,15 +3,20 @@
 // AppBar: "Mark all read" text button.
 // Each row: type icon in colored circle + title + body + time.
 // Unread rows: gold 3px left border.
+import 'dart:async';
+
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/cubits/chat/chat_cubit.dart';
 import '../../../core/cubits/notifications/notifications_cubit.dart';
+import '../../../core/cubits/interests/interests_cubit.dart';
 import '../../../core/cubits/subscription/subscription_cubit.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/overlays/silarah_dialog.dart';
 import '../../../l10n/generated/app_localizations.dart';
 
 class NotificationsScreen extends StatelessWidget {
@@ -146,6 +151,19 @@ class NotificationsScreen extends StatelessWidget {
                     }
                     final path = notificationPathFor(item);
                     if (path != null && context.mounted) {
+                      if (item.type == 'interest_received' ||
+                          item.type == 'interest_accepted' ||
+                          item.type == 'match' ||
+                          item.type == 'match_accepted') {
+                        unawaited(
+                          context
+                              .read<InterestsCubit>()
+                              .refreshIfChanged(forceCheck: true),
+                        );
+                      }
+                      if (item.type == 'new_message') {
+                        context.read<ChatCubit>().scheduleInboxReconciliation();
+                      }
                       if (item.type == 'referral_reward') {
                         context.go(path);
                       } else {
@@ -167,7 +185,7 @@ class NotificationsScreen extends StatelessWidget {
 enum _NotificationMenuAction { markAllRead, clearAll }
 
 Future<bool> _confirmDeleteOne(BuildContext context) async {
-  return await showDialog<bool>(
+  return await showSilarahDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
           backgroundColor: AppColors.surfaceElevated,
@@ -195,7 +213,7 @@ Future<bool> _confirmDeleteOne(BuildContext context) async {
 }
 
 Future<bool> _confirmClearAll(BuildContext context) async {
-  return await showDialog<bool>(
+  return await showSilarahDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
           backgroundColor: AppColors.surfaceElevated,

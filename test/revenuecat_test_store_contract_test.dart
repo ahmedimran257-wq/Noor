@@ -10,7 +10,8 @@ void main() {
     expect(script, contains('REVENUECAT_TEST_KEY'));
     expect(script, contains('https://api.revenuecat.com/v1/subscribers/'));
     expect(script, contains(r"'$rc_monthly'"));
-    expect(script, contains(r"'$rc_annual'"));
+    expect(script, contains(r"'$rc_three_month'"));
+    expect(script, contains('unsupported packages'));
     expect(script, isNot(contains('REVENUECAT_SECRET_KEY')));
   });
 }

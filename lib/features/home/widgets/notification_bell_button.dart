@@ -1,8 +1,9 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/cubits/notifications/notifications_cubit.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_curves.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
 
@@ -15,14 +16,16 @@ class NotificationBellButton extends StatelessWidget {
   const NotificationBellButton({
     super.key,
     required this.onTap,
+    this.embedded = false,
   });
 
   final VoidCallback onTap;
+  final bool embedded;
 
   @override
   Widget build(BuildContext context) {
     return BlocSelector<NotificationsCubit, NotificationsState, int>(
-      selector: (state) => state.unreadCount,
+      selector: (state) => state.bellUnreadCount,
       builder: (context, unreadCount) {
         return SilarahPressable(
           semanticLabel: unreadCount == 0
@@ -37,16 +40,18 @@ class NotificationBellButton extends StatelessWidget {
                 curve: Curves.easeOutCubic,
                 width: AppDimensions.minTouchTarget,
                 height: AppDimensions.minTouchTarget,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceGlass,
-                  borderRadius:
-                      BorderRadius.circular(AppDimensions.radiusButton),
-                  border: Border.all(
-                    color: unreadCount > 0
-                        ? AppColors.champagneGold.withValues(alpha: 0.38)
-                        : AppColors.cardBorder,
-                  ),
-                ),
+                decoration: embedded
+                    ? null
+                    : BoxDecoration(
+                        color: AppColors.surfaceGlass,
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusButton),
+                        border: Border.all(
+                          color: unreadCount > 0
+                              ? AppColors.champagneGold.withValues(alpha: 0.38)
+                              : AppColors.cardBorder,
+                        ),
+                      ),
                 child: Icon(
                   Icons.notifications_none_rounded,
                   color: unreadCount > 0
@@ -60,8 +65,8 @@ class NotificationBellButton extends StatelessWidget {
                 right: 6,
                 child: AnimatedSwitcher(
                   duration: AppDimensions.durationTransition,
-                  switchInCurve: Curves.easeOutBack,
-                  switchOutCurve: Curves.easeInCubic,
+                  switchInCurve: AppCurves.tactile,
+                  switchOutCurve: AppCurves.dismiss,
                   child: unreadCount > 0
                       ? Container(
                           key: const ValueKey('notification-unread-dot'),

@@ -114,6 +114,24 @@ abstract class AppLocalizations {
     Locale('ur')
   ];
 
+  /// No description provided for @guide_optional_details.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional details (optional)'**
+  String get guide_optional_details;
+
+  /// No description provided for @guide_optional_details_body.
+  ///
+  /// In en, this message translates to:
+  /// **'You can complete these details later from your profile.'**
+  String get guide_optional_details_body;
+
+  /// No description provided for @guide_profile_ownership.
+  ///
+  /// In en, this message translates to:
+  /// **'This profile describes the person seeking marriage. A separate Guardian can be invited later for conversation oversight.'**
+  String get guide_profile_ownership;
+
   /// No description provided for @about_button_later.
   ///
   /// In en, this message translates to:
@@ -4085,6 +4103,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Subscribe — {price}/month'**
   String subscription_button_monthly(String price);
+
+  /// No description provided for @subscription_button_three_month.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe — {price}/3 months'**
+  String subscription_button_three_month(String price);
 
   /// No description provided for @subscription_label_bestValue.
   ///

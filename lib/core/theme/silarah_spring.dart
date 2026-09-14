@@ -24,13 +24,6 @@ abstract final class SilarahSpring {
     stiffness: 300.0,
     damping: 29.44,
   );
-
-  /// Bouncy: mass=1.0, stiffness=400, ratio=0.55 (ceremony, celebrations)
-  static const SpringDescription bouncy = SpringDescription(
-    mass: 1.0,
-    stiffness: 400.0,
-    damping: 22.0,
-  );
 }
 
 extension SilarahSpringControllerExtension on AnimationController {

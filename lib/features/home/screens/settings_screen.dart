@@ -29,6 +29,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/loaders/silarah_shimmer.dart';
+import '../../../core/widgets/overlays/silarah_bottom_sheet.dart';
+import '../../../core/widgets/overlays/silarah_dialog.dart';
 import '../../../core/cubits/onboarding/onboarding_cubit.dart';
 import '../../../core/cubits/account_standing/account_standing_cubit.dart';
 import '../../../core/cubits/subscription/subscription_cubit.dart';
@@ -447,7 +449,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // Grievance Officer (India IT Act 2021)
   static void _showGrievanceInfo(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    showDialog(
+    showSilarahDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surfaceMid,
@@ -524,7 +526,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // Photo privacy
   // Language sheet
   void _showThemeSheet(BuildContext context) {
-    showModalBottomSheet<void>(
+    showSilarahBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -538,7 +540,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showLanguageSheet(BuildContext context, SupportedLanguage current) {
-    showModalBottomSheet<void>(
+    showSilarahBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -550,7 +552,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showReportHistory(BuildContext context, BlockReportState state) {
-    showModalBottomSheet<void>(
+    showSilarahBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -575,7 +577,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     NotificationPrefsState prefs,
   ) async {
     final l10n = AppLocalizations.of(context);
-    final selected = await showModalBottomSheet<DiscoveryDigestFrequency>(
+    final selected = await showSilarahBottomSheet<DiscoveryDigestFrequency>(
       context: context,
       backgroundColor: AppColors.obsidianNight,
       showDragHandle: true,
@@ -813,7 +815,7 @@ class _GuardianSectionState extends State<_GuardianSection> {
   }
 
   Future<void> _showInvitation(GuardianInvitation invitation) async {
-    await showModalBottomSheet<void>(
+    await showSilarahBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surfaceDark,
       showDragHandle: true,
@@ -1069,11 +1071,8 @@ class _GuardianSectionState extends State<_GuardianSection> {
                           onPressed:
                               _renewingInvitation ? null : _renewInvitation,
                           icon: _renewingInvitation
-                              ? const SizedBox.square(
-                                  dimension: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
+                              ? const SilarahActivityIndicator(
+                                  size: 16,
                                 )
                               : const Icon(Icons.share_outlined, size: 18),
                           label: const UiText('Create a new invitation code'),
@@ -1482,7 +1481,7 @@ class _PrivacySectionState extends State<_PrivacySection> {
 
   Future<void> _downloadMyData() async {
     final l10n = AppLocalizations.of(context);
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showSilarahDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: AppColors.surfaceMid,
@@ -1704,10 +1703,8 @@ class _PrivacySectionState extends State<_PrivacySection> {
                       ),
                     ),
                     if (_incognitoLoading || _incognitoSaving)
-                      const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                      const SilarahActivityIndicator(
+                        size: 24,
                       )
                     else if (subscription.canUseIncognito || requested)
                       _PrivacyToggle(
@@ -1805,9 +1802,8 @@ class _PrivacySectionState extends State<_PrivacySection> {
             child: FilledButton.icon(
               onPressed: _exportingData ? null : _downloadMyData,
               icon: _exportingData
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                  ? const SilarahActivityIndicator(
+                      size: 18,
                     )
                   : const Icon(Icons.download_for_offline_outlined),
               label: UiText(l10n.settings_privacy_download_btn),

@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'app_colors.dart';
 import 'app_dimensions.dart';
 import 'app_typography.dart';
-import 'silarah_spring.dart';
 
 abstract final class AppTheme {
   // Identity builder
@@ -198,20 +197,6 @@ abstract final class AppTheme {
         showCheckmark: false,
       ),
 
-      // Bottom Sheet Theme
-      // "NO Pop-ups: Use Bottom Sheets that slide up with easeOutCubic."
-      bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: AppColors.obsidianNight,
-        modalBackgroundColor: AppColors.obsidianNight,
-        elevation: 0,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(AppDimensions.radiusCard),
-          ),
-        ),
-        showDragHandle: false,
-      ),
-
       // Navigation Bar Theme (bottom nav)
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.obsidianNight,
@@ -259,18 +244,45 @@ abstract final class AppTheme {
         behavior: SnackBarBehavior.floating,
       ),
 
-      // Dialog → use SilarahBottomSheet instead
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: AppColors.surfaceElevated,
+        modalBackgroundColor: AppColors.surfaceElevated,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        modalElevation: 0,
+        modalBarrierColor: AppColors.overlayBlack55,
+        shadowColor: Colors.black.withValues(alpha: mode.isDark ? .42 : .16),
+        showDragHandle: false,
+        dragHandleColor: AppColors.slateMist.withValues(alpha: .42),
+        dragHandleSize: const Size(38, 4),
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppDimensions.radiusCard),
+          ),
+          side: BorderSide(color: AppColors.cardBorder),
+        ),
+      ),
+
+      // Compact confirmations remain visually related to sheet surfaces.
       dialogTheme: DialogThemeData(
-        backgroundColor: AppColors.obsidianNight,
+        backgroundColor: AppColors.surfaceElevated,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shadowColor: Colors.black.withValues(alpha: mode.isDark ? .46 : .18),
+        barrierColor: AppColors.overlayBlack55,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
+          side: BorderSide(color: AppColors.cardBorder),
         ),
         titleTextStyle: AppTypography.userName,
         contentTextStyle: AppTypography.body,
       ),
 
       // Page Transitions
-      // Overridden globally via GoRouter — kept here as fallback.
+      // GoRouter and imperative routes share the same opaque, gesture-aware
+      // transition. Never cross-fade complete screens over each other.
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.android: SilarahPageTransition(),
@@ -281,10 +293,7 @@ abstract final class AppTheme {
   }
 }
 
-// Custom Page Transition Builder
-// "The Unfolding Effect: fade in + shift upward 20px → 0px."
-
-class SilarahPageTransition extends PageTransitionsBuilder {
+class SilarahPageTransition extends CupertinoPageTransitionsBuilder {
   const SilarahPageTransition();
 
   @override
@@ -295,68 +304,14 @@ class SilarahPageTransition extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    // Gentle spring curve for both animations
-    const springCurve = SpringCurve(
-      spring: SilarahSpring.gentle,
-      duration: Duration(milliseconds: 500),
-    );
+    if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) return child;
 
-    // Primary (incoming) slide: slides in from right
-    final primarySlide = Tween<Offset>(
-      begin: const Offset(1.0, 0.0),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: animation,
-        curve: springCurve,
-      ),
-    );
-
-    // Secondary (outgoing) slide: slides left at 0.3x speed
-    final secondarySlide = Tween<Offset>(
-      begin: Offset.zero,
-      end: const Offset(-0.3, 0.0),
-    ).animate(
-      CurvedAnimation(
-        parent: secondaryAnimation,
-        curve: springCurve,
-      ),
-    );
-
-    // Primary (incoming) fade
-    final primaryFade = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(
-      CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOut,
-      ),
-    );
-
-    // Secondary (outgoing) fade: dims slightly to 80% opacity when pushed over
-    final secondaryFade = Tween<double>(
-      begin: 1.0,
-      end: 0.8,
-    ).animate(
-      CurvedAnimation(
-        parent: secondaryAnimation,
-        curve: Curves.easeOut,
-      ),
-    );
-
-    return SlideTransition(
-      position: secondarySlide,
-      child: FadeTransition(
-        opacity: secondaryFade,
-        child: SlideTransition(
-          position: primarySlide,
-          child: FadeTransition(
-            opacity: primaryFade,
-            child: child,
-          ),
-        ),
-      ),
+    return super.buildTransitions<T>(
+      route,
+      context,
+      animation,
+      secondaryAnimation,
+      child,
     );
   }
 }

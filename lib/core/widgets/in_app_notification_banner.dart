@@ -1,12 +1,14 @@
-﻿import 'package:silarah/l10n/ui_copy.dart';
+import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 
 import '../cubits/notifications/notifications_cubit.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_curves.dart';
 import '../theme/app_dimensions.dart';
 import '../theme/app_typography.dart';
+import 'buttons/silarah_pressable.dart';
 
 class InAppNotificationBannerHost extends StatefulWidget {
   const InAppNotificationBannerHost({
@@ -69,7 +71,10 @@ class _InAppNotificationBannerHostState
     final presentation = ++_presentation;
     _dismissTimer?.cancel();
     setState(() => _visible = false);
-    Timer(const Duration(milliseconds: 280), () {
+    final exitDelay = MediaQuery.maybeOf(context)?.disableAnimations ?? false
+        ? Duration.zero
+        : AppDimensions.durationDialogExit;
+    Timer(exitDelay, () {
       if (!mounted || presentation != _presentation) return;
       setState(() => _item = null);
     });
@@ -96,6 +101,8 @@ class _InAppNotificationBannerHostState
   @override
   Widget build(BuildContext context) {
     final item = _item;
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     return Stack(
       children: [
         widget.child,
@@ -107,91 +114,120 @@ class _InAppNotificationBannerHostState
             child: SafeArea(
               bottom: false,
               child: AnimatedSlide(
-                duration: const Duration(milliseconds: 320),
-                curve: Curves.easeOutCubic,
-                offset: _visible ? Offset.zero : const Offset(0, -1.25),
+                duration:
+                    reduceMotion ? Duration.zero : AppDimensions.durationReveal,
+                curve: AppCurves.reveal,
+                offset: _visible ? Offset.zero : const Offset(0, -.16),
                 child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 220),
+                  duration: reduceMotion
+                      ? Duration.zero
+                      : AppDimensions.durationTransition,
+                  curve: AppCurves.transition,
                   opacity: _visible ? 1 : 0,
                   child: Dismissible(
                     key: ValueKey('in_app_notification_${item.id}'),
                     direction: DismissDirection.horizontal,
                     onDismissed: (_) => _dismissImmediately(),
-                    child: Material(
-                      color: AppColors.surfaceElevated,
-                      elevation: 12,
-                      shadowColor:
-                          AppColors.champagneGold.withValues(alpha: 0.28),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          AppDimensions.radiusButton,
+                    child: SilarahPressable(
+                      haptic: false,
+                      semanticLabel: item.title,
+                      onTap: () {
+                        _dismiss();
+                        widget.onTap(item);
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceElevated,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: AppColors.cardBorder),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(
+                                alpha: AppColors.active.mode.isDark ? .4 : .14,
+                              ),
+                              blurRadius: 26,
+                              offset: const Offset(0, 12),
+                            ),
+                          ],
                         ),
-                        side: BorderSide(
-                          color: AppColors.champagneGold,
-                          width: 1.2,
-                        ),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: InkWell(
-                        onTap: () {
-                          _dismiss();
-                          widget.onTap(item);
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 38,
-                                height: 38,
+                        clipBehavior: Clip.antiAlias,
+                        child: Stack(
+                          children: [
+                            PositionedDirectional(
+                              start: 0,
+                              top: 10,
+                              bottom: 10,
+                              child: Container(
+                                width: 2,
                                 decoration: BoxDecoration(
-                                  color: AppColors.goldGlow,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.notifications_active_rounded,
                                   color: AppColors.champagneGold,
-                                  size: 20,
+                                  borderRadius: BorderRadius.circular(2),
                                 ),
                               ),
-                              const SizedBox(width: AppDimensions.space12),
-                              Expanded(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    UiText(
-                                      item.title,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: AppTypography.bodyMedium,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 38,
+                                    height: 38,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.goldGlow,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: AppColors.goldBorder,
+                                      ),
                                     ),
-                                    const SizedBox(
-                                      height: AppDimensions.space4,
+                                    child: Icon(
+                                      Icons.notifications_none_rounded,
+                                      color: AppColors.champagneGold,
+                                      size: 20,
                                     ),
-                                    UiText(
-                                      item.body,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: AppTypography.caption,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Semantics(
-                                label: 'Dismiss notification',
-                                button: true,
-                                child: IconButton(
-                                  onPressed: _dismiss,
-                                  icon: Icon(
-                                    Icons.close_rounded,
-                                    color: AppColors.slateMist,
-                                    size: 19,
                                   ),
-                                ),
+                                  const SizedBox(
+                                    width: AppDimensions.space12,
+                                  ),
+                                  Expanded(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        UiText(
+                                          item.title,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: AppTypography.bodyMedium,
+                                        ),
+                                        const SizedBox(
+                                          height: AppDimensions.space4,
+                                        ),
+                                        UiText(
+                                          item.body,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: AppTypography.caption,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Semantics(
+                                    label: 'Dismiss notification',
+                                    button: true,
+                                    child: IconButton(
+                                      onPressed: _dismiss,
+                                      icon: Icon(
+                                        Icons.close_rounded,
+                                        color: AppColors.slateMist,
+                                        size: 19,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ),

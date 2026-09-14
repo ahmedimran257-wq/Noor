@@ -2,12 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:silarah/l10n/ui_copy.dart';
 
 import '../theme/app_colors.dart';
-import '../theme/app_dimensions.dart';
 import '../theme/app_typography.dart';
-import 'buttons/silarah_pressable.dart';
 
-/// A one-time contextual guide. It deliberately does not use a toast: the
-/// member controls when it disappears and assistive technology can read it.
+/// Member-controlled guidance, displayed in its own layout space.
 class SilarahCoachMark extends StatelessWidget {
   const SilarahCoachMark({
     super.key,
@@ -29,108 +26,50 @@ class SilarahCoachMark extends StatelessWidget {
     return Semantics(
       liveRegion: true,
       container: true,
-      label: '$title. $message',
       child: Material(
-        color: Colors.transparent,
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 520),
-          padding: const EdgeInsets.fromLTRB(14, 13, 10, 10),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceElevated,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: AppColors.champagneGold.withValues(alpha: .55),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: .16),
-                blurRadius: 24,
-                offset: const Offset(0, 9),
-              ),
-            ],
-          ),
-          child: Row(
+        color: AppColors.surfaceElevated,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: AppColors.cardBorder),
+        ),
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: AppColors.goldGlow,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, size: 20, color: AppColors.champagneGold),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(icon, size: 20, color: AppColors.champagneGold),
+                  const SizedBox(width: 10),
+                  Expanded(
+                      child: UiText(title, style: AppTypography.bodyMedium)),
+                ],
               ),
-              const SizedBox(width: 11),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    UiText(
-                      title,
-                      style: AppTypography.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+              const SizedBox(height: 4),
+              UiText(message,
+                  style: AppTypography.caption.copyWith(height: 1.4)),
+              Wrap(
+                spacing: 12,
+                children: [
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size(48, 48),
+                      foregroundColor: AppColors.champagneGold,
                     ),
-                    const SizedBox(height: 2),
-                    UiText(
-                      message,
-                      style: AppTypography.caption.copyWith(height: 1.35),
-                    ),
-                    const SizedBox(height: 7),
-                    Wrap(
-                      spacing: 14,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        SilarahPressable(
-                          semanticLabel: 'Got it',
-                          onTap: onDismiss,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 2,
-                              vertical: 5,
-                            ),
-                            child: UiText(
-                              context.uiCopy('Got it'),
-                              style: AppTypography.captionMedium.copyWith(
-                                color: AppColors.champagneGold,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ),
-                        SilarahPressable(
-                          semanticLabel: 'Hide all tips',
-                          onTap: onDisableAll,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 2,
-                              vertical: 5,
-                            ),
-                            child: UiText(
-                              context.uiCopy('Hide tips'),
-                              style: AppTypography.caption.copyWith(
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              SilarahPressable(
-                semanticLabel: 'Dismiss',
-                onTap: onDismiss,
-                child: Padding(
-                  padding: const EdgeInsets.all(AppDimensions.space4),
-                  child: Icon(
-                    Icons.close_rounded,
-                    size: 19,
-                    color: AppColors.slateMist,
+                    onPressed: onDismiss,
+                    child: UiText(context.uiCopy('Got it')),
                   ),
-                ),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size(48, 48),
+                      foregroundColor: AppColors.slateMist,
+                    ),
+                    onPressed: onDisableAll,
+                    child: UiText(context.uiCopy('Hide tips')),
+                  ),
+                ],
               ),
             ],
           ),

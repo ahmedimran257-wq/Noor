@@ -9,6 +9,7 @@ import '../theme/app_typography.dart';
 import '../services/connectivity_service.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'buttons/silarah_pressable.dart';
+import 'loaders/silarah_shimmer.dart';
 
 /// Full-screen startup state shown before authentication when Silarah's
 /// backend cannot be reached. It intentionally keeps the router hidden so a
@@ -196,13 +197,9 @@ class _StartupOfflineScreenState extends State<StartupOfflineScreen>
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           if (_retrying)
-                            SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppColors.champagneGold,
-                              ),
+                            SilarahActivityIndicator(
+                              size: 18,
+                              color: AppColors.champagneGold,
                             )
                           else
                             Icon(

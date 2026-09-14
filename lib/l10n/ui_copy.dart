@@ -6,8 +6,9 @@ import 'package:silarah/l10n/legal_access_ui_copy.dart';
 import 'package:silarah/l10n/photo_guide_ui_copy.dart';
 import 'package:silarah/l10n/premium_discovery_ui_copy.dart';
 import 'package:silarah/l10n/premium_relationship_ui_copy.dart';
+import 'package:silarah/l10n/pricing_ui_copy.dart';
+import 'package:silarah/l10n/product_guide_ui_copy.dart';
 import 'package:silarah/l10n/trust_ui_copy.dart';
-import 'package:silarah/l10n/translation_privacy_ui_copy.dart';
 import 'package:silarah/l10n/email_guardian_ui_copy.dart';
 import 'package:silarah/l10n/guardian_ui_copy.dart';
 import 'package:silarah/l10n/ui_copy_supplement.dart';
@@ -28,8 +29,9 @@ class UiCopy {
         photoGuideUiCopy[languageCode]?[source] ??
         premiumDiscoveryUiCopy[languageCode]?[source] ??
         premiumRelationshipUiCopy[languageCode]?[source] ??
+        pricingUiCopy[languageCode]?[source] ??
+        productGuideUiCopy[languageCode]?[source] ??
         trustUiCopy[languageCode]?[source] ??
-        translationPrivacyUiCopy[languageCode]?[source] ??
         emailGuardianUiCopy[languageCode]?[source] ??
         guardianUiCopy[languageCode]?[source] ??
         supplementalUiCopy[languageCode]?[source] ??
@@ -44,8 +46,9 @@ class UiCopy {
       photoGuideUiCopy[languageCode]?.containsKey(source) == true ||
       premiumDiscoveryUiCopy[languageCode]?.containsKey(source) == true ||
       premiumRelationshipUiCopy[languageCode]?.containsKey(source) == true ||
+      pricingUiCopy[languageCode]?.containsKey(source) == true ||
+      productGuideUiCopy[languageCode]?.containsKey(source) == true ||
       trustUiCopy[languageCode]?.containsKey(source) == true ||
-      translationPrivacyUiCopy[languageCode]?.containsKey(source) == true ||
       emailGuardianUiCopy[languageCode]?.containsKey(source) == true ||
       guardianUiCopy[languageCode]?.containsKey(source) == true ||
       supplementalUiCopy[languageCode]?.containsKey(source) == true ||
@@ -99,7 +102,6 @@ class UiCopy {
       'Always': 'دائماً',
       'Amazigh (Berber)': 'الأمازيغية (البربرية)',
       'Amharic': 'الأمهرية',
-      'Annual': 'سنوي',
       'Any': 'أي',
       'App': 'برنامج',
       'Appearance': 'المظهر',
@@ -1146,7 +1148,6 @@ class UiCopy {
       'Always': 'সর্বদা',
       'Amazigh (Berber)': 'আমাজিঘ (বারবার)',
       'Amharic': 'আমহারিক',
-      'Annual': 'বার্ষিক',
       'Any': 'যে কোন',
       'App': 'অ্যাপ',
       'Appearance': 'চেহারা',
@@ -2213,7 +2214,6 @@ class UiCopy {
       'Always': 'Stets',
       'Amazigh (Berber)': 'Amazigh (Berber)',
       'Amharic': 'Amharisch',
-      'Annual': 'Jährlich',
       'Any': 'Beliebig',
       'App': 'App',
       'Appearance': 'Erscheinungsbild',
@@ -3288,7 +3288,6 @@ class UiCopy {
       'Always': 'Toujours',
       'Amazigh (Berber)': 'Amazigh (berbère)',
       'Amharic': 'Amharique',
-      'Annual': 'Annuel',
       'Any': 'N\'importe lequel',
       'App': 'Application',
       'Appearance': 'Apparence',
@@ -4367,7 +4366,6 @@ class UiCopy {
       'Always': 'हमेशा',
       'Amazigh (Berber)': 'अमेज़घ (बर्बर)',
       'Amharic': 'अम्हारिक्',
-      'Annual': 'वार्षिक',
       'Any': 'कोई',
       'App': 'अनुप्रयोग',
       'Appearance': 'दिखावट',
@@ -5437,7 +5435,6 @@ class UiCopy {
       'Always': 'Selalu',
       'Amazigh (Berber)': 'Amazigh (Berber)',
       'Amharic': 'Amharik',
-      'Annual': 'Tahunan',
       'Any': 'Setiap',
       'App': 'Aplikasi',
       'Appearance': 'Tampilan',
@@ -6509,7 +6506,6 @@ class UiCopy {
       'Always': 'Sentiasa',
       'Amazigh (Berber)': 'Amazigh (Berber)',
       'Amharic': 'Amharic',
-      'Annual': 'tahunan',
       'Any': 'mana-mana',
       'App': 'Apl',
       'Appearance': 'Penampilan',
@@ -7585,7 +7581,6 @@ class UiCopy {
       'Always': 'Her zaman',
       'Amazigh (Berber)': 'Amazigh (Berberi)',
       'Amharic': 'Amharca',
-      'Annual': 'Yıllık',
       'Any': 'Herhangi',
       'App': 'Uygulama',
       'Appearance': 'Görünüm',
@@ -8647,7 +8642,6 @@ class UiCopy {
       'Always': 'ہمیشہ',
       'Amazigh (Berber)': 'Amazigh (بربر)',
       'Amharic': 'امہاری',
-      'Annual': 'سالانہ',
       'Any': 'کوئی بھی',
       'App': 'ایپ',
       'Appearance': 'ظاہری شکل',

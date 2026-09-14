@@ -27,8 +27,14 @@ if (-not $current) {
     throw 'RevenueCat Test Store has no current offering.'
 }
 $packageIds = @($current.packages.identifier)
-if ('$rc_monthly' -notin $packageIds -or '$rc_annual' -notin $packageIds) {
-    throw 'The current Test Store offering must include monthly and annual packages.'
+if ('$rc_monthly' -notin $packageIds -or '$rc_three_month' -notin $packageIds) {
+    throw 'The current Test Store offering must include monthly and three-month packages.'
+}
+$unexpectedPackageIds = @(
+    $packageIds | Where-Object { $_ -notin @('$rc_monthly', '$rc_three_month') }
+)
+if ($unexpectedPackageIds.Count -gt 0) {
+    throw "The current Test Store offering contains unsupported packages: $($unexpectedPackageIds -join ', ')"
 }
 
 Write-Host "RevenueCat Test Store ready: $($current.identifier)"

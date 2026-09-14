@@ -8,11 +8,14 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/cubits/chat/chat_cubit.dart';
 import '../../../core/cubits/chat/chat_state.dart';
 import '../../../core/cubits/discovery/discovery_feed_cubit.dart';
 import '../../../core/cubits/interests/interests_cubit.dart';
+import '../../../core/router/app_router.dart';
+import '../../../core/router/notification_navigation.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_curves.dart';
 import '../../../core/theme/app_dimensions.dart';
@@ -21,6 +24,8 @@ import '../../../core/widgets/animations/silarah_motion.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
 import '../../../core/widgets/loaders/silarah_blur_image.dart';
 import '../../../core/widgets/loaders/silarah_shimmer.dart';
+import '../../../core/widgets/overlays/silarah_bottom_sheet.dart';
+import '../../../core/widgets/overlays/silarah_dialog.dart';
 import 'paywall_gate_screen.dart';
 import 'profile_route_screen.dart';
 
@@ -60,10 +65,15 @@ class _ChatScreenState extends State<ChatScreen>
   bool _messageSnapshotReady = false;
   ChatAccessDecision? _accessDecision;
   bool _profileOpening = false;
+  int _openGeneration = 0;
 
   bool _showSuggestedOpeners = true;
   late final AnimationController _openersAnim;
   late final Animation<double> _openersSize;
+
+  void _close() {
+    popOrGoToFallback(GoRouter.of(context), '${AppRoutes.home}?tab=2');
+  }
 
   @override
   void initState() {
@@ -84,12 +94,17 @@ class _ChatScreenState extends State<ChatScreen>
   }
 
   Future<void> _authorizeAndOpen() async {
-    final decision = await _chatCubit.checkChatAccess(widget.conversationId);
     if (!mounted) return;
+    final generation = ++_openGeneration;
+    final conversationId = widget.conversationId;
+    final decision = await _chatCubit.checkChatAccess(conversationId);
+    if (!mounted || generation != _openGeneration) return;
     setState(() => _accessDecision = decision);
     if (!decision.allowed) return;
-    await _chatCubit.loadMessages(widget.conversationId);
-    await _chatCubit.markRead(widget.conversationId);
+    await _chatCubit.loadMessages(conversationId, activate: true);
+    if (!mounted || generation != _openGeneration) return;
+    await _chatCubit.markRead(conversationId);
+    if (!mounted || generation != _openGeneration) return;
     _scrollToBottom();
     await _loadOpenersDismissed();
   }
@@ -139,53 +154,9 @@ class _ChatScreenState extends State<ChatScreen>
     await prefs.setBool('openers_dismissed_${widget.conversationId}', true);
   }
 
-  Future<void> _translateWithPrivacyNotice(
-    String messageId,
-    String locale,
-  ) async {
-    const consentKey = 'external_translation_notice_mymemory_v1';
-    final preferences = await SharedPreferences.getInstance();
-    var allowed = preferences.getBool(consentKey) ?? false;
-    if (!allowed && mounted) {
-      allowed = await showDialog<bool>(
-            context: context,
-            builder: (dialogContext) => AlertDialog(
-              backgroundColor: AppColors.surfaceElevated,
-              title: UiText(
-                context.uiCopy('Translate with an external provider?'),
-                style: AppTypography.bodyMedium,
-              ),
-              content: UiText(
-                context.uiCopy(
-                  'If you continue, the selected message text will be sent to MyMemory for translation and the result will be saved in this chat. Do not translate highly sensitive information.',
-                ),
-                style: AppTypography.bodyMuted,
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext, false),
-                  child: UiText(context.uiCopy('Not now')),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.pop(dialogContext, true),
-                  child: UiText(context.uiCopy('Continue to translate')),
-                ),
-              ],
-            ),
-          ) ??
-          false;
-      if (allowed) await preferences.setBool(consentKey, true);
-    }
-    if (!allowed || !mounted) return;
-    await context.read<ChatCubit>().translateMessage(
-          widget.conversationId,
-          messageId,
-          locale,
-        );
-  }
-
   @override
   void dispose() {
+    _openGeneration++;
     _chatCubit.updateTyping(widget.conversationId, isTyping: false);
     _chatCubit.leaveConversation(widget.conversationId);
     _scrollCtrl.removeListener(_handleScroll);
@@ -312,7 +283,7 @@ class _ChatScreenState extends State<ChatScreen>
 
   void _showEndMatchSheet(BuildContext context) {
     HapticFeedback.mediumImpact();
-    showModalBottomSheet<void>(
+    showSilarahBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -336,7 +307,7 @@ class _ChatScreenState extends State<ChatScreen>
 
   void _showBlockDialog(BuildContext context, String name) {
     HapticFeedback.mediumImpact();
-    showDialog<void>(
+    showSilarahDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppColors.surfaceElevated,
@@ -377,7 +348,7 @@ class _ChatScreenState extends State<ChatScreen>
   }
 
   Future<void> _showDeleteChatDialog() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showSilarahDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: AppColors.surfaceElevated,
@@ -424,7 +395,7 @@ class _ChatScreenState extends State<ChatScreen>
   void _showReportSheet(BuildContext context, ChatMessage message) {
     if (message.isMe) return;
     HapticFeedback.mediumImpact();
-    showModalBottomSheet<void>(
+    showSilarahBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) => _ReportMessageSheet(
@@ -460,6 +431,7 @@ class _ChatScreenState extends State<ChatScreen>
         decision: access,
         onRetry: _authorizeAndOpen,
         onViewPlans: () => PaywallGateSheet.show(context),
+        onBack: _close,
       );
     }
 
@@ -515,6 +487,7 @@ class _ChatScreenState extends State<ChatScreen>
             ),
             onRetry: _authorizeAndOpen,
             onViewPlans: () => PaywallGateSheet.show(context),
+            onBack: _close,
           );
         }
 
@@ -542,6 +515,7 @@ class _ChatScreenState extends State<ChatScreen>
             onEndMatch: () => _showEndMatchSheet(context),
             onBlock: () => _showBlockDialog(context, conv.matchName),
             onDelete: _showDeleteChatDialog,
+            onBack: _close,
           ),
           body: SafeArea(
             top: false,
@@ -579,8 +553,6 @@ class _ChatScreenState extends State<ChatScreen>
                                       i > 0 ? conv.messages[i - 1] : null;
                                   final sameAsPrev =
                                       prev != null && prev.isMe == msg.isMe;
-                                  final locale = Localizations.localeOf(context)
-                                      .languageCode;
                                   return _MessageArrival(
                                     key: ValueKey('message_${msg.id}'),
                                     animate: _freshMessageIds.remove(msg.id),
@@ -600,11 +572,6 @@ class _ChatScreenState extends State<ChatScreen>
                                           msg.status == MessageStatus.failed
                                               ? () => _retryMessage(msg)
                                               : null,
-                                      onTranslate: () =>
-                                          _translateWithPrivacyNotice(
-                                        msg.id,
-                                        locale,
-                                      ),
                                     ),
                                   );
                                 },
@@ -893,12 +860,9 @@ class _EndMatchSheetState extends State<_EndMatchSheet> {
                 elevation: 0,
               ),
               child: _submitting
-                  ? SizedBox.square(
-                      dimension: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.readableOn(confirmBackground),
-                      ),
+                  ? SilarahActivityIndicator(
+                      size: 22,
+                      color: AppColors.readableOn(confirmBackground),
                     )
                   : UiText(
                       context.uiCopy('Send & End Match'),
@@ -1064,15 +1028,20 @@ class _ChatAccessGate extends StatelessWidget {
     required this.decision,
     required this.onRetry,
     required this.onViewPlans,
+    required this.onBack,
   });
 
   final ChatAccessDecision decision;
   final VoidCallback onRetry;
   final VoidCallback onViewPlans;
+  final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
     final needsPremium = decision.requiresSubscription;
+    final returnsToInbox = decision.reason == ChatAccessReason.notFound ||
+        decision.reason == ChatAccessReason.closed ||
+        decision.reason == ChatAccessReason.accountRestricted;
     final (title, body, icon) = switch (decision.reason) {
       ChatAccessReason.subscriptionRequired => (
           'Messaging with Premium',
@@ -1094,6 +1063,16 @@ class _ChatAccessGate extends StatelessWidget {
           'This match is no longer open for messaging.',
           Icons.forum_outlined,
         ),
+      ChatAccessReason.notFound => (
+          'Conversation no longer available',
+          'This notification belongs to a conversation that has been removed. Your other messages are still available.',
+          Icons.forum_outlined,
+        ),
+      ChatAccessReason.accountRestricted => (
+          'Messaging unavailable',
+          'Messaging is unavailable for this account. Open Help & Support if you believe this is a mistake.',
+          Icons.shield_outlined,
+        ),
       _ => (
           'Unable to open chat',
           'We could not securely verify access. Check your connection and try again.',
@@ -1106,7 +1085,7 @@ class _ChatAccessGate extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppColors.obsidianNight,
         leading: IconButton(
-          onPressed: () => Navigator.maybePop(context),
+          onPressed: onBack,
           icon: const Icon(Icons.arrow_back_rounded),
         ),
       ),
@@ -1144,8 +1123,16 @@ class _ChatAccessGate extends StatelessWidget {
                   ),
                   const SizedBox(height: AppDimensions.space24),
                   SilarahPressable(
-                    semanticLabel: needsPremium ? 'View Premium' : 'Try again',
-                    onTap: needsPremium ? onViewPlans : onRetry,
+                    semanticLabel: needsPremium
+                        ? 'View Premium'
+                        : returnsToInbox
+                            ? 'Back to messages'
+                            : 'Try again',
+                    onTap: needsPremium
+                        ? onViewPlans
+                        : returnsToInbox
+                            ? onBack
+                            : onRetry,
                     child: Container(
                       width: double.infinity,
                       height: AppDimensions.buttonHeight,
@@ -1156,7 +1143,11 @@ class _ChatAccessGate extends StatelessWidget {
                             BorderRadius.circular(AppDimensions.radiusButton),
                       ),
                       child: UiText(
-                        needsPremium ? 'View Premium' : 'Try again',
+                        needsPremium
+                            ? 'View Premium'
+                            : returnsToInbox
+                                ? 'Back to messages'
+                                : 'Try again',
                         style: AppTypography.button,
                       ),
                     ),
@@ -1192,6 +1183,7 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.onEndMatch,
     required this.onBlock,
     required this.onDelete,
+    required this.onBack,
   });
   final String displayName;
   final String firstName;
@@ -1202,6 +1194,7 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onEndMatch;
   final VoidCallback onBlock;
   final VoidCallback onDelete;
+  final VoidCallback onBack;
 
   @override
   Size get preferredSize => const Size.fromHeight(64);
@@ -1219,7 +1212,7 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       child: Row(children: [
         GestureDetector(
-          onTap: () => Navigator.pop(context),
+          onTap: onBack,
           child: Container(
             margin: const EdgeInsets.all(AppDimensions.space8),
             width: 40,
@@ -1591,21 +1584,17 @@ class _MessageBubble extends StatelessWidget {
     required this.sameAsPrev,
     required this.onTap,
     required this.onLongPress,
-    this.onTranslate,
     this.onRetry,
   });
   final ChatMessage message;
   final bool sameAsPrev;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
-  final VoidCallback? onTranslate;
   final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
     final isMe = message.isMe;
-    final locale = Localizations.localeOf(context).languageCode;
-    final hasTranslation = message.translations.containsKey(locale);
 
     final radius = BorderRadius.only(
       topLeft: Radius.circular(isMe ? AppDimensions.radiusButton : 6),
@@ -1667,51 +1656,8 @@ class _MessageBubble extends StatelessWidget {
                               : AppColors.cardBorder,
                           width: 0.8),
                     ),
-                    child: hasTranslation
-                        ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              UiText(message.text,
-                                  style: AppTypography.chatMessage),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 6),
-                                child: Divider(
-                                  color: (isMe
-                                          ? AppColors.goldBorder
-                                          : AppColors.cardBorder)
-                                      .withValues(alpha: 0.5),
-                                  height: 1,
-                                ),
-                              ),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Icon(
-                                    Icons.g_translate_rounded,
-                                    color: AppColors.champagneGold
-                                        .withValues(alpha: 0.8),
-                                    size: 14,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: UiText(
-                                      message.translations[locale]!,
-                                      style: AppTypography.chatMessage.copyWith(
-                                        color: AppColors.pearlWhite
-                                            .withValues(alpha: 0.9),
-                                        fontStyle: FontStyle.italic,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          )
-                        : UiText(message.text,
-                            style: AppTypography.chatMessage),
+                    child:
+                        UiText(message.text, style: AppTypography.chatMessage),
                   ),
                 ),
                 if (isMe) ...[
@@ -1721,34 +1667,6 @@ class _MessageBubble extends StatelessWidget {
               ],
             ),
           ),
-          if (!isMe && !hasTranslation && onTranslate != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 4, left: 6),
-              child: GestureDetector(
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  onTranslate!();
-                },
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.translate,
-                      color: AppColors.champagneGold,
-                      size: 12,
-                    ),
-                    const SizedBox(width: 4),
-                    UiText(
-                      context.uiCopy('Translate'),
-                      style: AppTypography.chatTimestamp.copyWith(
-                        color: AppColors.champagneGold,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
           AnimatedSize(
             duration: AppDimensions.durationTransition,
             child: message.isTimestampVisible

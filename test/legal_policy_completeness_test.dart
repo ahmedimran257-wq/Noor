@@ -86,8 +86,8 @@ void main() {
     expect(originalConsentMigration, contains("'community_guidelines'"));
     expect(currentConsentMigration, contains("'2.3.0', '2.4.0'"));
     expect(currentConsentMigration, contains(LegalDocuments.version));
-    expect(LegalDocuments.operatorName, 'Imran Ahmed');
-    expect(LegalDocuments.grievanceOfficerName, 'Imran Ahmed');
+    expect(LegalDocuments.operatorName, 'Silarah');
+    expect(LegalDocuments.grievanceOfficerName, 'Silarah Grievance Desk');
   });
 
   test('account deletion never claims app-store billing is cancelled', () {
@@ -128,8 +128,8 @@ void main() {
     expect(policies, contains('does not impose an absolute “no refunds” rule'));
     expect(policies, contains('within 48 hours'));
     expect(policies, contains('statutory'));
-    expect(privacy, contains('MyMemory'));
-    expect(chat, contains('Translate with an external provider?'));
-    expect(chat, contains('external_translation_notice_mymemory_v1'));
+    expect(privacy, isNot(contains('MyMemory')));
+    expect(chat, isNot(contains('onTranslate')));
+    expect(chat, isNot(contains('_translateWithPrivacyNotice')));
   });
 }

@@ -1,13 +1,370 @@
-// SILARAH Loading States
-// "No spinning wheels. Use Shimmer Effects
-//  (Slate Mist → Obsidian Night gradient moving left to right)."
 import 'package:silarah/l10n/ui_copy.dart';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_curves.dart';
 import '../../theme/app_dimensions.dart';
 import '../../theme/app_typography.dart';
 
-class SilarahPulseLoader extends StatefulWidget {
+/// Silarah's quiet loading signature: a fixed seal with a shallow breathing
+/// motion. It communicates activity without the visual churn of a spinner.
+class SilarahActivityIndicator extends StatefulWidget {
+  const SilarahActivityIndicator({
+    super.key,
+    this.size = 24,
+    this.color,
+    this.label = 'Loading',
+  });
+
+  final double size;
+  final Color? color;
+  final String label;
+
+  @override
+  State<SilarahActivityIndicator> createState() =>
+      _SilarahActivityIndicatorState();
+}
+
+class _SilarahActivityIndicatorState extends State<SilarahActivityIndicator>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  bool _reduceMotion = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+      value: .5,
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    if (_reduceMotion == reduceMotion &&
+        (_controller.isAnimating || reduceMotion)) {
+      return;
+    }
+    _reduceMotion = reduceMotion;
+    if (reduceMotion) {
+      _controller
+        ..stop()
+        ..value = .5;
+    } else {
+      _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.color ?? AppColors.champagneGold;
+    return Semantics(
+      label: widget.label,
+      liveRegion: true,
+      child: ExcludeSemantics(
+        child: SizedBox.square(
+          dimension: widget.size,
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, _) {
+              final pulse = _reduceMotion
+                  ? .5
+                  : AppCurves.breathe.transform(_controller.value);
+              return CustomPaint(
+                painter: _SilarahActivityPainter(
+                  color: color,
+                  pulse: pulse,
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SilarahActivityPainter extends CustomPainter {
+  const _SilarahActivityPainter({required this.color, required this.pulse});
+
+  final Color color;
+  final double pulse;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = size.center(Offset.zero);
+    final outerSide = size.shortestSide * (.64 + pulse * .06);
+    final innerSide = size.shortestSide * (.18 + pulse * .025);
+    final stroke = math.max(1.0, size.shortestSide * .055);
+
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(math.pi / 4);
+    final outerRect = Rect.fromCenter(
+      center: Offset.zero,
+      width: outerSide,
+      height: outerSide,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        outerRect,
+        Radius.circular(size.shortestSide * .1),
+      ),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = stroke
+        ..color = color.withValues(alpha: .2 + pulse * .26),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(
+          center: Offset.zero,
+          width: innerSide,
+          height: innerSide,
+        ),
+        Radius.circular(size.shortestSide * .045),
+      ),
+      Paint()..color = color.withValues(alpha: .72 + pulse * .28),
+    );
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_SilarahActivityPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.pulse != pulse;
+}
+
+/// Determinate progress drawn as an open precision arc. The open lower edge
+/// keeps it visually distinct from an indeterminate spinner.
+class SilarahProgressRing extends StatelessWidget {
+  const SilarahProgressRing({
+    super.key,
+    required this.value,
+    this.size = 42,
+    this.strokeWidth = 3,
+    this.color,
+    this.trackColor,
+    this.semanticLabel,
+  });
+
+  final double value;
+  final double size;
+  final double strokeWidth;
+  final Color? color;
+  final Color? trackColor;
+  final String? semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = value.clamp(0.0, 1.0).toDouble();
+    return Semantics(
+      label: semanticLabel,
+      value: '${(progress * 100).round()}%',
+      child: ExcludeSemantics(
+        child: SizedBox.square(
+          dimension: size,
+          child: CustomPaint(
+            painter: _SilarahProgressRingPainter(
+              value: progress,
+              strokeWidth: strokeWidth,
+              color: color ?? AppColors.champagneGold,
+              trackColor: trackColor ?? AppColors.progressBarBase,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SilarahProgressRingPainter extends CustomPainter {
+  const _SilarahProgressRingPainter({
+    required this.value,
+    required this.strokeWidth,
+    required this.color,
+    required this.trackColor,
+  });
+
+  final double value;
+  final double strokeWidth;
+  final Color color;
+  final Color trackColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset(strokeWidth, strokeWidth) &
+        Size(size.width - strokeWidth * 2, size.height - strokeWidth * 2);
+    const start = math.pi * .75;
+    const totalSweep = math.pi * 1.5;
+    final basePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = strokeWidth;
+
+    canvas.drawArc(
+        rect, start, totalSweep, false, basePaint..color = trackColor);
+    if (value <= 0) return;
+    final sweep = totalSweep * value;
+    canvas.drawArc(rect, start, sweep, false, basePaint..color = color);
+    final radius = rect.width / 2;
+    final angle = start + sweep;
+    final center = rect.center;
+    canvas.drawCircle(
+      Offset(
+        center.dx + math.cos(angle) * radius,
+        center.dy + math.sin(angle) * radius,
+      ),
+      strokeWidth * .62,
+      Paint()..color = color,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_SilarahProgressRingPainter oldDelegate) =>
+      oldDelegate.value != value ||
+      oldDelegate.strokeWidth != strokeWidth ||
+      oldDelegate.color != color ||
+      oldDelegate.trackColor != trackColor;
+}
+
+/// Rounded progress track used for determinate progress and quiet background
+/// activity. Indeterminate motion is a short travelling accent, not a sweep
+/// across the full screen.
+class SilarahLinearProgress extends StatefulWidget {
+  const SilarahLinearProgress({
+    super.key,
+    this.value,
+    this.height = 4,
+    this.color,
+    this.trackColor,
+    this.semanticLabel,
+  });
+
+  final double? value;
+  final double height;
+  final Color? color;
+  final Color? trackColor;
+  final String? semanticLabel;
+
+  @override
+  State<SilarahLinearProgress> createState() => _SilarahLinearProgressState();
+}
+
+class _SilarahLinearProgressState extends State<SilarahLinearProgress>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  bool _reduceMotion = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+      value: .5,
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    if (_reduceMotion == reduceMotion &&
+        (_controller.isAnimating || reduceMotion || widget.value != null)) {
+      return;
+    }
+    _reduceMotion = reduceMotion;
+    _syncAnimation();
+  }
+
+  @override
+  void didUpdateWidget(covariant SilarahLinearProgress oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.value != widget.value) _syncAnimation();
+  }
+
+  void _syncAnimation() {
+    if (_reduceMotion || widget.value != null) {
+      _controller
+        ..stop()
+        ..value = .5;
+    } else if (!_controller.isAnimating) {
+      _controller.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.color ?? AppColors.champagneGold;
+    final track = widget.trackColor ?? AppColors.progressBarBase;
+    final progress = widget.value?.clamp(0.0, 1.0).toDouble();
+    final semanticsValue =
+        progress == null ? null : '${(progress * 100).round()}%';
+
+    return Semantics(
+      label: widget.semanticLabel,
+      value: semanticsValue,
+      child: ExcludeSemantics(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(widget.height),
+          child: SizedBox(
+            height: widget.height,
+            child: ColoredBox(
+              color: track,
+              child: progress != null
+                  ? Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: FractionallySizedBox(
+                        widthFactor: progress,
+                        heightFactor: 1,
+                        child: ColoredBox(color: color),
+                      ),
+                    )
+                  : LayoutBuilder(
+                      builder: (context, constraints) => AnimatedBuilder(
+                        animation: _controller,
+                        builder: (context, _) {
+                          final position = _reduceMotion
+                              ? 0.0
+                              : -1.35 +
+                                  AppCurves.transition
+                                          .transform(_controller.value) *
+                                      2.7;
+                          return Align(
+                            alignment: Alignment(position, 0),
+                            child: SizedBox(
+                              width: constraints.maxWidth * .28,
+                              height: widget.height,
+                              child: ColoredBox(color: color),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class SilarahPulseLoader extends StatelessWidget {
   const SilarahPulseLoader({
     super.key,
     this.label,
@@ -26,127 +383,19 @@ class SilarahPulseLoader extends StatefulWidget {
   final List<Color>? coreGradientColors;
 
   @override
-  State<SilarahPulseLoader> createState() => _SilarahPulseLoaderState();
-}
-
-class _SilarahPulseLoaderState extends State<SilarahPulseLoader>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1800),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final accentColor = widget.accentColor ?? AppColors.champagneGold;
-    final highlightColor = widget.highlightColor ?? AppColors.champagneLight;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          width: widget.size,
-          height: widget.size,
-          child: AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              final t = _controller.value;
-              final pulse = Curves.easeInOutCubic.transform(
-                t < 0.5 ? t * 2 : (1 - t) * 2,
-              );
-              return Stack(
-                alignment: Alignment.center,
-                children: [
-                  Transform.scale(
-                    scale: 0.92 + pulse * 0.36,
-                    child: Opacity(
-                      opacity: 0.30 - pulse * 0.18,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: accentColor,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Transform.rotate(
-                    angle: t * 6.283185307179586,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: accentColor.withValues(alpha: 0.2),
-                          width: 1,
-                        ),
-                      ),
-                      child: Align(
-                        alignment: Alignment.topCenter,
-                        child: Container(
-                          width: widget.size * 0.12,
-                          height: widget.size * 0.12,
-                          margin: EdgeInsets.only(top: widget.size * 0.08),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: highlightColor,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Container(
-                    width: widget.size * 0.56,
-                    height: widget.size * 0.56,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: widget.coreGradientColors ??
-                            [
-                              AppColors.champagneLight,
-                              AppColors.champagneGold,
-                              AppColors.antiqueGold,
-                            ],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: accentColor.withValues(alpha: 0.18),
-                          blurRadius: 18,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: ClipOval(
-                      child: Image.asset(
-                        'assets/icon/app_icon.png',
-                        width: widget.size * 0.52,
-                        height: widget.size * 0.52,
-                        fit: BoxFit.cover,
-                        filterQuality: FilterQuality.medium,
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
+        SilarahActivityIndicator(
+          size: size,
+          color: accentColor,
+          label: label ?? 'Loading',
         ),
-        if (widget.label != null) ...[
+        if (label != null) ...[
           const SizedBox(height: AppDimensions.space12),
           UiText(
-            widget.label!,
+            label!,
             style: AppTypography.caption.copyWith(
               color: AppColors.slateMist,
             ),
@@ -176,6 +425,7 @@ class SilarahShimmer extends StatefulWidget {
 class _SilarahShimmerState extends State<SilarahShimmer>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
+  bool _reduceMotion = false;
 
   @override
   void initState() {
@@ -183,7 +433,26 @@ class _SilarahShimmerState extends State<SilarahShimmer>
     _controller = AnimationController(
       vsync: this,
       duration: AppDimensions.durationShimmer,
-    )..repeat();
+      value: .5,
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    if (_reduceMotion == reduceMotion &&
+        (_controller.isAnimating || reduceMotion)) {
+      return;
+    }
+    _reduceMotion = reduceMotion;
+    if (reduceMotion) {
+      _controller
+        ..stop()
+        ..value = .5;
+    } else {
+      _controller.repeat();
+    }
   }
 
   @override
@@ -195,6 +464,8 @@ class _SilarahShimmerState extends State<SilarahShimmer>
   @override
   Widget build(BuildContext context) {
     if (!widget.enabled) return widget.child;
+
+    if (_reduceMotion) return widget.child;
 
     return AnimatedBuilder(
       animation: _controller,

@@ -1,78 +1,113 @@
-// SILARAH Bottom Sheet
-// "NO Pop-ups: Use Bottom Sheets that slide up with spring physics."
-// All dialogs and confirmations use this.
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimensions.dart';
 import '../../theme/app_typography.dart';
 import '../buttons/silarah_primary_button.dart';
+import '../buttons/silarah_pressable.dart';
 import '../buttons/silarah_secondary_button.dart';
 
-// Custom Route for Frosted Glass & Spring Transition
+/// Theme-native modal route with one controlled entrance treatment.
+///
+/// Flutter already positions and drag-tracks modal sheets. Adding another
+/// full-height slide here creates a visible double movement, so Silarah only
+/// keeps its content opaque and leaves movement to the native drag geometry.
 class SilarahBottomSheetRoute<T> extends ModalBottomSheetRoute<T> {
   SilarahBottomSheetRoute({
     required super.builder,
     super.capturedThemes,
     super.barrierLabel,
+    super.barrierOnTapHint,
+    super.backgroundColor,
+    super.elevation,
+    super.shape,
+    super.clipBehavior,
+    super.constraints,
+    super.modalBarrierColor,
     super.isDismissible = true,
     super.enableDrag = true,
+    super.showDragHandle,
     super.isScrollControlled = true,
     super.scrollControlDisabledMaxHeightRatio,
     super.settings,
+    super.requestFocus,
     super.transitionAnimationController,
     super.anchorPoint,
     super.useSafeArea = true,
+    super.sheetAnimationStyle = const AnimationStyle(
+      duration: AppDimensions.durationSheetEnter,
+      reverseDuration: AppDimensions.durationSheetExit,
+    ),
   });
-
-  @override
-  Color get barrierColor => const Color(0x66000000); // 40% black barrier
-
-  @override
-  Widget buildTransitions(
-    BuildContext context,
-    Animation<double> animation,
-    Animation<double> secondaryAnimation,
-    Widget child,
-  ) {
-    final routeAnimation = CurvedAnimation(
-      parent: animation,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
-    );
-    final slide = Tween<Offset>(
-      begin: const Offset(0.0, 1.0),
-      end: Offset.zero,
-    ).animate(routeAnimation);
-
-    return SlideTransition(
-      position: slide,
-      child: child,
-    );
-  }
 }
 
-// Show Helper
 Future<T?> showSilarahBottomSheet<T>({
   required BuildContext context,
-  required Widget child,
+  required WidgetBuilder builder,
+  Color? backgroundColor,
+  String? barrierLabel,
+  String? barrierOnTapHint,
+  double? elevation,
+  ShapeBorder? shape,
+  Clip? clipBehavior,
+  BoxConstraints? constraints,
+  Color? barrierColor,
   bool isDismissible = true,
-  bool isScrollControlled = true,
+  bool enableDrag = true,
+  bool? showDragHandle,
+  bool isScrollControlled = false,
+  double scrollControlDisabledMaxHeightRatio = 9.0 / 16.0,
+  bool useRootNavigator = false,
+  bool useSafeArea = false,
+  RouteSettings? routeSettings,
+  AnimationController? transitionAnimationController,
+  Offset? anchorPoint,
+  AnimationStyle? sheetAnimationStyle,
+  bool? requestFocus,
 }) {
-  return Navigator.of(context).push<T>(
+  final navigator = Navigator.of(context, rootNavigator: useRootNavigator);
+  final capturedThemes = InheritedTheme.capture(
+    from: context,
+    to: navigator.context,
+  );
+  final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+
+  return navigator.push<T>(
     SilarahBottomSheetRoute<T>(
-      builder: (_) => child,
+      builder: builder,
+      capturedThemes: capturedThemes,
+      backgroundColor: backgroundColor,
+      elevation: elevation,
+      shape: shape,
+      clipBehavior: clipBehavior,
+      constraints: constraints,
+      modalBarrierColor: barrierColor ?? AppColors.overlayBlack55,
       isDismissible: isDismissible,
-      enableDrag: isDismissible,
+      enableDrag: enableDrag,
+      showDragHandle: showDragHandle,
       isScrollControlled: isScrollControlled,
-      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      scrollControlDisabledMaxHeightRatio: scrollControlDisabledMaxHeightRatio,
+      useSafeArea: useSafeArea,
+      settings: routeSettings,
+      transitionAnimationController: transitionAnimationController,
+      anchorPoint: anchorPoint,
+      requestFocus: requestFocus,
+      barrierLabel: barrierLabel ??
+          MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      barrierOnTapHint: barrierOnTapHint,
+      sheetAnimationStyle: reduceMotion
+          ? AnimationStyle.noAnimation
+          : sheetAnimationStyle ??
+              const AnimationStyle(
+                duration: AppDimensions.durationSheetEnter,
+                reverseDuration: AppDimensions.durationSheetExit,
+              ),
     ),
   );
 }
 
-// Pulsing Handle Bar
-class SilarahPulseHandle extends StatelessWidget {
-  const SilarahPulseHandle({super.key});
+class SilarahSheetHandle extends StatelessWidget {
+  const SilarahSheetHandle({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +123,6 @@ class SilarahPulseHandle extends StatelessWidget {
   }
 }
 
-// Standard Bottom Sheet Shell
 class SilarahBottomSheet extends StatelessWidget {
   const SilarahBottomSheet({
     super.key,
@@ -113,7 +147,7 @@ class SilarahBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0x990A0A0F), // Frosted glass obsidian night
+        color: AppColors.surfaceElevated,
         borderRadius: const BorderRadius.vertical(
           top: Radius.circular(AppDimensions.radiusCard),
         ),
@@ -121,15 +155,23 @@ class SilarahBottomSheet extends StatelessWidget {
           top: BorderSide(
               color: AppColors.cardBorder, width: AppDimensions.borderThin),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha: AppColors.active.mode.isDark ? .38 : .12,
+            ),
+            blurRadius: 30,
+            offset: const Offset(0, -8),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Handle indicator
           if (showHandle)
             const Center(
-              child: SilarahPulseHandle(),
+              child: SilarahSheetHandle(),
             ),
 
           // Title
@@ -273,8 +315,9 @@ class _ReportOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return SilarahPressable(
       onTap: onTap,
+      semanticLabel: label,
       child: Container(
         padding: const EdgeInsetsDirectional.fromSTEB(
           AppDimensions.horizontalMargin,

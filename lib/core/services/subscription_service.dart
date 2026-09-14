@@ -12,9 +12,7 @@ import 'supabase_service.dart';
 class DisplayPricing {
   const DisplayPricing({
     required this.monthlyPrice,
-    required this.annualPrice,
-    required this.monthlyCta,
-    required this.annualCta,
+    required this.threeMonthPrice,
     required this.savingsPercent,
     required this.source,
     this.countryCode,
@@ -23,9 +21,7 @@ class DisplayPricing {
   });
 
   final String monthlyPrice;
-  final String annualPrice;
-  final String monthlyCta;
-  final String annualCta;
+  final String threeMonthPrice;
   final int savingsPercent;
   final PricingSource source;
   final String? countryCode;
@@ -34,23 +30,21 @@ class DisplayPricing {
 
   factory DisplayPricing.fromPackages({
     required Package monthlyPackage,
-    required Package annualPackage,
+    required Package threeMonthPackage,
     String? countryCode,
     String? pricingTier,
     String? offeringId,
   }) {
     final monthlyProduct = monthlyPackage.storeProduct;
-    final annualProduct = annualPackage.storeProduct;
-    final monthlyAnnualized = monthlyProduct.price * 12;
-    final savings = monthlyAnnualized > 0
-        ? ((1 - (annualProduct.price / monthlyAnnualized)) * 100).round()
+    final threeMonthProduct = threeMonthPackage.storeProduct;
+    final threeMonthlyPayments = monthlyProduct.price * 3;
+    final savings = threeMonthlyPayments > 0
+        ? ((1 - (threeMonthProduct.price / threeMonthlyPayments)) * 100).round()
         : 0;
 
     return DisplayPricing(
       monthlyPrice: monthlyProduct.priceString,
-      annualPrice: annualProduct.priceString,
-      monthlyCta: 'Subscribe - ${monthlyProduct.priceString} / month',
-      annualCta: 'Subscribe - ${annualProduct.priceString} / year',
+      threeMonthPrice: threeMonthProduct.priceString,
       savingsPercent: savings,
       source: PricingSource.revenueCat,
       countryCode: countryCode,
@@ -61,18 +55,14 @@ class DisplayPricing {
 
   factory DisplayPricing.unavailable() => const DisplayPricing(
         monthlyPrice: '',
-        annualPrice: '',
-        monthlyCta: '',
-        annualCta: '',
+        threeMonthPrice: '',
         savingsPercent: 0,
         source: PricingSource.unavailable,
       );
 
   factory DisplayPricing.loading() => const DisplayPricing(
         monthlyPrice: '',
-        annualPrice: '',
-        monthlyCta: '',
-        annualCta: '',
+        threeMonthPrice: '',
         savingsPercent: 0,
         source: PricingSource.loading,
       );
@@ -81,6 +71,8 @@ class DisplayPricing {
 }
 
 enum PricingSource { loading, revenueCat, unavailable }
+
+enum SubscriptionPlan { monthly, threeMonth }
 
 /// Canonical RevenueCat entitlement mapping.
 abstract final class SubscriptionEntitlements {
@@ -139,7 +131,7 @@ class SubscriptionService {
     await _refreshPricing();
   }
 
-  Future<bool> purchase({required bool isAnnual}) async {
+  Future<bool> purchase({required SubscriptionPlan plan}) async {
     try {
       Offering? offering = _activeOffering;
       if (offering == null) {
@@ -148,7 +140,10 @@ class SubscriptionService {
       }
       if (offering == null) throw Exception('No offerings available');
 
-      final package = isAnnual ? offering.annual : offering.monthly;
+      final package = switch (plan) {
+        SubscriptionPlan.monthly => offering.monthly,
+        SubscriptionPlan.threeMonth => offering.threeMonth,
+      };
       if (package == null) throw Exception('Package not available');
 
       final result = await Purchases.purchase(
@@ -207,9 +202,11 @@ class SubscriptionService {
       _activeOffering = offering;
 
       final monthlyPackage = offering.monthly;
-      final annualPackage = offering.annual;
-      if (monthlyPackage == null || annualPackage == null) {
-        debugPrint('[SubscriptionService] Missing monthly/annual package.');
+      final threeMonthPackage = offering.threeMonth;
+      if (monthlyPackage == null || threeMonthPackage == null) {
+        debugPrint(
+          '[SubscriptionService] Missing monthly/three-month package.',
+        );
         _setPricingUnavailable();
         _scheduleRetry();
         return;
@@ -217,7 +214,7 @@ class SubscriptionService {
 
       _currentPricing = DisplayPricing.fromPackages(
         monthlyPackage: monthlyPackage,
-        annualPackage: annualPackage,
+        threeMonthPackage: threeMonthPackage,
         countryCode: _countryCode,
         pricingTier: _pricingTier,
         offeringId: offering.identifier,
@@ -230,7 +227,7 @@ class SubscriptionService {
       debugPrint(
         '[SubscriptionService] Pricing loaded: '
         '${_currentPricing!.monthlyPrice}/mo, '
-        '${_currentPricing!.annualPrice}/yr, '
+        '${_currentPricing!.threeMonthPrice}/3mo, '
         'offering=${offering.identifier}, '
         'country=${_countryCode ?? "store"}, '
         'tier=${_pricingTier ?? "default"}',

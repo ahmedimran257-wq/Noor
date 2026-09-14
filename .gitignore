@@ -43,7 +43,7 @@ opencode.json
 .pub/
 /build/
 /coverage/
-/.wrangler/
+**/.wrangler/
 /audit_artifacts/
 /.codex-audit/
 /.codex-remote-attachments/

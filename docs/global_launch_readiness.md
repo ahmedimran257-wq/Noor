@@ -29,8 +29,8 @@ been legally cleared, registered, taxed, priced or store-tested there.
 
 - The live launch-country catalogue is server-restricted to India. Global
   country metadata remains engineering capability, not a public launch claim.
-- Policy bundle 2.2.0 identifies individual operator and grievance officer
-  Imran Ahmed, provides an authenticated machine-readable data archive, and
+- Policy bundle identifies Silarah and its role-based Grievance Desk, provides
+  an authenticated machine-readable data archive, and
   documents access, correction, consent withdrawal, deletion, retention,
   grievance and appeal routes.
 - Government-ID collection is retired. The optional photo trust check uses no
@@ -59,7 +59,7 @@ been legally cleared, registered, taxed, priced or store-tested there.
 7. Upload/verify the Apple APNs authentication key in Firebase and prove one
    real iOS token on a physical iPhone. Android operating-system delivery is
    verified; an iOS build cannot be built or physically tested from Windows.
-8. Test monthly purchase, annual purchase, cancellation, restore, renewal,
+8. Test monthly purchase, three-month purchase, cancellation, restore, renewal,
    expiry, refund, billing retry and webhook idempotency on real Play and Apple
    sandboxes in every pricing region that will launch.
 
@@ -81,7 +81,7 @@ been legally cleared, registered, taxed, priced or store-tested there.
 
 For every intended store region, retain evidence for:
 
-- correct monthly/annual products and the `premium` entitlement;
+- correct monthly/three-month products and the `premium` entitlement;
 - local currency and store-supplied price (never a hardcoded amount);
 - purchase, pending/declined purchase, restore, renewal, cancellation, expiry,
   refund and webhook replay;

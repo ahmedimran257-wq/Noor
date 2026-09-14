@@ -42,6 +42,21 @@ class WaliModeService {
   Stream<Map<String, dynamic>> get messageStream => _messageController.stream;
 
   bool _isRealtimeConnected = false;
+  int _realtimeGeneration = 0;
+  final _connectionController = StreamController<bool>.broadcast();
+  Stream<bool> get connectionStream => _connectionController.stream;
+  final _accessController = StreamController<void>.broadcast();
+  Stream<void> get accessChanges => _accessController.stream;
+  bool get hasRealtimeChannel => _realtimeChannel != null;
+
+  Future<bool> hasLinkedWards() async =>
+      await _supabase.rpc('has_my_linked_wards') == true;
+
+  static bool isAccessDenied(Object error) =>
+      error is PostgrestException &&
+      (error.message.contains('guardian_not_authorized') ||
+          error.code == '42501' ||
+          error.code == 'PGRST301');
 
   /// Whether the Realtime channel is currently connected.
   bool get isRealtimeConnected => _isRealtimeConnected;
@@ -95,10 +110,17 @@ class WaliModeService {
     String? markSeenWardId,
   }) async {
     try {
-      final response = await _supabase.rpc(
-        'get_guardian_dashboard_v2',
-        params: {'p_mark_seen_ward_id': markSeenWardId},
-      );
+      dynamic response;
+      try {
+        response = await _supabase.rpc('get_guardian_dashboard_v2',
+            params: {'p_mark_seen_ward_id': markSeenWardId});
+      } catch (error) {
+        // Revocation can race the Back/mark-seen action. A fresh unmarked
+        // read returns the currently authorized list, never the old card.
+        if (markSeenWardId == null || !isAccessDenied(error)) rethrow;
+        response = await _supabase.rpc('get_guardian_dashboard_v2',
+            params: {'p_mark_seen_ward_id': null});
+      }
       final rows = response as List<dynamic>;
       final ownerIds = rows
           .map((row) => (row as Map)['other_party_user_id']?.toString() ?? '')
@@ -185,14 +207,36 @@ class WaliModeService {
 
     // Unsubscribe from any existing channel
     disposeRealtime();
+    final generation = _realtimeGeneration;
 
     _realtimeChannel = _supabase
         .channel('guardian_messages_$userId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'guardian_access_state',
+          filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'guardian_id',
+              value: userId),
+          callback: (_) {
+            if (generation != _realtimeGeneration ||
+                SupabaseService.currentUserId != userId) {
+              return;
+            }
+            _accessController.add(null);
+            onNewMessage(const {});
+          },
+        )
         .onPostgresChanges(
           event: PostgresChangeEvent.insert,
           schema: 'public',
           table: 'messages',
           callback: (payload) {
+            if (generation != _realtimeGeneration ||
+                SupabaseService.currentUserId != userId) {
+              return;
+            }
             final newRecord = payload.newRecord;
             debugPrint(
                 '[WaliModeService] Realtime message: ${newRecord['match_id']}');
@@ -201,9 +245,16 @@ class WaliModeService {
           },
         )
         .subscribe((status, [error]) {
+      if (generation != _realtimeGeneration ||
+          SupabaseService.currentUserId != userId) {
+        return;
+      }
       debugPrint('[WaliModeService] Realtime status: $status');
       final isSubscribed = status == RealtimeSubscribeStatus.subscribed;
       _isRealtimeConnected = isSubscribed;
+      if (!_connectionController.isClosed) {
+        _connectionController.add(isSubscribed);
+      }
       if (onStatusChange != null) {
         onStatusChange(isSubscribed);
       }
@@ -221,11 +272,14 @@ class WaliModeService {
   Future<void> sendMessageAsGuardian({
     required String matchId,
     required String content,
+    required String operationId,
   }) async {
     try {
-      await _supabase.rpc('send_guardian_chat_message', params: {
+      await _supabase.rpc('send_chat_message_idempotent', params: {
         'p_match_id': matchId,
         'p_content': content,
+        'p_operation_id': operationId,
+        'p_as_guardian': true,
       });
 
       debugPrint('[WaliModeService] Guardian message sent for match $matchId');
@@ -367,10 +421,14 @@ class WaliModeService {
   /// Disposes the Realtime subscription.
   /// Call when guardian logs out or leaves the dashboard.
   void disposeRealtime() {
+    _realtimeGeneration++;
     if (_realtimeChannel != null) {
-      _supabase.removeChannel(_realtimeChannel!);
+      unawaited(_supabase
+          .removeChannel(_realtimeChannel!)
+          .catchError((Object _) => 'error'));
       _realtimeChannel = null;
       _isRealtimeConnected = false;
+      _connectionController.add(false);
       debugPrint('[WaliModeService] Realtime subscription disposed');
     }
   }
@@ -379,6 +437,8 @@ class WaliModeService {
   void dispose() {
     disposeRealtime();
     _messageController.close();
+    _connectionController.close();
+    _accessController.close();
   }
 }
 

@@ -7,13 +7,15 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
+import '../../../core/widgets/loaders/silarah_shimmer.dart';
+import '../../../core/widgets/overlays/silarah_bottom_sheet.dart';
 import '../screens/legal_doc_screen.dart';
 
 class PolicyReminderSheet {
   const PolicyReminderSheet._();
 
   static Future<void> show(BuildContext context) {
-    return showModalBottomSheet<void>(
+    return showSilarahBottomSheet<void>(
       context: context,
       useSafeArea: true,
       isScrollControlled: true,
@@ -203,14 +205,10 @@ class _PolicyReminderContentState extends State<_PolicyReminderContent> {
                     ],
                   ),
                   child: _saving
-                      ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.readableOn(
-                              AppColors.champagneGold,
-                            ),
+                      ? SilarahActivityIndicator(
+                          size: 20,
+                          color: AppColors.readableOn(
+                            AppColors.champagneGold,
                           ),
                         )
                       : Row(

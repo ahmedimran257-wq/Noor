@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,8 +19,12 @@ class _RecordingNavigatorObserver extends NavigatorObserver {
 }
 
 class _TestChatCubit extends ChatCubit {
+  Future<ChatAccessDecision>? accessResult;
+  final activatedConversations = <String>[];
+
   @override
   Future<ChatAccessDecision> checkChatAccess(String matchId) async {
+    if (accessResult != null) return accessResult!;
     return const ChatAccessDecision(ChatAccessReason.allowed);
   }
 
@@ -31,7 +36,9 @@ class _TestChatCubit extends ChatCubit {
 
   @override
   Future<void> loadMessages(String conversationId,
-      {bool older = false}) async {}
+      {bool older = false, bool activate = false}) async {
+    if (activate) activatedConversations.add(conversationId);
+  }
 
   @override
   Future<void> markRead(String conversationId) async {}
@@ -51,6 +58,25 @@ const _conversation = Conversation(
 );
 
 void main() {
+  testWidgets('late authorization cannot reactivate a disposed chat',
+      (tester) async {
+    final result = Completer<ChatAccessDecision>();
+    final cubit = _TestChatCubit()..accessResult = result.future;
+    cubit.seed(const ChatState(conversations: [_conversation]));
+    await tester.pumpWidget(BlocProvider<ChatCubit>.value(
+      value: cubit,
+      child:
+          const MaterialApp(home: ChatScreen(conversationId: _conversationId)),
+    ));
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox.shrink());
+    result.complete(const ChatAccessDecision(ChatAccessReason.allowed));
+    await tester.pump();
+    expect(cubit.activatedConversations, isEmpty);
+    expect(tester.takeException(), isNull);
+    await cubit.close();
+  });
+
   test('typing presence is transient state and scoped by conversation', () {
     const state = ChatState(
       conversations: [_conversation],

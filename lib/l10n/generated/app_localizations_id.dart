@@ -9,6 +9,17 @@ class AppLocalizationsId extends AppLocalizations {
   AppLocalizationsId([String locale = 'id']) : super(locale);
 
   @override
+  String get guide_optional_details => 'Detail tambahan (opsional)';
+
+  @override
+  String get guide_optional_details_body =>
+      'Anda dapat melengkapi detail ini nanti melalui profil Anda.';
+
+  @override
+  String get guide_profile_ownership =>
+      'Profil ini menjelaskan orang yang ingin menikah. Wali terpisah dapat diundang nanti untuk mengawasi percakapan.';
+
+  @override
   String get about_button_later => 'Aku akan melakukannya nanti';
 
   @override
@@ -2189,6 +2200,11 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String subscription_button_monthly(String price) {
     return 'Berlangganan — $price/bulan';
+  }
+
+  @override
+  String subscription_button_three_month(String price) {
+    return 'Berlangganan — $price/3 bulan';
   }
 
   @override

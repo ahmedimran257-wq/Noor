@@ -11,6 +11,7 @@ import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/cubits/interests/interests_cubit.dart';
 import '../../../core/cubits/interests/interests_state.dart';
 import '../../../core/cubits/chat/chat_cubit.dart';
@@ -20,6 +21,8 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/silarah_empty_state.dart';
 import '../../../core/widgets/loaders/silarah_blur_image.dart';
+import '../../../core/widgets/loaders/silarah_shimmer.dart';
+import '../../../core/widgets/overlays/silarah_dialog.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import 'chat_screen.dart';
 import 'paywall_gate_screen.dart';
@@ -66,12 +69,8 @@ Future<void> _openChatForProfile(
   }
 
   navigator.push(
-    PageRouteBuilder(
-      transitionDuration: AppDimensions.durationReveal,
-      pageBuilder: (ctx, anim, _) => FadeTransition(
-        opacity: anim,
-        child: ChatScreen(conversationId: convId),
-      ),
+    MaterialPageRoute<void>(
+      builder: (_) => ChatScreen(conversationId: convId),
     ),
   );
 }
@@ -106,7 +105,7 @@ class _InterestsScreenState extends State<InterestsScreen>
 
   void _showMutualMatchModal(DiscoveryProfile profile) {
     HapticFeedback.mediumImpact();
-    showDialog(
+    showSilarahDialog<void>(
       context: context,
       barrierColor: AppColors.obsidianNight.withValues(alpha: 0.85),
       builder: (context) => Center(
@@ -240,7 +239,7 @@ class _InterestsScreenState extends State<InterestsScreen>
   void _showWithdrawDialog(InterestEntry entry) {
     if (_processingInterestIds.contains(entry.id)) return;
     HapticFeedback.selectionClick();
-    showDialog(
+    showSilarahDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surfaceElevated,
@@ -472,16 +471,11 @@ class _DailyLimitBanner extends StatelessWidget {
           ),
           const SizedBox(height: AppDimensions.space6),
           // Gold progress bar (3px height)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(2),
-            child: LinearProgressIndicator(
-              value: frac,
-              minHeight: 3,
-              backgroundColor: AppColors.surfaceGlassHover,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                atLimit ? AppColors.softCoral : AppColors.champagneGold,
-              ),
-            ),
+          SilarahLinearProgress(
+            value: frac,
+            height: 3,
+            trackColor: AppColors.surfaceGlassHover,
+            color: atLimit ? AppColors.softCoral : AppColors.champagneGold,
           ),
         ],
       ),
@@ -580,6 +574,7 @@ class _ReceivedList extends StatelessWidget {
           entry: entry,
           accepting: acceptingIds.contains(entry.id),
           processing: processingIds.contains(entry.id),
+          onOpen: () => context.push('/profile/${entry.profile.id}'),
           onAccept: () => onAccept(entry),
           onDecline: () => onDecline(entry),
         );
@@ -591,12 +586,14 @@ class _ReceivedList extends StatelessWidget {
 class _ReceivedTile extends StatelessWidget {
   const _ReceivedTile({
     required this.entry,
+    required this.onOpen,
     required this.onAccept,
     required this.onDecline,
     required this.accepting,
     required this.processing,
   });
   final InterestEntry entry;
+  final VoidCallback onOpen;
   final VoidCallback onAccept;
   final VoidCallback onDecline;
   final bool accepting;
@@ -628,50 +625,66 @@ class _ReceivedTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Top row: avatar + name/city + time
-          Row(
-            children: [
-              _CircleAvatar(
-                photoUrl: p.photoUrl,
-                borderColor:
-                    isAccepted ? AppColors.champagneGold : AppColors.cardBorder,
-                opacity: isDeclined ? 0.5 : 1.0,
-              ),
-              const SizedBox(width: AppDimensions.space12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    UiText(
-                      p.displayName,
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: isDeclined
-                            ? AppColors.slateMist
-                            : AppColors.pearlWhite,
-                      ),
-                    ),
-                    const SizedBox(height: AppDimensions.space2),
-                    UiText(
-                      '${p.age} · ${p.cityName}',
-                      style: AppTypography.caption,
-                    ),
-                    if (p.occupation != null)
-                      UiText(p.occupation!, style: AppTypography.caption),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+          Semantics(
+            button: true,
+            label: 'View ${p.displayName} profile',
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onOpen,
+              child: Row(
                 children: [
-                  UiText(entry.timeAgo, style: AppTypography.caption),
-                  const SizedBox(height: AppDimensions.space4),
-                  if (isAccepted)
-                    _StatusPill(
-                        label: '✓ Matched', color: AppColors.champagneGold),
-                  if (isDeclined)
-                    _StatusPill(label: 'Declined', color: AppColors.slateMist),
+                  _CircleAvatar(
+                    photoUrl: p.photoUrl,
+                    borderColor: isAccepted
+                        ? AppColors.champagneGold
+                        : AppColors.cardBorder,
+                    opacity: isDeclined ? 0.5 : 1.0,
+                  ),
+                  const SizedBox(width: AppDimensions.space12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        UiText(
+                          p.displayName,
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: isDeclined
+                                ? AppColors.slateMist
+                                : AppColors.pearlWhite,
+                          ),
+                        ),
+                        const SizedBox(height: AppDimensions.space2),
+                        UiText(
+                          '${p.age} · ${p.cityName}',
+                          style: AppTypography.caption,
+                        ),
+                        if (p.occupation != null)
+                          UiText(p.occupation!, style: AppTypography.caption),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      UiText(entry.timeAgo, style: AppTypography.caption),
+                      const SizedBox(height: AppDimensions.space4),
+                      if (isAccepted)
+                        _StatusPill(
+                            label: '✓ Matched', color: AppColors.champagneGold),
+                      if (isDeclined)
+                        _StatusPill(
+                            label: 'Declined', color: AppColors.slateMist),
+                    ],
+                  ),
+                  const SizedBox(width: AppDimensions.space4),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.slateMist,
+                    size: AppDimensions.iconSizeSmall,
+                  ),
                 ],
               ),
-            ],
+            ),
           ),
 
           // G3: Display sender's interest note
@@ -755,13 +768,9 @@ class _ReceivedTile extends StatelessWidget {
                             onAccept();
                           },
                     child: accepting
-                        ? SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.obsidianNight,
-                            ),
+                        ? SilarahActivityIndicator(
+                            size: 18,
+                            color: AppColors.obsidianNight,
                           )
                         : UiText(
                             AppLocalizations.of(context)

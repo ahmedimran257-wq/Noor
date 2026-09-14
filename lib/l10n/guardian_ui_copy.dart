@@ -6,6 +6,8 @@ const guardianUiCopy = <String, Map<String, String>>{
     'Guardian-managed': 'يديره ولي',
     'Guardian-managed profile': 'ملف شخصي يديره ولي',
     'Guardian connection': 'اتصال الولي',
+    'Conversations appear here when a member connects you as Guardian and has an active match.':
+        'تظهر المحادثات هنا عندما يربطك أحد الأعضاء بصفة ولي ويكون لديه تطابق نشط.',
     'Guardian invitation accepted and connected': 'تم قبول دعوة الولي والاتصال',
     'Managed by you for a family member': 'تديره أنت لأحد أفراد العائلة',
     'Optional separate Guardian for chat oversight':
@@ -41,6 +43,8 @@ const guardianUiCopy = <String, Map<String, String>>{
     'Guardian-managed': 'অভিভাবক দ্বারা পরিচালিত',
     'Guardian-managed profile': 'অভিভাবক-পরিচালিত প্রোফাইল',
     'Guardian connection': 'অভিভাবক সংযোগ',
+    'Conversations appear here when a member connects you as Guardian and has an active match.':
+        'কোনো সদস্য আপনাকে অভিভাবক হিসেবে যুক্ত করলে এবং তার সক্রিয় ম্যাচ থাকলে কথোপকথন এখানে দেখা যাবে।',
     'Guardian invitation accepted and connected':
         'অভিভাবক আমন্ত্রণ গৃহীত এবং সংযুক্ত',
     'Managed by you for a family member':
@@ -78,6 +82,8 @@ const guardianUiCopy = <String, Map<String, String>>{
     'Guardian-managed': 'Von Guardian verwaltet',
     'Guardian-managed profile': 'Von einem Guardian verwaltetes Profil',
     'Guardian connection': 'Guardian-Verbindung',
+    'Conversations appear here when a member connects you as Guardian and has an active match.':
+        'Unterhaltungen erscheinen hier, wenn ein Mitglied Sie als Guardian verbindet und ein aktives Match hat.',
     'Guardian invitation accepted and connected':
         'Guardian-Einladung angenommen und verbunden',
     'Managed by you for a family member':
@@ -115,6 +121,8 @@ const guardianUiCopy = <String, Map<String, String>>{
     'Guardian-managed': 'Géré par un tuteur',
     'Guardian-managed profile': 'Profil géré par un tuteur',
     'Guardian connection': 'Connexion du tuteur',
+    'Conversations appear here when a member connects you as Guardian and has an active match.':
+        'Les conversations apparaissent ici lorsqu’un membre vous associe comme tuteur et dispose d’une correspondance active.',
     'Guardian invitation accepted and connected':
         'Invitation du tuteur acceptée et connexion établie',
     'Managed by you for a family member':
@@ -153,6 +161,8 @@ const guardianUiCopy = <String, Map<String, String>>{
     'Guardian-managed': 'अभिभावक द्वारा प्रबंधित',
     'Guardian-managed profile': 'अभिभावक द्वारा प्रबंधित प्रोफ़ाइल',
     'Guardian connection': 'अभिभावक कनेक्शन',
+    'Conversations appear here when a member connects you as Guardian and has an active match.':
+        'जब कोई सदस्य आपको अभिभावक के रूप में जोड़ता है और उसका कोई सक्रिय मैच होता है, तो बातचीत यहाँ दिखाई देती है।',
     'Guardian invitation accepted and connected':
         'अभिभावक आमंत्रण स्वीकार हुआ और जुड़ गया',
     'Managed by you for a family member':
@@ -190,6 +200,8 @@ const guardianUiCopy = <String, Map<String, String>>{
     'Guardian-managed': 'Dikelola Wali',
     'Guardian-managed profile': 'Profil yang dikelola Wali',
     'Guardian connection': 'Koneksi Wali',
+    'Conversations appear here when a member connects you as Guardian and has an active match.':
+        'Percakapan muncul di sini saat anggota menghubungkan Anda sebagai Wali dan memiliki kecocokan aktif.',
     'Guardian invitation accepted and connected':
         'Undangan Wali diterima dan terhubung',
     'Managed by you for a family member': 'Anda kelola untuk anggota keluarga',
@@ -226,6 +238,8 @@ const guardianUiCopy = <String, Map<String, String>>{
     'Guardian-managed': 'Diurus Wali',
     'Guardian-managed profile': 'Profil yang diurus Wali',
     'Guardian connection': 'Sambungan Wali',
+    'Conversations appear here when a member connects you as Guardian and has an active match.':
+        'Perbualan muncul di sini apabila ahli menghubungkan anda sebagai Wali dan mempunyai padanan aktif.',
     'Guardian invitation accepted and connected':
         'Jemputan Wali diterima dan disambungkan',
     'Managed by you for a family member': 'Anda urus untuk ahli keluarga',
@@ -262,6 +276,8 @@ const guardianUiCopy = <String, Map<String, String>>{
     'Guardian-managed': 'Vasi tarafından yönetiliyor',
     'Guardian-managed profile': 'Vasi tarafından yönetilen profil',
     'Guardian connection': 'Vasi bağlantısı',
+    'Conversations appear here when a member connects you as Guardian and has an active match.':
+        'Bir üye sizi Vasi olarak bağladığında ve aktif bir eşleşmesi olduğunda konuşmalar burada görünür.',
     'Guardian invitation accepted and connected':
         'Vasi daveti kabul edildi ve bağlandı',
     'Managed by you for a family member':
@@ -299,6 +315,8 @@ const guardianUiCopy = <String, Map<String, String>>{
     'Guardian-managed': 'سرپرست کے زیر انتظام',
     'Guardian-managed profile': 'سرپرست کے زیر انتظام پروفائل',
     'Guardian connection': 'سرپرست کنکشن',
+    'Conversations appear here when a member connects you as Guardian and has an active match.':
+        'گفتگو یہاں اس وقت ظاہر ہوتی ہے جب کوئی رکن آپ کو سرپرست کے طور پر منسلک کرے اور اس کا کوئی فعال میچ ہو۔',
     'Guardian invitation accepted and connected':
         'سرپرست کی دعوت قبول ہوئی اور کنکشن قائم ہے',
     'Managed by you for a family member':

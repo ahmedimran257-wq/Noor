@@ -29,8 +29,8 @@ class LegalDocument {
 abstract final class LegalDocuments {
   static const version = '2.4.0';
   static const effectiveDate = '28 August 2026';
-  static const operatorName = 'Imran Ahmed';
-  static const grievanceOfficerName = 'Imran Ahmed';
+  static const operatorName = 'Silarah';
+  static const grievanceOfficerName = 'Silarah Grievance Desk';
   static const supportEmail = 'support@silarah.com';
   static const privacyEmail = 'privacy@silarah.com';
   static const safetyEmail = 'safety@silarah.com';
@@ -45,7 +45,7 @@ abstract final class LegalDocuments {
     sections: [
       LegalSection(
         '1. Agreement and incorporated policies',
-        'These Terms form a binding agreement between you and Imran Ahmed, an individual developer operating Silarah in India, for use of the Silarah mobile application, website and related services (the “Service”). By creating an account, accessing the Service or purchasing a subscription, you accept these Terms and the Privacy Policy, Privacy Rights and Grievance Policy, Community Guidelines, Refund Policy, Data Deletion Policy, Verification Policy, Photo Moderation Policy and Guardian/Wali Policy. If you do not accept them, do not use the Service.',
+        'These Terms form a binding agreement between you and Silarah, operated in India, for use of the Silarah mobile application, website and related services (the “Service”). By creating an account, accessing the Service or purchasing a subscription, you accept these Terms and the Privacy Policy, Privacy Rights and Grievance Policy, Community Guidelines, Refund Policy, Data Deletion Policy, Verification Policy, Photo Moderation Policy and Guardian/Wali Policy. If you do not accept them, do not use the Service.',
       ),
       LegalSection(
         '2. Eligibility and purpose',
@@ -111,7 +111,7 @@ abstract final class LegalDocuments {
     sections: [
       LegalSection(
         '1. Scope and controller',
-        'This Policy applies to the Silarah app, silarah.com and related support, safety and verification operations. Imran Ahmed is the individual developer operating Silarah in India and the data fiduciary responsible for deciding why and how personal data is processed. The grievance officer is Imran Ahmed. Privacy questions and rights requests may be sent to privacy@silarah.com; formal grievances may be sent to grievance@silarah.com.',
+        'This Policy applies to the Silarah app, silarah.com and related support, safety and verification operations. Silarah is operated in India and is the data fiduciary responsible for deciding why and how personal data is processed. Privacy questions and rights requests may be sent to privacy@silarah.com; the Silarah Grievance Desk receives formal grievances at grievance@silarah.com.',
       ),
       LegalSection(
         '2. Data you provide',
@@ -135,7 +135,7 @@ abstract final class LegalDocuments {
       ),
       LegalSection(
         '7. Service providers and disclosures',
-        'We use vetted processors to run the Service: Supabase for verified-email authentication, database, private storage, realtime and server functions; Google Firebase for Play Integrity-backed App Check, push delivery and crash reporting; RevenueCat and Google Play for subscriptions and transaction state; Brevo for transactional email; Cloudflare for website delivery, DNS and security; Google ML Kit for on-device capture guidance and photo-safety signals; Photon/Wikidata for location and language lookup; and MyMemory for translating message text only when a member requests translation. These providers process data needed for their role under their own contractual and legal obligations. We may also disclose data at your direction, during a corporate transaction, to protect people and the Service, or when lawfully required. We do not sell personal data and do not run third-party behavioural advertising.',
+        'We use vetted processors to run the Service: Supabase for verified-email authentication, database, private storage, realtime and server functions; Google Firebase for Play Integrity-backed App Check, push delivery and crash reporting; RevenueCat and Google Play for subscriptions and transaction state; Brevo for transactional email; Cloudflare for website delivery, DNS and security; Google ML Kit for on-device capture guidance and photo-safety signals; and Photon/Wikidata for location and language lookup. Chat translation is no longer offered and we do not send new messages to a translation provider. These providers process data needed for their role under their own contractual and legal obligations. We may also disclose data at your direction, during a corporate transaction, to protect people and the Service, or when lawfully required. We do not sell personal data and do not run third-party behavioural advertising.',
       ),
       LegalSection(
         '8. International processing',
@@ -308,7 +308,7 @@ abstract final class LegalDocuments {
       LegalSection('6. Grievance timelines in India',
           'Formal grievances are acknowledged within 24 hours and ordinarily resolved within 7 days under the applicable Indian intermediary rules. Complaints concerning specified removal requests follow the legally shorter deadline, including 36 hours for qualifying unlawful-content complaints and 2 hours for qualifying intimate imagery, nudity, sexual impersonation or similar urgent material. These timelines do not guarantee a requested outcome and may change when amended law imposes a shorter period.'),
       LegalSection('7. Grievance information and evidence',
-          'The grievance officer is Imran Ahmed. Send a concise description, account email, dates, relevant profile or conversation reference and the outcome requested to grievance@silarah.com. Do not forward suspected child sexual abuse material or non-consensual intimate imagery by email; identify where it appears so authorized staff can preserve and restrict it safely. We may acknowledge receipt, request necessary clarification, issue a reasoned outcome, preserve required evidence, restrict content or accounts, and notify an authority when law requires.'),
+          'The Silarah Grievance Desk receives formal grievances at grievance@silarah.com. Send a concise description, account email, dates, relevant profile or conversation reference and the outcome requested. Do not forward suspected child sexual abuse material or non-consensual intimate imagery by email; identify where it appears so authorized staff can preserve and restrict it safely. We may acknowledge receipt, request necessary clarification, issue a reasoned outcome, preserve required evidence, restrict content or accounts, and notify an authority when law requires.'),
       LegalSection('8. Appeals and external remedies',
           'If you disagree with a grievance decision, reply with the original reference and explain the error. Where the Indian Grievance Appellate Committee has jurisdiction, an eligible appeal may be filed through its prescribed online mechanism within the legally applicable period, currently 30 days from receipt of the grievance officer’s decision. Privacy complaints may also be taken to the competent data-protection authority when its relevant powers and procedures are in force. Nothing here removes a non-waivable court, consumer or regulatory remedy.'),
       LegalSection('9. Security, records and changes',

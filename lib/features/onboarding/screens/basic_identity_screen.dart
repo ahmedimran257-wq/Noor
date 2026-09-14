@@ -19,6 +19,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/copy_engine.dart';
 import '../../../core/utils/validation_snackbar.dart';
 import '../../../core/widgets/inputs/silarah_text_field.dart';
+import '../../../core/widgets/overlays/silarah_bottom_sheet.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
 
@@ -419,7 +420,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       );
       return;
     }
-    showModalBottomSheet<void>(
+    showSilarahBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surfaceMid,
       isScrollControlled: true,
@@ -442,7 +443,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
   void _showCommunityPicker() {
     _dismissKeyboard();
     final l10n = AppLocalizations.of(context);
-    showModalBottomSheet<void>(
+    showSilarahBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surfaceMid,
       isScrollControlled: true,
@@ -637,14 +638,16 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                           color: AppColors.slateMist,
                           size: AppDimensions.iconSizeMedium),
                       const SizedBox(width: AppDimensions.space12),
-                      UiText(
-                        _dob != null
-                            ? _formatDob(_dob!)
-                            : l10n.onboarding_hint_selectDateOfBirth,
-                        style: _dob != null
-                            ? AppTypography.inputText
-                            : AppTypography.inputText
-                                .copyWith(color: AppColors.slateMist),
+                      Expanded(
+                        child: UiText(
+                          _dob != null
+                              ? _formatDob(_dob!)
+                              : l10n.onboarding_hint_selectDateOfBirth,
+                          style: _dob != null
+                              ? AppTypography.inputText
+                              : AppTypography.inputText
+                                  .copyWith(color: AppColors.slateMist),
+                        ),
                       ),
                     ],
                   ),
@@ -804,59 +807,6 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
 
               const SizedBox(height: AppDimensions.space28),
 
-              // COMMUNITY / BIRADARI (Optional)
-              Builder(builder: (ctx) {
-                final l10nBuild = AppLocalizations.of(ctx);
-                final rel = ctx
-                        .read<OnboardingCubit>()
-                        .currentData
-                        .profileCreatorRelation ??
-                    'self';
-                return UiText(
-                    '${CopyEngine.communityQuestion(l10nBuild, rel).toUpperCase()}  (${l10nBuild.common_label_optional})',
-                    style: AppTypography.sectionLabel);
-              }),
-              const SizedBox(height: AppDimensions.space12),
-              GestureDetector(
-                onTap: _showCommunityPicker,
-                child: Container(
-                  height: AppDimensions.buttonHeight,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: AppDimensions.space16),
-                  decoration: BoxDecoration(
-                    color: AppColors.inputSurface,
-                    borderRadius:
-                        BorderRadius.circular(AppDimensions.radiusButton),
-                    border: Border.all(
-                      color: _community != null
-                          ? AppColors.champagneGold
-                          : AppColors.cardBorder,
-                      width: AppDimensions.borderThin,
-                    ),
-                  ),
-                  child: Row(children: [
-                    Icon(Icons.groups_outlined,
-                        color: _community != null
-                            ? AppColors.champagneGold
-                            : AppColors.slateMist,
-                        size: AppDimensions.iconSizeMedium),
-                    const SizedBox(width: AppDimensions.space12),
-                    Expanded(
-                        child: UiText(
-                      _community ?? l10n.onboarding_hint_selectCommunity,
-                      style: AppTypography.inputText.copyWith(
-                        color: _community != null
-                            ? AppColors.pearlWhite
-                            : AppColors.slateMist,
-                      ),
-                    )),
-                    Icon(Icons.expand_more_rounded, color: AppColors.slateMist),
-                  ]),
-                ),
-              ),
-
-              const SizedBox(height: AppDimensions.space28),
-
               // HEIGHT
               UiText(
                   _isGuardianMode
@@ -870,25 +820,6 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                   _dismissKeyboard();
                   setState(() => _heightCm = v);
                 },
-              ),
-
-              const SizedBox(height: AppDimensions.space24),
-
-              // COMPLEXION (Optional)
-              UiText(l10n.onboarding_label_complexion.toUpperCase(),
-                  style: AppTypography.sectionLabel),
-              const SizedBox(height: AppDimensions.space12),
-              Wrap(
-                spacing: AppDimensions.space8,
-                runSpacing: AppDimensions.space8,
-                children: _kComplexions
-                    .map((o) => _SelectChip(
-                          label: _getLocalizedComplexion(l10n, o),
-                          isSelected: _complexion == o,
-                          onTap: () => setState(
-                              () => _complexion = _complexion == o ? null : o),
-                        ))
-                    .toList(),
               ),
 
               const SizedBox(height: AppDimensions.space24),
@@ -942,62 +873,164 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
 
               const SizedBox(height: AppDimensions.space28),
 
-              // RESIDENCY STATUS (Optional)
-              UiText(l10n.onboarding_label_residencyStatus.toUpperCase(),
-                  style: AppTypography.sectionLabel),
-              const SizedBox(height: AppDimensions.space12),
-              Wrap(
-                spacing: AppDimensions.space8,
-                runSpacing: AppDimensions.space8,
-                children: _kResidencyOptions
-                    .map((o) => _SelectChip(
-                          label: _getLocalizedResidency(l10n, o),
-                          isSelected: _residencyStatus == o,
-                          onTap: () => setState(() => _residencyStatus =
-                              _residencyStatus == o ? null : o),
-                        ))
-                    .toList(),
-              ),
-
-              const SizedBox(height: AppDimensions.space28),
-
-              // SPECIAL NEEDS (Optional)
-              UiText(l10n.onboarding_label_specialNeeds.toUpperCase(),
-                  style: AppTypography.sectionLabel),
-              const SizedBox(height: AppDimensions.space4),
-              Container(
-                padding: const EdgeInsets.all(AppDimensions.space10),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceGlass,
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
-                  border: Border.all(color: AppColors.cardBorder),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.lock_outline_rounded,
-                        color: AppColors.slateMist, size: 14),
-                    const SizedBox(width: AppDimensions.space8),
-                    Expanded(
-                      child: UiText(
-                        l10n.onboarding_specialNeeds_privacy,
-                        style: AppTypography.caption,
+              ExpansionTile(
+                key: const PageStorageKey('identity-optional-details'),
+                maintainState: true,
+                initiallyExpanded: _community != null ||
+                    _complexion != null ||
+                    _residencyStatus != null ||
+                    _specialNeeds != null,
+                tilePadding: EdgeInsets.zero,
+                childrenPadding: const EdgeInsets.only(top: 12, bottom: 12),
+                collapsedIconColor: AppColors.slateMist,
+                iconColor: AppColors.champagneGold,
+                shape: Border(top: BorderSide(color: AppColors.cardBorder)),
+                collapsedShape:
+                    Border(top: BorderSide(color: AppColors.cardBorder)),
+                title: UiText(l10n.guide_optional_details,
+                    style: AppTypography.bodyMedium),
+                subtitle: UiText(l10n.guide_optional_details_body,
+                    style: AppTypography.caption),
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // COMMUNITY / BIRADARI (Optional)
+                      Builder(builder: (ctx) {
+                        final l10nBuild = AppLocalizations.of(ctx);
+                        final rel = ctx
+                                .read<OnboardingCubit>()
+                                .currentData
+                                .profileCreatorRelation ??
+                            'self';
+                        return UiText(
+                            '${CopyEngine.communityQuestion(l10nBuild, rel).toUpperCase()}  (${l10nBuild.common_label_optional})',
+                            style: AppTypography.sectionLabel);
+                      }),
+                      const SizedBox(height: AppDimensions.space12),
+                      GestureDetector(
+                        onTap: _showCommunityPicker,
+                        child: Container(
+                          height: AppDimensions.buttonHeight,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: AppDimensions.space16),
+                          decoration: BoxDecoration(
+                            color: AppColors.inputSurface,
+                            borderRadius: BorderRadius.circular(
+                                AppDimensions.radiusButton),
+                            border: Border.all(
+                              color: _community != null
+                                  ? AppColors.champagneGold
+                                  : AppColors.cardBorder,
+                              width: AppDimensions.borderThin,
+                            ),
+                          ),
+                          child: Row(children: [
+                            Icon(Icons.groups_outlined,
+                                color: _community != null
+                                    ? AppColors.champagneGold
+                                    : AppColors.slateMist,
+                                size: AppDimensions.iconSizeMedium),
+                            const SizedBox(width: AppDimensions.space12),
+                            Expanded(
+                                child: UiText(
+                              _community ??
+                                  l10n.onboarding_hint_selectCommunity,
+                              style: AppTypography.inputText.copyWith(
+                                color: _community != null
+                                    ? AppColors.pearlWhite
+                                    : AppColors.slateMist,
+                              ),
+                            )),
+                            Icon(Icons.expand_more_rounded,
+                                color: AppColors.slateMist),
+                          ]),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppDimensions.space12),
-              Wrap(
-                spacing: AppDimensions.space8,
-                runSpacing: AppDimensions.space8,
-                children: _kSpecialNeedsOptions
-                    .map((o) => _SelectChip(
-                          label: _getLocalizedSpecialNeeds(l10n, o),
-                          isSelected: _specialNeeds == o,
-                          onTap: () => setState(() =>
-                              _specialNeeds = _specialNeeds == o ? null : o),
-                        ))
-                    .toList(),
+
+                      const SizedBox(height: AppDimensions.space28),
+
+                      // COMPLEXION (Optional)
+                      UiText(l10n.onboarding_label_complexion.toUpperCase(),
+                          style: AppTypography.sectionLabel),
+                      const SizedBox(height: AppDimensions.space12),
+                      Wrap(
+                        spacing: AppDimensions.space8,
+                        runSpacing: AppDimensions.space8,
+                        children: _kComplexions
+                            .map((o) => _SelectChip(
+                                  label: _getLocalizedComplexion(l10n, o),
+                                  isSelected: _complexion == o,
+                                  onTap: () => setState(() => _complexion =
+                                      _complexion == o ? null : o),
+                                ))
+                            .toList(),
+                      ),
+
+                      const SizedBox(height: AppDimensions.space24),
+
+                      // RESIDENCY STATUS (Optional)
+                      UiText(
+                          l10n.onboarding_label_residencyStatus.toUpperCase(),
+                          style: AppTypography.sectionLabel),
+                      const SizedBox(height: AppDimensions.space12),
+                      Wrap(
+                        spacing: AppDimensions.space8,
+                        runSpacing: AppDimensions.space8,
+                        children: _kResidencyOptions
+                            .map((o) => _SelectChip(
+                                  label: _getLocalizedResidency(l10n, o),
+                                  isSelected: _residencyStatus == o,
+                                  onTap: () => setState(() => _residencyStatus =
+                                      _residencyStatus == o ? null : o),
+                                ))
+                            .toList(),
+                      ),
+
+                      const SizedBox(height: AppDimensions.space28),
+
+                      // SPECIAL NEEDS (Optional)
+                      UiText(l10n.onboarding_label_specialNeeds.toUpperCase(),
+                          style: AppTypography.sectionLabel),
+                      const SizedBox(height: AppDimensions.space4),
+                      Container(
+                        padding: const EdgeInsets.all(AppDimensions.space10),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceGlass,
+                          borderRadius:
+                              BorderRadius.circular(AppDimensions.radiusChip),
+                          border: Border.all(color: AppColors.cardBorder),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.lock_outline_rounded,
+                                color: AppColors.slateMist, size: 14),
+                            const SizedBox(width: AppDimensions.space8),
+                            Expanded(
+                              child: UiText(
+                                l10n.onboarding_specialNeeds_privacy,
+                                style: AppTypography.caption,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: AppDimensions.space12),
+                      Wrap(
+                        spacing: AppDimensions.space8,
+                        runSpacing: AppDimensions.space8,
+                        children: _kSpecialNeedsOptions
+                            .map((o) => _SelectChip(
+                                  label: _getLocalizedSpecialNeeds(l10n, o),
+                                  isSelected: _specialNeeds == o,
+                                  onTap: () => setState(() => _specialNeeds =
+                                      _specialNeeds == o ? null : o),
+                                ))
+                            .toList(),
+                      ),
+                    ],
+                  ),
+                ],
               ),
 
               const SizedBox(height: AppDimensions.space32),

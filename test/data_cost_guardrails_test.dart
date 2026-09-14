@@ -29,10 +29,24 @@ void main() {
     expect(chat, contains('_inboxLoadInFlight'));
     expect(chat, contains('Future<void> refreshIfChanged'));
     expect(chat, contains('scheduleInboxReconciliation'));
+    expect(chat, isNot(contains("channel('chat_inbox:")));
     expect(chat, isNot(contains('unawaited(loadConversations());')));
     expect(notifications, contains('_maxRetainedNotifications = 100'));
     expect(notifications, contains('.limit(_maxRetainedNotifications)'));
     expect(notifications, contains('_freshness = Duration(minutes: 5)'));
+    expect(notifications, contains('reconcileForegroundPush'));
+    expect(notifications, isNot(contains("channel('user_notifications_")));
+  });
+
+  test('idle signed-in members do not consume realtime connections', () {
+    final standing = source(
+      'lib/core/cubits/account_standing/account_standing_cubit.dart',
+    );
+    final chat = source('lib/core/cubits/chat/chat_cubit.dart');
+
+    expect(standing, isNot(contains('.channel(')));
+    expect(chat, contains("'chat:\$conversationId'"));
+    expect(chat, contains('currently open private chat'));
   });
 
   test('signed photo URLs and bookmarks are account-scoped caches', () {
@@ -58,6 +72,9 @@ void main() {
     expect(interests, contains('_loadProfilesForUsers'));
     expect(interests, isNot(contains('_loadProfileForUser')));
     expect(interests, contains('_maxRowsPerSection = 100'));
+    expect(interests, contains('_batches(userIds, 50)'));
+    expect(interests, contains('_batches(profileIds, 50)'));
+    expect(interests, contains('_batches(photoOwners, 50)'));
     expect(
       blocks,
       contains('AuthorizedProfileService.load(relatedUserIds)'),
@@ -92,10 +109,18 @@ void main() {
     final relationshipRevision =
         source('lib/core/services/relationship_revision_service.dart');
 
-    expect(home, contains('read<InterestsCubit>().refreshIfChanged()'));
+    expect(
+      home,
+      contains(
+        'read<InterestsCubit>().refreshIfChanged(forceCheck: true)',
+      ),
+    );
     expect(home, contains('read<ChatCubit>().refreshIfChanged()'));
     expect(home, isNot(contains('loadData(force: true)')));
-    expect(main, contains('_interestsCubit.refreshIfChanged()'));
+    expect(
+      main,
+      contains('_interestsCubit.refreshIfChanged(forceCheck: true)'),
+    );
     expect(main, contains('_chatCubit.refreshIfChanged()'));
     expect(interests, contains('Future<void> refreshIfChanged'));
     expect(relationshipRevision, contains('get_my_relationship_revision'));

@@ -1,9 +1,6 @@
-// Internal base widget for tactile press animation.
-// "Button Press: Scale 1.0 → 0.96 → 1.0 with bouncy overshoot.
-//  Feels like a physical button. No ripple effect."
-// All SILARAH buttons wrap this.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../theme/app_curves.dart';
 import '../../theme/app_dimensions.dart';
 
 class SilarahPressable extends StatefulWidget {
@@ -83,12 +80,12 @@ class _SilarahPressableState extends State<SilarahPressable> {
                 : _pressed
                     ? AppDimensions.durationButtonPress
                     : AppDimensions.durationTransition,
-            curve: _pressed ? Curves.easeOutCubic : Curves.easeOutQuart,
+            curve: _pressed ? AppCurves.buttonPress : AppCurves.reveal,
             child: AnimatedSlide(
               duration: reduceMotion
                   ? Duration.zero
                   : AppDimensions.durationTransition,
-              curve: Curves.easeOutCubic,
+              curve: AppCurves.reveal,
               offset: Offset(0, _hovered && widget.enabled ? -0.015 : 0),
               child: AnimatedOpacity(
                 duration: reduceMotion

@@ -18,6 +18,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
 import '../../../core/widgets/loaders/silarah_blur_image.dart';
 import '../../../core/widgets/silarah_empty_state.dart';
+import '../../../core/widgets/overlays/silarah_dialog.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import 'chat_screen.dart';
 import 'paywall_gate_screen.dart';
@@ -59,7 +60,7 @@ class _ChatListScreenState extends State<ChatListScreen>
   }
 
   Future<void> _confirmDeleteConversation(Conversation conversation) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showSilarahDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: AppColors.surfaceElevated,
@@ -307,29 +308,9 @@ class _ChatListScreenState extends State<ChatListScreen>
 
                                 chatCubit.markRead(conv.id);
                                 await navigator.push(
-                                  PageRouteBuilder(
-                                    transitionDuration:
-                                        AppDimensions.durationReveal,
-                                    reverseTransitionDuration:
-                                        AppDimensions.durationTransition,
-                                    pageBuilder: (ctx, animation, _) =>
-                                        FadeTransition(
-                                      opacity: CurvedAnimation(
-                                        parent: animation,
-                                        curve: AppCurves.reveal,
-                                      ),
-                                      child: SlideTransition(
-                                        position: Tween<Offset>(
-                                          begin: const Offset(0.035, 0),
-                                          end: Offset.zero,
-                                        ).animate(CurvedAnimation(
-                                          parent: animation,
-                                          curve: AppCurves.reveal,
-                                        )),
-                                        child:
-                                            ChatScreen(conversationId: conv.id),
-                                      ),
-                                    ),
+                                  MaterialPageRoute<void>(
+                                    builder: (_) =>
+                                        ChatScreen(conversationId: conv.id),
                                   ),
                                 );
                               } finally {

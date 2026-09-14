@@ -91,6 +91,10 @@ void main() {
     expect(sheets, isNot(contains('BackdropFilter')));
     expect(sheets, isNot(contains('ImageFilter.blur')));
     expect(sheets, isNot(contains('repeat(reverse: true)')));
-    expect(sheets, contains('curve: Curves.easeOutCubic'));
+    expect(sheets, contains('extends ModalBottomSheetRoute'));
+    expect(sheets, contains('AppDimensions.durationSheetEnter'));
+    expect(sheets, contains('AnimationStyle.noAnimation'));
+    expect(sheets, isNot(contains('FadeTransition(')));
+    expect(sheets, isNot(contains('ScaleTransition(')));
   });
 }

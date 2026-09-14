@@ -13,6 +13,7 @@ import '../cubits/auth/auth_state.dart';
 import '../cubits/onboarding/onboarding_cubit.dart';
 import '../onboarding/onboarding_flow.dart';
 import '../theme/app_colors.dart';
+import 'notification_navigation.dart';
 
 import '../../features/onboarding/screens/splash_brand_screen.dart';
 import '../../features/onboarding/screens/language_selection_screen.dart';
@@ -198,14 +199,14 @@ GoRouter buildAppRouter(
       // Pre-auth screens
       GoRoute(
         path: AppRoutes.boot,
-        pageBuilder: (context, state) => _fadePage(
+        pageBuilder: (context, state) => _slidePage(
           key: state.pageKey,
           child: const _BootGateScreen(),
         ),
       ),
       GoRoute(
         path: AppRoutes.authCallback,
-        pageBuilder: (context, state) => _fadePage(
+        pageBuilder: (context, state) => _slidePage(
           key: state.pageKey,
           child: const _BootGateScreen(),
         ),
@@ -388,7 +389,10 @@ GoRouter buildAppRouter(
           final id = state.pathParameters['id'] ?? '';
           return _slidePage(
             key: state.pageKey,
-            child: ChatScreen(conversationId: id),
+            child: NotificationRouteBackScope(
+              fallbackPath: '${AppRoutes.home}?tab=2',
+              child: ChatScreen(conversationId: id),
+            ),
           );
         },
       ),
@@ -453,78 +457,13 @@ class _OnboardingRouteStepBinderState
   Widget build(BuildContext context) => widget.child;
 }
 
-CustomTransitionPage<void> _slidePage({
+MaterialPage<void> _slidePage({
   required LocalKey key,
   required Widget child,
 }) {
-  return CustomTransitionPage<void>(
+  return MaterialPage<void>(
     key: key,
     child: child,
-    transitionDuration: const Duration(milliseconds: 320),
-    reverseTransitionDuration: const Duration(milliseconds: 220),
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) {
-        return child;
-      }
-      final direction =
-          Directionality.of(context) == TextDirection.rtl ? -1.0 : 1.0;
-      final incoming = CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic,
-      );
-      final outgoing = CurvedAnimation(
-        parent: secondaryAnimation,
-        curve: Curves.easeOutCubic,
-      );
-
-      return FadeTransition(
-        opacity: incoming,
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: Offset(0.055 * direction, 0),
-            end: Offset.zero,
-          ).animate(incoming),
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: Offset.zero,
-              end: Offset(-0.018 * direction, 0),
-            ).animate(outgoing),
-            child: child,
-          ),
-        ),
-      );
-    },
-  );
-}
-
-// Auth Listenable (triggers router refresh on auth change)
-Page<void> _fadePage({required LocalKey key, required Widget child}) {
-  return CustomTransitionPage<void>(
-    key: key,
-    child: child,
-    transitionDuration: const Duration(milliseconds: 260),
-    reverseTransitionDuration: const Duration(milliseconds: 170),
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      final curved = CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic,
-      );
-      return FadeTransition(
-        opacity: curved,
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 0.018),
-            end: Offset.zero,
-          ).animate(curved),
-          child: ScaleTransition(
-            scale: Tween<double>(begin: 0.992, end: 1).animate(curved),
-            child: child,
-          ),
-        ),
-      );
-    },
   );
 }
 

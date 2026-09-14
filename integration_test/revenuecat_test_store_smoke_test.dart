@@ -34,9 +34,13 @@ void main() {
     expect(current, isNotNull, reason: 'A current offering is required.');
 
     final monthly = current!.monthly;
-    final annual = current.annual;
+    final threeMonth = current.threeMonth;
     expect(monthly, isNotNull, reason: 'The monthly package is required.');
-    expect(annual, isNotNull, reason: 'The annual package is required.');
+    expect(
+      threeMonth,
+      isNotNull,
+      reason: 'The three-month package is required.',
+    );
 
     if (action == 'valid') {
       final purchase = await Purchases.purchase(

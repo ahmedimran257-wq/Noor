@@ -45,7 +45,8 @@ void main() {
       );
     });
 
-    test('Flutter regenerates registrants before Android snapshots sources', () {
+    test('Flutter regenerates registrants before Android snapshots sources',
+        () {
       expect(
         gradle,
         isNot(contains('removeDevOnlyGeneratedPluginRegistrant')),
@@ -64,7 +65,8 @@ void main() {
       );
       expect(
         gradle,
-        contains('Could not remove the dev-only integration_test registration.'),
+        contains(
+            'Could not remove the dev-only integration_test registration.'),
       );
       expect(
         installScript,

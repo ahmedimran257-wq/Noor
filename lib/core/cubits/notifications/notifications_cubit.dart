@@ -1,11 +1,10 @@
 // SILARAH - Notifications Cubit
-// Production Supabase realtime only.
+// Bounded notification state backed by Supabase and foreground FCM recovery.
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../services/supabase_service.dart';
 import '../../utils/notification_deep_link.dart';
@@ -54,6 +53,10 @@ class NotificationsState extends Equatable {
 
   final List<NotificationItem> items;
   int get unreadCount => items.where((n) => !n.isRead).length;
+  int get bellUnreadCount =>
+      items.where((n) => !n.isRead && n.type != 'profile_view').length;
+  int get profileViewUnreadAlertCount =>
+      items.where((n) => !n.isRead && n.type == 'profile_view').length;
 
   NotificationsState copyWith({List<NotificationItem>? items}) =>
       NotificationsState(items: items ?? this.items);
@@ -65,10 +68,9 @@ class NotificationsState extends Equatable {
 class NotificationsCubit extends Cubit<NotificationsState> {
   NotificationsCubit() : super(const NotificationsState());
 
-  RealtimeChannel? _realtimeSubscription;
-  String? _realtimeUserId;
   int _loadVersion = 0;
   bool _loadInFlight = false;
+  bool _reloadAfterCurrentLoad = false;
   DateTime? _lastLoadedAt;
   static const _freshness = Duration(minutes: 5);
   static const _maxRetainedNotifications = 100;
@@ -78,12 +80,14 @@ class NotificationsCubit extends Cubit<NotificationsState> {
   Stream<NotificationItem> get inAppNotifications => _inAppNotifications.stream;
 
   Future<void> loadNotifications({bool force = false}) async {
-    if (_loadInFlight) return;
+    if (_loadInFlight) {
+      if (force) _reloadAfterCurrentLoad = true;
+      return;
+    }
     final lastLoadedAt = _lastLoadedAt;
     if (!force &&
         lastLoadedAt != null &&
         DateTime.now().difference(lastLoadedAt) < _freshness) {
-      _setupRealtime();
       return;
     }
     _loadInFlight = true;
@@ -116,49 +120,41 @@ class NotificationsCubit extends Cubit<NotificationsState> {
       }
       emit(NotificationsState(items: items));
       _lastLoadedAt = DateTime.now();
-      _setupRealtime();
     } catch (e) {
       if (_isCurrentLoad(loadVersion)) emit(const NotificationsState());
     } finally {
       _loadInFlight = false;
+      if (_reloadAfterCurrentLoad &&
+          !isClosed &&
+          SupabaseService.currentUserId != null) {
+        _reloadAfterCurrentLoad = false;
+        unawaited(loadNotifications(force: true));
+      }
     }
   }
 
-  void _setupRealtime() {
-    final me = SupabaseService.currentUserId;
-    if (me == null) return;
-    if (_realtimeUserId == me && _realtimeSubscription != null) return;
-
-    _realtimeSubscription?.unsubscribe();
-    _realtimeUserId = me;
-
-    _realtimeSubscription = SupabaseService.client
-        .channel('user_notifications_$me')
-        .onPostgresChanges(
-          event: PostgresChangeEvent.insert,
-          schema: 'public',
-          table: 'notifications',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'user_id',
-            value: me,
-          ),
-          callback: (payload) {
-            _mergeRealtimeNotification(payload);
-          },
-        )
-        .subscribe();
-  }
-
-  void _mergeRealtimeNotification(PostgresChangePayload payload) {
-    final record = payload.newRecord;
-    if (record.isEmpty) {
-      unawaited(loadNotifications(force: true));
-      return;
-    }
-    if (record['user_id']?.toString() != SupabaseService.currentUserId) return;
-
-    final item = _itemFromRow(Map<String, dynamic>.from(record));
+  /// Shows a foreground push immediately and then reconciles the bounded list
+  /// with the authoritative notification row. This replaces an always-on
+  /// Postgres Changes channel, preserving responsive UI without consuming one
+  /// Realtime connection for every signed-in member.
+  void reconcileForegroundPush({
+    required String type,
+    String? notificationId,
+    String? title,
+    String? body,
+    String? deepLink,
+  }) {
+    final fallback = _copyForType(type);
+    final item = _itemFromRow({
+      'id': _cleanText(notificationId) ??
+          'foreground_${DateTime.now().microsecondsSinceEpoch}',
+      'type': type,
+      'title': _cleanText(title) ?? fallback.$1,
+      'body': _cleanText(body) ?? fallback.$2,
+      'read_at': null,
+      'created_at': DateTime.now().toUtc().toIso8601String(),
+      'deep_link': deepLink,
+    });
     if (state.items.any((notification) => notification.id == item.id)) return;
     if (!isClosed) {
       emit(NotificationsState(
@@ -168,6 +164,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
       ));
       _inAppNotifications.add(item);
     }
+    unawaited(loadNotifications(force: true));
   }
 
   NotificationItem _itemFromRow(Map<String, dynamic> row) {
@@ -330,6 +327,20 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     }
   }
 
+  /// Reconciles local notification history after the dedicated profile-view
+  /// read cursor has been advanced server-side.
+  void reconcileProfileViewsSeen() {
+    var changed = false;
+    final updated = state.items.map((notification) {
+      if (notification.type != 'profile_view' || notification.isRead) {
+        return notification;
+      }
+      changed = true;
+      return notification.copyWith(isRead: true);
+    }).toList(growable: false);
+    if (changed) emit(state.copyWith(items: updated));
+  }
+
   Future<bool> deleteNotification(String id) async {
     final me = SupabaseService.currentUserId;
     final previous = state.items;
@@ -369,21 +380,15 @@ class NotificationsCubit extends Cubit<NotificationsState> {
 
   void clear() {
     _loadVersion++;
-    _realtimeSubscription?.unsubscribe();
-    _realtimeSubscription = null;
-    _realtimeUserId = null;
     _lastLoadedAt = null;
     _loadInFlight = false;
+    _reloadAfterCurrentLoad = false;
     if (!isClosed) emit(const NotificationsState());
   }
 
   @override
   Future<void> close() async {
     _loadVersion++;
-    final subscription = _realtimeSubscription;
-    _realtimeSubscription = null;
-    _realtimeUserId = null;
-    if (subscription != null) await subscription.unsubscribe();
     await _inAppNotifications.close();
     await super.close();
   }
@@ -392,65 +397,9 @@ class NotificationsCubit extends Cubit<NotificationsState> {
 }
 
 String? notificationPathFor(NotificationItem item) {
-  // Referral rewards open the account surface even for legacy rows whose
-  // deep link pointed at checkout.
-  if (item.type == 'referral_reward') return '/home?tab=3';
-
-  final deepLinkPath = notificationPathFromDeepLink(item.deepLink);
-  if (deepLinkPath != null) return deepLinkPath;
-
-  switch (item.type) {
-    case 'new_message':
-      return '/home?tab=2';
-    case 'match':
-    case 'match_accepted':
-    case 'interest_received':
-    case 'interest_accepted':
-    case 'interest_expiring':
-    case 'interest_expired':
-      return '/home?tab=1';
-    case 'match_ended':
-    case 'new_compatible_profiles':
-      return '/home?tab=0';
-    case 'admin_announcement':
-      return '/notifications';
-    case 'profile_live':
-      return '/home?tab=3';
-    case 'profile_view':
-      return '/profile-views';
-    case 'photo_access_request':
-      return '/photo-requests';
-    case 'photo_access_granted':
-      return item.profileId == null
-          ? '/home?tab=1'
-          : '/profile/${item.profileId}';
-    case 'profile_nudge':
-      return '/edit-profile';
-    case 'inactive_nudge':
-      return '/home?tab=0';
-    case 'boost_ready':
-    case 'boost_available':
-      return '/home?tab=3';
-    case 'subscription_active':
-    case 'subscription_renewed':
-    case 'subscription_updated':
-    case 'subscription_cancelled':
-    case 'subscription_expired':
-    case 'subscription_refunded':
-    case 'billing_issue':
-      return '/subscription';
-    case 'profile_returned_to_review':
-    case 'account_restored':
-    case 'photo_approved':
-    case 'photo_rejected':
-    case 'photo_verification_approved':
-      return '/home?tab=3';
-    case 'photo_verification_reviewed':
-      return '/verify';
-    case 'account_suspended':
-    case 'account_banned':
-      return '/help-support';
-    default:
-      return null;
-  }
+  return notificationDestinationPath(
+    type: item.type,
+    deepLink: item.deepLink,
+    profileId: item.profileId,
+  );
 }

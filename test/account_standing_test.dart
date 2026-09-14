@@ -33,7 +33,7 @@ void main() {
   });
 
   test(
-      'account standing is realtime, global, actionable, and not notification dependent',
+      'account standing is authoritative, actionable, and reconciled without an idle realtime channel',
       () {
     final cubit = File(
       'lib/core/cubits/account_standing/account_standing_cubit.dart',
@@ -41,21 +41,14 @@ void main() {
     final home = File('lib/features/home/home_screen.dart').readAsStringSync();
     final profile = File('lib/features/home/screens/my_profile_screen.dart')
         .readAsStringSync();
-    final migration = File(
-      'supabase/migrations/126_realtime_account_standing.sql',
-    ).readAsStringSync();
-
-    expect(cubit, contains("channel('account_standing_\$userId')"));
+    expect(cubit, isNot(contains("channel('account_standing_\$userId')")));
+    expect(cubit, contains('foreground FCM'));
     expect(cubit, contains("rpc(\n        'set_profile_pause'"));
     expect(home, contains('_PersistentStandingBanner'));
     expect(home, contains("'Resume'"));
     expect(home, contains("'Get help'"));
     expect(profile.indexOf('_ProfileLifecycleCard('),
         lessThan(profile.indexOf('_ProfilePreviewCard(')));
-    expect(
-        migration,
-        contains(
-            'ALTER PUBLICATION supabase_realtime ADD TABLE public.profiles'));
   });
 
   test('silent shadowban semantics remain isolated from user-visible standing',

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -6,12 +8,15 @@ import '../../../core/cubits/interests/interests_cubit.dart';
 import '../../../core/cubits/interests/interests_state.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/cubits/auth/auth_state.dart';
+import '../../../core/cubits/notifications/notifications_cubit.dart';
 import '../../../core/cubits/subscription/subscription_cubit.dart';
 import '../../../core/cubits/subscription/subscription_state.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/router/notification_navigation.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/services/authorized_profile_service.dart';
 import '../../../core/services/profile_photo_service.dart';
+import '../../../core/services/profile_view_service.dart';
 import '../../../core/models/discovery_profile.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
@@ -39,14 +44,25 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
   bool _isLoading = false;
   bool _hasLoaded = false;
 
+  void _close() {
+    popOrGoToFallback(GoRouter.of(context), '${AppRoutes.home}?tab=3');
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_markSeen());
       if (mounted && context.read<SubscriptionCubit>().state.isSubscribed) {
         _loadViews();
       }
     });
+  }
+
+  Future<void> _markSeen() async {
+    final marked = await ProfileViewService.instance.markSeen();
+    if (!mounted || !marked) return;
+    context.read<NotificationsCubit>().reconcileProfileViewsSeen();
   }
 
   Future<void> _loadViews() async {
@@ -143,145 +159,160 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
       listener: (context, subscription) {
         if (subscription.isSubscribed) _loadViews();
       },
-      builder: (context, subscription) => Scaffold(
-        backgroundColor: AppColors.obsidianNight,
-        appBar: AppBar(
-          backgroundColor: AppColors.obsidianNight,
-          surfaceTintColor: Colors.transparent,
-          elevation: 0,
-          leading: GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              margin: const EdgeInsets.all(AppDimensions.space8),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceGlass,
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.cardBorder),
+      builder: (context, subscription) {
+        final router = GoRouter.of(context);
+        return PopScope(
+          canPop: router.canPop(),
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop) router.go('${AppRoutes.home}?tab=3');
+          },
+          child: Scaffold(
+            backgroundColor: AppColors.obsidianNight,
+            appBar: AppBar(
+              backgroundColor: AppColors.obsidianNight,
+              surfaceTintColor: Colors.transparent,
+              elevation: 0,
+              leading: GestureDetector(
+                onTap: _close,
+                child: Container(
+                  margin: const EdgeInsets.all(AppDimensions.space8),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceGlass,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.cardBorder),
+                  ),
+                  child: Icon(
+                    Icons.arrow_back_rounded,
+                    color: AppColors.pearlWhite,
+                    size: AppDimensions.iconSizeMedium,
+                  ),
+                ),
               ),
-              child: Icon(
-                Icons.arrow_back_rounded,
-                color: AppColors.pearlWhite,
-                size: AppDimensions.iconSizeMedium,
-              ),
+              title: UiText(context.uiCopy('Profile Views'),
+                  style: AppTypography.screenTitle.copyWith(fontSize: 20)),
             ),
-          ),
-          title: UiText(context.uiCopy('Profile Views'),
-              style: AppTypography.screenTitle.copyWith(fontSize: 20)),
-        ),
-        body: subscription.isLoading && !subscription.isSubscribed
-            ? const _ShimmerLoader()
-            : !subscription.isSubscribed
-                ? _PremiumViewerGate(
-                    onUpgrade: () => context.push(AppRoutes.subscription),
-                  )
-                : _isLoading
-                    ? const _ShimmerLoader()
-                    : _loadedViewers.isEmpty
-                        ? const _EmptyState()
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(24, 8, 24, 16),
-                                child: UiText(
-                                  '${_loadedViewers.length} people viewed your profile this week',
-                                  style: AppTypography.screenTitle
-                                      .copyWith(fontSize: 18),
-                                ),
-                              ),
-                              Expanded(
-                                child: ListView.separated(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(24, 0, 24, 40),
-                                  itemCount: _loadedViewers.length,
-                                  separatorBuilder: (_, __) => const SizedBox(
-                                      height: AppDimensions.space8),
-                                  itemBuilder: (context, i) {
-                                    final viewer = _loadedViewers[i];
-                                    final p = viewer.profile;
-                                    final sent =
-                                        interests.interactionWith(p.id) !=
-                                            ProfileInteractionState.none;
-                                    return _ViewerTile(
-                                      photoUrl: p.photoUrl,
-                                      displayName: p.displayName,
-                                      age: p.age,
-                                      city: p.cityName,
-                                      timeLabel:
-                                          _timeLabel(context, viewer.viewedAt),
-                                      isVerified: p.isVerified,
-                                      isInterestSent: sent,
-                                      onOpen: () =>
-                                          context.push('/profile/${p.id}'),
-                                      onSendInterest: sent
-                                          ? null
-                                          : () async {
-                                              HapticFeedback.mediumImpact();
-                                              final sent = await context
-                                                  .read<InterestsCubit>()
-                                                  .sendInterest(p);
-                                              if (!context.mounted) return;
-                                              if (!sent) {
-                                                ScaffoldMessenger.of(context)
-                                                  ..clearSnackBars()
-                                                  ..showSnackBar(
-                                                    SnackBar(
-                                                      content: UiText(
-                                                        context.uiCopy(
-                                                            'Interest could not be sent. Check your limit and try again.'),
+            body: subscription.isLoading && !subscription.isSubscribed
+                ? const _ShimmerLoader()
+                : !subscription.isSubscribed
+                    ? _PremiumViewerGate(
+                        onUpgrade: () => context.push(AppRoutes.subscription),
+                      )
+                    : _isLoading
+                        ? const _ShimmerLoader()
+                        : _loadedViewers.isEmpty
+                            ? const _EmptyState()
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        24, 8, 24, 16),
+                                    child: UiText(
+                                      '${_loadedViewers.length} people viewed your profile this week',
+                                      style: AppTypography.screenTitle
+                                          .copyWith(fontSize: 18),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: ListView.separated(
+                                      padding: const EdgeInsets.fromLTRB(
+                                          24, 0, 24, 40),
+                                      itemCount: _loadedViewers.length,
+                                      separatorBuilder: (_, __) =>
+                                          const SizedBox(
+                                              height: AppDimensions.space8),
+                                      itemBuilder: (context, i) {
+                                        final viewer = _loadedViewers[i];
+                                        final p = viewer.profile;
+                                        final sent =
+                                            interests.interactionWith(p.id) !=
+                                                ProfileInteractionState.none;
+                                        return _ViewerTile(
+                                          photoUrl: p.photoUrl,
+                                          displayName: p.displayName,
+                                          age: p.age,
+                                          city: p.cityName,
+                                          timeLabel: _timeLabel(
+                                              context, viewer.viewedAt),
+                                          isVerified: p.isVerified,
+                                          isInterestSent: sent,
+                                          onOpen: () =>
+                                              context.push('/profile/${p.id}'),
+                                          onSendInterest: sent
+                                              ? null
+                                              : () async {
+                                                  HapticFeedback.mediumImpact();
+                                                  final sent = await context
+                                                      .read<InterestsCubit>()
+                                                      .sendInterest(p);
+                                                  if (!context.mounted) return;
+                                                  if (!sent) {
+                                                    ScaffoldMessenger.of(
+                                                        context)
+                                                      ..clearSnackBars()
+                                                      ..showSnackBar(
+                                                        SnackBar(
+                                                          content: UiText(
+                                                            context.uiCopy(
+                                                                'Interest could not be sent. Check your limit and try again.'),
+                                                          ),
+                                                        ),
+                                                      );
+                                                    return;
+                                                  }
+                                                  ScaffoldMessenger.of(context)
+                                                    ..clearSnackBars()
+                                                    ..showSnackBar(
+                                                      SnackBar(
+                                                        content: Row(children: [
+                                                          Icon(
+                                                              Icons
+                                                                  .favorite_rounded,
+                                                              color: AppColors
+                                                                  .champagneGold,
+                                                              size: 16),
+                                                          const SizedBox(
+                                                              width: 8),
+                                                          UiText(
+                                                              'Interest sent to ${p.firstName}',
+                                                              style:
+                                                                  AppTypography
+                                                                      .body
+                                                                      .copyWith(
+                                                                color: AppColors
+                                                                    .readableOn(
+                                                                  AppColors
+                                                                      .surfaceGlassHover,
+                                                                ),
+                                                              )),
+                                                        ]),
+                                                        backgroundColor: AppColors
+                                                            .surfaceGlassHover,
+                                                        behavior:
+                                                            SnackBarBehavior
+                                                                .floating,
+                                                        shape:
+                                                            RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                  AppDimensions
+                                                                      .radiusButton),
+                                                        ),
+                                                        duration:
+                                                            const Duration(
+                                                                seconds: 2),
                                                       ),
-                                                    ),
-                                                  );
-                                                return;
-                                              }
-                                              ScaffoldMessenger.of(context)
-                                                ..clearSnackBars()
-                                                ..showSnackBar(
-                                                  SnackBar(
-                                                    content: Row(children: [
-                                                      Icon(
-                                                          Icons
-                                                              .favorite_rounded,
-                                                          color: AppColors
-                                                              .champagneGold,
-                                                          size: 16),
-                                                      const SizedBox(width: 8),
-                                                      UiText(
-                                                          'Interest sent to ${p.firstName}',
-                                                          style: AppTypography
-                                                              .body
-                                                              .copyWith(
-                                                            color: AppColors
-                                                                .readableOn(
-                                                              AppColors
-                                                                  .surfaceGlassHover,
-                                                            ),
-                                                          )),
-                                                    ]),
-                                                    backgroundColor: AppColors
-                                                        .surfaceGlassHover,
-                                                    behavior: SnackBarBehavior
-                                                        .floating,
-                                                    shape:
-                                                        RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              AppDimensions
-                                                                  .radiusButton),
-                                                    ),
-                                                    duration: const Duration(
-                                                        seconds: 2),
-                                                  ),
-                                                );
-                                            },
-                                    );
-                                  },
-                                ),
+                                                    );
+                                                },
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

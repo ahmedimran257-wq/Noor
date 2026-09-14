@@ -82,15 +82,8 @@ void main() {
 
   test('signup publication cannot leave account standing or discovery stale',
       () {
-    expect(accountStanding, contains('event: PostgresChangeEvent.all'));
-    final subscriptionIndex =
-        accountStanding.indexOf(".channel('account_standing_\$userId')");
-    final initialReadIndex =
-        accountStanding.indexOf('await refresh();', subscriptionIndex);
-    expect(
-      subscriptionIndex,
-      lessThan(initialReadIndex),
-    );
+    expect(accountStanding, isNot(contains('PostgresChangeEvent')));
+    expect(accountStanding, contains('await refresh();'));
     expect(discovery, contains('refreshAfterViewerPublication'));
     expect(discovery, contains('_readyViewerId = null'));
     expect(app, contains('_synchronizePublishedProfile(state.userId)'));

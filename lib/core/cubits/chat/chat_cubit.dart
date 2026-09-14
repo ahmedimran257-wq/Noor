@@ -8,15 +8,18 @@ import 'package:uuid/uuid.dart';
 
 import '../../services/supabase_service.dart';
 import '../../services/relationship_revision_service.dart';
-import '../../services/translation_service.dart';
 import '../../services/profile_photo_service.dart';
+import '../../services/live_refresh_controller.dart';
 import 'chat_state.dart';
+import 'chat_message_page.dart';
 
 enum ChatAccessReason {
   allowed,
+  readOnly,
   subscriptionRequired,
   guardianApprovalRequired,
   suspended,
+  accountRestricted,
   closed,
   notFound,
   memberUnavailableReadOnly,
@@ -29,8 +32,11 @@ class ChatAccessDecision {
   final ChatAccessReason reason;
   bool get allowed =>
       reason == ChatAccessReason.allowed ||
+      reason == ChatAccessReason.readOnly ||
       reason == ChatAccessReason.memberUnavailableReadOnly;
-  bool get readOnly => reason == ChatAccessReason.memberUnavailableReadOnly;
+  bool get readOnly =>
+      reason == ChatAccessReason.readOnly ||
+      reason == ChatAccessReason.memberUnavailableReadOnly;
   bool get requiresSubscription =>
       reason == ChatAccessReason.subscriptionRequired;
 }
@@ -40,16 +46,19 @@ class ChatCubit extends Cubit<ChatState> {
 
   static const int _messagePageSize = 30;
 
-  int _msgCounter = 0;
+  int _sessionEpoch = 0;
   int _loadVersion = 0;
   bool _inboxLoadInFlight = false;
+  Completer<void>? _inboxLoadCompletion;
   DateTime? _lastInboxLoadedAt;
   static const _inboxFreshness = Duration(minutes: 2);
   static const _revisionCheckFreshness = Duration(seconds: 90);
   String? _loadedRelationshipRevision;
   DateTime? _lastRelationshipRevisionCheckAt;
   final Set<String> _messageLoadsInFlight = {};
+  final Set<String> _pendingMessageReloads = {};
   final Set<String> _exhaustedMessagePages = {};
+  final Map<String, String> _latestFetchedMessageIds = {};
   final Map<String, String> _closureOperationIds = {};
 
   // Responsive enough for a live typing indicator while reducing Realtime
@@ -59,9 +68,7 @@ class ChatCubit extends Cubit<ChatState> {
   static const Duration _remoteTypingExpiry = Duration(milliseconds: 7000);
 
   RealtimeChannel? _activeChatSubscription;
-  RealtimeChannel? _inboxSubscription;
   String? _realtimeUserId;
-  String? _inboxRealtimeUserId;
   String? _activeConversationId;
   String? _loadedUserId;
   bool _reloadInboxAfterCurrentLoad = false;
@@ -70,6 +77,8 @@ class ChatCubit extends Cubit<ChatState> {
   Timer? _inboxReconcileTimer;
   DateTime? _lastTypingBroadcastAt;
   bool _localTypingActive = false;
+  bool _isForeground = true;
+  LiveRefreshController? _liveRecovery;
 
   bool get _isRealMode => SupabaseService.isInitialized;
 
@@ -95,6 +104,9 @@ class ChatCubit extends Cubit<ChatState> {
           ChatAccessReason.memberUnavailableReadOnly,
         );
       }
+      if (row['allowed'] == true && row['reason']?.toString() == 'read_only') {
+        return const ChatAccessDecision(ChatAccessReason.readOnly);
+      }
       if (row['allowed'] == true) {
         return const ChatAccessDecision(ChatAccessReason.allowed);
       }
@@ -103,6 +115,7 @@ class ChatCubit extends Cubit<ChatState> {
         'guardian_approval_required' =>
           ChatAccessReason.guardianApprovalRequired,
         'suspended' => ChatAccessReason.suspended,
+        'account_restricted' => ChatAccessReason.accountRestricted,
         'closed' => ChatAccessReason.closed,
         'not_found' => ChatAccessReason.notFound,
         _ => ChatAccessReason.unavailable,
@@ -117,12 +130,13 @@ class ChatCubit extends Cubit<ChatState> {
     bool showLoading = true,
     bool force = false,
   }) async {
+    if (isClosed) return;
     final me = SupabaseService.currentUserId;
-    if (me != null && _isRealMode) {
-      _setupInboxRealtime(me);
-    }
     if (_inboxLoadInFlight) {
       if (force) _reloadInboxAfterCurrentLoad = true;
+      // Opening a chat must wait for the existing inbox fetch; returning early
+      // here makes a valid deep link look like an absent conversation.
+      await _inboxLoadCompletion?.future;
       return;
     }
     final lastLoadedAt = _lastInboxLoadedAt;
@@ -134,10 +148,14 @@ class ChatCubit extends Cubit<ChatState> {
       return;
     }
     _inboxLoadInFlight = true;
+    final completion = Completer<void>();
+    _inboxLoadCompletion = completion;
     final loadVersion = ++_loadVersion;
     if (!_isRealMode) {
       emit(state.copyWith(conversations: const [], isLoading: false));
       _inboxLoadInFlight = false;
+      _inboxLoadCompletion = null;
+      completion.complete();
       return;
     }
 
@@ -194,22 +212,26 @@ class ChatCubit extends Cubit<ChatState> {
       debugPrint('ChatCubit: Error loading conversations: $e');
       if (_isCurrentLoad(loadVersion)) emit(state.copyWith(isLoading: false));
     } finally {
-      _inboxLoadInFlight = false;
-      if (_reloadInboxAfterCurrentLoad &&
-          !isClosed &&
-          SupabaseService.currentUserId != null) {
-        _reloadInboxAfterCurrentLoad = false;
-        unawaited(loadConversations(showLoading: false, force: true));
+      if (!completion.isCompleted) completion.complete();
+      // An old account's completion must never unlock a new account's load.
+      if (identical(_inboxLoadCompletion, completion)) {
+        _inboxLoadCompletion = null;
+        _inboxLoadInFlight = false;
+        if (_reloadInboxAfterCurrentLoad &&
+            !isClosed &&
+            SupabaseService.currentUserId != null) {
+          _reloadInboxAfterCurrentLoad = false;
+          unawaited(loadConversations(showLoading: false, force: true));
+        }
       }
     }
   }
 
-  /// Uses the relationship revision to detect match closures/status changes,
-  /// while the two-minute fallback and targeted Realtime channel cover message
-  /// delivery. Selecting Chat repeatedly therefore does not reload the inbox.
+  /// Uses the relationship revision to detect match closures/status changes.
+  /// New-message FCM, app resume and the two-minute freshness window recover
+  /// inbox state without keeping a Realtime connection open for every member.
   Future<void> refreshIfChanged({bool forceCheck = false}) async {
     final me = SupabaseService.currentUserId;
-    if (me != null && _isRealMode) _setupInboxRealtime(me);
     if (me == null || _inboxLoadInFlight) return;
 
     final loadedAt = _lastInboxLoadedAt;
@@ -244,40 +266,63 @@ class ChatCubit extends Cubit<ChatState> {
     await loadConversations(showLoading: false, force: true);
   }
 
-  /// Coalesces overlapping Realtime, notification-table and FCM recovery
-  /// signals into at most one inbox reconciliation per short event burst.
+  /// Coalesces notification and FCM recovery signals into one authoritative
+  /// inbox refresh. If a chat is open, its bounded message page is refreshed
+  /// too, so message delivery recovers even when Realtime is unavailable.
   void scheduleInboxReconciliation() {
-    _inboxReconcileTimer?.cancel();
+    if (_inboxReconcileTimer != null) return;
     _inboxReconcileTimer = Timer(const Duration(milliseconds: 800), () {
+      _inboxReconcileTimer = null;
       if (!isClosed) {
-        unawaited(loadConversations(showLoading: false, force: true));
+        unawaited(_reconcileInboxAndActiveConversation());
       }
     });
+  }
+
+  Future<void> _reconcileInboxAndActiveConversation() async {
+    final activeConversationId = _activeConversationId;
+    await loadConversations(showLoading: false, force: true);
+    if (isClosed || !_isForeground || activeConversationId == null) return;
+    if (_activeConversationId != activeConversationId) return;
+    await loadMessages(activeConversationId);
+    if (!isClosed && _activeConversationId == activeConversationId) {
+      await markRead(activeConversationId);
+    }
   }
 
   Future<void> loadMessages(
     String conversationId, {
     bool older = false,
+    bool activate = false,
   }) async {
-    if (!_isRealMode) return;
-    if (_messageLoadsInFlight.contains(conversationId)) return;
+    if (isClosed || !_isRealMode) return;
+    if (activate) _subscribeToActiveChat(conversationId);
+    if (_messageLoadsInFlight.contains(conversationId)) {
+      if (!older) _pendingMessageReloads.add(conversationId);
+      return;
+    }
     if (older && _exhaustedMessagePages.contains(conversationId)) return;
 
-    var conv = _findConversation(conversationId);
-    if (conv == null) {
-      await loadConversations(force: true);
-      conv = _findConversation(conversationId);
-      if (conv == null) return;
-    }
-    _subscribeToActiveChat(conversationId);
-
+    final me = SupabaseService.currentUserId;
+    final epoch = _sessionEpoch;
+    if (me == null) return;
     _messageLoadsInFlight.add(conversationId);
     try {
-      final before = older && conv.messages.isNotEmpty
-          ? conv.messages.first.sentAt.toUtc().toIso8601String()
-          : null;
-      final beforeId =
-          older && conv.messages.isNotEmpty ? conv.messages.first.id : null;
+      var conv = _findConversation(conversationId);
+      if (conv == null) {
+        await loadConversations(force: true);
+        if (isClosed ||
+            epoch != _sessionEpoch ||
+            SupabaseService.currentUserId != me) {
+          return;
+        }
+        conv = _findConversation(conversationId);
+        if (conv == null) return;
+      }
+      final oldest = oldestPersistedChatMessage(conv.messages);
+      if (older && oldest == null) return;
+      final before = older ? oldest!.sentAt.toUtc().toIso8601String() : null;
+      final beforeId = older ? oldest!.id : null;
       final rows = _asRows(await SupabaseService.client.rpc(
         'get_chat_messages_v2',
         params: {
@@ -288,24 +333,51 @@ class ChatCubit extends Cubit<ChatState> {
         },
       ));
 
-      if (rows.length < _messagePageSize) {
-        _exhaustedMessagePages.add(conversationId);
+      if (isClosed ||
+          epoch != _sessionEpoch ||
+          SupabaseService.currentUserId != me) {
+        return;
       }
-
-      final me = SupabaseService.currentUserId;
-      if (me == null || isClosed) return;
       if (_loadedUserId != null && _loadedUserId != me) return;
-
       final messages = rows.map((row) => _messageFromRow(row, me)).toList();
       final updated = state.conversations.map((c) {
         if (c.id != conversationId) return c;
-        return c.copyWith(messages: _mergeMessagesById(c.messages, messages));
+        final page = reconcileChatMessagePage(
+          current: c.messages,
+          incoming: messages,
+          older: older,
+          wasExhausted: _exhaustedMessagePages.contains(conversationId),
+          pageSize: _messagePageSize,
+          lastFetchedMessageId: _latestFetchedMessageIds[conversationId],
+        );
+        if (page.olderExhausted) {
+          _exhaustedMessagePages.add(conversationId);
+        } else {
+          _exhaustedMessagePages.remove(conversationId);
+        }
+        return c.copyWith(messages: page.messages);
       }).toList();
+      if (!older) {
+        if (messages.isEmpty) {
+          _latestFetchedMessageIds.remove(conversationId);
+        } else {
+          _latestFetchedMessageIds[conversationId] =
+              mergeChatMessagesById(const [], messages).last.id;
+        }
+      }
       emit(state.copyWith(conversations: updated));
     } catch (e) {
       debugPrint('ChatCubit: Error loading messages: $e');
     } finally {
-      _messageLoadsInFlight.remove(conversationId);
+      if (epoch == _sessionEpoch) {
+        _messageLoadsInFlight.remove(conversationId);
+        if (_pendingMessageReloads.remove(conversationId) &&
+            !isClosed &&
+            _activeConversationId == conversationId &&
+            _isForeground) {
+          _liveRecovery?.request();
+        }
+      }
     }
   }
 
@@ -331,10 +403,11 @@ class ChatCubit extends Cubit<ChatState> {
     final conv = _findConversation(conversationId);
     if (conv == null || conv.isMatchClosed || !_isRealMode) return false;
 
-    _msgCounter++;
-    final tempMsgId = 'local_$_msgCounter';
+    final operationId = const Uuid().v4();
+    final tempMsgId = 'local_$operationId';
     final localMsg = ChatMessage(
       id: tempMsgId,
+      operationId: operationId,
       text: trimmed,
       sentAt: DateTime.now(),
       isMe: true,
@@ -366,15 +439,25 @@ class ChatCubit extends Cubit<ChatState> {
     ChatMessage localMessage,
   ) async {
     final localId = localMessage.id;
+    final epoch = _sessionEpoch;
+    final actor = SupabaseService.currentUserId;
+    if (actor == null || localMessage.operationId == null) return false;
 
     try {
       final rows = _asRows(await SupabaseService.client.rpc(
-        'send_chat_message',
+        'send_chat_message_idempotent',
         params: {
           'p_match_id': conversationId,
           'p_content': localMessage.text,
+          'p_operation_id': localMessage.operationId,
         },
       ));
+
+      if (isClosed ||
+          epoch != _sessionEpoch ||
+          SupabaseService.currentUserId != actor) {
+        return false;
+      }
 
       final row = rows.isNotEmpty ? rows.first : const <String, dynamic>{};
       final realId = row['message_id']?.toString();
@@ -395,8 +478,16 @@ class ChatCubit extends Cubit<ChatState> {
           status: MessageStatus.sent,
         ),
       );
+      if (_messageLoadsInFlight.contains(conversationId)) {
+        _pendingMessageReloads.add(conversationId);
+      }
       return true;
     } catch (e) {
+      if (isClosed ||
+          epoch != _sessionEpoch ||
+          SupabaseService.currentUserId != actor) {
+        return false;
+      }
       debugPrint('ChatCubit: Error sending message: $e');
       _updateMessageStatus(conversationId, localId, MessageStatus.failed);
       if (_isSafetyBlock(e)) {
@@ -407,12 +498,23 @@ class ChatCubit extends Cubit<ChatState> {
   }
 
   Future<void> markRead(String conversationId) async {
-    if (!_isRealMode || !_conversationExists(conversationId)) return;
+    if (!_isRealMode ||
+        !_isForeground ||
+        !_conversationExists(conversationId)) {
+      return;
+    }
+    final epoch = _sessionEpoch;
+    final actor = SupabaseService.currentUserId;
     try {
       await SupabaseService.client.rpc(
         'mark_chat_read',
         params: {'p_match_id': conversationId},
       );
+      if (isClosed ||
+          epoch != _sessionEpoch ||
+          SupabaseService.currentUserId != actor) {
+        return;
+      }
       final updated = state.conversations.map((c) {
         if (c.id != conversationId) return c;
         final messages = c.messages.map((m) {
@@ -535,32 +637,6 @@ class ChatCubit extends Cubit<ChatState> {
     emit(state.copyWith(conversations: updated));
   }
 
-  Future<void> translateMessage(
-    String conversationId,
-    String messageId,
-    String targetLang,
-  ) async {
-    final conv = _findConversation(conversationId);
-    if (conv == null || !_isRealMode) return;
-    final message = conv.messages.where((m) => m.id == messageId).firstOrNull;
-    if (message == null || message.translations.containsKey(targetLang)) return;
-
-    try {
-      final translated = await TranslationService.instance.translate(
-        messageId: messageId,
-        targetLang: targetLang,
-      );
-      if (translated == null) return;
-      final dbTranslations = <String, dynamic>{
-        ...message.translations,
-        targetLang: translated,
-      };
-      _updateMessageTranslations(conversationId, messageId, dbTranslations);
-    } catch (e) {
-      debugPrint('ChatCubit: Error translating message in DB: $e');
-    }
-  }
-
   /// Publishes ephemeral typing presence to the currently open private chat.
   /// Keystrokes and message content are never included in this payload.
   void updateTyping(String conversationId, {required bool isTyping}) {
@@ -594,73 +670,28 @@ class ChatCubit extends Cubit<ChatState> {
   }
 
   void clear() {
+    _sessionEpoch++;
     _loadVersion++;
+    _inboxReconcileTimer?.cancel();
+    _inboxReconcileTimer = null;
     _messageLoadsInFlight.clear();
+    _pendingMessageReloads.clear();
     _exhaustedMessagePages.clear();
+    _latestFetchedMessageIds.clear();
     _closureOperationIds.clear();
     _loadedUserId = null;
     _lastInboxLoadedAt = null;
+    _loadedRelationshipRevision = null;
+    _lastRelationshipRevisionCheckAt = null;
+    final inboxCompletion = _inboxLoadCompletion;
+    _inboxLoadCompletion = null;
+    if (inboxCompletion != null && !inboxCompletion.isCompleted) {
+      inboxCompletion.complete();
+    }
     _inboxLoadInFlight = false;
     _reloadInboxAfterCurrentLoad = false;
     _disposeRealtime();
-    _disposeInboxRealtime();
     if (!isClosed) emit(const ChatState());
-  }
-
-  /// Keeps the Chat badge authoritative while the user is anywhere in the
-  /// app. The channel is filtered at Postgres to this receiver, so it does not
-  /// stream other members' messages or require an FCM delivery to refresh UI.
-  void _setupInboxRealtime(String me) {
-    if (_inboxRealtimeUserId == me && _inboxSubscription != null) return;
-
-    _disposeInboxRealtime();
-    _inboxRealtimeUserId = me;
-    _inboxSubscription = SupabaseService.client
-        .channel('chat_inbox:$me')
-        .onPostgresChanges(
-          event: PostgresChangeEvent.insert,
-          schema: 'public',
-          table: 'messages',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'receiver_id',
-            value: me,
-          ),
-          callback: (payload) => _handleInboxMessageInsert(payload, me),
-        )
-        .subscribe();
-  }
-
-  void _handleInboxMessageInsert(
-    PostgresChangePayload payload,
-    String subscribedUserId,
-  ) {
-    if (isClosed || SupabaseService.currentUserId != subscribedUserId) return;
-    final record = payload.newRecord;
-    if (record['receiver_id']?.toString() != subscribedUserId) return;
-    final matchId = record['match_id']?.toString();
-    if (matchId == null || matchId.isEmpty) return;
-
-    final conversationIsLoaded = _conversationExists(matchId);
-    if (conversationIsLoaded) {
-      final isOpen = _activeConversationId == matchId;
-      _appendMessage(
-        matchId,
-        _messageFromRow(record, subscribedUserId),
-        incrementUnread: !isOpen,
-      );
-      if (isOpen) unawaited(markRead(matchId));
-    } else {
-      _requestInboxReload();
-    }
-  }
-
-  void _requestInboxReload() {
-    if (_inboxLoadInFlight) {
-      _reloadInboxAfterCurrentLoad = true;
-      return;
-    }
-    unawaited(loadConversations(showLoading: false, force: true));
   }
 
   void _subscribeToActiveChat(String conversationId) {
@@ -675,6 +706,26 @@ class ChatCubit extends Cubit<ChatState> {
     _disposeRealtime();
     _realtimeUserId = me;
     _activeConversationId = conversationId;
+    // Authorization may finish after the app has backgrounded. Remember the
+    // visible route, but do not open a fresh socket until foreground resume.
+    if (!_isForeground) return;
+    final recovery = LiveRefreshController(refresh: () async {
+      if (isClosed ||
+          !_isForeground ||
+          _activeConversationId != conversationId ||
+          SupabaseService.currentUserId != me) {
+        return;
+      }
+      await loadMessages(conversationId);
+      if (!isClosed &&
+          _isForeground &&
+          _activeConversationId == conversationId &&
+          SupabaseService.currentUserId == me) {
+        await markRead(conversationId);
+      }
+    });
+    _liveRecovery = recovery;
+    if (_isForeground) recovery.start();
 
     // Scale guard: realtime is scoped to the currently open chat only.
     // Inbox state is refreshed through get_chat_inbox RPC and background
@@ -700,7 +751,27 @@ class ChatCubit extends Cubit<ChatState> {
           ),
           callback: (payload) => _handleMessageRealtime(payload, me),
         )
-        .subscribe();
+        .subscribe((status, error) {
+      if (!identical(_liveRecovery, recovery) ||
+          SupabaseService.currentUserId != me) {
+        return;
+      }
+      recovery.setConnected(status == RealtimeSubscribeStatus.subscribed);
+    });
+  }
+
+  void setForeground(bool foreground) {
+    _isForeground = foreground;
+    if (foreground) {
+      final conversationId = _activeConversationId;
+      if (conversationId != null && _activeChatSubscription == null) {
+        _subscribeToActiveChat(conversationId);
+      }
+      _liveRecovery?.start();
+      _liveRecovery?.request();
+    } else {
+      _liveRecovery?.stop();
+    }
   }
 
   void _sendTypingBroadcast(bool isTyping) {
@@ -735,6 +806,12 @@ class ChatCubit extends Cubit<ChatState> {
     String conversationId,
     String me,
   ) {
+    if (isClosed ||
+        !_isForeground ||
+        _activeConversationId != conversationId ||
+        SupabaseService.currentUserId != me) {
+      return;
+    }
     // Realtime client versions may expose the broadcast body directly or
     // under `payload`; accepting both keeps presence compatible across SDK
     // upgrades without weakening the participant-only channel policy.
@@ -762,13 +839,21 @@ class ChatCubit extends Cubit<ChatState> {
   }
 
   void _handleMessageRealtime(PostgresChangePayload payload, String me) {
+    if (isClosed || !_isForeground || SupabaseService.currentUserId != me) {
+      return;
+    }
     final record = payload.newRecord;
     final matchId = record['match_id'] as String?;
-    if (matchId == null) {
+    if (matchId == null || matchId != _activeConversationId) {
       return;
     }
 
     if (payload.eventType == PostgresChangeEvent.insert) {
+      // The HTTP page may predate this event. Arrange a trailing read rather
+      // than losing the event when a discontinuous history window is reset.
+      if (_messageLoadsInFlight.contains(matchId)) {
+        _pendingMessageReloads.add(matchId);
+      }
       _appendMessage(
         matchId,
         _messageFromRow(record, me),
@@ -792,6 +877,8 @@ class ChatCubit extends Cubit<ChatState> {
   }
 
   void _disposeRealtime() {
+    _liveRecovery?.dispose();
+    _liveRecovery = null;
     if (_localTypingActive) _sendTypingBroadcast(false);
     _localTypingIdleTimer?.cancel();
     _remoteTypingExpiryTimer?.cancel();
@@ -802,23 +889,23 @@ class ChatCubit extends Cubit<ChatState> {
     if (_activeConversationId != null) {
       _setRemoteTyping(_activeConversationId!, false);
     }
-    _activeChatSubscription?.unsubscribe();
+    final channel = _activeChatSubscription;
+    // removeChannel also disconnects the transport when this was its last
+    // channel. unsubscribe alone leaves an idle quota-consuming socket open.
+    if (channel != null) {
+      unawaited(SupabaseService.client
+          .removeChannel(channel)
+          .catchError((Object _) => 'error'));
+    }
     _activeChatSubscription = null;
     _realtimeUserId = null;
     _activeConversationId = null;
-  }
-
-  void _disposeInboxRealtime() {
-    _inboxSubscription?.unsubscribe();
-    _inboxSubscription = null;
-    _inboxRealtimeUserId = null;
   }
 
   @override
   Future<void> close() {
     _inboxReconcileTimer?.cancel();
     _disposeRealtime();
-    _disposeInboxRealtime();
     return super.close();
   }
 
@@ -889,7 +976,6 @@ class ChatCubit extends Cubit<ChatState> {
 
   ChatMessage _messageFromRow(Map<String, dynamic> row, String me) {
     final isMe = row['sender_id'] == me;
-    final translationsMap = row['translations'] as Map<dynamic, dynamic>? ?? {};
     return ChatMessage(
       id: row['id'].toString(),
       text: row['content'] as String? ?? '',
@@ -897,9 +983,6 @@ class ChatCubit extends Cubit<ChatState> {
       isMe: isMe,
       status: _messageStatusFromRow(row, isMe),
       sentByGuardian: row['sent_by_guardian'] == true,
-      translations: translationsMap.map(
-        (key, value) => MapEntry(key.toString(), value.toString()),
-      ),
     );
   }
 
@@ -961,38 +1044,11 @@ class ChatCubit extends Cubit<ChatState> {
     emit(state.copyWith(conversations: updated));
   }
 
-  void _updateMessageTranslations(
-    String convId,
-    String msgId,
-    Map<String, dynamic> translations,
-  ) {
-    if (isClosed) return;
-    final updated = state.conversations.map((c) {
-      if (c.id != convId) return c;
-      final msgs = c.messages.map((m) {
-        if (m.id != msgId) return m;
-        return m.copyWith(translations: Map<String, String>.from(translations));
-      }).toList();
-      return c.copyWith(messages: msgs);
-    }).toList();
-    emit(state.copyWith(conversations: updated));
-  }
-
   List<ChatMessage> _mergeMessagesById(
     List<ChatMessage> current,
     List<ChatMessage> incoming,
-  ) {
-    final byId = <String, ChatMessage>{for (final m in current) m.id: m};
-    for (final message in incoming) {
-      byId[message.id] = message;
-    }
-    final merged = byId.values.toList()
-      ..sort((a, b) {
-        final byTime = a.sentAt.compareTo(b.sentAt);
-        return byTime != 0 ? byTime : a.id.compareTo(b.id);
-      });
-    return merged;
-  }
+  ) =>
+      mergeChatMessagesById(current, incoming);
 
   List<Conversation> _mergeLoadedConversations(
     List<Conversation> current,

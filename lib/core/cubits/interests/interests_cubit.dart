@@ -6,6 +6,8 @@
 //
 // Real mode: all operations hit Supabase interests/matches tables.
 // Production mode: all operations hit Supabase.
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'interests_state.dart';
@@ -35,6 +37,7 @@ class InterestsCubit extends Cubit<InterestsState> {
   InterestsCubit() : super(const InterestsState());
 
   bool _loadInFlight = false;
+  bool _forceReloadQueued = false;
   DateTime? _lastLoadedAt;
   String? _loadedUserId;
   String? _loadedRelationshipRevision;
@@ -47,7 +50,11 @@ class InterestsCubit extends Cubit<InterestsState> {
   Future<void> loadData({bool force = false}) async {
     if (!SupabaseService.isInitialized) return;
     final userId = SupabaseService.currentUserId;
-    if (userId == null || _loadInFlight) return;
+    if (userId == null) return;
+    if (_loadInFlight) {
+      if (force) _forceReloadQueued = true;
+      return;
+    }
     final lastLoadedAt = _lastLoadedAt;
     if (!force &&
         _loadedUserId == userId &&
@@ -65,6 +72,10 @@ class InterestsCubit extends Cubit<InterestsState> {
       _lastRelationshipRevisionCheckAt = DateTime.now();
     } finally {
       _loadInFlight = false;
+      if (_forceReloadQueued && !isClosed) {
+        _forceReloadQueued = false;
+        unawaited(loadData(force: true));
+      }
     }
   }
 
@@ -72,7 +83,11 @@ class InterestsCubit extends Cubit<InterestsState> {
   /// retained as a five-minute fallback for quota/subscription changes that do
   /// not alter an interest or match row.
   Future<void> refreshIfChanged({bool forceCheck = false}) async {
-    if (!SupabaseService.isInitialized || _loadInFlight) return;
+    if (!SupabaseService.isInitialized) return;
+    if (_loadInFlight) {
+      if (forceCheck) _forceReloadQueued = true;
+      return;
+    }
     final userId = SupabaseService.currentUserId;
     if (userId == null) return;
 
@@ -108,16 +123,10 @@ class InterestsCubit extends Cubit<InterestsState> {
       return;
     }
 
-    _InterestQuota quota;
-    try {
-      quota = await _loadServerQuota();
-    } catch (e) {
-      debugPrint('[InterestsCubit] Error loading daily quota: $e');
-      if (!isClosed) {
-        emit(state.copyWith(quotaUnavailable: true));
-      }
-      return;
-    }
+    // Quota and relationship rows are independent reads. Starting them
+    // together removes one network round trip from the visible inbox load, and
+    // a quota outage no longer hides genuine received interests.
+    final quotaFuture = _loadServerQuotaOrNull();
 
     try {
       final now = DateTime.now();
@@ -147,6 +156,7 @@ class InterestsCubit extends Cubit<InterestsState> {
           params: {'p_limit': _maxRowsPerSection},
         ),
       ]);
+      final quota = await quotaFuture;
 
       final receivedRows = results[0] as List<dynamic>;
       final sentRows = results[1] as List<dynamic>;
@@ -228,25 +238,36 @@ class InterestsCubit extends Cubit<InterestsState> {
           received: received,
           sent: sent,
           matches: matches,
-          interestsSentToday: quota.sentToday,
-          dailyLimit: quota.dailyLimit,
-          lastResetDate: now,
-          quotaResetsAt: quota.resetsAt,
-          isPremium: quota.isPremium,
+          interestsSentToday: quota?.sentToday ?? state.interestsSentToday,
+          dailyLimit: quota?.dailyLimit ?? state.dailyLimit,
+          lastResetDate: quota == null ? state.lastResetDate : now,
+          quotaResetsAt: quota?.resetsAt ?? state.quotaResetsAt,
+          isPremium: quota?.isPremium ?? state.isPremium,
+          quotaUnavailable: quota == null,
         ));
       }
     } catch (e) {
       debugPrint('[InterestsCubit] Error loading from DB: $e');
+      final quota = await quotaFuture;
       if (!isClosed) {
         emit(state.copyWith(
-          interestsSentToday: quota.sentToday,
-          dailyLimit: quota.dailyLimit,
-          lastResetDate: DateTime.now(),
-          quotaResetsAt: quota.resetsAt,
-          isPremium: quota.isPremium,
-          clearQuotaUnavailable: true,
+          interestsSentToday: quota?.sentToday ?? state.interestsSentToday,
+          dailyLimit: quota?.dailyLimit ?? state.dailyLimit,
+          lastResetDate: quota == null ? state.lastResetDate : DateTime.now(),
+          quotaResetsAt: quota?.resetsAt ?? state.quotaResetsAt,
+          isPremium: quota?.isPremium ?? state.isPremium,
+          quotaUnavailable: quota == null,
+          clearQuotaUnavailable: quota != null,
         ));
       }
+    }
+  }
+
+  Future<_InterestQuota?> _loadServerQuotaOrNull() async {
+    try {
+      return await _loadServerQuota();
+    } catch (_) {
+      return null;
     }
   }
 
@@ -254,21 +275,34 @@ class InterestsCubit extends Cubit<InterestsState> {
     Set<String> userIds,
   ) async {
     if (userIds.isEmpty) return const {};
-    final mappedRows = await AuthorizedProfileService.load(userIds);
+    // Each authorization RPC deliberately accepts at most 50 owners. Keep the
+    // server-side safety bound, while covering every relationship row returned
+    // by the three 100-row inbox sections instead of silently dropping owners
+    // after the first batch.
+    final userIdBatches = _batches(userIds, 50);
+    final profileBatchResults = await Future.wait(
+      userIdBatches.map(AuthorizedProfileService.load),
+    );
+    final mappedRows = profileBatchResults.expand((rows) => rows).toList();
     final profileIds = mappedRows
         .map((row) => row['id']?.toString())
         .whereType<String>()
         .toList(growable: false);
-    final photos = profileIds.isEmpty
-        ? const <dynamic>[]
-        : await SupabaseService.client
-            .from('photos')
-            .select('profile_id, blurhash')
-            .inFilter('profile_id', profileIds)
-            .eq('status', 'active')
-            .eq('admin_approved', true)
-            .eq('nsfw_cleared', true)
-            .order('order_index');
+    final photoBatchResults = profileIds.isEmpty
+        ? const <List<dynamic>>[]
+        : await Future.wait(
+            _batches(profileIds, 50).map(
+              (batch) => SupabaseService.client
+                  .from('photos')
+                  .select('profile_id, blurhash')
+                  .inFilter('profile_id', batch)
+                  .eq('status', 'active')
+                  .eq('admin_approved', true)
+                  .eq('nsfw_cleared', true)
+                  .order('order_index'),
+            ),
+          );
+    final photos = photoBatchResults.expand((rows) => rows);
     final photosByProfile = <String, List<Map<String, dynamic>>>{};
     for (final raw in photos) {
       final photo = Map<String, dynamic>.from(raw as Map);
@@ -283,10 +317,16 @@ class InterestsCubit extends Cubit<InterestsState> {
         .map((row) => row['user_id']?.toString())
         .whereType<String>()
         .toList(growable: false);
-    final signedUrls =
-        await ProfilePhotoService.instance.getAuthorizedPhotoUrls(
-      ownerUserIds: photoOwners,
+    final signedUrlBatchResults = await Future.wait(
+      _batches(photoOwners, 50).map(
+        (batch) => ProfilePhotoService.instance.getAuthorizedPhotoUrls(
+          ownerUserIds: batch,
+        ),
+      ),
     );
+    final signedUrls = <String, String>{
+      for (final batch in signedUrlBatchResults) ...batch,
+    };
 
     final result = <String, DiscoveryProfile>{};
     for (final row in mappedRows) {
@@ -305,6 +345,20 @@ class InterestsCubit extends Cubit<InterestsState> {
       }
     }
     return result;
+  }
+
+  static List<List<T>> _batches<T>(Iterable<T> values, int size) {
+    final batches = <List<T>>[];
+    var current = <T>[];
+    for (final value in values) {
+      current.add(value);
+      if (current.length == size) {
+        batches.add(current);
+        current = <T>[];
+      }
+    }
+    if (current.isNotEmpty) batches.add(current);
+    return batches;
   }
 
   void setDailyLimitForGender({
@@ -368,7 +422,7 @@ class InterestsCubit extends Cubit<InterestsState> {
         resetsAt: resetsAt.toLocal(),
       );
     } catch (e) {
-      debugPrint('[InterestsCubit] Error loading server quota: $e');
+      debugPrint('[InterestsCubit] Error loading daily quota: $e');
       throw StateError('Unable to verify your daily interest limit.');
     }
   }
@@ -564,6 +618,7 @@ class InterestsCubit extends Cubit<InterestsState> {
 
   void clear() {
     _loadInFlight = false;
+    _forceReloadQueued = false;
     _lastLoadedAt = null;
     _loadedUserId = null;
     if (!isClosed) emit(const InterestsState());

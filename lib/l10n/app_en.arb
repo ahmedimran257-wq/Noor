@@ -1,5 +1,11 @@
 {
   "@@locale": "en",
+  "guide_optional_details": "Additional details (optional)",
+  "@guide_optional_details": {},
+  "guide_optional_details_body": "You can complete these details later from your profile.",
+  "@guide_optional_details_body": {},
+  "guide_profile_ownership": "This profile describes the person seeking marriage. A separate Guardian can be invited later for conversation oversight.",
+  "@guide_profile_ownership": {},
   "@@last_modified": "2026-04-11",
   "@about_button_later": {},
   "@about_hint_bio_guardian": {},
@@ -728,6 +734,13 @@
       }
     }
   },
+  "@subscription_button_three_month": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
   "@subscription_label_bestValue": {},
   "@subscription_subtitle": {},
   "@subscription_title": {},
@@ -1393,6 +1406,7 @@
   "splash_referral_subtitle": "If a friend invited you to Silarah, enter their 6-character referral code below.",
   "splash_referral_title": "Enter Referral Code",
   "subscription_button_monthly": "Subscribe — {price}/month",
+  "subscription_button_three_month": "Subscribe — {price}/3 months",
   "subscription_label_bestValue": "Best Value",
   "subscription_subtitle": "Women message free. Men subscribe to connect.",
   "subscription_title": "Unlock Silarah",

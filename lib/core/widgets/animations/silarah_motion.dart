@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/app_curves.dart';
 import '../../theme/app_dimensions.dart';
 
 /// Clips and reveals [child] along one axis without relying on Flutter's
@@ -75,7 +76,7 @@ class SilarahEntrance extends StatelessWidget {
             : ((value - delayRatio) / (1 - delayRatio))
                 .clamp(0.0, 1.0)
                 .toDouble();
-        final eased = Curves.easeOutCubic.transform(local);
+        final eased = AppCurves.reveal.transform(local);
         return Opacity(
           opacity: eased,
           child: Transform.translate(
@@ -112,8 +113,8 @@ class SilarahContentSwap extends StatelessWidget {
       duration: reduceMotion ? Duration.zero : AppDimensions.durationReveal,
       reverseDuration:
           reduceMotion ? Duration.zero : AppDimensions.durationTransition,
-      switchInCurve: Curves.easeOutCubic,
-      switchOutCurve: Curves.easeInCubic,
+      switchInCurve: AppCurves.reveal,
+      switchOutCurve: AppCurves.dismiss,
       layoutBuilder: (currentChild, previousChildren) => Stack(
         alignment: alignment,
         fit: StackFit.passthrough,
@@ -122,8 +123,8 @@ class SilarahContentSwap extends StatelessWidget {
       transitionBuilder: (child, animation) {
         final curved = CurvedAnimation(
           parent: animation,
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeInCubic,
+          curve: AppCurves.reveal,
+          reverseCurve: AppCurves.dismiss,
         );
         return FadeTransition(
           opacity: curved,

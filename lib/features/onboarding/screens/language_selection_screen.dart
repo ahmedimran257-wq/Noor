@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/cubits/locale/locale_cubit.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_curves.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
@@ -411,9 +412,9 @@ class _LanguageTile extends StatelessWidget {
               ),
               const SizedBox(width: AppDimensions.space12),
               AnimatedScale(
-                scale: isSelected ? 1 : 0.72,
+                scale: isSelected ? 1 : .94,
                 duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOutBack,
+                curve: AppCurves.tactile,
                 child: Icon(
                   isSelected
                       ? Icons.check_circle_rounded

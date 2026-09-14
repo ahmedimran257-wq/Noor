@@ -57,7 +57,7 @@ void main() {
       ).readAsStringSync();
 
       expect(serviceSource, isNot(contains("monthlyPrice: '--'")));
-      expect(serviceSource, isNot(contains("annualPrice: '--'")));
+      expect(serviceSource, isNot(contains("threeMonthPrice: '--'")));
       expect(
         screenSource,
         contains('if (_pricing.source == PricingSource.loading)'),

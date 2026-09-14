@@ -18,6 +18,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/loaders/silarah_shimmer.dart';
+import '../../../core/widgets/overlays/silarah_bottom_sheet.dart';
 
 class ReportBottomSheet {
   static Future<bool> show(
@@ -25,7 +26,7 @@ class ReportBottomSheet {
     required String reportedUserId,
     required String reportedName,
   }) {
-    return showModalBottomSheet<bool>(
+    return showSilarahBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,

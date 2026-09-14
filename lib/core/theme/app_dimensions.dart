@@ -71,30 +71,32 @@ abstract final class AppDimensions {
   static const double cardAspectRatio = 7 / 10;
 
   // Animation Durations
-  /// "The Reveal" — elements entering the screen (300–500ms).
-  static const Duration durationReveal = Duration(milliseconds: 250);
+  /// Content entrance: fast response followed by a quiet settle.
+  static const Duration durationReveal = Duration(milliseconds: 300);
 
   /// "The Transition" — state changes, chip color (200–300ms).
   static const Duration durationTransition = Duration(milliseconds: 180);
 
-  /// "The Tactile Pop" — micro-interactions (600–800ms).
-  static const Duration durationTactile = Duration(milliseconds: 350);
+  /// Restrained emphasis for a confirmed state change.
+  static const Duration durationTactile = Duration(milliseconds: 280);
 
   /// Button press scale animation (100ms).
   static const Duration durationButtonPress = Duration(milliseconds: 100);
 
-  /// Page transition "Unfolding" (350ms).
-  static const Duration durationPageTransition = Duration(milliseconds: 250);
+  /// Navigation transition.
+  static const Duration durationPageTransition = Duration(milliseconds: 300);
+
+  /// Modal surfaces have a slightly longer entrance and a quicker exit.
+  static const Duration durationSheetEnter = Duration(milliseconds: 360);
+  static const Duration durationSheetExit = Duration(milliseconds: 220);
+  static const Duration durationDialogEnter = Duration(milliseconds: 280);
+  static const Duration durationDialogExit = Duration(milliseconds: 180);
 
   /// Shimmer sweep duration.
   static const Duration durationShimmer = Duration(milliseconds: 1500);
 
-  // Interest Ceremony Timeline
-  static const Duration ceremonyCooldown = Duration(milliseconds: 2100);
-  static const Duration ceremonyRingExpand = Duration(milliseconds: 400);
-  static const Duration ceremonyRingFade = Duration(milliseconds: 300);
-  static const Duration ceremonyParticles = Duration(milliseconds: 400);
-  static const Duration ceremonyCheckmark = Duration(milliseconds: 300);
-  static const Duration ceremonyTextFade = Duration(milliseconds: 300);
-  static const Duration ceremonyOverlayFade = Duration(milliseconds: 300);
+  // Interest acknowledgement. The state is legible without blocking the
+  // member behind a long celebration sequence.
+  static const Duration durationAcknowledgement = Duration(milliseconds: 520);
+  static const Duration acknowledgementHold = Duration(milliseconds: 620);
 }

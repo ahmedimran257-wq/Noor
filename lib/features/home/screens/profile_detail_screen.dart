@@ -36,6 +36,9 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
+import '../../../core/widgets/loaders/silarah_shimmer.dart';
+import '../../../core/widgets/overlays/silarah_bottom_sheet.dart';
+import '../../../core/widgets/overlays/silarah_dialog.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../widgets/interest_ceremony_overlay.dart';
 import '../widgets/interest_note_sheet.dart';
@@ -459,7 +462,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
   void _showMoreMenu() {
     HapticFeedback.selectionClick();
-    showModalBottomSheet(
+    showSilarahBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -541,8 +544,12 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                 ],
                 flexibleSpace: FlexibleSpaceBar(
                   stretchModes: const [StretchMode.zoomBackground],
-                  background: Hero(
-                    tag: widget.heroTag,
+                  // The feed card and gallery use different crops, gradients,
+                  // and privacy affordances. A Hero swaps those mid-flight and
+                  // flashes an uncropped image on pop. Keep the media inside
+                  // the opaque page so the route owns the entire movement.
+                  background: HeroMode(
+                    enabled: false,
                     child: _PhotoCarousel(
                       profile: p,
                       controller: _photoController,
@@ -1169,9 +1176,9 @@ class _PublicSlide extends StatelessWidget {
     }
     if (isLoading) {
       return Center(
-        child: CircularProgressIndicator(
+        child: SilarahActivityIndicator(
+          size: 30,
           color: AppColors.champagneGold,
-          strokeWidth: 2,
         ),
       );
     }
@@ -1267,8 +1274,8 @@ class _PrivateSlide extends StatelessWidget {
             child: accessLoading
                 ? Padding(
                     padding: const EdgeInsets.all(30),
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
+                    child: SilarahActivityIndicator(
+                      size: 28,
                       color: AppColors.champagneGold,
                     ),
                   )
@@ -1973,10 +1980,8 @@ class _CompatibilityIndicatorState extends State<_CompatibilityIndicator> {
             context,
             child: Row(
               children: [
-                const SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                const SilarahActivityIndicator(
+                  size: 28,
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -2025,9 +2030,10 @@ class _CompatibilityIndicatorState extends State<_CompatibilityIndicator> {
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
-                        CircularProgressIndicator(
+                        SilarahProgressRing(
                           value: insight.fraction,
-                          backgroundColor: AppColors.surfaceGlassHover,
+                          size: 48,
+                          trackColor: AppColors.surfaceGlassHover,
                           color: AppColors.champagneGold,
                           strokeWidth: 3.5,
                         ),
@@ -2276,10 +2282,8 @@ class _PrivateShortlistCard extends StatelessWidget {
               if (loading)
                 const Padding(
                   padding: EdgeInsets.only(left: 8),
-                  child: SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                  child: SilarahActivityIndicator(
+                    size: 18,
                   ),
                 )
               else
@@ -2640,7 +2644,7 @@ class _ReportBlockSheet extends StatelessWidget {
             color: AppColors.softCoral,
             onTap: () async {
               Navigator.pop(context);
-              final confirmed = await showDialog<bool>(
+              final confirmed = await showSilarahDialog<bool>(
                     context: context,
                     builder: (dialogContext) => AlertDialog(
                       title: UiText(l10n.safety_blockTitle(profile.firstName)),

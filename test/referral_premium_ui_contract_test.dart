@@ -14,6 +14,9 @@ void main() {
   final notifications = File(
     'lib/core/cubits/notifications/notifications_cubit.dart',
   ).readAsStringSync();
+  final notificationRoutes = File(
+    'lib/core/utils/notification_deep_link.dart',
+  ).readAsStringSync();
   final subscriptionCubit = File(
     'lib/core/cubits/subscription/subscription_cubit.dart',
   ).readAsStringSync();
@@ -55,9 +58,9 @@ void main() {
   });
 
   test('legacy referral pushes no longer open checkout', () {
-    expect(fcm, contains("type == 'referral_reward'"));
-    expect(fcm, contains("? '/home?tab=3'"));
-    expect(notifications, contains("item.type == 'referral_reward'"));
-    expect(notifications, contains("return '/home?tab=3'"));
+    expect(notificationRoutes, contains("type == 'referral_reward'"));
+    expect(notificationRoutes, contains("return '/home?tab=3'"));
+    expect(fcm, contains('notificationDestinationPath('));
+    expect(notifications, contains('notificationDestinationPath('));
   });
 }

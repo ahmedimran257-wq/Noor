@@ -35,7 +35,9 @@ void main() {
       'lib/features/home/widgets/discovery_filter_sheet.dart',
     ).readAsStringSync();
 
-    expect(loader, contains("assets/icon/app_icon.png"));
+    expect(loader, contains('class SilarahActivityIndicator'));
+    expect(loader, contains('class _SilarahActivityPainter'));
+    expect(loader, isNot(contains("assets/icon/app_icon.png")));
     expect(loader, isNot(contains("'م'")));
     expect(loader, contains('Preparing profile recommendations'));
     expect(loader, contains('MediaQuery.disableAnimationsOf(context)'));

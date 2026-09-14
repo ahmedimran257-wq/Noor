@@ -7,6 +7,8 @@ import '../../../core/theme/app_curves.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
+import '../../../core/widgets/loaders/silarah_shimmer.dart';
+import '../../../core/widgets/overlays/silarah_bottom_sheet.dart';
 import '../screens/subscription_screen.dart';
 
 /// The single quota-exhaustion surface used by discovery, profile detail and
@@ -19,7 +21,7 @@ class InterestQuotaSheet {
     BuildContext context, {
     required InterestsState quota,
   }) {
-    return showModalBottomSheet<void>(
+    return showSilarahBottomSheet<void>(
       context: context,
       useSafeArea: true,
       isScrollControlled: true,
@@ -176,16 +178,11 @@ class _InterestQuotaContent extends StatelessWidget {
                     tween: Tween(begin: 0, end: 1),
                     duration: const Duration(milliseconds: 650),
                     curve: AppCurves.reveal,
-                    builder: (_, value, __) => ClipRRect(
-                      borderRadius: BorderRadius.circular(99),
-                      child: LinearProgressIndicator(
-                        value: value,
-                        minHeight: 5,
-                        backgroundColor: AppColors.surfaceGlassHover,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          AppColors.champagneGold,
-                        ),
-                      ),
+                    builder: (_, value, __) => SilarahLinearProgress(
+                      value: value,
+                      height: 5,
+                      trackColor: AppColors.surfaceGlassHover,
+                      color: AppColors.champagneGold,
                     ),
                   ),
                 ],

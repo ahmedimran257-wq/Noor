@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:silarah/core/theme/app_colors.dart';
 import 'package:silarah/core/widgets/cards/silarah_profile_card.dart';
+import 'package:silarah/core/widgets/loaders/silarah_shimmer.dart';
 
 void main() {
   tearDown(() => AppColors.activate(SilarahThemeMode.blackWhite));
@@ -124,8 +125,8 @@ void main() {
     );
 
     expect(find.text('Sending...'), findsOneWidget);
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    expect(find.byType(LinearProgressIndicator), findsNothing);
+    expect(find.byType(SilarahActivityIndicator), findsOneWidget);
+    expect(find.byType(SilarahLinearProgress), findsNothing);
   });
 
   testWidgets(

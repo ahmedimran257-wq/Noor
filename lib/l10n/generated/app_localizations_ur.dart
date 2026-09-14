@@ -9,6 +9,17 @@ class AppLocalizationsUr extends AppLocalizations {
   AppLocalizationsUr([String locale = 'ur']) : super(locale);
 
   @override
+  String get guide_optional_details => 'اضافی تفصیلات (اختیاری)';
+
+  @override
+  String get guide_optional_details_body =>
+      'آپ یہ تفصیلات بعد میں اپنی پروفائل سے مکمل کر سکتے ہیں۔';
+
+  @override
+  String get guide_profile_ownership =>
+      'یہ پروفائل شادی کے خواہش مند شخص کا تعارف کراتی ہے۔ گفتگو کی نگرانی کے لیے بعد میں ایک الگ سرپرست کو مدعو کیا جا سکتا ہے۔';
+
+  @override
   String get about_button_later => 'میں یہ بعد میں کروں گا۔';
 
   @override
@@ -2172,6 +2183,11 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String subscription_button_monthly(String price) {
     return 'سبسکرائب کریں — $price/مہینہ';
+  }
+
+  @override
+  String subscription_button_three_month(String price) {
+    return 'سبسکرائب کریں — $price/3 ماہ';
   }
 
   @override

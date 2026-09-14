@@ -15,6 +15,7 @@ import '../../../core/cubits/subscription/subscription_cubit.dart';
 import '../../../core/cubits/subscription/subscription_state.dart';
 import '../../../core/cubits/account_standing/account_standing_cubit.dart';
 import '../../../core/cubits/account_standing/account_standing_state.dart';
+import '../../../core/cubits/notifications/notifications_cubit.dart';
 import '../../../core/models/discovery_profile.dart';
 import '../../../core/models/onboarding_data.dart';
 import '../../../core/router/app_router.dart';
@@ -29,7 +30,9 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/silarah_empty_state.dart';
 import '../../../core/widgets/loaders/silarah_blur_image.dart';
+import '../../../core/widgets/loaders/silarah_shimmer.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
+import '../../../core/widgets/overlays/silarah_bottom_sheet.dart';
 import 'edit_profile_screen.dart';
 import 'settings_screen.dart';
 import 'subscription_screen.dart';
@@ -41,7 +44,7 @@ import '../../../core/services/profile_photo_service.dart';
 import '../../../core/services/profile_view_service.dart';
 import '../../../core/services/wali_mode_service.dart';
 import '../../onboarding/screens/photo_upload_screen.dart';
-import '../widgets/notification_bell_button.dart';
+import '../widgets/profile_header_action_rail.dart';
 
 // Completeness score
 ({int score, String? nudge}) _calcCompleteness(
@@ -125,7 +128,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   DateTime? _lastProfileRefreshAt;
   static const _profileFreshness = Duration(minutes: 5);
 
-  int _viewCount = 0;
+  int _unseenViewCount = 0;
 
   @override
   bool get wantKeepAlive => true;
@@ -151,7 +154,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       unawaited(_refreshProfileFromDb());
-      unawaited(_loadViewsCount());
+      unawaited(_loadViewActivity());
       unawaited(_loadIncognito(force: true));
     }
   }
@@ -236,14 +239,8 @@ class _MyProfileScreenState extends State<MyProfileScreen>
 
   Future<void> _openEditProfile() async {
     final changed = await Navigator.of(context).push<bool>(
-      PageRouteBuilder<bool>(
-        transitionDuration: AppDimensions.durationReveal,
-        reverseTransitionDuration: AppDimensions.durationTransition,
-        pageBuilder: (context, animation, _) => FadeTransition(
-          opacity:
-              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-          child: const EditProfileScreen(),
-        ),
+      MaterialPageRoute<bool>(
+        builder: (_) => const EditProfileScreen(),
       ),
     );
     if (changed == true && mounted) await _refreshProfileFromDb(force: true);
@@ -251,16 +248,8 @@ class _MyProfileScreenState extends State<MyProfileScreen>
 
   Future<void> _openManagePhotos() async {
     final saved = await Navigator.of(context).push<bool>(
-      PageRouteBuilder<bool>(
-        transitionDuration: AppDimensions.durationReveal,
-        reverseTransitionDuration: AppDimensions.durationTransition,
-        pageBuilder: (context, animation, _) => FadeTransition(
-          opacity: CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutCubic,
-          ),
-          child: const PhotoUploadScreen(returnToPreviousOnSave: true),
-        ),
+      MaterialPageRoute<bool>(
+        builder: (_) => const PhotoUploadScreen(returnToPreviousOnSave: true),
       ),
     );
     if (saved == true && mounted) {
@@ -430,7 +419,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
       await Future.wait([
         _loadPrimaryPhoto(),
         _loadApprovedPhotoCount(),
-        _loadViewsCount(),
+        _loadViewActivity(),
         _loadGuardian(),
         _loadVerificationBadge(),
         _loadTrustState(),
@@ -466,11 +455,11 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     }
   }
 
-  Future<void> _loadViewsCount() async {
+  Future<void> _loadViewActivity() async {
     try {
-      final count = await ProfileViewService.instance.weeklyDistinctCount();
+      final summary = await ProfileViewService.instance.activitySummary();
       if (mounted) {
-        setState(() => _viewCount = count);
+        setState(() => _unseenViewCount = summary.unseenViewerCount);
       }
     } catch (_) {}
   }
@@ -479,7 +468,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     await Navigator.of(context).push(
       MaterialPageRoute<void>(builder: (_) => const ProfileViewsScreen()),
     );
-    if (mounted) await _loadViewsCount();
+    if (mounted) await _loadViewActivity();
   }
 
   Future<void> _loadApprovedPhotoCount() async {
@@ -513,310 +502,297 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     final guardianManaged =
         currentProfile.profileOwnerType == ProfileOwnerType.guardian ||
             currentProfile.isGuardianMode;
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          // Header row
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-            child: Row(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    UiText(context.uiCopy('Profile'),
-                        style: AppTypography.screenTitle),
-                    const SizedBox(height: 2),
-                    UiText('Your presence on Silarah',
-                        style: AppTypography.caption),
-                  ],
-                ),
-                const Spacer(),
-                // Notifications
-                NotificationBellButton(
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const NotificationsScreen(),
+    return BlocListener<NotificationsCubit, NotificationsState>(
+      listenWhen: (previous, current) =>
+          previous.profileViewUnreadAlertCount !=
+          current.profileViewUnreadAlertCount,
+      listener: (context, state) {
+        if (state.profileViewUnreadAlertCount > 0) {
+          unawaited(_loadViewActivity());
+        }
+      },
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Header row
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        UiText(context.uiCopy('Profile'),
+                            style: AppTypography.screenTitle),
+                        const SizedBox(height: 2),
+                        UiText(
+                          'Your presence on Silarah',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.caption,
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                const SizedBox(width: AppDimensions.space8),
-                // Settings
-                SilarahPressable(
-                  onTap: () async {
-                    await Navigator.of(context).push(
+                  const SizedBox(width: AppDimensions.space8),
+                  ProfileHeaderActionRail(
+                    unseenViewCount: _unseenViewCount,
+                    onProfileViews: _openProfileViews,
+                    onNotifications: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
-                        builder: (_) => const SettingsScreen(),
+                        builder: (_) => const NotificationsScreen(),
                       ),
-                    );
-                    if (!context.mounted) return;
-                    await context.read<AccountStandingCubit>().refresh();
-                    await _loadTrustState();
-                    await _loadIncognito(force: true);
-                  },
-                  child: Container(
-                    width: AppDimensions.minTouchTarget,
-                    height: AppDimensions.minTouchTarget,
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceGlass,
-                      borderRadius:
-                          BorderRadius.circular(AppDimensions.radiusButton),
-                      border: Border.all(color: AppColors.cardBorder),
                     ),
-                    child: Icon(
-                      Icons.settings_outlined,
-                      color: AppColors.slateMist,
-                      size: AppDimensions.iconSizeLarge,
-                    ),
+                    onSettings: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const SettingsScreen(),
+                        ),
+                      );
+                      if (!context.mounted) return;
+                      await context.read<AccountStandingCubit>().refresh();
+                      await _loadTrustState();
+                      await _loadIncognito(force: true);
+                    },
                   ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: AppDimensions.space20),
-
-          // Profile activity is intentionally first: it is time-sensitive,
-          // personally relevant and one of the strongest reasons to return.
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: _ProfileViewsSpotlight(
-              viewCount: _viewCount,
-              onTap: _openProfileViews,
-            ),
-          ),
-
-          const SizedBox(height: AppDimensions.space16),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: BlocBuilder<AccountStandingCubit, AccountStandingState>(
-              builder: (context, standing) => _ProfileLifecycleCard(
-                standing: standing,
-                incognitoEnabled: _incognito?.enabled == true,
-                onResume: () =>
-                    context.read<AccountStandingCubit>().resumeProfile(),
-                onContactSupport: () => context.push(AppRoutes.helpSupport),
-                onManagePhotos: _openManagePhotos,
+                ],
               ),
             ),
-          ),
 
-          const SizedBox(height: AppDimensions.space16),
+            const SizedBox(height: AppDimensions.space20),
 
-          BlocBuilder<SubscriptionCubit, SubscriptionState>(
-            builder: (context, subscription) {
-              if (!subscription.isTemporaryPromotional) {
-                return const SizedBox.shrink();
-              }
-              return Padding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-                child: _ReferralPremiumProfileBanner(
-                  expiresAt: subscription.expiresAt,
-                  isTest: subscription.isTestOnly,
-                  onTap: () => context.push(AppRoutes.subscription),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: BlocBuilder<AccountStandingCubit, AccountStandingState>(
+                builder: (context, standing) => _ProfileLifecycleCard(
+                  standing: standing,
+                  incognitoEnabled: _incognito?.enabled == true,
+                  onResume: () =>
+                      context.read<AccountStandingCubit>().resumeProfile(),
+                  onContactSupport: () => context.push(AppRoutes.helpSupport),
+                  onManagePhotos: _openManagePhotos,
                 ),
-              );
-            },
-          ),
+              ),
+            ),
 
-          // Profile card preview (live completeness)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: BlocBuilder<OnboardingCubit, OnboardingState>(
-              builder: (context, _) {
-                final data = context.read<OnboardingCubit>().currentData;
-                final result = _calcCompleteness(
-                  data,
-                  approvedPhotoCount: _approvedPhotoCount,
-                );
-                return _ProfilePreviewCard(
-                  score: result.score,
-                  nudge: result.nudge,
-                  data: data,
-                  guardianManaged: guardianManaged,
-                  hasVerificationBadge: _hasVerificationBadge,
-                  verificationLoading: _verificationLoading,
-                  onVerify: _openVerification,
-                  primaryPhotoUrl: _primaryPhotoUrl,
-                  onPhotoLoadFailed: _recoverPrimaryPhoto,
+            const SizedBox(height: AppDimensions.space16),
+
+            BlocBuilder<SubscriptionCubit, SubscriptionState>(
+              builder: (context, subscription) {
+                if (!subscription.isTemporaryPromotional) {
+                  return const SizedBox.shrink();
+                }
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                  child: _ReferralPremiumProfileBanner(
+                    expiresAt: subscription.expiresAt,
+                    isTest: subscription.isTestOnly,
+                    onTap: () => context.push(AppRoutes.subscription),
+                  ),
                 );
               },
             ),
-          ),
 
-          const SizedBox(height: AppDimensions.space16),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: _ProfilePrimaryActions(
-              onEdit: _openEditProfile,
-              onPreview: _openOwnProfilePreview,
-              previewOpening: _profilePreviewOpening,
-            ),
-          ),
-
-          const SizedBox(height: AppDimensions.space16),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: _TrustCenterCard(
-              loading: _trustStateLoading,
-              photoStatus: _photoVerificationStatus,
-              guardianConnected: _guardianEnabled,
-              guardianManaged: guardianManaged,
-              establishedMember: _establishedMember,
-              email: _accountEmail,
-              emailVerified: _emailVerified,
-              onPhotoVerification: _openVerification,
-              onGuardianConnection: _openGuardianSettings,
-            ),
-          ),
-
-          const SizedBox(height: AppDimensions.space16),
-
-          // Subscription card
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: _SubscriptionCard(),
-          ),
-
-          const SizedBox(height: AppDimensions.space16),
-
-          // Boost Section
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: _BoostSection(),
-          ),
-
-          const SizedBox(height: AppDimensions.space16),
-
-          // Saved profiles section — always shown (empty state if none)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: _SavedProfilesSection(
-              savedProfiles: _savedProfiles,
-              onChanged: _loadBookmarks,
-              onManage: () => context.push(AppRoutes.shortlist),
-            ),
-          ),
-
-          const SizedBox(height: AppDimensions.space16),
-
-          // Referral is intentionally below personal activity tools. It is a
-          // growth action, not part of the member's primary profile workflow.
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: SilarahPressable(
-              semanticLabel: context.uiCopy('Refer a Friend'),
-              onTap: () => context.push(AppRoutes.referral),
-              child: Container(
-                padding: const EdgeInsets.all(AppDimensions.space16),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceGlass,
-                  borderRadius:
-                      BorderRadius.circular(AppDimensions.radiusButton),
-                  border: Border.all(
-                    color: AppColors.goldBorder.withValues(alpha: 0.5),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.champagneGold.withValues(alpha: 0.02),
-                      blurRadius: 12,
-                      spreadRadius: 1,
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(AppDimensions.space8),
-                      decoration: BoxDecoration(
-                        color: AppColors.champagneGold.withValues(alpha: 0.12),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.goldBorder),
-                      ),
-                      child: Icon(
-                        Icons.card_giftcard_rounded,
-                        color: AppColors.champagneGold,
-                        size: AppDimensions.iconSizeMedium,
-                      ),
-                    ),
-                    const SizedBox(width: AppDimensions.space12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          UiText(
-                            context.uiCopy('Refer a Friend'),
-                            style: AppTypography.bodyMedium,
-                          ),
-                          UiText(
-                            context.uiCopy('Get 3 days of Premium for free'),
-                            style: AppTypography.caption,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      color: AppColors.slateMist,
-                      size: AppDimensions.iconSizeMedium,
-                    ),
-                  ],
-                ),
+            // Profile card preview (live completeness)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: BlocBuilder<OnboardingCubit, OnboardingState>(
+                builder: (context, _) {
+                  final data = context.read<OnboardingCubit>().currentData;
+                  final result = _calcCompleteness(
+                    data,
+                    approvedPhotoCount: _approvedPhotoCount,
+                  );
+                  return _ProfilePreviewCard(
+                    score: result.score,
+                    nudge: result.nudge,
+                    data: data,
+                    guardianManaged: guardianManaged,
+                    hasVerificationBadge: _hasVerificationBadge,
+                    verificationLoading: _verificationLoading,
+                    onVerify: _openVerification,
+                    primaryPhotoUrl: _primaryPhotoUrl,
+                    onPhotoLoadFailed: _recoverPrimaryPhoto,
+                  );
+                },
               ),
             ),
-          ),
 
-          const SizedBox(height: AppDimensions.space20),
+            const SizedBox(height: AppDimensions.space16),
 
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: _HelpAndGrievanceCard(
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const SettingsScreen(
-                    initialSection: 'help',
-                  ),
-                ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: _ProfilePrimaryActions(
+                onEdit: _openEditProfile,
+                onPreview: _openOwnProfilePreview,
+                previewOpening: _profilePreviewOpening,
               ),
             ),
-          ),
-          const SizedBox(height: AppDimensions.space16),
 
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: _IFoundMyMatchButton(),
-          ),
-          const SizedBox(height: AppDimensions.space16),
+            const SizedBox(height: AppDimensions.space16),
 
-          // Sign out
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: SizedBox(
-              width: double.infinity,
-              height: AppDimensions.buttonHeight,
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: AppColors.softCoral),
-                  shape: RoundedRectangleBorder(
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: _TrustCenterCard(
+                loading: _trustStateLoading,
+                photoStatus: _photoVerificationStatus,
+                guardianConnected: _guardianEnabled,
+                guardianManaged: guardianManaged,
+                establishedMember: _establishedMember,
+                email: _accountEmail,
+                emailVerified: _emailVerified,
+                onPhotoVerification: _openVerification,
+                onGuardianConnection: _openGuardianSettings,
+              ),
+            ),
+
+            const SizedBox(height: AppDimensions.space16),
+
+            // Subscription card
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: _SubscriptionCard(),
+            ),
+
+            const SizedBox(height: AppDimensions.space16),
+
+            // Boost Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: _BoostSection(),
+            ),
+
+            const SizedBox(height: AppDimensions.space16),
+
+            // Saved profiles section — always shown (empty state if none)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: _SavedProfilesSection(
+                savedProfiles: _savedProfiles,
+                onChanged: _loadBookmarks,
+                onManage: () => context.push(AppRoutes.shortlist),
+              ),
+            ),
+
+            const SizedBox(height: AppDimensions.space16),
+
+            // Referral is intentionally below personal activity tools. It is a
+            // growth action, not part of the member's primary profile workflow.
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: SilarahPressable(
+                semanticLabel: context.uiCopy('Refer a Friend'),
+                onTap: () => context.push(AppRoutes.referral),
+                child: Container(
+                  padding: const EdgeInsets.all(AppDimensions.space16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceGlass,
                     borderRadius:
                         BorderRadius.circular(AppDimensions.radiusButton),
+                    border: Border.all(
+                      color: AppColors.goldBorder.withValues(alpha: 0.5),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.champagneGold.withValues(alpha: 0.02),
+                        blurRadius: 12,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(AppDimensions.space8),
+                        decoration: BoxDecoration(
+                          color:
+                              AppColors.champagneGold.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.goldBorder),
+                        ),
+                        child: Icon(
+                          Icons.card_giftcard_rounded,
+                          color: AppColors.champagneGold,
+                          size: AppDimensions.iconSizeMedium,
+                        ),
+                      ),
+                      const SizedBox(width: AppDimensions.space12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            UiText(
+                              context.uiCopy('Refer a Friend'),
+                              style: AppTypography.bodyMedium,
+                            ),
+                            UiText(
+                              context.uiCopy('Get 3 days of Premium for free'),
+                              style: AppTypography.caption,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: AppColors.slateMist,
+                        size: AppDimensions.iconSizeMedium,
+                      ),
+                    ],
                   ),
                 ),
-                icon: Icon(Icons.logout_rounded,
-                    color: AppColors.softCoral,
-                    size: AppDimensions.iconSizeMedium),
-                label: UiText(context.uiCopy('Sign Out'),
-                    style: AppTypography.buttonSecondary
-                        .copyWith(color: AppColors.softCoral)),
-                onPressed: () => context.read<AuthCubit>().signOut(),
               ),
             ),
-          ),
-          const SizedBox(height: AppDimensions.space40),
-        ],
+
+            const SizedBox(height: AppDimensions.space20),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: _HelpAndGrievanceCard(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const SettingsScreen(
+                      initialSection: 'help',
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppDimensions.space16),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: _IFoundMyMatchButton(),
+            ),
+            const SizedBox(height: AppDimensions.space16),
+
+            // Sign out
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: SizedBox(
+                width: double.infinity,
+                height: AppDimensions.buttonHeight,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: AppColors.softCoral),
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusButton),
+                    ),
+                  ),
+                  icon: Icon(Icons.logout_rounded,
+                      color: AppColors.softCoral,
+                      size: AppDimensions.iconSizeMedium),
+                  label: UiText(context.uiCopy('Sign Out'),
+                      style: AppTypography.buttonSecondary
+                          .copyWith(color: AppColors.softCoral)),
+                  onPressed: () => context.read<AuthCubit>().signOut(),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppDimensions.space40),
+          ],
+        ),
       ),
     );
   }
@@ -888,13 +864,9 @@ class _ProfilePrimaryActions extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (previewOpening)
-                    SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.champagneGold,
-                      ),
+                    SilarahActivityIndicator(
+                      size: 18,
+                      color: AppColors.champagneGold,
                     )
                   else
                     Icon(
@@ -914,143 +886,6 @@ class _ProfilePrimaryActions extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _ProfileViewsSpotlight extends StatelessWidget {
-  const _ProfileViewsSpotlight({
-    required this.viewCount,
-    required this.onTap,
-  });
-
-  final int viewCount;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final title = context.uiCopy('Profile Views');
-    final period = context.uiCopy('This week');
-    return TweenAnimationBuilder<double>(
-      duration: const Duration(milliseconds: 420),
-      curve: Curves.easeOutCubic,
-      tween: Tween(begin: 0, end: 1),
-      builder: (context, progress, child) => Opacity(
-        opacity: progress,
-        child: Transform.translate(
-          offset: Offset(0, 8 * (1 - progress)),
-          child: child,
-        ),
-      ),
-      child: SilarahPressable(
-        semanticLabel: '$title, $viewCount, $period',
-        onTap: onTap,
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(AppDimensions.space16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: AlignmentDirectional.topStart,
-              end: AlignmentDirectional.bottomEnd,
-              colors: [
-                AppColors.champagneGold.withValues(alpha: 0.18),
-                AppColors.surfacePanelTop,
-              ],
-            ),
-            borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
-            border: Border.all(color: AppColors.goldBorder),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.champagneGold.withValues(alpha: 0.10),
-                blurRadius: 24,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: AppColors.champagneGold,
-                      borderRadius:
-                          BorderRadius.circular(AppDimensions.radiusButton),
-                    ),
-                    child: Icon(
-                      Icons.visibility_rounded,
-                      color: AppColors.readableOn(AppColors.champagneGold),
-                      size: AppDimensions.iconSizeLarge,
-                    ),
-                  ),
-                  if (viewCount > 0)
-                    PositionedDirectional(
-                      top: -3,
-                      end: -3,
-                      child: Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: AppColors.softCoral,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppColors.surfaceElevated,
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(width: AppDimensions.space14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    UiText(title, style: AppTypography.bodyMedium),
-                    const SizedBox(height: AppDimensions.space4),
-                    UiText(
-                      context.uiCopy('Your weekly count stays visible'),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.caption,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: AppDimensions.space12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  UiText(
-                    '$viewCount',
-                    style: AppTypography.screenTitle.copyWith(
-                      color: AppColors.champagneGold,
-                      height: 1,
-                    ),
-                  ),
-                  const SizedBox(height: AppDimensions.space4),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      UiText(period, style: AppTypography.caption),
-                      const SizedBox(width: AppDimensions.space4),
-                      Icon(
-                        Icons.arrow_forward_rounded,
-                        color: AppColors.champagneGold,
-                        size: AppDimensions.iconSizeSmall,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
@@ -1238,15 +1073,10 @@ class _ProfileLifecycleCard extends StatelessWidget {
                       border: Border.all(color: color),
                     ),
                     child: standing.updating
-                        ? SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: isRestricted
-                                  ? color
-                                  : AppColors.obsidianNight,
-                            ),
+                        ? SilarahActivityIndicator(
+                            size: 18,
+                            color:
+                                isRestricted ? color : AppColors.obsidianNight,
                           )
                         : UiText(
                             actionLabel,
@@ -2374,16 +2204,11 @@ class _ProfilePreviewCard extends StatelessWidget {
                   tween: Tween(begin: 0, end: pct),
                   duration: AppDimensions.durationReveal,
                   curve: Curves.easeOutCubic,
-                  builder: (context, value, _) => ClipRRect(
-                    borderRadius: BorderRadius.circular(3),
-                    child: LinearProgressIndicator(
-                      value: value,
-                      minHeight: 6,
-                      backgroundColor: AppColors.progressBarBase,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        AppColors.champagneGold,
-                      ),
-                    ),
+                  builder: (context, value, _) => SilarahLinearProgress(
+                    value: value,
+                    height: 6,
+                    trackColor: AppColors.progressBarBase,
+                    color: AppColors.champagneGold,
                   ),
                 ),
                 if (nudge != null) ...[
@@ -2742,7 +2567,7 @@ class _IFoundMyMatchButton extends StatelessWidget {
   }
 
   void _showConfirmation(BuildContext context) {
-    showModalBottomSheet<void>(
+    showSilarahBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) => Container(

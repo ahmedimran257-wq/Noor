@@ -326,67 +326,13 @@ class FcmService {
 
   void _handleNotificationTap(RemoteMessage message) {
     debugPrint('[FcmService] Notification tapped: ${message.data}');
-    final deepLink = message.data['deep_link'] as String?;
     final type = message.data['type'] as String?;
-    // Referral Premium is an account entitlement, not a checkout request.
-    // Override already-delivered legacy pushes that still carry the old
-    // subscription deep link.
-    String? path = type == 'referral_reward'
-        ? '/home?tab=3'
-        : notificationPathFromDeepLink(deepLink);
-
-    if (path != null) {
-      // Deep links are the server-side source of truth for queued push
-      // notifications. Type fallbacks below support older queued rows.
-    } else if (type == 'interest_received') {
-      path = '/home?tab=1';
-    } else if (type == 'new_message') {
-      final matchId = message.data['match_id'] as String?;
-      if (matchId != null) {
-        path = '/chat/$matchId';
-      }
-    } else if (type == 'interest_accepted' ||
-        type == 'match' ||
-        type == 'match_accepted') {
-      path = '/home?tab=1';
-    } else if (type == 'profile_live') {
-      path = '/home?tab=3';
-    } else if (type == 'new_compatible_profiles') {
-      path = '/home?tab=0';
-    } else if (type == 'profile_view') {
-      path = '/profile-views';
-    } else if (type == 'photo_access_request') {
-      path = '/photo-requests';
-    } else if (type == 'photo_access_granted') {
-      final ownerId = message.data['owner_user_id'] as String?;
-      path = ownerId == null ? '/home?tab=1' : '/profile/$ownerId';
-    } else if (type == 'profile_nudge') {
-      path = '/edit-profile';
-    } else if (type == 'inactive_nudge') {
-      path = '/home?tab=0';
-    } else if (type == 'boost_ready' || type == 'boost_available') {
-      path = '/home?tab=3';
-    } else if (type == 'subscription_active' ||
-        type == 'subscription_renewed' ||
-        type == 'subscription_updated' ||
-        type == 'subscription_cancelled' ||
-        type == 'subscription_expired' ||
-        type == 'subscription_refunded' ||
-        type == 'billing_issue') {
-      path = '/subscription';
-    } else if (type == 'admin_announcement') {
-      path = '/notifications';
-    } else if (type == 'profile_returned_to_review' ||
-        type == 'account_restored' ||
-        type == 'photo_approved' ||
-        type == 'photo_rejected' ||
-        type == 'photo_verification_approved') {
-      path = '/home?tab=3';
-    } else if (type == 'photo_verification_reviewed') {
-      path = '/verify';
-    } else if (type == 'account_suspended' || type == 'account_banned') {
-      path = '/help-support';
-    }
+    final path = notificationDestinationPath(
+      type: type,
+      deepLink: message.data['deep_link'] as String?,
+      matchId: message.data['match_id'] as String?,
+      profileId: message.data['owner_user_id'] as String?,
+    );
 
     if (path != null) {
       if (_onNotificationTap != null) {

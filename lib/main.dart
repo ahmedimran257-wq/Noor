@@ -7,6 +7,7 @@ import 'dart:io' show Platform;
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -98,6 +99,15 @@ Future<void> _activateFirebaseAppCheck() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Flutter Inspector paint toggles can persist for the lifetime of a debug
+  // process and draw colored text baselines over otherwise-correct UI. Always
+  // start every flavor from a clean render surface; release builds keep these
+  // disabled as an additional distribution safeguard.
+  debugPaintSizeEnabled = false;
+  debugPaintBaselinesEnabled = false;
+  debugPaintPointersEnabled = false;
+  debugPaintLayerBordersEnabled = false;
+  debugRepaintRainbowEnabled = false;
   if (!Platform.environment.containsKey('FLUTTER_TEST')) {
     FirebaseMessaging.onBackgroundMessage(
       silarahFirebaseMessagingBackgroundHandler,
@@ -493,6 +503,12 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
       if (item.type == 'new_message') {
         _chatCubit.scheduleInboxReconciliation();
       }
+      if (item.type == 'interest_received' ||
+          item.type == 'interest_accepted' ||
+          item.type == 'match' ||
+          item.type == 'match_accepted') {
+        unawaited(_interestsCubit.refreshIfChanged(forceCheck: true));
+      }
       if (item.type == 'match_ended') {
         unawaited(_chatCubit.refreshIfChanged(forceCheck: true));
         unawaited(_interestsCubit.refreshIfChanged(forceCheck: true));
@@ -511,32 +527,22 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
 
     // Wire up FCM tap navigation callback
     FcmService.instance.onNotificationTap = (path) {
+      if (_opensInterestInbox(path)) {
+        unawaited(_interestsCubit.refreshIfChanged(forceCheck: true));
+      }
+      if (_opensChat(path)) {
+        _chatCubit.scheduleInboxReconciliation();
+      }
       navigateFromPushNotification(_router, path);
     };
     FcmService.instance.onForegroundMessage = (message) {
-      if (message.data['type'] == 'referral_reward') {
-        unawaited(_refreshPremiumEntitlement(refreshDiscovery: true));
-      }
-      if (message.data['type'] == 'account_suspended' ||
-          message.data['type'] == 'account_banned' ||
-          message.data['type'] == 'account_restored') {
-        unawaited(_accountStandingCubit.refresh());
-      }
-      if (message.data['type'] == 'new_message' ||
-          message.data['type'] == 'match_ended') {
-        _chatCubit.scheduleInboxReconciliation();
-      }
-      if (message.data['type'] == 'interest_received' ||
-          message.data['type'] == 'interest_accepted' ||
-          message.data['type'] == 'match' ||
-          message.data['type'] == 'match_accepted' ||
-          message.data['type'] == 'match_ended') {
-        unawaited(_interestsCubit.refreshIfChanged(forceCheck: true));
-      }
-      if (message.data['type'] == 'match_ended' ||
-          message.data['type'] == 'new_compatible_profiles') {
-        unawaited(_discoveryFeedCubit.refreshIfChanged(forceCheck: true));
-      }
+      _notificationsCubit.reconcileForegroundPush(
+        type: message.data['type']?.toString() ?? 'general',
+        notificationId: message.data['notification_id']?.toString(),
+        title: message.notification?.title,
+        body: message.notification?.body,
+        deepLink: message.data['deep_link']?.toString(),
+      );
     };
 
     _revenueCatReady = _configureRevenueCat();
@@ -564,6 +570,20 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
     if (!Platform.environment.containsKey('FLUTTER_TEST')) {
       unawaited(FcmService.instance.initialize(requestPermission: false));
     }
+  }
+
+  bool _opensInterestInbox(String path) {
+    final uri = Uri.tryParse(path);
+    return uri?.path == AppRoutes.home && uri?.queryParameters['tab'] == '1';
+  }
+
+  bool _opensChat(String path) {
+    final uri = Uri.tryParse(path);
+    if (uri == null) return false;
+    if (uri.path == AppRoutes.home && uri.queryParameters['tab'] == '2') {
+      return true;
+    }
+    return uri.pathSegments.length == 2 && uri.pathSegments.first == 'chat';
   }
 
   Future<void> _resolveStartupConnectivity() async {
@@ -685,13 +705,19 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     PresenceService.instance.handleLifecycle(state);
+    _chatCubit.setForeground(state == AppLifecycleState.resumed);
     if (state == AppLifecycleState.resumed &&
         SupabaseService.currentUserId != null) {
       unawaited(_accountStandingCubit.refresh());
       unawaited(_notificationsCubit.loadNotifications());
+      final identity = _authCubit.state;
+      if (identity is! AuthAuthenticated || identity.isGuardianOnly) return;
       unawaited(_refreshPremiumEntitlement(refreshDiscovery: false));
       unawaited(_discoveryFeedCubit.refreshIfChanged());
-      unawaited(_interestsCubit.refreshIfChanged());
+      // A lightweight revision RPC on resume closes the gap where Realtime or
+      // FCM was suspended in the background. A full interests reload still
+      // happens only when the server token changed.
+      unawaited(_interestsCubit.refreshIfChanged(forceCheck: true));
       unawaited(_onboardingCubit.refreshProfileFromDb());
       unawaited(_chatCubit.refreshIfChanged());
     }
@@ -764,7 +790,14 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
   void _openInAppNotification(NotificationItem item) {
     unawaited(_notificationsCubit.markRead(item.id));
     final path = notificationPathFor(item);
-    if (path != null) _router.push(path);
+    if (path == null) return;
+    if (_opensInterestInbox(path)) {
+      unawaited(_interestsCubit.refreshIfChanged(forceCheck: true));
+    }
+    if (_opensChat(path)) {
+      _chatCubit.scheduleInboxReconciliation();
+    }
+    _router.push(path);
   }
 
   @override
@@ -849,27 +882,35 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
               // authenticates. Without the _onboardingInitialized guard,
               // every saveAndAdvance() → updateOnboardingStep() call
               // re-triggers this listener and wipes accumulated form data.
-              if (state is AuthAuthenticated && !_onboardingInitialized) {
+              if (state is AuthAuthenticated &&
+                  !state.isGuardianOnly &&
+                  !_onboardingInitialized) {
                 _onboardingInitialized = true;
                 _onboardingCubit.initialize(startStep: state.onboardingStep);
               }
               // Set the daily interest limit based on gender + subscription status.
               if (state is AuthAuthenticated) {
                 _activeSessionUserId = state.userId;
-                PresenceService.instance.start(state.userId);
+                if (!state.isGuardianOnly) {
+                  PresenceService.instance.start(state.userId);
+                }
                 if (isNewAuthenticatedSession) {
                   unawaited(_accountStandingCubit.start(state.userId));
-                  unawaited(_loginSubscriptionUser(state.userId));
+                  if (!state.isGuardianOnly) {
+                    unawaited(_loginSubscriptionUser(state.userId));
+                  }
                   unawaited(FcmService.instance.onUserLogin());
                   unawaited(
                     _localeCubit.syncToServer(countryCode: state.countryCode),
                   );
                   unawaited(_notificationPrefsCubit.loadPrefs());
-                  _chatCubit.loadConversations();
+                  if (!state.isGuardianOnly) {
+                    _chatCubit.loadConversations();
+                    _interestsCubit.loadData();
+                  }
                   _notificationsCubit.loadNotifications();
-                  _interestsCubit.loadData();
                 }
-                if (state.onboardingCompleted) {
+                if (state.onboardingCompleted && !state.isGuardianOnly) {
                   if (isNewAuthenticatedSession) {
                     // Existing members are covered by the session-start read.
                     _onboardingPublicationSyncedUserId = state.userId;

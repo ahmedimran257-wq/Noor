@@ -14,7 +14,7 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
   SubscriptionCubit() : super(const SubscriptionState());
 
   static const monthlyProductId = 'silarah_monthly';
-  static const annualProductId = 'silarah_annual';
+  static const threeMonthProductId = 'silarah_three_month';
 
   StreamSubscription<DisplayPricing>? _pricingSub;
   int _entitlementRefreshId = 0;
@@ -115,9 +115,10 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
     }
 
     try {
-      final success = await SubscriptionService.instance.purchase(
-        isAnnual: productId == annualProductId,
-      );
+      final plan = productId == threeMonthProductId
+          ? SubscriptionPlan.threeMonth
+          : SubscriptionPlan.monthly;
+      final success = await SubscriptionService.instance.purchase(plan: plan);
 
       if (isClosed) return false;
 

@@ -225,7 +225,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
       );
   }
 
-  Future<void> _openProfile(int index, FeedProfile fp) async {
+  Future<void> _openProfile(FeedProfile fp) async {
     final allowed = await _recordVisibleProfileView(fp.profile.id);
     if (!mounted) return;
     if (!allowed) {
@@ -237,7 +237,7 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
       MaterialPageRoute<void>(
         builder: (_) => ProfileDetailScreen(
           profile: fp.profile,
-          heroTag: 'profile_card_$index',
+          heroTag: 'profile_photo_${fp.profile.id}',
         ),
       ),
     );
@@ -427,40 +427,40 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                // Main card (with Hero for shared-element to detail)
-                Hero(
-                  tag: 'profile_card_$index',
-                  child: SilarahProfileCard(
-                    displayName: p.displayName,
-                    age: p.age,
-                    cityName: p.cityName,
-                    sect: p.sect,
-                    deenLevel: p.deenLevel,
-                    profession: p.occupation,
-                    photoUrl: p.photoUrl,
-                    blurhash: p.blurhash,
-                    photoCount: p.photoCount,
-                    isPhotoPrivate: p.isPhotoPrivate,
-                    isVerified: p.isVerified,
-                    isGuardianManaged: p.isGuardianProfile,
-                    lastActiveLabel:
-                        _localizedLastActive(context, fp.lastActiveAt),
-                    isFocused: true, // Scale handled externally now
-                    cardScale: 1,
-                    isBookmarked: _bookmarked.contains(p.id),
-                    interestActionLabel: action.label,
-                    isInterestActionEnabled: action.onTap != null,
-                    previousMatchLabel: p.previousMatchAt == null
-                        ? null
-                        : AppLocalizations.of(context).discovery_previous_match(
-                            MaterialLocalizations.of(context).formatMediumDate(
-                              p.previousMatchAt!.toLocal(),
-                            ),
+                // Only the photo participates in the shared-element flight.
+                // Transforming the entire text-rich card on reverse navigation
+                // can leave baseline/ghost artifacts on some Android GPUs.
+                SilarahProfileCard(
+                  displayName: p.displayName,
+                  age: p.age,
+                  cityName: p.cityName,
+                  sect: p.sect,
+                  deenLevel: p.deenLevel,
+                  profession: p.occupation,
+                  photoUrl: p.photoUrl,
+                  blurhash: p.blurhash,
+                  photoCount: p.photoCount,
+                  isPhotoPrivate: p.isPhotoPrivate,
+                  isVerified: p.isVerified,
+                  isGuardianManaged: p.isGuardianProfile,
+                  lastActiveLabel:
+                      _localizedLastActive(context, fp.lastActiveAt),
+                  isFocused: true, // Scale handled externally now
+                  cardScale: 1,
+                  isBookmarked: _bookmarked.contains(p.id),
+                  interestActionLabel: action.label,
+                  isInterestActionEnabled: action.onTap != null,
+                  previousMatchLabel: p.previousMatchAt == null
+                      ? null
+                      : AppLocalizations.of(context).discovery_previous_match(
+                          MaterialLocalizations.of(context).formatMediumDate(
+                            p.previousMatchAt!.toLocal(),
                           ),
-                    onTap: () => _openProfile(index, fp),
-                    onSendInterest: action.onTap,
-                    onBookmark: () => _handleBookmark(index, fp),
-                  ),
+                        ),
+                  photoHeroTag: 'profile_photo_${p.id}',
+                  onTap: () => _openProfile(fp),
+                  onSendInterest: action.onTap,
+                  onBookmark: () => _handleBookmark(index, fp),
                 ),
 
                 // Wild-card label — "Someone you might connect with"
@@ -487,10 +487,10 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
             top: 0,
             left: AppDimensions.space40,
             right: AppDimensions.space40,
-            child: LinearProgressIndicator(
-              minHeight: 1.5,
+            child: SilarahLinearProgress(
+              height: 1.5,
               color: AppColors.champagneGold,
-              backgroundColor: AppColors.transparent,
+              trackColor: AppColors.transparent,
             ),
           ),
         if (feedState.failureKind != null)

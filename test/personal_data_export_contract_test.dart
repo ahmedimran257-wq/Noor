@@ -50,7 +50,7 @@ void main() {
     expect(page, contains('Download my data'));
     expect(page, contains('acknowledged within 24 hours'));
     expect(page, contains('resolved within 7 days'));
-    expect(page, contains('grievance officer is Imran Ahmed'));
+    expect(page, contains('Silarah Grievance Desk'));
     expect(sitemap, contains('https://silarah.com/privacy-rights/'));
   });
 }

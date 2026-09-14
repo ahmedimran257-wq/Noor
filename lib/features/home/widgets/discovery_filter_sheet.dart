@@ -8,7 +8,7 @@
 //   Long-press preset chip → confirm delete
 //
 // Bottom: "Clear All" + "Apply Filters" buttons.
-// Show via showModalBottomSheet from DiscoveryFilterBar chips.
+// Presented through Silarah's shared modal route from discovery filter chips.
 import 'package:silarah/l10n/ui_copy.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -26,6 +26,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/overlays/silarah_bottom_sheet.dart';
+import '../../../core/widgets/overlays/silarah_dialog.dart';
+import '../../../core/widgets/loaders/silarah_shimmer.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
 import '../../../core/widgets/inputs/city_search_field.dart';
 import '../../../core/widgets/inputs/region_search_field.dart';
@@ -231,7 +233,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
 
   Future<void> _deletePreset(int index) async {
     final preset = _presets[index];
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showSilarahDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surfaceMid,
@@ -431,7 +433,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
           child: Column(
             children: [
               // Handle
-              const Center(child: SilarahPulseHandle()),
+              const Center(child: SilarahSheetHandle()),
 
               // Header
               Padding(
@@ -543,10 +545,10 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
 
               Divider(color: AppColors.divider, height: 1),
               if (_optionsLoading)
-                LinearProgressIndicator(
-                  minHeight: 1,
+                SilarahLinearProgress(
+                  height: 1,
                   color: AppColors.champagneGold,
-                  backgroundColor: AppColors.surfaceGlass,
+                  trackColor: AppColors.surfaceGlass,
                 ),
               if (_optionsLoadFailed)
                 Padding(
@@ -1172,7 +1174,7 @@ class _DiscoveryFilterSheetState extends State<DiscoveryFilterSheet> {
           : (_draft.browseCountries ?? []),
     );
 
-    showModalBottomSheet<void>(
+    showSilarahBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surfaceElevated,
       isScrollControlled: true,

@@ -9,6 +9,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/animations/spring_keyboard_padding.dart';
+import '../../../core/widgets/overlays/silarah_bottom_sheet.dart';
 import '../../../core/utils/content_filter.dart';
 
 /// Shows the interest note sheet and returns the note text (or null).
@@ -18,7 +19,7 @@ Future<String?> showInterestNoteSheet(
   BuildContext context, {
   required String firstName,
 }) {
-  return showModalBottomSheet<String>(
+  return showSilarahBottomSheet<String>(
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,

@@ -9,6 +9,17 @@ class AppLocalizationsBn extends AppLocalizations {
   AppLocalizationsBn([String locale = 'bn']) : super(locale);
 
   @override
+  String get guide_optional_details => 'অতিরিক্ত বিবরণ (ঐচ্ছিক)';
+
+  @override
+  String get guide_optional_details_body =>
+      'আপনি পরে আপনার প্রোফাইল থেকে এই বিবরণ পূরণ করতে পারবেন।';
+
+  @override
+  String get guide_profile_ownership =>
+      'এই প্রোফাইলটি বিবাহপ্রত্যাশী ব্যক্তির পরিচয় দেয়। কথোপকথন তত্ত্বাবধানের জন্য পরে আলাদা অভিভাবককে আমন্ত্রণ জানানো যাবে।';
+
+  @override
   String get about_button_later => 'আমি এটা পরে করব';
 
   @override
@@ -2172,6 +2183,11 @@ class AppLocalizationsBn extends AppLocalizations {
   @override
   String subscription_button_monthly(String price) {
     return 'সদস্যতা নিন — $price/মাস';
+  }
+
+  @override
+  String subscription_button_three_month(String price) {
+    return 'সদস্যতা নিন — $price/৩ মাস';
   }
 
   @override

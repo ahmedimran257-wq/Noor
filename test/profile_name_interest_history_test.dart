@@ -32,6 +32,9 @@ void main() {
       'lib/core/cubits/interests/interests_cubit.dart',
     ).readAsStringSync();
     final home = File('lib/features/home/home_screen.dart').readAsStringSync();
+    final screen = File(
+      'lib/features/home/screens/interests_screen.dart',
+    ).readAsStringSync();
 
     expect(
       cubit,
@@ -40,7 +43,16 @@ void main() {
       ),
     );
     expect(cubit, contains("status: _parseStatus(row['status'] as String)"));
-    expect(home, contains('read<InterestsCubit>().refreshIfChanged()'));
+    expect(
+      screen,
+      contains(r"context.push('/profile/${entry.profile.id}')"),
+    );
+    expect(
+      home,
+      contains(
+        'read<InterestsCubit>().refreshIfChanged(forceCheck: true)',
+      ),
+    );
   });
 
   test('database transports complete surnames on every profile surface', () {

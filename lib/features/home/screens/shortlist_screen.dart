@@ -15,6 +15,8 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
 import '../../../core/widgets/loaders/silarah_blur_image.dart';
+import '../../../core/widgets/loaders/silarah_shimmer.dart';
+import '../../../core/widgets/overlays/silarah_bottom_sheet.dart';
 import 'profile_detail_screen.dart';
 import 'subscription_screen.dart';
 
@@ -31,7 +33,7 @@ Future<ShortlistDetail?> showShortlistEditor(
   required String firstName,
   ShortlistDetail? initial,
 }) {
-  return showModalBottomSheet<ShortlistDetail>(
+  return showSilarahBottomSheet<ShortlistDetail>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
@@ -137,7 +139,9 @@ class _ShortlistScreenState extends State<ShortlistScreen> {
 
   Widget _body() {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: SilarahPulseLoader(),
+      );
     }
     if (_error != null) {
       return Center(
@@ -605,10 +609,8 @@ class _ShortlistEditorSheetState extends State<_ShortlistEditorSheet> {
                 FilledButton.icon(
                   onPressed: _saving ? null : _save,
                   icon: _saving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                      ? const SilarahActivityIndicator(
+                          size: 18,
                         )
                       : const Icon(Icons.lock_outline_rounded),
                   label: UiText(context.uiCopy('Save private details')),

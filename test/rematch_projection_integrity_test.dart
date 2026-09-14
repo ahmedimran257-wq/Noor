@@ -77,7 +77,9 @@ void main() {
 
     expect(migration, contains("'match_ended'"));
     expect(migration, contains('trg_queue_match_ended_notification'));
-    expect(main, contains("message.data['type'] == 'match_ended'"));
+    expect(main, contains('_notificationsCubit.reconcileForegroundPush'));
+    expect(main, contains("item.type == 'match_ended'"));
+    expect(main, contains('_chatCubit.refreshIfChanged'));
     expect(main, contains('_discoveryFeedCubit.refreshIfChanged'));
     expect(main, contains('_interestsCubit.refreshIfChanged'));
   });

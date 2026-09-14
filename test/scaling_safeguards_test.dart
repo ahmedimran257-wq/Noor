@@ -83,7 +83,9 @@ void main() {
       expect(runner, contains('/auth/v1/admin/users'));
       expect(runner, contains('AbortSignal.timeout(timeoutMs)'));
       expect(runner, contains('finally'));
-      expect(runner, contains('Promise.all(fixtures.map(deleteFixture))'));
+      expect(runner, contains('for (const fixture of fixtures)'));
+      expect(runner, contains('cleanupAllLoadFixtures'));
+      expect(runner, contains('LOAD_TEST_CLEANUP_ONLY'));
     });
   });
 }

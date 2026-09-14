@@ -23,11 +23,14 @@ import '../../../core/services/photo_moderation_service.dart';
 import '../../../core/services/media_permission_error.dart';
 import '../../../core/services/platform_action_service.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_curves.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/animations/silarah_motion.dart';
 import '../../../core/widgets/loaders/silarah_shimmer.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
+import '../../../core/widgets/overlays/silarah_bottom_sheet.dart';
+import '../../../core/widgets/overlays/silarah_dialog.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/step_header.dart';
@@ -198,7 +201,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         final l10n = AppLocalizations.of(context);
         if (MediaPermissionError.isPermissionDenied(e)) {
           final permissionL10n = AppLocalizations.of(context);
-          await showDialog<void>(
+          await showSilarahDialog<void>(
             context: context,
             builder: (dialogContext) => AlertDialog(
               title: UiText(permissionL10n.media_photoAccessOff),
@@ -392,7 +395,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
   Future<ImageSource?> _showSourceSheet() async {
     FocusManager.instance.primaryFocus?.unfocus();
     final l10n = AppLocalizations.of(context);
-    return showModalBottomSheet<ImageSource>(
+    return showSilarahBottomSheet<ImageSource>(
       context: context,
       backgroundColor: AppColors.surfaceMid,
       shape: const RoundedRectangleBorder(
@@ -682,6 +685,8 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: AppDimensions.space16),
+              PhotoAudienceSummary(privacy: _privacy),
               const SizedBox(height: AppDimensions.space32),
               StepHeader(
                 title: widget.returnToPreviousOnSave
@@ -958,11 +963,11 @@ class _PhotoOperationPanel extends StatelessWidget {
                 tween: Tween(end: progress),
                 duration: AppDimensions.durationTactile,
                 curve: Curves.easeOutCubic,
-                builder: (_, value, __) => LinearProgressIndicator(
+                builder: (_, value, __) => SilarahLinearProgress(
                   value: value,
-                  minHeight: 3,
-                  backgroundColor: AppColors.progressBarBase,
-                  valueColor: AlwaysStoppedAnimation(accent),
+                  height: 3,
+                  trackColor: AppColors.progressBarBase,
+                  color: accent,
                 ),
               ),
             ),
@@ -1015,8 +1020,7 @@ class _SlotProgressOverlay extends StatelessWidget {
         child: AnimatedSwitcher(
           duration: AppDimensions.durationTransition,
           transitionBuilder: (child, animation) => ScaleTransition(
-            scale:
-                CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+            scale: CurvedAnimation(parent: animation, curve: AppCurves.tactile),
             child: child,
           ),
           child: complete
@@ -1032,10 +1036,11 @@ class _SlotProgressOverlay extends StatelessWidget {
                     tween: Tween(end: progress),
                     duration: AppDimensions.durationTactile,
                     curve: Curves.easeOutCubic,
-                    builder: (_, value, __) => CircularProgressIndicator(
+                    builder: (_, value, __) => SilarahProgressRing(
                       value: value,
+                      size: 42,
                       strokeWidth: 2.5,
-                      backgroundColor: AppColors.progressBarBase,
+                      trackColor: AppColors.progressBarBase,
                       color: AppColors.champagneGold,
                     ),
                   ),
@@ -1306,6 +1311,60 @@ class _EmptySlot extends StatelessWidget {
 }
 
 // Privacy toggle
+/// Shows the actual audience immediately before the member continues or saves.
+/// The summary uses the selected policy, never an optimistic privacy promise.
+class PhotoAudienceSummary extends StatelessWidget {
+  const PhotoAudienceSummary({super.key, required this.privacy});
+
+  final PhotoPrivacy privacy;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final description = switch (privacy) {
+      PhotoPrivacy.publicAll => l10n.photo_privacy_everyone_sub,
+      PhotoPrivacy.mutualOnly => l10n.photo_privacy_mutual_sub,
+      PhotoPrivacy.requestOnly => l10n.photo_privacy_request_sub,
+    };
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceElevated,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+          border: Border.all(color: AppColors.cardBorder),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              privacy == PhotoPrivacy.publicAll
+                  ? Icons.visibility_outlined
+                  : Icons.lock_outline_rounded,
+              color: AppColors.champagneGold,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  UiText('Who can see your photos',
+                      style: AppTypography.bodyMedium),
+                  const SizedBox(height: 4),
+                  UiText(description,
+                      style: AppTypography.caption.copyWith(height: 1.5)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _PrivacyToggle extends StatelessWidget {
   const _PrivacyToggle({required this.current, required this.onChanged});
   final PhotoPrivacy current;

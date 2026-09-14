@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:silarah/core/cubits/theme/theme_cubit.dart';
 import 'package:silarah/core/theme/app_colors.dart';
 import 'package:silarah/core/theme/app_theme.dart';
 import 'package:silarah/features/home/widgets/policy_reminder_sheet.dart';

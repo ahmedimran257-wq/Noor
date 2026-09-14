@@ -7,11 +7,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/services/photo_access_service.dart';
 import '../../../core/services/supabase_service.dart';
+import '../../../core/services/live_refresh_controller.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
 import '../../../core/widgets/loaders/silarah_shimmer.dart';
+import '../../../core/widgets/overlays/silarah_dialog.dart';
 
 class PhotoAccessRequestsScreen extends StatefulWidget {
   const PhotoAccessRequestsScreen({super.key});
@@ -21,16 +23,22 @@ class PhotoAccessRequestsScreen extends StatefulWidget {
       _PhotoAccessRequestsScreenState();
 }
 
-class _PhotoAccessRequestsScreenState extends State<PhotoAccessRequestsScreen> {
+class _PhotoAccessRequestsScreenState extends State<PhotoAccessRequestsScreen>
+    with WidgetsBindingObserver {
   List<IncomingPhotoAccessRequest> _requests = const [];
   final Set<String> _busyIds = <String>{};
   RealtimeChannel? _channel;
   bool _loading = true;
   String? _error;
+  late final LiveRefreshController _refresh;
+  bool _loadInFlight = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _refresh = LiveRefreshController(refresh: () => _load(silent: true))
+      ..start();
     unawaited(_load());
     unawaited(_subscribe());
   }
@@ -49,17 +57,27 @@ class _PhotoAccessRequestsScreenState extends State<PhotoAccessRequestsScreen> {
             column: 'owner_id',
             value: userId,
           ),
-          callback: (_) => unawaited(_load(silent: true)),
+          callback: (_) => _refresh.request(),
         )
-        .subscribe();
+        .subscribe((status, error) {
+      if (mounted && SupabaseService.currentUserId == userId) {
+        _refresh.setConnected(status == RealtimeSubscribeStatus.subscribed);
+      }
+    });
     if (!mounted) {
-      await channel.unsubscribe();
+      await SupabaseService.client.removeChannel(channel);
       return;
     }
     _channel = channel;
   }
 
   Future<void> _load({bool silent = false}) async {
+    if (_loadInFlight) {
+      _refresh.request();
+      return;
+    }
+    final actor = SupabaseService.currentUserId;
+    _loadInFlight = true;
     if (!silent && mounted) {
       setState(() {
         _loading = true;
@@ -68,7 +86,7 @@ class _PhotoAccessRequestsScreenState extends State<PhotoAccessRequestsScreen> {
     }
     try {
       final requests = await PhotoAccessService.instance.getIncomingRequests();
-      if (!mounted) return;
+      if (!mounted || SupabaseService.currentUserId != actor) return;
       setState(() {
         _requests = requests;
         _loading = false;
@@ -82,6 +100,18 @@ class _PhotoAccessRequestsScreenState extends State<PhotoAccessRequestsScreen> {
             ? error.message
             : 'Photo requests could not be loaded.';
       });
+    } finally {
+      _loadInFlight = false;
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refresh.start();
+      _refresh.request();
+    } else {
+      _refresh.stop();
     }
   }
 
@@ -112,7 +142,7 @@ class _PhotoAccessRequestsScreenState extends State<PhotoAccessRequestsScreen> {
   }
 
   Future<void> _revoke(IncomingPhotoAccessRequest request) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showSilarahDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
             backgroundColor: AppColors.surfaceElevated,
@@ -170,8 +200,14 @@ class _PhotoAccessRequestsScreenState extends State<PhotoAccessRequestsScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _refresh.dispose();
     final channel = _channel;
-    if (channel != null) unawaited(channel.unsubscribe());
+    if (channel != null) {
+      unawaited(SupabaseService.client
+          .removeChannel(channel)
+          .catchError((Object _) => 'error'));
+    }
     super.dispose();
   }
 
@@ -377,13 +413,9 @@ class _AccessRequestCard extends StatelessWidget {
                 ),
               ),
               if (busy)
-                SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.champagneGold,
-                  ),
+                SilarahActivityIndicator(
+                  size: 22,
+                  color: AppColors.champagneGold,
                 ),
             ],
           ),

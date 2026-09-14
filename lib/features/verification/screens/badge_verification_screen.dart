@@ -14,6 +14,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
+import '../../../core/widgets/loaders/silarah_shimmer.dart';
 
 enum _ScreenState { loading, guiding, uploading, pending, approved, failed }
 
@@ -526,7 +527,10 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
           children: [
             _topBar('Photo verification', canClose: false),
             const Spacer(),
-            CircularProgressIndicator(color: AppColors.champagneGold),
+            SilarahActivityIndicator(
+              size: 42,
+              color: AppColors.champagneGold,
+            ),
             const SizedBox(height: AppDimensions.space24),
             UiText(context.uiCopy('Securing your temporary captures'),
                 style: AppTypography.screenTitle, textAlign: TextAlign.center),

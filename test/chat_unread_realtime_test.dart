@@ -27,7 +27,7 @@ void main() {
     expect(state.totalUnread, 3);
   });
 
-  test('incoming messages update the badge without depending on FCM', () {
+  test('chat badge recovers through bounded FCM and resume reconciliation', () {
     final chat =
         File('lib/core/cubits/chat/chat_cubit.dart').readAsStringSync();
     final nav = File(
@@ -35,19 +35,16 @@ void main() {
     ).readAsStringSync();
     final main = File('lib/main.dart').readAsStringSync();
 
-    expect(chat, contains(".channel('chat_inbox:\$me')"));
-    expect(chat, contains('event: PostgresChangeEvent.insert'));
-    expect(chat, contains("column: 'receiver_id'"));
-    expect(chat, contains('_handleInboxMessageInsert(payload, me)'));
-    expect(chat, contains('incrementUnread: !isOpen'));
-    expect(chat, contains('_requestInboxReload()'));
-    expect(chat, contains('_disposeInboxRealtime()'));
+    expect(chat, isNot(contains(".channel('chat_inbox:\$me')")));
+    expect(chat, contains('_reconcileInboxAndActiveConversation'));
+    expect(chat, contains('await loadMessages(activeConversationId)'));
 
     expect(nav, contains('selector: (state) => state.totalUnread'));
     expect(nav, contains('2 => chatUnread'));
 
-    // Notification Realtime and foreground FCM remain independent recovery
-    // signals, but duplicate signals are coalesced into one reconciliation.
+    // Foreground FCM, app resume and both tap paths remain independent
+    // recovery signals. ChatCubit coalesces a burst into one reconciliation.
+    expect(main, contains('reconcileForegroundPush('));
     expect(main, contains("if (item.type == 'new_message')"));
     expect(main, contains('_notificationRefreshSubscription'));
     expect(main, contains('_chatCubit.scheduleInboxReconciliation()'));
@@ -55,7 +52,7 @@ void main() {
       RegExp(r'_chatCubit\.scheduleInboxReconciliation\(\)')
           .allMatches(main)
           .length,
-      2,
+      3,
     );
   });
 }

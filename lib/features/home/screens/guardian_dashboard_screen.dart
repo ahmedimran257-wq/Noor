@@ -17,14 +17,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/services/wali_mode_service.dart';
+import '../../../core/services/live_refresh_controller.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/loaders/silarah_shimmer.dart';
 
 class GuardianDashboardScreen extends StatefulWidget {
   const GuardianDashboardScreen({super.key});
@@ -34,28 +37,41 @@ class GuardianDashboardScreen extends StatefulWidget {
       _GuardianDashboardScreenState();
 }
 
-class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
+class _GuardianDashboardScreenState extends State<GuardianDashboardScreen>
+    with WidgetsBindingObserver {
   final _waliService = WaliModeService.instance;
   List<GuardianDashboardItem> _chats = [];
   bool _isLoading = true;
   bool _isRealtimeConnected = false;
+  late final LiveRefreshController _dashboardRefresh;
+  bool _loadInFlight = false;
+  bool _transcriptOpen = false;
+  String? _pendingMarkSeenWardId;
+  bool _hasLinkedWards = false;
+  String? _dashboardError;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _dashboardRefresh =
+        LiveRefreshController(refresh: () => _loadDashboard(silent: true))
+          ..start();
     _loadDashboard();
-    _setupRealtime();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _dashboardRefresh.dispose();
     if (SupabaseService.isInitialized) {
       _waliService.disposeRealtime();
     }
     super.dispose();
   }
 
-  Future<void> _loadDashboard({String? markSeenWardId}) async {
+  Future<void> _loadDashboard(
+      {String? markSeenWardId, bool silent = false}) async {
     if (!SupabaseService.isInitialized) {
       if (mounted) {
         setState(() {
@@ -65,32 +81,78 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
       }
       return;
     }
-    setState(() => _isLoading = true);
+    if (_loadInFlight) {
+      _pendingMarkSeenWardId = markSeenWardId ?? _pendingMarkSeenWardId;
+      _dashboardRefresh.request();
+      return;
+    }
+    _loadInFlight = true;
+    final actor = SupabaseService.currentUserId;
+    if (!silent) setState(() => _isLoading = true);
     try {
       final chats = await _waliService.getDashboard(
         markSeenWardId: markSeenWardId,
       );
-      if (mounted) {
+      final linked = chats.isNotEmpty || await _waliService.hasLinkedWards();
+      if (mounted && SupabaseService.currentUserId == actor) {
         setState(() {
           _chats = chats;
+          _hasLinkedWards = linked;
+          _dashboardError = null;
           _isLoading = false;
         });
+        if (linked) {
+          _setupRealtime();
+        } else {
+          _waliService.disposeRealtime();
+          _dashboardRefresh.stop();
+          setState(() => _isRealtimeConnected = false);
+        }
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+          _chats = [];
+          _dashboardError =
+              'Unable to refresh Guardian access. Please try again.';
+        });
+      }
+    } finally {
+      _loadInFlight = false;
+      final pending = _pendingMarkSeenWardId;
+      _pendingMarkSeenWardId = null;
+      if (mounted &&
+          pending != null &&
+          SupabaseService.currentUserId == actor) {
+        unawaited(_loadDashboard(markSeenWardId: pending, silent: true));
       }
     }
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && !_transcriptOpen) {
+      _dashboardRefresh.start();
+      _dashboardRefresh.request();
+    } else {
+      _dashboardRefresh.stop();
+    }
+  }
+
   void _setupRealtime() {
-    if (!SupabaseService.isInitialized) return;
+    if (!SupabaseService.isInitialized ||
+        !_hasLinkedWards ||
+        _waliService.hasRealtimeChannel) {
+      return;
+    }
     _waliService.subscribeToMirroredChats(
       onNewMessage: (message) {
         // Refresh dashboard to update unread counts and last message
-        _loadDashboard();
+        _dashboardRefresh.request();
       },
       onStatusChange: (connected) {
+        _dashboardRefresh.setConnected(connected);
         if (mounted) {
           setState(() => _isRealtimeConnected = connected);
         }
@@ -139,12 +201,25 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
   }
 
   Future<void> _openTranscript(GuardianDashboardItem chat) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => _GuardianTranscriptScreen(chat: chat),
-      ),
-    );
-    if (mounted) await _loadDashboard(markSeenWardId: chat.wardUserId);
+    if (_transcriptOpen) return;
+    _transcriptOpen = true;
+    _dashboardRefresh.stop();
+    try {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => _GuardianTranscriptScreen(chat: chat),
+        ),
+      );
+    } finally {
+      _transcriptOpen = false;
+      if (mounted) {
+        if (WidgetsBinding.instance.lifecycleState ==
+            AppLifecycleState.resumed) {
+          _dashboardRefresh.start();
+        }
+        await _loadDashboard(markSeenWardId: chat.wardUserId, silent: true);
+      }
+    }
   }
 
   @override
@@ -163,7 +238,8 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
                 style: AppTypography.wordmark.copyWith(fontSize: 16)),
             const Spacer(),
             // Realtime connection indicator
-            _RealtimeIndicator(isConnected: _isRealtimeConnected),
+            if (_hasLinkedWards)
+              _RealtimeIndicator(isConnected: _isRealtimeConnected),
             PopupMenuButton<_GuardianAccountAction>(
               tooltip: context.uiCopy('Guardian account'),
               color: AppColors.surfaceDark,
@@ -174,7 +250,11 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
               onSelected: (action) async {
                 switch (action) {
                   case _GuardianAccountAction.acceptAnother:
-                    context.push(AppRoutes.guardianConnect);
+                    await context.push(AppRoutes.guardianConnect);
+                    if (mounted) {
+                      _dashboardRefresh.start();
+                      await _loadDashboard();
+                    }
                     break;
                   case _GuardianAccountAction.help:
                     context.push(AppRoutes.helpSupport);
@@ -213,33 +293,41 @@ class _GuardianDashboardScreenState extends State<GuardianDashboardScreen> {
       ),
       body: _isLoading
           ? const _DashboardShimmer()
-          : _chats.isEmpty
-              ? const _EmptyDashboard()
-              : RefreshIndicator(
-                  color: AppColors.champagneGold,
-                  backgroundColor: AppColors.obsidianNight,
-                  onRefresh: _loadDashboard,
-                  child: ListView.separated(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppDimensions.space16,
-                      vertical: AppDimensions.space12,
+          : _dashboardError != null
+              ? Center(
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  UiText(context.uiCopy(_dashboardError!)),
+                  TextButton(
+                      onPressed: _loadDashboard,
+                      child: UiText(context.uiCopy('Try again'))),
+                ]))
+              : _chats.isEmpty
+                  ? _EmptyDashboard(onRefresh: _loadDashboard)
+                  : RefreshIndicator(
+                      color: AppColors.champagneGold,
+                      backgroundColor: AppColors.obsidianNight,
+                      onRefresh: _loadDashboard,
+                      child: ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppDimensions.space16,
+                          vertical: AppDimensions.space12,
+                        ),
+                        itemCount: _chats.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: AppDimensions.space10),
+                        itemBuilder: (context, index) {
+                          final chat = _chats[index];
+                          return _ChatTile(
+                            chat: chat,
+                            onTap: () => unawaited(_openTranscript(chat)),
+                            onApprove: chat.needsApproval
+                                ? () => _handleApproveMatch(chat)
+                                : null,
+                          );
+                        },
+                      ),
                     ),
-                    itemCount: _chats.length,
-                    separatorBuilder: (_, __) =>
-                        const SizedBox(height: AppDimensions.space10),
-                    itemBuilder: (context, index) {
-                      final chat = _chats[index];
-                      return _ChatTile(
-                        chat: chat,
-                        onTap: () => unawaited(_openTranscript(chat)),
-                        onApprove: chat.needsApproval
-                            ? () => _handleApproveMatch(chat)
-                            : null,
-                      );
-                    },
-                  ),
-                ),
     );
   }
 }
@@ -256,12 +344,19 @@ class _GuardianTranscriptScreen extends StatefulWidget {
       _GuardianTranscriptScreenState();
 }
 
-class _GuardianTranscriptScreenState extends State<_GuardianTranscriptScreen> {
+class _GuardianTranscriptScreenState extends State<_GuardianTranscriptScreen>
+    with WidgetsBindingObserver {
   final _service = WaliModeService.instance;
   final _composer = TextEditingController();
   final _scrollController = ScrollController();
   final List<GuardianTranscriptMessage> _messages = [];
   StreamSubscription<Map<String, dynamic>>? _messageSubscription;
+  StreamSubscription<bool>? _connectionSubscription;
+  StreamSubscription<void>? _accessSubscription;
+  late final LiveRefreshController _transcriptRefresh;
+  bool _latestInFlight = false;
+  String? _sendOperationId;
+  String? _sendContent;
   late GuardianDashboardItem _chat;
   bool _loading = true;
   bool _loadingOlder = false;
@@ -269,15 +364,43 @@ class _GuardianTranscriptScreenState extends State<_GuardianTranscriptScreen> {
   bool _sending = false;
   bool _approving = false;
   String? _error;
+  bool _accessVerified = false;
+  bool _mustVerifyAccess = true;
+  int _accessGeneration = 0;
+
+  void _invalidateAccess({bool revoked = false}) {
+    if (!mounted) return;
+    _accessGeneration++;
+    setState(() {
+      _accessVerified = false;
+      _mustVerifyAccess = true;
+      _messages.clear();
+      _composer.clear();
+      _hasOlder = false;
+      _loading = false;
+      _error = revoked
+          ? 'Guardian access is no longer available.'
+          : 'Checking Guardian access…';
+    });
+  }
 
   @override
   void initState() {
     super.initState();
     _chat = widget.chat;
+    WidgetsBinding.instance.addObserver(this);
+    _transcriptRefresh = LiveRefreshController(refresh: _loadLatest)..start();
+    _transcriptRefresh.setConnected(_service.isRealtimeConnected);
+    _connectionSubscription =
+        _service.connectionStream.listen(_transcriptRefresh.setConnected);
+    _accessSubscription = _service.accessChanges.listen((_) {
+      _invalidateAccess();
+      _transcriptRefresh.request();
+    });
     _scrollController.addListener(_maybeLoadOlder);
     _messageSubscription = _service.messageStream.listen((event) {
       if (event['match_id']?.toString() == _chat.matchId) {
-        unawaited(_loadLatest());
+        _transcriptRefresh.request();
       }
     });
     unawaited(_loadLatest());
@@ -285,6 +408,10 @@ class _GuardianTranscriptScreenState extends State<_GuardianTranscriptScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _transcriptRefresh.dispose();
+    _connectionSubscription?.cancel();
+    _accessSubscription?.cancel();
     _messageSubscription?.cancel();
     _scrollController
       ..removeListener(_maybeLoadOlder)
@@ -304,9 +431,43 @@ class _GuardianTranscriptScreenState extends State<_GuardianTranscriptScreen> {
   }
 
   Future<void> _loadLatest() async {
+    if (_latestInFlight) {
+      _transcriptRefresh.request();
+      return;
+    }
+    _latestInFlight = true;
+    final generation = _accessGeneration;
+    final actor = SupabaseService.currentUserId;
     try {
+      var current = _chat;
+      if (_mustVerifyAccess || !_accessVerified) {
+        final dashboard = await _service.getDashboard();
+        final refreshed = dashboard
+            .where((item) => item.matchId == _chat.matchId)
+            .firstOrNull;
+        if (!mounted ||
+            SupabaseService.currentUserId != actor ||
+            generation != _accessGeneration) {
+          return;
+        }
+        if (refreshed == null) {
+          _invalidateAccess(revoked: true);
+          _transcriptRefresh.stop();
+          try {
+            if (!await _service.hasLinkedWards()) _service.disposeRealtime();
+          } catch (_) {
+            // Authorization is already revoked; channel cleanup is best effort.
+          }
+          return;
+        }
+        current = refreshed;
+      }
       final loaded = await _service.getTranscript(matchId: _chat.matchId);
-      if (!mounted) return;
+      if (!mounted ||
+          SupabaseService.currentUserId != actor ||
+          generation != _accessGeneration) {
+        return;
+      }
       final existing = {for (final message in _messages) message.id: message};
       for (final message in loaded) {
         existing[message.id] = message;
@@ -317,6 +478,9 @@ class _GuardianTranscriptScreenState extends State<_GuardianTranscriptScreen> {
           return byTime != 0 ? byTime : b.id.compareTo(a.id);
         });
       setState(() {
+        _chat = current;
+        _accessVerified = true;
+        _mustVerifyAccess = false;
         _messages
           ..clear()
           ..addAll(merged);
@@ -324,51 +488,80 @@ class _GuardianTranscriptScreenState extends State<_GuardianTranscriptScreen> {
         _loading = false;
         _error = null;
       });
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
+      _invalidateAccess(revoked: WaliModeService.isAccessDenied(error));
       setState(() {
         _loading = false;
-        _error = 'Conversation could not be loaded. Please try again.';
+        if (!WaliModeService.isAccessDenied(error)) {
+          _error = 'Conversation could not be loaded. Please try again.';
+        }
       });
+    } finally {
+      _latestInFlight = false;
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _invalidateAccess();
+      _transcriptRefresh.start();
+      _transcriptRefresh.request();
+    } else {
+      _transcriptRefresh.stop();
     }
   }
 
   Future<void> _loadOlder() async {
-    if (_messages.isEmpty) return;
+    if (_messages.isEmpty || !_accessVerified) return;
+    final generation = _accessGeneration;
     setState(() => _loadingOlder = true);
     try {
       final loaded = await _service.getTranscript(
         matchId: _chat.matchId,
         before: _messages.last,
       );
-      if (!mounted) return;
+      if (!mounted || generation != _accessGeneration) return;
       final known = _messages.map((message) => message.id).toSet();
       setState(() {
         _messages.addAll(loaded.where((message) => known.add(message.id)));
         _hasOlder = loaded.length == 50;
         _loadingOlder = false;
       });
-    } catch (_) {
+    } catch (error) {
+      if (WaliModeService.isAccessDenied(error)) {
+        _invalidateAccess(revoked: true);
+      }
       if (mounted) setState(() => _loadingOlder = false);
     }
   }
 
   Future<void> _approve() async {
-    if (_approving) return;
+    if (_approving || !_accessVerified) return;
+    final generation = _accessGeneration;
     setState(() => _approving = true);
     try {
       await _service.approveMatch(_chat.matchId);
       final dashboard = await _service.getDashboard();
       final refreshed =
           dashboard.where((item) => item.matchId == _chat.matchId).firstOrNull;
-      if (!mounted) return;
+      if (!mounted || generation != _accessGeneration) return;
+      if (refreshed == null) {
+        _invalidateAccess(revoked: true);
+        return;
+      }
       setState(() {
-        if (refreshed != null) _chat = refreshed;
+        _chat = refreshed;
         _approving = false;
         _error = null;
       });
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
+      if (WaliModeService.isAccessDenied(error)) {
+        _invalidateAccess(revoked: true);
+        return;
+      }
       setState(() {
         _approving = false;
         _error = 'Approval could not be saved. Please try again.';
@@ -378,16 +571,32 @@ class _GuardianTranscriptScreenState extends State<_GuardianTranscriptScreen> {
 
   Future<void> _send() async {
     final text = _composer.text.trim();
-    if (text.isEmpty || _sending || !_chat.canSendMessages) return;
+    if (text.isEmpty ||
+        _sending ||
+        !_accessVerified ||
+        !_chat.canSendMessages) {
+      return;
+    }
     setState(() => _sending = true);
     try {
+      if (_sendOperationId == null || _sendContent != text) {
+        _sendOperationId = const Uuid().v4();
+        _sendContent = text;
+      }
       await _service.sendMessageAsGuardian(
         matchId: _chat.matchId,
         content: text,
+        operationId: _sendOperationId!,
       );
+      _sendOperationId = null;
+      _sendContent = null;
       _composer.clear();
       await _loadLatest();
-    } catch (_) {
+    } catch (error) {
+      if (WaliModeService.isAccessDenied(error)) {
+        _invalidateAccess(revoked: true);
+        return;
+      }
       if (mounted) {
         setState(() =>
             _error = 'Message could not be sent. Review it and try again.');
@@ -412,7 +621,9 @@ class _GuardianTranscriptScreenState extends State<_GuardianTranscriptScreen> {
               style: AppTypography.bodyMedium,
             ),
             UiText(
-              '${_chat.wardName} · ${_chat.guardianMode == 'active' ? 'Active Guardian' : 'Read-only Guardian'}',
+              !_accessVerified
+                  ? 'Guardian access unconfirmed'
+                  : '${_chat.wardName} · ${_chat.guardianMode == 'active' ? 'Active Guardian' : 'Read-only Guardian'}',
               style: AppTypography.caption.copyWith(
                 color: AppColors.slateMist,
               ),
@@ -424,11 +635,12 @@ class _GuardianTranscriptScreenState extends State<_GuardianTranscriptScreen> {
         top: false,
         child: Column(
           children: [
-            _GuardianAccessBanner(
-              chat: _chat,
-              approving: _approving,
-              onApprove: _chat.needsApproval ? _approve : null,
-            ),
+            if (_accessVerified)
+              _GuardianAccessBanner(
+                chat: _chat,
+                approving: _approving,
+                onApprove: _chat.needsApproval ? _approve : null,
+              ),
             if (_error != null)
               MaterialBanner(
                 content: UiText(context.uiCopy(_error!)),
@@ -442,7 +654,9 @@ class _GuardianTranscriptScreenState extends State<_GuardianTranscriptScreen> {
               ),
             Expanded(
               child: _loading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const Center(
+                      child: SilarahPulseLoader(),
+                    )
                   : _messages.isEmpty
                       ? Center(
                           child: UiText(
@@ -462,7 +676,7 @@ class _GuardianTranscriptScreenState extends State<_GuardianTranscriptScreen> {
                               return const Padding(
                                 padding: EdgeInsets.all(12),
                                 child: Center(
-                                  child: CircularProgressIndicator(),
+                                  child: SilarahActivityIndicator(),
                                 ),
                               );
                             }
@@ -474,7 +688,7 @@ class _GuardianTranscriptScreenState extends State<_GuardianTranscriptScreen> {
                           },
                         ),
             ),
-            if (_chat.canSendMessages)
+            if (_accessVerified && _chat.canSendMessages)
               _GuardianComposer(
                 controller: _composer,
                 sending: _sending,
@@ -527,9 +741,8 @@ class _GuardianAccessBanner extends StatelessWidget {
             TextButton(
               onPressed: approving ? null : onApprove,
               child: approving
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                  ? const SilarahActivityIndicator(
+                      size: 18,
                     )
                   : UiText(context.uiCopy('Approve')),
             ),
@@ -660,9 +873,8 @@ class _GuardianComposer extends StatelessWidget {
           IconButton.filled(
             onPressed: sending ? null : onSend,
             icon: sending
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                ? const SilarahActivityIndicator(
+                    size: 18,
                   )
                 : const Icon(Icons.arrow_upward_rounded),
           ),
@@ -1010,7 +1222,8 @@ class _Avatar extends StatelessWidget {
 
 // Empty Dashboard
 class _EmptyDashboard extends StatelessWidget {
-  const _EmptyDashboard();
+  const _EmptyDashboard({required this.onRefresh});
+  final Future<void> Function() onRefresh;
 
   @override
   Widget build(BuildContext context) {
@@ -1043,12 +1256,13 @@ class _EmptyDashboard extends StatelessWidget {
             const SizedBox(height: AppDimensions.space12),
             UiText(
               context.uiCopy(
-                'Your ward hasn\'t started any conversations yet.\n'
-                'You\'ll see their chats here when they do.',
+                'Conversations appear here when a member connects you as Guardian and has an active match.',
               ),
               style: AppTypography.bodyMuted,
               textAlign: TextAlign.center,
             ),
+            TextButton(
+                onPressed: onRefresh, child: UiText(context.uiCopy('Refresh'))),
           ],
         ),
       ),

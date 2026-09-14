@@ -14,6 +14,9 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/buttons/silarah_primary_button.dart';
 import '../../../core/widgets/buttons/silarah_secondary_button.dart';
 import '../../../core/widgets/silarah_launch_sequence.dart';
+import '../../../core/widgets/silarah_product_guide.dart';
+import '../../../core/widgets/loaders/silarah_shimmer.dart';
+import '../../../core/widgets/overlays/silarah_bottom_sheet.dart';
 import '../../../l10n/generated/app_localizations.dart';
 
 /// Unauthenticated landing surface. The opening greeting belongs exclusively
@@ -156,7 +159,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
     final codeController = TextEditingController();
     var isSaving = false;
 
-    final saved = await showModalBottomSheet<bool>(
+    final saved = await showSilarahBottomSheet<bool>(
       context: context,
       backgroundColor: AppColors.surfaceMid,
       isScrollControlled: true,
@@ -304,13 +307,9 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                             }
                           },
                     child: isSaving
-                        ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.obsidianNight,
-                            ),
+                        ? SilarahActivityIndicator(
+                            size: 20,
+                            color: AppColors.obsidianNight,
                           )
                         : UiText(
                             l10n.splash_referral_button,
@@ -359,164 +358,199 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
           child: LayoutBuilder(
             builder: (context, constraints) {
               final compact = constraints.maxHeight < 700;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SizedBox(
-                    height: compact ? 64 : 76,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        FadeTransition(
-                          opacity: _lockupOpacity,
-                          child: SlideTransition(
-                            position: _lockupSlide,
-                            child: const SilarahCompactLockup(),
-                          ),
-                        ),
-                        PositionedDirectional(
-                          start: 12,
-                          child: FadeTransition(
-                            opacity: _tertiaryOpacity,
-                            child: Semantics(
-                              button: true,
-                              label: 'Change language',
-                              child: InkResponse(
-                                onTap: () => _lightTap(
-                                  () => context.go(AppRoutes.languageSelect),
-                                ),
-                                radius: 28,
-                                child: Container(
-                                  width: 44,
-                                  height: 44,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.surfaceGlass,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: AppColors.cardBorder,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppColors.champagneGold
-                                            .withValues(alpha: .07),
-                                        blurRadius: 18,
-                                        offset: const Offset(0, 8),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Icon(
-                                    Icons.language_rounded,
-                                    color: AppColors.pearlWhite,
-                                    size: 20,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: FadeTransition(
-                      opacity: _heroOpacity,
-                      child: SlideTransition(
-                        position: _heroSlide,
-                        child: Center(
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 440),
-                            child: _IntentionalUnionHero(
-                              reveal: _orchestrator,
-                              ambient: _ambient,
-                              compact: compact,
-                              title: l10n.splash_intention_title,
-                              subtitle: l10n.splash_intention_subtitle,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      AppDimensions.space24,
-                      compact ? AppDimensions.space12 : AppDimensions.space20,
-                      AppDimensions.space24,
-                      compact ? AppDimensions.space20 : AppDimensions.space32,
-                    ),
+              return CustomScrollView(
+                slivers: [
+                  SliverFillRemaining(
+                    hasScrollBody: false,
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        FadeTransition(
-                          opacity: _primaryOpacity,
-                          child: SlideTransition(
-                            position: _primarySlide,
-                            child: SilarahPrimaryButton(
-                              label: l10n.splash_button_createProfile,
-                              haptic: false,
-                              onTap: () => _lightTap(
-                                () => context.push(AppRoutes.legal),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: AppDimensions.space12),
-                        FadeTransition(
-                          opacity: _secondaryOpacity,
-                          child: SlideTransition(
-                            position: _secondarySlide,
-                            child: SilarahSecondaryButton(
-                              label: l10n.splash_button_signIn,
-                              haptic: false,
-                              onTap: () => _lightTap(
-                                () => context.push(
-                                  '${AppRoutes.email}?mode=signin',
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: AppDimensions.space8),
-                        FadeTransition(
-                          opacity: _tertiaryOpacity,
-                          child: Row(
+                        SizedBox(
+                          height: compact ? 64 : 76,
+                          child: Stack(
+                            alignment: Alignment.center,
                             children: [
-                              Expanded(
-                                child: Semantics(
-                                  label: context.uiCopy(
-                                    'I have a Guardian invitation',
-                                  ),
-                                  button: true,
-                                  child: TextButton(
-                                    onPressed: () => _lightTap(
-                                      () => context.push(
-                                        AppRoutes.guardianConnect,
+                              FadeTransition(
+                                opacity: _lockupOpacity,
+                                child: SlideTransition(
+                                  position: _lockupSlide,
+                                  child: const SilarahCompactLockup(),
+                                ),
+                              ),
+                              PositionedDirectional(
+                                start: 12,
+                                child: FadeTransition(
+                                  opacity: _tertiaryOpacity,
+                                  child: Semantics(
+                                    button: true,
+                                    label: 'Change language',
+                                    child: InkResponse(
+                                      onTap: () => _lightTap(
+                                        () => context
+                                            .go(AppRoutes.languageSelect),
                                       ),
-                                    ),
-                                    child: UiText(
-                                      context.uiCopy('Guardian invitation'),
-                                      textAlign: TextAlign.center,
-                                      maxLines: 2,
-                                      style:
-                                          AppTypography.captionMedium.copyWith(
-                                        color: AppColors.pearlWhite,
-                                        decoration: TextDecoration.none,
+                                      radius: 28,
+                                      child: Container(
+                                        width: 44,
+                                        height: 44,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.surfaceGlass,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: AppColors.cardBorder,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: AppColors.champagneGold
+                                                  .withValues(alpha: .07),
+                                              blurRadius: 18,
+                                              offset: const Offset(0, 8),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Icon(
+                                          Icons.language_rounded,
+                                          color: AppColors.pearlWhite,
+                                          size: 20,
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
                               ),
-                              Expanded(
-                                child: TextButton(
-                                  onPressed: () => _lightTap(
-                                    () => _showReferralSheet(context),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: FadeTransition(
+                            opacity: _heroOpacity,
+                            child: SlideTransition(
+                              position: _heroSlide,
+                              child: Center(
+                                child: ConstrainedBox(
+                                  constraints:
+                                      const BoxConstraints(maxWidth: 440),
+                                  child: _IntentionalUnionHero(
+                                    reveal: _orchestrator,
+                                    ambient: _ambient,
+                                    compact: compact,
+                                    title: l10n.splash_intention_title,
+                                    subtitle: l10n.splash_intention_subtitle,
                                   ),
-                                  child: UiText(
-                                    l10n.splash_referral_question,
-                                    textAlign: TextAlign.center,
-                                    maxLines: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            AppDimensions.space24,
+                            compact
+                                ? AppDimensions.space12
+                                : AppDimensions.space20,
+                            AppDimensions.space24,
+                            compact
+                                ? AppDimensions.space20
+                                : AppDimensions.space32,
+                          ),
+                          child: Column(
+                            children: [
+                              FadeTransition(
+                                opacity: _primaryOpacity,
+                                child: SlideTransition(
+                                  position: _primarySlide,
+                                  child: SilarahPrimaryButton(
+                                    label: l10n.splash_button_createProfile,
+                                    haptic: false,
+                                    onTap: () => _lightTap(
+                                      () => context.push(AppRoutes.legal),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: AppDimensions.space12),
+                              FadeTransition(
+                                opacity: _secondaryOpacity,
+                                child: SlideTransition(
+                                  position: _secondarySlide,
+                                  child: SilarahSecondaryButton(
+                                    label: l10n.splash_button_signIn,
+                                    haptic: false,
+                                    onTap: () => _lightTap(
+                                      () => context.push(
+                                        '${AppRoutes.email}?mode=signin',
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: AppDimensions.space8),
+                              FadeTransition(
+                                opacity: _tertiaryOpacity,
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Semantics(
+                                        label: context.uiCopy(
+                                          'I have a Guardian invitation',
+                                        ),
+                                        button: true,
+                                        child: TextButton(
+                                          onPressed: () => _lightTap(
+                                            () => context.push(
+                                              AppRoutes.guardianConnect,
+                                            ),
+                                          ),
+                                          child: UiText(
+                                            context
+                                                .uiCopy('Guardian invitation'),
+                                            textAlign: TextAlign.center,
+                                            maxLines: 2,
+                                            style: AppTypography.captionMedium
+                                                .copyWith(
+                                              color: AppColors.pearlWhite,
+                                              decoration: TextDecoration.none,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: TextButton(
+                                        onPressed: () => _lightTap(
+                                          () => _showReferralSheet(context),
+                                        ),
+                                        child: UiText(
+                                          l10n.splash_referral_question,
+                                          textAlign: TextAlign.center,
+                                          maxLines: 2,
+                                          style: AppTypography.captionMedium
+                                              .copyWith(
+                                            color: AppColors.champagneGold,
+                                            decoration: TextDecoration.none,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              FadeTransition(
+                                opacity: _tertiaryOpacity,
+                                child: TextButton.icon(
+                                  onPressed: () async {
+                                    HapticFeedback.selectionClick();
+                                    await SilarahProductGuide.show(context);
+                                  },
+                                  icon: Icon(
+                                    Icons.menu_book_outlined,
+                                    size: 17,
+                                    color: AppColors.slateMist,
+                                  ),
+                                  label: UiText(
+                                    context.uiCopy('How Silarah works'),
                                     style: AppTypography.captionMedium.copyWith(
-                                      color: AppColors.champagneGold,
-                                      decoration: TextDecoration.none,
+                                      color: AppColors.slateMist,
                                     ),
                                   ),
                                 ),
@@ -526,7 +560,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                         ),
                       ],
                     ),
-                  ),
+                  )
                 ],
               );
             },
@@ -557,8 +591,8 @@ class _IntentionalUnionHero extends StatelessWidget {
     return AnimatedBuilder(
       animation: Listenable.merge([reveal, ambient]),
       builder: (context, _) => RepaintBoundary(
-        child: SizedBox(
-          height: compact ? 350 : 380,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: compact ? 260 : 380),
           child: CustomPaint(
             painter: _UnionArchPainter(
               reveal: reveal.value,

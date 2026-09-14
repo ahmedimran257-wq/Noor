@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#07070c">
+  <meta name="theme-color" content="#F7F3EA">
   <meta name="description" content="Silarah is a premium Muslim matrimony app in India for serious nikah introductions, faith-based compatibility, photo privacy and optional guardian support.">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <link rel="canonical" href="https://silarah.com/">
@@ -25,11 +25,11 @@
   <meta name="twitter:description" content="A more intentional Muslim matrimony experience for serious nikah introductions across India.">
   <meta name="twitter:image" content="https://silarah.com/assets/campaign/silarah-social-1200x630.jpg">
   <title>Muslim Matrimony App India — Silarah</title>
-  <link rel="icon" href="/brand-gold-s.svg" type="image/svg+xml" sizes="any">
-  <link rel="apple-touch-icon" href="/assets/silarah-icon.png">
-  <link rel="manifest" href="/site.webmanifest">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/favicon-48.png" type="image/png" sizes="48x48">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="preload" as="image" href="/assets/campaign/hero-768.webp" imagesrcset="/assets/campaign/hero-768.webp 768w, /assets/campaign/hero-1536.webp 1536w" imagesizes="(max-width: 900px) 100vw, 58vw" type="image/webp">
-  <link rel="stylesheet" href="/styles.css?v=20260826-1">
+  <link rel="stylesheet" href="/styles.css?v=20260831-2">
   <script defer src="/assets/site.js?v=20260826-1"></script>
   <script type="application/ld+json">
   {
@@ -43,7 +43,7 @@
         "email": "support@silarah.com",
         "logo": {
           "@type": "ImageObject",
-          "url": "https://silarah.com/assets/silarah-icon.png",
+          "url": "https://silarah.com/assets/silarah-app-icon-v2.png",
           "width": 512,
           "height": 512
         },
@@ -69,20 +69,29 @@
         "inLanguage": "en-IN",
         "countriesSupported": "IN",
         "audience": {"@type":"Audience","audienceType":"Adults seeking Muslim matrimonial introductions"},
-        "offers": {
-          "@type": "Offer",
-          "price": "300",
-          "priceCurrency": "INR",
-          "category": "monthly subscription",
-          "availability": "https://schema.org/PreOrder"
-        },
+        "offers": [
+          {
+            "@type": "Offer",
+            "price": "299",
+            "priceCurrency": "INR",
+            "category": "monthly subscription",
+            "availability": "https://schema.org/PreOrder"
+          },
+          {
+            "@type": "Offer",
+            "price": "749",
+            "priceCurrency": "INR",
+            "category": "three-month subscription",
+            "availability": "https://schema.org/PreOrder"
+          }
+        ],
         "publisher": {"@id": "https://silarah.com/#organization"}
       },
       {
         "@type": "FAQPage",
         "mainEntity": [
           {"@type":"Question","name":"Is Silarah a dating app?","acceptedAnswer":{"@type":"Answer","text":"No. Silarah is designed for adults seeking serious Muslim matrimonial introductions."}},
-          {"@type":"Question","name":"How much is Silarah Premium?","acceptedAnswer":{"@type":"Answer","text":"The India launch price is ₹300 per month. The final price, renewal date and billing terms are shown by Google Play before purchase."}},
+          {"@type":"Question","name":"How much is Silarah Premium?","acceptedAnswer":{"@type":"Answer","text":"India launch plans are ₹299 monthly or ₹749 every 3 months. The final price, renewal date and billing terms are shown by Google Play before purchase."}},
 {"@type":"Question","name":"Can women message for free?","acceptedAnswer":{"@type":"Answer","text":"Yes. Women can read and send messages after a mutual match without a subscription. Men need active Premium to send. Accounts use verified email; no phone number or KYC is required."}},
 {"@type":"Question","name":"Where is Silarah available?","acceptedAnswer":{"@type":"Answer","text":"This release is available only to adults in India on Android. iOS and other countries are not supported in this release."}},
           {"@type":"Question","name":"How does photo verification work?","acceptedAnswer":{"@type":"Answer","text":"A guided look, smile and blink check is human-reviewed against the profile photo. Temporary captures are deleted after review and within 48 hours. No government ID or face template is used."}}
@@ -110,7 +119,7 @@
         <a href="#pricing">Pricing</a>
         <a href="#roadmap">Availability</a>
         <a href="#faq">FAQ</a>
-        <a class="nav-cta" href="https://app.silarah.com/">Start your profile <span aria-hidden="true">↗</span></a>
+        <a class="nav-cta" href="https://app.silarah.com/">Android access <span aria-hidden="true">↗</span></a>
       </div>
     </nav>
   </header>
@@ -129,11 +138,11 @@
           <h1>Built for the <em>marriage,</em><br>not the match count.</h1>
           <p>Silarah helps marriage-minded Muslims discover compatible introductions through faith, family expectations, privacy controls and thoughtful pacing—without the endless-swipe culture.</p>
           <div class="hero-actions">
-            <a class="button primary" href="https://app.silarah.com/">Begin with intention <span aria-hidden="true">↗</span></a>
+            <a class="button primary" href="https://app.silarah.com/">Get Android access <span aria-hidden="true">↗</span></a>
             <a class="button glass" href="#experience">Explore the experience <span aria-hidden="true">↓</span></a>
           </div>
           <div class="hero-trust-line" aria-label="Silarah launch highlights">
-            <span><b>₹300</b> monthly launch price</span>
+            <span><b>₹299</b> monthly launch price</span>
             <span><b>₹0</b> women’s messaging</span>
             <span><b>India</b> Android first</span>
           </div>
@@ -161,7 +170,7 @@
 
     <section class="proof-rail" aria-label="Silarah at a glance">
       <div class="shell proof-grid">
-        <div><strong>₹300</strong><span>Premium per month</span></div>
+        <div><strong>₹299</strong><span>Premium per month</span></div>
         <div><strong>₹0</strong><span>Women’s messaging</span></div>
         <div><strong>48h</strong><span>Maximum selfie retention</span></div>
         <div><strong>18+</strong><span>Strictly 18+ · adults only</span></div>
@@ -258,12 +267,13 @@
         <div class="pricing-copy">
           <span class="eyebrow">Accessible by design</span>
           <h2>A premium experience.<br><em>Not a premium burden.</em></h2>
-          <p>Traditional matrimony packages can be complicated and expensive. Silarah begins with one transparent India launch price: ₹300 per month.</p>
+          <p>Traditional matrimony packages can be complicated and expensive. Silarah begins with two transparent India launch plans: ₹299 monthly or ₹749 every 3 months.</p>
           <div class="women-free-card"><span>₹0</span><div><strong>Women message free</strong><p>After a mutual match, women can read and send messages without a subscription.</p></div></div>
         </div>
         <article class="premium-card">
           <div class="premium-card-head"><span>India launch</span><b>Silarah Premium</b></div>
-          <div class="premium-price"><sup>₹</sup><strong>300</strong><span>/ month</span></div>
+          <div class="premium-price"><sup>₹</sup><strong>299</strong><span>/ month</span></div>
+          <div class="quarterly-option"><div><strong>₹749</strong><span>every 3 months</span></div><b>Save 16%</b></div>
           <p>Men use active Premium to unlock conversations and the complete intentional discovery toolkit. Accounts use verified email; no phone number or KYC is required.</p>
           <ul>
             <li><span>✓</span> Full messaging for men with active Premium</li>
@@ -276,8 +286,8 @@
             <li><span>✓</span> Incognito Discovery with existing connections preserved</li>
             <li><span>✓</span> One profile boost per week</li>
           </ul>
-          <a class="button primary full-button" href="https://app.silarah.com/">Choose Premium <span aria-hidden="true">↗</span></a>
-          <small>Auto-renewing monthly subscription. Google Play shows the final price, renewal date, applicable taxes and cancellation terms before purchase. Cancel through Google Play.</small>
+          <a class="button primary full-button" href="https://app.silarah.com/">View Android access <span aria-hidden="true">↗</span></a>
+          <small>Both plans auto-renew at their displayed billing period unless cancelled. Google Play shows the final price, renewal date, applicable taxes and cancellation terms before purchase. Cancel through Google Play.</small>
         </article>
       </div>
     </section>
@@ -314,7 +324,7 @@
         <div class="trust-card-grid">
           <article><span class="trust-seal mint">✓</span><h3>Photo verified</h3><p>Guided look, smile and blink captures are human-reviewed. Temporary captures are deleted after review and within 48 hours.</p><small>Photo check only · not legal identity verification</small></article>
           <article><span class="trust-seal gold">@</span><h3>Verified email</h3><p>Every account confirms its email before access. Guardian invitations are also bound to the invited verified email.</p><small>No phone number or KYC required</small></article>
-          <article><span class="trust-seal violet">@</span><h3>Email confirmed</h3><p>The account owner completed the email sign-in code. This is a contact signal, not legal identity verification.</p><small>Separate from photo and phone checks</small></article>
+          <article><span class="trust-seal violet">@</span><h3>Email confirmed</h3><p>The account owner completed the email sign-in code. This is a contact signal, not legal identity verification.</p><small>Separate from photo and account-history checks</small></article>
           <article><span class="trust-seal rose">◇</span><h3>Guardian connected</h3><p>A member has transparently linked a trusted guardian or wali where the feature is enabled.</p><small>The adult member keeps account control</small></article>
         </div>
       </div>
@@ -374,7 +384,7 @@
           <p>Silarah opens one market at a time after billing, safety operations, support and local requirements are ready.</p>
         </div>
         <div class="platform-grid">
-          <article class="platform-card live-platform"><span class="platform-status live">Available first</span><h3>Android · India</h3><p>India-wide discovery across states, cities and mother tongues, using verified-email accounts.</p><a href="https://app.silarah.com/">Get Silarah <span aria-hidden="true">↗</span></a></article>
+          <article class="platform-card live-platform"><span class="platform-status live">Launching first</span><h3>Android · India</h3><p>India-wide discovery across states, cities and mother tongues, using verified-email accounts.</p><a href="https://app.silarah.com/">Android access <span aria-hidden="true">↗</span></a></article>
           <article class="platform-card"><span class="platform-status">Not in this release</span><h3>iPhone &amp; iPad</h3><p>There is no public iOS release date. This release supports Android only.</p></article>
           <article class="platform-card countries-card"><span class="platform-status">Not in this release</span><h3>Countries outside India</h3><p>Registration, billing and discovery are limited to India for this release.</p><small>No international release date is currently promised.</small></article>
         </div>
@@ -416,7 +426,7 @@
       </div>
       <div class="faq-list">
         <details><summary>Is Silarah a dating app?<span>+</span></summary><p>No. Silarah is built for adults seeking serious Muslim matrimonial introductions. Profiles and matching focus on compatibility, intention and respectful pacing.</p></details>
-        <details><summary>How much does Premium cost?<span>+</span></summary><p>The India launch price is ₹300 per month. Google Play shows the final price, renewal date, taxes and cancellation terms before purchase.</p></details>
+        <details><summary>How much does Premium cost?<span>+</span></summary><p>India launch plans are ₹299 monthly or ₹749 every 3 months. Google Play shows the final price, renewal date, taxes and cancellation terms before purchase.</p></details>
         <details><summary>Why do women message free?<span>+</span></summary><p>Women can read and send messages after a mutual match without a subscription. Men require active Premium to send. Accounts use verified email and no phone number or KYC. This is Silarah’s current India messaging model.</p></details>
         <details><summary>Where is Silarah available?<span>+</span></summary><p>This release is available only to adults in India on Android. Other countries and iOS are not supported in this release.</p></details>
         <details><summary>Is there an iPhone app?<span>+</span></summary><p>iOS is planned after the Android launch is stable and App Store preparation is complete. No public iOS release date has been promised yet.</p></details>
@@ -432,7 +442,7 @@
         <span class="eyebrow">Begin with intention</span>
         <h2>Your next introduction<br><em>can feel different.</em></h2>
         <p>Create a thoughtful profile, choose your boundaries and discover serious Muslim introductions across India.</p>
-        <div class="hero-actions centered-actions"><a class="button primary" href="https://app.silarah.com/">Get Silarah <span aria-hidden="true">↗</span></a><a class="button glass" href="/about/">Why we built it</a></div>
+        <div class="hero-actions centered-actions"><a class="button primary" href="https://app.silarah.com/">View Android access <span aria-hidden="true">↗</span></a><a class="button glass" href="/about/">Why we built it</a></div>
       </div>
     </section>
   </main>

@@ -18,6 +18,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/messaging_access_policy.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
+import '../../../core/widgets/overlays/silarah_bottom_sheet.dart';
 import 'subscription_screen.dart';
 
 class PaywallGateSheet {
@@ -41,7 +42,7 @@ class PaywallGateSheet {
     final active = _activeSheet;
     if (active != null) return active;
 
-    final sheet = showModalBottomSheet<void>(
+    final sheet = showSilarahBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,

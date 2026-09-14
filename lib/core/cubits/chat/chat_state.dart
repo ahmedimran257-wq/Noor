@@ -21,46 +21,44 @@ class ChatMessage extends Equatable {
     this.status = MessageStatus.sent,
     this.isTimestampVisible = false,
     this.sentByGuardian = false,
-    this.translations = const {},
+    this.operationId,
   });
 
   final String id;
+  final String? operationId;
   final String text;
   final DateTime sentAt;
   final bool isMe; // true = sent by current user
   final MessageStatus status;
   final bool isTimestampVisible;
   final bool sentByGuardian; // §3.2: true when guardian sent this message
-  final Map<String, String>
-      translations; // key: langCode (e.g. 'ur', 'tr'), value: translated text
 
   ChatMessage copyWith({
     MessageStatus? status,
     bool? isTimestampVisible,
-    Map<String, String>? translations,
   }) {
     return ChatMessage(
       id: id,
+      operationId: operationId,
       text: text,
       sentAt: sentAt,
       isMe: isMe,
       status: status ?? this.status,
       isTimestampVisible: isTimestampVisible ?? this.isTimestampVisible,
       sentByGuardian: sentByGuardian,
-      translations: translations ?? this.translations,
     );
   }
 
   @override
   List<Object?> get props => [
         id,
+        operationId,
         text,
         sentAt,
         isMe,
         status,
         isTimestampVisible,
         sentByGuardian,
-        translations
       ];
 }
 

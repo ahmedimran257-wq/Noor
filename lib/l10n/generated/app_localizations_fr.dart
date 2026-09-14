@@ -9,6 +9,18 @@ class AppLocalizationsFr extends AppLocalizations {
   AppLocalizationsFr([String locale = 'fr']) : super(locale);
 
   @override
+  String get guide_optional_details =>
+      'Informations complémentaires (facultatif)';
+
+  @override
+  String get guide_optional_details_body =>
+      'Vous pourrez compléter ces informations plus tard depuis votre profil.';
+
+  @override
+  String get guide_profile_ownership =>
+      'Ce profil décrit la personne qui souhaite se marier. Un tuteur distinct pourra être invité plus tard pour superviser les conversations.';
+
+  @override
   String get about_button_later => 'je ferai ça plus tard';
 
   @override
@@ -2187,6 +2199,11 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String subscription_button_monthly(String price) {
     return 'Abonnez-vous — $price/mois';
+  }
+
+  @override
+  String subscription_button_three_month(String price) {
+    return 'Abonnez-vous — $price/3 mois';
   }
 
   @override

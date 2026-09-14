@@ -11,7 +11,7 @@ void main() {
 
   test('homepage has a real primary conversion path', () {
     expect(home, contains('href="https://app.silarah.com/"'));
-    expect(home, contains('Get Silarah'));
+    expect(home, contains('Get Android access'));
     expect(home, contains('Explore the experience'));
     expect(home, isNot(contains('Visit Help Center')));
   });
@@ -89,17 +89,87 @@ void main() {
     expect(sitemap, contains('https://silarah.com/child-safety/'));
   });
 
-  test('public homepage uses honest campaign imagery and a restrained favicon',
-      () {
+  test('public site uses the signed Android brand and is not installable', () {
     expect(home, contains('class="brand"'));
     expect(home, contains('<img'));
     expect(home, contains('fictional AI-generated models'));
     expect(home, contains('not members or testimonials'));
-    expect(home, contains('href="/brand-gold-s.svg"'));
+    expect(home, contains('href="/favicon-48.png"'));
+    expect(home, contains('/assets/silarah-app-icon-v2.png'));
+    expect(home, isNot(contains('site.webmanifest')));
+    expect(home, isNot(contains('brand-gold-s.svg')));
+    expect(File('site/favicon-48.png').existsSync(), isTrue);
+    expect(File('site/assets/silarah-wordmark-v2.png').existsSync(), isTrue);
+  });
 
-    final favicon = File('site/brand-gold-s.svg').readAsStringSync();
-    expect(favicon, contains('fill="#0A0A0D"'));
-    expect(favicon, contains('fill="#D8AF55"'));
-    expect(favicon, contains('>S</text>'));
+  test('Android handoff is truthful, non-indexable and never starts web auth',
+      () {
+    final launch = File('site-app/index.html').readAsStringSync();
+    expect(launch, contains('Silarah for Android'));
+    expect(launch, contains('noindex,nofollow,noarchive'));
+    expect(launch, contains('does not currently offer profile registration'));
+    expect(launch, contains('Ask about Android access'));
+    expect(launch, isNot(contains('site.webmanifest')));
+    expect(launch, isNot(contains('main.dart.js')));
+    expect(launch, isNot(contains('firebase')));
+  });
+
+  test('web identity assets are generated from the signed app icon', () {
+    final generator = File('tool/generate_silarah_icon.py').readAsStringSync();
+    expect(generator, contains('assets/icon/app_icon.png'));
+    expect(generator, contains('site/assets/silarah-app-icon-v2.png'));
+    expect(generator, isNot(contains('ImageFont')));
+    expect(generator, isNot(contains('brand-gold-s')));
+  });
+
+  test('every public page uses current brand, launch copy and privacy identity',
+      () {
+    final pages = Directory('site')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((file) => file.path.endsWith('.html'));
+
+    for (final page in pages) {
+      final html = page.readAsStringSync();
+      for (final retired in <String>[
+        'brand-gold-s',
+        'silarah-icon.png',
+        'site.webmanifest',
+        'Open Silarah',
+        'Start your profile',
+        'Get Silarah',
+        'Imran Ahmed',
+        'individual developer',
+        '₹300',
+      ]) {
+        expect(html, isNot(contains(retired)),
+            reason: '${page.path} contains retired copy: $retired');
+      }
+    }
+  });
+
+  test('every root-relative public asset and route resolves locally', () {
+    final pages = Directory('site')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((file) => file.path.endsWith('.html'));
+    final references = RegExp(r'''(?:href|src)="(/[^"#]*)"''');
+
+    for (final page in pages) {
+      final html = page.readAsStringSync();
+      for (final match in references.allMatches(html)) {
+        final raw = match.group(1)!;
+        final clean = raw.split('?').first;
+        if (clean == '/') {
+          expect(File('site/index.html').existsSync(), isTrue);
+          continue;
+        }
+        final relative = clean.substring(1);
+        final file = File('site/$relative');
+        final directoryIndex = File('site/$relative/index.html');
+        expect(file.existsSync() || directoryIndex.existsSync(), isTrue,
+            reason: '${page.path} references missing $clean');
+      }
+    }
   });
 }

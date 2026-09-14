@@ -1,18 +1,28 @@
 import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/legal/public_site_links.dart';
+import '../../../core/cubits/auth/auth_cubit.dart';
+import '../../../core/cubits/auth/auth_state.dart';
+import '../../../core/services/coach_mark_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/silarah_product_guide.dart';
+import 'settings_screen.dart';
+import 'profile_views_screen.dart';
+import 'block_list_screen.dart';
 
 class HelpSupportScreen extends StatelessWidget {
   const HelpSupportScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthCubit>().state;
+    final member = auth is AuthAuthenticated && !auth.isGuardianOnly;
     return Scaffold(
       backgroundColor: AppColors.obsidianNight,
       appBar: AppBar(
@@ -20,9 +30,14 @@ class HelpSupportScreen extends StatelessWidget {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
           onPressed: () => Navigator.of(context).pop(),
-          icon: Icon(Icons.arrow_back_ios_new_rounded,
-              color: AppColors.pearlWhite, size: 20),
+          icon: Icon(
+              Directionality.of(context) == TextDirection.rtl
+                  ? Icons.arrow_forward_ios_rounded
+                  : Icons.arrow_back_ios_new_rounded,
+              color: AppColors.pearlWhite,
+              size: 20),
         ),
         title: UiText(
           context.uiCopy('Help & Support'),
@@ -32,6 +47,54 @@ class HelpSupportScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
         children: [
+          _GuidanceCard(
+            onOpenGuide: () => SilarahProductGuide.show(context),
+            onReplayTips: () => _resetFirstUseTips(context),
+          ),
+          const SizedBox(height: AppDimensions.space16),
+          const _FaqTile(
+            question: 'Interests',
+            answer:
+                'Every interest keeps a clear status. Open Sent to review, withdraw, or follow its progress without losing the profile.',
+          ),
+          _FaqTile(
+            question: 'Photo Privacy',
+            answer:
+                'Public photos appear after upload and moderation. Private photos are shown only based on your photo privacy setting.',
+            onTap: member
+                ? () => _openScreen(
+                    context, const SettingsScreen(initialSection: 'privacy'))
+                : null,
+            actionLabel: 'Photo Privacy',
+          ),
+          _FaqTile(
+            question: 'Profile Views',
+            answer:
+                'The activity eye shows profile visits. Your profile, photo controls, and optional trust checks stay together here.',
+            onTap: member
+                ? () => _openScreen(context, const ProfileViewsScreen())
+                : null,
+            actionLabel: 'Profile Views',
+          ),
+          _FaqTile(
+            question: 'Guardian connection',
+            answer: 'Optional consent-based guardian connection',
+            onTap: member
+                ? () => _openScreen(
+                    context, const SettingsScreen(initialSection: 'guardian'))
+                : null,
+            actionLabel: 'Guardian connection',
+          ),
+          _FaqTile(
+            question: 'Safety & Reports',
+            answer:
+                'Report abusive behavior from the profile menu. Urgent safety reviews are prioritized.',
+            onTap: member
+                ? () => _openScreen(context, const BlockListScreen())
+                : null,
+            actionLabel: 'Blocked Profiles',
+          ),
+          const SizedBox(height: AppDimensions.space16),
           const _EmailTrustNotice(),
           const SizedBox(height: AppDimensions.space16),
           _SupportCard(
@@ -56,7 +119,7 @@ class HelpSupportScreen extends StatelessWidget {
             icon: Icons.gavel_outlined,
             title: 'Grievance Officer',
             body:
-                'Imran Ahmed. Formal grievances are acknowledged within 24 hours and ordinarily resolved within 7 days.',
+                'Silarah Grievance Desk. Formal grievances are acknowledged within 24 hours and ordinarily resolved within 7 days.',
             actionLabel: 'grievance@silarah.com',
             onTap: () => _contactEmail(context, 'grievance@silarah.com'),
           ),
@@ -118,6 +181,10 @@ class HelpSupportScreen extends StatelessWidget {
     );
   }
 
+  static void _openScreen(BuildContext context, Widget screen) {
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
+  }
+
   static Future<void> _contactEmail(BuildContext context, String email) async {
     final uri = Uri(
       scheme: 'mailto',
@@ -145,6 +212,25 @@ class HelpSupportScreen extends StatelessWidget {
       );
   }
 
+  static Future<void> _resetFirstUseTips(BuildContext context) async {
+    await CoachMarkService().resetAll();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: UiText(
+            context.uiCopy('First-use tips are ready to show again.'),
+            style: AppTypography.body.copyWith(
+              color: AppColors.readableOn(AppColors.surfaceGlassHover),
+            ),
+          ),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.surfaceGlassHover,
+        ),
+      );
+  }
+
   static Future<void> _openWebPage(BuildContext context, Uri uri) async {
     if (await launchUrl(uri, mode: LaunchMode.externalApplication)) return;
     await Clipboard.setData(ClipboardData(text: uri.toString()));
@@ -163,6 +249,101 @@ class HelpSupportScreen extends StatelessWidget {
           behavior: SnackBarBehavior.floating,
         ),
       );
+  }
+}
+
+class _GuidanceCard extends StatelessWidget {
+  const _GuidanceCard({
+    required this.onOpenGuide,
+    required this.onReplayTips,
+  });
+
+  final VoidCallback onOpenGuide;
+  final VoidCallback onReplayTips;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.space16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceElevated,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+        border: Border.all(color: AppColors.goldBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.goldGlow,
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+                ),
+                child: Icon(
+                  Icons.route_outlined,
+                  size: 21,
+                  color: AppColors.champagneGold,
+                ),
+              ),
+              const SizedBox(width: AppDimensions.space12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    UiText(
+                      context.uiCopy('Using Silarah'),
+                      style: AppTypography.bodyMedium,
+                    ),
+                    const SizedBox(height: AppDimensions.space4),
+                    UiText(
+                      context.uiCopy(
+                        'Learn how introductions, interests, privacy, and conversations work.',
+                      ),
+                      style: AppTypography.caption.copyWith(height: 1.45),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppDimensions.space16),
+          SizedBox(
+            width: double.infinity,
+            height: AppDimensions.buttonHeightSmall,
+            child: OutlinedButton.icon(
+              onPressed: onOpenGuide,
+              icon: const Icon(Icons.menu_book_outlined, size: 17),
+              label: UiText(context.uiCopy('View guide')),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.champagneGold,
+                side: BorderSide(color: AppColors.goldBorder),
+                shape: RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(AppDimensions.radiusButton),
+                ),
+              ),
+            ),
+          ),
+          Align(
+            alignment: AlignmentDirectional.center,
+            child: TextButton(
+              onPressed: onReplayTips,
+              child: UiText(
+                context.uiCopy('Show first-use tips again'),
+                textAlign: TextAlign.center,
+                style: AppTypography.captionMedium.copyWith(
+                  color: AppColors.slateMist,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -330,10 +511,14 @@ class _FaqTile extends StatelessWidget {
   const _FaqTile({
     required this.question,
     required this.answer,
+    this.onTap,
+    this.actionLabel,
   });
 
   final String question;
   final String answer;
+  final VoidCallback? onTap;
+  final String? actionLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -355,6 +540,15 @@ class _FaqTile extends StatelessWidget {
             child: UiText(answer,
                 style: AppTypography.caption.copyWith(height: 1.5)),
           ),
+          if (onTap != null && actionLabel != null)
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: TextButton.icon(
+                onPressed: onTap,
+                icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                label: UiText(actionLabel!),
+              ),
+            ),
         ],
       ),
     );

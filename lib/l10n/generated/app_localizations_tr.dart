@@ -9,6 +9,17 @@ class AppLocalizationsTr extends AppLocalizations {
   AppLocalizationsTr([String locale = 'tr']) : super(locale);
 
   @override
+  String get guide_optional_details => 'Ek bilgiler (isteğe bağlı)';
+
+  @override
+  String get guide_optional_details_body =>
+      'Bu bilgileri daha sonra profilinizden tamamlayabilirsiniz.';
+
+  @override
+  String get guide_profile_ownership =>
+      'Bu profil evlenmek isteyen kişiyi tanıtır. Görüşmelere nezaret etmesi için daha sonra ayrı bir Vasi davet edilebilir.';
+
+  @override
   String get about_button_later => 'Bunu daha sonra yapacağım';
 
   @override
@@ -2168,6 +2179,11 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String subscription_button_monthly(String price) {
     return 'Abone ol — $price/ay';
+  }
+
+  @override
+  String subscription_button_three_month(String price) {
+    return 'Abone ol — $price/3 ay';
   }
 
   @override

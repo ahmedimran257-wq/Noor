@@ -35,7 +35,7 @@ void main() {
 
     expect(cubit, contains("'get_chat_inbox'"));
     expect(cubit, contains("'get_chat_messages_v2'"));
-    expect(cubit, contains("'send_chat_message'"));
+    expect(cubit, contains("'send_chat_message_idempotent'"));
     expect(cubit, contains("'mark_chat_read'"));
     expect(cubit, isNot(contains(".from('messages')")));
     expect(cubit, isNot(contains(".from('matches')")));
