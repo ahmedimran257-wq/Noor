@@ -16,6 +16,7 @@ const titles: Record<string, string> = {
   content: "Content",
   stories: "Success stories",
   security: "Security",
+  privacy: "Member rights",
   audit: "Audit trail",
   staff: "Staff access",
   system: "System health",

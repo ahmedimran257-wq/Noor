@@ -43,6 +43,7 @@ import '../../../core/services/supabase_service.dart';
 import '../../../core/services/wali_mode_service.dart';
 import '../../../core/legal/legal_documents.dart';
 import 'legal_doc_screen.dart';
+import 'privacy_requests_screen.dart';
 import 'subscription_screen.dart';
 
 const _kLanguages = LocaleCubit.supportedLanguages;
@@ -1810,6 +1811,17 @@ class _PrivacySectionState extends State<_PrivacySection> {
             ),
           ),
         ),
+      ),
+      const SizedBox(height: AppDimensions.space8),
+      ListTile(
+        leading: const Icon(Icons.manage_accounts_outlined),
+        title: const UiText('Privacy requests'),
+        subtitle:
+            const UiText('Access, correction, erasure, consent and nomination'),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+          builder: (_) => const PrivacyRequestsScreen(),
+        )),
       ),
     ]);
   }

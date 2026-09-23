@@ -2,6 +2,24 @@
 
 Saved: 14 September 2026
 
+## Current candidate — 23 September 2026
+
+- Play Console's latest releases/bundles page shows uploaded code `42042`
+  and an inactive internal track with that older draft. Do not publish it.
+- The new candidate is permanently versioned `1.0.0+42043` in `pubspec.yaml`.
+- Both Play products are now imported, attached to `premium`, and mapped to
+  the current offering. The production-key offering verifier passes.
+- Freeze this updated source, run CI on that exact commit, build with the real
+  upload key, and record the new AAB certificate/hash before replacing the draft.
+- Production database was checked at migration 259; staging at 264. The five
+  pending backend migrations must be backed up, deployed and verified before
+  the new app is delivered. Never run a clean reset against production.
+- Actual Google Play purchase validation, real-time notifications, license
+  testing and Play-delivered payment lifecycle evidence remain required.
+
+The original checklist below records the September 14 baseline; its statements
+about an empty Play draft and reserved code 42042 are historical, not current.
+
 ## Before the first Internal Testing AAB
 
 1. Freeze and commit the complete release source, including the latest app,

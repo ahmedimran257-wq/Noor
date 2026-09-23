@@ -1,0 +1,50 @@
+/* Shared emerald surfaces, typography and interaction rhythm. */
+:root { --canvas: #0c1412; --surface: #131f1b; --surface-2: #1a2923; --border: #2c3e35; --ink: #f3f1e9; --text: #f3f1e9; --muted: #a7b8ae; --gold: #c5ad78; --gold-2: #e3c994; --success: #9bcbb2; }
+body { background: var(--canvas); font-family: var(--font-geist-sans), sans-serif; -webkit-font-smoothing: antialiased; }
+/* Persistent decoration must not compete with operational information. */
+.auth-page::before,.auth-orbit,.signal-orbit,.live-dot,.online-user-pulse { animation:none; }
+.sidebar { background: #0d1813; border-right-color: #283b30; }
+.sidebar-brand { padding-bottom: 24px; border-bottom: 1px solid #283b30; }
+.sidebar-brand strong { font-family: Georgia, serif; font-size: 28px; font-weight: 400; letter-spacing: -.04em; }
+.sidebar-brand small { color: var(--muted); letter-spacing: .16em; }
+.brand-symbol { color: #d5bf8e; background: #203b2d; border: 1px solid #42604d; border-radius: 12px; }
+.nav-section { color: #849b8c; letter-spacing: .14em; font-size: 10px; }
+.nav-item { border-radius: 8px; color: #b7c4bb; transition: background-color 180ms, color 180ms; }
+.nav-item:hover { color: #fff9ec; background: #1c2d23; }
+.nav-item.active { color: #f1ead9; background: #263e30; box-shadow: inset 2px 0 #c5ad78; }
+.admin-topbar { background: #101b16; border-bottom-color: #283b30; }
+.admin-content { max-width: 1640px; margin-inline: auto; padding-top: 42px; }
+.page-hero h1 { font-family: Georgia, serif; font-weight: 400; font-size: clamp(32px,3.4vw,48px); letter-spacing: -.045em; }
+.page-hero { padding-bottom: 26px; border-bottom: 1px solid var(--border); }
+.page-hero .muted { max-width: 70ch; margin-top: 12px; }
+.elevated-panel,.metric-card,.traffic-card,.cockpit-panel,.photo-check-review-card,.photo-check-empty { background: var(--surface); border-color: var(--border); border-radius: 14px; box-shadow: 0 10px 28px #00000015; }
+.metric-card strong,.traffic-card strong { font-variant-numeric: tabular-nums; letter-spacing: -.04em; }
+.primary-button,.auth-submit { background: #c5ad78; color: #17221a; border-color: #c5ad78; border-radius: 8px; }
+.primary-button:hover,.auth-submit:hover { background: #dec693; color: #142019; }
+.staff-summary,.project-state { background: #18281e; border-color: var(--border); }
+.auth-page { background: radial-gradient(ellipse at 12% 24%,#213e2c 0,transparent 52%),#0b1510; }
+.auth-panel,.enterprise-panel { background: #15231b; border: 1px solid #3b5140; border-radius: 18px; }
+.auth-input { background: #0e1a13; border-color: #405343; }
+.auth-lockup h1 { font-family: Georgia, serif; font-weight: 400; }
+.auth-system-panel { background: #102017; border-color: #314638; }
+.privacy-case { padding: clamp(18px,3vw,28px); }
+.privacy-case header,.privacy-case-actions { display:flex; justify-content:space-between; align-items:center; gap:18px; }
+.privacy-case h2 { text-transform:capitalize; }
+.privacy-case label { display:grid; gap:8px; color:var(--muted); font-size:13px; }
+.privacy-case textarea,.privacy-case select { width:100%; border:1px solid #49604f; border-radius:8px; background:#0d1a12; color:var(--ink); padding:12px; }
+.privacy-case-details { white-space:pre-wrap; overflow-wrap:anywhere; margin-block:22px; line-height:1.7; }
+.privacy-case code { overflow-wrap:anywhere; }
+.privacy-case-actions { margin-top:14px; }
+.privacy-retention { margin-top:24px; border-top:1px solid var(--border); padding-top:18px; }
+.privacy-retention summary { cursor:pointer; color:var(--muted); }
+.privacy-retention form { display:grid; gap:14px; margin-top:14px; }
+.privacy-retention input[type=date] { color:var(--ink); background:var(--canvas); border:1px solid var(--border); padding:12px; border-radius:8px; color-scheme:dark; }
+:focus-visible { outline:2px solid #e3c994; outline-offset:4px; }
+@media (prefers-reduced-motion: no-preference) {
+  .page-hero { animation:atelier-arrive 420ms cubic-bezier(.22,1,.36,1) both; }
+  .primary-button,.inline-action,.icon-button { transition:background-color 180ms,border-color 180ms,transform 180ms; }
+  .primary-button:active,.inline-action:active { transform:translateY(1px); }
+  @keyframes atelier-arrive { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+}
+@media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; } }
+@media(max-width:620px) { .privacy-case header,.privacy-case-actions { align-items:stretch; flex-direction:column; } .admin-content { padding-top:24px; } }

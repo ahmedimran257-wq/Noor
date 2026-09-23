@@ -118,25 +118,73 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
       final plan = productId == threeMonthProductId
           ? SubscriptionPlan.threeMonth
           : SubscriptionPlan.monthly;
-      final success = await SubscriptionService.instance.purchase(plan: plan);
+      final purchase = await SubscriptionService.instance.purchase(plan: plan);
 
       if (isClosed) return false;
 
-      if (success) {
-        final info = await Purchases.getCustomerInfo();
+      if (purchase.outcome == SubscriptionPurchaseOutcome.purchased) {
+        final info = purchase.customerInfo ?? await Purchases.getCustomerInfo();
         await _refreshEffectiveEntitlement(
           info,
           isLoading: false,
           successMessage: 'JazakAllah khair - SILARAH Premium is now active!',
         );
         return state.isSubscribed;
-      } else {
+      }
+
+      if (purchase.outcome == SubscriptionPurchaseOutcome.alreadyPurchased) {
+        final info = purchase.customerInfo ?? await Purchases.getCustomerInfo();
+        if (SubscriptionEntitlements.isPremiumActive(info)) {
+          await _refreshEffectiveEntitlement(
+            info,
+            isLoading: false,
+            successMessage:
+                'Your existing SILARAH Premium subscription is active.',
+          );
+          return state.isSubscribed;
+        }
         emit(state.copyWith(
           isLoading: false,
-          error: 'Purchase could not be completed. Please try again.',
+          error:
+              'Google Play reports this plan is already owned. Use Restore Purchase to refresh access.',
         ));
         return false;
       }
+
+      if (purchase.outcome == SubscriptionPurchaseOutcome.cancelled) {
+        emit(state.copyWith(
+          isLoading: false,
+          clearError: true,
+          clearSuccess: true,
+        ));
+        return false;
+      }
+
+      if (purchase.outcome == SubscriptionPurchaseOutcome.pending) {
+        emit(state.copyWith(
+          isLoading: false,
+          clearError: true,
+          successMessage:
+              'Payment is pending. Premium will activate automatically after Google Play confirms it.',
+        ));
+        return false;
+      }
+
+      if (purchase.outcome == SubscriptionPurchaseOutcome.entitlementPending) {
+        emit(state.copyWith(
+          isLoading: false,
+          clearError: true,
+          successMessage:
+              'Google Play accepted the purchase. Premium is syncing now; use Restore Purchase if it does not appear shortly.',
+        ));
+        return false;
+      }
+
+      emit(state.copyWith(
+        isLoading: false,
+        error: _purchaseErrorMessage(purchase.errorCode),
+      ));
+      return false;
     } catch (e) {
       debugPrint('[SubscriptionCubit] Purchase error: $e');
       if (!isClosed) {
@@ -147,6 +195,28 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
       }
       return false;
     }
+  }
+
+  String _purchaseErrorMessage(PurchasesErrorCode? code) {
+    return switch (code) {
+      PurchasesErrorCode.networkError =>
+        'A secure connection could not be made. Check your internet and try again.',
+      PurchasesErrorCode.storeProblemError =>
+        'Google Play could not complete the request. No access was changed; please try again shortly.',
+      PurchasesErrorCode.purchaseNotAllowedError ||
+      PurchasesErrorCode.insufficientPermissionsError =>
+        'Purchases are not available for this Google Play account or device.',
+      PurchasesErrorCode.productNotAvailableForPurchaseError ||
+      PurchasesErrorCode.configurationError ||
+      PurchasesErrorCode.invalidCredentialsError =>
+        'This plan is not available right now. Please contact Silarah Support.',
+      PurchasesErrorCode.receiptAlreadyInUseError ||
+      PurchasesErrorCode.receiptInUseByOtherSubscriberError =>
+        'This Google Play subscription belongs to another Silarah account. Sign in to that account or contact Silarah Support.',
+      PurchasesErrorCode.operationAlreadyInProgressError =>
+        'A purchase is already in progress. Complete it in Google Play, then return to Silarah.',
+      _ => 'The purchase was not completed. Please try again.',
+    };
   }
 
   Future<void> restore() async {

@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -74,6 +75,46 @@ enum PricingSource { loading, revenueCat, unavailable }
 
 enum SubscriptionPlan { monthly, threeMonth }
 
+/// Store outcomes that need materially different product behavior.
+///
+/// A cancellation is intentionally silent, a pending payment must not unlock
+/// Premium, and a completed store transaction without the expected entitlement
+/// must never be reported as a failed charge.
+enum SubscriptionPurchaseOutcome {
+  purchased,
+  cancelled,
+  pending,
+  alreadyPurchased,
+  entitlementPending,
+  failed,
+}
+
+class SubscriptionPurchaseResult {
+  const SubscriptionPurchaseResult({
+    required this.outcome,
+    this.customerInfo,
+    this.errorCode,
+  });
+
+  final SubscriptionPurchaseOutcome outcome;
+  final CustomerInfo? customerInfo;
+  final PurchasesErrorCode? errorCode;
+}
+
+SubscriptionPurchaseOutcome classifySubscriptionPurchaseError(
+  PurchasesErrorCode code,
+) {
+  return switch (code) {
+    PurchasesErrorCode.purchaseCancelledError =>
+      SubscriptionPurchaseOutcome.cancelled,
+    PurchasesErrorCode.paymentPendingError =>
+      SubscriptionPurchaseOutcome.pending,
+    PurchasesErrorCode.productAlreadyPurchasedError =>
+      SubscriptionPurchaseOutcome.alreadyPurchased,
+    _ => SubscriptionPurchaseOutcome.failed,
+  };
+}
+
 /// Canonical RevenueCat entitlement mapping.
 abstract final class SubscriptionEntitlements {
   static const String premium = 'premium';
@@ -131,7 +172,9 @@ class SubscriptionService {
     await _refreshPricing();
   }
 
-  Future<bool> purchase({required SubscriptionPlan plan}) async {
+  Future<SubscriptionPurchaseResult> purchase({
+    required SubscriptionPlan plan,
+  }) async {
     try {
       Offering? offering = _activeOffering;
       if (offering == null) {
@@ -152,10 +195,40 @@ class SubscriptionService {
       final customerInfo = result.customerInfo;
       _isSubscribed = SubscriptionEntitlements.isPremiumActive(customerInfo);
       _customerInfo = customerInfo;
-      return _isSubscribed;
-    } catch (e) {
-      debugPrint('[SubscriptionService] Purchase error: $e');
-      return false;
+      return SubscriptionPurchaseResult(
+        outcome: _isSubscribed
+            ? SubscriptionPurchaseOutcome.purchased
+            : SubscriptionPurchaseOutcome.entitlementPending,
+        customerInfo: customerInfo,
+      );
+    } on PlatformException catch (error) {
+      final code = PurchasesErrorHelper.getErrorCode(error);
+      final outcome = classifySubscriptionPurchaseError(code);
+      CustomerInfo? customerInfo;
+      if (outcome == SubscriptionPurchaseOutcome.alreadyPurchased) {
+        try {
+          customerInfo = await Purchases.getCustomerInfo();
+          _customerInfo = customerInfo;
+          _isSubscribed =
+              SubscriptionEntitlements.isPremiumActive(customerInfo);
+        } catch (refreshError) {
+          debugPrint(
+            '[SubscriptionService] Existing purchase refresh error: '
+            '$refreshError',
+          );
+        }
+      }
+      debugPrint('[SubscriptionService] Purchase error ($code): $error');
+      return SubscriptionPurchaseResult(
+        outcome: outcome,
+        customerInfo: customerInfo,
+        errorCode: code,
+      );
+    } catch (error) {
+      debugPrint('[SubscriptionService] Purchase error: $error');
+      return const SubscriptionPurchaseResult(
+        outcome: SubscriptionPurchaseOutcome.failed,
+      );
     }
   }
 

@@ -55,6 +55,7 @@ const groups = [
     label: "Govern",
     items: [
       ["/security", "Security", ShieldAlert],
+      ["/privacy", "Member rights", ShieldCheck],
       ["/audit", "Audit trail", FileClock],
       ["/staff", "Staff access", ShieldPlus],
       ["/system", "System health", Activity],

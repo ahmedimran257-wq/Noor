@@ -77,17 +77,61 @@ void main() {
       'supabase/migrations/134_versioned_legal_policy_consents.sql',
     ).readAsStringSync();
     final currentConsentMigration = File(
-      'supabase/migrations/252_policy_240_premium_relationship_privacy.sql',
+      'supabase/migrations/264_policy_250_compatible_consent_rollout.sql',
     ).readAsStringSync();
 
     expect(settings, contains('LegalDocuments.all'));
     expect(legalGate, contains('community-guidelines'));
     expect(consentService, contains('LegalDocuments.version'));
     expect(originalConsentMigration, contains("'community_guidelines'"));
-    expect(currentConsentMigration, contains("'2.3.0', '2.4.0'"));
+    expect(currentConsentMigration, contains("'2.4.0', '2.5.0'"));
     expect(currentConsentMigration, contains(LegalDocuments.version));
     expect(LegalDocuments.operatorName, 'Silarah');
     expect(LegalDocuments.grievanceOfficerName, 'Silarah Grievance Desk');
+  });
+
+  test('2.5 privacy commitments are honest and aligned across app and site',
+      () {
+    expect(LegalDocuments.version, '2.5.0');
+    final app = LegalDocuments.privacy.sections.map((s) => s.body).join(' ');
+    final rights =
+        LegalDocuments.privacyRights.sections.map((s) => s.body).join(' ');
+    final html = File('site/privacy/index.html').readAsStringSync();
+    final rightsHtml =
+        File('site/privacy-rights/index.html').readAsStringSync();
+    for (final copy in [app, html]) {
+      expect(
+          copy, contains('specific statutory legitimate use under section 7'));
+      expect(copy, isNot(contains('legitimate interests in operating')));
+      expect(
+          copy, isNot(contains('legitimate safety and operational interests')));
+      expect(copy, contains('when its relevant provisions apply'));
+    }
+    for (final copy in [app, html, rights, rightsHtml]) {
+      expect(copy, contains('Profile → Settings → Privacy → Privacy requests'));
+      expect(
+          copy,
+          contains(
+              'does not immediately stop processing or delete your account'));
+      expect(copy,
+          contains('does not appoint a nominee or complete a nomination'));
+      expect(copy, contains('12 months after resolution'));
+      expect(copy, contains('unless a documented legal hold applies'));
+      expect(copy, contains('while unresolved'));
+      expect(copy, contains('does not anonymise the request text'));
+    }
+    final migration = File(
+            'supabase/migrations/264_policy_250_compatible_consent_rollout.sql')
+        .readAsStringSync();
+    expect(migration, contains('VALUES (v_version, p_acceptances)'));
+    expect(migration, contains('required.consent_type, v_tx.policy_version'));
+    expect(migration, contains('p_acceptances IS DISTINCT FROM'));
+    expect(migration, contains('v_tx.acceptances IS DISTINCT FROM'));
+    expect(migration,
+        contains('ON CONFLICT (user_id, consent_type, version) DO NOTHING'));
+    expect(migration, isNot(contains('SET revoked_at = NULL')));
+    expect(migration, isNot(contains('UPDATE public.user_consents')));
+    expect(migration, contains("SELECT '2.5.0'::text"));
   });
 
   test('account deletion never claims app-store billing is cancelled', () {

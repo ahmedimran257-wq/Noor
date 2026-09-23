@@ -1,0 +1,29 @@
+/* Editorial movement: finite entrances, quiet feedback, readable without JS. */
+.note-one,.note-two { animation:none; }
+.button,.feature-card,.knowledge-grid > a,.safety-link-grid > a { transition:transform 240ms cubic-bezier(.22,1,.36,1),border-color 180ms,box-shadow 240ms; }
+.hero-photo { overflow:hidden; }
+@media (prefers-reduced-motion:no-preference) {
+  .hero-copy-new > * { animation:opening-line 800ms cubic-bezier(.22,1,.36,1) both; }
+  .hero-copy-new > :nth-child(2) { animation-delay:90ms; }
+  .hero-copy-new > :nth-child(3) { animation-delay:170ms; }
+  .hero-copy-new > :nth-child(4) { animation-delay:240ms; }
+  .hero-intention-card { animation:opening-line 900ms 280ms cubic-bezier(.22,1,.36,1) both; }
+  .hero-photo img { animation:opening-image 1400ms cubic-bezier(.2,.7,.2,1) both; }
+  .motion-ready .in-view { animation:section-arrive 700ms cubic-bezier(.22,1,.36,1) both; }
+  .motion-ready .trust-card-grid article:nth-child(even).in-view { animation-name:section-arrive-offset; }
+  .journey-grid article:nth-child(2).in-view,.feature-card:nth-child(2).in-view { animation-delay:70ms; }
+  .journey-grid article:nth-child(3).in-view,.feature-card:nth-child(3).in-view { animation-delay:140ms; }
+  @keyframes opening-line { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+  @keyframes opening-image { from { transform:scale(1.035); } to { transform:scale(1); } }
+  @keyframes section-arrive { from { opacity:.45; transform:translateY(16px); } to { opacity:1; transform:none; } }
+  @keyframes section-arrive-offset { from { opacity:.45; transform:translateY(40px); } to { opacity:1; transform:translateY(24px); } }
+}
+@media (hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference) {
+  .button:hover { transform:translateY(-2px); }
+  .button:active { transform:translateY(0); }
+  .knowledge-grid > a:hover,.safety-link-grid > a:hover { transform:translateY(-3px); box-shadow:0 14px 32px #173c2710; }
+}
+@media(max-width:780px) { .motion-ready .trust-card-grid article:nth-child(even).in-view { animation-name:section-arrive; } }
+@media(prefers-reduced-motion:reduce) {
+  *,*::before,*::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; }
+}

@@ -14,6 +14,13 @@ void main() {
       expect(serviceSource, contains('Purchases.purchase('));
       expect(serviceSource, contains('PurchaseParams.package(package)'));
       expect(serviceSource, contains('result.customerInfo'));
+      expect(serviceSource, contains('PurchasesErrorHelper.getErrorCode'));
+      expect(serviceSource, contains('SubscriptionPurchaseOutcome.cancelled'));
+      expect(serviceSource, contains('SubscriptionPurchaseOutcome.pending'));
+      expect(
+        serviceSource,
+        contains('SubscriptionPurchaseOutcome.entitlementPending'),
+      );
       expect(serviceSource, isNot(contains('Purchases.purchasePackage(')));
     });
 

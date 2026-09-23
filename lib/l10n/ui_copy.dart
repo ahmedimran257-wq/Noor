@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:silarah/l10n/privacy_requests_ui_copy.dart';
 import 'package:silarah/l10n/generated/app_localizations.dart';
 import 'package:silarah/l10n/generated/app_localizations_en.dart';
 import 'package:silarah/l10n/billing_legal_ui_copy.dart';
@@ -24,7 +25,8 @@ class UiCopy {
 
   static String localize(BuildContext context, String source) {
     final languageCode = Localizations.localeOf(context).languageCode;
-    return billingLegalUiCopy[languageCode]?[source] ??
+    return privacyRequestsUiCopy[languageCode]?[source] ??
+        billingLegalUiCopy[languageCode]?[source] ??
         legalAccessUiCopy[languageCode]?[source] ??
         photoGuideUiCopy[languageCode]?[source] ??
         premiumDiscoveryUiCopy[languageCode]?[source] ??
@@ -41,6 +43,7 @@ class UiCopy {
 
   static bool hasTranslation(String languageCode, String source) =>
       languageCode == 'en' ||
+      privacyRequestsUiCopy[languageCode]?.containsKey(source) == true ||
       billingLegalUiCopy[languageCode]?.containsKey(source) == true ||
       legalAccessUiCopy[languageCode]?.containsKey(source) == true ||
       photoGuideUiCopy[languageCode]?.containsKey(source) == true ||
@@ -9734,8 +9737,29 @@ class UiText extends StatelessWidget {
     this.textWidthBasis,
     this.textHeightBehavior,
     this.selectionColor,
-  });
+  }) : _translate = true;
 
+  /// Displays authored content or an already-localized composite unchanged.
+  /// Never pass untranslated UI labels to this constructor.
+  const UiText.verbatim(
+    this.data, {
+    super.key,
+    this.style,
+    this.strutStyle,
+    this.textAlign,
+    this.textDirection,
+    this.locale,
+    this.softWrap,
+    this.overflow,
+    this.textScaler,
+    this.maxLines,
+    this.semanticsLabel,
+    this.textWidthBasis,
+    this.textHeightBehavior,
+    this.selectionColor,
+  }) : _translate = false;
+
+  final bool _translate;
   final String data;
   final TextStyle? style;
   final StrutStyle? strutStyle;
@@ -9754,7 +9778,7 @@ class UiText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      UiCopy.localize(context, data),
+      _translate ? UiCopy.localize(context, data) : data,
       style: style,
       strutStyle: strutStyle,
       textAlign: textAlign,
@@ -9766,7 +9790,9 @@ class UiText extends StatelessWidget {
       maxLines: maxLines,
       semanticsLabel: semanticsLabel == null
           ? null
-          : UiCopy.localize(context, semanticsLabel!),
+          : (_translate
+              ? UiCopy.localize(context, semanticsLabel!)
+              : semanticsLabel),
       textWidthBasis: textWidthBasis,
       textHeightBehavior: textHeightBehavior,
       selectionColor: selectionColor,

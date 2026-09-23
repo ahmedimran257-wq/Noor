@@ -77,10 +77,10 @@ void main() {
     expect(publicPolicy, contains('48 hours'));
   });
 
-  test('quarterly policy reminder and signup consent use one policy version',
+  test('policy reminders use current metadata with honest signup compatibility',
       () {
     final migration = File(
-      'supabase/migrations/252_policy_240_premium_relationship_privacy.sql',
+      'supabase/migrations/264_policy_250_compatible_consent_rollout.sql',
     ).readAsStringSync();
     final legalDocuments =
         File('lib/core/legal/legal_documents.dart').readAsStringSync();
@@ -89,8 +89,8 @@ void main() {
       'lib/features/home/widgets/policy_reminder_sheet.dart',
     ).readAsStringSync();
 
-    expect(legalDocuments, contains("static const version = '2.4.0'"));
-    expect(migration, contains("'2.3.0', '2.4.0'"));
+    expect(legalDocuments, contains("static const version = '2.5.0'"));
+    expect(migration, contains("'2.4.0', '2.5.0'"));
     final priorReminderMigration = File(
       'supabase/migrations/214_policy_230_subscription_and_privacy_consents.sql',
     ).readAsStringSync();

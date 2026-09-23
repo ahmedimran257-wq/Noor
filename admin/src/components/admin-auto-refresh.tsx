@@ -26,7 +26,9 @@ export function AdminAutoRefresh() {
   useEffect(() => {
     // The dashboard owns its visible-only live feed. Other server-rendered pages
     // refresh less aggressively to avoid duplicate RPC traffic.
-    if (pathname === "/dashboard") return;
+    // Rights replies can remain unsaved after focus leaves the textarea. Do not
+    // replace this queue underneath a reviewer; submissions refresh it explicitly.
+    if (pathname === "/dashboard" || pathname === "/privacy") return;
     let cancelled = false;
     let lastRefreshAt = Date.now();
 

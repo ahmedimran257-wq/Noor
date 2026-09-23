@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select extensions.plan(55);
+select extensions.plan(57);
 
 select extensions.ok(
   not has_table_privilege('authenticated', 'public.users', 'INSERT,UPDATE,DELETE'),
@@ -188,6 +188,29 @@ select extensions.ok(
     'public.apply_revenuecat_subscription_event(uuid,text,text,bigint,text,timestamptz,text,text,numeric,timestamptz)'
   ) is not null,
   'provider-ID RevenueCat RPC exists'
+);
+select extensions.ok(
+  exists (
+    select 1
+    from pg_indexes
+    where schemaname = 'public'
+      and tablename = 'subscription_events'
+      and indexname = 'idx_subscription_events_provider_event'
+      and indexdef like 'CREATE UNIQUE INDEX%'
+      and indexdef like '%provider_event_id%'
+  ),
+  'RevenueCat provider event IDs have a unique idempotency index'
+);
+select extensions.ok(
+  exists (
+    select 1
+    from pg_indexes
+    where schemaname = 'public'
+      and tablename = 'subscription_events'
+      and indexname = 'idx_subscription_events_user_time'
+      and indexdef like '%user_id%event_timestamp_ms DESC%'
+  ),
+  'subscriber billing history has a latest-event lookup index'
 );
 select extensions.ok(
   not has_function_privilege(

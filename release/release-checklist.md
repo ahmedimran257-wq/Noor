@@ -1,5 +1,22 @@
 # First production release checklist
 
+## Latest checkpoint — 23 September 2026
+
+The historical checks below are not blanket sign-off for the current candidate.
+The working tree is still unfrozen, and deployment/payment gates remain open.
+
+- Full Flutter suite: **603 tests passed** on 22 September after the privacy
+  localization fixes (`tmp-release-full-tests.log`).
+- Dart format: 306 files checked, zero changes on 22 September.
+- Flutter analysis rerun on 23 September: **no issues found**
+  (`tmp-release-analysis.log`).
+- Play product/entitlement/offering setup completed; see `revenuecat-qa.md`.
+  Actual Play-delivered purchase lifecycle testing is still pending.
+- New candidate source version is `1.0.0+42043`, selected after checking Play's
+  latest uploaded bundle (`42042`). Older artifact/version references below
+  describe historical tests only. The new candidate still needs exact-commit
+  CI, signed bundle validation and internal-track delivery.
+
 ## Automated and repository gates
 
 - [x] `flutter analyze` has zero findings.
@@ -29,7 +46,7 @@
 - [ ] Crashlytics initializes and the release mapping upload is wired. Upload
       symbols and confirm a controlled event in Firebase for the exact final
       candidate (current source version `1.0.0+27026`) before widening testers.
-- [x] RevenueCat Test Store exposes the current monthly and annual packages;
+- [x] RevenueCat Test Store exposes the current monthly and three-month packages;
       Android purchase, restore, cancellation, forced failure and accelerated
       renewal/expiry pass. Production webhook state remains a Play sandbox/staging
       gate.
@@ -53,7 +70,8 @@
 - [ ] Complete the standard Google Payments merchant profile, bank and tax setup required for Google Play Billing in India. Do not configure BillDesk or alternative billing for this India-only release.
 - [ ] Enrol in Play App Signing and save the app-signing SHA-1/SHA-256.
 - [ ] Replace/add the Play app-signing SHA-256 in Digital Asset Links and Firebase.
-- [ ] Create `silarah_monthly` and `silarah_annual` subscription base plans.
+- [ ] Create `silarah_monthly` and `silarah_three_month` subscription base plans
+      at INR 299/month and INR 749/3 months.
 - [ ] Import production products into RevenueCat and attach them to the Silarah
       entitlement/current offering.
 - [ ] Complete App content: Data safety, content rating, target audience, ads,
