@@ -1,18 +1,12 @@
 // SILARAH — Background Compute / Isolate Parsers
 // Offloads heavy JSON mapping/deserialization to background threads.
 import '../models/discovery_profile.dart';
-import '../cubits/chat/chat_state.dart';
 
 /// Parse real discovery RPC rows into the profile view model.
 List<DiscoveryProfile> parseProfilesInBackground(List<dynamic> list) {
   return list
       .map((row) => mapDbRowToDiscoveryProfile(row as Map<String, dynamic>))
       .toList();
-}
-
-/// Parse a single database profile row in the background.
-DiscoveryProfile parseSingleProfileInBackground(Map<String, dynamic> row) {
-  return mapDbRowToDiscoveryProfile(row);
 }
 
 /// Map a raw Supabase discovery row to the profile view model.
@@ -134,47 +128,4 @@ int _requiredAge(Map<String, dynamic> row) {
   throw StateError(
     'Supabase profile row is missing a valid adult age/date_of_birth.',
   );
-}
-
-/// Input parameter structure for parsing message lists in background
-class MessagesParseInput {
-  const MessagesParseInput(
-      {required this.messagesData, required this.myUserId});
-  final List<dynamic> messagesData;
-  final String myUserId;
-}
-
-/// Output result structure for parsing message lists in background
-class MessagesParseResult {
-  const MessagesParseResult(
-      {required this.chatMessages, required this.unreadCount});
-  final List<ChatMessage> chatMessages;
-  final int unreadCount;
-}
-
-/// Parse message rows in background isolate.
-MessagesParseResult parseMessagesInBackground(MessagesParseInput input) {
-  final List<ChatMessage> chatMessages = [];
-  int unreadCount = 0;
-
-  for (var msg in input.messagesData) {
-    final isMe = msg['sender_id'] == input.myUserId;
-    final readAt = msg['read_at'];
-    final isRead = readAt != null;
-    if (!isMe && !isRead) {
-      unreadCount++;
-    }
-
-    chatMessages.add(ChatMessage(
-      id: msg['id'] as String,
-      text: msg['content'] as String? ?? '',
-      sentAt: DateTime.parse(msg['created_at'] as String).toLocal(),
-      isMe: isMe,
-      status: isRead
-          ? MessageStatus.read
-          : (isMe ? MessageStatus.sent : MessageStatus.delivered),
-    ));
-  }
-  return MessagesParseResult(
-      chatMessages: chatMessages, unreadCount: unreadCount);
 }
