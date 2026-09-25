@@ -58,3 +58,40 @@ for (const route of ["/login/:path*", "/privacy/:path*", "/mfa/:path*", "/api/:p
   assert.ok(routes.includes(JSON.stringify(route)), `${route} needs the session middleware`);
 }
 console.log("PASS: private cache headers survive auth-cookie refresh; auth/privacy/API routes covered.");
+
+const liveSource = readFileSync(new URL("../src/app/api/live/route.ts", import.meta.url), "utf8");
+const liveCode = ts.transpileModule(liveSource, {
+  compilerOptions: { module: ts.ModuleKind.CommonJS },
+}).outputText;
+for (const failingRpc of [null, "admin_live_operations_snapshot", "admin_online_users"]) {
+  const exports = {};
+  const membershipQuery = {
+    select() { return this; },
+    eq() { return this; },
+    async maybeSingle() { return { data: { mfa_required: true } }; },
+  };
+  vm.runInNewContext(liveCode, { exports, require(name) {
+    if (name === "next/server") return { NextResponse: { json: (body, options) => ({ body, ...options }) } };
+    if (name === "@/lib/supabase/server") return { createClient: async () => ({
+      auth: {
+        getUser: async () => ({ data: { user: { id: "fixture-staff" } } }),
+        mfa: { getAuthenticatorAssuranceLevel: async () => ({ data: { currentLevel: "aal2" } }) },
+      },
+      from: () => membershipQuery,
+      rpc: async (rpc) => rpc === failingRpc
+        ? { error: { message: "sensitive database diagnostic fixture" } }
+        : { data: rpc === "admin_online_users" ? [] : { ready: true } },
+    }) };
+    throw new Error(`Unexpected dependency: ${name}`);
+  } });
+  const response = await exports.GET();
+  if (failingRpc) {
+    assert.equal(response.status, 500);
+    assert.equal(response.body.error, "Live operations are temporarily unavailable.");
+  } else {
+    assert.equal(response.body.snapshot.ready, true);
+    assert.equal(response.body.onlineUsers.length, 0);
+    assert.equal(response.headers["Cache-Control"], "no-store");
+  }
+}
+console.log("PASS: both live API failure paths hide backend diagnostics; success payload is preserved.");

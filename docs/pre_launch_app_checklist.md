@@ -20,7 +20,7 @@ marked complete from source inspection alone when it requires runtime testing.
 | 7 | Test file uploads | PENDING. Verify MIME/magic bytes, decoder limits, oversized files, slot quotas, reservation replay/expiry, ownership and revoked private-photo access. Test actual upload/finalization, not extension checks alone. |
 | 8 | Handle API errors | PENDING final runtime QA. Verify timeouts, offline/slow responses, retries, duplicate actions and cancellation without data loss or false success. |
 | 9 | Remove debug logs | PENDING release log review. Remove sensitive/noisy debug output, not useful sanitized operational events. Inspect release-device logs and provider logs for tokens, links, messages and PII. |
-| 10 | Hide sensitive errors | PENDING full boundary review. Return generic public errors/correlation IDs; keep sanitized diagnostics restricted. Callback errors do not print the URI or exception. |
+| 10 | Hide sensitive errors | IN PROGRESS. Callback errors do not print the URI or exception. Both admin live-API RPC failure paths now return a generic message rather than raw database diagnostics; executable regression checks reproduced the old leak and pass after the fix, with successful payload/status behavior preserved. Other boundaries and deployed verification remain PENDING. |
 | 11 | Test mobile layouts | PENDING exact-build QA. Small/large devices, all themes/locales, text scaling, keyboard/safe areas, accessibility and back-navigation motion. |
 | 12 | Test slow internet | PENDING exact-build device tests. Airplane mode, connection loss mid-write, slow responses, app resume and repeated taps. Existing offline-session regression checks pass locally. |
 | 13 | Test payments and webhooks | BLOCKED pending fresh Play-delivered internal build and successful RevenueCat Play package validation. Test license/sandbox purchases, restores, renewals, cancellation, expiry, refund/revocation, replay and out-of-order events. No real-money purchase authorized. |
@@ -29,7 +29,7 @@ marked complete from source inspection alone when it requires runtime testing.
 | 16 | Verify environment variables | PENDING exact-release validation. Fail closed on placeholders; verify production Supabase project, RevenueCat Google key, webhook environment/app/product allowlists and admin server-only settings without exposing values. |
 | 17 | Set up error tracking | PENDING runtime verification. Crashlytics and operational telemetry exist; verify receipt of a safe staging event, redaction, source/symbol retention and access controls. |
 | 18 | Review database indexes | IN PROGRESS. Review actual query/RLS paths, foreign keys, uniqueness and idempotency constraints; run advisors and representative EXPLAIN checks. Do not add indexes merely for count. |
-| 19 | Configure automated backups | IN PROGRESS. Weekly production backup task is enabled; next run 27 Sep at 03:00 IST. Last scheduled run (20 Sep) returned nonzero result 3221225786, so registration is not proof of successful automation. A separate 23 Sep application-data/schema backup exists, but does not cover all Auth/Storage/Vault state. Verify a successful scheduled run, retention/access, storage recovery and a restore drill before claiming disaster recovery. |
+| 19 | Configure automated backups | PARTIAL PASS. Existing weekly production task is enabled; next run 27 Sep at 03:00 IST. A Task Scheduler-triggered test completed successfully on 25 Sep (exit 0), and all three file checksums plus the archive catalogue verify for 87 app-owned tables. The earlier 20 Sep attempt had a nonzero result. Auth/Storage/Vault recovery, retention/access and a full restore drill remain PENDING; an application-only backup is not complete disaster recovery. |
 | 20 | Legal and privacy compliance | PENDING qualified review. Verify truthful consent, retention/deletion/export handling, store declarations and actual processor/data flows. Operator/grievance legal identity remains unresolved; the generic desk label is not proof of compliance or protection from fines. |
 | 21 | Audit dependency vulnerabilities | Admin PASS (local, 25 Sep): full locked audit and isolated npm ci report zero advisories after updating js-yaml to 4.3.2 and Browserslist to 4.29.1 with its metadata dependencies. The previous full audit had three high-severity package entries in development tooling; production-only audit was already zero. CI now audits development dependencies too. Flutter/native and Edge dependency advisory review remains PENDING; an empty npm audit is not proof of complete application security. |
 | 22 | Set cache-control headers | IN PROGRESS. Admin session middleware now explicitly sets private/no-store after cookie refresh; login and privacy routes are included. Executable mock-boundary tests pass for refreshed and unchanged sessions. CDN/deployed readback and media/API coverage remain PENDING. Public static-asset caching was not disabled. |
@@ -51,8 +51,9 @@ marked complete from source inspection alone when it requires runtime testing.
   The same 23 assertions also pass against real Supabase staging Auth/session
   functions with migration 265 applied inside a rollback-only transaction.
   Readback confirms migration history remains at 264, zero fixture users,
-  no test schema and no temporary deadline helper. Full Supabase clean reset
-  and permanent deployment verification remain required.
+  no test schema and no temporary deadline helper. The full Supabase clean
+  reset and database CI subsequently passed on commit 739a7a6; permanent
+  deployment verification remains required.
 - `node admin/scripts/test-session-cache.mjs`: passed (25 Sep), including
   the response replacement performed during cookie refresh.
 - First full Windows Flutter run: 613 passed, six failures. Normalizing tracked
@@ -68,6 +69,11 @@ marked complete from source inspection alone when it requires runtime testing.
   production build pass with the updated isolated dependencies (25 Sep).
   The build emits upstream Next/Supabase Edge-runtime compatibility warnings;
   Cloudflare-adapter/deployed verification is still required before deployment.
+- All four GitHub CI jobs passed on commit 739a7a6 (run 36117145817): secret
+  scan, Flutter/release build, admin, and Supabase migrations/functions.
+  The CI bundle uses a CI-only signing identity; it is not a production AAB.
+- Existing Task Scheduler backup test completed at 09:15 UTC on 25 Sep;
+  `20260925T091335Z` contains 87 app-owned tables and passes the backup verifier.
 - Staging Security Advisor results still need triage. They include extension
   placement/PostGIS reference-table warnings and callable definer functions;
   warnings are not automatically exploitable findings, and blanket revocation
