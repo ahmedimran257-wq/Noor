@@ -17,9 +17,9 @@ marked complete from source inspection alone when it requires runtime testing.
 | 4 | Secure database rules | IN PROGRESS. Complete effective RLS, view, definer-function and grant review; run fresh Supabase reset/database tests and advisors. Source migration count alone is not authorization proof. Never reset production. |
 | 5 | Validate user inputs | PENDING full coverage. Include malformed/oversized inputs, unexpected JSON keys, duplicate query parameters, ownership fields, pagination and boundary values; enforce server-side. Callback malformed/ambiguous input tests pass locally. |
 | 6 | Add API rate limits | IN PROGRESS review. Shared distributed rate limiting and authenticated media limits exist. Verify all costly/public endpoints, atomic concurrency behavior and failure handling; do not trust client throttles. |
-| 7 | Test file uploads | PENDING. Verify MIME/magic bytes, decoder limits, oversized files, slot quotas, reservation replay/expiry, ownership and revoked private-photo access. Test actual upload/finalization, not extension checks alone. |
+| 7 | Test file uploads | IN PROGRESS. Upload-token expiry metadata now matches Supabase's actual two-hour validity; the separate database reservation/submission deadlines and five-minute read-token TTL are unchanged. The app does not use upload expiry metadata to extend reservations. Photo-related source-contract tests pass (23 tests, 25 Sep). Decoder allocation occurs before dimension validation and needs bounded investigation; no memory-exhaustion test was run. Actual upload/finalization, replay/expiry, ownership and revoked-photo access remain PENDING. |
 | 8 | Handle API errors | PENDING final runtime QA. Verify timeouts, offline/slow responses, retries, duplicate actions and cancellation without data loss or false success. |
-| 9 | Remove debug logs | PENDING release log review. Remove sensitive/noisy debug output, not useful sanitized operational events. Inspect release-device logs and provider logs for tokens, links, messages and PII. |
+| 9 | Remove debug logs | IN PROGRESS. Removed routine signed-media success logs containing member/viewer/owner IDs; retained error and security signals. Release-device/provider log review for tokens, links, messages and PII remains PENDING. |
 | 10 | Hide sensitive errors | IN PROGRESS. Callback errors do not print the URI or exception. Both admin live-API RPC failure paths now return a generic message rather than raw database diagnostics; executable regression checks reproduced the old leak and pass after the fix, with successful payload/status behavior preserved. Other boundaries and deployed verification remain PENDING. |
 | 11 | Test mobile layouts | PENDING exact-build QA. Small/large devices, all themes/locales, text scaling, keyboard/safe areas, accessibility and back-navigation motion. |
 | 12 | Test slow internet | PENDING exact-build device tests. Airplane mode, connection loss mid-write, slow responses, app resume and repeated taps. Existing offline-session regression checks pass locally. |
@@ -32,7 +32,7 @@ marked complete from source inspection alone when it requires runtime testing.
 | 19 | Configure automated backups | PARTIAL PASS. Existing weekly production task is enabled; next run 27 Sep at 03:00 IST. A Task Scheduler-triggered test completed successfully on 25 Sep (exit 0), and all three file checksums plus the archive catalogue verify for 87 app-owned tables. The earlier 20 Sep attempt had a nonzero result. Auth/Storage/Vault recovery, retention/access and a full restore drill remain PENDING; an application-only backup is not complete disaster recovery. |
 | 20 | Legal and privacy compliance | PENDING qualified review. Verify truthful consent, retention/deletion/export handling, store declarations and actual processor/data flows. Operator/grievance legal identity remains unresolved; the generic desk label is not proof of compliance or protection from fines. |
 | 21 | Audit dependency vulnerabilities | Admin PASS (local, 25 Sep): full locked audit and isolated npm ci report zero advisories after updating js-yaml to 4.3.2 and Browserslist to 4.29.1 with its metadata dependencies. The previous full audit had three high-severity package entries in development tooling; production-only audit was already zero. CI now audits development dependencies too. Flutter/native and Edge dependency advisory review remains PENDING; an empty npm audit is not proof of complete application security. |
-| 22 | Set cache-control headers | IN PROGRESS. Admin session middleware now explicitly sets private/no-store after cookie refresh; login and privacy routes are included. Executable mock-boundary tests pass for refreshed and unchanged sessions. CDN/deployed readback and media/API coverage remain PENDING. Public static-asset caching was not disabled. |
+| 22 | Set cache-control headers | IN PROGRESS. Admin session middleware explicitly sets private/no-store after cookie refresh; login and privacy routes are included. Local Cloudflare worker responses verify login 200, protected-route redirects and unauthenticated live API 401 with private/no-store. Shared Edge response defaults now set no-store, including signed photo links and upload tokens; new regression tests failed before the fix and pass after it. Explicit private location caching and public static assets are unchanged. Production readback and actual Storage object/CDN cache-revocation behavior remain PENDING; API response headers do not control cached image bytes. |
 
 ## Verification already observed on the isolated fix branch
 
@@ -61,17 +61,25 @@ marked complete from source inspection alone when it requires runtime testing.
   assertions. Full rerun: **619 passed, zero failures** (25 Sep, 6m55s).
   `.gitattributes` pins consistent checkout endings; no bulk content rewrite
   is included in the Git diff.
-- Edge Functions: formatting (20 files), lint (19 files), typechecks for all
-  12 entrypoints, and all 10 existing tests pass with the frozen lockfile.
+- Edge Functions: formatting (21 files), lint (20 files), typechecks for all
+  12 entrypoints, and all 13 tests pass with the frozen lockfile (25 Sep).
+- The shared cache regression reproduced two failures before the header fix;
+  all three new checks now pass, including preflight and the existing explicit
+  private location-cache override. The five selected Flutter photo suites
+  pass all 23 tests after upload-expiry metadata/log cleanup.
 - Existing deployed admin security-header test passes (25 Sep). This verifies
   the current deployed headers, not the pending no-cache middleware patch.
 - Admin full lint, session-cache regression test, TypeScript check and
   production build pass with the updated isolated dependencies (25 Sep).
   The build emits upstream Next/Supabase Edge-runtime compatibility warnings;
-  Cloudflare-adapter/deployed verification is still required before deployment.
-- All four GitHub CI jobs passed on commit 739a7a6 (run 36117145817): secret
+  OpenNext Cloudflare build also passes on 30126b9. A local worker preview
+  verifies private/no-store for login, protected redirects and unauthenticated
+  live API responses, then was stopped. Production readback remains pending.
+- All four GitHub CI jobs passed on commit 30126b9 (run 36143463090), as well
+  as 739a7a6 (run 36117145817): secret
   scan, Flutter/release build, admin, and Supabase migrations/functions.
-  The CI bundle uses a CI-only signing identity; it is not a production AAB.
+  These precede the latest Edge cache/metadata/log patch, whose full CI must
+  rerun. The CI bundle uses a CI-only signing identity; it is not a production AAB.
 - Existing Task Scheduler backup test completed at 09:15 UTC on 25 Sep;
   `20260925T091335Z` contains 87 app-owned tables and passes the backup verifier.
 - Staging Security Advisor results still need triage. They include extension

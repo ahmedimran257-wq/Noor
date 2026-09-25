@@ -81,7 +81,7 @@ void main() {
       expect(authCubit, contains('SupabaseService.recoverSession()'));
       expect(authCubit, contains('Never hydrate the authenticated UI'));
       expect(photoService, contains('currentUserIdOrRefresh()'));
-      expect(signedUrlFunction, contains('UPLOAD_URL_EXPIRES_IN = 300'));
+      expect(signedUrlFunction, contains('UPLOAD_URL_EXPIRES_IN = 7200'));
       expect(signedUrlFunction, contains('READ_URL_EXPIRES_IN = 300'));
       expect(signedUrlFunction, contains('.getUser(userToken)'));
       expect(
@@ -94,6 +94,14 @@ void main() {
         signedUrlFunction,
         isNot(contains('createClient(SUPABASE_URL, SUPABASE_ANON_KEY')),
       );
+    });
+
+    test('upload metadata matches Supabase TTL without verbose media logs', () {
+      final verification = File(
+        'supabase/functions/photo-verification/index.ts',
+      ).readAsStringSync();
+      expect(verification, contains('URL_TTL_SECONDS = 7200'));
+      expect(signedUrlFunction, isNot(contains('console.log(')));
     });
   });
 }
