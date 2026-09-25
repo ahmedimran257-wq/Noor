@@ -8,6 +8,7 @@
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "test:security-headers": "node scripts/verify-security-headers.mjs",
+    "test:session-cache": "node scripts/test-session-cache.mjs",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "start": "next start",
     "lint": "eslint .",
@@ -48,6 +49,6 @@
     "minimatch@10.2.5": {
       "brace-expansion": "5.0.9"
     },
-    "js-yaml": "4.3.1"
+    "js-yaml": "4.3.2"
   }
 }

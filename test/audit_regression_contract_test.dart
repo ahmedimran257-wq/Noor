@@ -26,7 +26,7 @@ void main() {
     expect(source, isNot(contains('debugPrint(uri')));
     expect(source, isNot(contains('debugPrint(error')));
     expect(source, contains('exchangeCodeForSession'));
-    expect(source, contains('setSession(refreshToken)'));
+    expect(source, isNot(contains('setSession(')));
   });
 
   test('DigiLocker product code and deployment source are absent', () {

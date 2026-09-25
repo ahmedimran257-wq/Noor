@@ -23,5 +23,10 @@ export async function updateSession(request: NextRequest) {
   );
 
   await supabase.auth.getUser();
+  // Refreshing auth cookies must never make a response reusable by a CDN.
+  // Set these after getUser because setAll replaces the response object.
+  response.headers.set("Cache-Control", "private, no-store, max-age=0");
+  response.headers.set("Pragma", "no-cache");
+  response.headers.set("Expires", "0");
   return response;
 }

@@ -2,6 +2,13 @@
 
 Saved: 14 September 2026
 
+## Expanded release gate — 25 September 2026
+
+Use [the pre-launch app checklist](pre_launch_app_checklist.md) alongside this
+billing/release sequence. It tracks all 22 requested security, reliability and
+operational checks plus safe test-data removal. Cleanup and incremental security
+fixes are still isolated; the historical 42043 AAB does not include them.
+
 ## Current candidate — 23 September 2026
 
 - Play Console's latest releases/bundles page shows uploaded code `42042`

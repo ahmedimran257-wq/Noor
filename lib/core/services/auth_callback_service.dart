@@ -2,15 +2,21 @@ import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'supabase_service.dart';
 
-/// Installs sessions returned through the verified SILARAH auth callback.
+/// Exchanges device-bound sign-in codes from the verified SILARAH callback.
 ///
 /// Callback credentials are consumed here and are never forwarded to widgets,
 /// logs, analytics, or error messages.
 class AuthCallbackService {
-  AuthCallbackService._();
+  AuthCallbackService._() : _auth = null;
+
+  @visibleForTesting
+  AuthCallbackService.forTesting(GoTrueClient auth) : _auth = auth;
+
+  final GoTrueClient? _auth;
 
   static final instance = AuthCallbackService._();
   static const callbackHost = 'silarah.com';
@@ -38,25 +44,29 @@ class AuthCallbackService {
   static bool isAuthCallback(Uri uri) =>
       uri.scheme == 'https' &&
       uri.host.toLowerCase() == callbackHost &&
+      uri.port == 443 &&
+      uri.userInfo.isEmpty &&
       uri.path == callbackPath;
 
   Future<bool> handleUri(Uri uri) async {
-    if (!isAuthCallback(uri) || !SupabaseService.isInitialized) return false;
+    if (!isAuthCallback(uri) || uri.hasFragment) return false;
+    final auth = _auth ??
+        (SupabaseService.isInitialized ? SupabaseService.client.auth : null);
+    if (auth == null) return false;
 
     try {
-      final code = uri.queryParameters['code']?.trim();
-      if (code != null && code.isNotEmpty) {
-        await SupabaseService.client.auth.exchangeCodeForSession(code);
-        return true;
+      final codes = uri.queryParametersAll['code'];
+      if (codes == null || codes.length != 1 || codes.single.trim().isEmpty) {
+        return false;
+      }
+      if (const ['access_token', 'refresh_token', 'error', 'error_description']
+          .any(uri.queryParameters.containsKey)) {
+        return false;
       }
 
-      final fragment = uri.fragment.isEmpty
-          ? const <String, String>{}
-          : Uri.splitQueryString(uri.fragment);
-      final refreshToken = fragment['refresh_token']?.trim();
-      if (refreshToken == null || refreshToken.isEmpty) return false;
-
-      await SupabaseService.client.auth.setSession(refreshToken);
+      // A matching hostname proves app routing, not who initiated sign-in.
+      // PKCE requires this device's verifier; link-supplied tokens do not.
+      await auth.exchangeCodeForSession(codes.single.trim());
       return true;
     } catch (_) {
       // Never include the URI or exception: either may contain credentials.
