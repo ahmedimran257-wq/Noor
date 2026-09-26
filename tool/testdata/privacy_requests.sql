@@ -4,6 +4,8 @@ INSERT INTO auth.users(id) VALUES
  ('00000000-0000-4000-8000-000000000002'),
  ('00000000-0000-4000-8000-000000000003');
 INSERT INTO public.admin_memberships VALUES ('00000000-0000-4000-8000-000000000003','support','active');
+INSERT INTO auth.sessions(id, user_id, created_at) VALUES
+ ('00000000-0000-4000-8000-000000000013','00000000-0000-4000-8000-000000000003',now());
 SELECT test.assert(NOT has_function_privilege('anon', 'public.submit_my_privacy_request(uuid,text,text)', 'EXECUTE'), 'anonymous intake denied');
 SELECT test.assert(NOT has_table_privilege('authenticated', 'public.privacy_requests', 'INSERT,UPDATE,DELETE'), 'raw member writes denied');
 SELECT test.assert(NOT has_table_privilege('authenticated', 'private.privacy_request_events', 'SELECT,INSERT,UPDATE,DELETE'), 'audit trail private');
@@ -29,6 +31,7 @@ SELECT test.assert((SELECT count(*) = 0 FROM public.privacy_requests), 'second m
 SELECT test.assert(public.submit_my_privacy_request('00000000-0000-4000-8000-000000000010', 'access', 'Export my information') <> :'request_id', 'retry keys isolated by member');
 SELECT test.assert((SELECT count(*) = 1 FROM public.privacy_requests), 'second member only sees own request');
 SET LOCAL request.jwt.claim.sub = '00000000-0000-4000-8000-000000000003';
+SET LOCAL request.jwt.claim.session_id = '00000000-0000-4000-8000-000000000013';
 SELECT test.assert((SELECT count(*) = 0 FROM public.privacy_requests), 'staff without MFA cannot read queue');
 SELECT test.reject(format('SELECT public.review_privacy_request(%L, %L, %L, now())', :'request_id','resolved','Completed requested action'), 'privacy_staff_required');
 SET LOCAL request.jwt.claim.aal = 'aal2';
@@ -43,12 +46,12 @@ SELECT updated_at AS resolved_updated FROM public.privacy_requests WHERE id = :'
 SELECT test.reject(format('SELECT public.review_privacy_request(%L, %L, %L, %L)', :'request_id','reviewing','Reopen the resolved request',:'resolved_updated'), 'privacy_request_already_resolved');
 RESET ROLE;
 SELECT test.assert((SELECT count(*) = 2 FROM private.privacy_request_events WHERE request_id = :'request_id'), 'exact review retry does not duplicate audit events');
-UPDATE public.admin_memberships SET status = 'revoked';
+UPDATE public.admin_memberships SET status = 'revoked' WHERE user_id = '00000000-0000-4000-8000-000000000003';
 SET LOCAL ROLE authenticated;
 SELECT test.assert((SELECT count(*) = 0 FROM public.privacy_requests), 'revoked staff loses queue access');
 SELECT test.reject(format('SELECT public.review_privacy_request(%L, %L, %L, %L)', :'request_id','resolved','Completed requested action',:'resolved_updated'), 'privacy_staff_required');
 RESET ROLE;
-UPDATE public.admin_memberships SET status = 'active', role = 'moderator';
+UPDATE public.admin_memberships SET status = 'active', role = 'moderator' WHERE user_id = '00000000-0000-4000-8000-000000000003';
 SET LOCAL ROLE authenticated;
 SELECT test.assert((SELECT count(*) = 0 FROM public.privacy_requests), 'moderator cannot read privacy queue');
 SET LOCAL request.jwt.claim.sub = '00000000-0000-4000-8000-000000000001';

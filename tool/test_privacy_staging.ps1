@@ -33,9 +33,9 @@ try {
     $sql = $sql.Replace('RESET ROLE;', 'SET LOCAL ROLE postgres;')
     # Supabase auth.jwt reads the combined claims object; update it whenever
     # a fixture switches identity or assurance. The real auth functions remain.
-    $sql = [regex]::Replace($sql, '(?m)^(SET LOCAL request\.jwt\.claim\.(?:sub|aal|role) = [^;]+;)', {
+    $sql = [regex]::Replace($sql, '(?m)^(SET LOCAL request\.jwt\.claim\.(?:sub|aal|role|session_id) = [^;]+;)', {
       param($match)
-      $match.Value + "`nSELECT set_config('request.jwt.claims', jsonb_build_object('sub', current_setting('request.jwt.claim.sub', true), 'aal', current_setting('request.jwt.claim.aal', true), 'role', current_setting('request.jwt.claim.role', true))::text, true);"
+      $match.Value + "`nSELECT set_config('request.jwt.claims', jsonb_build_object('sub', current_setting('request.jwt.claim.sub', true), 'aal', current_setting('request.jwt.claim.aal', true), 'role', current_setting('request.jwt.claim.role', true), 'session_id', current_setting('request.jwt.claim.session_id', true))::text, true);"
     })
     $wrapped = "BEGIN;`nSET LOCAL ROLE postgres;`nSET LOCAL statement_timeout = '30s';`n$helpers`n$sql`nROLLBACK;"
     $wrapped | & $psql -X -q -v ON_ERROR_STOP=1

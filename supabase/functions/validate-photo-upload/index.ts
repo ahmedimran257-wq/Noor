@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { Image } from "imagescript";
 import { encode } from "blurhash";
 import { corsHeaders } from "../_shared/cors.ts";
+import { hasSafeJpegDimensions } from "./jpeg_dimensions.ts";
 import {
   consumeDistributedRateLimit,
   rateLimitHeaders,
@@ -96,6 +97,11 @@ Deno.serve(async (req: Request) => {
     ) {
       await admin.storage.from(BUCKET_NAME).remove([storagePath]);
       return json(422, { error: "invalid_image" });
+    }
+
+    if (!hasSafeJpegDimensions(bytes)) {
+      await admin.storage.from(BUCKET_NAME).remove([storagePath]);
+      return json(422, { error: "invalid_image_dimensions" });
     }
 
     let image: Image;

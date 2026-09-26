@@ -175,7 +175,16 @@ class SupabaseService {
       );
     }
 
-    await Supabase.initialize(url: url, anonKey: anonKey);
+    await Supabase.initialize(
+      url: url,
+      anonKey: anonKey,
+      authOptions: const FlutterAuthClientOptions(
+        authFlowType: AuthFlowType.pkce,
+        // AuthCallbackService owns URI validation and exchange. A second
+        // listener would bypass its allowlist and race the one-time code.
+        detectSessionInUri: false,
+      ),
+    );
     _client = Supabase.instance.client;
     _isInitialized = true;
   }
