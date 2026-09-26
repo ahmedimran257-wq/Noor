@@ -1,6 +1,8 @@
 BEGIN;
 INSERT INTO auth.users(id) VALUES ('00000000-0000-4000-8000-000000000003');
 INSERT INTO public.admin_memberships VALUES ('00000000-0000-4000-8000-000000000003','support','active');
+INSERT INTO auth.sessions(id, user_id, created_at) VALUES
+ ('00000000-0000-4000-8000-000000000013','00000000-0000-4000-8000-000000000003',now());
 INSERT INTO public.privacy_requests(id, request_key, kind, details, status, resolved_at)
 VALUES
  ('00000000-0000-4000-8000-000000000101',gen_random_uuid(),'access','Synthetic old resolved request','resolved',now()-interval '13 months'),
@@ -10,10 +12,11 @@ VALUES
 SELECT test.assert(NOT has_function_privilege('authenticated','private.purge_expired_privacy_requests()','EXECUTE'), 'members cannot run retention purge');
 SET LOCAL request.jwt.claim.sub = '00000000-0000-4000-8000-000000000003';
 SET LOCAL request.jwt.claim.aal = 'aal2';
+SET LOCAL request.jwt.claim.session_id = '00000000-0000-4000-8000-000000000013';
 SET LOCAL ROLE authenticated;
 SELECT test.reject($q$SELECT public.set_privacy_request_hold('00000000-0000-4000-8000-000000000102', now()+interval '7 days','Synthetic legal hold reference')$q$, 'privacy_super_admin_required');
 RESET ROLE;
-UPDATE public.admin_memberships SET role='super_admin';
+UPDATE public.admin_memberships SET role='super_admin' WHERE user_id = '00000000-0000-4000-8000-000000000003';
 SET LOCAL ROLE authenticated;
 SELECT test.reject($q$SELECT public.set_privacy_request_hold('00000000-0000-4000-8000-000000000102', now()+interval '2 years','Synthetic legal hold reference')$q$, 'invalid_privacy_hold');
 SELECT test.reject($q$SELECT public.set_privacy_request_hold('00000000-0000-4000-8000-000000000102', now()+interval '7 days','short')$q$, 'invalid_privacy_hold');

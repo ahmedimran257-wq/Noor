@@ -2,6 +2,21 @@
 
 Saved: 14 September 2026
 
+## Next signed candidate — 26 September 2026
+
+- Play Console still shows uploaded code `42042` and the inactive old draft.
+- Reserve `1.0.0+42044` for the cleanup/security candidate, distinct from the
+  historical local 42043 bundle. Do not publish 42042 or reuse its artifact.
+- Source commit `7b57697` passed all four CI jobs. The subsequent billing/
+  privacy test updates and version bump require their own exact-head gate.
+- Staging now has migration 265 and the JPEG validation guard. Live upload,
+  replay and rollback-only privacy/billing checks pass. Production migration
+  and deployment are still pending; these are not Play purchase results.
+- The 87-table app-owned backup restore drill passed in an ephemeral staging
+  database; managed Auth/Storage/Vault and full-service recovery remain separate.
+- Keep the candidate off Play until the remaining release gates and bundle
+  identity/signature checks are complete. Internal publication requires approval.
+
 ## Expanded release gate — 25 September 2026
 
 Use [the pre-launch app checklist](pre_launch_app_checklist.md) alongside this
