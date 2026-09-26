@@ -1,6 +1,6 @@
 # Silarah pre-launch checklist
 
-Updated: 25 September 2026. Applies to the next release candidate, not a claim
+Updated: 26 September 2026. Applies to the next release candidate, not a claim
 that the existing AAB contains the pending cleanup/security fixes.
 
 Status meanings: **PASS (local)** means the named local check passed, not that
@@ -12,19 +12,19 @@ marked complete from source inspection alone when it requires runtime testing.
 | --- | --- | --- |
 | 0 | Remove test data | Production registry checked 25 Sep: zero fixture batches and zero registered fixture members. Nothing identified there required deletion. Broader staging/manual-fixture inventory PENDING; preserve real users, payment QA accounts, audit evidence, backups and project memory. No production deletion performed. |
 | 1 | Hide API keys | PASS (local secret scan, 24 Sep); production verification PENDING. Keep service-role/provider/signing secrets server-side and out of Git, logs and bundles. Supabase publishable/anon and RevenueCat public SDK keys are intentionally client-visible; protect their APIs with authorization, not obfuscation. Rotate any actually exposed secret. |
-| 2 | Protect admin routes | IN PROGRESS. Existing staff layout/MFA checks inspected. Migration 265 adds Auth-session-bound expiry to the shared database guard, covering direct RPC/RLS paths too. Complete database tests and deployment readback; verify alternate API/server-action routes. |
+| 2 | Protect admin routes | IN PROGRESS. Migration 265 is deployed to staging (26 Sep) after a CLI dry run showing only that migration. All 23 staff-session assertions pass against the deployed functions; readback confirms migration 265, the private helper's denied client access, and zero retained test users/schema. Production deployment and alternate API/server-action verification remain pending. |
 | 3 | Check auth and permissions | IN PROGRESS. Callback account-substitution reproduced and patched locally. Six callback tests plus nearby regression tests pass; Flutter analysis passes. Test sign-in/sign-out, account switching, MFA, revoked sessions and real-device deep links. |
 | 4 | Secure database rules | IN PROGRESS. Complete effective RLS, view, definer-function and grant review; run fresh Supabase reset/database tests and advisors. Source migration count alone is not authorization proof. Never reset production. |
 | 5 | Validate user inputs | PENDING full coverage. Include malformed/oversized inputs, unexpected JSON keys, duplicate query parameters, ownership fields, pagination and boundary values; enforce server-side. Callback malformed/ambiguous input tests pass locally. |
 | 6 | Add API rate limits | IN PROGRESS review. Shared distributed rate limiting and authenticated media limits exist. Verify all costly/public endpoints, atomic concurrency behavior and failure handling; do not trust client throttles. |
-| 7 | Test file uploads | IN PROGRESS. Upload-token expiry metadata now matches Supabase's actual two-hour validity; the separate database reservation/submission deadlines and five-minute read-token TTL are unchanged. The app does not use upload expiry metadata to extend reservations. Photo-related source-contract tests pass (23 tests, 25 Sep). Decoder allocation occurs before dimension validation and needs bounded investigation; no memory-exhaustion test was run. Actual upload/finalization, replay/expiry, ownership and revoked-photo access remain PENDING. |
+| 7 | Test file uploads | IN PROGRESS. Upload-token expiry metadata matches Supabase's two-hour validity; reservation/submission deadlines and five-minute read-token TTL are unchanged. A new pre-decode JPEG geometry guard rejects oversized/ambiguous headers before allocation, retaining the existing dimension limits and post-decode validation. The original decoder-call regression fails without the guard and passes with it; real baseline, progressive, grayscale and CMYK images still decode/publish through mocked network boundaries. All 23 nearby Flutter tests pass (26 Sep). Deployed upload/finalization, replay/expiry, ownership, revoked-photo access and peak-memory behavior for allowed images remain PENDING. No memory-exhaustion test was run. |
 | 8 | Handle API errors | PENDING final runtime QA. Verify timeouts, offline/slow responses, retries, duplicate actions and cancellation without data loss or false success. |
 | 9 | Remove debug logs | IN PROGRESS. Removed routine signed-media success logs containing member/viewer/owner IDs; retained error and security signals. Release-device/provider log review for tokens, links, messages and PII remains PENDING. |
 | 10 | Hide sensitive errors | IN PROGRESS. Callback errors do not print the URI or exception. Both admin live-API RPC failure paths now return a generic message rather than raw database diagnostics; executable regression checks reproduced the old leak and pass after the fix, with successful payload/status behavior preserved. Other boundaries and deployed verification remain PENDING. |
 | 11 | Test mobile layouts | PENDING exact-build QA. Small/large devices, all themes/locales, text scaling, keyboard/safe areas, accessibility and back-navigation motion. |
 | 12 | Test slow internet | PENDING exact-build device tests. Airplane mode, connection loss mid-write, slow responses, app resume and repeated taps. Existing offline-session regression checks pass locally. |
 | 13 | Test payments and webhooks | BLOCKED pending fresh Play-delivered internal build and successful RevenueCat Play package validation. Test license/sandbox purchases, restores, renewals, cancellation, expiry, refund/revocation, replay and out-of-order events. No real-money purchase authorized. |
-| 14 | Try to break the app | IN PROGRESS. Source audit has two validated findings being repaired; scope is still partial. Use isolated fixtures/staging for adversarial tests; no production load/destructive testing. Independent audit worker unavailable due usage limits. |
+| 14 | Try to break the app | IN PROGRESS. Source audit has two validated findings being repaired; repository coverage remains partial. A separate boundary investigator and bypass/regression reviewer examined the JPEG fix on 26 Sep; the review's real-format test gap was addressed. Use isolated fixtures/staging for adversarial tests; no production load/destructive testing. |
 | 15 | Configure CORS | PENDING endpoint-by-endpoint verification. Distinguish browser origin restrictions from authentication; CORS alone does not authorize native/API callers. Test preflight, allowed origins and rejected origins. |
 | 16 | Verify environment variables | PENDING exact-release validation. Fail closed on placeholders; verify production Supabase project, RevenueCat Google key, webhook environment/app/product allowlists and admin server-only settings without exposing values. |
 | 17 | Set up error tracking | PENDING runtime verification. Crashlytics and operational telemetry exist; verify receipt of a safe staging event, redaction, source/symbol retention and access controls. |
@@ -36,6 +36,22 @@ marked complete from source inspection alone when it requires runtime testing.
 
 ## Verification already observed on the isolated fix branch
 
+- All four CI jobs passed on 7a2478e (run 36145530159), including clean database
+  reset/tests and the CI-signed Android bundle. The newer JPEG patch needs its
+  own full CI run; no production upload-signed AAB has been built from it.
+- 26 Sep: the JPEG guard, actual handler regression and parser boundary tests
+  pass: all 17 Edge tests, including five handler subtests, with frozen lock.
+  Formatting (24 files), lint (23 files), all 12 entrypoint typechecks, secret
+  scan, migration validation and 23 selected Flutter photo tests pass.
+  The lockfile now also records runtime SDK modules exercised by the handler
+  test; no dependency version or application dependency was added.
+- 26 Sep: only migration 265 applied to staging. The 23-assertion readback test
+  uses the deployed functions without replacing them; synthetic rows/schema
+  are rolled back. Production was not migrated. The isolated fix checkout is
+  now linked to staging; do not assume its CLI link targets production.
+- Staging reports PostgreSQL 17.6. Review the newly announced 15.19/17.11
+  security update and extension compatibility before scheduling an upgrade;
+  no database engine upgrade or extension relocation was attempted.
 - Original callback regression failed: an attacker-token callback returned true.
 - After the fix, 26 tests across callback, audit contracts, offline recovery,
   session cleanup and routing passed. The callback suite was then expanded to
