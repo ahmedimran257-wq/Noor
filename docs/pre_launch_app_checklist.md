@@ -1,6 +1,6 @@
 # Silarah pre-launch checklist
 
-Updated: 26 September 2026. Applies to the next release candidate, not a claim
+Updated: 27 September 2026. Applies to the next release candidate, not a claim
 that the existing AAB contains the pending cleanup/security fixes.
 
 Status meanings: **PASS (local)** means the named local check passed, not that
@@ -124,6 +124,35 @@ marked complete from source inspection alone when it requires runtime testing.
   placement/PostGIS reference-table warnings and callable definer functions;
   warnings are not automatically exploitable findings, and blanket revocation
   would break the application's checked RPC interfaces.
+
+## 27 September billing-session and error-display follow-up
+
+- All four CI jobs passed for `126badb` (run `36238585588`). The newer
+  working-tree changes below require a new exact-head gate; that earlier CI
+  result does not certify them.
+- Four controlled delayed-response tests reproduced late login/refresh/restore
+  state returning after clear and unordered native login/logout. Separate
+  reproductions caught a cached previous-account listener event and a failed
+  SDK identity switch reading the previous account's entitlement.
+- The fix invalidates old session work, serializes native identity changes
+  with purchase/restore, refreshes current SDK state instead of trusting a
+  replayed event, and retries failed identity setup before using store access.
+  Pricing/attribute/cache updates also reject stale completions. Account
+  deletion now uses the shared sign-out path instead of a second direct store
+  logout. No new dependency was added.
+- The billing-session suite includes normal paid login, purchase and
+  restore, rapid account switch, same-user re-login, cached native events,
+  failed identity setup, and logout during purchase/restore. Restore network
+  failures now reach the generic retry message instead of falsely saying no
+  purchases exist. These use mocked
+  store calls and an isolated HTTP client: no live payment or production data.
+- Account-deletion errors no longer interpolate backend exceptions into UI
+  copy. The old behavior failed the regression; the existing generic localized
+  message passes in all 10 supported languages.
+- Connected OnePlus IN2011 was verified on build 42042 with the matching upload
+  certificate on 26 Sep. No app was uninstalled, no data was cleared, and no
+  newer build was installed. Per the user's follow-up, building and installing
+  remain on hold until fixes and checks are ready.
 
 ## Release ordering
 

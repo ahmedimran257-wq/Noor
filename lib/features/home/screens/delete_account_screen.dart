@@ -10,7 +10,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/services/fcm_service.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
@@ -56,14 +55,8 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
             params: {'p_reason': _reason},
           );
 
-          // 2. RevenueCat logOut
-          try {
-            await Purchases.logOut();
-          } catch (e) {
-            debugPrint('RevenueCat logOut error: $e');
-          }
-
-          // 3. FCM onUserLogout to delete token
+          // Store identity is cleared by the shared auth sign-out listener.
+          // FCM onUserLogout deletes the device token before sign-out.
           try {
             await FcmService.instance.onUserLogout();
           } catch (e) {

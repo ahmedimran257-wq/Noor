@@ -189,6 +189,13 @@ class SupabaseService {
     _isInitialized = true;
   }
 
+  /// Installs an isolated client for tests without contacting live services.
+  @visibleForTesting
+  static void initializeForTesting(SupabaseClient client) {
+    _client = client;
+    _isInitialized = true;
+  }
+
   /// Reset for testing or re-initialization
   static void reset() {
     _client = null;

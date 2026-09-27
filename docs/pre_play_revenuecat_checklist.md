@@ -2,13 +2,15 @@
 
 Saved: 14 September 2026
 
-## Next signed candidate — 26 September 2026
+## Next signed candidate — 27 September 2026
 
 - Play Console still shows uploaded code `42042` and the inactive old draft.
 - Reserve `1.0.0+42044` for the cleanup/security candidate, distinct from the
   historical local 42043 bundle. Do not publish 42042 or reuse its artifact.
-- Source commit `7b57697` passed all four CI jobs. The subsequent billing/
-  privacy test updates and version bump require their own exact-head gate.
+- Source commits `7b57697` and `126badb` passed all four CI jobs. The subsequent
+  billing-session/error-display fixes require their own exact-head gate.
+- Build/device installation is held pending those fixes and checks. The phone
+  remains on 42042; no new signed 42044 artifact has been built or installed.
 - Staging now has migration 265 and the JPEG validation guard. Live upload,
   replay and rollback-only privacy/billing checks pass. Production migration
   and deployment are still pending; these are not Play purchase results.
