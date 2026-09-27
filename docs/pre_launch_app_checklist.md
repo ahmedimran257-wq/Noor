@@ -154,6 +154,26 @@ marked complete from source inspection alone when it requires runtime testing.
   newer build was installed. Per the user's follow-up, building and installing
   remain on hold until fixes and checks are ready.
 
+## 27 September admin error-boundary follow-up
+
+- Exact source `f65e398` passed all four CI jobs (`36295228405`), including
+  Android signing enforcement and the CI-key bundle. Its frozen local Flutter
+  run passed 644 tests. Neither result is a production-upload-key build.
+- Reproduced raw backend diagnostics in staff-action redirect URLs and in the
+  rendered admin error boundary. Both now use safe retry text; validation
+  guidance, framework redirects, role denial, success, support digest and
+  retry are covered by the existing native regression script. Tests failed
+  before each fix and pass afterward. No dependency was added.
+- Admin lint, TypeScript, production build and full dependency audit pass;
+  the audit reports zero vulnerabilities. New exact-head CI remains required.
+- Source review remains partial. Staff login/MFA and photo-signing control
+  traces were extended; the independent worker again returned a usage-limit
+  error, so no independent coverage is credited. MFA replacement copy and
+  cross-bucket login-throttle concurrency need follow-up; neither is being
+  represented as a validated new security finding.
+- No production deployment, merge, new signed AAB/APK, phone update or Play
+  purchase was performed in this follow-up.
+
 ## Release ordering
 
 Fix and test confirmed issues incrementally. Preserve the immutable audit

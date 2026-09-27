@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
+import * as zod from "zod";
+import * as jsxRuntime from "react/jsx-runtime";
+import { renderToStaticMarkup } from "react-dom/server";
 
 // Execute the real middleware with only its network/framework edges mocked.
 const source = readFileSync(
@@ -95,3 +98,63 @@ for (const failingRpc of [null, "admin_live_operations_snapshot", "admin_online_
   }
 }
 console.log("PASS: both live API failure paths hide backend diagnostics; success payload is preserved.");
+
+const actionCode = ts.transpileModule(readFileSync(
+  new URL("../src/app/(staff)/actions.ts", import.meta.url), "utf8",
+), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+for (const scenario of ["rpc-error", "auth-error", "invalid-form", "success", "redirect", "role-denied"]) {
+  const exports = {};
+  const revalidated = [];
+  let writes = 0;
+  const redirect = (url) => { throw Object.assign(new Error(url), { digest: "NEXT_REDIRECT", url }); };
+  vm.runInNewContext(actionCode, { exports, require(name) {
+    if (name === "zod") return zod;
+    if (name === "next/navigation") return { redirect };
+    if (name === "next/cache") return { revalidatePath: (path) => revalidated.push(path) };
+    if (name === "@/lib/auth") return { requireAdmin: async () => {
+      if (scenario === "redirect") redirect("/login");
+      if (scenario === "auth-error") throw new Error("private_table secret@example.invalid");
+      return { role: scenario === "role-denied" ? "support" : "super_admin" };
+    } };
+    if (name === "@/lib/supabase/admin") return {};
+    if (name === "@/lib/supabase/server") return { createClient: async () => ({ rpc: async () => {
+      writes++;
+      return { error: scenario === "rpc-error" ? { message: "private_table secret@example.invalid" } : null };
+    } }) };
+    throw new Error(`Unexpected dependency: ${name}`);
+  } });
+  const form = new FormData();
+  form.set("userId", "11111111-1111-4111-8111-111111111111");
+  form.set("action", "suspend");
+  if (scenario === "invalid-form") form.set("reason", "x".repeat(501));
+  await assert.rejects(exports.accountAction(form), (error) => {
+    assert.equal(error.digest, "NEXT_REDIRECT");
+    const url = new URL(error.url, "https://admin.example.invalid");
+    assert.ok(!error.url.includes("private_table") && !error.url.includes("secret"));
+    if (scenario === "redirect") assert.equal(url.pathname, "/login");
+    else if (scenario === "success") assert.equal(url.searchParams.get("admin_success"), "Action completed.");
+    else if (scenario === "invalid-form") assert.match(url.searchParams.get("admin_error"), /500/);
+    else assert.equal(url.searchParams.get("admin_error"), "The action could not be completed. Refresh and try again.");
+    return true;
+  });
+  assert.equal(writes, ["rpc-error", "success"].includes(scenario) ? 1 : 0);
+  assert.deepEqual(revalidated, scenario === "success" ? ["/users", "/dashboard"] : []);
+}
+console.log("PASS: staff failures hide backend diagnostics; validation, authorization, redirects and success are preserved.");
+
+const errorCode = ts.transpileModule(readFileSync(
+  new URL("../src/app/error.tsx", import.meta.url), "utf8",
+), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText;
+const errorExports = {};
+vm.runInNewContext(errorCode, { exports: errorExports, require(name) {
+  if (name === "react/jsx-runtime") return jsxRuntime;
+  if (name === "lucide-react") return { ShieldAlert: () => null };
+  throw new Error(`Unexpected dependency: ${name}`);
+} });
+const errorHtml = renderToStaticMarkup(errorExports.default({
+  error: Object.assign(new Error("private_table secret@example.invalid"), { digest: "fixture-digest" }),
+  reset() {},
+}));
+assert.ok(!errorHtml.includes("private_table") && !errorHtml.includes("secret@example.invalid"));
+assert.ok(errorHtml.includes("fixture-digest") && errorHtml.includes("Retry"));
+console.log("PASS: rendered error boundary hides raw diagnostics and preserves support digest/retry.");
