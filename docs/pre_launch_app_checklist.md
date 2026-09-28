@@ -36,6 +36,26 @@ marked complete from source inspection alone when it requires runtime testing.
 
 ## Verification already observed on the isolated fix branch
 
+- 28 Sep API follow-up: all four CI jobs pass on `f40eb5f` (run
+  `36363808099`), including the CI-key bundle. Added a dependency-free test of
+  the real cron credential verifier: missing/short/bearer-only credentials
+  deny before lookup, wrong/missing stored hashes and database failure deny,
+  and the matching hash succeeds. All 18 Edge tests (plus five handler
+  substeps), formatting, lint and all 12 entrypoint typechecks pass locally.
+- Staging live smoke: eleven protected endpoints return 401 to a no-credential
+  POST with an untrusted Origin; health returns 200 with the exact service
+  identity and no-store. Ten browser-facing OPTIONS probes return 200 with
+  the existing wildcard origin and no Allow-Credentials. Wildcard CORS is not
+  authentication and was not changed to a false browser-only security gate.
+- Exception: staging `revenuecat-webhook` returns 503 rather than 401. Its
+  deployed source fails closed before parsing events when the webhook secret
+  is missing/short; configuration/log verification and a sandbox-specific
+  setup remain required. Do not relax production's environment allowlist.
+- Deployment drift: staging still has `verify-firebase-phone` although the
+  current source/tests intentionally retire it. Its unauthenticated call is
+  denied. No endpoint was deleted; reconcile retirement and deployed database
+  boundaries before decommissioning. These probes sent no valid member/cron
+  credentials, no provider events and no purchases.
 - 28 Sep: all four CI jobs pass for `4759546` (run `36312527810`). The
   subsequent MFA fix needs its own exact-head CI. Local tests execute the
   shared staff-session guard and real MFA actions with mocked provider calls:
