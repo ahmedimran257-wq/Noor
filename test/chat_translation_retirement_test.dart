@@ -27,4 +27,14 @@ void main() {
         contains('REVOKE ALL ON FUNCTION public.store_message_translation'));
     expect(migration, contains("SET translations = '{}'::jsonb"));
   });
+
+  test('staging readiness verifies the retired endpoint contract', () {
+    final readiness =
+        File('tool/staging_global_readiness.mjs').readAsStringSync();
+    expect(readiness, isNot(contains('["translate-message", {}, [401]]')));
+    expect(readiness, contains('request("/functions/v1/translate-message"'));
+    expect(readiness, contains('expectedStatuses: [410]'));
+    expect(readiness,
+        contains('response.data?.error === "chat_translation_removed"'));
+  });
 }

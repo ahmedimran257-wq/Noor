@@ -36,6 +36,15 @@ marked complete from source inspection alone when it requires runtime testing.
 
 ## Verification already observed on the isolated fix branch
 
+- 28 Sep India-readiness repair: scheduled run `36400291291` failed because
+  its translation probe expected 401 from the intentionally retired endpoint.
+  The probe now separately requires 410 and `chat_translation_removed`; active
+  endpoint authentication checks are unchanged. All nine live staging checks
+  pass, with no stale fixtures removed and the disposable account cleaned up.
+  Both translation-retirement regression tests pass. The preceding `0bbc02c`
+  source passed all four CI jobs (`36383406957`); this follow-up needs fresh CI.
+  This smoke pass is not webhook configuration, device push or Play purchase
+  evidence: those remain separate gates.
 - 28 Sep API follow-up: all four CI jobs pass on `f40eb5f` (run
   `36363808099`), including the CI-key bundle. Added a dependency-free test of
   the real cron credential verifier: missing/short/bearer-only credentials
