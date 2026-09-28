@@ -20,10 +20,13 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
   int _entitlementRefreshId = 0;
   CustomerInfoUpdateListener? _customerInfoListener;
   Timer? _expiryTimer;
-  Future<void>? _logoutInFlight;
+  Future<void> _identityInFlight = Future<void>.value();
+  int _sessionGeneration = 0;
   String? _loggedInUserId;
+  bool _storeIdentityReady = false;
 
   Future<void> initialize() async {
+    if (isClosed || _pricingSub != null) return;
     emit(state.copyWith(isLoading: true));
 
     if (!SupabaseService.isInitialized) {
@@ -38,33 +41,43 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
       if (!isClosed) emit(state.copyWith(isLoading: false));
     });
 
-    if (!isClosed) {
-      emit(state.copyWith(
-        isLoading: false,
-        status: SubscriptionStatus.none,
-        source: PremiumEntitlementSource.none,
-        clearExpiresAt: true,
-      ));
-    }
+    if (!isClosed) emit(state.copyWith(isLoading: false));
   }
 
   Future<void> loginUser(String userId) async {
-    if (!SupabaseService.isInitialized) return;
-
-    final pendingLogout = _logoutInFlight;
-    if (pendingLogout != null) await pendingLogout;
-    _detachCustomerInfoListener();
-    _expiryTimer?.cancel();
+    if (!SupabaseService.isInitialized || isClosed) return;
+    clear();
+    final generation = _sessionGeneration;
     _loggedInUserId = userId;
-
     emit(state.copyWith(isLoading: true));
 
+    // The native SDK has one identity. Keep login/logout ordered even when
+    // an account changes while a previous native request is still pending.
+    await _withStoreIdentity(() => _loginUser(userId, generation));
+  }
+
+  Future<T> _withStoreIdentity<T>(Future<T> Function() operation) {
+    final pending = _identityInFlight.then((_) => operation());
+    _identityInFlight =
+        pending.then<void>((_) {}, onError: (Object error, StackTrace stack) {
+      debugPrint('[SubscriptionCubit] Store operation error: $error');
+    });
+    return pending;
+  }
+
+  bool _isCurrentSession(int generation) =>
+      !isClosed && generation == _sessionGeneration && _loggedInUserId != null;
+
+  Future<void> _loginUser(String userId, int generation) async {
+    if (!_isCurrentSession(generation)) return;
+
     CustomerInfo? customerInfo;
-    var revenueCatReady = false;
     try {
       await Purchases.logIn(userId);
+      if (!_isCurrentSession(generation)) return;
+      _storeIdentityReady = true;
       customerInfo = await Purchases.getCustomerInfo();
-      revenueCatReady = true;
+      if (!_isCurrentSession(generation)) return;
 
       await SubscriptionService.instance.initialize(userId: userId);
     } catch (e) {
@@ -74,19 +87,37 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
     // Supabase is authoritative for promotional grants. This runs even when
     // RevenueCat is unavailable so a valid referral reward never shows a
     // paywall merely because the store SDK is offline.
-    await _refreshEffectiveEntitlement(customerInfo, isLoading: false);
+    await _refreshEffectiveEntitlement(customerInfo,
+        generation: generation, isLoading: false);
 
-    if (revenueCatReady) {
-      final listenerUserId = userId;
-      _customerInfoListener = (info) {
-        if (isClosed || _loggedInUserId != listenerUserId) return;
-        unawaited(_refreshEffectiveEntitlement(info));
+    if (_storeIdentityReady && _isCurrentSession(generation)) {
+      _customerInfoListener = (_) {
+        if (!_isCurrentSession(generation)) return;
+        // Listener registration replays a cached native event, which may
+        // belong to the previous account. Read the current SDK identity.
+        unawaited(refreshEntitlement());
       };
       Purchases.addCustomerInfoUpdateListener(_customerInfoListener!);
     }
   }
 
   Future<bool> purchase(String productId) async {
+    final generation = _sessionGeneration;
+    return _withStoreIdentity(() => _purchase(productId, generation));
+  }
+
+  Future<bool> _purchase(String productId, int generation) async {
+    if (!_isCurrentSession(generation)) return false;
+    if (!_storeIdentityReady) {
+      await _loginUser(_loggedInUserId!, generation);
+      if (!_isCurrentSession(generation)) return false;
+      if (!_storeIdentityReady) {
+        emit(state.copyWith(
+            isLoading: false,
+            error: _purchaseErrorMessage(PurchasesErrorCode.networkError)));
+        return false;
+      }
+    }
     if (state.isReferralOnly) {
       emit(state.copyWith(
         isLoading: false,
@@ -120,16 +151,17 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
           : SubscriptionPlan.monthly;
       final purchase = await SubscriptionService.instance.purchase(plan: plan);
 
-      if (isClosed) return false;
+      if (!_isCurrentSession(generation)) return false;
 
       if (purchase.outcome == SubscriptionPurchaseOutcome.purchased) {
         final info = purchase.customerInfo ?? await Purchases.getCustomerInfo();
         await _refreshEffectiveEntitlement(
           info,
+          generation: generation,
           isLoading: false,
           successMessage: 'JazakAllah khair - SILARAH Premium is now active!',
         );
-        return state.isSubscribed;
+        return _isCurrentSession(generation) && state.isSubscribed;
       }
 
       if (purchase.outcome == SubscriptionPurchaseOutcome.alreadyPurchased) {
@@ -137,12 +169,14 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
         if (SubscriptionEntitlements.isPremiumActive(info)) {
           await _refreshEffectiveEntitlement(
             info,
+            generation: generation,
             isLoading: false,
             successMessage:
                 'Your existing SILARAH Premium subscription is active.',
           );
-          return state.isSubscribed;
+          return _isCurrentSession(generation) && state.isSubscribed;
         }
+        if (!_isCurrentSession(generation)) return false;
         emit(state.copyWith(
           isLoading: false,
           error:
@@ -187,7 +221,7 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
       return false;
     } catch (e) {
       debugPrint('[SubscriptionCubit] Purchase error: $e');
-      if (!isClosed) {
+      if (_isCurrentSession(generation)) {
         emit(state.copyWith(
           isLoading: false,
           error: 'Purchase failed. Please check your connection and try again.',
@@ -220,6 +254,22 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
   }
 
   Future<void> restore() async {
+    final generation = _sessionGeneration;
+    await _withStoreIdentity(() => _restore(generation));
+  }
+
+  Future<void> _restore(int generation) async {
+    if (!_isCurrentSession(generation)) return;
+    if (!_storeIdentityReady) {
+      await _loginUser(_loggedInUserId!, generation);
+      if (!_isCurrentSession(generation)) return;
+      if (!_storeIdentityReady) {
+        emit(state.copyWith(
+            isLoading: false,
+            error: _purchaseErrorMessage(PurchasesErrorCode.networkError)));
+        return;
+      }
+    }
     emit(state.copyWith(isLoading: true, clearError: true));
 
     if (!SupabaseService.isInitialized) {
@@ -233,12 +283,13 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
     try {
       final success = await SubscriptionService.instance.restorePurchases();
 
-      if (isClosed) return;
+      if (!_isCurrentSession(generation)) return;
 
       if (success) {
         final info = await Purchases.getCustomerInfo();
         await _refreshEffectiveEntitlement(
           info,
+          generation: generation,
           isLoading: false,
           successMessage: 'Alhamdulillah! Your subscription has been restored.',
         );
@@ -250,7 +301,7 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
       }
     } catch (e) {
       debugPrint('[SubscriptionCubit] Restore error: $e');
-      if (!isClosed) {
+      if (_isCurrentSession(generation)) {
         emit(state.copyWith(
           isLoading: false,
           error: 'Restore failed. Please try again.',
@@ -268,6 +319,14 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
   /// entitlement hydration is not sufficient.
   Future<void> refreshEntitlement({bool showLoading = false}) async {
     if (!SupabaseService.isInitialized) return;
+    final generation = _sessionGeneration;
+    await _identityInFlight;
+    if (!_isCurrentSession(generation)) return;
+    if (!_storeIdentityReady) {
+      final userId = _loggedInUserId!;
+      await _withStoreIdentity(() => _loginUser(userId, generation));
+      return;
+    }
     if (showLoading && !isClosed) emit(state.copyWith(isLoading: true));
 
     CustomerInfo? customerInfo;
@@ -276,25 +335,24 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
     } catch (e) {
       debugPrint('[SubscriptionCubit] RevenueCat refresh error: $e');
     }
-    await _refreshEffectiveEntitlement(customerInfo, isLoading: false);
+    await _refreshEffectiveEntitlement(customerInfo,
+        generation: generation, isLoading: false);
   }
 
   void clear() {
+    _sessionGeneration++;
     _entitlementRefreshId++;
     _expiryTimer?.cancel();
     _detachCustomerInfoListener();
     _loggedInUserId = null;
+    _storeIdentityReady = false;
     SubscriptionService.instance.clearUser();
     if (!isClosed) emit(const SubscriptionState());
   }
 
   Future<void> logoutUser() {
     clear();
-    final operation = _performRevenueCatLogout();
-    _logoutInFlight = operation;
-    return operation.whenComplete(() {
-      if (identical(_logoutInFlight, operation)) _logoutInFlight = null;
-    });
+    return _withStoreIdentity(_performRevenueCatLogout);
   }
 
   Future<void> _performRevenueCatLogout() async {
@@ -315,9 +373,11 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
 
   Future<void> _refreshEffectiveEntitlement(
     CustomerInfo? customerInfo, {
+    required int generation,
     bool? isLoading,
     String? successMessage,
   }) async {
+    if (!_isCurrentSession(generation)) return;
     final refreshId = ++_entitlementRefreshId;
     final revenueCatActive = customerInfo != null &&
         SubscriptionEntitlements.isPremiumActive(customerInfo);
@@ -330,7 +390,9 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
         : null;
 
     final server = await _loadServerEntitlement();
-    if (isClosed || refreshId != _entitlementRefreshId) return;
+    if (!_isCurrentSession(generation) || refreshId != _entitlementRefreshId) {
+      return;
+    }
 
     // A transient Supabase failure must not revoke an unexpired promotional
     // entitlement already proven by the server on this session.
@@ -430,9 +492,8 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
 
   @override
   Future<void> close() {
+    clear();
     _pricingSub?.cancel();
-    _expiryTimer?.cancel();
-    _detachCustomerInfoListener();
     return super.close();
   }
 }

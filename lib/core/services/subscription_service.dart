@@ -153,15 +153,19 @@ class SubscriptionService {
   String? _countryCode;
   String? _pricingTier;
   Offering? _activeOffering;
+  int _sessionGeneration = 0;
 
   Future<void> initialize({required String userId}) async {
+    final generation = _sessionGeneration;
     try {
       _retryTimer?.cancel();
       _retryCount = 0;
-      await _syncSubscriberAttributes(userId);
+      await _syncSubscriberAttributes(userId, generation);
+      if (generation != _sessionGeneration) return;
       await _refreshPricing();
     } catch (e) {
       debugPrint('[SubscriptionService] RevenueCat init error: $e');
+      if (generation != _sessionGeneration) return;
       _setPricingUnavailable();
       _scheduleRetry();
     }
@@ -175,10 +179,15 @@ class SubscriptionService {
   Future<SubscriptionPurchaseResult> purchase({
     required SubscriptionPlan plan,
   }) async {
+    final generation = _sessionGeneration;
     try {
       Offering? offering = _activeOffering;
       if (offering == null) {
         final offerings = await Purchases.syncAttributesAndOfferingsIfNeeded();
+        if (generation != _sessionGeneration) {
+          return const SubscriptionPurchaseResult(
+              outcome: SubscriptionPurchaseOutcome.failed);
+        }
         offering = _selectOffering(offerings);
       }
       if (offering == null) throw Exception('No offerings available');
@@ -192,6 +201,10 @@ class SubscriptionService {
       final result = await Purchases.purchase(
         PurchaseParams.package(package),
       );
+      if (generation != _sessionGeneration) {
+        return const SubscriptionPurchaseResult(
+            outcome: SubscriptionPurchaseOutcome.failed);
+      }
       final customerInfo = result.customerInfo;
       _isSubscribed = SubscriptionEntitlements.isPremiumActive(customerInfo);
       _customerInfo = customerInfo;
@@ -202,12 +215,20 @@ class SubscriptionService {
         customerInfo: customerInfo,
       );
     } on PlatformException catch (error) {
+      if (generation != _sessionGeneration) {
+        return const SubscriptionPurchaseResult(
+            outcome: SubscriptionPurchaseOutcome.failed);
+      }
       final code = PurchasesErrorHelper.getErrorCode(error);
       final outcome = classifySubscriptionPurchaseError(code);
       CustomerInfo? customerInfo;
       if (outcome == SubscriptionPurchaseOutcome.alreadyPurchased) {
         try {
           customerInfo = await Purchases.getCustomerInfo();
+          if (generation != _sessionGeneration) {
+            return const SubscriptionPurchaseResult(
+                outcome: SubscriptionPurchaseOutcome.failed);
+          }
           _customerInfo = customerInfo;
           _isSubscribed =
               SubscriptionEntitlements.isPremiumActive(customerInfo);
@@ -233,25 +254,28 @@ class SubscriptionService {
   }
 
   Future<bool> restorePurchases() async {
+    final generation = _sessionGeneration;
     try {
       final info = await Purchases.restorePurchases();
+      if (generation != _sessionGeneration) return false;
       _customerInfo = info;
       _isSubscribed = SubscriptionEntitlements.isPremiumActive(info);
       return _isSubscribed;
     } catch (e) {
       debugPrint('[SubscriptionService] Restore error: $e');
-      return false;
+      rethrow;
     }
   }
 
   void dispose() {
-    _retryTimer?.cancel();
+    clearUser();
     _pricingController.close();
   }
 
   /// Clears all user-derived pricing and entitlement snapshots on account
   /// change. RevenueCat identity ownership remains in SubscriptionCubit.
   void clearUser() {
+    _sessionGeneration++;
     _retryTimer?.cancel();
     _retryCount = 0;
     _countryCode = null;
@@ -263,8 +287,10 @@ class SubscriptionService {
   }
 
   Future<void> _refreshPricing() async {
+    final generation = _sessionGeneration;
     try {
       final offerings = await Purchases.syncAttributesAndOfferingsIfNeeded();
+      if (generation != _sessionGeneration) return;
       final offering = _selectOffering(offerings);
       if (offering == null) {
         debugPrint('[SubscriptionService] No offering configured.');
@@ -307,6 +333,7 @@ class SubscriptionService {
       );
     } catch (e) {
       debugPrint('[SubscriptionService] Offerings fetch error: $e');
+      if (generation != _sessionGeneration) return;
       _setPricingUnavailable();
       _scheduleRetry();
     }
@@ -343,8 +370,9 @@ class SubscriptionService {
     return offerings.current;
   }
 
-  Future<void> _syncSubscriberAttributes(String userId) async {
+  Future<void> _syncSubscriberAttributes(String userId, int generation) async {
     final context = await _loadPricingContext(userId);
+    if (generation != _sessionGeneration) return;
     _countryCode = context.countryCode;
     _pricingTier = context.pricingTier;
 
@@ -355,6 +383,7 @@ class SubscriptionService {
     if (attributes.isNotEmpty) {
       await Purchases.setAttributes(attributes);
     }
+    if (generation != _sessionGeneration) return;
     if (context.email != null && context.email!.isNotEmpty) {
       await Purchases.setEmail(context.email!);
     }

@@ -725,7 +725,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
 
   Future<void> _loginSubscriptionUser(String userId) async {
     await _revenueCatReady;
-    if (!mounted) return;
+    if (!mounted || _activeSessionUserId != userId) return;
     await _subscriptionCubit.loginUser(userId);
   }
 

@@ -125,8 +125,7 @@ function actionMessage(error: unknown) {
   if (error instanceof ZodError) {
     return error.issues[0]?.message ?? "Check the form and try again.";
   }
-  if (error instanceof Error) return error.message;
-  return "The action could not be completed.";
+  return "The action could not be completed. Refresh and try again.";
 }
 
 function isNextRedirect(error: unknown) {

@@ -18,11 +18,15 @@ try {
   if ($LASTEXITCODE -ne 0) { throw 'Isolated PostgreSQL startup failed' }
   $started = $true
   Invoke-Sql (Get-Content "$repo/tool/testdata/privacy_bootstrap.sql" -Raw)
-  # Exercise the real production staff-MFA predicate, not an always-true stub.
-  $adminMigration = Get-Content "$repo/supabase/migrations/147_admin_aal2_and_governance_boundary.sql" -Raw
-  $predicate = [regex]::Match($adminMigration, '(?s)CREATE OR REPLACE FUNCTION public\.is_active_admin.*?\$\$;').Value
-  if (-not $predicate) { throw 'Could not locate the staff predicate' }
-  Invoke-Sql $predicate
+  Invoke-Sql (Get-Content "$repo/tool/testdata/admin_session_bootstrap.sql" -Raw)
+  # Exercise the current Auth-session/MFA predicate, not the superseded gate.
+  $adminMigration = Get-Content "$repo/supabase/migrations/265_enforce_staff_session_expiry_at_database.sql" -Raw
+  foreach ($function in @('private.admin_session_deadline', 'public.is_active_admin')) {
+    $pattern = '(?s)CREATE OR REPLACE FUNCTION ' + [regex]::Escape($function) + '.*?\$\$;'
+    $predicate = [regex]::Match($adminMigration, $pattern).Value
+    if (-not $predicate) { throw "Could not locate $function" }
+    Invoke-Sql $predicate
+  }
   Invoke-Sql (Get-Content "$repo/supabase/migrations/262_privacy_rights_requests.sql" -Raw)
   Invoke-Sql (Get-Content "$repo/supabase/migrations/263_privacy_request_retention.sql" -Raw)
   Invoke-Sql (Get-Content "$repo/tool/testdata/privacy_requests.sql" -Raw)

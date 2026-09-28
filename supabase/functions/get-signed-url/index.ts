@@ -25,9 +25,11 @@ const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const BUCKET_NAME = "profile-photos";
 const MAX_PHOTOS = 4;
-const UPLOAD_URL_EXPIRES_IN = 300; // Upload tokens stay deliberately short-lived.
-// Keep private grants revocable. The client refreshes authorized URLs on
-// expiry, so a revoked viewer loses access within five minutes at most.
+// Supabase fixes upload-token validity at two hours. Reservation expiry is
+// enforced separately by finalize_profile_photo_upload, not by this metadata.
+const UPLOAD_URL_EXPIRES_IN = 7200;
+// Authorization is checked again when issuing a new read URL. Storage/CDN
+// response caching is independent of this token TTL.
 const READ_URL_EXPIRES_IN = 300;
 const RATE_LIMIT_WINDOW = 60 * 60; // 1 hour in seconds
 const PURPOSE_LIMITS: Record<string, number> = {
@@ -279,10 +281,6 @@ Deno.serve(async (req: Request) => {
       return errorResponse(503, "A secure upload URL could not be issued.");
     }
 
-    console.log(
-      `[get-signed-url] ✅ URL issued for user ${userId}, slot ${order_index}`,
-    );
-
     return new Response(
       JSON.stringify({
         signed_url: signedUrlData.signedUrl,
@@ -380,16 +378,12 @@ async function createAuthorizedProfilePhotoReadUrl(
   const { data, error } = await adminClient.storage
     .from(BUCKET_NAME)
     // Image transformations are not part of the Supabase Free plan. Uploads
-    // are already bounded WebP files, so serve the original private object.
+    // are already bounded JPEG files, so serve the original private object.
     .createSignedUrl(photo.storage_path, READ_URL_EXPIRES_IN);
 
   if (error || !data?.signedUrl) {
     throw new Error(`Failed to generate read URL: ${error?.message}`);
   }
-
-  console.log(
-    `[get-signed-url] read URL issued for viewer ${viewerUserId}, owner ${ownerUserId}, slot ${orderIndex}`,
-  );
 
   return new Response(
     JSON.stringify({
@@ -476,12 +470,6 @@ async function createAuthorizedProfilePhotoReadUrls(
       urls[ownerId] = signedUrl;
     }
   }
-
-  console.log(
-    `[get-signed-url] batch read URLs issued for viewer ${viewerUserId}, owners ${
-      Object.keys(urls).length
-    }`,
-  );
 
   return new Response(
     JSON.stringify({

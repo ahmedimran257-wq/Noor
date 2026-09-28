@@ -10,6 +10,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/login/:path*",
     "/dashboard/:path*",
     "/users/:path*",
     "/photo-verification/:path*",
@@ -20,6 +21,7 @@ export const config = {
     "/content/:path*",
     "/stories/:path*",
     "/inbox/:path*",
+    "/privacy/:path*",
     "/audit/:path*",
     "/security/:path*",
     "/staff/:path*",

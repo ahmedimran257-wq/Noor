@@ -9675,8 +9675,7 @@ extension UiCopyBuildContext on BuildContext {
 
   String uiOpenProfile(String name) => _uiL10n.ui_openProfile(name);
   String uiTyping(String name) => _uiL10n.ui_typing(name);
-  String uiDeleteFailed(Object error) =>
-      _uiL10n.ui_deleteFailed(error.toString());
+  String uiDeleteFailed(Object error) => _uiL10n.common_error_generic;
   String uiChangeCountry(String country) => _uiL10n.ui_changeCountry(country);
   String uiEmailCopied(String email) => _uiL10n.ui_emailCopied(email);
   String uiMessagePerson(String name) => _uiL10n.ui_messagePerson(name);

@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { requireStaffSession } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -63,27 +64,8 @@ async function withTimeout<T>(request: PromiseLike<T>): Promise<T> {
 }
 
 async function getAuthenticatedClient() {
+  const user = await withTimeout(requireStaffSession());
   const supabase = await createClient();
-  const {
-    data: { user },
-    error,
-  } = await withTimeout(supabase.auth.getUser());
-  if (error || !user) {
-    return { error: "Your staff session has expired. Please sign in again." } as const;
-  }
-
-  const { data: membership, error: membershipError } = await withTimeout(
-    supabase
-      .from("admin_memberships")
-      .select("user_id")
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .maybeSingle(),
-  );
-  if (membershipError || !membership) {
-    return { error: "This account is not an active Silarah staff account." } as const;
-  }
-
   return { supabase, user } as const;
 }
 
@@ -111,7 +93,7 @@ async function setPendingMfaFactor(userId: string, factor: PendingMfaFactor) {
 
 async function clearPendingMfaFactor() {
   const cookieStore = await cookies();
-  cookieStore.delete(pendingMfaCookieName);
+  cookieStore.delete({ name: pendingMfaCookieName, path: "/mfa" });
 }
 
 export async function getPendingMfaFactor(userId: string): Promise<PendingMfaFactor | undefined> {
@@ -142,7 +124,6 @@ export async function getPendingMfaFactor(userId: string): Promise<PendingMfaFac
 export async function getVerifiedMfaFactorId() {
   try {
     const session = await getAuthenticatedClient();
-    if ("error" in session) return undefined;
 
     const { data, error } = await withTimeout(session.supabase.auth.mfa.listFactors());
     if (error) return undefined;
@@ -155,7 +136,6 @@ export async function getVerifiedMfaFactorId() {
 async function enrollAuthenticator() {
   try {
     const session = await getAuthenticatedClient();
-    if ("error" in session) return { ok: false as const, message: session.error };
 
     const { data, error } = await withTimeout(
       session.supabase.auth.mfa.enroll({
@@ -180,21 +160,16 @@ async function enrollAuthenticator() {
 
 const replacementSchema = z.object({
   factorId: z.string().uuid(),
-  password: z.string().min(8),
 });
 
-async function replaceAuthenticator(input: { factorId: string; password: string }) {
+async function replaceAuthenticator(input: { factorId: string }) {
   const parsed = replacementSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false as const, message: "Enter your current staff password to replace the authenticator." };
+    return { ok: false as const, message: "Select your current authenticator and try again." };
   }
 
   try {
     const session = await getAuthenticatedClient();
-    if ("error" in session) return { ok: false as const, message: session.error };
-    if (!session.user.email) {
-      return { ok: false as const, message: "This staff account has no email address. Contact another super administrator." };
-    }
 
     const { data: assurance, error: assuranceError } = await withTimeout(
       session.supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
@@ -241,7 +216,6 @@ async function verifyAuthenticator(input: { factorId: string; code: string }) {
 
   try {
     const session = await getAuthenticatedClient();
-    if ("error" in session) return { ok: false as const, message: session.error };
 
     const { data: challenge, error: challengeError } = await withTimeout(
       session.supabase.auth.mfa.challenge({ factorId: parsed.data.factorId }),
@@ -314,7 +288,6 @@ export async function enrollAuthenticatorForm() {
 export async function replaceAuthenticatorForm(formData: FormData) {
   const result = await replaceAuthenticator({
     factorId: String(formData.get("factorId") ?? ""),
-    password: String(formData.get("password") ?? ""),
   });
   if (!result.ok) redirectWithError("replace");
 

@@ -22,7 +22,7 @@ export default function GlobalError({
           The admin panel stopped this operation before it could continue. Try
           again, or check the audit and system pages if it repeats.
         </p>
-        <p className="form-error">{error.message || "Unexpected admin error."}</p>
+        <p className="form-error">The operation could not be completed. Please try again.</p>
         {error.digest ? <small className="muted">Digest: {error.digest}</small> : null}
         <button className="primary-button" type="button" onClick={reset}>
           Retry

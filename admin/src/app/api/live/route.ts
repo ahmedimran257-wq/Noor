@@ -30,7 +30,7 @@ export async function GET() {
 
   const { data, error } = await supabase.rpc("admin_live_operations_snapshot");
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Live operations are temporarily unavailable." }, { status: 500 });
   }
 
   const { data: onlineUsers, error: onlineError } = await supabase.rpc(
@@ -38,7 +38,7 @@ export async function GET() {
     { p_limit: 25 },
   );
   if (onlineError) {
-    return NextResponse.json({ error: onlineError.message }, { status: 500 });
+    return NextResponse.json({ error: "Live operations are temporarily unavailable." }, { status: 500 });
   }
 
   return NextResponse.json({

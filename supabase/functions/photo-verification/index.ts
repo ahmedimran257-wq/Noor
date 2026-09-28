@@ -9,7 +9,8 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const BUCKET = "photo-verification-captures";
 const MAX_CAPTURE_BYTES = 2 * 1024 * 1024;
-const URL_TTL_SECONDS = 300;
+// Supabase upload tokens have a fixed two-hour TTL, independent of submission deadlines.
+const URL_TTL_SECONDS = 7200;
 
 type Action = "start" | "submit" | "abandon";
 // The service-role client intentionally has no generated schema binding in

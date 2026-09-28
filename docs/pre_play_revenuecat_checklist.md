@@ -2,6 +2,48 @@
 
 Saved: 14 September 2026
 
+## Release checkpoint — 28 September 2026
+
+- All four CI jobs passed on `4759546` (run `36312527810`). This includes
+  the CI-key Android bundle, not a real upload-key release artifact.
+- The MFA follow-up reuses the shared staff-session expiry guard, removes
+  the unused replacement-password field, and clears the signed pending-factor
+  cookie at its actual `/mfa` path. Local regression tests, lint, typecheck,
+  production build and secret scan pass. Its new commit needs fresh CI.
+- The live admin security-header verifier passes. This does not mean the
+  pending admin source changes have been deployed.
+- Database review found client write grants on the platform-owned PostGIS
+  reference table in both projects. A zero-row staging check reproduced the
+  permission; a rolled-back revoke attempt did not remove the grants. Owner
+  support remediation and staging readback are required; no records changed.
+- Wider review, production deployment, fresh signed 42044 artifacts, device
+  installation and actual Play sandbox payments remain unfinished.
+
+## Next signed candidate — 27 September 2026
+
+- Play Console still shows uploaded code `42042` and the inactive old draft.
+- Reserve `1.0.0+42044` for the cleanup/security candidate, distinct from the
+  historical local 42043 bundle. Do not publish 42042 or reuse its artifact.
+- Source `f65e398` passed all four CI jobs (`36295228405`), including the
+  CI-key Android bundle. Its clean Windows Flutter run passed all 644 tests.
+  The subsequent admin error-redaction change needs its own exact-head CI.
+- Build/device installation is held pending those fixes and checks. The phone
+  remains on 42042; no new signed 42044 artifact has been built or installed.
+- Staging now has migration 265 and the JPEG validation guard. Live upload,
+  replay and rollback-only privacy/billing checks pass. Production migration
+  and deployment are still pending; these are not Play purchase results.
+- The 87-table app-owned backup restore drill passed in an ephemeral staging
+  database; managed Auth/Storage/Vault and full-service recovery remain separate.
+- Keep the candidate off Play until the remaining release gates and bundle
+  identity/signature checks are complete. Internal publication requires approval.
+
+## Expanded release gate — 25 September 2026
+
+Use [the pre-launch app checklist](pre_launch_app_checklist.md) alongside this
+billing/release sequence. It tracks all 22 requested security, reliability and
+operational checks plus safe test-data removal. Cleanup and incremental security
+fixes are still isolated; the historical 42043 AAB does not include them.
+
 ## Current candidate — 23 September 2026
 
 - Play Console's latest releases/bundles page shows uploaded code `42042`
