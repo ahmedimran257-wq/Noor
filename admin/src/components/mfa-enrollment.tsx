@@ -15,7 +15,7 @@ type MfaEnrollmentProps = {
 
 const errorMessages: Record<string, string> = {
   setup: "Authenticator setup could not be started. Please try again.",
-  replace: "The authenticator could not be replaced. Check your password and try again.",
+  replace: "The authenticator could not be replaced. Verify your current authenticator first, then try again.",
   verify: "The code was not accepted. Enter a fresh code and try again.",
 };
 
@@ -71,16 +71,7 @@ export function MfaEnrollment({ initialFactorId, pendingFactor, error }: MfaEnro
       {factorId && !pendingFactor ? (
         <form action={replaceAuthenticatorForm} className="auth-form">
           <input type="hidden" name="factorId" value={factorId} />
-          <p className="muted">Cannot access this authenticator? Confirm your password to replace it and receive a new QR code.</p>
-          <label htmlFor="replacement-password">Current password</label>
-          <input
-            id="replacement-password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            minLength={8}
-            required
-          />
+          <p className="muted">Replacement requires a session verified with your current authenticator. If you cannot access it, contact another super administrator for account recovery.</p>
           <button type="submit" className="primary-button">Replace authenticator</button>
         </form>
       ) : null}

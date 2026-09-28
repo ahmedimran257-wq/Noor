@@ -1,6 +1,6 @@
 # Silarah pre-launch checklist
 
-Updated: 27 September 2026. Applies to the next release candidate, not a claim
+Updated: 28 September 2026. Applies to the next release candidate, not a claim
 that the existing AAB contains the pending cleanup/security fixes.
 
 Status meanings: **PASS (local)** means the named local check passed, not that
@@ -36,6 +36,19 @@ marked complete from source inspection alone when it requires runtime testing.
 
 ## Verification already observed on the isolated fix branch
 
+- 28 Sep: all four CI jobs pass for `4759546` (run `36312527810`). The
+  subsequent MFA fix needs its own exact-head CI. Local tests execute the
+  shared staff-session guard and real MFA actions with mocked provider calls:
+  expired actions are denied, AAL1 replacement is denied, first enrollment
+  and AAL2 replacement remain possible, and the old factor is retired only
+  after successful verification. Real Next cookie semantics confirm deletion
+  at `/mfa`; misleading password-recovery UI was removed. Lint, typecheck,
+  production build, secret scan and live admin security headers pass.
+- 28 Sep: PostGIS `public.spatial_ref_sys` has client write grants in both
+  projects. Staging anon zero-row UPDATE is permitted; an owner-restricted
+  revoke test was ineffective and rolled back. No rows or production grants
+  changed. Supabase owner-authorized remediation is required; this operational
+  issue is not clearance from the partial immutable-source scan.
 - All four CI jobs passed on 7b57697 (run 36222756797), including the JPEG
   patch, full Flutter suite, clean database reset/tests, admin audit and
   CI-signed Android bundle. The new billing/privacy test-only follow-up needs

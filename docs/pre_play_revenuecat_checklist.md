@@ -2,6 +2,23 @@
 
 Saved: 14 September 2026
 
+## Release checkpoint — 28 September 2026
+
+- All four CI jobs passed on `4759546` (run `36312527810`). This includes
+  the CI-key Android bundle, not a real upload-key release artifact.
+- The MFA follow-up reuses the shared staff-session expiry guard, removes
+  the unused replacement-password field, and clears the signed pending-factor
+  cookie at its actual `/mfa` path. Local regression tests, lint, typecheck,
+  production build and secret scan pass. Its new commit needs fresh CI.
+- The live admin security-header verifier passes. This does not mean the
+  pending admin source changes have been deployed.
+- Database review found client write grants on the platform-owned PostGIS
+  reference table in both projects. A zero-row staging check reproduced the
+  permission; a rolled-back revoke attempt did not remove the grants. Owner
+  support remediation and staging readback are required; no records changed.
+- Wider review, production deployment, fresh signed 42044 artifacts, device
+  installation and actual Play sandbox payments remain unfinished.
+
 ## Next signed candidate — 27 September 2026
 
 - Play Console still shows uploaded code `42042` and the inactive old draft.
