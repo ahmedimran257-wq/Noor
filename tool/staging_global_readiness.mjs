@@ -324,7 +324,6 @@ try {
     const probes = [
       ["location-search", {}, [401]],
       ["photo-verification", {}, [401]],
-      ["translate-message", {}, [401]],
       ["validate-photo-upload", {}, [401]],
       ["get-signed-url", {}, [401]],
       // A missing vendor secret is a deployment blocker (503), never an auth
@@ -341,6 +340,18 @@ try {
       assert(response.status !== 200, `${name} did not reject the request`);
     }
     return { guardedFunctions: probes.length };
+  });
+
+  await test("retired chat translation returns Gone without processing messages", async () => {
+    const response = await request("/functions/v1/translate-message", {
+      method: "POST",
+      body: {},
+      expectedStatuses: [410],
+    });
+    assert(
+      response.data?.error === "chat_translation_removed",
+      "Retired translation endpoint returned an unexpected response",
+    );
   });
 
   await createFixture();
