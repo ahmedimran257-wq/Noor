@@ -33,6 +33,11 @@ class FcmService {
   /// Device ID - persisted across sessions so the same device
   /// always overwrites its own token row (via UPSERT).
   String? _deviceId;
+
+  /// Last registration the server acknowledged in this process. Login and
+  /// initialization both save the current token, so an identical repeat is
+  /// skipped instead of costing another RPC.
+  String? _syncedRegistration;
   static const _pendingRegistrationKey = 'silarah_pending_fcm_registration_v1';
   static const _pendingRemovalKey = 'silarah_pending_fcm_removal_v1';
 
@@ -157,6 +162,8 @@ class FcmService {
 
     final platform =
         defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android';
+    final registration = '${session.user.id}|$platform|${_deviceId!}|$token';
+    if (_syncedRegistration == registration) return;
 
     try {
       await SupabaseService.client.rpc('register_my_fcm_token', params: {
@@ -164,6 +171,7 @@ class FcmService {
         'p_fcm_token': token,
         'p_platform': platform,
       });
+      _syncedRegistration = registration;
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_pendingRegistrationKey);
@@ -203,6 +211,7 @@ class FcmService {
   /// Called on logout or account deletion.
   /// Deletes the FCM token row to prevent ghost push notifications.
   Future<void> onUserLogout() async {
+    _syncedRegistration = null;
     if (!SupabaseService.isInitialized || _deviceId == null) return;
 
     final session = SupabaseService.client.auth.currentSession;
