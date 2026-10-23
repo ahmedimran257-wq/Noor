@@ -1,7 +1,7 @@
 name: silarah
 description: "Silarah - Premium Muslim Matrimony App"
 publish_to: 'none'
-version: 1.0.0+42044
+version: 1.0.0+42045
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
