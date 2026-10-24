@@ -130,3 +130,30 @@ from public.users u where u.id = '<tester supabase id>';
 ```
 
 Sign-off needs every row to show each event exactly once.
+
+### Results — 24 October 2026 (build 42045, production backend)
+
+Tester `3a9a91ec-…` on OnePlus 8, Google Play sandbox, "Test card, always approves":
+
+| Scenario | Result |
+|---|---|
+| Monthly purchase | Play confirmed the test purchase (no charge) |
+| Renewals ×3 | `RENEWAL` recorded once each; status `active`; one email and one in-app notification each |
+| Cancellation | `CANCELLATION` recorded once; access kept until period end; email sent |
+| Expiry | `EXPIRATION` recorded once; status `none`; email sent |
+
+Findings fixed during the run:
+
+- The production RevenueCat webhook was set to "Production only", so sandbox
+  events went to the staging webhook. For QA it is temporarily set to "Both
+  Production and Sandbox"; production still accepts only allowlisted testers.
+- RevenueCat sends Play products as `subscriptionId:basePlanId`
+  (`silarah_monthly:monthly`). The webhook rejected them as unknown products,
+  which would also have rejected real purchases. Fixed in `58bf270` and
+  deployed (function version 47).
+- Real-time developer notifications were already connected (last received
+  29 September); the earlier note saying otherwise was out of date.
+
+After QA: set the production webhook back to "Production only" and delete
+`REVENUECAT_SANDBOX_TESTER_IDS`. Not yet run: restore, three-month purchase,
+billing issue, refund.
