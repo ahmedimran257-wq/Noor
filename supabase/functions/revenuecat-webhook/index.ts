@@ -90,6 +90,13 @@ Deno.serve(async (req: Request) => {
   const supabase = createAdminClient();
 
   const eventTimestampMs = event.event_timestamp_ms!;
+  // RevenueCat has no separate refund event: Play and App Store refunds
+  // arrive as a CUSTOMER_SUPPORT cancellation. Record them as refunds so the
+  // ledger, notification and email do not promise access until period end.
+  const eventType = event.type === "CANCELLATION" &&
+      event.cancel_reason === "CUSTOMER_SUPPORT"
+    ? "REFUND"
+    : event.type;
   let newStatus: "active" | "none" | "grace";
   let newExpiresAt: string | null = null;
 
@@ -100,7 +107,7 @@ Deno.serve(async (req: Request) => {
     ? new Date(event.grace_period_expiration_at_ms).toISOString()
     : null;
 
-  switch (event.type) {
+  switch (eventType) {
     case "INITIAL_PURCHASE":
     case "RENEWAL":
     case "PRODUCT_CHANGE":
@@ -125,9 +132,19 @@ Deno.serve(async (req: Request) => {
       newExpiresAt = expiresAt;
       break;
     case "EXPIRATION":
-    case "REFUND":
       newStatus = "none";
       newExpiresAt = null;
+      break;
+    case "REFUND":
+      // A refund that revoked access ends the transaction at the refund time.
+      // One that left access in place keeps it until the paid period ends.
+      if (expiresAt && Date.parse(expiresAt) > Date.now()) {
+        newStatus = "active";
+        newExpiresAt = expiresAt;
+      } else {
+        newStatus = "none";
+        newExpiresAt = null;
+      }
       break;
     case "BILLING_ISSUE":
       if (!graceExpiresAt && !expiresAt) {
@@ -157,7 +174,7 @@ Deno.serve(async (req: Request) => {
     {
       p_user_id: supabaseUserId,
       p_provider_event_id: event.id,
-      p_event_type: event.type,
+      p_event_type: eventType,
       p_event_timestamp_ms: eventTimestampMs,
       p_subscription_status: newStatus,
       p_subscription_expires_at: newExpiresAt,
@@ -194,16 +211,17 @@ Deno.serve(async (req: Request) => {
   // notifications are changed only once, while a failed transactional email
   // remains claimable from the durable outbox on a webhook retry.
   if (applyResult?.applied) {
-    await queueSubscriptionNotification(supabase, supabaseUserId, event.type);
+    await queueSubscriptionNotification(supabase, supabaseUserId, eventType);
   }
 
   const emailDedupeKey = applyResult?.email_dedupe_key ??
-    `revenuecat:${supabaseUserId}:${event.type}:${eventTimestampMs}`;
+    `revenuecat:${supabaseUserId}:${eventType}:${eventTimestampMs}`;
   try {
     await deliverSubscriptionEmail(
       supabase,
       emailDedupeKey,
       event,
+      eventType,
       expiresAt,
     );
   } catch (error) {
@@ -326,6 +344,7 @@ async function deliverSubscriptionEmail(
   supabase: AdminClient,
   dedupeKey: string,
   event: RevenueCatEvent,
+  eventType: string,
   expiresAt: string | null,
 ): Promise<void> {
   const { data: claimedRows, error: claimError } = await supabase.rpc(
@@ -371,7 +390,7 @@ async function deliverSubscriptionEmail(
 
     const firstName = profile?.first_name?.toString().trim() || null;
     const email = renderSubscriptionEmail({
-      eventType: event.type,
+      eventType,
       firstName,
       productId: event.product_id,
       currency: event.currency,

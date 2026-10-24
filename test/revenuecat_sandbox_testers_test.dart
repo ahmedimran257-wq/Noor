@@ -20,7 +20,22 @@ void main() {
     final webhook = File('supabase/functions/revenuecat-webhook/index.ts')
         .readAsStringSync();
     expect(webhook, contains('!isAllowedProduct(event.product_id)'));
-    expect(webhook, contains('const subscriptionId = productId.split(":")[0];'));
+    expect(
+        webhook, contains('const subscriptionId = productId.split(":")[0];'));
     expect(webhook, contains('allowed.split(":")[0] === subscriptionId'));
+  });
+
+  test('store refunds are recorded as refunds, not renewal cancellations', () {
+    final webhook = File('supabase/functions/revenuecat-webhook/index.ts')
+        .readAsStringSync();
+    expect(webhook, contains('event.cancel_reason === "CUSTOMER_SUPPORT"'));
+    expect(webhook, contains('switch (eventType)'));
+    expect(webhook, contains('p_event_type: eventType,'));
+    expect(
+        webhook,
+        contains(
+            'queueSubscriptionNotification(supabase, supabaseUserId, eventType)'));
+    // A revoked refund must not leave the member marked active.
+    expect(webhook, contains('Date.parse(expiresAt) > Date.now()'));
   });
 }
