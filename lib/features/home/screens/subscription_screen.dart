@@ -416,12 +416,19 @@ class _PaidPremiumActiveView extends StatelessWidget {
           const SizedBox(height: AppDimensions.space24),
           SizedBox(
             height: AppDimensions.buttonHeight,
+            // The filled-button text style is background-coloured on light
+            // themes, so an outlined button needs the accent style.
             child: OutlinedButton.icon(
               onPressed: () => _SecondaryLinks._openBillingPortal(context),
-              icon: const Icon(Icons.settings_outlined),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.champagneGold,
+                side: BorderSide(color: AppColors.goldBorder),
+              ),
+              icon:
+                  Icon(Icons.settings_outlined, color: AppColors.champagneGold),
               label: UiText(
                 context.uiCopy('Manage Subscription'),
-                style: AppTypography.button,
+                style: AppTypography.buttonSecondary,
               ),
             ),
           ),
