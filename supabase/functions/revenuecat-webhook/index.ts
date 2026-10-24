@@ -93,9 +93,20 @@ Deno.serve(async (req: Request) => {
   // RevenueCat has no separate refund event: Play and App Store refunds
   // arrive as a CUSTOMER_SUPPORT cancellation. Record them as refunds so the
   // ledger, notification and email do not promise access until period end.
-  const eventType = event.type === "CANCELLATION" &&
-      event.cancel_reason === "CUSTOMER_SUPPORT"
+  //
+  // A Play Console refund that removes entitlement arrives instead as an
+  // UNSUBSCRIBE cancellation whose transaction already ended, followed by an
+  // EXPIRATION. Record it as a revocation: access ends now, and no "access
+  // continues" message is sent (the expiration's message covers it).
+  const accessAlreadyEnded = event.expiration_at_ms == null ||
+    event.expiration_at_ms <= event.event_timestamp_ms!;
+  const eventType = event.type !== "CANCELLATION" ||
+      event.cancel_reason === "BILLING_ERROR"
+    ? event.type
+    : event.cancel_reason === "CUSTOMER_SUPPORT"
     ? "REFUND"
+    : accessAlreadyEnded
+    ? "REVOCATION"
     : event.type;
   let newStatus: "active" | "none" | "grace";
   let newExpiresAt: string | null = null;
@@ -132,6 +143,7 @@ Deno.serve(async (req: Request) => {
       newExpiresAt = expiresAt;
       break;
     case "EXPIRATION":
+    case "REVOCATION":
       newStatus = "none";
       newExpiresAt = null;
       break;
@@ -278,8 +290,8 @@ function validRevenueCatEvent(event: RevenueCatEvent): boolean {
       Number.isSafeInteger(event.expiration_at_ms)) &&
     (event.grace_period_expiration_at_ms == null ||
       Number.isSafeInteger(event.grace_period_expiration_at_ms)) &&
-    (event.price == null ||
-      (Number.isFinite(event.price) && event.price >= 0));
+    // Refund events carry a negative price.
+    (event.price == null || Number.isFinite(event.price));
 }
 
 function validateProductionRevenueCatEvent(

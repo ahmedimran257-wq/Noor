@@ -38,4 +38,19 @@ void main() {
     // A revoked refund must not leave the member marked active.
     expect(webhook, contains('Date.parse(expiresAt) > Date.now()'));
   });
+
+  test('a cancellation after access ended revokes without an access promise',
+      () {
+    final webhook = File('supabase/functions/revenuecat-webhook/index.ts')
+        .readAsStringSync();
+    expect(webhook,
+        contains('event.expiration_at_ms <= event.event_timestamp_ms!'));
+    expect(webhook, contains('? "REVOCATION"'));
+    expect(webhook, contains('case "REVOCATION":'));
+    // No notification copy and no outbox email exist for a revocation; the
+    // following EXPIRATION carries the member-facing message.
+    expect(webhook, isNot(contains('REVOCATION: [')));
+    // Refund events carry a negative price and must not be rejected.
+    expect(webhook, isNot(contains('event.price >= 0')));
+  });
 }
