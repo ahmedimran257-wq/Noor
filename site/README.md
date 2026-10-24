@@ -19,7 +19,17 @@ Static Cloudflare Pages project for `silarah.com`.
 - `silarah.com/sitemap.xml` lists public, indexable pages only. The app and
   staff console are intentionally excluded.
 
-The Android asset link contains the signed release upload-certificate fingerprint.
-Add the separate Play App Signing SHA-256 fingerprint after Play Console creates it
-for the published app. Add an Apple App Site Association file after the Apple
-Developer Team ID is available.
+The Android asset link contains both the upload-certificate and Play App Signing fingerprints.
+
+## Localisation and edge personalisation
+
+- `/hi/` and `/ur/` are built by `python tool/build_site_languages.py`; policies
+  stay in English, which governs.
+- `_worker.js` names an Indian visitor's state on the home pages, explains to
+  visitors outside India that Silarah is India-only, and offers Hindi or Urdu
+  to matching browsers. Crawlers receive the unpersonalised page.
+
+## Search
+
+After each deploy, run `node tool/indexnow_submit.mjs` to notify IndexNow
+engines. Google discovers changes through the sitemap in Search Console.
