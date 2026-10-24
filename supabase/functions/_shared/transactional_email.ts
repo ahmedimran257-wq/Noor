@@ -61,7 +61,7 @@ export function renderSubscriptionEmail(
   }</td>
     </tr>`).join("");
 
-  const subject = subjectFor(input.eventType, plan);
+  const subject = subjectFor(input.eventType);
   const html = `<!doctype html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -332,14 +332,14 @@ function copyFor(
   }
 }
 
-function subjectFor(eventType: string, plan: string): string {
+function subjectFor(eventType: string): string {
   switch (eventType) {
     case "INITIAL_PURCHASE":
       return "Your Silarah Premium membership is active";
     case "RENEWAL":
       return "Your Silarah Premium membership renewed";
     case "PRODUCT_CHANGE":
-      return `Your ${plan} plan was updated`;
+      return "Your Silarah Premium plan was updated";
     case "CANCELLATION":
       return "Your Silarah renewal has been cancelled";
     case "EXPIRATION":
