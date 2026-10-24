@@ -119,7 +119,7 @@ class HelpSupportScreen extends StatelessWidget {
             icon: Icons.gavel_outlined,
             title: 'Grievance Officer',
             body:
-                'Silarah Grievance Desk. Formal grievances are acknowledged within 24 hours and ordinarily resolved within 7 days.',
+                'Silarah Grievance Desk. Formal grievances are acknowledged and resolved within the time limits set by Indian law.',
             actionLabel: 'grievance@silarah.com',
             onTap: () => _contactEmail(context, 'grievance@silarah.com'),
           ),

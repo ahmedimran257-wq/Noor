@@ -169,9 +169,17 @@ void main() {
       profile.indexOf('child: _SavedProfilesSection('),
       lessThan(profile.indexOf('child: _HelpAndGrievanceCard(')),
     );
-    expect(policies, contains('does not impose an absolute “no refunds” rule'));
+    // Non-refundable by default, with narrow exceptions the law expects.
+    expect(policies, contains('final and non-refundable'));
+    expect(policies, contains('charged more than once'));
+    expect(policies, contains('fault on Silarah’s side'));
     expect(policies, contains('within 48 hours'));
     expect(policies, contains('statutory'));
+    // A solo operator must not promise faster grievance handling than the law.
+    expect(policies, isNot(contains('ordinarily resolved within 7 days')));
+    final refundPage = File('site/refund-policy/index.html').readAsStringSync();
+    expect(refundPage, contains('final and non-refundable'));
+    expect(refundPage, contains('charged more than once'));
     expect(privacy, isNot(contains('MyMemory')));
     expect(chat, isNot(contains('onTranslate')));
     expect(chat, isNot(contains('_translateWithPrivacyNotice')));

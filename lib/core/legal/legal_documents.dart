@@ -28,7 +28,7 @@ class LegalDocument {
 
 abstract final class LegalDocuments {
   static const version = '2.5.0';
-  static const effectiveDate = '20 September 2026';
+  static const effectiveDate = '24 October 2026';
   static const operatorName = 'Silarah';
   static const grievanceOfficerName = 'Silarah Grievance Desk';
   static const supportEmail = 'support@silarah.com';
@@ -69,7 +69,7 @@ abstract final class LegalDocuments {
       ),
       LegalSection(
         '7. Subscriptions, renewal and cancellation',
-        'Paid plans, included features, total price, currency, billing period, trial (if any) and renewal terms are shown before purchase. Premium features may include explainable compatibility insights, private shortlist organization and Incognito Discovery. Incognito limits appearance in general discovery and search while it is enabled and Premium remains active; it does not hide you from people with whom you already interacted, matched, shared photo access or established a guardian relationship. Google Play subscriptions renew automatically at the price and frequency displayed by Google Play until cancelled there. Use the in-app Manage Subscription link or Google Play Subscription Center before the renewal date shown in Google Play. Removing the app, pausing a profile or deleting a Silarah account does not cancel store billing. Cancellation stops future renewal and ordinarily leaves access until the paid period ends; it does not automatically refund the current period. Refund eligibility is governed by applicable consumer law, Google Play’s rules and our Refund Policy. Premium improves access to stated features but never guarantees an interest, match, response, meeting or marriage.',
+        'Paid plans, included features, total price, currency, billing period, trial (if any) and renewal terms are shown before purchase. Premium features may include explainable compatibility insights, private shortlist organization and Incognito Discovery. Incognito limits appearance in general discovery and search while it is enabled and Premium remains active; it does not hide you from people with whom you already interacted, matched, shared photo access or established a guardian relationship. Google Play subscriptions renew automatically at the price and frequency displayed by Google Play until cancelled there. Use the in-app Manage Subscription link or Google Play Subscription Center before the renewal date shown in Google Play. Removing the app, pausing a profile or deleting a Silarah account does not cancel store billing. Cancellation stops future renewal and ordinarily leaves access until the paid period ends; the current period is not refunded. Subscription payments are non-refundable except as set out in the Refund Policy or required by law. Premium improves access to stated features but never guarantees an interest, match, response, meeting or marriage.',
       ),
       LegalSection(
         '8. Prohibited conduct',
@@ -85,11 +85,11 @@ abstract final class LegalDocuments {
       ),
       LegalSection(
         '11. Service and member disclaimers',
-        'Silarah provides an introduction and communication service on an “as available” basis. We do not arrange or guarantee a meeting, relationship or marriage; verify every claim; control member conduct off-platform; or promise uninterrupted or error-free operation. Always use independent judgment, protect financial and identity information, involve trusted people where appropriate, meet safely and report concerns. Nothing in these Terms excludes warranties or rights that cannot lawfully be excluded.',
+        'Silarah provides an introduction and communication service on an “as available” basis. We do not arrange or guarantee a meeting, relationship or marriage; verify every claim; control member conduct off-platform; or promise uninterrupted or error-free operation. We may change, suspend or discontinue any feature, plan or part of the Service, with notice where reasonably practicable. Always use independent judgment, protect financial and identity information, involve trusted people where appropriate, meet safely and report concerns. Nothing in these Terms excludes warranties or rights that cannot lawfully be excluded.',
       ),
       LegalSection(
         '12. Liability',
-        'To the maximum extent permitted by law, Silarah is not liable for indirect, incidental, special, consequential or punitive loss, loss of opportunity, or conduct of another member. Our aggregate liability arising from the Service will not exceed the greater of the amount you paid Silarah in the 12 months before the event or the minimum amount required by applicable law. These limits do not apply to fraud, wilful misconduct, death or personal injury caused by negligence, or any liability that law does not permit us to limit.',
+        'To the maximum extent permitted by law, Silarah is not liable for indirect, incidental, special, consequential or punitive loss, loss of opportunity, or conduct of another member. Our aggregate liability arising from the Service will not exceed the greater of the amount you paid Silarah in the 12 months before the event or the minimum amount required by applicable law. These limits do not apply to fraud, wilful misconduct, death or personal injury caused by negligence, or any liability that law does not permit us to limit. To the extent permitted by law, you are responsible for loss Silarah suffers because of your breach of these Terms, unlawful use of the Service or content you post.',
       ),
       LegalSection(
         '13. Governing law and disputes',
@@ -245,22 +245,24 @@ abstract final class LegalDocuments {
     slug: 'refund-policy',
     title: 'Refund Policy',
     summary:
-        'How subscription cancellation, store-managed refunds, duplicate charges and entitlement changes are handled.',
+        'Silarah subscriptions are non-refundable, except for duplicate, unauthorised or incorrect charges and failures caused by Silarah.',
     sections: [
-      LegalSection('1. Scope',
-          'This Policy applies to paid Silarah subscriptions and features. Silarah does not impose an absolute “no refunds” rule. The total price, currency, billing period, renewal date, trial and included benefits shown in Google Play and on the purchase screen control the transaction, subject to non-waivable consumer law.'),
-      LegalSection('2. App Store purchases',
-          'Apple processes App Store payments and decides refund eligibility. Request a refund at reportaproblem.apple.com or through Apple Support. Silarah cannot issue an Apple refund directly. Cancelling an Apple subscription prevents future renewal but does not automatically refund the current period.'),
-      LegalSection('3. Google Play purchases',
-          'Google Play processes Android payments. Use the in-app Manage Subscription link or Google Play Subscription Center to stop future renewal. Google states that a refund may be available within 48 hours depending on the purchase details; after 48 hours, contact Silarah support for troubleshooting and a fair review under this Policy. Google may also issue refunds under its own rules or applicable law. Where platform controls permit, Silarah may submit a refund-and-revoke action, but a request is not a guarantee of approval.'),
-      LegalSection('4. Eligibility and fair review',
-          'The general rule for a cancelled Google Play subscription is no refund for the current billing period while access continues through that period, but exceptions and mandatory rights remain. A refund is not automatically due because you did not find a match, changed your mind, did not use the Service, were incompatible with another member, or lost access after a substantiated policy violation. We or Google Play will fairly consider unauthorized or duplicate charges, material failure to deliver purchased functionality, misleading purchase information, an incorrect charge and rights under applicable consumer law. We may ask for the order ID, date, platform and problem description—never full card details or an OTP.'),
-      LegalSection('5. Cancellation, deletion and entitlements',
-          'Deleting the app, pausing a profile or deleting a Silarah account does not cancel Google Play billing. Cancel in Google Play before the renewal date displayed there. A granted refund may immediately revoke Premium access. Cancellation without a refund normally preserves access until the paid period ends. If Silarah discontinues a paid feature during an active period, we will provide a reasonable substitute, continued access, extension or refund where required by the circumstances and law.'),
-      LegalSection('6. Trials and renewals',
-          'If a trial is offered, its duration and conversion price appear before purchase. Unless the store says otherwise, it converts to a paid auto-renewing subscription unless cancelled before the displayed deadline. Store account settings are the authoritative source for renewal status.'),
-      LegalSection('7. How to get help',
-          'For a billing investigation, email support@silarah.com with your Silarah account email, store, order ID and charge date. We aim to acknowledge support requests promptly, but store review and bank settlement times are outside our control. This Policy does not limit non-waivable statutory rights.'),
+      LegalSection('1. Subscriptions are non-refundable',
+          'Silarah subscription payments are final and non-refundable once a purchase is completed, including for any unused part of a billing period. The price, billing period and renewal terms are shown by Google Play and on the purchase screen before you pay. This Policy does not limit any statutory right that cannot be excluded under applicable consumer law.'),
+      LegalSection('2. When we do not refund',
+          'We do not refund because you changed your mind, did not find a match, did not receive interests or replies, did not use Premium, found a member incompatible, became engaged or married, forgot to cancel before a renewal, uninstalled the app, paused or deleted your account, or lost access after we enforced the Terms of Service or Community Guidelines.'),
+      LegalSection('3. When we do refund',
+          'We refund only when: you were charged more than once for the same subscription period; a charge is confirmed as not authorised by you; you were charged a different amount from the price shown at purchase; or Premium did not work for a substantial part of the paid period because of a fault on Silarah’s side that we could not fix within a reasonable time after you reported it. The refund covers the duplicate, unauthorised or excess amount, or the affected part of the period, and is paid through Google Play to the original payment method.'),
+      LegalSection('4. Google Play purchases',
+          'Payments are processed by Google Play, not by Silarah, and Silarah never sees your card or bank details. Google Play may independently grant a refund under its own policies; for example, Google offers a refund request flow for many purchases made within 48 hours. Those decisions are made by Google and are outside this Policy. When a purchase is refunded by Google or by us, the Premium access it paid for ends.'),
+      LegalSection('5. How to request an eligible refund',
+          'Email support@silarah.com from your Silarah account email, preferably within 30 days of the charge, with the Google Play order ID (it begins with GPA.), the charge date and a short description. We may ask for proportionate evidence, such as a screenshot showing both charges. Never send card numbers, bank details, passwords or OTP codes. Later requests are considered where the law requires it.'),
+      LegalSection('6. Cancellation and renewal',
+          'You can cancel at any time in Google Play under Payments & subscriptions, or through Manage Subscription in the app. Cancelling stops the next renewal; you keep Premium until the end of the period you already paid for, and that period is not refunded. Uninstalling the app, pausing a profile or deleting a Silarah account does not cancel Google Play billing. A free trial, if offered, becomes a paid subscription unless cancelled before the deadline shown.'),
+      LegalSection('7. Changes to Premium',
+          'We may add, change or retire individual Premium features as the Service develops. If a change materially reduces what you paid for during an active period, we will offer a reasonable remedy, such as an equivalent feature, extra time or a proportionate refund, where applicable law requires it.'),
+      LegalSection('8. Contact',
+          'Billing questions: support@silarah.com. Formal complaints: grievance@silarah.com. Nothing in this Policy affects non-waivable statutory rights.'),
     ],
   );
 
@@ -282,9 +284,9 @@ abstract final class LegalDocuments {
       LegalSection('5. Specific-data requests',
           'You can edit many profile fields and delete or replace photos without deleting the account. For access, correction, export, restriction or deletion of a particular category, email privacy@silarah.com. We will explain if deletion would make a requested feature unavailable or if law permits us to refuse part of the request.'),
       LegalSection('6. Subscriptions are separate',
-          'Account deletion does not cancel billing controlled by Apple or Google. Cancel the subscription in the relevant store before deleting the account. Deletion does not itself create a refund; see the Refund Policy.'),
+          'Account deletion does not cancel billing controlled by Google Play or any other app store. Cancel the subscription in the store before deleting the account. Deletion does not itself create a refund; see the Refund Policy.'),
       LegalSection('7. Timing and confirmation',
-          'We begin processing verified requests without undue delay. In-app deletion is scheduled after the stated 30-day recovery period; complex privacy requests follow the deadline required by applicable law. We will confirm completion where contact details remain available. Contact privacy@silarah.com if the process does not behave as described.'),
+          'We begin processing verified requests without undue delay. In-app deletion is scheduled after the stated 30-day recovery period; complex privacy requests follow the deadline required by applicable law. We may confirm completion where contact details remain available. Contact privacy@silarah.com if the process does not behave as described.'),
     ],
   );
 
@@ -306,7 +308,7 @@ abstract final class LegalDocuments {
       LegalSection('5. Identity verification and request tracking',
           'We verify a request using the signed-in session, the registered email or proportionate account facts. We do not ask for more data than reasonably needed and will provide a secure route if stronger verification is genuinely necessary. Include the account email, request type and relevant dates. We may ask you to identify the profile field, message, transaction or decision concerned. Duplicate or abusive automated requests may be consolidated without preventing a genuine legal right.'),
       LegalSection('6. Grievance timelines in India',
-          'Formal grievances are acknowledged within 24 hours and ordinarily resolved within 7 days under the applicable Indian intermediary rules. Complaints concerning specified removal requests follow the legally shorter deadline, including 36 hours for qualifying unlawful-content complaints and 2 hours for qualifying intimate imagery, nudity, sexual impersonation or similar urgent material. These timelines do not guarantee a requested outcome and may change when amended law imposes a shorter period.'),
+          'Formal grievances are acknowledged and resolved within the periods set by the applicable Indian intermediary and data-protection rules, including the shorter periods those rules set for specified urgent content such as non-consensual intimate imagery. Meeting a timeline does not guarantee a requested outcome.'),
       LegalSection('7. Grievance information and evidence',
           'The Silarah Grievance Desk receives formal grievances at grievance@silarah.com. Send a concise description, account email, dates, relevant profile or conversation reference and the outcome requested. Do not forward suspected child sexual abuse material or non-consensual intimate imagery by email; identify where it appears so authorized staff can preserve and restrict it safely. We may acknowledge receipt, request necessary clarification, issue a reasoned outcome, preserve required evidence, restrict content or accounts, and notify an authority when law requires.'),
       LegalSection('8. Appeals and external remedies',
@@ -340,7 +342,7 @@ abstract final class LegalDocuments {
       LegalSection('7. Decision and appeal',
           'The app provides a reason or next step when possible. You may retry after correcting quality issues or appeal through safety@silarah.com. Include your account email and decision date, but do not email identity documents. Staff may request a new secure submission. Appeals do not guarantee approval.'),
       LegalSection('8. Regional availability and account confirmation',
-          'The initial service launch is limited to India as shown in the app and Google Play listing. Accounts use verified email; Silarah does not collect or verify phone numbers. Women message mutual matches free. Men require active paid, referral or authorized testing Premium to send. Premium billing remains tied to the Google Play and Silarah account. Guardian invitations are one-time, expire after 7 days, are stored only as hashes and can be accepted only by the invited verified-email account.'),
+          'The initial service launch is limited to India as shown in the app and Google Play listing. Accounts use verified email; Silarah does not collect or verify phone numbers. Messaging access can differ by plan and by product rules that the app shows before use or purchase. Premium billing remains tied to the Google Play and Silarah account. Guardian invitations are one-time, expire after 7 days, are stored only as hashes and can be accepted only by the invited verified-email account.'),
     ],
   );
 
