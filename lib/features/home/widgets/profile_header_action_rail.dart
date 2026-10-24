@@ -30,7 +30,7 @@ class ProfileHeaderActionRail extends StatelessWidget {
       key: const ValueKey('profile-header-action-rail'),
       decoration: BoxDecoration(
         color: AppColors.surfaceGlass,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+        borderRadius: BorderRadius.circular(999),
         border: Border.all(color: AppColors.cardBorder),
       ),
       clipBehavior: Clip.antiAlias,

@@ -70,6 +70,9 @@ abstract final class AppDimensions {
   /// Tall editorial portrait leaves room for trust and rematch context.
   static const double cardAspectRatio = 7 / 10;
 
+  /// Tallest the card may grow on long phones before space is left free.
+  static const double cardTallestAspectRatio = 9 / 16;
+
   // Animation Durations
   /// Content entrance: fast response followed by a quiet settle.
   static const Duration durationReveal = Duration(milliseconds: 300);

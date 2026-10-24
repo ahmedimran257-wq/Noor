@@ -1970,33 +1970,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings_label_version => 'Version';
 
   @override
-  String get settings_notify_activityNudges => 'Activity Nudges';
+  String get settings_notify_activityNudges => 'Activity nudges';
 
   @override
   String get settings_notify_activityNudgesSub =>
       'Remind when inactive for 7+ days';
 
   @override
-  String get settings_notify_boostReminders => 'Boost Reminders';
+  String get settings_notify_boostReminders => 'Boost reminders';
 
   @override
   String get settings_notify_boostRemindersSub =>
       'Remind when your weekly boost is ready';
 
   @override
-  String get settings_notify_interestAccepted => 'Interest Accepted';
+  String get settings_notify_interestAccepted => 'Interest accepted';
 
   @override
-  String get settings_notify_interestExpiring => 'Interest Expiring Soon';
+  String get settings_notify_interestExpiring => 'Interest expiring soon';
 
   @override
-  String get settings_notify_newInterest => 'New Interests';
+  String get settings_notify_newInterest => 'New interests';
 
   @override
-  String get settings_notify_newMessage => 'New Messages';
+  String get settings_notify_newMessage => 'New messages';
 
   @override
-  String get settings_notify_quietHours => 'Quiet Hours';
+  String get settings_notify_quietHours => 'Quiet hours';
 
   @override
   String get settings_photo_privacy_accepted_interests =>

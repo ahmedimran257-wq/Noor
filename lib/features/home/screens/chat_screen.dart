@@ -1596,12 +1596,17 @@ class _MessageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final isMe = message.isMe;
 
+    // Only the first bubble of a run carries the tail corner, so consecutive
+    // messages read as one grouped thought.
+    const round = Radius.circular(18);
+    final tail = sameAsPrev ? round : const Radius.circular(6);
     final radius = BorderRadius.only(
-      topLeft: Radius.circular(isMe ? AppDimensions.radiusButton : 6),
-      topRight: Radius.circular(isMe ? 6 : AppDimensions.radiusButton),
-      bottomLeft: const Radius.circular(AppDimensions.radiusButton),
-      bottomRight: const Radius.circular(AppDimensions.radiusButton),
+      topLeft: isMe ? round : tail,
+      topRight: isMe ? tail : round,
+      bottomLeft: round,
+      bottomRight: round,
     );
+    final fill = isMe ? AppColors.champagneGold : AppColors.surfaceElevated;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -1646,18 +1651,19 @@ class _MessageBubble extends StatelessWidget {
                         horizontal: AppDimensions.space14,
                         vertical: AppDimensions.space10),
                     decoration: BoxDecoration(
-                      color: isMe
-                          ? AppColors.champagneGold.withValues(alpha: 0.15)
-                          : AppColors.surfaceGlassHover,
+                      color: fill,
                       borderRadius: radius,
-                      border: Border.all(
-                          color: isMe
-                              ? AppColors.goldBorder
-                              : AppColors.cardBorder,
-                          width: 0.8),
+                      border: isMe
+                          ? null
+                          : Border.all(color: AppColors.cardBorder, width: 0.8),
                     ),
-                    child:
-                        UiText(message.text, style: AppTypography.chatMessage),
+                    child: UiText(
+                      message.text,
+                      style: isMe
+                          ? AppTypography.chatMessage
+                              .copyWith(color: AppColors.readableOn(fill))
+                          : AppTypography.chatMessage,
+                    ),
                   ),
                 ),
                 if (isMe) ...[

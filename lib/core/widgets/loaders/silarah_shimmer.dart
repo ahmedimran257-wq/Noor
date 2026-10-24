@@ -5,6 +5,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_curves.dart';
 import '../../theme/app_dimensions.dart';
 import '../../theme/app_typography.dart';
+import '../cards/profile_card_box.dart';
 
 /// Silarah's quiet loading signature: a fixed seal with a shallow breathing
 /// motion. It communicates activity without the visual churn of a spinner.
@@ -600,8 +601,7 @@ class _SilarahProfileCardShimmerState extends State<SilarahProfileCardShimmer>
               .16 + pulse * .12,
             )!;
 
-            return AspectRatio(
-              aspectRatio: AppDimensions.cardAspectRatio,
+            return ProfileCardBox(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
                 child: DecoratedBox(

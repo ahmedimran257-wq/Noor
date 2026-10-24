@@ -115,7 +115,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
 
     final double spaceLarge = isSmallScreen ? 16 : 36;
     final double spaceMedium = isSmallScreen ? 12 : 28;
-    final double spaceSmall = isSmallScreen ? 10 : 20;
 
     return BlocConsumer<SubscriptionCubit, SubscriptionState>(
       listener: (context, state) {
@@ -177,6 +176,34 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
           Scaffold(
             backgroundColor: AppColors.obsidianNight,
             appBar: _appBar(),
+            // The price and action stay in reach while the plans scroll.
+            bottomNavigationBar: _pricing.isAvailable
+                ? DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: AppColors.obsidianNight,
+                      border: Border(
+                        top: BorderSide(
+                          color: AppColors.cardBorder,
+                          width: AppDimensions.borderThin,
+                        ),
+                      ),
+                    ),
+                    child: SafeArea(
+                      top: false,
+                      minimum: const EdgeInsets.only(bottom: 8),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+                        child: _CtaButton(
+                          selectedPlan: _selectedPlan,
+                          pricing: _pricing,
+                          isLoading: state.isLoading || _purchaseFlowInProgress,
+                          isSmallScreen: isSmallScreen,
+                          onTap: _startPurchase,
+                        ),
+                      ),
+                    ),
+                  )
+                : null,
             body: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               padding: EdgeInsets.fromLTRB(20, 0, 20, isSmallScreen ? 20 : 40),
@@ -223,18 +250,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                       isFemale: isFemale, isSmallScreen: isSmallScreen),
 
                   SizedBox(height: spaceLarge),
-
-                  // CTA Button
-                  if (_pricing.isAvailable)
-                    _CtaButton(
-                      selectedPlan: _selectedPlan,
-                      pricing: _pricing,
-                      isLoading: state.isLoading || _purchaseFlowInProgress,
-                      isSmallScreen: isSmallScreen,
-                      onTap: _startPurchase,
-                    ),
-
-                  SizedBox(height: spaceSmall),
 
                   // Secondary links
                   _SecondaryLinks(
@@ -1085,21 +1100,44 @@ class _SecondaryLinks extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final actionStyle = AppTypography.caption.copyWith(
+      color: AppColors.champagneGold,
+      fontSize: isSmallScreen ? 12 : 13,
+    );
+    final actionButtonStyle = TextButton.styleFrom(
+      padding: EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: isSmallScreen ? 4 : 8,
+      ),
+      minimumSize: Size.zero,
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    );
     return Column(
       children: [
-        TextButton(
-          onPressed: isLoading ? null : onRestore,
-          style: TextButton.styleFrom(
-            padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 4 : 8),
-            minimumSize: Size.zero,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-          child: UiText(
-            context.uiCopy('Restore Purchase'),
-            style: AppTypography.caption.copyWith(
-                color: AppColors.champagneGold,
-                fontSize: isSmallScreen ? 12 : 14),
-          ),
+        Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            TextButton(
+              onPressed: isLoading ? null : onRestore,
+              style: actionButtonStyle,
+              child: UiText(
+                context.uiCopy('Restore Purchase'),
+                style: actionStyle,
+              ),
+            ),
+            UiText('·',
+                style:
+                    AppTypography.caption.copyWith(color: AppColors.slateMist)),
+            TextButton(
+              onPressed: () => _openBillingPortal(context),
+              style: actionButtonStyle,
+              child: UiText(
+                context.uiCopy('Manage Subscription'),
+                style: actionStyle,
+              ),
+            ),
+          ],
         ),
         SizedBox(height: isSmallScreen ? 2 : 4),
         Wrap(
@@ -1146,22 +1184,6 @@ class _SecondaryLinks extends StatelessWidget {
               child: UiText(context.uiCopy('Refund Policy'),
                   style: AppTypography.caption
                       .copyWith(fontSize: isSmallScreen ? 11 : 12)),
-            ),
-            UiText('·',
-                style:
-                    AppTypography.caption.copyWith(color: AppColors.slateMist)),
-            TextButton(
-              onPressed: () => _openBillingPortal(context),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: UiText(context.uiCopy('Manage Subscription'),
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.champagneGold,
-                    fontSize: isSmallScreen ? 11 : 12,
-                  )),
             ),
           ],
         ),

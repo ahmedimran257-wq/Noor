@@ -229,8 +229,7 @@ class _ChatListScreenState extends State<ChatListScreen>
                       height: AppDimensions.minTouchTarget,
                       decoration: BoxDecoration(
                         color: AppColors.surfaceGlass,
-                        borderRadius:
-                            BorderRadius.circular(AppDimensions.radiusButton),
+                        shape: BoxShape.circle,
                         border: Border.all(
                           color: _isSearching
                               ? AppColors.goldBorder

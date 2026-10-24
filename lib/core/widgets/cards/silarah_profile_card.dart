@@ -17,6 +17,7 @@ import '../../theme/app_typography.dart';
 import '../buttons/silarah_pressable.dart';
 import '../loaders/silarah_blur_image.dart';
 import '../loaders/silarah_shimmer.dart';
+import 'profile_card_box.dart';
 
 class SilarahProfileCard extends StatelessWidget {
   const SilarahProfileCard({
@@ -72,16 +73,15 @@ class SilarahProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final frameColor = isFocused
-        ? AppColors.champagneGold.withValues(alpha: .88)
-        : AppColors.onMedia.withValues(alpha: .28);
+    // A hairline edge reads as finish; a coloured outline reads as a widget.
+    final frameColor =
+        AppColors.onMedia.withValues(alpha: isFocused ? .12 : .08);
 
     return Transform.scale(
       scale: cardScale,
       child: SilarahPressable(
         onTap: onTap,
-        child: AspectRatio(
-          aspectRatio: AppDimensions.cardAspectRatio,
+        child: ProfileCardBox(
           child: Container(
             key: const Key('discovery_profile_card_frame'),
             decoration: BoxDecoration(
@@ -97,15 +97,10 @@ class SilarahProfileCard extends StatelessWidget {
               boxShadow: isFocused
                   ? [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.22),
-                        blurRadius: 34,
-                        spreadRadius: -8,
-                        offset: const Offset(0, 20),
-                      ),
-                      BoxShadow(
-                        color: AppColors.goldGlow,
-                        blurRadius: 28,
-                        spreadRadius: -12,
+                        color: Colors.black.withValues(alpha: 0.18),
+                        blurRadius: 32,
+                        spreadRadius: -10,
+                        offset: const Offset(0, 18),
                       ),
                     ]
                   : null,
@@ -114,7 +109,7 @@ class SilarahProfileCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppDimensions.radiusCard),
               border: Border.all(
                 color: frameColor,
-                width: 1.5,
+                width: 1,
               ),
             ),
             clipBehavior: Clip.antiAlias,
@@ -279,7 +274,8 @@ class SilarahProfileCard extends StatelessWidget {
                                   spacing: AppDimensions.space8,
                                   runSpacing: AppDimensions.space6,
                                   children: [
-                                    if (sect != null) _InfoChip(label: sect!),
+                                    if (sect != null)
+                                      _InfoChip(label: _formatSect(sect!)),
                                     if (deenLevel != null)
                                       _InfoChip(label: _formatDeen(deenLevel!)),
                                   ],
@@ -289,18 +285,7 @@ class SilarahProfileCard extends StatelessWidget {
                               const SizedBox(height: AppDimensions.space14),
 
                               // Action row: bookmark + send interest
-                              Container(
-                                padding: const EdgeInsets.all(5),
-                                decoration: BoxDecoration(
-                                  color: AppColors.overlayBlack87,
-                                  borderRadius: BorderRadius.circular(
-                                    AppDimensions.radiusButton + 4,
-                                  ),
-                                  border: Border.all(
-                                    color: AppColors.onMedia
-                                        .withValues(alpha: .18),
-                                  ),
-                                ),
+                              SizedBox(
                                 child: Row(
                                   children: [
                                     _IconActionButton(
@@ -349,6 +334,15 @@ class SilarahProfileCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  // Stored sects can be upper-case enum names; chips read in title case.
+  String _formatSect(String raw) {
+    if (raw != raw.toUpperCase()) return raw;
+    return raw.toLowerCase().replaceAllMapped(
+          RegExp(r'(^|[\s/(-])([a-z])'),
+          (m) => '${m[1]}${m[2]!.toUpperCase()}',
+        );
   }
 
   String _formatDeen(String raw) {
@@ -736,25 +730,19 @@ class _InfoChip extends StatelessWidget {
         vertical: AppDimensions.space6,
       ),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xD1000000),
-            Color(0x99000000),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
+        color: AppColors.onMedia.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: AppColors.onMedia.withValues(alpha: 0.22),
-          width: AppDimensions.borderThin,
+          color: AppColors.onMedia.withValues(alpha: 0.20),
+          width: 0.75,
         ),
       ),
       child: UiText(
         label,
         style: AppTypography.chipLabel.copyWith(
-          color: AppColors.onMedia,
-          fontWeight: FontWeight.w600,
+          color: AppColors.onMedia.withValues(alpha: 0.94),
+          fontWeight: FontWeight.w500,
+          letterSpacing: 0.4,
         ),
       ),
     );
@@ -809,12 +797,12 @@ class _SendInterestButton extends StatelessWidget {
                   end: Alignment.bottomRight,
                   colors: enabledColors,
                 ),
-          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+          borderRadius: BorderRadius.circular(25),
           border: Border.all(
             color: !isInteractive
-                ? AppColors.onMedia.withValues(alpha: 0.22)
-                : AppColors.champagneLight.withValues(alpha: 0.92),
-            width: 1.25,
+                ? AppColors.onMedia.withValues(alpha: 0.16)
+                : AppColors.champagneLight.withValues(alpha: 0.45),
+            width: 0.75,
           ),
           boxShadow: !isInteractive
               ? null
@@ -914,25 +902,13 @@ class _IconActionButton extends StatelessWidget {
         width: 50,
         height: 50,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isActive
-                ? [
-                    AppColors.onMedia,
-                    AppColors.onMedia.withValues(alpha: 0.88),
-                  ]
-                : [
-                    AppColors.overlayBlack87,
-                    AppColors.overlayBlack55,
-                  ],
-          ),
-          borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
+          color: isActive
+              ? AppColors.onMedia
+              : AppColors.onMedia.withValues(alpha: 0.14),
+          shape: BoxShape.circle,
           border: Border.all(
-            color: isActive
-                ? AppColors.overlayBlack45
-                : AppColors.onMedia.withValues(alpha: 0.72),
-            width: AppDimensions.borderThin,
+            color: AppColors.onMedia.withValues(alpha: isActive ? 0 : 0.24),
+            width: 0.75,
           ),
         ),
         child: Icon(

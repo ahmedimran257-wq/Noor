@@ -315,27 +315,34 @@ class _InterestsScreenState extends State<InterestsScreen>
             Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: AppDimensions.space24),
+              // An inset track with a raised thumb that slides between tabs.
               child: Container(
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceGlass,
-                  borderRadius:
-                      BorderRadius.circular(AppDimensions.radiusButton),
-                  border: Border.all(color: AppColors.cardBorder),
+                  color: AppColors.champagneGold.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(999),
                 ),
                 child: TabBar(
                   controller: _tabCtrl,
-                  labelStyle: AppTypography.bodyMedium.copyWith(fontSize: 14),
+                  labelStyle: AppTypography.bodyMedium
+                      .copyWith(fontSize: 14, fontWeight: FontWeight.w600),
                   unselectedLabelStyle:
                       AppTypography.bodyMuted.copyWith(fontSize: 14),
                   labelColor: AppColors.champagneGold,
                   unselectedLabelColor: AppColors.slateMist,
                   indicatorSize: TabBarIndicatorSize.tab,
                   indicator: BoxDecoration(
-                    color: AppColors.champagneGold.withValues(alpha: 0.12),
-                    borderRadius:
-                        BorderRadius.circular(AppDimensions.radiusButton - 2),
-                    border: Border.all(color: AppColors.goldBorder),
+                    color: AppColors.surfaceElevated,
+                    borderRadius: BorderRadius.circular(999),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.07),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
+                  splashBorderRadius: BorderRadius.circular(999),
                   dividerColor: Colors.transparent,
                   tabs: [
                     Tab(

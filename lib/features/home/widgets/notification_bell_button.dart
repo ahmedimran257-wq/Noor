@@ -44,8 +44,7 @@ class NotificationBellButton extends StatelessWidget {
                     ? null
                     : BoxDecoration(
                         color: AppColors.surfaceGlass,
-                        borderRadius:
-                            BorderRadius.circular(AppDimensions.radiusButton),
+                        shape: BoxShape.circle,
                         border: Border.all(
                           color: unreadCount > 0
                               ? AppColors.champagneGold.withValues(alpha: 0.38)
@@ -61,8 +60,8 @@ class NotificationBellButton extends StatelessWidget {
                 ),
               ),
               Positioned(
-                top: 6,
-                right: 6,
+                top: embedded ? 6 : 11,
+                right: embedded ? 6 : 12,
                 child: AnimatedSwitcher(
                   duration: AppDimensions.durationTransition,
                   switchInCurve: AppCurves.tactile,

@@ -1,6 +1,6 @@
 // SILARAH — Bottom Navigation Bar
 // 4 tabs: Discover / Interests / Chat / Profile
-// Active: Champagne Gold icon + thin gold underline
+// Active: Champagne Gold icon in a capsule that widens on selection
 // Inactive: Slate Mist
 // Badges: Gold bubble on Interests (pending received count)
 //         and Chat (total unread count)
@@ -142,33 +142,19 @@ class _NavTab extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // A precise brand line replaces the previous oversized gradient
-            // box, keeping navigation quiet while preserving clear state.
-            AnimatedContainer(
-              duration: AppDimensions.durationTransition,
-              curve: Curves.easeOutCubic,
-              width: isActive ? 24.0 : 0.0,
-              height: 2.5,
-              margin: const EdgeInsets.only(bottom: 4),
-              decoration: BoxDecoration(
-                color:
-                    isActive ? AppColors.champagneGold : AppColors.transparent,
-                borderRadius: BorderRadius.circular(AppDimensions.radiusTiny),
-              ),
-            ),
-
-            // Icon + optional badge
+            // One state marker: the capsule widens behind the active icon.
             Stack(
               clipBehavior: Clip.none,
               children: [
                 AnimatedContainer(
                   duration: AppDimensions.durationTransition,
-                  width: 34,
+                  curve: Curves.easeOutCubic,
+                  width: isActive ? 56 : 34,
                   height: 30,
                   decoration: BoxDecoration(
                     color:
                         isActive ? AppColors.goldGlow : AppColors.transparent,
-                    borderRadius: BorderRadius.circular(11),
+                    borderRadius: BorderRadius.circular(15),
                   ),
                   child: Icon(
                     isActive ? item.activeIcon : item.icon,
@@ -189,7 +175,7 @@ class _NavTab extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 1),
+            const SizedBox(height: 4),
 
             // Label
             AnimatedDefaultTextStyle(
@@ -197,7 +183,8 @@ class _NavTab extends StatelessWidget {
               style: AppTypography.caption.copyWith(
                 color: isActive ? AppColors.champagneGold : AppColors.slateMist,
                 fontSize: 10,
-                fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                letterSpacing: 0.2,
                 height: 1.0,
               ),
               child: FittedBox(
@@ -230,9 +217,9 @@ class _Badge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
       decoration: BoxDecoration(
         color: AppColors.premiumGold,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusTiny),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: AppColors.obsidianNight,
+          color: AppColors.navBarSurface,
           width: 1.5,
         ),
       ),

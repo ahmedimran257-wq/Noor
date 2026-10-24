@@ -3723,7 +3723,7 @@ abstract class AppLocalizations {
   /// No description provided for @settings_notify_activityNudges.
   ///
   /// In en, this message translates to:
-  /// **'Activity Nudges'**
+  /// **'Activity nudges'**
   String get settings_notify_activityNudges;
 
   /// No description provided for @settings_notify_activityNudgesSub.
@@ -3735,7 +3735,7 @@ abstract class AppLocalizations {
   /// No description provided for @settings_notify_boostReminders.
   ///
   /// In en, this message translates to:
-  /// **'Boost Reminders'**
+  /// **'Boost reminders'**
   String get settings_notify_boostReminders;
 
   /// No description provided for @settings_notify_boostRemindersSub.
@@ -3747,31 +3747,31 @@ abstract class AppLocalizations {
   /// No description provided for @settings_notify_interestAccepted.
   ///
   /// In en, this message translates to:
-  /// **'Interest Accepted'**
+  /// **'Interest accepted'**
   String get settings_notify_interestAccepted;
 
   /// No description provided for @settings_notify_interestExpiring.
   ///
   /// In en, this message translates to:
-  /// **'Interest Expiring Soon'**
+  /// **'Interest expiring soon'**
   String get settings_notify_interestExpiring;
 
   /// No description provided for @settings_notify_newInterest.
   ///
   /// In en, this message translates to:
-  /// **'New Interests'**
+  /// **'New interests'**
   String get settings_notify_newInterest;
 
   /// No description provided for @settings_notify_newMessage.
   ///
   /// In en, this message translates to:
-  /// **'New Messages'**
+  /// **'New messages'**
   String get settings_notify_newMessage;
 
   /// No description provided for @settings_notify_quietHours.
   ///
   /// In en, this message translates to:
-  /// **'Quiet Hours'**
+  /// **'Quiet hours'**
   String get settings_notify_quietHours;
 
   /// No description provided for @settings_photo_privacy_accepted_interests.

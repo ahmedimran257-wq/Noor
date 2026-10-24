@@ -154,54 +154,57 @@ class _Chip extends StatelessWidget {
         HapticFeedback.selectionClick();
         onTap();
       },
-      child: AnimatedContainer(
-        duration: AppDimensions.durationTransition,
-        constraints: const BoxConstraints(
-          minHeight: 44,
-          maxWidth: 176,
-        ),
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppDimensions.space12,
-          vertical: AppDimensions.space8,
-        ),
-        decoration: BoxDecoration(
-          color: isActive
-              ? accent.withValues(alpha: 0.12)
-              : AppColors.surfaceGlass,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusChip),
-          border: Border.all(
-            color: isActive
-                ? accent
-                : AppColors.isChromatic
-                    ? accent.withValues(alpha: .28)
-                    : AppColors.cardBorder,
-            width: 1.5,
+      // The horizontal list forces full height; centring keeps a slim pill.
+      child: Center(
+        child: AnimatedContainer(
+          duration: AppDimensions.durationTransition,
+          constraints: const BoxConstraints(
+            minHeight: 38,
+            maxWidth: 176,
           ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.space12,
+            vertical: AppDimensions.space8,
+          ),
+          decoration: BoxDecoration(
+            color: isActive
+                ? accent.withValues(alpha: 0.12)
+                : AppColors.surfaceGlass,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
               color: isActive
-                  ? accent
+                  ? accent.withValues(alpha: .55)
                   : AppColors.isChromatic
-                      ? accent.withValues(alpha: .78)
-                      : AppColors.slateMist,
-              size: AppDimensions.iconSizeSmall,
+                      ? accent.withValues(alpha: .20)
+                      : AppColors.cardBorder,
+              width: 1,
             ),
-            const SizedBox(width: AppDimensions.space6),
-            Flexible(
-              child: UiText(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTypography.chipLabel.copyWith(
-                  color: isActive ? accent : AppColors.slateMist,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                color: isActive
+                    ? accent
+                    : AppColors.isChromatic
+                        ? accent.withValues(alpha: .78)
+                        : AppColors.slateMist,
+                size: AppDimensions.iconSizeSmall,
+              ),
+              const SizedBox(width: AppDimensions.space6),
+              Flexible(
+                child: UiText(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.chipLabel.copyWith(
+                    color: isActive ? accent : AppColors.slateMist,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

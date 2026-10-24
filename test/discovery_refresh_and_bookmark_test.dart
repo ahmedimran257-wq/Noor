@@ -215,7 +215,8 @@ void main() {
         frameBorder.left,
       ]) {
         expect(side.style, BorderStyle.solid);
-        expect(side.width, 1.5);
+        // A hairline frame on every side reads as finish, not a widget outline.
+        expect(side.width, 1.0);
       }
 
       final action = tester.widget<AnimatedContainer>(

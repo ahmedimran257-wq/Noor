@@ -65,7 +65,8 @@ void main() {
     );
     expect(filters, contains('onChangeEnd: (values)'));
     expect(filterBar, contains('BlocSelector<DiscoveryFeedCubit'));
-    expect(filterBar, contains('width: 1.5'));
+    // One border width for every state keeps chip geometry stable.
+    expect(filterBar, contains('width: 1,'));
     expect(filterOptions, contains('_cacheLifetime'));
     expect(filterOptions, contains('_inFlight'));
     expect(filterOptions, contains('identical(_inFlight, request)'));

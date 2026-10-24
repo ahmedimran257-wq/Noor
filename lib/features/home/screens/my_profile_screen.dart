@@ -769,16 +769,13 @@ class _MyProfileScreenState extends State<MyProfileScreen>
             // Sign out
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
+              // A quiet exit: sign-out should not outweigh the actions above.
               child: SizedBox(
                 width: double.infinity,
                 height: AppDimensions.buttonHeight,
-                child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: AppColors.softCoral),
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppDimensions.radiusButton),
-                    ),
+                child: TextButton.icon(
+                  style: TextButton.styleFrom(
+                    shape: const StadiumBorder(),
                   ),
                   icon: Icon(Icons.logout_rounded,
                       color: AppColors.softCoral,
@@ -978,6 +975,42 @@ class _ProfileLifecycleCard extends StatelessWidget {
             : needsPhoto
                 ? onManagePhotos
                 : null;
+
+    // A healthy public profile needs one calm line, not a full status panel.
+    final isQuiet = isActive &&
+        !needsPhoto &&
+        !incognitoEnabled &&
+        standing.errorMessage == null;
+    if (isQuiet) {
+      return Semantics(
+        liveRegion: true,
+        label: '${context.uiCopy(title)}. ${context.uiCopy(body)}',
+        child: AnimatedContainer(
+          duration: AppDimensions.durationReveal,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.space16,
+            vertical: AppDimensions.space12,
+          ),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.07),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: color.withValues(alpha: 0.22)),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: color, size: 18),
+              const SizedBox(width: AppDimensions.space10),
+              Expanded(
+                child: UiText(
+                  title,
+                  style: AppTypography.bodyMedium.copyWith(color: color),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Semantics(
       liveRegion: true,
@@ -2190,16 +2223,6 @@ class _ProfilePreviewCard extends StatelessWidget {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(children: [
-                  UiText(context.uiProfileCompleteness(score),
-                      style: AppTypography.captionMedium
-                          .copyWith(color: AppColors.champagneGold)),
-                  const Spacer(),
-                  UiText(score >= 80 ? '✓ Great profile!' : 'Keep going!',
-                      style: AppTypography.caption
-                          .copyWith(color: AppColors.champagneGold)),
-                ]),
-                const SizedBox(height: AppDimensions.space8),
                 TweenAnimationBuilder<double>(
                   tween: Tween(begin: 0, end: pct),
                   duration: AppDimensions.durationReveal,
