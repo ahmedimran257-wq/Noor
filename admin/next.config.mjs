@@ -1,21 +1,14 @@
 const isDev = process.env.NODE_ENV !== "production";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://*.supabase.co";
-const supabaseImageHost = (() => {
+const supabaseOrigin = (() => {
   try {
     return new URL(supabaseUrl).origin;
   } catch {
     return "https://*.supabase.co";
   }
 })();
-const supabaseImageHostname = (() => {
-  try {
-    return new URL(supabaseUrl).hostname;
-  } catch {
-    return "**.supabase.co";
-  }
-})();
 
-const securityHeaders = [
+const baseHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
@@ -26,40 +19,35 @@ const securityHeaders = [
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains; preload",
   },
-  {
-    key: "Content-Security-Policy",
-    value: [
-      "default-src 'self'",
-      `script-src 'self'${isDev ? " 'unsafe-eval'" : ""}`,
-      "style-src 'self'",
-      `img-src 'self' data: ${supabaseImageHost}`,
-      "font-src 'self'",
-      `connect-src 'self' ${process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://*.supabase.co"}`,
-      "frame-ancestors 'none'",
-      "object-src 'none'",
-      "base-uri 'none'",
-      "form-action 'self'",
-    ].join("; "),
-  },
 ];
+
+// Documents get a per-request nonce policy from src/middleware.ts. Assets the
+// middleware skips keep this static policy, which never needs inline code.
+const staticCsp = {
+  key: "Content-Security-Policy",
+  value: [
+    "default-src 'self'",
+    `script-src 'self'${isDev ? " 'unsafe-eval'" : ""}`,
+    "style-src 'self'",
+    `img-src 'self' data: ${supabaseOrigin}`,
+    "font-src 'self'",
+    `connect-src 'self' ${supabaseOrigin}`,
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+    "base-uri 'none'",
+    "form-action 'self'",
+  ].join("; "),
+};
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   poweredByHeader: false,
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: supabaseImageHostname,
-      },
-    ],
-  },
   async headers() {
     return [
-      {
-        source: "/(.*)",
-        headers: securityHeaders,
-      },
+      { source: "/(.*)", headers: baseHeaders },
+      { source: "/_next/static/:path*", headers: [staticCsp] },
+      { source: "/_next/image", headers: [staticCsp] },
+      { source: "/favicon.ico", headers: [staticCsp] },
     ];
   },
 };

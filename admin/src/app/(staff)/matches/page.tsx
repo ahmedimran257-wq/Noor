@@ -1,8 +1,56 @@
+import { Heart, MessageCircle, Sparkles, Users } from "lucide-react";
+import { EmptyState, PageHeader, Stat, formatDate, relativeTime } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
-import { getMatches, getMatchMetrics } from "@/lib/operations";
+import { getMatchMetrics, getMatches } from "@/lib/operations";
+
+export const metadata = { title: "Matches" };
 
 export default async function MatchesPage() {
-  await requireAdmin(); const [metrics, matches] = await Promise.all([getMatchMetrics(), getMatches()]);
-  const cards = [["Active matches", metrics.activeMatches], ["Interests (30d)", metrics.interestsThirtyDays], ["Accepted (30d)", metrics.acceptedThirtyDays], ["Messages (30d)", metrics.messagesThirtyDays], ["Discovery pool", metrics.discoveryProfiles]];
-  return <section className="dashboard-page"><p className="eyebrow">Core matching health</p><h1>Matches & interests</h1><div className="metric-grid">{cards.map(([label,value]) => <article className="metric-card" key={label}><span>{label}</span><strong>{Number(value ?? 0).toLocaleString()}</strong></article>)}</div><h2 className="section-title">Active matches</h2><div className="table-wrap"><table><thead><tr><th>Match</th><th>Created</th><th>Messages</th><th>Last message</th></tr></thead><tbody>{matches.map((match) => <tr key={match.match_id}><td>{match.user_a_name} · {match.user_b_name}</td><td>{new Date(match.created_at).toLocaleDateString()}</td><td>{match.message_count}</td><td>{match.last_message_at ? new Date(match.last_message_at).toLocaleDateString() : "No messages"}</td></tr>)}</tbody></table></div></section>;
+  await requireAdmin();
+  const [metrics, matches] = await Promise.all([getMatchMetrics(), getMatches()]);
+  const m = metrics ?? {};
+  const acceptance = m.interestsThirtyDays ? Math.round((Number(m.acceptedThirtyDays ?? 0) / Number(m.interestsThirtyDays)) * 100) : null;
+
+  return (
+    <div className="stack-lg">
+      <PageHeader
+        eyebrow="Members"
+        title="Matches & interests"
+        lede="How well introductions are turning into conversations. Names are masked; open a member from the directory if you need more."
+      />
+      <div className="stat-grid">
+        <Stat label="Active matches" value={m.activeMatches} icon={Heart} />
+        <Stat label="Interests · 30 days" value={m.interestsThirtyDays} icon={Sparkles} />
+        <Stat label="Accepted · 30 days" value={m.acceptedThirtyDays} hint={acceptance === null ? undefined : `${acceptance}% acceptance`} icon={Sparkles} />
+        <Stat label="Messages · 30 days" value={m.messagesThirtyDays} icon={MessageCircle} />
+        <Stat label="In Discover now" value={m.discoveryProfiles} icon={Users} />
+      </div>
+
+      <section className="card">
+        <div className="card-head">
+          <h2><Heart size={16} /> Newest active matches</h2>
+          <span className="muted">Up to 100</span>
+        </div>
+        {matches.length === 0 ? (
+          <EmptyState icon={Heart} title="No active matches yet">When two members accept each other, the match appears here.</EmptyState>
+        ) : (
+          <div className="table-wrap">
+            <table className="table">
+              <thead><tr><th>Couple</th><th>Matched</th><th className="right">Messages</th><th>Last message</th></tr></thead>
+              <tbody>
+                {matches.map((match) => (
+                  <tr key={match.match_id}>
+                    <td><span className="cell-main">{match.user_a_name} &amp; {match.user_b_name}</span></td>
+                    <td className="num">{formatDate(match.created_at)}</td>
+                    <td className="right num">{Number(match.message_count).toLocaleString("en-IN")}</td>
+                    <td className="muted">{match.last_message_at ? relativeTime(match.last_message_at) : "No messages yet"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </div>
+  );
 }

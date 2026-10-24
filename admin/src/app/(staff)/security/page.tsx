@@ -1,43 +1,45 @@
-import { KeyRound, ShieldAlert, ShieldCheck } from "lucide-react";
+import { Bell, FileClock, KeyRound, ShieldAlert, ShieldCheck } from "lucide-react";
+import { NoAccess, PageHeader, Stat } from "@/components/ui";
+import { requireArea } from "@/lib/auth";
 import { getSecurityMetrics } from "@/lib/operations";
 
-const securityCards = [
-  ["Failed logins 15m", "failedLogins15m", ShieldAlert],
-  ["Failed logins 24h", "failedLogins24h", ShieldAlert],
-  ["Successful logins 24h", "successfulLogins24h", KeyRound],
-  ["Unread admin alerts", "unreadAdminNotifications", ShieldAlert],
-  ["Audit events 24h", "auditEvents24h", ShieldCheck],
-  ["Active super admins", "activeSuperAdmins", ShieldCheck],
-] as const;
+export const metadata = { title: "Security" };
 
 export default async function SecurityPage() {
-  const metrics = (await getSecurityMetrics()) ?? {};
+  const { allowed } = await requireArea("security");
+  if (!allowed) return <NoAccess area="Security" />;
+  const m = (await getSecurityMetrics()) ?? {};
+  const failedRecent = Number(m.failedLogins15m ?? 0);
 
   return (
-    <section className="dashboard-page">
-      <div className="page-hero">
-        <div>
-          <p className="eyebrow">Security center</p>
-          <h1>Access posture</h1>
-          <p className="muted">Real-time security indicators from admin login attempts, audit events, staff memberships, and internal alerts.</p>
+    <div className="stack-lg">
+      <PageHeader
+        eyebrow="Governance"
+        title="Security"
+        lede="Sign-in attempts to this console and the safeguards around staff access."
+      />
+      {failedRecent >= 5 ? (
+        <div className="notice danger"><ShieldAlert size={16} /><span><strong>{failedRecent} failed sign-ins in the last 15 minutes.</strong> Login rate limits are active. Check the audit trail if this continues.</span></div>
+      ) : null}
+      <div className="stat-grid">
+        <Stat label="Failed sign-ins · 15 min" value={m.failedLogins15m} icon={ShieldAlert} tone={failedRecent >= 5 ? "alert" : undefined} />
+        <Stat label="Failed sign-ins · 24 h" value={m.failedLogins24h} icon={ShieldAlert} />
+        <Stat label="Successful sign-ins · 24 h" value={m.successfulLogins24h} icon={KeyRound} />
+        <Stat label="Unread alerts" value={m.unreadAdminNotifications} icon={Bell} href="/inbox" />
+        <Stat label="Audit entries · 24 h" value={m.auditEvents24h} icon={FileClock} href="/audit" />
+        <Stat label="Active super admins" value={m.activeSuperAdmins} icon={ShieldCheck} href="/staff" />
+      </div>
+      <section className="card card-pad">
+        <div className="stack">
+          <h2 className="display">How access is protected</h2>
+          <ul className="muted stack">
+            <li>Staff accounts are separate from member profiles and need an authenticator code before any data loads.</li>
+            <li>Sessions end 12 hours after sign-in, enforced by the database on every request.</li>
+            <li>Every privileged change and sensitive read is written to the audit trail.</li>
+            <li>Member names and emails stay masked until a reveal with a stated reason.</li>
+          </ul>
         </div>
-        <div className="hero-badge"><ShieldCheck size={18} /> MFA gated</div>
-      </div>
-
-      <div className="metric-grid">
-        {securityCards.map(([label, key, Icon]) => (
-          <article className="metric-card elevated-panel" key={key}>
-            <Icon size={19} />
-            <span>{label}</span>
-            <strong>{Number(metrics[key] ?? 0).toLocaleString()}</strong>
-          </article>
-        ))}
-      </div>
-
-      <div className="foundation-card">
-        <ShieldCheck size={24} />
-        <p>Staff access is separated from public matrimony profiles, MFA is enforced before the dashboard, and privileged changes are written to the audit log.</p>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }

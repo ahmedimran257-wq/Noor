@@ -1,234 +1,164 @@
 "use client";
 
-import { Activity, BadgeCheck, Bell, Camera, Heart, MessageCircle, Radio, ShieldAlert, Sparkles, Users, WalletCards } from "lucide-react";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { BadgeCheck, Heart, MessageCircle, Radio, Sparkles, Users } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { DashboardOverview } from "@/lib/operations";
 
-type Bucket = Record<string, number>;
-type LiveSnapshot = {
-  generatedAt: number;
-  traffic: Bucket;
-  engagement: Bucket;
-  progress: Bucket;
-  queues: Bucket;
-  pipeline: Bucket;
-};
+// private.refresh_admin_metric_snapshots runs every 15 minutes. Fetching more
+// often only re-reads the same row, so the next fetch is scheduled for just
+// after the next snapshot, and only while the tab is visible.
+const snapshotEveryMs = 15 * 60 * 1000;
+const snapshotGraceMs = 45 * 1000;
 
-type OnlineUser = {
-  user_id: string;
-  profile_id: string | null;
-  name: string;
-  email: string | null;
-  country_code: string | null;
-  gender: string | null;
-  last_seen_at: string;
-  app_state: string;
-  platform: string | null;
-  visibility: string;
-  verification_status: string;
-  subscription_status: string;
-};
-
-type LivePayload =
-  | LiveSnapshot
-  | {
-      snapshot: LiveSnapshot;
-      onlineUsers: OnlineUser[];
-    };
-
-type LiveState =
-  | { status: "loading"; data: LiveSnapshot | null; onlineUsers: OnlineUser[]; error: null }
-  | { status: "ready"; data: LiveSnapshot; onlineUsers: OnlineUser[]; error: null }
-  | { status: "error"; data: LiveSnapshot | null; onlineUsers: OnlineUser[]; error: string };
-
-// The backing aggregate snapshot is produced every five minutes. Polling more
-// frequently only repeated the same database read and online-user query.
-const refreshMs = 300000;
-
-function number(value: number | undefined) {
-  return Number(value ?? 0).toLocaleString();
+function n(value: number | undefined) {
+  return Number(value ?? 0).toLocaleString("en-IN");
 }
 
-function percent(value: number | undefined) {
-  return Math.max(0, Math.min(100, Number(value ?? 0)));
+function pct(value: number | undefined) {
+  return Math.max(0, Math.min(100, Math.round(Number(value ?? 0))));
 }
 
-export function LiveOperationsCockpit({
-  initial,
-  initialOnlineUsers,
-}: {
-  initial: LiveSnapshot;
-  initialOnlineUsers: OnlineUser[];
-}) {
-  const [state, setState] = useState<LiveState>({
-    status: "ready",
-    data: initial,
-    onlineUsers: initialOnlineUsers,
-    error: null,
-  });
-  const [isPending, startTransition] = useTransition();
-  const [pulse, setPulse] = useState(0);
+const timeFormat = new Intl.DateTimeFormat("en-IN", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" });
 
-  useEffect(() => {
-    let cancelled = false;
-    async function refresh() {
-      try {
-        const response = await fetch("/api/live", { cache: "no-store" });
-        if (!response.ok) throw new Error(`Live feed unavailable (${response.status})`);
-        const payload = await response.json() as LivePayload;
-        const data = "snapshot" in payload ? payload.snapshot : payload;
-        const onlineUsers = "snapshot" in payload ? payload.onlineUsers : [];
-        if (!cancelled) {
-          startTransition(() => {
-            setState({ status: "ready", data, onlineUsers, error: null });
-            setPulse((value) => value + 1);
-          });
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setState((current) => ({
-            status: "error",
-            data: current.data,
-            onlineUsers: current.onlineUsers,
-            error: error instanceof Error ? error.message : "Live feed unavailable",
-          }));
-        }
-      }
+export function LiveOperationsCockpit({ initial }: { initial: DashboardOverview }) {
+  const [data, setData] = useState(initial);
+  const [status, setStatus] = useState<"ready" | "refreshing" | "error">("ready");
+  const inFlight = useRef(false);
+
+  const generatedAtMs = (data.live?.generatedAt ?? 0) * 1000;
+
+  const refresh = useCallback(async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setStatus("refreshing");
+    try {
+      const response = await fetch("/api/live", { cache: "no-store" });
+      if (!response.ok) throw new Error(String(response.status));
+      const next = await response.json() as DashboardOverview;
+      setData(next);
+      setStatus("ready");
+    } catch {
+      setStatus("error");
+    } finally {
+      inFlight.current = false;
     }
-
-    const refreshVisible = () => {
-      if (!document.hidden) void refresh();
-    };
-    const timer = window.setInterval(refreshVisible, refreshMs);
-    const onVisibility = () => {
-      if (!document.hidden) void refresh();
-    };
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => {
-      cancelled = true;
-      window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", onVisibility);
-    };
   }, []);
 
-  const snapshot = state.data ?? initial;
-  const onlineUsers = state.onlineUsers;
-  const lastUpdated = useMemo(() => {
-    if (!snapshot.generatedAt) return "Waiting for live feed";
-    return new Date(snapshot.generatedAt * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  }, [snapshot.generatedAt]);
+  useEffect(() => {
+    let timer: number | undefined;
+    const schedule = () => {
+      window.clearTimeout(timer);
+      if (document.hidden) return;
+      const due = (generatedAtMs || Date.now()) + snapshotEveryMs + snapshotGraceMs;
+      timer = window.setTimeout(() => void refresh(), Math.max(due - Date.now(), 30_000));
+    };
+    const onVisibility = () => {
+      if (document.hidden) {
+        window.clearTimeout(timer);
+        return;
+      }
+      if (Date.now() >= generatedAtMs + snapshotEveryMs + snapshotGraceMs) void refresh();
+      else schedule();
+    };
+    schedule();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [generatedAtMs, refresh]);
 
-  const trafficCards = [
-    { label: "Online now", value: snapshot.traffic.onlineNow, icon: Radio, tone: "live" },
-    { label: "Active today", value: snapshot.traffic.activeToday, icon: Users, tone: "gold" },
-    { label: "Signups last hour", value: snapshot.traffic.signupsLastHour, icon: Sparkles, tone: "green" },
-    { label: "Messages last hour", value: snapshot.engagement.messagesLastHour, icon: MessageCircle, tone: "blue" },
-    { label: "Interests today", value: snapshot.engagement.interestsToday, icon: Heart, tone: "rose" },
-    { label: "Matches today", value: snapshot.engagement.matchesToday, icon: BadgeCheck, tone: "gold" },
-  ] as const;
+  const live = data.live;
+  const traffic = live?.traffic ?? {};
+  const engagement = live?.engagement ?? {};
+  const pipeline = live?.pipeline ?? {};
+  const progress = live?.progress ?? {};
+  const updated = generatedAtMs ? `${timeFormat.format(new Date(generatedAtMs))} IST` : "not yet generated";
 
-  const queues = [
-    { label: "Open reports", value: snapshot.queues.openReports, icon: ShieldAlert },
-    { label: "Pending photos", value: snapshot.queues.pendingPhotos, icon: Camera },
-    { label: "Due pushes", value: snapshot.queues.dueNotifications, icon: Bell },
-    { label: "Pushes sent 1h", value: snapshot.queues.sentNotificationsLastHour, icon: Activity },
-  ] as const;
+  const today = [
+    { label: "Online now", value: traffic.onlineNow, icon: Radio },
+    { label: "Active today", value: traffic.activeToday, icon: Users },
+    { label: "New members today", value: traffic.signupsToday, icon: Sparkles },
+    { label: "Messages today", value: engagement.messagesToday, icon: MessageCircle },
+    { label: "Interests today", value: engagement.interestsToday, icon: Heart },
+    { label: "Matches today", value: engagement.matchesToday, icon: BadgeCheck },
+  ];
 
-  const pipeline = [
-    { label: "Profile completion", value: snapshot.pipeline.completionRate },
-    { label: "Photo verified", value: snapshot.pipeline.verificationRate },
-    { label: "Subscribers", value: snapshot.pipeline.subscriberRate },
-    { label: "Photo clearance", value: snapshot.pipeline.photoClearanceRate },
-  ] as const;
+  const funnel = [
+    { label: "Profiles completed", value: pipeline.completionRate },
+    { label: "Photo verified", value: pipeline.verificationRate },
+    { label: "Photos cleared", value: pipeline.photoClearanceRate },
+    { label: "Subscribers", value: pipeline.subscriberRate },
+  ];
 
   return (
-    <section className="live-cockpit" aria-label="Live operations cockpit">
-      <div className="cockpit-header">
-        <div>
-          <p className="eyebrow">Live traffic</p>
-          <h2>Operations cockpit</h2>
-          <p className="muted">Direct RPC snapshot from the production Supabase project, refreshed every {refreshMs / 1000}s.</p>
+    <div className="stack-lg">
+      <section aria-labelledby="today-title">
+        <div className="section-head">
+          <h2 id="today-title">Today</h2>
+          <p className="row" aria-live="polite">
+            {status === "error" ? (
+              <span className="pill warn plain">Live figures could not refresh</span>
+            ) : (
+              <span>Snapshot {updated}</span>
+            )}
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => void refresh()} disabled={status === "refreshing"}>
+              {status === "refreshing" ? "Updating…" : "Update"}
+            </button>
+          </p>
         </div>
-        <div className={`live-chip ${state.status}`} key={pulse}>
-          <span className="live-dot" />
-          {state.status === "error" ? state.error : isPending ? "Refreshing" : `Updated ${lastUpdated}`}
-        </div>
-      </div>
-
-      <div className="traffic-grid">
-        {trafficCards.map(({ label, value, icon: Icon, tone }) => (
-          <article className={`traffic-card ${tone}`} key={label}>
-            <Icon size={18} />
-            <span>{label}</span>
-            <strong>{number(value)}</strong>
-          </article>
-        ))}
-      </div>
-
-      <div className="cockpit-panels">
-        <div className="glass-panel">
-          <div className="panel-title"><Activity size={18} /> Funnel progress</div>
-          <div className="progress-stack">
-            {pipeline.map((item) => (
-              <div className="progress-row" key={item.label}>
-                <div><span>{item.label}</span><strong>{percent(item.value)}%</strong></div>
-                <progress
-                  className="premium-progress"
-                  aria-label={`${item.label} ${percent(item.value)}%`}
-                  max={100}
-                  value={percent(item.value)}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="glass-panel">
-          <div className="panel-title"><ShieldAlert size={18} /> Safety queues</div>
-          <div className="queue-meters">
-            {queues.map(({ label, value, icon: Icon }) => (
-              <div className="queue-meter" key={label}>
-                <Icon size={16} />
-                <span>{label}</span>
-                <strong>{number(value)}</strong>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="glass-panel signal-panel">
-          <div className="panel-title"><WalletCards size={18} /> Profile base</div>
-          <div className="signal-orbit">
-            <div>
-              <span>Average completion</span>
-              <strong>{percent(snapshot.progress.avgCompletion)}%</strong>
+        <div className="stat-grid">
+          {today.map(({ label, value, icon: Icon }) => (
+            <div className="stat" key={label}>
+              <span className="stat-label"><Icon size={15} aria-hidden="true" />{label}</span>
+              <span className="stat-value">{n(value)}</span>
             </div>
-          </div>
-          <p className="muted">{number(snapshot.progress.completedProfiles)} completed of {number(snapshot.progress.totalProfiles)} total profiles. {number(snapshot.progress.activeSubscribers)} active subscribers.</p>
+          ))}
         </div>
+      </section>
 
-        <div className="glass-panel online-panel">
-          <div className="panel-title"><Radio size={18} /> Online users</div>
-          {onlineUsers.length === 0 ? (
-            <p className="muted">No authenticated app heartbeats in the last 15 minutes.</p>
+      <div className="split">
+        <section className="card" aria-labelledby="funnel-title">
+          <div className="card-head">
+            <h2 id="funnel-title">Member journey</h2>
+            <span className="muted">{n(progress.totalProfiles)} profiles · avg. {pct(progress.avgCompletion)}% complete</span>
+          </div>
+          <div className="card-body meter-list">
+            {funnel.map((item) => (
+              <div className="meter-row" key={item.label}>
+                <div><span>{item.label}</span><strong>{pct(item.value)}%</strong></div>
+                <progress className="meter" max={100} value={pct(item.value)} aria-label={`${item.label} ${pct(item.value)}%`} />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="card" aria-labelledby="online-title">
+          <div className="card-head">
+            <h2 id="online-title"><Radio size={16} /> Online members</h2>
+            <span className="muted">last 12 min</span>
+          </div>
+          {data.onlineUsers.length === 0 ? (
+            <div className="empty">
+              <h3>No one is online</h3>
+              <p>Members appear here while the app is open on their phone.</p>
+            </div>
           ) : (
-            <div className="online-user-list">
-              {onlineUsers.map((user) => (
-                <div className="online-user-row" key={user.user_id}>
-                  <span className="online-user-pulse" />
-                  <div>
+            <div className="people">
+              {data.onlineUsers.map((user) => (
+                <div className="person" key={user.user_id}>
+                  <span className="avatar" aria-hidden="true">{user.name.slice(0, 1)}</span>
+                  <span className="who">
                     <strong>{user.name}</strong>
-                    <small>{user.email ?? user.user_id}</small>
-                  </div>
-                  <div className="online-user-meta">
-                    <span>{user.country_code ?? "??"}</span>
-                    <span>{user.platform ?? "app"}</span>
-                  </div>
+                    <small>{[user.country_code, user.platform, user.app_state].filter(Boolean).join(" · ")}</small>
+                  </span>
+                  <span className="live-dot" aria-label="Online" />
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </section>
       </div>
-    </section>
+    </div>
   );
 }

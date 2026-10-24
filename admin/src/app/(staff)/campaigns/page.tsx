@@ -1,64 +1,88 @@
-import { Megaphone } from "lucide-react";
-import { createCampaign, queueCampaign } from "@/app/(staff)/actions";
+import { Megaphone, Send } from "lucide-react";
+import { LocalDateTimeInput, SubmitButton } from "@/components/client-ui";
+import { EmptyState, NoAccess, PageHeader, StatusPill, formatDateTime } from "@/components/ui";
+import { requireArea } from "@/lib/auth";
 import { getCampaigns } from "@/lib/operations";
+import { createCampaign, queueCampaign } from "../actions";
 
-const nowLocalValue = () => new Date(Date.now() + 5 * 60 * 1000).toISOString().slice(0, 16);
+export const metadata = { title: "Campaigns" };
+
+const audiences: Record<string, string> = {
+  all: "All visible members",
+  active_7d: "Active in the last 7 days",
+  subscribers: "Premium subscribers",
+  country: "One country",
+};
 
 export default async function CampaignsPage() {
+  const { allowed } = await requireArea("campaigns");
+  if (!allowed) return <NoAccess area="Campaigns" />;
   const campaigns = await getCampaigns();
 
   return (
-    <section className="dashboard-page">
-      <p className="eyebrow">Push campaigns</p>
-      <h1>Campaigns</h1>
-      <p className="muted">Create targeted push campaigns and queue them through the existing notification dispatcher.</p>
+    <div className="stack-lg">
+      <PageHeader
+        eyebrow="Publishing"
+        title="Push campaigns"
+        lede="Write a draft, check it, then queue it. Queuing creates one notification per eligible member, delivered by the notification dispatcher at the scheduled time."
+      />
 
-      <form action={createCampaign} className="admin-form panel-form">
-        <h2><Megaphone size={18} /> New campaign</h2>
-        <div className="form-grid">
-          <label>Title<input name="title" required minLength={3} maxLength={80} placeholder="Silarah reminder" /></label>
-          <label>Audience
-            <select name="audience" defaultValue="all">
-              <option value="all">All visible users</option>
-              <option value="active_7d">Active in last 7 days</option>
-              <option value="subscribers">Subscribers</option>
-              <option value="country">Country only</option>
-            </select>
-          </label>
-          <label>Country code<input name="countryCode" maxLength={2} placeholder="IN" /></label>
-          <label>Schedule<input name="scheduledAt" type="datetime-local" defaultValue={nowLocalValue()} /></label>
-        </div>
-        <label>Body<textarea name="body" required minLength={3} maxLength={220} rows={3} placeholder="Write a respectful, short notification." /></label>
-        <label>Deep link<input name="deepLink" placeholder="silarah://profile or silarah://subscription" /></label>
-        <button type="submit" className="primary-button">Create draft</button>
-      </form>
+      <div className="split">
+        <section className="card">
+          <div className="card-head"><h2><Megaphone size={16} /> Recent campaigns</h2></div>
+          {campaigns.length === 0 ? (
+            <EmptyState icon={Megaphone} title="No campaigns yet">Your first draft will appear here. Nothing is sent until you queue it.</EmptyState>
+          ) : (
+            <div className="list">
+              {campaigns.map((campaign) => (
+                <article className="list-item" key={campaign.campaign_id}>
+                  <div>
+                    <h3>{campaign.title} <StatusPill status={campaign.status} /></h3>
+                    <p>{campaign.body}</p>
+                    <div className="meta">
+                      <span>{audiences[campaign.audience] ?? campaign.audience}{campaign.country_code ? ` · ${campaign.country_code}` : ""}</span>
+                      <span>for {formatDateTime(campaign.scheduled_at)}</span>
+                      {campaign.queued_count > 0 ? <span>{campaign.queued_count.toLocaleString("en-IN")} queued</span> : null}
+                      {campaign.deep_link ? <span className="mono">{campaign.deep_link}</span> : null}
+                    </div>
+                  </div>
+                  <div className="aside">
+                    {campaign.status === "draft" ? (
+                      <form action={queueCampaign}>
+                        <input type="hidden" name="campaignId" value={campaign.campaign_id} />
+                        <input type="hidden" name="returnTo" value="/campaigns" />
+                        <SubmitButton className="btn btn-primary btn-sm" confirm={`Queue "${campaign.title}" for ${audiences[campaign.audience] ?? campaign.audience}? This cannot be undone.`}>
+                          <Send size={14} /> Queue
+                        </SubmitButton>
+                      </form>
+                    ) : <span className="faint">{campaign.queued_at ? `Queued ${formatDateTime(campaign.queued_at)}` : "Done"}</span>}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
 
-      <h2 className="section-title">Recent campaigns</h2>
-      <div className="table-wrap">
-        <table>
-          <thead><tr><th>Campaign</th><th>Audience</th><th>Schedule</th><th>Status</th><th>Queued</th><th>Action</th></tr></thead>
-          <tbody>
-            {campaigns.map((campaign) => (
-              <tr key={campaign.campaign_id}>
-                <td><strong>{campaign.title}</strong><small>{campaign.body}</small></td>
-                <td>{campaign.audience}{campaign.country_code ? ` · ${campaign.country_code}` : ""}</td>
-                <td>{new Date(campaign.scheduled_at).toLocaleString()}</td>
-                <td>{campaign.status}</td>
-                <td>{campaign.queued_count}</td>
-                <td>
-                  {campaign.status === "draft" ? (
-                    <form action={queueCampaign}>
-                      <input type="hidden" name="campaignId" value={campaign.campaign_id} />
-                      <button className="inline-action" type="submit">Queue</button>
-                    </form>
-                  ) : <span className="muted">{campaign.queued_at ? new Date(campaign.queued_at).toLocaleDateString() : "Done"}</span>}
-                </td>
-              </tr>
-            ))}
-            {campaigns.length === 0 && <tr><td colSpan={6}>No campaigns yet.</td></tr>}
-          </tbody>
-        </table>
+        <section className="card">
+          <div className="card-head"><h2>New draft</h2></div>
+          <form action={createCampaign} className="card-body stack">
+            <input type="hidden" name="returnTo" value="/campaigns" />
+            <label className="field">Title<input name="title" className="input" required minLength={3} maxLength={80} placeholder="A gentle reminder" /></label>
+            <label className="field">Message<textarea name="body" className="textarea" required minLength={3} maxLength={220} rows={3} placeholder="Short, warm and respectful. 220 characters at most." /></label>
+            <div className="form-grid">
+              <label className="field">Audience
+                <select name="audience" className="select" defaultValue="all">
+                  {Object.entries(audiences).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </label>
+              <label className="field">Country code<input name="countryCode" className="input" maxLength={2} placeholder="IN" pattern="[A-Za-z]{2}" /><small>Only for one-country campaigns</small></label>
+            </div>
+            <LocalDateTimeInput name="scheduledAt" label="Send at" />
+            <label className="field">Open in app<input name="deepLink" className="input" placeholder="silarah://subscription" pattern="silarah://.*" /><small>Optional. Leave blank to open the home screen.</small></label>
+            <div className="form-actions"><SubmitButton className="btn btn-primary">Save draft</SubmitButton></div>
+          </form>
+        </section>
       </div>
-    </section>
+    </div>
   );
 }

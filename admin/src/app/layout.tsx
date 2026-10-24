@@ -1,36 +1,42 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { headers } from "next/headers";
 import "./globals.css";
-import "./atelier.css";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
+const inter = localFont({
+  src: "./fonts/Inter.woff2",
+  variable: "--font-inter",
   weight: "100 900",
+  display: "swap",
 });
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
+const playfair = localFont({
+  src: "./fonts/PlayfairDisplay.woff2",
+  variable: "--font-playfair",
+  weight: "400 900",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Silarah Admin",
+  title: { default: "Silarah Operations", template: "%s · Silarah Operations" },
   description: "Silarah Matrimony staff operations.",
+  robots: { index: false, follow: false },
 };
 
-export default function RootLayout({
+export const viewport: Viewport = {
+  themeColor: "#f7f3ea",
+};
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Reading the request headers keeps every document dynamic, so each one
+  // carries the per-request CSP nonce that Next stamps on its scripts.
+  await headers();
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable}`}
-      >
-        {children}
-      </body>
+    <html lang="en-IN" className={`${inter.variable} ${playfair.variable}`}>
+      <body>{children}</body>
     </html>
   );
 }

@@ -3,48 +3,28 @@ import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
+// One RPC per refresh. admin_dashboard_overview() enforces is_active_admin()
+// (active membership, AAL2 and a live session under 12 hours) itself, so a
+// separate user lookup and membership read would only repeat that check.
 export async function GET() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: membership, error: membershipError } = await supabase
-    .from("admin_memberships")
-    .select("mfa_required")
-    .eq("user_id", user.id)
-    .eq("status", "active")
-    .maybeSingle();
-
-  if (membershipError || !membership) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  if (membership.mfa_required) {
-    const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    if (assurance?.currentLevel !== "aal2") {
-      return NextResponse.json({ error: "MFA required" }, { status: 403 });
-    }
-  }
-
-  const { data, error } = await supabase.rpc("admin_live_operations_snapshot");
+  const { data, error } = await supabase.rpc("admin_dashboard_overview", {
+    p_online_limit: 12,
+  });
   if (error) {
-    return NextResponse.json({ error: "Live operations are temporarily unavailable." }, { status: 500 });
+    const forbidden = error.code === "42501";
+    return NextResponse.json(
+      { error: forbidden ? "Forbidden" : "Live operations are temporarily unavailable." },
+      { status: forbidden ? 403 : 500, headers: { "Cache-Control": "no-store" } },
+    );
   }
 
-  const { data: onlineUsers, error: onlineError } = await supabase.rpc(
-    "admin_online_users",
-    { p_limit: 25 },
-  );
-  if (onlineError) {
-    return NextResponse.json({ error: "Live operations are temporarily unavailable." }, { status: 500 });
-  }
-
-  return NextResponse.json({
-    snapshot: data,
-    onlineUsers: onlineUsers ?? [],
-  }, {
+  return NextResponse.json(data, {
     headers: {
       "Cache-Control": "no-store",
     },

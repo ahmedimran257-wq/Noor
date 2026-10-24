@@ -80,7 +80,9 @@ export async function signIn(formData: FormData) {
     redirect("/login?error=Invalid+email+or+password.");
   }
   await finishLoginAttempt(attemptId, true, "success");
-  redirect("/dashboard");
+  // Straight to the authenticator step; it forwards to the dashboard once
+  // the session is AAL2, saving a redirect hop through the staff layout.
+  redirect("/mfa");
 }
 
 export async function signOut() {

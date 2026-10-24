@@ -1,64 +1,46 @@
 "use client";
 
-import { RefreshCw } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { Menu, RefreshCw } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { useNavigation } from "@/components/navigation-state";
+import { pageTitle } from "@/lib/access";
 
-const titles: Record<string, string> = {
-  dashboard: "Overview",
-  inbox: "Admin inbox",
-  users: "Members",
-  "photo-verification": "Photo checks",
-  moderation: "Moderation",
-  matches: "Matches",
-  subscriptions: "Subscriptions",
-  campaigns: "Campaigns",
-  content: "Content",
-  stories: "Success stories",
-  security: "Security",
-  privacy: "Member rights",
-  audit: "Audit trail",
-  staff: "Staff access",
-  system: "System health",
-};
-
-export function AdminTopbar({ projectRef }: { projectRef: string }) {
+export function AdminTopbar({ environment }: { environment: "production" | "staging" | "local" }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-  const [time, setTime] = useState(() => new Date());
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setTime(new Date()), 30_000);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  const title = useMemo(() => {
-    const segment = pathname.split("/").filter(Boolean)[0] ?? "dashboard";
-    return titles[segment] ?? "Operations";
-  }, [pathname]);
+  const { open, setOpen, refresh, refreshing } = useNavigation();
+  const label = environment === "production" ? "Production" : environment === "staging" ? "Staging" : "Local";
 
   return (
-    <header className="admin-topbar">
-      <div className="topbar-title">
-        <span>Console</span>
-        <strong>{title}</strong>
-      </div>
-      <div className="topbar-actions">
-        <div className="project-state" title={`Supabase project ${projectRef}`}>
-          <span className="project-state-dot" />
-          <span>Live Supabase</span>
-          <code>{projectRef.slice(0, 4)}…{projectRef.slice(-4)}</code>
-        </div>
-        <time dateTime={time.toISOString()}>{time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time>
+    <header className="topbar">
+      <div className="crumbs">
         <button
           type="button"
-          className="icon-button"
-          onClick={() => startTransition(() => router.refresh())}
-          aria-label="Refresh live data"
-          title="Refresh live data"
+          className="btn btn-ghost btn-icon menu-button"
+          aria-label={open ? "Close navigation" : "Open navigation"}
+          aria-expanded={open}
+          aria-controls="admin-navigation"
+          onClick={() => setOpen(!open)}
         >
-          <RefreshCw size={16} className={pending ? "spin" : ""} />
+          <Menu size={18} />
+        </button>
+        <span className="faint">Operations</span>
+        <span className="faint" aria-hidden="true">/</span>
+        <strong>{pageTitle(pathname)}</strong>
+      </div>
+      <div className="topbar-actions">
+        <span className={`env-chip${environment === "production" ? "" : " is-staging"}`} title="Connected Supabase project">
+          <span className="dot" aria-hidden="true" />
+          <span className="env-label">{label} data</span>
+        </span>
+        <button
+          type="button"
+          className="btn btn-sm"
+          onClick={refresh}
+          disabled={refreshing}
+          aria-label="Refresh this page's data"
+        >
+          <RefreshCw size={14} className={refreshing ? "spin-icon" : undefined} />
+          <span>Refresh</span>
         </button>
       </div>
     </header>

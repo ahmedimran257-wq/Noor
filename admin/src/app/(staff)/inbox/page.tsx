@@ -1,42 +1,93 @@
-import { Bell, CheckCheck } from "lucide-react";
-import { markAdminNotificationRead, markAllAdminNotificationsRead } from "@/app/(staff)/actions";
-import { getAdminInbox } from "@/lib/operations";
+import { Bell, CheckCheck, ChevronRight } from "lucide-react";
+import Link from "next/link";
+import { SubmitButton } from "@/components/client-ui";
+import { EmptyState, PageHeader, formatDateTime } from "@/components/ui";
+import { formatCount } from "@/lib/access";
+import { requireAdmin } from "@/lib/auth";
+import { encodeCursor, getAdminInbox, parseCursor } from "@/lib/operations";
+import { markAdminNotificationRead, markAllAdminNotificationsRead } from "../actions";
 
-export default async function InboxPage() {
-  const notifications = await getAdminInbox();
-  const unreadCount = notifications.filter((item) => !item.is_read).length;
+export const metadata = { title: "Inbox" };
+
+function href(view: "unread" | "all", after?: string) {
+  const params = new URLSearchParams();
+  if (view === "all") params.set("view", "all");
+  if (after) params.set("after", after);
+  const value = params.toString();
+  return `/inbox${value ? `?${value}` : ""}`;
+}
+
+export default async function InboxPage({ searchParams }: { searchParams: Promise<{ view?: string; after?: string }> }) {
+  const admin = await requireAdmin();
+  const params = await searchParams;
+  const view = params.view === "all" ? "all" : "unread";
+  const cursor = parseCursor(params.after);
+  const page = await getAdminInbox(view === "unread", cursor);
+  const unread = admin.counts.unreadInbox ?? 0;
+  const returnTo = href(view, params.after);
 
   return (
-    <section className="dashboard-page wide-page">
-      <div className="page-hero">
-        <div>
-          <p className="eyebrow">Admin inbox</p>
-          <h1>Operations alerts</h1>
-          <p className="muted">System-generated admin notifications from moderation, trust scoring, analytics, and operational rules.</p>
-        </div>
-        <form action={markAllAdminNotificationsRead}>
-          <button className="primary-button compact-button" disabled={unreadCount === 0}><CheckCheck size={16} /> Mark all read</button>
-        </form>
-      </div>
+    <div>
+      <PageHeader
+        eyebrow="Today"
+        title="Inbox"
+        lede="Alerts raised by moderation, trust scoring and operational rules. Newest first."
+        actions={
+          <form action={markAllAdminNotificationsRead}>
+            <input type="hidden" name="returnTo" value={href(view)} />
+            <SubmitButton className="btn" disabled={unread === 0} confirm={`Mark all ${formatCount(unread)} unread alerts as read?`}>
+              <CheckCheck size={15} /> Mark all read
+            </SubmitButton>
+          </form>
+        }
+      />
 
-      <div className="queue-list">
-        {notifications.map((item) => (
-          <article className={`queue-card elevated-panel ${item.is_read ? "is-read" : "is-unread"}`} key={item.notification_id}>
-            <div>
-              <h2><Bell size={17} /> {item.type}</h2>
-              <p>{item.message}</p>
-              <p className="muted">{new Date(item.created_at).toLocaleString()}{item.related_user_id ? ` · user ${item.related_user_id}` : ""}</p>
-            </div>
-            {!item.is_read ? (
-              <form action={markAdminNotificationRead}>
-                <input type="hidden" name="notificationId" value={item.notification_id} />
-                <button className="inline-action">Mark read</button>
-              </form>
-            ) : <span className="status-pill">Read</span>}
-          </article>
-        ))}
-        {notifications.length === 0 && <p className="muted">No admin notifications yet.</p>}
-      </div>
-    </section>
+      <nav className="tabs" aria-label="Inbox filter">
+        <Link href={href("unread")} prefetch={false} className={`tab${view === "unread" ? " is-active" : ""}`} aria-current={view === "unread" ? "page" : undefined}>
+          Unread {unread > 0 ? <span className="nav-count">{formatCount(unread)}</span> : null}
+        </Link>
+        <Link href={href("all")} prefetch={false} className={`tab${view === "all" ? " is-active" : ""}`} aria-current={view === "all" ? "page" : undefined}>
+          All alerts
+        </Link>
+      </nav>
+
+      <section className="card">
+        {page.rows.length === 0 ? (
+          <EmptyState icon={Bell} title={view === "unread" ? "You are all caught up" : "No alerts yet"}>
+            {view === "unread" ? "New alerts will appear here. Older ones are under All alerts." : "Operational alerts will appear here when rules fire."}
+          </EmptyState>
+        ) : (
+          <div className="list">
+            {page.rows.map((item) => (
+              <article className={`list-item${item.is_read ? "" : " is-unread"}`} key={item.notification_id}>
+                <div>
+                  <h3>{item.type.replaceAll("_", " ")}</h3>
+                  <p>{item.message}</p>
+                  <div className="meta">
+                    <span>{formatDateTime(item.created_at)}</span>
+                    {item.related_user_id ? <span className="mono">member {item.related_user_id.slice(0, 8)}</span> : null}
+                  </div>
+                </div>
+                <div className="aside">
+                  {item.is_read ? <span className="pill plain">Read</span> : (
+                    <form action={markAdminNotificationRead}>
+                      <input type="hidden" name="notificationId" value={item.notification_id} />
+                      <input type="hidden" name="returnTo" value={returnTo} />
+                      <SubmitButton className="btn btn-sm">Mark read</SubmitButton>
+                    </form>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+        {(cursor || page.next) ? (
+          <nav className="pager" aria-label="Inbox pages">
+            {cursor ? <Link href={href(view)} prefetch={false} className="link">← Back to newest</Link> : <span>Newest {page.rows.length}</span>}
+            {page.next ? <Link href={href(view, encodeCursor(page.next))} prefetch={false} className="btn btn-sm">Older <ChevronRight size={14} /></Link> : <span>End of list</span>}
+          </nav>
+        ) : null}
+      </section>
+    </div>
   );
 }

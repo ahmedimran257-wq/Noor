@@ -1,171 +1,162 @@
-import { Search } from "lucide-react";
+import { ChevronRight, MoreHorizontal, Users } from "lucide-react";
+import Link from "next/link";
+import { Suspense } from "react";
+import { SearchField, SubmitButton } from "@/components/client-ui";
+import { EmptyState, PageHeader, StatusPill, formatDate, relativeTime } from "@/components/ui";
+import { can } from "@/lib/access";
 import { requireAdmin } from "@/lib/auth";
-import { getRevealedUserPii, getUsers } from "@/lib/operations";
+import { encodeCursor, getUsers, parseCursor, userPageSize } from "@/lib/operations";
 import { accountAction, bulkAccountAction } from "../actions";
+import { MemberIdentity, SelectAll } from "./member-tools";
 
-function buildPageHref(query: string, page: number) {
+export const metadata = { title: "Members" };
+
+const bulkFormId = "bulk-user-action";
+
+function href(query: string, after?: string) {
   const params = new URLSearchParams();
   if (query) params.set("q", query);
-  if (page > 1) params.set("page", String(page));
-  return `/users${params.size ? `?${params.toString()}` : ""}`;
+  if (after) params.set("after", after);
+  const value = params.toString();
+  return `/users${value ? `?${value}` : ""}`;
 }
 
-function buildRevealHref(query: string, page: number, userId: string) {
-  const params = new URLSearchParams();
-  if (query) params.set("q", query);
-  if (page > 1) params.set("page", String(page));
-  params.set("reveal", userId);
-  return `/users?${params.toString()}`;
-}
-
-function safePage(value?: string) {
-  const parsed = Number(value ?? "1");
-  return Number.isFinite(parsed) ? Math.max(1, Math.floor(parsed)) : 1;
-}
-
-export default async function UsersPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string; reveal?: string }> }) {
+export default async function UsersPage({ searchParams }: { searchParams: Promise<{ q?: string; after?: string }> }) {
   const admin = await requireAdmin();
   const params = await searchParams;
-  const query = params.q ?? "";
-  const page = safePage(params.page);
-  const userPage = await getUsers(query, page);
-  const canModerate = admin.role === "super_admin" || admin.role === "moderator";
-  const canReveal = canModerate;
-  const revealed = params.reveal && canReveal
-    ? await getRevealedUserPii(params.reveal, "Viewed from admin user directory")
-    : null;
+  const query = (params.q ?? "").trim().slice(0, 120);
+  const cursor = parseCursor(params.after);
+  const page = await getUsers(query, cursor);
+  const canModerate = can(admin.role, "moderateAccounts");
+  const canBan = can(admin.role, "banAccounts");
+  const canReveal = can(admin.role, "revealPii");
+  const returnTo = href(query, params.after);
 
   return (
-    <section className="dashboard-page wide-page">
-      <div className="page-hero">
-        <div>
-          <p className="eyebrow">User management</p>
-          <h1>Members</h1>
-          <p className="muted">Search accounts, review trust state, and apply safety actions. PII is masked until an audited reveal is required.</p>
-        </div>
-        <div className="hero-badge">{userPage.total.toLocaleString()} matched</div>
+    <div>
+      <PageHeader
+        eyebrow="Members"
+        title="Member directory"
+        lede="Newest members first. Names and emails stay masked until you reveal one with a reason, and every reveal is written to the audit trail."
+      />
+
+      <div className="toolbar">
+        <Suspense fallback={<div className="search"><input className="input" disabled placeholder="Search" /></div>}>
+          <SearchField label="Search members" placeholder="Search by name, email or member ID" />
+        </Suspense>
+        {canModerate ? (
+          <form id={bulkFormId} action={bulkAccountAction} className="row">
+            <input type="hidden" name="returnTo" value={returnTo} />
+            <label className="sr-only" htmlFor="bulk-action">Bulk action</label>
+            <select id="bulk-action" name="action" defaultValue="suspend" className="select btn-sm">
+              <option value="suspend">Suspend selected</option>
+              <option value="restore">Restore selected</option>
+              {canBan ? <option value="shadowban">Shadowban selected</option> : null}
+              {canBan ? <option value="ban">Ban selected</option> : null}
+            </select>
+            <label className="sr-only" htmlFor="bulk-reason">Reason</label>
+            <input id="bulk-reason" name="reason" className="input btn-sm" placeholder="Reason (required)" minLength={6} required />
+            <SubmitButton className="btn btn-sm" confirm="Apply this action to every selected member?">Apply</SubmitButton>
+          </form>
+        ) : null}
       </div>
 
-      <form className="search-form elevated-panel">
-        <Search size={18} />
-        <input name="q" defaultValue={query} placeholder="Search name, email, or user ID" />
-        <button className="primary-button">Search</button>
-      </form>
-
-      {canModerate ? (
-        <form id="bulk-user-action" action={bulkAccountAction} className="bulk-toolbar elevated-panel">
-          <div>
-            <strong>Bulk safety action</strong>
-            <small>Select up to 50 visible rows. Bulk actions require an audited reason.</small>
+      <section className="card">
+        {page.rows.length === 0 ? (
+          <EmptyState icon={Users} title={query ? "No members match this search" : "No members yet"}>
+            {query ? "Try part of a first name, an email address, or paste a full member ID." : "New sign-ups appear here as soon as they create a profile."}
+          </EmptyState>
+        ) : (
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  {canModerate ? <th className="check"><SelectAll formId={bulkFormId} /></th> : null}
+                  <th>Member</th>
+                  <th>Joined</th>
+                  <th>Last active</th>
+                  <th>Profile</th>
+                  <th>Plan</th>
+                  <th>Status</th>
+                  {canModerate ? <th className="right">Actions</th> : null}
+                </tr>
+              </thead>
+              <tbody>
+                {page.rows.map((user) => {
+                  const restricted = user.visibility === "suspended" || user.is_shadowbanned || user.is_banned;
+                  const canRestore = !user.is_banned || canBan;
+                  const status = user.is_banned ? "banned" : user.is_shadowbanned ? "shadowbanned" : user.visibility;
+                  return (
+                    <tr key={user.user_id}>
+                      {canModerate ? (
+                        <td className="check">
+                          <input form={bulkFormId} type="checkbox" name="userIds" value={user.user_id} aria-label={`Select ${user.name}`} />
+                        </td>
+                      ) : null}
+                      <td>
+                        <MemberIdentity userId={user.user_id} maskedName={user.name} maskedEmail={user.email} canReveal={canReveal} />
+                      </td>
+                      <td><span className="cell-main num">{formatDate(user.joined_at)}</span><span className="cell-sub">{user.country_code || "—"} · {user.gender || "—"}</span></td>
+                      <td className="muted">{relativeTime(user.last_active_at)}</td>
+                      <td>
+                        <span className="cell-main num">{user.completeness_score ?? 0}% complete</span>
+                        <span className="cell-sub">
+                          {user.has_verification_badge ? "Photo verified" : "Not photo verified"}
+                          {user.approval_block_reason ? ` · ${user.approval_block_reason}` : ""}
+                        </span>
+                      </td>
+                      <td><StatusPill status={user.subscription_status || "none"} label={user.subscription_status === "none" ? "Free" : undefined} /></td>
+                      <td><StatusPill status={status} /></td>
+                      {canModerate ? (
+                        <td className="right">
+                          {canRestore ? (
+                            <details className="disclosure">
+                              <summary className="btn btn-ghost btn-sm btn-icon" aria-label={`Actions for ${user.name}`}><MoreHorizontal size={16} /></summary>
+                              <div className="popover-form">
+                                <form action={accountAction} className="action-row">
+                                  <input type="hidden" name="userId" value={user.user_id} />
+                                  <input type="hidden" name="returnTo" value={returnTo} />
+                                  <input type="hidden" name="action" value={restricted ? "restore" : "suspend"} />
+                                  <SubmitButton className="btn btn-sm" confirm={restricted ? undefined : "Suspend this member? Their profile is hidden until restored."}>
+                                    {user.is_shadowbanned ? "Remove shadowban" : restricted ? "Restore" : "Suspend"}
+                                  </SubmitButton>
+                                </form>
+                                {canBan && !user.is_banned ? (
+                                  <form action={accountAction} className="stack">
+                                    <input type="hidden" name="userId" value={user.user_id} />
+                                    <input type="hidden" name="returnTo" value={returnTo} />
+                                    <input name="reason" className="input btn-sm" placeholder="Reason for audit log" minLength={6} required />
+                                    <div className="action-row">
+                                      {!user.is_shadowbanned ? <SubmitButton className="btn btn-sm" name="action" value="shadowban">Shadowban</SubmitButton> : null}
+                                      <SubmitButton className="btn btn-sm btn-danger" name="action" value="ban" confirm="Ban this member permanently?">Ban</SubmitButton>
+                                    </div>
+                                  </form>
+                                ) : null}
+                              </div>
+                            </details>
+                          ) : <span className="faint">Super admin only</span>}
+                        </td>
+                      ) : null}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-          <select name="action" defaultValue="suspend" aria-label="Bulk action">
-            <option value="suspend">Suspend selected</option>
-            <option value="restore">Restore selected</option>
-            {admin.role === "super_admin" ? <option value="shadowban">Shadowban selected</option> : null}
-            {admin.role === "super_admin" ? <option value="ban">Ban selected</option> : null}
-          </select>
-          <input name="reason" placeholder="Required reason" minLength={6} required />
-          <button>Apply</button>
-        </form>
-      ) : null}
-
-      {revealed ? (
-        <div className="pii-reveal-panel elevated-panel">
-          <div>
-            <strong>PII reveal active</strong>
-            <small>
-              Showing unmasked details for {revealed.name || revealed.user_id}. This read was written to the audit log.
-            </small>
-          </div>
-          <a href={buildPageHref(query, page)}>Hide revealed PII</a>
-        </div>
-      ) : null}
-
-      <div className="table-wrap elevated-panel">
-        <table>
-          <thead>
-            <tr>{canModerate ? <th>Select</th> : null}<th>Name</th><th>Country</th><th>Joined</th><th>Photo trust</th><th>Plan</th><th>Status</th><th>Actions</th></tr>
-          </thead>
-          <tbody>
-            {userPage.rows.map((user) => {
-              const isRevealed = revealed?.user_id === user.user_id;
-              const displayName = isRevealed ? revealed.name : user.name;
-              const displayEmail = isRevealed ? revealed.email : user.email;
-              const needsRestore = user.visibility === "suspended" || user.is_shadowbanned || user.is_banned;
-              const canRestore = !user.is_banned || admin.role === "super_admin";
-              const statusLabel = user.is_banned
-                ? "Banned"
-                : user.is_shadowbanned
-                  ? "Shadowbanned"
-                  : user.visibility;
-              const photoTrust = user.has_verification_badge
-                ? { label: "Photo verified", tone: "success" }
-                : { label: "Not verified", tone: "neutral" };
-              return (
-              <tr key={user.user_id} className={isRevealed ? "revealed-row" : undefined}>
-                {canModerate ? (
-                  <td><input form="bulk-user-action" type="checkbox" name="userIds" value={user.user_id} aria-label={`Select ${displayName || user.user_id}`} /></td>
-                ) : null}
-                <td>
-                  <strong>{displayName || "Unnamed"}</strong>
-                  <small>{displayEmail ?? user.user_id}</small>
-                  {isRevealed ? <span className="pii-reveal-badge">PII reveal audited</span> : null}
-                </td>
-                <td>{user.country_code || "N/A"}</td>
-                <td>{new Date(user.joined_at).toLocaleDateString()}</td>
-                <td>
-                  <span
-                    className={`status-pill ${photoTrust.tone}`}
-                  >
-                    {photoTrust.label}
-                  </span>
-                </td>
-                <td>{user.subscription_status}</td>
-                <td><span className={user.is_banned ? "status-pill danger" : user.is_shadowbanned ? "status-pill warning" : "status-pill"}>{statusLabel}</span></td>
-                <td>
-                  <div className="action-row">
-                    {canReveal ? (
-                      <a className="inline-action" href={buildRevealHref(query, userPage.page, user.user_id)}>
-                        {isRevealed ? "PII revealed" : "Reveal PII"}
-                      </a>
-                    ) : null}
-                    {canModerate && canRestore ? (
-                      <form action={accountAction}>
-                        <input type="hidden" name="userId" value={user.user_id} />
-                        <input type="hidden" name="action" value={needsRestore ? "restore" : "suspend"} />
-                        <button>{user.is_shadowbanned ? "Remove shadowban" : needsRestore ? "Restore" : "Suspend"}</button>
-                      </form>
-                    ) : null}
-                    {admin.role === "super_admin" && !user.is_banned ? (
-                      <>
-                        {!user.is_shadowbanned ? (
-                          <form action={accountAction}>
-                            <input type="hidden" name="userId" value={user.user_id} />
-                            <input type="hidden" name="action" value="shadowban" />
-                            <button>Shadowban</button>
-                          </form>
-                        ) : null}
-                        <form action={accountAction}>
-                          <input type="hidden" name="userId" value={user.user_id} />
-                          <input type="hidden" name="action" value="ban" />
-                          <button className="danger">Ban</button>
-                        </form>
-                      </>
-                    ) : null}
-                  </div>
-                </td>
-              </tr>
-            );})}
-            {userPage.rows.length === 0 && <tr><td colSpan={canModerate ? 8 : 7}>No users found.</td></tr>}
-          </tbody>
-        </table>
-      </div>
-
-      <nav className="pagination-row" aria-label="User directory pagination">
-        <a className={!userPage.hasPreviousPage ? "disabled-link" : ""} href={buildPageHref(query, userPage.page - 1)}>Previous</a>
-        <span>Page {userPage.page} · Showing {userPage.rows.length} of {userPage.total.toLocaleString()}</span>
-        <a className={!userPage.hasNextPage ? "disabled-link" : ""} href={buildPageHref(query, userPage.page + 1)}>Next</a>
-      </nav>
-    </section>
+        )}
+        {(cursor || page.next) ? (
+          <nav className="pager" aria-label="Member pages">
+            {cursor ? <Link href={href(query)} prefetch={false} className="link">← Back to newest</Link> : <span>Showing the newest {page.rows.length}</span>}
+            {page.next ? (
+              <Link href={href(query, encodeCursor(page.next))} prefetch={false} className="btn btn-sm">
+                Older members <ChevronRight size={14} />
+              </Link>
+            ) : <span>End of list</span>}
+          </nav>
+        ) : page.rows.length > 0 ? (
+          <div className="pager"><span>{page.rows.length} of {page.rows.length} shown</span><span>Up to {userPageSize} per page</span></div>
+        ) : null}
+      </section>
+    </div>
   );
 }

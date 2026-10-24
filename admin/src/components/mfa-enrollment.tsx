@@ -24,62 +24,72 @@ export function MfaEnrollment({ initialFactorId, pendingFactor, error }: MfaEnro
   const errorMessage = error ? errorMessages[error] : undefined;
 
   return (
-    <section className="auth-panel" aria-labelledby="mfa-title">
-      <div className="brand-mark">2FA</div>
-      <p className="eyebrow">Security check</p>
-      <h1 id="mfa-title">Verify your authenticator</h1>
-      <p className="muted">
-        Silarah staff accounts require a time-based one-time code.
+    <section className="auth-card" aria-labelledby="mfa-title">
+      <div className="brand">
+        <span className="brand-mark" aria-hidden="true">S</span>
+        <span><strong>Silarah</strong><small>Security check</small></span>
+      </div>
+      <h1 id="mfa-title">{factorId ? "Enter your code" : "Protect this account"}</h1>
+      <p className="lede">
+        Silarah staff accounts need a six-digit code from an authenticator app.
       </p>
 
       {!factorId ? (
         <form action={enrollAuthenticatorForm} className="auth-form">
           <p className="muted">
-            Set up an authenticator app to protect this staff account before entering the console.
+            Set up an authenticator app such as Google Authenticator or 1Password before entering the console.
           </p>
-          <button type="submit" className="primary-button">Set up authenticator</button>
+          <button type="submit" className="btn btn-primary">Set up authenticator</button>
         </form>
       ) : (
         <form action={verifyAuthenticatorForm} className="auth-form">
           <input type="hidden" name="factorId" value={factorId} />
           {pendingFactor ? (
-            <div className="qr-wrap">
-              <QRCodeSVG value={pendingFactor.uri} size={180} includeMargin />
+            <div className="qr">
+              <QRCodeSVG value={pendingFactor.uri} size={176} includeMargin />
               <p className="muted">
                 Scan this code with your authenticator app, then enter its current six-digit code below.
               </p>
             </div>
-          ) : (
-            <p className="muted">Enter the current code from your authenticator app.</p>
-          )}
-          <label htmlFor="totp">Six-digit code</label>
-          <input
-            id="totp"
-            name="code"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            pattern="[0-9]{6}"
-            maxLength={6}
-            autoFocus
-            placeholder="000000"
-            required
-          />
-          <button type="submit" className="primary-button">Verify and continue</button>
+          ) : null}
+          <label className="field" htmlFor="totp">Six-digit code
+            <input
+              id="totp"
+              name="code"
+              className="input otp"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]{6}"
+              maxLength={6}
+              autoFocus
+              placeholder="000000"
+              required
+            />
+          </label>
+          {errorMessage ? <p className="notice danger" role="alert"><span>{errorMessage}</span></p> : null}
+          <button type="submit" className="btn btn-primary">Verify and continue</button>
         </form>
       )}
 
-      {factorId && !pendingFactor ? (
-        <form action={replaceAuthenticatorForm} className="auth-form">
-          <input type="hidden" name="factorId" value={factorId} />
-          <p className="muted">Replacement requires a session verified with your current authenticator. If you cannot access it, contact another super administrator for account recovery.</p>
-          <button type="submit" className="primary-button">Replace authenticator</button>
-        </form>
-      ) : null}
+      {!factorId && errorMessage ? <p className="notice danger" role="alert"><span>{errorMessage}</span></p> : null}
 
-      {errorMessage ? <p className="form-error" role="alert">{errorMessage}</p> : null}
-      <form action={signOut}>
-        <button type="submit" className="text-button">Use another staff account</button>
-      </form>
+      <div className="auth-foot">
+        <div className="stack">
+          {factorId && !pendingFactor ? (
+            <details className="disclosure">
+              <summary className="text-button">Replace my authenticator</summary>
+              <form action={replaceAuthenticatorForm} className="popover-form">
+                <input type="hidden" name="factorId" value={factorId} />
+                <p className="muted">Replacement requires a session verified with your current authenticator. If you cannot access it, contact another super administrator for account recovery.</p>
+                <button type="submit" className="btn btn-sm">Start replacement</button>
+              </form>
+            </details>
+          ) : null}
+          <form action={signOut}>
+            <button type="submit" className="text-button">Use another staff account</button>
+          </form>
+        </div>
+      </div>
     </section>
   );
 }

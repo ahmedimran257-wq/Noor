@@ -1,92 +1,48 @@
-import { ArrowRight, BadgeCheck, Fingerprint, KeyRound, LockKeyhole, Radio, Server, ShieldCheck } from "lucide-react";
+import { ArrowRight, LockKeyhole } from "lucide-react";
+import { SubmitButton } from "@/components/client-ui";
 import { signIn } from "./actions";
+
+export const metadata = { title: "Sign in" };
 
 type LoginPageProps = { searchParams: Promise<{ error?: string }> };
 
+// Only messages this app writes are shown; anything else in the URL is
+// replaced so a crafted link cannot put arbitrary text on the sign-in page.
+const knownErrors = new Set([
+  "Enter a valid email and password.",
+  "Secure login is temporarily unavailable. Please try again.",
+  "Too many attempts. Please wait and try again.",
+  "Invalid email or password.",
+  "Session expired. Please sign in again.",
+]);
+
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
-  const authConfigured = Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
+  const error = params.error ? (knownErrors.has(params.error) ? params.error : "Please sign in again.") : null;
 
   return (
-    <main className="auth-page">
-      <div className="auth-gridline" />
-      <div className="auth-shell">
-        <section className="auth-command" aria-label="Silarah operations security posture">
-          <div className="auth-lockup">
-            <div className="brand-mark enterprise"><ShieldCheck size={28} /></div>
-            <div>
-              <p className="eyebrow">Silarah Command</p>
-              <h1>Operations access gateway</h1>
-            </div>
-          </div>
+    <main className="auth">
+      <section className="auth-card" aria-labelledby="login-title">
+        <div className="brand">
+          <span className="brand-mark" aria-hidden="true">S</span>
+          <span><strong>Silarah</strong><small>Operations</small></span>
+        </div>
+        <h1 id="login-title">Staff sign in</h1>
+        <p className="lede">For the Silarah team only. You will confirm with your authenticator app next.</p>
 
-          <p className="auth-lead">
-            Staff-only control for trust, photo checks, moderation, subscriptions, campaigns, and live platform health.
-          </p>
+        <form action={signIn} className="auth-form">
+          <label className="field" htmlFor="email">Work email
+            <input id="email" name="email" type="email" className="input" autoComplete="username" required autoFocus />
+          </label>
+          <label className="field" htmlFor="password">Password
+            <input id="password" name="password" type="password" className="input" autoComplete="current-password" required minLength={8} />
+          </label>
+          {error ? <p className="notice danger" role="alert"><span>{error}</span></p> : null}
+          <SubmitButton className="btn btn-primary">Continue <ArrowRight size={16} /></SubmitButton>
+        </form>
 
-          <div className="auth-system-panel">
-            <div className="system-row">
-              <Server size={17} />
-              <span>Supabase Auth</span>
-              <strong className={authConfigured ? "good" : "danger"}>{authConfigured ? "Configured" : "Needs env"}</strong>
-            </div>
-            <div className="system-row">
-              <Fingerprint size={17} />
-              <span>MFA challenge</span>
-              <strong className="good">Required</strong>
-            </div>
-            <div className="system-row">
-              <BadgeCheck size={17} />
-              <span>Staff membership</span>
-              <strong className="good">RLS gated</strong>
-            </div>
-            <div className="system-row">
-              <Radio size={17} />
-              <span>Live cockpit</span>
-              <strong className="good">After sign-in</strong>
-            </div>
-          </div>
-
-          <div className="auth-orbit" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </div>
-        </section>
-
-        <section className="auth-panel enterprise-panel" aria-labelledby="login-title">
-          <div className="auth-panel-head">
-            <div className="mini-mark"><LockKeyhole size={20} /></div>
-            <div>
-              <p className="eyebrow">Secure staff sign in</p>
-              <h2 id="login-title">Enter admin console</h2>
-            </div>
-          </div>
-
-          <form action={signIn} className="auth-form enterprise-form">
-            <label htmlFor="email">Work email</label>
-            <div className="auth-input">
-              <KeyRound size={18} />
-              <input id="email" name="email" type="email" autoComplete="email" required />
-            </div>
-            <label htmlFor="password">Password</label>
-            <div className="auth-input">
-              <LockKeyhole size={18} />
-              <input id="password" name="password" type="password" autoComplete="current-password" required />
-            </div>
-            {params.error ? <p className="form-error" role="alert">{params.error}</p> : null}
-            <button type="submit" className="primary-button auth-submit">Continue <ArrowRight size={18} /></button>
-          </form>
-
-          <div className="auth-footnote">
-            <span className="live-dot" />
-            Authorized staff only. Every sensitive action is role-gated and audit logged.
-          </div>
-        </section>
-      </div>
+        <p className="auth-foot"><LockKeyhole size={13} /> Every sensitive action is role-checked and written to the audit trail.</p>
+      </section>
     </main>
   );
 }

@@ -24,7 +24,7 @@ function fixture({ expired = false, aal = "aal2", badCode = false } = {}) {
   const user = { id: userId, email: "staff@example.invalid" };
   const client = {
     auth: {
-      getUser: async () => ({ data: { user } }),
+      getUser: async () => { throw new Error("staff checks must not call GoTrue getUser"); },
       getSession: async () => ({ data: { session: { access_token: `fixture.${Buffer.from(JSON.stringify({ session_id: userId })).toString("base64url")}.fixture` } } }),
       signOut: async () => { calls.push("signOut"); },
       mfa: {
@@ -35,8 +35,15 @@ function fixture({ expired = false, aal = "aal2", badCode = false } = {}) {
         verify: async () => { calls.push("verify"); return { error: badCode ? { message: "invalid" } : null }; },
       },
     },
-    rpc: async (name) => { assert.equal(name, "assert_admin_session_boundary"); calls.push("boundary"); return { data: !expired }; },
-    from: () => ({ select() { return this; }, eq() { return this; }, maybeSingle: async () => ({ data: { role: "super_admin", mfa_required: true } }) }),
+    rpc: async (name, args) => {
+      assert.equal(name, "admin_console_context");
+      assert.equal(args.p_session_id, userId, "the session id comes from the access token");
+      calls.push("boundary");
+      return { data: expired
+        ? { allowed: false, reason: "session" }
+        : { allowed: true, adminId: userId, email: user.email, role: "super_admin", mfaRequired: true, aal, hasVerifiedTotp: true, counts: {} } };
+    },
+    from: () => { throw new Error("membership is part of admin_console_context"); },
   };
   const authExports = {};
   const exports = {};
@@ -49,6 +56,8 @@ function fixture({ expired = false, aal = "aal2", badCode = false } = {}) {
       if (name === "next/headers") return { cookies: async () => cookies };
       if (name === "next/navigation") return { redirect: (url) => { throw Object.assign(new Error(url), { digest: "NEXT_REDIRECT", url }); } };
       if (name === "@/lib/auth") return authExports;
+      if (name === "react") return { cache: (fn) => fn };
+      if (name === "@/lib/access") return { canAccess: () => true };
       if (name === "@/lib/supabase/server") return { createClient: async () => client };
       if (name === "@/lib/supabase/admin") return { createAdminClient: () => ({ auth: { admin: { mfa: { deleteFactor: async (args) => {
         assert.equal(args.id, oldFactor);

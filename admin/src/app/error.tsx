@@ -10,23 +10,22 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <main className="auth-page">
-      <div className="auth-gridline" />
-      <section className="auth-panel enterprise-panel">
-        <div className="brand-mark">
-          <ShieldAlert size={24} />
-        </div>
+    <main className="auth">
+      <section className="auth-card">
+        <div className="empty-icon"><ShieldAlert size={22} /></div>
         <p className="eyebrow">Admin safety boundary</p>
         <h1>Something needs attention</h1>
-        <p className="muted">
-          The admin panel stopped this operation before it could continue. Try
-          again, or check the audit and system pages if it repeats.
+        <p className="lede">
+          The console stopped this operation before it could continue. Nothing
+          was changed. Try again, or check System health if it repeats.
         </p>
-        <p className="form-error">The operation could not be completed. Please try again.</p>
-        {error.digest ? <small className="muted">Digest: {error.digest}</small> : null}
-        <button className="primary-button" type="button" onClick={reset}>
-          Retry
-        </button>
+        <p className="notice danger"><span>The operation could not be completed. Please try again.</span></p>
+        {error.digest ? <small className="faint">Digest: {error.digest}</small> : null}
+        <div className="auth-form">
+          <button className="btn btn-primary" type="button" onClick={reset}>
+            Retry
+          </button>
+        </div>
       </section>
     </main>
   );

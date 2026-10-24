@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z, ZodError } from "zod";
-import { requireAdmin, type AdminRole, type CurrentAdmin } from "@/lib/auth";
+import { requireAdmin, type CurrentAdmin } from "@/lib/auth";
+import { can, type AdminAction } from "@/lib/access";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -13,9 +14,13 @@ const accountActionSchema = z.object({
   userId: uuidSchema,
   action: z.enum(["suspend", "restore", "ban", "shadowban"]),
   reason: reasonSchema,
+}).superRefine((value, ctx) => {
+  if (["ban", "shadowban"].includes(value.action) && value.reason.length < 6) {
+    ctx.addIssue({ code: "custom", message: "Bans and shadowbans need a short reason for the audit log." });
+  }
 });
 const bulkAccountActionSchema = z.object({
-  userIds: z.array(uuidSchema).min(1).max(50),
+  userIds: z.array(uuidSchema).min(1, "Select at least one member.").max(50),
   action: z.enum(["suspend", "restore", "ban", "shadowban"]),
   reason: z.string().trim().min(6, "Bulk actions require a reason.").max(500),
 });
@@ -50,28 +55,40 @@ const photoReviewSchema = z.object({
   photoId: uuidSchema,
   decision: z.enum(["approve", "reject"]),
   reason: reasonSchema,
+}).superRefine((value, ctx) => {
+  if (value.decision === "reject" && value.reason.length < 6) {
+    ctx.addIssue({ code: "custom", message: "Tell the member why the photo was rejected." });
+  }
 });
 const campaignSchema = z.object({
-  title: z.string().trim().min(3).max(120),
-  body: z.string().trim().min(3).max(500),
-  deepLink: z.string().trim().max(300).optional().default(""),
+  title: z.string().trim().min(3).max(80),
+  body: z.string().trim().min(3).max(220),
+  deepLink: z.string().trim().max(300).optional().default("")
+    .refine((value) => value === "" || /^silarah:\/\/[a-z0-9/_-]*$/i.test(value), "Deep links must start with silarah://"),
   audience: z.enum(["all", "active_7d", "subscribers", "country"]).default("all"),
-  countryCode: z.string().trim().max(2).optional().default(""),
-  scheduledAt: z.string().trim().optional(),
+  countryCode: z.string().trim().toUpperCase().max(2).optional().default(""),
+  scheduledAt: z.string().trim().datetime({ offset: true, message: "Choose when the campaign should go out." }),
+}).superRefine((value, ctx) => {
+  if (value.audience === "country" && !/^[A-Z]{2}$/.test(value.countryCode)) {
+    ctx.addIssue({ code: "custom", message: "Country campaigns need a two-letter country code." });
+  }
+  if (Date.parse(value.scheduledAt) < Date.now() - 60_000) {
+    ctx.addIssue({ code: "custom", message: "The schedule is in the past. Choose a future time." });
+  }
 });
 const contentSchema = z.object({
-  slug: z.string().trim().min(2).max(120),
-  locale: z.string().trim().min(2).max(12).default("en"),
-  title: z.string().trim().min(2).max(160),
-  body: z.string().trim().min(10),
+  slug: z.string().trim().regex(/^[a-z0-9][a-z0-9-]{1,80}$/, "Use lowercase letters, numbers and dashes for the slug."),
+  locale: z.string().trim().regex(/^[a-z]{2}(-[a-z]{2})?$/, "Use a locale like en or hi-in.").default("en"),
+  title: z.string().trim().min(3).max(120),
+  body: z.string().trim().min(20, "The page body needs at least 20 characters."),
 });
 const contentStatusSchema = z.object({
   pageId: uuidSchema,
   status: z.enum(["draft", "published", "archived"]),
 });
 const successStorySchema = z.object({
-  coupleName: z.string().trim().min(2).max(160),
-  countryCode: z.string().trim().max(2).optional().default(""),
+  coupleName: z.string().trim().min(2).max(120),
+  countryCode: z.string().trim().toUpperCase().max(2).optional().default(""),
   story: z.string().trim().min(20),
   photoPath: z.string().trim().max(500).optional().default(""),
 });
@@ -89,19 +106,26 @@ const staffUpdateSchema = z.object({
   status: z.enum(["active", "revoked"]),
   mfaRequired: z.boolean(),
 });
+const revealSchema = z.object({
+  userId: uuidSchema,
+  reason: z.enum([
+    "Member support request",
+    "Safety investigation",
+    "Legal or privacy request",
+    "Account recovery",
+  ]),
+});
 
-function assertRole(admin: CurrentAdmin, allowed: AdminRole[]) {
-  if (!allowed.includes(admin.role)) {
+// Mirrors the role list each RPC enforces in the database, so staff get a
+// clear message instead of a database refusal.
+function assertCan(admin: CurrentAdmin, action: AdminAction) {
+  if (!can(admin.role, action)) {
     throw new Error("UNAUTHORIZED: Your staff role cannot perform this action.");
   }
 }
 
 function assertAccountActionRole(admin: CurrentAdmin, action: string) {
-  if (["ban", "shadowban"].includes(action)) {
-    assertRole(admin, ["super_admin"]);
-    return;
-  }
-  assertRole(admin, ["super_admin", "moderator"]);
+  assertCan(admin, ["ban", "shadowban"].includes(action) ? "banAccounts" : "moderateAccounts");
 }
 
 function formString(formData: FormData, key: string) {
@@ -121,9 +145,18 @@ async function claimWorkItem(itemType: "report" | "photo" | "message_report", it
   });
 }
 
+class UserFacingError extends Error {}
+
 function actionMessage(error: unknown) {
+  if (error instanceof UserFacingError) return error.message;
   if (error instanceof ZodError) {
     return error.issues[0]?.message ?? "Check the form and try again.";
+  }
+  if (error instanceof Error && error.message.startsWith("UNAUTHORIZED:")) {
+    return "Your staff role cannot perform this action.";
+  }
+  if (error instanceof Error && error.message.includes("already being reviewed")) {
+    return "Another moderator is reviewing this item. Try again in a few minutes.";
   }
   return "The action could not be completed. Refresh and try again.";
 }
@@ -137,24 +170,45 @@ function isNextRedirect(error: unknown) {
   );
 }
 
-function withNotice(path: string, key: "admin_error" | "admin_success", message: string): never {
-  redirect(`${path}?${key}=${encodeURIComponent(message)}`);
+// Keep the operator's search, tab and page after a decision. Only same-page
+// relative targets are accepted.
+function returnTarget(path: string, formData?: FormData) {
+  const raw = formData ? formString(formData, "returnTo") : "";
+  if (!raw.startsWith(path) || raw.startsWith("//") || /[\r\n\\]/.test(raw)) return { path, query: new URLSearchParams() };
+  const url = new URL(raw, "https://admin.invalid");
+  if (url.pathname !== path) return { path, query: new URLSearchParams() };
+  url.searchParams.delete("admin_error");
+  url.searchParams.delete("admin_success");
+  return { path, query: url.searchParams };
+}
+
+function withNotice(
+  target: { path: string; query: URLSearchParams },
+  key: "admin_error" | "admin_success",
+  message: string,
+): never {
+  const query = new URLSearchParams(target.query);
+  query.set(key, message);
+  redirect(`${target.path}?${query.toString()}`);
 }
 
 async function guardedAction(
   path: string,
   work: () => Promise<void>,
   successMessage = "Action completed.",
+  formData?: FormData,
 ) {
+  const target = returnTarget(path, formData);
   try {
     await work();
   } catch (error) {
     if (isNextRedirect(error)) throw error;
-    withNotice(path, "admin_error", actionMessage(error));
+    withNotice(target, "admin_error", actionMessage(error));
   }
+  // The layout re-renders with the action response, so the sidebar counts
+  // update together with the page.
   revalidatePath(path);
-  revalidatePath("/dashboard");
-  withNotice(path, "admin_success", successMessage);
+  withNotice(target, "admin_success", successMessage);
 }
 
 export async function accountAction(formData: FormData) {
@@ -167,7 +221,7 @@ export async function accountAction(formData: FormData) {
     });
     assertAccountActionRole(admin, parsed.action);
     await run("admin_account_action", { p_user_id: parsed.userId, p_action: parsed.action, p_reason: parsed.reason });
-  });
+  }, "Member updated.", formData);
 }
 export async function bulkAccountAction(formData: FormData) {
   await guardedAction("/users", async () => {
@@ -183,12 +237,43 @@ export async function bulkAccountAction(formData: FormData) {
       p_action: parsed.action,
       p_reason: parsed.reason,
     });
-  }, "Bulk action completed.");
+  }, "Bulk action completed.", formData);
 }
+
+export type RevealState =
+  | { status: "idle" }
+  | { status: "revealed"; userId: string; name: string; email: string | null }
+  | { status: "error"; message: string };
+
+// A POST, not a GET link: the audited read happens once per deliberate click
+// and never on refresh, back-navigation or link prefetch.
+export async function revealUserPii(_previous: RevealState, formData: FormData): Promise<RevealState> {
+  try {
+    const admin = await requireAdmin();
+    assertCan(admin, "revealPii");
+    const parsed = revealSchema.parse({
+      userId: formData.get("userId"),
+      reason: formData.get("reason"),
+    });
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("admin_reveal_user_pii", {
+      p_user_id: parsed.userId,
+      p_reason: parsed.reason,
+    });
+    if (error) throw new Error(error.message);
+    const row = (data as { user_id: string; name: string; email: string | null }[])[0];
+    if (!row) return { status: "error", message: "No member was found for this ID." };
+    return { status: "revealed", userId: row.user_id, name: row.name, email: row.email };
+  } catch (error) {
+    if (isNextRedirect(error)) throw error;
+    return { status: "error", message: actionMessage(error) };
+  }
+}
+
 export async function reviewPhotoVerification(formData: FormData) {
   await guardedAction("/photo-verification", async () => {
     const admin = await requireAdmin();
-    assertRole(admin, ["super_admin", "moderator"]);
+    assertCan(admin, "reviewPhotos");
     const parsed = photoVerificationReviewSchema.parse({
       submissionId: formData.get("submissionId"),
       decision: formData.get("decision"),
@@ -227,24 +312,24 @@ export async function reviewPhotoVerification(formData: FormData) {
         p_error: removeError?.message ?? null,
       });
     }
-  }, "Photo verification review saved and capture deletion started.");
+  }, "Photo check saved. Capture deletion has started.", formData);
 }
 export async function resolveReport(formData: FormData) {
   await guardedAction("/moderation", async () => {
     const admin = await requireAdmin();
-    assertRole(admin, ["super_admin", "moderator"]);
+    assertCan(admin, "resolveReports");
     const parsed = reportSchema.parse({
       reportId: formData.get("reportId"),
       action: formData.get("action"),
     });
     await claimWorkItem("report", parsed.reportId);
     await run("admin_resolve_report", { p_report_id: parsed.reportId, p_action: parsed.action });
-  }, "Report decision saved.");
+  }, "Report decision saved.", formData);
 }
 export async function resolveMessageReport(formData: FormData) {
   await guardedAction("/moderation", async () => {
     const admin = await requireAdmin();
-    assertRole(admin, ["super_admin", "moderator"]);
+    assertCan(admin, "resolveReports");
     const parsed = messageReportSchema.parse({
       reportId: formData.get("reportId"),
       action: formData.get("action"),
@@ -254,31 +339,31 @@ export async function resolveMessageReport(formData: FormData) {
       p_report_id: parsed.reportId,
       p_action: parsed.action,
     });
-  }, "Message report decision saved.");
+  }, "Message report decision saved.", formData);
 }
 export async function reviewPhoto(formData: FormData) {
   await guardedAction("/moderation", async () => {
     const admin = await requireAdmin();
-    assertRole(admin, ["super_admin", "moderator"]);
+    assertCan(admin, "reviewPhotos");
     const parsed = photoReviewSchema.parse({
       photoId: formData.get("photoId"),
       decision: formData.get("decision"),
-      reason: formString(formData, "reason"),
+      reason: formString(formData, "reason") || (formData.get("decision") === "approve" ? "Manual profile photo review approved." : ""),
     });
     await claimWorkItem("photo", parsed.photoId);
     await run("admin_review_photo", { p_photo_id: parsed.photoId, p_decision: parsed.decision, p_reason: parsed.reason });
-  }, "Photo decision saved.");
+  }, "Photo decision saved.", formData);
 }
 export async function createCampaign(formData: FormData) {
   await guardedAction("/campaigns", async () => {
     const admin = await requireAdmin();
-    assertRole(admin, ["super_admin"]);
+    assertCan(admin, "manageCampaigns");
     const parsed = campaignSchema.parse({
       title: formData.get("title"),
       body: formData.get("body"),
-      deepLink: formData.get("deepLink"),
+      deepLink: formData.get("deepLink") ?? "",
       audience: formData.get("audience") || "all",
-      countryCode: formData.get("countryCode"),
+      countryCode: formData.get("countryCode") ?? "",
       scheduledAt: formData.get("scheduledAt"),
     });
     await run("admin_create_push_campaign", {
@@ -286,22 +371,22 @@ export async function createCampaign(formData: FormData) {
       p_body: parsed.body,
       p_deep_link: parsed.deepLink,
       p_audience: parsed.audience,
-      p_country_code: parsed.countryCode,
-      p_scheduled_at: parsed.scheduledAt || new Date().toISOString(),
+      p_country_code: parsed.audience === "country" ? parsed.countryCode : "",
+      p_scheduled_at: parsed.scheduledAt,
     });
-  }, "Campaign created.");
+  }, "Campaign draft created. Queue it when you are ready.", formData);
 }
 export async function queueCampaign(formData: FormData) {
   await guardedAction("/campaigns", async () => {
     const admin = await requireAdmin();
-    assertRole(admin, ["super_admin"]);
+    assertCan(admin, "manageCampaigns");
     await run("admin_queue_push_campaign", { p_campaign_id: uuidSchema.parse(formData.get("campaignId")) });
-  }, "Campaign queued.");
+  }, "Campaign queued for delivery.", formData);
 }
 export async function upsertContentPage(formData: FormData) {
   await guardedAction("/content", async () => {
     const admin = await requireAdmin();
-    assertRole(admin, ["super_admin", "moderator"]);
+    assertCan(admin, "publishContent");
     const parsed = contentSchema.parse({
       slug: formData.get("slug"),
       locale: formData.get("locale") || "en",
@@ -314,28 +399,28 @@ export async function upsertContentPage(formData: FormData) {
       p_title: parsed.title,
       p_body: parsed.body,
     });
-  }, "Content saved.");
+  }, "Page saved.", formData);
 }
 export async function setContentStatus(formData: FormData) {
   await guardedAction("/content", async () => {
     const admin = await requireAdmin();
-    assertRole(admin, ["super_admin", "moderator"]);
+    assertCan(admin, "publishContent");
     const parsed = contentStatusSchema.parse({
       pageId: formData.get("pageId"),
       status: formData.get("status"),
     });
     await run("admin_set_content_status", { p_page_id: parsed.pageId, p_status: parsed.status });
-  }, "Content status updated.");
+  }, "Page status updated.", formData);
 }
 export async function addSuccessStory(formData: FormData) {
   await guardedAction("/stories", async () => {
     const admin = await requireAdmin();
-    assertRole(admin, ["super_admin", "moderator"]);
+    assertCan(admin, "manageStories");
     const parsed = successStorySchema.parse({
       coupleName: formData.get("coupleName"),
-      countryCode: formData.get("countryCode"),
+      countryCode: formData.get("countryCode") ?? "",
       story: formData.get("story"),
-      photoPath: formData.get("photoPath"),
+      photoPath: formData.get("photoPath") ?? "",
     });
     await run("admin_add_success_story", {
       p_couple_name: parsed.coupleName,
@@ -343,38 +428,24 @@ export async function addSuccessStory(formData: FormData) {
       p_story: parsed.story,
       p_photo_path: parsed.photoPath,
     });
-  }, "Story added.");
+  }, "Story added.", formData);
 }
 export async function reviewSuccessStory(formData: FormData) {
   await guardedAction("/stories", async () => {
     const admin = await requireAdmin();
-    assertRole(admin, ["super_admin", "moderator"]);
+    assertCan(admin, "manageStories");
     const parsed = successStoryReviewSchema.parse({
       storyId: formData.get("storyId"),
       status: formData.get("status"),
     });
     await run("admin_review_success_story", { p_story_id: parsed.storyId, p_status: parsed.status });
-  }, "Story reviewed.");
-}
-export async function addStaffMember(formData: FormData) {
-  await guardedAction("/staff", async () => {
-    const admin = await requireAdmin();
-    assertRole(admin, ["super_admin"]);
-    const parsed = staffSchema.parse({
-      email: formData.get("email"),
-      role: formData.get("role"),
-    });
-    await run("admin_add_staff_member", {
-      p_email: parsed.email,
-      p_role: parsed.role,
-    });
-  }, "Staff member added.");
+  }, "Story updated.", formData);
 }
 
 export async function inviteStaffMember(formData: FormData) {
   await guardedAction("/staff", async () => {
     const admin = await requireAdmin();
-    assertRole(admin, ["super_admin"]);
+    assertCan(admin, "manageStaff");
     const parsed = staffSchema.parse({
       email: formData.get("email"),
       role: formData.get("role"),
@@ -400,25 +471,28 @@ export async function inviteStaffMember(formData: FormData) {
       p_email: parsed.email,
       p_role: parsed.role,
     });
-  }, "Staff invite sent.");
+  }, "Staff invite sent.", formData);
 }
 export async function updateStaffMember(formData: FormData) {
   await guardedAction("/staff", async () => {
     const admin = await requireAdmin();
-    assertRole(admin, ["super_admin"]);
+    assertCan(admin, "manageStaff");
     const parsed = staffUpdateSchema.parse({
       userId: formData.get("userId"),
       role: formData.get("role"),
       status: formData.get("status"),
       mfaRequired: formData.get("mfaRequired") === "on",
     });
+    if (parsed.userId === admin.id && (parsed.status !== "active" || parsed.role !== "super_admin")) {
+      throw new UserFacingError("You cannot demote or revoke your own access. Ask another super admin.");
+    }
     await run("admin_update_staff_member", {
       p_user_id: parsed.userId,
       p_role: parsed.role,
       p_status: parsed.status,
       p_mfa_required: parsed.mfaRequired,
     });
-  }, "Staff member updated.");
+  }, "Staff member updated.", formData);
 }
 export async function markAdminNotificationRead(formData: FormData) {
   await guardedAction("/inbox", async () => {
@@ -426,21 +500,18 @@ export async function markAdminNotificationRead(formData: FormData) {
     await run("admin_mark_notification_read", {
       p_notification_id: uuidSchema.parse(formString(formData, "notificationId")),
     });
-  }, "Notification marked read.");
+  }, "Marked as read.", formData);
 }
-export async function markAllAdminNotificationsRead() {
+export async function markAllAdminNotificationsRead(formData?: FormData) {
   await guardedAction("/inbox", async () => {
     await requireAdmin();
     await run("admin_mark_all_notifications_read", {});
-  }, "All notifications marked read.");
+  }, "All alerts marked as read.", formData);
 }
 
 function adminSiteUrl() {
   if (process.env.NEXT_PUBLIC_ADMIN_SITE_URL) {
     return process.env.NEXT_PUBLIC_ADMIN_SITE_URL.replace(/\/$/, "");
-  }
-  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
-    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
   }
   if (process.env.NODE_ENV !== "production") {
     return "http://localhost:3001";

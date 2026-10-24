@@ -1,58 +1,80 @@
-import { BookOpenCheck } from "lucide-react";
-import { addSuccessStory, reviewSuccessStory } from "@/app/(staff)/actions";
+import { BookHeart } from "lucide-react";
+import { SubmitButton } from "@/components/client-ui";
+import { EmptyState, NoAccess, PageHeader, StatusPill, formatDate } from "@/components/ui";
+import { requireArea } from "@/lib/auth";
 import { getSuccessStories } from "@/lib/operations";
+import { addSuccessStory, reviewSuccessStory } from "../actions";
+
+export const metadata = { title: "Stories" };
+
+function StatusButton({ storyId, status, label, className = "btn btn-sm", confirm }: { storyId: string; status: string; label: string; className?: string; confirm?: string }) {
+  return (
+    <form action={reviewSuccessStory}>
+      <input type="hidden" name="storyId" value={storyId} />
+      <input type="hidden" name="status" value={status} />
+      <input type="hidden" name="returnTo" value="/stories" />
+      <SubmitButton className={className} confirm={confirm}>{label}</SubmitButton>
+    </form>
+  );
+}
 
 export default async function StoriesPage() {
+  const { allowed } = await requireArea("stories");
+  if (!allowed) return <NoAccess area="Stories" />;
   const stories = await getSuccessStories();
 
   return (
-    <section className="dashboard-page">
-      <p className="eyebrow">Marriage stories</p>
-      <h1>Success stories</h1>
-      <p className="muted">Review, publish, and add verified marriage stories for future in-app trust content.</p>
+    <div className="stack-lg">
+      <PageHeader
+        eyebrow="Publishing"
+        title="Marriage stories"
+        lede="Stories couples have agreed to share. Use first initials or names they approved, and never contact details."
+      />
 
-      <form action={addSuccessStory} className="admin-form panel-form">
-        <h2><BookOpenCheck size={18} /> Add story</h2>
-        <div className="form-grid">
-          <label>Couple name<input name="coupleName" required minLength={2} maxLength={120} placeholder="A & F" /></label>
-          <label>Country code<input name="countryCode" maxLength={2} placeholder="MY" /></label>
-          <label className="wide">Photo path<input name="photoPath" placeholder="success-stories/story.webp" /></label>
-        </div>
-        <label>Story<textarea name="story" required minLength={20} rows={6} placeholder="Share the story in a respectful, privacy-safe way." /></label>
-        <button type="submit" className="primary-button">Add published story</button>
-      </form>
+      <div className="split">
+        <section className="card">
+          <div className="card-head"><h2><BookHeart size={16} /> Stories</h2><span className="muted">{stories.length} total</span></div>
+          {stories.length === 0 ? (
+            <EmptyState icon={BookHeart} title="No stories yet">Stories you add here can be shown in the app to build trust.</EmptyState>
+          ) : (
+            <div className="list">
+              {stories.map((story) => (
+                <article className="list-item" key={story.story_id}>
+                  <div>
+                    <h3>{story.couple_name} <StatusPill status={story.status} /></h3>
+                    <p>{story.story}</p>
+                    <div className="meta">
+                      <span>{story.country_code ?? "Global"}</span>
+                      <span>added {formatDate(story.created_at)}</span>
+                      {story.photo_path ? <span className="mono">{story.photo_path}</span> : null}
+                    </div>
+                  </div>
+                  <div className="aside">
+                    {story.status !== "published" ? <StatusButton storyId={story.story_id} status="published" label="Publish" className="btn btn-sm btn-primary" /> : null}
+                    {story.status === "pending" ? <StatusButton storyId={story.story_id} status="rejected" label="Reject" className="btn btn-sm btn-danger" /> : null}
+                    {story.status !== "archived" ? <StatusButton storyId={story.story_id} status="archived" label="Archive" confirm="Archive this story? It will no longer be shown." /> : null}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
 
-      <h2 className="section-title">Story queue</h2>
-      <div className="queue-list">
-        {stories.map((story) => (
-          <article key={story.story_id} className="queue-card">
-            <div>
-              <strong>{story.couple_name}</strong>
-              <p className="muted">{story.country_code ?? "Global"} · {story.status} · {new Date(story.created_at).toLocaleDateString()}</p>
-              <p>{story.story}</p>
-              {story.photo_path && <small className="muted">{story.photo_path}</small>}
+        <section className="card">
+          <div className="card-head"><h2>Add a story</h2></div>
+          <form action={addSuccessStory} className="card-body stack">
+            <input type="hidden" name="returnTo" value="/stories" />
+            <p className="notice warn"><span>Stories added here are <strong>published immediately</strong>. Only add stories the couple has approved.</span></p>
+            <div className="form-grid">
+              <label className="field">Couple<input name="coupleName" className="input" required minLength={2} maxLength={120} placeholder="A & F" /></label>
+              <label className="field">Country code<input name="countryCode" className="input" maxLength={2} pattern="[A-Za-z]{2}" placeholder="IN" /></label>
             </div>
-            <div className="action-row">
-              <form action={reviewSuccessStory}>
-                <input type="hidden" name="storyId" value={story.story_id} />
-                <input type="hidden" name="status" value="published" />
-                <button type="submit">Publish</button>
-              </form>
-              <form action={reviewSuccessStory}>
-                <input type="hidden" name="storyId" value={story.story_id} />
-                <input type="hidden" name="status" value="rejected" />
-                <button type="submit" className="danger">Reject</button>
-              </form>
-              <form action={reviewSuccessStory}>
-                <input type="hidden" name="storyId" value={story.story_id} />
-                <input type="hidden" name="status" value="archived" />
-                <button type="submit">Archive</button>
-              </form>
-            </div>
-          </article>
-        ))}
-        {stories.length === 0 && <p className="muted">No success stories yet.</p>}
+            <label className="field">Story<textarea name="story" className="textarea" required minLength={20} rows={7} placeholder="How they met, in their words." /></label>
+            <label className="field">Photo path<input name="photoPath" className="input" placeholder="success-stories/story.webp" /><small>Optional. A file already uploaded to storage.</small></label>
+            <div className="form-actions"><SubmitButton className="btn btn-primary" confirm="Publish this story now?">Publish story</SubmitButton></div>
+          </form>
+        </section>
       </div>
-    </section>
+    </div>
   );
 }

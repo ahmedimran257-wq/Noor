@@ -1,63 +1,94 @@
 import { Activity, Languages } from "lucide-react";
+import { EmptyState, PageHeader, Stat, formatDateTime } from "@/components/ui";
+import { requireAdmin } from "@/lib/auth";
 import { getLocalizationOverview, getSystemHealth } from "@/lib/operations";
 
-const healthLabels: Record<string, string> = {
-  dueNotifications: "Due notifications",
-  staleNotifications: "Stale notifications",
-  futureNotifications: "Future notifications",
-  fcmTokenUsers: "Users with FCM tokens",
-  pendingPhotoChecks: "Pending photo checks",
-  pendingPhotos: "Pending photos",
-  openReports: "Open reports",
-  queuedCampaigns: "Queued campaigns",
-  publishedContentPages: "Published CMS pages",
-  publishedSuccessStories: "Published stories",
-  subscriptionEvents24h: "Subscription events 24h",
-  failedEmails24h: "Failed emails 24h",
-  rateLimitRejections1h: "Blocked requests 1h",
-  databaseUsageMb: "Database usage (MB)",
-  storageUsageMb: "Storage usage (MB)",
-  dispatchConsecutiveFailures: "Dispatch failures",
-  dispatchHealthy: "Dispatch healthy (1/0)",
-  activeStaff: "Active staff",
-};
+export const metadata = { title: "System health" };
+
+type Metric = { key: string; label: string; hint?: string; bad?: (value: number) => boolean };
+
+const groups: { title: string; metrics: Metric[] }[] = [
+  {
+    title: "Notifications",
+    metrics: [
+      { key: "dispatchHealthy", label: "Dispatcher", hint: "1 = healthy", bad: (v) => v !== 1 },
+      { key: "dispatchConsecutiveFailures", label: "Dispatch failures in a row", bad: (v) => v > 0 },
+      { key: "dueNotifications", label: "Due now" },
+      { key: "staleNotifications", label: "Overdue", bad: (v) => v > 0 },
+      { key: "futureNotifications", label: "Scheduled" },
+      { key: "fcmTokenUsers", label: "Members with push enabled" },
+    ],
+  },
+  {
+    title: "Queues",
+    metrics: [
+      { key: "openReports", label: "Open reports" },
+      { key: "pendingPhotos", label: "Photos to review" },
+      { key: "queuedCampaigns", label: "Queued campaigns" },
+      { key: "failedEmails24h", label: "Failed emails · 24 h", bad: (v) => v > 0 },
+      { key: "rateLimitRejections1h", label: "Rate-limited requests · 1 h" },
+      { key: "subscriptionEvents24h", label: "Billing events · 24 h" },
+    ],
+  },
+  {
+    title: "Platform",
+    metrics: [
+      { key: "databaseUsageMb", label: "Database size (MB)" },
+      { key: "storageUsageMb", label: "Storage used (MB)" },
+      { key: "publishedContentPages", label: "Published pages" },
+      { key: "publishedSuccessStories", label: "Published stories" },
+      { key: "activeStaff", label: "Active staff" },
+    ],
+  },
+];
 
 export default async function SystemPage() {
+  await requireAdmin();
   const [health, locales] = await Promise.all([getSystemHealth(), getLocalizationOverview()]);
+  const h = health ?? {};
 
   return (
-    <section className="dashboard-page">
-      <p className="eyebrow">Operations</p>
-      <h1>System health</h1>
-      <p className="muted">Database-backed operational counters for queues, moderation load, push readiness, staff access, and localized CMS content.</p>
-
-      <h2 className="section-title"><Activity size={18} /> Health counters</h2>
-      <div className="metric-grid">
-        {Object.entries(healthLabels).map(([key, label]) => (
-          <div className="metric-card" key={key}>
-            <span>{label}</span>
-            <strong>{Number(health[key] ?? 0).toLocaleString()}</strong>
+    <div className="stack-lg">
+      <PageHeader
+        eyebrow="Governance"
+        title="System health"
+        lede="Operational counters from the 15-minute metrics snapshot. Anything that needs attention is highlighted."
+      />
+      {groups.map((group) => (
+        <section key={group.title}>
+          <div className="section-head"><h2>{group.title}</h2></div>
+          <div className="stat-grid">
+            {group.metrics.map((metric) => {
+              const value = Number(h[metric.key] ?? 0);
+              const bad = metric.bad?.(value) ?? false;
+              return <Stat key={metric.key} label={metric.label} value={value} hint={metric.hint} tone={bad ? "alert" : undefined} icon={bad ? Activity : undefined} />;
+            })}
           </div>
-        ))}
-      </div>
+        </section>
+      ))}
 
-      <h2 className="section-title"><Languages size={18} /> Localization coverage</h2>
-      <div className="table-wrap">
-        <table>
-          <thead><tr><th>Locale</th><th>Pages</th><th>Published</th><th>Last updated</th></tr></thead>
-          <tbody>
-            {locales.map((locale) => (
-              <tr key={locale.locale}>
-                <td>{locale.locale}</td>
-                <td>{Number(locale.page_count).toLocaleString()}</td>
-                <td>{Number(locale.published_count).toLocaleString()}</td>
-                <td>{locale.last_updated ? new Date(locale.last_updated).toLocaleString() : "Never"}</td>
-              </tr>
-            ))}
-            {locales.length === 0 && <tr><td colSpan={4}>No CMS localization records yet.</td></tr>}
-          </tbody>
-        </table>
-      </div>
-    </section>
+      <section className="card">
+        <div className="card-head"><h2><Languages size={16} /> Content by language</h2></div>
+        {locales.length === 0 ? (
+          <EmptyState icon={Languages} title="No app content yet">Pages created under Content are counted here by language.</EmptyState>
+        ) : (
+          <div className="table-wrap">
+            <table className="table">
+              <thead><tr><th>Language</th><th className="right">Pages</th><th className="right">Published</th><th>Last updated</th></tr></thead>
+              <tbody>
+                {locales.map((locale) => (
+                  <tr key={locale.locale}>
+                    <td className="mono">{locale.locale}</td>
+                    <td className="right num">{Number(locale.page_count).toLocaleString("en-IN")}</td>
+                    <td className="right num">{Number(locale.published_count).toLocaleString("en-IN")}</td>
+                    <td>{formatDateTime(locale.last_updated)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </div>
   );
 }
