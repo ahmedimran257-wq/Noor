@@ -363,10 +363,16 @@ function dateLabel(eventType: string): string {
 
 function planName(productId?: string | null): string {
   const product = productId?.toLowerCase() ?? "";
+  // Play sends `subscriptionId:basePlanId`; match on the subscription ID.
+  switch (product.split(":")[0]) {
+    case "silarah_monthly":
+      return "Silarah Premium Monthly";
+    case "silarah_three_month":
+      return "Silarah Premium 3 Months";
+  }
   if (product.includes("annual") || product.includes("year")) {
     return "Silarah Premium Annual";
   }
-  if (product.includes("month")) return "Silarah Premium Monthly";
   return "Silarah Premium";
 }
 

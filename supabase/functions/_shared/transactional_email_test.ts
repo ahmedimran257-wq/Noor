@@ -40,6 +40,28 @@ for (const eventType of eventTypes) {
   });
 }
 
+const planCases: [string | undefined, string][] = [
+  ["silarah_monthly", "Silarah Premium Monthly"],
+  ["silarah_monthly:monthly", "Silarah Premium Monthly"],
+  ["silarah_three_month", "Silarah Premium 3 Months"],
+  ["silarah_three_month:three-month", "Silarah Premium 3 Months"],
+  ["silarah_six_month", "Silarah Premium"],
+  [undefined, "Silarah Premium"],
+];
+
+for (const [productId, expected] of planCases) {
+  Deno.test(`labels ${productId} as ${expected}`, () => {
+    const email = renderSubscriptionEmail({
+      eventType: "INITIAL_PURCHASE",
+      firstName: "Amina",
+      productId,
+    });
+    if (!email.text.includes(`Membership: ${expected}\n`)) {
+      throw new Error(`Expected plan "${expected}" in:\n${email.text}`);
+    }
+  });
+}
+
 Deno.test("escapes account data before inserting it into HTML", () => {
   const email = renderSubscriptionEmail({
     eventType: "INITIAL_PURCHASE",
