@@ -22,6 +22,12 @@ const REVENUECAT_ALLOWED_PRODUCT_IDS = csvSet(
 const REVENUECAT_ALLOWED_STORES = csvSet(
   Deno.env.get("REVENUECAT_ALLOWED_STORES"),
 );
+// Google Play license testers' purchases arrive as SANDBOX events. During
+// pre-launch QA they are accepted only for the Supabase user IDs listed here;
+// remove the secret after testing and sandbox events are rejected again.
+const REVENUECAT_SANDBOX_TESTER_IDS = csvSet(
+  Deno.env.get("REVENUECAT_SANDBOX_TESTER_IDS"),
+);
 
 function createAdminClient() {
   return createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
@@ -262,7 +268,12 @@ function validateProductionRevenueCatEvent(
   event: RevenueCatEvent,
 ): string | null {
   if (event.app_id !== REVENUECAT_EXPECTED_APP_ID) return "app_id";
-  if (event.environment !== REVENUECAT_EXPECTED_ENVIRONMENT) {
+  const allowedSandboxTester = event.environment === "SANDBOX" &&
+    REVENUECAT_SANDBOX_TESTER_IDS.has(event.app_user_id);
+  if (
+    event.environment !== REVENUECAT_EXPECTED_ENVIRONMENT &&
+    !allowedSandboxTester
+  ) {
     return "environment";
   }
   if (

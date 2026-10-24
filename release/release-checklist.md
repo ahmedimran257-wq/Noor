@@ -45,7 +45,7 @@ The working tree is still unfrozen, and deployment/payment gates remain open.
 - [x] Support, safety, privacy and grievance addresses receive transactional mail.
 - [ ] Crashlytics initializes and the release mapping upload is wired. Upload
       symbols and confirm a controlled event in Firebase for the exact final
-      candidate (current source version `1.0.0+27026`) before widening testers.
+      candidate (current source version `1.0.0+42045`) before widening testers.
 - [x] RevenueCat Test Store exposes the current monthly and three-month packages;
       Android purchase, restore, cancellation, forced failure and accelerated
       renewal/expiry pass. Production webhook state remains a Play sandbox/staging
@@ -68,8 +68,12 @@ The working tree is still unfrozen, and deployment/payment gates remain open.
 
 - [x] Create the Play app with package `com.silarah.app`.
 - [ ] Complete the standard Google Payments merchant profile, bank and tax setup required for Google Play Billing in India. Do not configure BillDesk or alternative billing for this India-only release.
-- [ ] Enrol in Play App Signing and save the app-signing SHA-1/SHA-256.
-- [ ] Replace/add the Play app-signing SHA-256 in Digital Asset Links and Firebase.
+- [x] Enrol in Play App Signing and save the app-signing SHA-1/SHA-256
+      (SHA-1 `45aa2bee3fdcb5ef78f84ef89c0a3e58a7dbd5b5`, SHA-256
+      `14e804148c62926d54d00024f97374cbfb4c6bd122e8c7dc6375539d7f7fe50c`).
+- [x] Replace/add the Play app-signing SHA-256 in Digital Asset Links and Firebase
+      (2026-10-24: live assetlinks lists both keys and Android verifies
+      silarah.com; both Play SHAs registered on the Firebase Android app).
 - [ ] Create `silarah_monthly` and `silarah_three_month` subscription base plans
       at INR 299/month and INR 749/3 months.
 - [ ] Import production products into RevenueCat and attach them to the Silarah
