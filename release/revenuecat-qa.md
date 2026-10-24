@@ -114,7 +114,7 @@ and a three-month plan every 10 minutes, up to six renewals.
 | 4 | Restore | Reinstall, sign in, tap Restore | Premium returns without a new purchase |
 | 5 | Three-month purchase | Second tester buys three-month | Same as 1 with `silarah_three_month` |
 | 6 | Billing issue | Test card "Slow test card, declines after a few minutes" | `BILLING_ISSUE`; `subscription_status = grace` with grace expiry; payment email |
-| 7 | Refund | Play Console → Order management → refund and revoke | `REFUND`; Premium removed |
+| 7 | Refund | Play Console → Order management → refund with "Remove entitlement" | RevenueCat sends `CANCELLATION` with `cancel_reason = CUSTOMER_SUPPORT`; recorded as `REFUND`; status `none`; refund notification and email |
 | 8 | Non-tester rejection | Remove a tester from the secret and repeat 1 | Webhook logs "Rejected non-production event: environment"; no state change |
 
 ### Server check after each scenario
@@ -141,6 +141,10 @@ Tester `3a9a91ec-…` on OnePlus 8, Google Play sandbox, "Test card, always appr
 | Renewals ×3 | `RENEWAL` recorded once each; status `active`; one email and one in-app notification each |
 | Cancellation | `CANCELLATION` recorded once; access kept until period end; email sent |
 | Expiry | `EXPIRATION` recorded once; status `none`; email sent |
+| Three-month purchase | `INITIAL_PURCHASE` (`silarah_three_month:three-month`) recorded once; status `active`; one email and one in-app notification |
+| Billing issue | "Slow test card, declines after a few minutes": `BILLING_ISSUE` recorded once; status `grace` until 08:25:05Z; the `BILLING_ERROR` cancellation was correctly deferred; one email and one notification. Grace then ended with `EXPIRATION` (status `none`, one email) |
+| Restore | Premium persisted after an app restart; no new purchase. A full reinstall was not repeated |
+| Refund | Order `GPA.3374-2955-6735-46248` refunded 100% with "Remove entitlement" at about 08:30Z. **Pending**: no webhook delivered by 08:54Z, and the deployed function (version 49) predates the refund fix below |
 
 Findings fixed during the run:
 
@@ -153,7 +157,22 @@ Findings fixed during the run:
   deployed (function version 47).
 - Real-time developer notifications were already connected (last received
   29 September); the earlier note saying otherwise was out of date.
+- `REVENUECAT_ALLOWED_PRODUCT_IDS` listed only the monthly product, so the
+  three-month purchase was rejected as an unknown product until the secret
+  was set to `silarah_monthly,silarah_three_month`.
+- RevenueCat has no `REFUND` event: store refunds arrive as `CANCELLATION`
+  with `cancel_reason = CUSTOMER_SUPPORT`, which the webhook treated as a
+  renewal cancellation (member left `active`, told access continues). Fixed in
+  `570f123`; **not yet deployed**.
+
+Open issue: the subscription email's `planName()` matches "month" inside
+`silarah_three_month`, so three-month receipts are titled "Silarah Premium
+Monthly" (`supabase/functions/_shared/transactional_email.ts`).
+
+To finish the refund check: deploy `570f123`
+(`npx supabase functions deploy revenuecat-webhook --project-ref jukpscfxzwttgtxvrbmj`),
+then confirm one `REFUND` row, status `none`, a `subscription_refunded`
+notification and one refund email for the tester.
 
 After QA: set the production webhook back to "Production only" and delete
-`REVENUECAT_SANDBOX_TESTER_IDS`. Not yet run: restore, three-month purchase,
-billing issue, refund.
+`REVENUECAT_SANDBOX_TESTER_IDS`.
