@@ -15,4 +15,12 @@ void main() {
     expect(webhook, contains('?? "PRODUCTION"'));
     expect(webhook, contains('return "environment";'));
   });
+
+  test('Play product IDs match with or without the base plan suffix', () {
+    final webhook = File('supabase/functions/revenuecat-webhook/index.ts')
+        .readAsStringSync();
+    expect(webhook, contains('!isAllowedProduct(event.product_id)'));
+    expect(webhook, contains('const subscriptionId = productId.split(":")[0];'));
+    expect(webhook, contains('allowed.split(":")[0] === subscriptionId'));
+  });
 }

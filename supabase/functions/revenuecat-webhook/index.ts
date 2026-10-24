@@ -282,7 +282,7 @@ function validateProductionRevenueCatEvent(
   ) return "entitlement";
   if (
     typeof event.product_id !== "string" ||
-    !REVENUECAT_ALLOWED_PRODUCT_IDS.has(event.product_id)
+    !isAllowedProduct(event.product_id)
   ) return "product";
   if (
     typeof event.store !== "string" ||
@@ -294,6 +294,18 @@ function validateProductionRevenueCatEvent(
     !event.aliases?.includes(event.app_user_id)
   ) return "original_identity";
   return null;
+}
+
+// Google Play subscriptions arrive as "subscriptionId:basePlanId" (for example
+// "silarah_monthly:monthly"); the allowlist may name either form. The
+// subscription ID must always be allowlisted.
+function isAllowedProduct(productId: string): boolean {
+  if (REVENUECAT_ALLOWED_PRODUCT_IDS.has(productId)) return true;
+  const subscriptionId = productId.split(":")[0];
+  for (const allowed of REVENUECAT_ALLOWED_PRODUCT_IDS) {
+    if (allowed.split(":")[0] === subscriptionId) return true;
+  }
+  return false;
 }
 
 function csvSet(value: string | undefined): Set<string> {
