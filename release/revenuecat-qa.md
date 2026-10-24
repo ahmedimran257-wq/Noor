@@ -79,3 +79,54 @@ The production webhook intentionally rejects Test Store events. Webhook mutation
 notification and transactional-email testing must use an isolated Supabase staging
 project or the Google Play sandbox with a real Supabase UUID as RevenueCat app user
 ID; Test Store events must never grant production entitlements.
+
+## Google Play sandbox runbook (build 42045)
+
+The production webhook rejects `SANDBOX` events unless the purchaser's
+Supabase user ID is listed in the `REVENUECAT_SANDBOX_TESTER_IDS` Edge
+Function secret (comma-separated). Delete the secret when QA ends.
+
+### Before testing (owner)
+
+1. Deploy the webhook from `release/42045`:
+   `npx supabase functions deploy revenuecat-webhook --project-ref jukpscfxzwttgtxvrbmj`
+   (`supabase/config.toml` keeps JWT verification off for it).
+2. Play Console → Setup → License testing: add the Gmail accounts used on
+   the test phones; set the response to `RESPOND_NORMALLY`.
+3. Play Console → Monetization setup: connect Real-time developer
+   notifications to the Pub/Sub topic shown in RevenueCat → Project
+   settings → Google Play. Send a test notification from RevenueCat.
+4. Upload the 42045 AAB to Internal testing, add the testers, and install
+   from the opt-in link on each phone (uninstall any sideloaded copy first).
+5. Sign in to Silarah on each phone, then add those users' Supabase IDs to
+   `REVENUECAT_SANDBOX_TESTER_IDS` (Dashboard → Edge Functions → Secrets).
+
+### Scenarios
+
+Sandbox subscriptions renew quickly: a monthly plan renews every 5 minutes
+and a three-month plan every 10 minutes, up to six renewals.
+
+| # | Scenario | How | Expected server result |
+|---|---|---|---|
+| 1 | Monthly purchase | Buy monthly with the test card that always approves | `INITIAL_PURCHASE` once; `subscription_status = active`; Premium features unlock; one confirmation email |
+| 2 | Renewal | Wait 5 minutes | `RENEWAL` events; expiry moves forward; no duplicate emails per event |
+| 3 | Cancellation | Cancel in Play Subscriptions | `CANCELLATION`; access continues to expiry, then `EXPIRATION` and `subscription_status = none` |
+| 4 | Restore | Reinstall, sign in, tap Restore | Premium returns without a new purchase |
+| 5 | Three-month purchase | Second tester buys three-month | Same as 1 with `silarah_three_month` |
+| 6 | Billing issue | Test card "Slow test card, declines after a few minutes" | `BILLING_ISSUE`; `subscription_status = grace` with grace expiry; payment email |
+| 7 | Refund | Play Console → Order management → refund and revoke | `REFUND`; Premium removed |
+| 8 | Non-tester rejection | Remove a tester from the secret and repeat 1 | Webhook logs "Rejected non-production event: environment"; no state change |
+
+### Server check after each scenario
+
+```sql
+select u.id, u.subscription_status, u.subscription_expires_at,
+  (select json_agg(json_build_object('type', e.event_type, 'at', e.event_timestamp_ms)
+     order by e.event_timestamp_ms)
+   from public.subscription_events e where e.user_id = u.id) as events,
+  (select count(*) from public.transactional_email_outbox o
+   where o.user_id = u.id and o.status = 'sent') as emails_sent
+from public.users u where u.id = '<tester supabase id>';
+```
+
+Sign-off needs every row to show each event exactly once.
