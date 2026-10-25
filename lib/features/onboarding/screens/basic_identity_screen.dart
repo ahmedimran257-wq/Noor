@@ -84,6 +84,12 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
   int _heightCm = 165;
   String? _complexion;
   String? _motherTongue;
+
+  // Section anchors so a missing-field message can scroll to the field.
+  final _nameKey = GlobalKey();
+  final _dobKey = GlobalKey();
+  final _genderKey = GlobalKey();
+  final _motherTongueKey = GlobalKey();
   String? _community;
   String? _residencyStatus;
   String? _specialNeeds;
@@ -242,6 +248,27 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
     if (!_hasConfirmedLocation) missing.add('Confirmed location');
     if (_motherTongue == null) missing.add('Mother tongue');
     showValidationSnackbar(context, missing);
+
+    // Bring the first missing field into view; it may be below the fold.
+    final target =
+        _firstNameCtrl.text.trim().isEmpty || _lastNameCtrl.text.trim().isEmpty
+            ? _nameKey
+            : _dob == null || _dobError.isNotEmpty
+                ? _dobKey
+                : _gender == null && !_isGuardianMode
+                    ? _genderKey
+                    : _motherTongue == null
+                        ? _motherTongueKey
+                        : null;
+    final targetContext = target?.currentContext;
+    if (targetContext != null) {
+      Scrollable.ensureVisible(
+        targetContext,
+        duration: AppDimensions.durationTransition,
+        curve: Curves.easeOutCubic,
+        alignment: 0.2,
+      );
+    }
   }
 
   @override
@@ -599,6 +626,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
 
               // Name row
               Row(
+                key: _nameKey,
                 children: [
                   Expanded(
                     child: SilarahTextField(
@@ -628,7 +656,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
 
               // Date of birth
               UiText(l10n.onboarding_label_dateOfBirth.toUpperCase(),
-                  style: AppTypography.sectionLabel),
+                  key: _dobKey, style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space8),
               GestureDetector(
                 onTap: _pickDob,
@@ -676,6 +704,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
                 // Gender
                 UiText(
                   l10n.onboarding_label_gender_self.toUpperCase(),
+                  key: _genderKey,
                   style: AppTypography.sectionLabel,
                 ),
                 const SizedBox(height: AppDimensions.space8),
@@ -836,7 +865,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
 
               // MOTHER TONGUE (Required)
               UiText(l10n.onboarding_label_motherTongue.toUpperCase(),
-                  style: AppTypography.sectionLabel),
+                  key: _motherTongueKey, style: AppTypography.sectionLabel),
               const SizedBox(height: AppDimensions.space12),
               GestureDetector(
                 onTap: _showMotherTonguePicker,

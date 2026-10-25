@@ -959,7 +959,7 @@ class _IncludedFeatures extends StatelessWidget {
     (Icons.travel_explore_rounded, 'All India, state, city & trust filters'),
     (Icons.hub_outlined, 'Mutual compatibility insights'),
     (Icons.bookmarks_outlined, 'Private shortlists, notes & reminders'),
-    (Icons.visibility_off_outlined, 'Incognito Discovery'),
+    (Icons.visibility_off_outlined, 'Incognito discovery'),
     (Icons.rocket_launch_outlined, 'One profile boost per week'),
   ];
 
@@ -968,7 +968,7 @@ class _IncludedFeatures extends StatelessWidget {
     (Icons.travel_explore_rounded, 'All India, state, city & trust filters'),
     (Icons.hub_outlined, 'Mutual compatibility insights'),
     (Icons.bookmarks_outlined, 'Private shortlists, notes & reminders'),
-    (Icons.visibility_off_outlined, 'Incognito Discovery'),
+    (Icons.visibility_off_outlined, 'Incognito discovery'),
     (Icons.rocket_launch_outlined, 'Weekly profile boost'),
     (Icons.visibility_rounded, 'See everyone who viewed your profile'),
     (Icons.bookmark_border_rounded, 'Save multiple filter presets'),

@@ -300,6 +300,8 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
             ),
             backgroundColor: AppColors.surfaceGlassHover,
             behavior: SnackBarBehavior.floating,
+            // Clears the Continue button.
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 104),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
               side: BorderSide(color: AppColors.goldBorder),
@@ -548,6 +550,8 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
           SnackBar(
             content: UiText(context.uiCopy('Photos saved.')),
             behavior: SnackBarBehavior.floating,
+            // Clears the Continue button.
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 104),
           ),
         );
         Navigator.pop(context, true);
@@ -581,6 +585,8 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
             ),
             backgroundColor: AppColors.surfaceGlassHover,
             behavior: SnackBarBehavior.floating,
+            // Clears the Continue button.
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 104),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
               side: BorderSide(color: AppColors.cardBorder),
@@ -628,6 +634,8 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
           ),
           backgroundColor: AppColors.surfaceGlassHover,
           behavior: SnackBarBehavior.floating,
+          // Clears the Continue button.
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 104),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
             side: BorderSide(color: AppColors.goldBorder),
@@ -659,6 +667,8 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
         ),
         backgroundColor: AppColors.softCoral,
         behavior: SnackBarBehavior.floating,
+        // Clears the Continue button.
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 104),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
         ),

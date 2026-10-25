@@ -350,6 +350,9 @@ class _CitySearchFieldState extends State<CitySearchField> {
                     ),
                   )
                 : ListView.separated(
+                    // Without this the list inherits the status-bar inset
+                    // inside the overlay and draws an empty band on top.
+                    padding: EdgeInsets.zero,
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: _results.length,

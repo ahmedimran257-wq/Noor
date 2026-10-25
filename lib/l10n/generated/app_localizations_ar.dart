@@ -2084,7 +2084,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings_section_app => 'برنامج';
 
   @override
-  String get settings_section_dangerZone => 'منطقة الخطر';
+  String get settings_section_dangerZone => 'إغلاق الحساب';
 
   @override
   String get settings_section_guardian => 'الوصي';

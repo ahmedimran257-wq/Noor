@@ -2052,7 +2052,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings_privacy_online_sub => 'Show when you were last active';
 
   @override
-  String get settings_privacy_pause_label => 'PROFILE PAUSE';
+  String get settings_privacy_pause_label => 'Profile pause';
 
   @override
   String get settings_privacy_pause_sub => 'Hide your profile from search';
@@ -2102,7 +2102,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings_section_app => 'App';
 
   @override
-  String get settings_section_dangerZone => 'Danger Zone';
+  String get settings_section_dangerZone => 'Close account';
 
   @override
   String get settings_section_guardian => 'Guardian';

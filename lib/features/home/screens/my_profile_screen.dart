@@ -2470,7 +2470,7 @@ class _HelpAndGrievanceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return SilarahPressable(
       semanticLabel: '${context.uiCopy('Help & Support')}. '
-          '${context.uiCopy('Formal grievances')}',
+          '${context.uiCopy('Help Center, contact and grievances')}',
       onTap: onTap,
       child: Container(
         width: double.infinity,
@@ -2507,7 +2507,7 @@ class _HelpAndGrievanceCard extends StatelessWidget {
                   ),
                   const SizedBox(height: AppDimensions.space4),
                   UiText(
-                    context.uiCopy('Formal grievances'),
+                    context.uiCopy('Help Center, contact and grievances'),
                     style: AppTypography.caption,
                   ),
                 ],

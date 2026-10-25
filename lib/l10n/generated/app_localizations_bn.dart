@@ -2109,7 +2109,7 @@ class AppLocalizationsBn extends AppLocalizations {
   String get settings_section_app => 'অ্যাপ';
 
   @override
-  String get settings_section_dangerZone => 'ডেঞ্জার জোন';
+  String get settings_section_dangerZone => 'অ্যাকাউন্ট বন্ধ করুন';
 
   @override
   String get settings_section_guardian => 'অভিভাবক';

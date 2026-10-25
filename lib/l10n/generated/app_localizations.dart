@@ -3873,7 +3873,7 @@ abstract class AppLocalizations {
   /// No description provided for @settings_privacy_pause_label.
   ///
   /// In en, this message translates to:
-  /// **'PROFILE PAUSE'**
+  /// **'Profile pause'**
   String get settings_privacy_pause_label;
 
   /// No description provided for @settings_privacy_pause_sub.
@@ -3969,7 +3969,7 @@ abstract class AppLocalizations {
   /// No description provided for @settings_section_dangerZone.
   ///
   /// In en, this message translates to:
-  /// **'Danger Zone'**
+  /// **'Close account'**
   String get settings_section_dangerZone;
 
   /// No description provided for @settings_section_guardian.

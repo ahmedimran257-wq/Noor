@@ -162,7 +162,9 @@ void main() {
     expect(paywall, contains('before the renewal date shown there'));
     expect(paywall, isNot(contains('24h before renewal')));
     expect(profile, contains('openGooglePlaySubscriptions'));
-    expect(profile, contains("context.uiCopy('Formal grievances')"));
+    // Grievance access must stay named on the Profile support entry.
+    expect(profile,
+        contains("context.uiCopy('Help Center, contact and grievances')"));
     expect(profile, contains("initialSection: 'help'"));
     expect(profile, contains('child: _HelpAndGrievanceCard('));
     expect(

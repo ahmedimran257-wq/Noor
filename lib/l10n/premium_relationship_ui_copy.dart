@@ -2,7 +2,7 @@ const premiumRelationshipUiCopy = <String, Map<String, String>>{
   'ar': {
     'Mutual compatibility insights': 'رؤى التوافق المتبادل',
     'Private shortlists, notes & reminders': 'قوائم خاصة وملاحظات وتذكيرات',
-    'Incognito Discovery': 'الاكتشاف الخفي',
+    'Incognito discovery': 'الاكتشاف الخفي',
     'Reading mutual preferences…': 'جارٍ تحليل التفضيلات المتبادلة…',
     'Compatibility details are temporarily unavailable.':
         'تفاصيل التوافق غير متاحة مؤقتًا.',
@@ -58,7 +58,6 @@ const premiumRelationshipUiCopy = <String, Map<String, String>>{
     'Marriage timeline': 'موعد الزواج',
     'Relocation': 'الانتقال',
     'Living plans': 'خطط السكن',
-    'Incognito discovery': 'الاكتشاف الخفي',
     'You are hidden from general discovery and remain visible only to people you contact or already know.':
         'أنت مخفي من الاكتشاف العام وتبقى ظاهرًا فقط لمن تتواصل معهم أو تعرفهم مسبقًا.',
     'PRIVATE': 'خاص',
@@ -68,7 +67,7 @@ const premiumRelationshipUiCopy = <String, Map<String, String>>{
     'Mutual compatibility insights': 'পারস্পরিক সামঞ্জস্যের বিশ্লেষণ',
     'Private shortlists, notes & reminders':
         'ব্যক্তিগত তালিকা, নোট ও রিমাইন্ডার',
-    'Incognito Discovery': 'গোপন ডিসকভারি',
+    'Incognito discovery': 'গোপন ডিসকভারি',
     'Reading mutual preferences…': 'দুই পক্ষের পছন্দ যাচাই হচ্ছে…',
     'Compatibility details are temporarily unavailable.':
         'সামঞ্জস্যের তথ্য সাময়িকভাবে পাওয়া যাচ্ছে না।',
@@ -126,7 +125,6 @@ const premiumRelationshipUiCopy = <String, Map<String, String>>{
     'Marriage timeline': 'বিয়ের সময়সীমা',
     'Relocation': 'স্থানান্তর',
     'Living plans': 'বসবাসের পরিকল্পনা',
-    'Incognito discovery': 'গোপন ডিসকভারি',
     'You are hidden from general discovery and remain visible only to people you contact or already know.':
         'আপনি সাধারণ ডিসকভারি থেকে লুকানো এবং শুধু যোগাযোগ করা বা আগে থেকে পরিচিতদের কাছে দৃশ্যমান।',
     'PRIVATE': 'ব্যক্তিগত',
@@ -136,7 +134,7 @@ const premiumRelationshipUiCopy = <String, Map<String, String>>{
     'Mutual compatibility insights': 'Gegenseitige Kompatibilitätsanalyse',
     'Private shortlists, notes & reminders':
         'Private Listen, Notizen & Erinnerungen',
-    'Incognito Discovery': 'Inkognito-Entdeckung',
+    'Incognito discovery': 'Inkognito-Entdeckung',
     'Reading mutual preferences…': 'Gegenseitige Präferenzen werden geprüft…',
     'Compatibility details are temporarily unavailable.':
         'Kompatibilitätsdetails sind vorübergehend nicht verfügbar.',
@@ -194,7 +192,6 @@ const premiumRelationshipUiCopy = <String, Map<String, String>>{
     'Marriage timeline': 'Zeitrahmen für die Ehe',
     'Relocation': 'Umzug',
     'Living plans': 'Wohnpläne',
-    'Incognito discovery': 'Inkognito-Entdeckung',
     'You are hidden from general discovery and remain visible only to people you contact or already know.':
         'Du bist in der allgemeinen Entdeckung verborgen und nur für kontaktierte oder bereits bekannte Personen sichtbar.',
     'PRIVATE': 'PRIVAT',
@@ -205,7 +202,7 @@ const premiumRelationshipUiCopy = <String, Map<String, String>>{
     'Mutual compatibility insights': 'Analyse de compatibilité mutuelle',
     'Private shortlists, notes & reminders':
         'Sélections, notes et rappels privés',
-    'Incognito Discovery': 'Découverte incognito',
+    'Incognito discovery': 'Découverte incognito',
     'Reading mutual preferences…': 'Analyse des préférences mutuelles…',
     'Compatibility details are temporarily unavailable.':
         'Les détails de compatibilité sont temporairement indisponibles.',
@@ -263,7 +260,6 @@ const premiumRelationshipUiCopy = <String, Map<String, String>>{
     'Marriage timeline': 'Projet de mariage',
     'Relocation': 'Déménagement',
     'Living plans': 'Projet de vie',
-    'Incognito discovery': 'Découverte incognito',
     'You are hidden from general discovery and remain visible only to people you contact or already know.':
         'Vous êtes masqué de la découverte générale et visible uniquement par les personnes contactées ou déjà connues.',
     'PRIVATE': 'PRIVÉ',
@@ -273,7 +269,7 @@ const premiumRelationshipUiCopy = <String, Map<String, String>>{
   'hi': {
     'Mutual compatibility insights': 'आपसी अनुकूलता जानकारी',
     'Private shortlists, notes & reminders': 'निजी सूची, नोट्स और रिमाइंडर',
-    'Incognito Discovery': 'गुप्त डिस्कवरी',
+    'Incognito discovery': 'गुप्त डिस्कवरी',
     'Reading mutual preferences…': 'दोनों की पसंद जाँची जा रही है…',
     'Compatibility details are temporarily unavailable.':
         'अनुकूलता की जानकारी अभी उपलब्ध नहीं है।',
@@ -330,7 +326,6 @@ const premiumRelationshipUiCopy = <String, Map<String, String>>{
     'Marriage timeline': 'विवाह की समयसीमा',
     'Relocation': 'स्थान परिवर्तन',
     'Living plans': 'रहने की योजना',
-    'Incognito discovery': 'गुप्त डिस्कवरी',
     'You are hidden from general discovery and remain visible only to people you contact or already know.':
         'आप सामान्य डिस्कवरी से छिपे हैं और केवल संपर्क किए या पहले से परिचित लोगों को दिखाई देते हैं।',
     'PRIVATE': 'निजी',
@@ -340,7 +335,7 @@ const premiumRelationshipUiCopy = <String, Map<String, String>>{
     'Mutual compatibility insights': 'Wawasan kecocokan bersama',
     'Private shortlists, notes & reminders':
         'Daftar, catatan & pengingat pribadi',
-    'Incognito Discovery': 'Penemuan Samaran',
+    'Incognito discovery': 'Penemuan Samaran',
     'Reading mutual preferences…': 'Membaca preferensi bersama…',
     'Compatibility details are temporarily unavailable.':
         'Detail kecocokan sementara tidak tersedia.',
@@ -398,7 +393,6 @@ const premiumRelationshipUiCopy = <String, Map<String, String>>{
     'Marriage timeline': 'Rencana waktu menikah',
     'Relocation': 'Relokasi',
     'Living plans': 'Rencana tempat tinggal',
-    'Incognito discovery': 'Penemuan samaran',
     'You are hidden from general discovery and remain visible only to people you contact or already know.':
         'Anda tersembunyi dari penemuan umum dan hanya terlihat oleh orang yang Anda hubungi atau sudah kenal.',
     'PRIVATE': 'PRIBADI',
@@ -409,7 +403,7 @@ const premiumRelationshipUiCopy = <String, Map<String, String>>{
     'Mutual compatibility insights': 'Wawasan keserasian bersama',
     'Private shortlists, notes & reminders':
         'Senarai, nota & peringatan peribadi',
-    'Incognito Discovery': 'Penemuan Samaran',
+    'Incognito discovery': 'Penemuan Samaran',
     'Reading mutual preferences…': 'Menilai pilihan bersama…',
     'Compatibility details are temporarily unavailable.':
         'Butiran keserasian tidak tersedia buat sementara waktu.',
@@ -466,7 +460,6 @@ const premiumRelationshipUiCopy = <String, Map<String, String>>{
     'Marriage timeline': 'Jangka masa perkahwinan',
     'Relocation': 'Berpindah',
     'Living plans': 'Rancangan tempat tinggal',
-    'Incognito discovery': 'Penemuan samaran',
     'You are hidden from general discovery and remain visible only to people you contact or already know.':
         'Anda disembunyikan daripada penemuan umum dan hanya kelihatan kepada orang yang dihubungi atau telah dikenali.',
     'PRIVATE': 'PERIBADI',
@@ -477,7 +470,7 @@ const premiumRelationshipUiCopy = <String, Map<String, String>>{
     'Mutual compatibility insights': 'Karşılıklı uyumluluk analizi',
     'Private shortlists, notes & reminders':
         'Özel listeler, notlar ve hatırlatmalar',
-    'Incognito Discovery': 'Gizli Keşif',
+    'Incognito discovery': 'Gizli Keşif',
     'Reading mutual preferences…': 'Karşılıklı tercihler inceleniyor…',
     'Compatibility details are temporarily unavailable.':
         'Uyumluluk ayrıntıları geçici olarak kullanılamıyor.',
@@ -535,7 +528,6 @@ const premiumRelationshipUiCopy = <String, Map<String, String>>{
     'Marriage timeline': 'Evlilik takvimi',
     'Relocation': 'Taşınma',
     'Living plans': 'Yaşam planları',
-    'Incognito discovery': 'Gizli keşif',
     'You are hidden from general discovery and remain visible only to people you contact or already know.':
         'Genel keşiften gizlisiniz ve yalnızca iletişim kurduğunuz veya önceden tanıdığınız kişilere görünürsünüz.',
     'PRIVATE': 'ÖZEL',
@@ -545,7 +537,7 @@ const premiumRelationshipUiCopy = <String, Map<String, String>>{
     'Mutual compatibility insights': 'باہمی مطابقت کی تفصیل',
     'Private shortlists, notes & reminders':
         'نجی فہرستیں، نوٹس اور یاد دہانیاں',
-    'Incognito Discovery': 'خفیہ تلاش',
+    'Incognito discovery': 'خفیہ تلاش',
     'Reading mutual preferences…': 'باہمی ترجیحات دیکھی جا رہی ہیں…',
     'Compatibility details are temporarily unavailable.':
         'مطابقت کی تفصیل عارضی طور پر دستیاب نہیں۔',
@@ -601,7 +593,6 @@ const premiumRelationshipUiCopy = <String, Map<String, String>>{
     'Marriage timeline': 'شادی کا وقت',
     'Relocation': 'منتقلی',
     'Living plans': 'رہائش کے منصوبے',
-    'Incognito discovery': 'خفیہ تلاش',
     'You are hidden from general discovery and remain visible only to people you contact or already know.':
         'آپ عام تلاش سے پوشیدہ ہیں اور صرف ان لوگوں کو نظر آتے ہیں جن سے رابطہ کیا یا پہلے سے جانتے ہیں۔',
     'PRIVATE': 'نجی',

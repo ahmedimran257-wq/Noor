@@ -248,7 +248,7 @@ class _Step1 extends StatelessWidget {
                     style: AppTypography.button.copyWith(
                       color: selected == null
                           ? AppColors.slateMist
-                          : AppColors.pearlWhite,
+                          : AppColors.readableOn(AppColors.softCoral),
                     ),
                   ),
           ),
@@ -363,8 +363,8 @@ class _Step2 extends StatelessWidget {
                     ],
                   )
                 : UiText(context.uiCopy('Submit Report'),
-                    style: AppTypography.button
-                        .copyWith(color: AppColors.pearlWhite)),
+                    style: AppTypography.button.copyWith(
+                        color: AppColors.readableOn(AppColors.softCoral))),
           ),
         ),
       ],
@@ -482,7 +482,7 @@ class _ReasonTile extends StatelessWidget {
                   UiText(reason.label, style: AppTypography.body),
                   UiText(reason.detail,
                       style: AppTypography.caption,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis),
                 ],
               ),

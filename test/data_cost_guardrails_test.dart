@@ -86,8 +86,7 @@ void main() {
     final discovery =
         source('lib/core/cubits/discovery/discovery_feed_cubit.dart');
     final cockpit = source('admin/src/components/live-operations-cockpit.tsx');
-    final adminRefresh =
-        source('admin/src/components/navigation-state.tsx');
+    final adminRefresh = source('admin/src/components/navigation-state.tsx');
     final adminSidebar = source('admin/src/components/admin-sidebar.tsx');
 
     expect(

@@ -41,7 +41,8 @@ void showValidationSnackbar(BuildContext context, List<String> missingFields) {
           side: BorderSide(color: AppColors.goldBorder),
         ),
         duration: const Duration(seconds: 3),
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 80),
+        // Clears the onboarding Continue button and its padding.
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 104),
       ),
     );
 }

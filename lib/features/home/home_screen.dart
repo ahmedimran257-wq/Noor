@@ -242,7 +242,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         : AppDimensions.durationReveal,
                     switchInCurve: AppCurves.reveal,
                     switchOutCurve: AppCurves.dismiss,
-                    child: standing.showsPersistentNotice
+                    // The Profile tab (index 3) shows the same standing in its
+                    // own card with a Resume action, so the banner would repeat.
+                    child: standing.showsPersistentNotice && _currentTab != 3
                         ? _PersistentStandingBanner(
                             key: ValueKey(standing.kind),
                             standing: standing,

@@ -81,6 +81,16 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
     }
 
     if (mounted) {
+      // The app-level messenger outlives this route, so the confirmation is
+      // still visible on the welcome screen after sign-out.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: UiText(context.uiCopy(
+              'Your account will be deleted in 30 days. You can log back in anytime before then to cancel.')),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 6),
+        ),
+      );
       context.read<AuthCubit>().signOut();
     }
   }

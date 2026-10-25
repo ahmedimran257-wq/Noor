@@ -2071,7 +2071,7 @@ class AppLocalizationsDe extends AppLocalizations {
       'Zeigt an, wann Sie zuletzt aktiv waren';
 
   @override
-  String get settings_privacy_pause_label => 'PROFILPAUSE';
+  String get settings_privacy_pause_label => 'Profilpause';
 
   @override
   String get settings_privacy_pause_sub =>
@@ -2122,7 +2122,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settings_section_app => 'App';
 
   @override
-  String get settings_section_dangerZone => 'Gefahrenzone';
+  String get settings_section_dangerZone => 'Konto schließen';
 
   @override
   String get settings_section_guardian => 'Wächter';

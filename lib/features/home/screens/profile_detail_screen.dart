@@ -465,6 +465,10 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     showSilarahBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
+      // The card floats on its own; the theme's bordered sheet shape would
+      // draw a second outline around it.
+      shape: const RoundedRectangleBorder(),
+      elevation: 0,
       isScrollControlled: true,
       builder: (_) => BlocProvider.value(
         value: context.read<BlockReportCubit>(),
@@ -2476,15 +2480,22 @@ class _CtaBar extends StatelessWidget {
     return Container(
       padding: EdgeInsets.fromLTRB(
         AppDimensions.space24,
-        AppDimensions.space12,
+        AppDimensions.space24,
         AppDimensions.space24,
         AppDimensions.space12 + MediaQuery.of(context).padding.bottom,
       ),
+      // A short fade above the buttons, then solid: content scrolling
+      // underneath must not show through around them.
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.transparent, AppColors.obsidianNight],
+          colors: [
+            AppColors.obsidianNight.withValues(alpha: 0),
+            AppColors.obsidianNight,
+            AppColors.obsidianNight,
+          ],
+          stops: const [0, 0.28, 1],
         ),
       ),
       child: Row(

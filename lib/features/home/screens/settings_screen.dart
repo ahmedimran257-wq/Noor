@@ -1667,7 +1667,7 @@ class _PrivacySectionState extends State<_PrivacySection> {
           final enabled = _incognito?.enabled == true;
           final requested = _incognito?.requested == true;
           return _PrivacyCard(
-            label: context.uiCopy('Incognito Discovery'),
+            label: context.uiCopy('Incognito discovery'),
             subtitle: context.uiCopy(
                 'Browse privately. Your profile appears only to people you contact or already know.'),
             saved: enabled,

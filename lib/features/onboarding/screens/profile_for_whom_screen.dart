@@ -251,12 +251,13 @@ class _ProfileForWhomScreenState extends State<ProfileForWhomScreen>
                           subtitle: l10n.onboarding_profileForWhom_myselfSub,
                           isSelected: _selectedCategory == 'self',
                           onTap: _advancing ? null : _selectSelf,
+                          showChevron: true,
                         ),
                         const SizedBox(height: AppDimensions.space16),
 
                         // Option 2: Guardian
                         _SelectionCard(
-                          icon: Icons.copy_rounded, // or any icon from design
+                          icon: Icons.family_restroom_rounded,
                           title:
                               l10n.onboarding_profileForWhom_guardianCardTitle,
                           subtitle:

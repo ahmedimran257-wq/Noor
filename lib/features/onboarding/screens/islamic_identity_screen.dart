@@ -448,23 +448,36 @@ class _IslamicIdentityScreenState extends State<IslamicIdentityScreen> {
                 }),
               ),
               const SizedBox(height: AppDimensions.space20),
-              if (_sect == Sect.sunni || _sect == Sect.shia) ...[
-                _SectionTitle(l10n.onboarding_label_subSect.toUpperCase()),
-                const SizedBox(height: AppDimensions.space12),
-                Wrap(
-                  spacing: AppDimensions.space8,
-                  runSpacing: AppDimensions.space8,
-                  children: _subSects
-                      .map((s) => _SelectChip(
-                            label: _getLocalizedSubSect(l10n, s),
-                            isSelected: _subSect == s,
-                            onTap: () => setState(
-                                () => _subSect = _subSect == s ? null : s),
-                          ))
-                      .toList(),
-                ),
-                const SizedBox(height: AppDimensions.space20),
-              ],
+              // Grows smoothly so the questions below slide instead of
+              // jumping under the member's finger.
+              AnimatedSize(
+                duration: AppDimensions.durationTransition,
+                curve: Curves.easeOutCubic,
+                alignment: Alignment.topCenter,
+                child: _sect == Sect.sunni || _sect == Sect.shia
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _SectionTitle(
+                              l10n.onboarding_label_subSect.toUpperCase()),
+                          const SizedBox(height: AppDimensions.space12),
+                          Wrap(
+                            spacing: AppDimensions.space8,
+                            runSpacing: AppDimensions.space8,
+                            children: _subSects
+                                .map((s) => _SelectChip(
+                                      label: _getLocalizedSubSect(l10n, s),
+                                      isSelected: _subSect == s,
+                                      onTap: () => setState(() =>
+                                          _subSect = _subSect == s ? null : s),
+                                    ))
+                                .toList(),
+                          ),
+                          const SizedBox(height: AppDimensions.space20),
+                        ],
+                      )
+                    : const SizedBox(width: double.infinity),
+              ),
 
               // REVERT / CONVERT STATUS
               _SectionTitle(l10n.onboarding_label_revert.toUpperCase()),
