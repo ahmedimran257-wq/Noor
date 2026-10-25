@@ -43,7 +43,7 @@ export default async function ModerationPage({ searchParams }: { searchParams: P
     reports: "Member reports",
     messages: "Reported messages",
     photos: "Photo review",
-    discovery: "Discovery check",
+    discovery: "Discovery eligibility",
   };
 
   return (
@@ -143,7 +143,7 @@ async function MessagesQueue({ returnTo }: { returnTo: string }) {
                 </form>
                 <form action={resolveMessageReport}>
                   <Hidden returnTo={returnTo} fields={{ reportId: report.report_id, action: "actioned" }} />
-                  <SubmitButton className="btn btn-sm btn-danger" confirm="Restrict this sender's messaging for 7 days?">Restrict 7 days</SubmitButton>
+                  <SubmitButton className="btn btn-sm btn-danger" confirm="Restrict this sender's messaging for 7 days?">Restrict messaging 7 days</SubmitButton>
                 </form>
               </div>
             </article>
@@ -159,17 +159,19 @@ async function PhotosQueue({ returnTo }: { returnTo: string }) {
   if (photos.length === 0) {
     return (
       <section className="card">
-        <EmptyState icon={Camera} title="No photos waiting">Every uploaded profile photo has been reviewed.</EmptyState>
+        <EmptyState icon={Camera} title="No photos pending moderation.">Every uploaded profile photo remains available for staff review; new uploads appear here oldest first.</EmptyState>
       </section>
     );
   }
   const flagged = photos.filter((photo) => Number(photo.nsfw_score ?? 0) > 0.85).length;
+  const routine = photos.length - flagged;
   return (
     <div className="stack">
       <div className="notice info">
         <Eye size={16} />
         <span>
-          <strong>{photos.length} oldest photos shown.</strong> {flagged > 0 ? `${flagged} carry an explicit-content flag and stay hidden from members until approved. ` : ""}
+          <strong>Photo moderation review.</strong> Every uploaded profile photo remains available for staff review.
+          Routine photo reviews: {routine}. Explicit-content flags: {flagged}{flagged > 0 ? ", hidden from members until approved" : ""}. Oldest {photos.length} shown.
           Previews are private links that expire after five minutes; refresh if one stops loading.
         </span>
       </div>

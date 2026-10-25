@@ -86,7 +86,9 @@ void main() {
     final discovery =
         source('lib/core/cubits/discovery/discovery_feed_cubit.dart');
     final cockpit = source('admin/src/components/live-operations-cockpit.tsx');
-    final adminRefresh = source('admin/src/components/admin-auto-refresh.tsx');
+    final adminRefresh =
+        source('admin/src/components/navigation-state.tsx');
+    final adminSidebar = source('admin/src/components/admin-sidebar.tsx');
 
     expect(
       RegExp(r'_loadServerViewQuota\(\)').allMatches(discovery).length,
@@ -97,9 +99,13 @@ void main() {
     expect(discovery, contains('Duration(seconds: 90)'));
     expect(discovery, contains("'get_my_discovery_revision'"));
     expect(discovery, contains("'p_filters': _mapFilterToJson(filter)"));
-    expect(cockpit, contains('const refreshMs = 300000'));
-    expect(cockpit, contains('if (!document.hidden)'));
-    expect(adminRefresh, contains('const refreshMs = 300000'));
+    // The live feed follows the 15-minute metrics snapshot and only runs in
+    // a visible tab; pages refresh on demand, never on a background timer.
+    expect(cockpit, contains('const snapshotEveryMs = 15 * 60 * 1000'));
+    expect(cockpit, contains('if (document.hidden)'));
+    expect(adminRefresh, contains('const staleAfterMs = 5 * 60 * 1000'));
+    expect(adminRefresh, isNot(contains('setInterval')));
+    expect(adminSidebar, contains('prefetch={false}'));
   });
 
   test('tab and resume reconciliation do not bypass surface caches', () {
