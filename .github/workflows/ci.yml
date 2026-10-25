@@ -148,7 +148,7 @@ jobs:
         run: deno lint --config supabase/functions/deno.json supabase/functions
       - name: Test Edge Functions
         run: >-
-          deno test --allow-env --allow-net
+          deno test --allow-env --allow-net --allow-read=supabase/auth
           --config supabase/functions/deno.json
           --lock supabase/deno.lock
           --frozen

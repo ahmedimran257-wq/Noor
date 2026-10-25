@@ -1,4 +1,8 @@
 import { renderSubscriptionEmail } from "./transactional_email.ts";
+import {
+  renderSignInCodeTemplate,
+  renderWelcomeCodeTemplate,
+} from "./auth_email_templates.ts";
 
 const eventTypes = [
   "INITIAL_PURCHASE",
@@ -29,12 +33,19 @@ for (const eventType of eventTypes) {
       throw new Error("Subject is missing transactional context.");
     }
     if (
-      !email.html.includes("SILARAH") ||
-      !email.html.includes("Membership details")
+      !email.html.includes(">Silarah</div>") ||
+      !email.html.includes("Membership details") ||
+      !email.html.includes("#F7F3EA") ||
+      !email.html.includes("prefers-color-scheme:dark") ||
+      !email.html.includes("v:roundrect")
     ) {
       throw new Error("HTML template is incomplete.");
     }
-    if (!email.text.includes("Silarah Premium Annual")) {
+    if (
+      !email.text.includes("Silarah Premium Annual") ||
+      !email.text.includes("support@silarah.com") ||
+      email.text.includes("<")
+    ) {
       throw new Error("Plain-text alternative is incomplete.");
     }
   });
@@ -69,5 +80,35 @@ Deno.test("escapes account data before inserting it into HTML", () => {
   });
   if (email.html.includes("<script>")) {
     throw new Error("Untrusted profile data reached the HTML template.");
+  }
+});
+
+Deno.test("keeps Google Play order IDs whole for refund requests", () => {
+  const email = renderSubscriptionEmail({
+    eventType: "RENEWAL",
+    transactionId: "GPA.3374-2955-6735-46248",
+  });
+  if (!email.text.includes("Reference: GPA.3374-2955-6735-46248\n")) {
+    throw new Error("Play order ID was shortened.");
+  }
+});
+
+Deno.test("committed auth templates match the shared layout", async () => {
+  const dir = new URL("../../auth/email_templates/", import.meta.url);
+  const pairs: [string, string][] = [
+    ["silarah_verification_code.html", renderSignInCodeTemplate()],
+    ["silarah_welcome_verification_code.html", renderWelcomeCodeTemplate()],
+  ];
+  for (const [file, expected] of pairs) {
+    const committed = (await Deno.readTextFile(new URL(file, dir)))
+      .replace(/\r\n/g, "\n");
+    if (committed !== expected) {
+      throw new Error(
+        `${file} is stale. Run: deno run --allow-write=supabase/auth tool/render_auth_email_templates.ts`,
+      );
+    }
+    if (committed.split("{{ .Token }}").length !== 2) {
+      throw new Error(`${file} must contain {{ .Token }} exactly once.`);
+    }
   }
 });

@@ -1,13 +1,18 @@
 import 'package:silarah/l10n/ui_copy.dart';
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/legal/public_site_links.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
 import '../../../core/cubits/auth/auth_state.dart';
 import '../../../core/services/coach_mark_service.dart';
+import '../../../core/services/support_email.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
@@ -23,6 +28,7 @@ class HelpSupportScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthCubit>().state;
     final member = auth is AuthAuthenticated && !auth.isGuardianOnly;
+    final memberId = auth is AuthAuthenticated ? auth.userId : null;
     return Scaffold(
       backgroundColor: AppColors.obsidianNight,
       appBar: AppBar(
@@ -103,7 +109,11 @@ class HelpSupportScreen extends StatelessWidget {
             body:
                 'For account, billing, safety, verification, or profile issues.',
             actionLabel: 'support@silarah.com',
-            onTap: () => _contactEmail(context, 'support@silarah.com'),
+            onTap: () => _contactEmail(
+              context,
+              SupportInbox.support,
+              memberId: memberId,
+            ),
           ),
           const SizedBox(height: AppDimensions.space12),
           _SupportCard(
@@ -112,7 +122,11 @@ class HelpSupportScreen extends StatelessWidget {
             body:
                 'Report abusive behavior from the profile menu. Urgent safety reviews are prioritized.',
             actionLabel: 'safety@silarah.com',
-            onTap: () => _contactEmail(context, 'safety@silarah.com'),
+            onTap: () => _contactEmail(
+              context,
+              SupportInbox.safety,
+              memberId: memberId,
+            ),
           ),
           const SizedBox(height: AppDimensions.space12),
           _SupportCard(
@@ -121,7 +135,11 @@ class HelpSupportScreen extends StatelessWidget {
             body:
                 'Silarah Grievance Desk. Formal grievances are acknowledged and resolved within the time limits set by Indian law.',
             actionLabel: 'grievance@silarah.com',
-            onTap: () => _contactEmail(context, 'grievance@silarah.com'),
+            onTap: () => _contactEmail(
+              context,
+              SupportInbox.grievance,
+              memberId: memberId,
+            ),
           ),
           const SizedBox(height: AppDimensions.space20),
           UiText(context.uiCopy('Common Help'),
@@ -185,11 +203,24 @@ class HelpSupportScreen extends StatelessWidget {
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
   }
 
-  static Future<void> _contactEmail(BuildContext context, String email) async {
-    final uri = Uri(
-      scheme: 'mailto',
-      path: email,
-      queryParameters: const {'subject': 'Silarah support request'},
+  static Future<void> _contactEmail(
+    BuildContext context,
+    SupportInbox inbox, {
+    String? memberId,
+  }) async {
+    final email = inbox.address;
+    String? appVersion;
+    try {
+      final info = await PackageInfo.fromPlatform();
+      appVersion = '${info.version} (${info.buildNumber})';
+    } catch (_) {
+      // The email still opens without version details.
+    }
+    final uri = supportEmailUri(
+      inbox,
+      appVersion: appVersion,
+      device: _deviceLabel(),
+      memberId: memberId,
     );
     if (await launchUrl(uri, mode: LaunchMode.externalApplication)) return;
     await Clipboard.setData(ClipboardData(text: email));
@@ -210,6 +241,14 @@ class HelpSupportScreen extends StatelessWidget {
           ),
         ),
       );
+  }
+
+  static String? _deviceLabel() {
+    if (kIsWeb) return 'Web';
+    final version = Platform.operatingSystemVersion.trim();
+    final label =
+        '${Platform.isIOS ? 'iOS' : Platform.isAndroid ? 'Android' : Platform.operatingSystem} $version';
+    return label.length <= 80 ? label : label.substring(0, 80);
   }
 
   static Future<void> _resetFirstUseTips(BuildContext context) async {

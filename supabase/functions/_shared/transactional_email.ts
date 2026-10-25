@@ -1,3 +1,22 @@
+import {
+  BRAND,
+  button,
+  detailList,
+  escapeHtml,
+  footerBand,
+  greeting,
+  HELP_URL,
+  note,
+  panel,
+  paragraph,
+  PRIVACY_URL,
+  renderEmailLayout,
+  signOff,
+  steps,
+  SUPPORT_EMAIL,
+  TERMS_URL,
+} from "./email_layout.ts";
+
 export interface SubscriptionEmailInput {
   eventType: string;
   firstName?: string | null;
@@ -16,24 +35,47 @@ export interface RenderedTransactionalEmail {
 }
 
 interface SubscriptionEmailCopy {
+  subject: string;
+  preheader: string;
   eyebrow: string;
   heading: string;
   intro: string;
   statusLabel: string;
   statusValue: string;
+  benefits?: [string, string][];
   actionLabel: string;
   actionUrl: string;
   note: string;
+  tone?: "standard" | "attention";
 }
 
 const APP_URL = "https://silarah.com/app/";
-const SUPPORT_URL = "https://silarah.com/help/";
+
+const PREMIUM_BENEFITS: [string, string][] = [
+  [
+    "Full match messaging",
+    "Carry every conversation with your matches forward, without waiting.",
+  ],
+  [
+    "All-India discovery and advanced filters",
+    "Look beyond your city, with the filters that matter to you and your family.",
+  ],
+  [
+    "Profile viewers and a weekly boost",
+    "See who has visited your profile, and be seen by more members each week.",
+  ],
+];
+
+const SIGN_OFF = ["With every good wish for your search,", "The Silarah team"];
+
+const SERVICE_REASON =
+  "This is a service message about your Silarah membership, so it is sent whatever your marketing preferences.";
 
 export function renderSubscriptionEmail(
   input: SubscriptionEmailInput,
 ): RenderedTransactionalEmail {
   const firstName = cleanFirstName(input.firstName);
-  const greeting = firstName
+  const salutation = firstName
     ? `Assalamu alaikum ${firstName},`
     : "Assalamu alaikum,";
   const plan = planName(input.productId);
@@ -43,112 +85,93 @@ export function renderSubscriptionEmail(
   const store = storeName(input.store);
   const copy = copyFor(input.eventType, effectiveDate, store);
 
-  const details = [
+  const details: [string, string][] = [
     ["Membership", plan],
-    ...(amount ? [["Amount", amount]] : []),
-    ...(effectiveDate ? [[dateLabel(input.eventType), effectiveDate]] : []),
-    ...(store ? [["Payment provider", store]] : []),
-    ...(reference ? [["Reference", reference]] : []),
+    ...(amount ? [["Amount", amount] as [string, string]] : []),
+    ...(effectiveDate
+      ? [[dateLabel(input.eventType), effectiveDate] as [string, string]]
+      : []),
+    ...(store ? [["Payment provider", store] as [string, string]] : []),
+    ...(reference ? [["Reference", reference] as [string, string]] : []),
   ];
+  const e = escapeHtml;
+  const supportLine =
+    `Questions about your membership? Simply reply to this email and it reaches our support team at ${SUPPORT_EMAIL}.`;
 
-  const detailRows = details.map(([label, value]) => `
-    <tr>
-      <td style="padding:11px 0;border-bottom:1px solid #2a282f;color:#8f8a94;font-size:13px;line-height:20px;">${
-    escapeHtml(label)
-  }</td>
-      <td align="right" style="padding:11px 0;border-bottom:1px solid #2a282f;color:#eee8de;font-size:13px;line-height:20px;font-weight:650;">${
-    escapeHtml(value)
-  }</td>
-    </tr>`).join("");
+  const html = renderEmailLayout({
+    title: e(copy.subject),
+    preheader: e(copy.preheader),
+    eyebrow: e(copy.eyebrow),
+    heading: e(copy.heading),
+    tone: copy.tone,
+    reason: e(SERVICE_REASON),
+    body: [
+      greeting(e(salutation)),
+      paragraph(e(copy.intro)),
+      panel(e(copy.statusLabel), e(copy.statusValue), { tone: copy.tone }),
+      ...(copy.benefits
+        ? [
+          steps(
+            "What is now open to you",
+            copy.benefits.map(([title, text]) => [e(title), e(text)]),
+          ),
+        ]
+        : []),
+      detailList(
+        "Membership details",
+        details.map(([label, value]) => [e(label), e(value)]),
+      ),
+      button(e(copy.actionLabel), e(copy.actionUrl)),
+      note(e(copy.note)),
+      signOff(SIGN_OFF.map(e).join("<br>")),
+      footerBand(
+        `Questions about your membership? Simply reply to this email and it reaches our support team at <a class="link" href="mailto:${SUPPORT_EMAIL}" style="color:${BRAND.emerald};text-decoration:underline;">${SUPPORT_EMAIL}</a>.`,
+      ),
+    ].join("\n"),
+  });
 
-  const subject = subjectFor(input.eventType);
-  const html = `<!doctype html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="color-scheme" content="light dark">
-  <meta name="supported-color-schemes" content="light dark">
-  <title>${escapeHtml(subject)}</title>
-</head>
-<body style="margin:0;padding:0;background:#09090d;color:#f6f1e8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%;">
-  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${
-    escapeHtml(copy.intro)
-  }</div>
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background:#09090d;">
-    <tr><td align="center" style="padding:40px 16px;">
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;">
-        <tr><td style="padding:0 8px 24px;text-align:left;">
-          <div style="font-size:24px;line-height:30px;font-weight:750;letter-spacing:3px;color:#d9b965;"><span style="font-family:Tahoma,Arial,sans-serif;letter-spacing:0;">&#1587;&#1610;&#1604;&#1575;&#1585;&#1575;</span>&nbsp;&nbsp;SILARAH</div>
-          <div style="padding-top:7px;font-size:11px;line-height:18px;letter-spacing:1.6px;text-transform:uppercase;color:#8d8992;">Membership services</div>
-        </td></tr>
-        <tr><td style="background:#141419;border:1px solid #343038;border-radius:20px;overflow:hidden;">
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-            <tr><td style="height:4px;background:#d9b965;font-size:0;line-height:0;">&nbsp;</td></tr>
-            <tr><td style="padding:42px 44px 20px;">
-              <div style="display:inline-block;padding:6px 11px;border:1px solid #51482f;border-radius:999px;background:#1c1a16;color:#d9b965;font-size:11px;line-height:16px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;">${
-    escapeHtml(copy.eyebrow)
-  }</div>
-              <h1 style="margin:21px 0 12px;font-family:Georgia,'Times New Roman',serif;font-size:32px;line-height:39px;font-weight:600;letter-spacing:-0.45px;color:#f6f1e8;">${
-    escapeHtml(copy.heading)
-  }</h1>
-              <p style="margin:0 0 14px;font-size:16px;line-height:26px;color:#d0cad3;">${
-    escapeHtml(greeting)
-  }</p>
-              <p style="margin:0;font-size:15px;line-height:25px;color:#aaa5ae;">${
-    escapeHtml(copy.intro)
-  }</p>
-            </td></tr>
-            <tr><td style="padding:8px 44px 22px;">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#0d0d11;border:1px solid #4d4430;border-radius:15px;">
-                <tr><td style="padding:22px 24px;">
-                  <div style="font-size:10px;line-height:15px;font-weight:700;letter-spacing:1.35px;text-transform:uppercase;color:#88838d;">${
-    escapeHtml(copy.statusLabel)
-  }</div>
-                  <div style="padding-top:6px;font-size:20px;line-height:28px;font-weight:700;color:#edcf7b;">${
-    escapeHtml(copy.statusValue)
-  }</div>
-                </td></tr>
-              </table>
-            </td></tr>
-            <tr><td style="padding:0 44px 29px;">
-              <div style="margin-bottom:8px;font-size:10px;line-height:15px;font-weight:700;letter-spacing:1.35px;text-transform:uppercase;color:#88838d;">Membership details</div>
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">${detailRows}</table>
-            </td></tr>
-            <tr><td align="center" style="padding:0 44px 35px;">
-              <a href="${
-    escapeHtml(copy.actionUrl)
-  }" style="display:block;padding:15px 20px;border-radius:12px;background:#d9b965;color:#111116;text-decoration:none;font-size:15px;line-height:20px;font-weight:750;text-align:center;">${
-    escapeHtml(copy.actionLabel)
-  }</a>
-              <p style="margin:16px 0 0;font-size:12px;line-height:19px;color:#77737f;">${
-    escapeHtml(copy.note)
-  }</p>
-            </td></tr>
-            <tr><td style="padding:21px 44px;background:#101014;border-top:1px solid #2b2930;font-size:12px;line-height:20px;color:#85818a;">This transactional message was sent because your Silarah membership changed. Payment collection, tax documents, and store receipts are issued by your payment provider.</td></tr>
-          </table>
-        </td></tr>
-        <tr><td style="padding:25px 8px 0;text-align:center;font-size:12px;line-height:20px;color:#77737c;">
-          <a href="${SUPPORT_URL}" style="color:#aaa4af;text-decoration:underline;">Membership support</a>
-          <span style="padding:0 8px;color:#4e4b52;">&bull;</span>
-          <a href="https://silarah.com/terms/" style="color:#aaa4af;text-decoration:underline;">Terms</a>
-          <span style="padding:0 8px;color:#4e4b52;">&bull;</span>
-          <a href="https://silarah.com/privacy/" style="color:#aaa4af;text-decoration:underline;">Privacy</a>
-          <br><span style="display:inline-block;padding-top:9px;">Silarah &mdash; thoughtful introductions, handled privately.</span>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
+  const text = [
+    "SILARAH",
+    "Introductions with intention",
+    "",
+    copy.heading,
+    "=".repeat(copy.heading.length),
+    "",
+    salutation,
+    "",
+    copy.intro,
+    "",
+    `${copy.statusLabel}: ${copy.statusValue}`,
+    ...(copy.benefits
+      ? [
+        "",
+        "What is now open to you",
+        ...copy.benefits.map(([title, text], index) =>
+          `${index + 1}. ${title}: ${text}`
+        ),
+      ]
+      : []),
+    "",
+    "Membership details",
+    ...details.map(([label, value]) => `${label}: ${value}`),
+    "",
+    `${copy.actionLabel}: ${copy.actionUrl}`,
+    "",
+    copy.note,
+    "",
+    ...SIGN_OFF,
+    "",
+    "--",
+    supportLine,
+    `Help centre: ${HELP_URL}`,
+    `Privacy: ${PRIVACY_URL}`,
+    `Terms: ${TERMS_URL}`,
+    "",
+    SERVICE_REASON,
+    "",
+  ].join("\n");
 
-  const detailText = details.map(([label, value]) => `${label}: ${value}`).join(
-    "\n",
-  );
-  const text =
-    `SILARAH\n\n${copy.heading}\n\n${greeting}\n\n${copy.intro}\n\n${copy.statusLabel}: ${copy.statusValue}\n\n${detailText}\n\n${copy.actionLabel}: ${copy.actionUrl}\n\n${copy.note}\n\nMembership support: ${SUPPORT_URL}`;
-
-  return { subject, html, text };
+  return { subject: copy.subject, html, text };
 }
 
 export async function sendBrevoTransactionalEmail(args: {
@@ -234,122 +257,128 @@ function copyFor(
     : store === "Google Play"
     ? "https://play.google.com/store/account/subscriptions"
     : APP_URL;
+  const provider = store ?? "your payment provider";
+  const Provider = store ?? "Your payment provider";
 
   switch (eventType) {
     case "INITIAL_PURCHASE":
       return {
+        subject: "Your Silarah Premium membership is active",
+        preheader:
+          "Thank you for choosing Premium. Full messaging, all-India discovery and profile viewers are open to you now.",
         eyebrow: "Membership confirmed",
-        heading: "Welcome to Silarah Premium.",
+        heading: "Welcome to Silarah Premium",
         intro:
-          "Your membership is active. Premium access is now connected to your Silarah account across supported devices.",
+          "Thank you for choosing Premium. It is active on your account now, so the next conversation can begin whenever you are ready.",
         statusLabel: "Membership status",
         statusValue: "Active",
+        benefits: PREMIUM_BENEFITS,
         actionLabel: "Open Silarah",
         actionUrl: APP_URL,
         note:
-          "Your payment provider sends the official purchase receipt separately.",
+          `${Provider} sends your official receipt separately. Silarah never sees your card or bank details.`,
       };
     case "RENEWAL":
       return {
+        subject: "Your Silarah Premium membership renewed",
+        preheader:
+          "Your Premium membership renewed as planned. Your conversations and filters carry on without a break.",
         eyebrow: "Renewal confirmed",
-        heading: "Your membership continues.",
+        heading: "Your Premium continues",
         intro:
-          "Your Silarah Premium membership renewed successfully, with no interruption to your access.",
+          "Your membership renewed as planned, so your conversations, filters and weekly boost carry on without a break.",
         statusLabel: "Membership status",
-        statusValue: "Renewed",
+        statusValue: "Renewed and active",
         actionLabel: "Open Silarah",
         actionUrl: APP_URL,
         note:
-          "Your payment provider sends the official renewal receipt separately.",
+          `${Provider} sends the official renewal receipt. You can change or stop future renewals at any time from your subscriptions in ${provider}.`,
       };
     case "PRODUCT_CHANGE":
       return {
+        subject: "Your Silarah Premium plan was updated",
+        preheader:
+          "We have recorded your plan change. Here is what your membership looks like now.",
         eyebrow: "Plan updated",
-        heading: "Your membership plan changed.",
+        heading: "Your plan has been updated",
         intro:
-          "Your requested plan change has been recorded. The membership details below reflect the latest information supplied by your payment provider.",
+          `We have recorded your plan change. The details below are exactly what ${provider} reported to us.`,
         statusLabel: "Membership status",
         statusValue: "Plan updated",
-        actionLabel: "Review membership",
+        actionLabel: "Review your membership",
         actionUrl: APP_URL,
         note:
-          "Any proration or credit is calculated and documented by your payment provider.",
+          `Any proration or credit for the change is calculated and shown by ${provider}.`,
       };
     case "CANCELLATION":
       return {
-        eyebrow: "Cancellation confirmed",
-        heading: "Your renewal has been stopped.",
+        subject: "Your Silarah renewal has been cancelled",
+        preheader: effectiveDate
+          ? `Nothing changes today. Premium stays open to you until ${effectiveDate}.`
+          : "Nothing changes today. Premium stays open to you until the end of your paid period.",
+        eyebrow: "Renewal cancelled",
+        heading: "Your renewal is cancelled",
         intro: effectiveDate
-          ? `Your membership remains available until ${effectiveDate}. It will not renew automatically after that date.`
-          : "Your automatic renewal has been stopped. Access remains available for the remainder of the paid period.",
-        statusLabel: "Membership status",
-        statusValue: "Ends after current period",
+          ? `Nothing changes today. Premium stays fully open to you until ${effectiveDate}, and it will not renew after that.`
+          : "Nothing changes today. Premium stays fully open to you until the end of the period you have already paid for, and it will not renew after that.",
+        statusLabel: "Premium access until",
+        statusValue: effectiveDate ?? "End of your current period",
         actionLabel: "Manage subscription",
         actionUrl: manageUrl,
         note:
-          "You can resume from your payment provider before the current period ends, where supported.",
+          `Changed your mind? You can resume from ${provider} before the current period ends. Your profile, matches and conversations stay with you either way.`,
       };
     case "EXPIRATION":
       return {
+        subject: "Your Silarah Premium membership has ended",
+        preheader:
+          "Your Premium period has ended. Your profile, matches and conversations are all still here.",
         eyebrow: "Membership ended",
-        heading: "Your Premium access has ended.",
+        heading: "Your Premium period has ended",
         intro:
-          "Your paid membership period is complete. Your Silarah account and profile remain available under the standard experience.",
+          "Thank you for the time you spent with Premium. Your profile, matches and conversations are all still here, now on the free membership.",
         statusLabel: "Membership status",
-        statusValue: "Expired",
-        actionLabel: "View membership options",
+        statusValue: "Free membership",
+        actionLabel: "See membership options",
         actionUrl: APP_URL,
-        note: "You can subscribe again at any time from the Silarah app.",
+        note:
+          "You can return to Premium whenever it suits you, from the app. Nothing you have built is lost.",
       };
     case "REFUND":
       return {
-        eyebrow: "Refund update",
-        heading: "Your membership was refunded.",
+        subject: "Your Silarah membership refund update",
+        preheader:
+          `${Provider} has confirmed your refund, and your Silarah account has been updated to match.`,
+        eyebrow: "Refund confirmed",
+        heading: "Your refund is confirmed",
         intro:
-          "Your payment provider reported a refund and Silarah Premium access has been updated accordingly.",
+          `${Provider} has told us your payment was refunded, and we have updated your account to match. Your profile and conversations remain, on the free membership.`,
         statusLabel: "Membership status",
         statusValue: "Refunded",
-        actionLabel: "Get membership support",
-        actionUrl: SUPPORT_URL,
+        actionLabel: "Visit the help centre",
+        actionUrl: HELP_URL,
         note:
-          "Refund timing and settlement details are controlled by your payment provider.",
+          `When the money reaches you is decided by ${provider} and your bank, not by Silarah.`,
       };
     case "BILLING_ISSUE":
       return {
-        eyebrow: "Action required",
-        heading: "There is a payment issue.",
+        subject: "Your Silarah Premium payment needs attention",
+        preheader:
+          `${Provider} could not take your latest Premium payment. A quick check of your payment method keeps Premium uninterrupted.`,
+        eyebrow: "Action needed",
+        heading: "We could not renew your Premium",
         intro:
-          "Your payment provider could not complete the latest membership charge. Please review your payment method to avoid losing Premium access.",
+          `${Provider} was unable to take the latest payment for your membership. Please check your payment method so Premium continues without interruption.`,
         statusLabel: "Membership status",
-        statusValue: "Payment attention needed",
+        statusValue: "Payment needs attention",
         actionLabel: "Update payment method",
         actionUrl: manageUrl,
         note:
-          "Silarah never receives or stores your full card or bank details.",
+          "Silarah never receives or stores your card or bank details, and we will never ask for them by email.",
+        tone: "attention",
       };
     default:
       throw new Error(`Unsupported subscription email event: ${eventType}`);
-  }
-}
-
-function subjectFor(eventType: string): string {
-  switch (eventType) {
-    case "INITIAL_PURCHASE":
-      return "Your Silarah Premium membership is active";
-    case "RENEWAL":
-      return "Your Silarah Premium membership renewed";
-    case "PRODUCT_CHANGE":
-      return "Your Silarah Premium plan was updated";
-    case "CANCELLATION":
-      return "Your Silarah renewal has been cancelled";
-    case "EXPIRATION":
-      return "Your Silarah Premium membership has ended";
-    case "REFUND":
-      return "Your Silarah membership refund update";
-    case "BILLING_ISSUE":
-      return "Action required: update your membership payment";
-    default:
-      return "Your Silarah membership update";
   }
 }
 
@@ -424,7 +453,9 @@ function storeName(store?: string | null): string | null {
 function shortReference(value?: string | null): string | null {
   const reference = value?.trim();
   if (!reference) return null;
-  if (reference.length <= 18) return reference;
+  // Google Play order IDs (GPA.xxxx-xxxx-xxxx-xxxxx) stay whole: the refund
+  // policy asks members to quote them to support.
+  if (reference.length <= 32) return reference;
   return `${reference.slice(0, 8)}...${reference.slice(-6)}`;
 }
 
@@ -432,13 +463,4 @@ function cleanFirstName(value?: string | null): string | null {
   const cleaned = value?.trim().replace(/\s+/g, " ");
   if (!cleaned) return null;
   return cleaned.slice(0, 60);
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
 }

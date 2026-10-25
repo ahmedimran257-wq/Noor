@@ -71,3 +71,6 @@ app.*.map.json
 
 # Unused REST API scaffold
 rest-api/
+
+# Crashlytics Gradle plugin tool cache (dump_syms)
+.crashlytics/

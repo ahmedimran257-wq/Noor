@@ -97,6 +97,34 @@ Future<void> _activateFirebaseAppCheck() async {
   }
 }
 
+/// Installs crash reporting the moment Firebase is ready, before Supabase and
+/// the auth callback start, so failures in the rest of startup still reach
+/// Crashlytics. Debug sessions keep collection off so the release dashboard
+/// only shows real device crashes.
+Future<void> _installCrashReporting() async {
+  await FirebaseCrashlytics.instance
+      .setCrashlyticsCollectionEnabled(!kDebugMode);
+
+  // Catch Flutter framework errors → forward to Crashlytics
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    final exceptionText = details.exceptionAsString();
+    final isLayoutOverflow = exceptionText.contains('RenderFlex overflowed');
+    debugPrint('Flutter Error: $exceptionText');
+    FirebaseCrashlytics.instance.recordFlutterError(
+      details,
+      fatal: !isLayoutOverflow,
+    );
+  };
+
+  // Catch async errors not caught by Flutter framework → forward to Crashlytics
+  ui.PlatformDispatcher.instance.onError = (error, stack) {
+    debugPrint('Async Error: $error\n$stack');
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true; // Prevent app crash
+  };
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Flutter Inspector paint toggles can persist for the lifetime of a debug
@@ -134,6 +162,7 @@ void main() async {
       Firebase.initializeApp(),
     ]);
     final prefs = startupDependencies.first as SharedPreferences;
+    await _installCrashReporting();
     await _activateFirebaseAppCheck();
     final introCompleted = prefs.getBool('silarah_intro_completed') ?? false;
     _bootstrapInitialLocation =
@@ -156,19 +185,6 @@ void main() async {
     _bootstrapStage.value = _BootstrapStage.failed;
     return;
   }
-
-  // Global Error Handling + Crashlytics
-  // Catch Flutter framework errors → forward to Crashlytics
-  FlutterError.onError = (FlutterErrorDetails details) {
-    FlutterError.presentError(details);
-    final exceptionText = details.exceptionAsString();
-    final isLayoutOverflow = exceptionText.contains('RenderFlex overflowed');
-    debugPrint('Flutter Error: $exceptionText');
-    FirebaseCrashlytics.instance.recordFlutterError(
-      details,
-      fatal: !isLayoutOverflow,
-    );
-  };
 
   // Replace the ugly red error screen with a styled fallback
   ErrorWidget.builder = (FlutterErrorDetails details) {
@@ -227,13 +243,6 @@ void main() async {
         );
       },
     );
-  };
-
-  // Catch async errors not caught by Flutter framework → forward to Crashlytics
-  ui.PlatformDispatcher.instance.onError = (error, stack) {
-    debugPrint('Async Error: $error\n$stack');
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-    return true; // Prevent app crash
   };
 
   // Status bar: transparent, dark icons on the signature white canvas.

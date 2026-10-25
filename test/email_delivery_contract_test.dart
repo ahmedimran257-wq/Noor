@@ -52,11 +52,14 @@ void main() {
       expect(verificationTemplate, contains('Silarah staff will never ask'));
       expect(verificationTemplate, contains('https://silarah.com/help/'));
       expect(verificationTemplate, contains('https://silarah.com/privacy/'));
-      expect(verificationTemplate, contains('background:#f3f1ec'));
-      expect(verificationTemplate, contains('background:#ffffff'));
+      expect(verificationTemplate, contains('background:#F7F3EA'));
+      expect(verificationTemplate, contains('background:#FFFDF8'));
+      expect(verificationTemplate, contains('prefers-color-scheme:dark'));
+      expect(verificationTemplate, contains('Playfair Display'));
+      expect(verificationTemplate, contains('Georgia'));
       expect(verificationTemplate, contains('@media only screen'));
       expect(verificationTemplate, contains('noreply@mail.silarah.com'));
-      expect(welcomeTemplate, contains('background:#f3f1ec'));
+      expect(welcomeTemplate, contains('background:#F7F3EA'));
       expect(welcomeTemplate, contains('After verification'));
       expect(welcomeTemplate, contains('noreply@mail.silarah.com'));
       expect(verificationTemplate, isNot(contains('background-color:#09090d')));

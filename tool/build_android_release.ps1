@@ -29,6 +29,22 @@ foreach ($key in @(
         throw "$key is missing or is a placeholder in $configPath."
     }
 }
+$productionSupabaseRef = 'jukpscfxzwttgtxvrbmj'
+if ([string]$defines.SUPABASE_URL -ne "https://$productionSupabaseRef.supabase.co") {
+    throw "Release builds must target the production Supabase project ($productionSupabaseRef)."
+}
+# Legacy anon keys are JWTs whose payload names the project; a staging key
+# paired with the production URL would fail every request after launch.
+$anonParts = ([string]$defines.SUPABASE_ANON_KEY).Split('.')
+if ($anonParts.Count -eq 3) {
+    $payload = $anonParts[1].Replace('-', '+').Replace('_', '/')
+    $payload = $payload.PadRight($payload.Length + (4 - $payload.Length % 4) % 4, '=')
+    $claims = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($payload)) |
+        ConvertFrom-Json
+    if ($claims.ref -ne $productionSupabaseRef -or $claims.role -ne 'anon') {
+        throw 'SUPABASE_ANON_KEY is not the production anon key.'
+    }
+}
 if (-not ([string]$defines.REVENUECAT_ANDROID_KEY).StartsWith('goog_')) {
     throw 'Release builds require the RevenueCat Google Play public SDK key.'
 }
