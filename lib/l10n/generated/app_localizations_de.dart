@@ -970,7 +970,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get legal_summary_2 =>
-      'Ihre Fotos werden überprüft, bevor Ihr Profil online geschaltet wird.';
+      'Jedes Foto wird auf Sicherheit geprüft, und unser Team prüft neue Fotos.';
 
   @override
   String get legal_summary_3 =>
@@ -2319,7 +2319,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get legal_specialCategoryConsent =>
-      'Ich willige ausdrücklich ein, dass SILARAH meine religiösen Angaben (Rechtsschule, Gebetspraxis und islamische Identität) für die Kompatibilitätsvermittlung verarbeitet. Beauftragte Dienstleister verwenden sie nur zum Betrieb von Silarah, niemals für verhaltensbasierte Werbung.';
+      'Ich willige ausdrücklich ein, dass Silarah meine religiösen Angaben (Rechtsschule, Gebetspraxis und islamische Identität) für die Kompatibilitätsvermittlung verarbeitet. Beauftragte Dienstleister verwenden sie nur zum Betrieb von Silarah, niemals für verhaltensbasierte Werbung.';
 
   @override
   String get onboarding_complexion_fair => 'Hell';

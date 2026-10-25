@@ -1869,7 +1869,7 @@ abstract class AppLocalizations {
   /// No description provided for @legal_summary_2.
   ///
   /// In en, this message translates to:
-  /// **'Your photos are reviewed before your profile goes live.'**
+  /// **'Every photo is safety-checked, and our team reviews new uploads.'**
   String get legal_summary_2;
 
   /// No description provided for @legal_summary_3.
@@ -4317,7 +4317,7 @@ abstract class AppLocalizations {
   /// No description provided for @legal_specialCategoryConsent.
   ///
   /// In en, this message translates to:
-  /// **'I explicitly consent to SILARAH processing my religious information (sect, prayer practice and Islamic identity) for compatibility matching. Contracted processors use it only to operate Silarah, never for behavioural advertising.'**
+  /// **'I explicitly consent to Silarah processing my religious information (sect, prayer practice and Islamic identity) for compatibility matching. Contracted processors use it only to operate Silarah, never for behavioural advertising.'**
   String get legal_specialCategoryConsent;
 
   /// No description provided for @onboarding_complexion_fair.

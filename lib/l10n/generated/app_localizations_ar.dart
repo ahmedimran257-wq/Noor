@@ -951,7 +951,8 @@ class AppLocalizationsAr extends AppLocalizations {
       'يتم تشفير بياناتك ولا يتم بيعها أبدًا لأطراف ثالثة.';
 
   @override
-  String get legal_summary_2 => 'تتم مراجعة صورك قبل نشر ملفك الشخصي.';
+  String get legal_summary_2 =>
+      'تخضع كل صورة لفحص أمان، ويراجع فريقنا الصور الجديدة.';
 
   @override
   String get legal_summary_3 =>
@@ -2274,7 +2275,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get legal_specialCategoryConsent =>
-      'أوافق صراحةً على معالجة SILARAH لمعلوماتي الدينية (المذهب والصلاة والهوية الإسلامية) لمطابقة التوافق. يستخدمها مزودو الخدمة المتعاقدون فقط لتشغيل سيلارا، وليس للإعلانات السلوكية.';
+      'أوافق صراحةً على معالجة Silarah لمعلوماتي الدينية (المذهب والصلاة والهوية الإسلامية) لمطابقة التوافق. يستخدمها مزودو الخدمة المتعاقدون فقط لتشغيل سيلارا، وليس للإعلانات السلوكية.';
 
   @override
   String get onboarding_complexion_fair => 'فاتحة';

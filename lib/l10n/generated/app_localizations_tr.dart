@@ -966,7 +966,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get legal_summary_2 =>
-      'Profiliniz yayınlanmadan önce fotoğraflarınız incelenir.';
+      'Her fotoğraf güvenlik kontrolünden geçer ve ekibimiz yeni fotoğrafları inceler.';
 
   @override
   String get legal_summary_3 =>
@@ -2301,7 +2301,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get legal_specialCategoryConsent =>
-      'Uyumluluk eşleştirmesi için SILARAH’ın dini bilgilerimi (mezhep, namaz uygulaması ve İslami kimlik) işlemesine açıkça izin veriyorum. Sözleşmeli hizmet sağlayıcılar bu bilgileri yalnızca Silarah’ı işletmek için kullanır; davranışsal reklamcılık için kullanmaz.';
+      'Uyumluluk eşleştirmesi için Silarah’ın dini bilgilerimi (mezhep, namaz uygulaması ve İslami kimlik) işlemesine açıkça izin veriyorum. Sözleşmeli hizmet sağlayıcılar bu bilgileri yalnızca Silarah’ı işletmek için kullanır; davranışsal reklamcılık için kullanmaz.';
 
   @override
   String get onboarding_complexion_fair => 'Açık';

@@ -972,7 +972,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get legal_summary_2 =>
-      'Foto Anda ditinjau sebelum profil Anda ditayangkan.';
+      'Setiap foto diperiksa keamanannya, dan tim kami meninjau foto baru.';
 
   @override
   String get legal_summary_3 =>
@@ -2322,7 +2322,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get legal_specialCategoryConsent =>
-      'Saya secara tegas menyetujui SILARAH memproses informasi agama saya (mazhab, praktik salat, dan identitas Islam) untuk pencocokan kompatibilitas. Penyedia layanan yang dikontrak hanya menggunakannya untuk mengoperasikan Silarah, bukan untuk iklan berbasis perilaku.';
+      'Saya secara tegas menyetujui Silarah memproses informasi agama saya (mazhab, praktik salat, dan identitas Islam) untuk pencocokan kompatibilitas. Penyedia layanan yang dikontrak hanya menggunakannya untuk mengoperasikan Silarah, bukan untuk iklan berbasis perilaku.';
 
   @override
   String get onboarding_complexion_fair => 'Cerah';

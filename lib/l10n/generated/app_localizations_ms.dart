@@ -973,7 +973,7 @@ class AppLocalizationsMs extends AppLocalizations {
 
   @override
   String get legal_summary_2 =>
-      'Foto anda disemak sebelum profil anda disiarkan secara langsung.';
+      'Setiap gambar disemak dari segi keselamatan, dan pasukan kami menyemak gambar baharu.';
 
   @override
   String get legal_summary_3 =>
@@ -2323,7 +2323,7 @@ class AppLocalizationsMs extends AppLocalizations {
 
   @override
   String get legal_specialCategoryConsent =>
-      'Saya memberikan persetujuan nyata kepada SILARAH untuk memproses maklumat agama saya (mazhab, amalan solat dan identiti Islam) bagi padanan keserasian. Penyedia perkhidmatan yang dilantik hanya menggunakannya untuk mengendalikan Silarah, bukan untuk pengiklanan tingkah laku.';
+      'Saya memberikan persetujuan nyata kepada Silarah untuk memproses maklumat agama saya (mazhab, amalan solat dan identiti Islam) bagi padanan keserasian. Penyedia perkhidmatan yang dilantik hanya menggunakannya untuk mengendalikan Silarah, bukan untuk pengiklanan tingkah laku.';
 
   @override
   String get onboarding_complexion_fair => 'Cerah';

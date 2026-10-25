@@ -74,6 +74,9 @@ class _LegalGateScreenState extends State<LegalGateScreen> {
         ),
         child: SafeArea(
           child: Column(
+            // Stretch so the header aligns to the screen edge instead of
+            // centring around the title's width.
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Header
               Padding(
