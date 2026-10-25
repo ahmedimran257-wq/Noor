@@ -207,7 +207,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
           isGuardianPath: isGuardianPath,
           onboardingCompleted: true,
         );
-        emit(const OnboardingComplete());
+        emit(OnboardingComplete(data: updatedData));
       } else {
         _authCubit.updateOnboardingStep(nextStep,
             isGuardianPath: isGuardianPath);
@@ -481,6 +481,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     if (s is OnboardingLoading) return s.data;
     if (s is OnboardingSaved) return s.data;
     if (s is OnboardingError) return s.data;
+    if (s is OnboardingComplete) return s.data;
     return const OnboardingData();
   }
 

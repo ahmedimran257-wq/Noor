@@ -51,8 +51,16 @@ class OnboardingSaved extends OnboardingState {
 }
 
 /// Onboarding is fully complete.
+///
+/// Carries the saved profile so screens shown right after completion (the
+/// Profile tab) render the member's details instead of empty placeholders.
 class OnboardingComplete extends OnboardingState {
-  const OnboardingComplete();
+  const OnboardingComplete({this.data = const OnboardingData()});
+
+  final OnboardingData data;
+
+  @override
+  List<Object?> get props => [data];
 }
 
 /// A non-fatal validation error to display inline (e.g. under-18).
