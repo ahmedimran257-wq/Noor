@@ -1173,7 +1173,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboarding_label_female => 'Female';
 
   @override
-  String get onboarding_label_firstName => 'First Name';
+  String get onboarding_label_firstName => 'First name';
 
   @override
   String get onboarding_label_firstName_guardian => 'Candidate\'s first name';
@@ -1207,7 +1207,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Can you provide a separate living space?';
 
   @override
-  String get onboarding_label_lastName => 'Last Name';
+  String get onboarding_label_lastName => 'Last name';
 
   @override
   String get onboarding_label_leadership => 'Religious Leadership';
@@ -1536,7 +1536,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboarding_tooltip_moderate =>
-      'Values Islamic principles, prays regularly but not always, culturally Muslim';
+      'Values Islamic principles and prays, though not always five times a day';
 
   @override
   String get onboarding_tooltip_practicing =>

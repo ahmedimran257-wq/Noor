@@ -1552,7 +1552,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get onboarding_tooltip_moderate =>
-      'Schätzt islamische Prinzipien, betet regelmäßig, aber nicht immer, kulturell muslimisch';
+      'Schätzt islamische Werte und betet, wenn auch nicht immer fünfmal am Tag';
 
   @override
   String get onboarding_tooltip_practicing =>

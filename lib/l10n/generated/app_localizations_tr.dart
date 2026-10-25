@@ -1539,7 +1539,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get onboarding_tooltip_moderate =>
-      'İslami ilkelere değer verir, her zaman olmasa da düzenli olarak dua eder, kültürel olarak Müslümandır';
+      'İslami ilkelere değer verir ve namaz kılar, ancak her zaman günde beş vakit değil';
 
   @override
   String get onboarding_tooltip_practicing =>

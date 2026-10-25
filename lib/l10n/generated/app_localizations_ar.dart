@@ -1520,7 +1520,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get onboarding_tooltip_moderate =>
-      'قيم المبادئ الإسلامية، يصلي بانتظام ولكن ليس دائما، ثقافيا';
+      'يقدّر المبادئ الإسلامية ويصلي، وإن لم يكن دائمًا خمس مرات في اليوم';
 
   @override
   String get onboarding_tooltip_practicing =>

@@ -1188,7 +1188,7 @@ class AppLocalizationsMs extends AppLocalizations {
   String get onboarding_label_female => 'perempuan';
 
   @override
-  String get onboarding_label_firstName => 'Nama Pertama';
+  String get onboarding_label_firstName => 'Nama pertama';
 
   @override
   String get onboarding_label_firstName_guardian => 'Nama pertama calon';
@@ -1222,7 +1222,7 @@ class AppLocalizationsMs extends AppLocalizations {
       'Bolehkah anda menyediakan ruang tamu yang berasingan?';
 
   @override
-  String get onboarding_label_lastName => 'Nama Akhir';
+  String get onboarding_label_lastName => 'Nama akhir';
 
   @override
   String get onboarding_label_leadership => 'Kepimpinan Agama';
@@ -1554,7 +1554,7 @@ class AppLocalizationsMs extends AppLocalizations {
 
   @override
   String get onboarding_tooltip_moderate =>
-      'Menghargai prinsip Islam, berdoa secara tetap tetapi tidak selalu, berbudaya Islam';
+      'Menghargai prinsip Islam dan bersolat, walaupun tidak selalu lima waktu sehari';
 
   @override
   String get onboarding_tooltip_practicing =>

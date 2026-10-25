@@ -1542,7 +1542,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get onboarding_tooltip_moderate =>
-      'اسلامی اصولوں کی قدر کرتا ہے، باقاعدگی سے نماز پڑھتا ہے لیکن ہمیشہ نہیں، ثقافتی طور پر مسلمان';
+      'اسلامی اصولوں کو اہمیت دیتے ہیں اور نماز پڑھتے ہیں، اگرچہ ہمیشہ دن میں پانچ وقت نہیں';
 
   @override
   String get onboarding_tooltip_practicing =>

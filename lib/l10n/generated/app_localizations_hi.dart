@@ -1544,7 +1544,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get onboarding_tooltip_moderate =>
-      'इस्लामी सिद्धांतों को महत्व देता है, नियमित रूप से प्रार्थना करता है लेकिन हमेशा नहीं, सांस्कृतिक रूप से मुस्लिम है';
+      'इस्लामी उसूलों को मानते हैं और नमाज़ पढ़ते हैं, हालाँकि हमेशा दिन में पाँच बार नहीं';
 
   @override
   String get onboarding_tooltip_practicing =>

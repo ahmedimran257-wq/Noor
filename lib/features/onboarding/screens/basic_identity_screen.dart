@@ -182,7 +182,14 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
     final ctx = results[0] as CountryContext;
     final languages = results[1] as List<String>;
     setState(() {
-      _loadedLanguages = languages;
+      // Urdu and Hindi lead for Indian Muslim members; the rest stay in
+      // catalogue order.
+      _loadedLanguages = [
+        for (final top in const ['Urdu', 'Hindi'])
+          if (languages.contains(top)) top,
+        for (final language in languages)
+          if (language != 'Urdu' && language != 'Hindi') language,
+      ];
       _isLoadingLanguages = false;
       if (_motherTongue != null && !_loadedLanguages.contains(_motherTongue)) {
         _motherTongue = null;
@@ -424,6 +431,8 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       context: context,
       backgroundColor: AppColors.surfaceMid,
       isScrollControlled: true,
+      // Keeps the full-height list clear of the status bar.
+      useSafeArea: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -447,6 +456,7 @@ class _BasicIdentityScreenState extends State<BasicIdentityScreen> {
       context: context,
       backgroundColor: AppColors.surfaceMid,
       isScrollControlled: true,
+      useSafeArea: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),

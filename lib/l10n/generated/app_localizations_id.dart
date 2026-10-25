@@ -1220,7 +1220,7 @@ class AppLocalizationsId extends AppLocalizations {
       'Bisakah Anda menyediakan tempat tinggal terpisah?';
 
   @override
-  String get onboarding_label_lastName => 'Nama Belakang';
+  String get onboarding_label_lastName => 'Nama belakang';
 
   @override
   String get onboarding_label_leadership => 'Kepemimpinan Agama';
@@ -1551,7 +1551,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get onboarding_tooltip_moderate =>
-      'Menghargai prinsip-prinsip Islam, berdoa secara teratur tetapi tidak selalu, secara budaya Muslim';
+      'Menjunjung prinsip Islam dan salat, meski tidak selalu lima waktu sehari';
 
   @override
   String get onboarding_tooltip_practicing =>

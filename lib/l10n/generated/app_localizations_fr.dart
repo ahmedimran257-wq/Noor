@@ -1548,7 +1548,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get onboarding_tooltip_moderate =>
-      'Valorise les principes islamiques, prie régulièrement mais pas toujours, culturellement musulman';
+      'Attaché aux principes islamiques et prie, mais pas toujours cinq fois par jour';
 
   @override
   String get onboarding_tooltip_practicing =>

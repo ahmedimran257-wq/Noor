@@ -2247,7 +2247,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboarding_label_firstName.
   ///
   /// In en, this message translates to:
-  /// **'First Name'**
+  /// **'First name'**
   String get onboarding_label_firstName;
 
   /// No description provided for @onboarding_label_firstName_guardian.
@@ -2313,7 +2313,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboarding_label_lastName.
   ///
   /// In en, this message translates to:
-  /// **'Last Name'**
+  /// **'Last name'**
   String get onboarding_label_lastName;
 
   /// No description provided for @onboarding_label_leadership.
@@ -2913,7 +2913,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboarding_tooltip_moderate.
   ///
   /// In en, this message translates to:
-  /// **'Values Islamic principles, prays regularly but not always, culturally Muslim'**
+  /// **'Values Islamic principles and prays, though not always five times a day'**
   String get onboarding_tooltip_moderate;
 
   /// No description provided for @onboarding_tooltip_practicing.

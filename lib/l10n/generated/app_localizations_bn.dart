@@ -1542,7 +1542,7 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get onboarding_tooltip_moderate =>
-      'ইসলামিক নীতিকে মূল্য দেয়, নিয়মিত নামাজ পড়ে তবে সবসময় নয়, সাংস্কৃতিকভাবে মুসলিম';
+      'ইসলামি মূল্যবোধ মেনে চলেন এবং নামাজ পড়েন, যদিও সবসময় দিনে পাঁচ ওয়াক্ত নয়';
 
   @override
   String get onboarding_tooltip_practicing =>

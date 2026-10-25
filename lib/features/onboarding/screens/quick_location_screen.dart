@@ -279,11 +279,13 @@ class _QuickLocationScreenState extends State<QuickLocationScreen> {
               _initialCity = null;
             }),
           ),
-          const SizedBox(height: AppDimensions.space16),
-          UiText(
-            context.uiCopy('Select a city from the results to continue.'),
-            style: AppTypography.bodyMuted,
-          ),
+          if (!_isValid) ...[
+            const SizedBox(height: AppDimensions.space16),
+            UiText(
+              context.uiCopy('Select a city from the results to continue.'),
+              style: AppTypography.bodyMuted,
+            ),
+          ],
         ],
       ),
       ctaLabel: 'Continue',

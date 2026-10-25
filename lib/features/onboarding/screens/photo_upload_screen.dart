@@ -1212,9 +1212,9 @@ class _PhotoSlot extends StatelessWidget {
                 child: UiText(
                   label,
                   style: AppTypography.caption.copyWith(
-                    color: isPrimary
-                        ? AppColors.champagneLight
-                        : AppColors.onMedia,
+                    // The accent is green on Ivory Emerald and unreadable on
+                    // the dark scrim; media labels stay white in every theme.
+                    color: AppColors.onMedia,
                     fontWeight: FontWeight.w600,
                     fontSize: isPrimary ? 12 : 10,
                   ),
