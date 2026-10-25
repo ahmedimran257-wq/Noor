@@ -278,6 +278,14 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
       _showPhotoSafetyError(_photoModerationMessage(moderation));
       return;
     }
+    if (!moderation.personDetected) {
+      _clearOperation();
+      if (!await _confirmPhotoWithoutPerson()) {
+        await file.delete().catchError((_) => file);
+        return;
+      }
+      if (!mounted) return;
+    }
     if (moderation.decision == PhotoModerationDecision.flagged) {
       ScaffoldMessenger.of(context)
         ..clearSnackBars()
@@ -285,7 +293,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
           SnackBar(
             content: UiText(
               context.uiCopy(
-                  'Explicit content was detected. This photo will be reviewed and will not appear publicly.'),
+                  'This photo will be reviewed by our team before it appears on your profile.'),
               style: AppTypography.body.copyWith(
                 color: AppColors.readableOn(AppColors.surfaceGlassHover),
               ),
@@ -383,13 +391,34 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
     if (moderation.category == 'invalid_image') {
       return 'Choose a valid photo file.';
     }
-    if (moderation.category == 'no_person_detected') {
-      return 'Choose a photo that includes at least one person.';
-    }
     if (moderation.category == 'explicit_content') {
-      return 'Photos with explicit content are not permitted.';
+      return "This photo can't be used. Silarah doesn't allow nudity or revealing photos.";
     }
     return 'This photo could not be safety checked. Please choose another image.';
+  }
+
+  /// Covered photos (niqab, burqa) may show no face or clothing label, so the
+  /// member decides; every upload still enters staff review.
+  Future<bool> _confirmPhotoWithoutPerson() async {
+    final confirmed = await showSilarahDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: UiText(context.uiCopy('Is this a photo of you?')),
+        content: UiText(context.uiCopy(
+            "We couldn't spot a person in this photo. Profile photos should show you. Photos in hijab, niqab or burqa are welcome.")),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: UiText(context.uiCopy('Choose another')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: UiText(context.uiCopy('Use this photo')),
+          ),
+        ],
+      ),
+    );
+    return confirmed == true;
   }
 
   Future<ImageSource?> _showSourceSheet() async {

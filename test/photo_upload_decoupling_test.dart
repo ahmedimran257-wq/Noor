@@ -22,14 +22,19 @@ void main() {
         'lib/core/services/photo_moderation_service.dart',
       ).readAsStringSync();
 
-      expect(source, isNot(contains('google_mlkit_face_detection')));
-      expect(source, isNot(contains('FaceDetector')));
+      // A face is only extra evidence of a person; covered photos (niqab,
+      // burqa) must never be rejected for lacking one.
+      expect(
+          source, contains('if (await _hasClothingLabel(path)) return true;'));
+      expect(source, contains('return _hasFace(path);'));
       expect(source, isNot(contains('FaceProminence')));
       expect(source, isNot(contains('faceRatio')));
       expect(source, isNot(contains("category: 'no_face'")));
+      expect(source, isNot(contains("category: 'no_person_detected'")));
+      expect(source, contains('personDetected: hasHuman'));
       expect(source, contains('google_mlkit_object_detection'));
-      expect(source, contains('explicitContentFlagThreshold = 0.85'));
-      expect(source, contains("category: 'no_person_detected'"));
+      expect(source, contains('explicitContentBlockThreshold = 0.85'));
+      expect(source, contains('reviewThreshold = 0.50'));
       expect(source, contains("category: 'invalid_image'"));
       expect(source, isNot(contains("category: 'safety_uncertain'")));
       expect(source, isNot(contains('_isRealImage')));

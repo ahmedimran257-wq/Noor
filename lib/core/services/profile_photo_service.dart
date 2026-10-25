@@ -486,11 +486,8 @@ class ProfilePhotoService {
     if (moderation.category == 'invalid_image') {
       return 'Choose a valid photo file.';
     }
-    if (moderation.category == 'no_person_detected') {
-      return 'Choose a photo that includes at least one person.';
-    }
     if (moderation.category == 'explicit_content') {
-      return 'Photos with explicit content are not permitted.';
+      return "This photo can't be used. Silarah doesn't allow nudity or revealing photos.";
     }
     return 'This photo could not be safety checked. Please choose another image.';
   }

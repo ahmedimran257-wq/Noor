@@ -41,54 +41,63 @@ void main() {
       expect(result.canUpload, isTrue);
     });
 
-    test('niqab, traditional dress, and group photos have no separate gate',
+    test('modest dress scores publish: hijab, niqab and burqa photos',
         () async {
       final file = await _writeSyntheticPhoto();
       addTearDown(() => file.deleteSync());
 
-      for (final nudity in [0.01, 0.20, 0.84]) {
+      // On-device scores measured for real hijab, niqab, burqa and chador
+      // photos were 0.000-0.052.
+      for (final nudity in [0.0, 0.052, 0.20, 0.50]) {
         final result = await serviceFor(
-          scores: NsfwScores(
-            nsfw: nudity,
-            safe: 0.10,
-          ),
+          scores: NsfwScores(nsfw: nudity, safe: 1 - nudity),
         ).scanFile(file.path);
         expect(result.decision, PhotoModerationDecision.approved);
       }
     });
 
-    test('an image without a detected human is rejected before NSFW', () async {
+    test('no detected person still uploads after the member confirms',
+        () async {
+      // Regression: the ML Kit base model has no person label, so niqab
+      // photos and close portraits were rejected as "no person".
       final file = await _writeSyntheticPhoto();
       addTearDown(() => file.deleteSync());
-      var classifierCalled = false;
-      final service = PhotoModerationService(
-        humanPresenceScanner: (_) async => false,
-        nsfwScanner: (_) async {
-          classifierCalled = true;
-          return const NsfwScores(nsfw: 0, safe: 1);
-        },
-      );
 
-      final result = await service.scanFile(file.path);
+      final result = await serviceFor(hasHuman: false).scanFile(file.path);
 
-      expect(result.decision, PhotoModerationDecision.rejected);
-      expect(result.category, 'no_person_detected');
-      expect(result.canUpload, isFalse);
-      expect(classifierCalled, isFalse);
+      expect(result.decision, PhotoModerationDecision.approved);
+      expect(result.personDetected, isFalse);
+      expect(result.canUpload, isTrue);
     });
 
-    test('0.85 is approved and only a score above 0.85 is flagged', () {
-      final atThreshold = PhotoModerationService.evaluateScores(
-        const NsfwScores(nsfw: 0.85, safe: 0.15),
-      );
-      final overThreshold = PhotoModerationService.evaluateScores(
-        const NsfwScores(nsfw: 0.851, safe: 0.149),
-      );
+    test('no detected person does not skip the nudity check', () async {
+      final file = await _writeSyntheticPhoto();
+      addTearDown(() => file.deleteSync());
 
-      expect(atThreshold.decision, PhotoModerationDecision.approved);
-      expect(overThreshold.decision, PhotoModerationDecision.flagged);
-      expect(overThreshold.category, 'explicit_content');
-      expect(overThreshold.canUpload, isTrue);
+      final result = await serviceFor(
+        hasHuman: false,
+        scores: const NsfwScores(nsfw: 0.97, safe: 0.03),
+      ).scanFile(file.path);
+
+      expect(result.decision, PhotoModerationDecision.rejected);
+      expect(result.category, 'explicit_content');
+    });
+
+    test('above 0.85 is blocked on the device; 0.50-0.85 is held for review',
+        () {
+      PhotoModerationResult at(double nsfw) =>
+          PhotoModerationService.evaluateScores(
+            NsfwScores(nsfw: nsfw, safe: 1 - nsfw),
+          );
+
+      expect(at(0.50).decision, PhotoModerationDecision.approved);
+      expect(at(0.501).decision, PhotoModerationDecision.flagged);
+      expect(at(0.501).category, 'needs_review');
+      expect(at(0.501).canUpload, isTrue);
+      expect(at(0.85).decision, PhotoModerationDecision.flagged);
+      expect(at(0.851).decision, PhotoModerationDecision.rejected);
+      expect(at(0.851).category, 'explicit_content');
+      expect(at(0.851).canUpload, isFalse);
     });
 
     test('low safe confidence cannot reject a non-explicit human photo', () {
@@ -106,11 +115,12 @@ void main() {
       );
       final payload = result.toValidationPayload();
 
-      expect(payload['policy_version'], 3);
+      expect(payload['policy_version'], 4);
       expect(payload['nsfw_confidence'], 0.92);
       expect(payload['safe_confidence'], 0.08);
       expect(payload['is_nsfw'], isTrue);
-      expect(payload['requires_review'], isTrue);
+      expect(payload['requires_review'], isFalse);
+      expect(payload['person_detected'], isTrue);
     });
 
     test('classifier failures fail closed', () async {

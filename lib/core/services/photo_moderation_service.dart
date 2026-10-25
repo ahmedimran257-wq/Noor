@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:google_mlkit_object_detection/google_mlkit_object_detection.dart';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
@@ -20,6 +21,7 @@ class PhotoModerationResult {
     required this.safeConfidence,
     required this.category,
     required this.threshold,
+    this.personDetected = true,
     this.error,
   });
 
@@ -29,6 +31,10 @@ class PhotoModerationResult {
   final double safeConfidence;
   final String category;
   final double threshold;
+
+  /// False when neither a face nor clothing was found. Covered photos (niqab,
+  /// burqa) can land here, so the picker asks the member instead of rejecting.
+  final bool personDetected;
   final String? error;
 
   bool get isSafe => decision == PhotoModerationDecision.approved;
@@ -39,9 +45,9 @@ class PhotoModerationResult {
   Map<String, dynamic> toValidationPayload() => {
         'policy_version': PhotoModerationService.policyVersion,
         'status': decision.name,
-        'is_nsfw': category == 'explicit_content' &&
-            decision == PhotoModerationDecision.flagged,
+        'is_nsfw': category == 'explicit_content',
         'requires_review': decision == PhotoModerationDecision.flagged,
+        'person_detected': personDetected,
         'confidence': confidence,
         'nsfw_confidence': nsfwConfidence,
         'safe_confidence': safeConfidence,
@@ -63,7 +69,9 @@ typedef NsfwScanner = Future<NsfwScores> Function(String path);
 
 /// Runs profile-photo moderation completely on-device.
 ///
-/// ML Kit provides the already-established human-presence gate. A bundled,
+/// ML Kit faces or clothing signal a person; when neither is found the member
+/// confirms the photo rather than being rejected, because covered photos
+/// (niqab, burqa) and close portraits often carry no object label. A bundled,
 /// compact OpenNSFW2 binary classifier is executed directly through LiteRT,
 /// avoiding the release-only Flutter embedding defect in the old
 /// `nsfw_detect` plugin.
@@ -77,9 +85,15 @@ class PhotoModerationService {
 
   static final PhotoModerationService instance = PhotoModerationService();
 
-  static const int policyVersion = 3;
-  static const double explicitContentFlagThreshold = 0.85;
-  static const double confidenceThreshold = explicitContentFlagThreshold;
+  static const int policyVersion = 4;
+
+  /// Above this the photo is blocked on the device and never uploaded.
+  static const double explicitContentBlockThreshold = 0.85;
+
+  /// Above this (up to the block threshold) the photo is held for staff
+  /// review instead of publishing. Mirrors finalize_profile_photo_upload.
+  static const double reviewThreshold = 0.50;
+  static const double confidenceThreshold = explicitContentBlockThreshold;
   static const String modelAssetPath = 'assets/models/opennsfw2_float16.tflite';
   static const String modelSource = 'bhky/opennsfw2';
   // Reproducible float16-weight build from tool/build_compact_nsfw_model.py.
@@ -126,18 +140,10 @@ class PhotoModerationService {
       }
 
       final hasHuman = await _humanPresenceScanner(path);
-      if (!hasHuman) {
-        return const PhotoModerationResult(
-          decision: PhotoModerationDecision.rejected,
-          confidence: 1,
-          nsfwConfidence: 0,
-          safeConfidence: 0,
-          category: 'no_person_detected',
-          threshold: 0,
-        );
-      }
-
-      return evaluateScores(await _nsfwScanner(path));
+      return evaluateScores(
+        await _nsfwScanner(path),
+        personDetected: hasHuman,
+      );
     } on FormatException catch (error) {
       debugPrint('[PhotoModerationService] invalid image: $error');
       return _invalidImage();
@@ -149,26 +155,41 @@ class PhotoModerationService {
         nsfwConfidence: 0,
         safeConfidence: 0,
         category: 'scan_failed',
-        threshold: explicitContentFlagThreshold,
+        threshold: explicitContentBlockThreshold,
         error: error.toString(),
       );
     }
   }
 
-  static PhotoModerationResult evaluateScores(NsfwScores rawScores) {
+  static PhotoModerationResult evaluateScores(
+    NsfwScores rawScores, {
+    bool personDetected = true,
+  }) {
     final nsfw = rawScores.nsfw.clamp(0.0, 1.0).toDouble();
     final safe = rawScores.safe.clamp(0.0, 1.0).toDouble();
 
-    // The production policy is unchanged: only an explicit score above 0.85
-    // enters admin review. Exactly 0.85 remains approved.
-    if (nsfw > explicitContentFlagThreshold) {
+    // Policy v4: explicit photos never leave the device; revealing ones are
+    // held for review. Modest dress (hijab, niqab, burqa) scores near zero.
+    if (nsfw > explicitContentBlockThreshold) {
+      return PhotoModerationResult(
+        decision: PhotoModerationDecision.rejected,
+        confidence: nsfw,
+        nsfwConfidence: nsfw,
+        safeConfidence: safe,
+        category: 'explicit_content',
+        threshold: explicitContentBlockThreshold,
+        personDetected: personDetected,
+      );
+    }
+    if (nsfw > reviewThreshold) {
       return PhotoModerationResult(
         decision: PhotoModerationDecision.flagged,
         confidence: nsfw,
         nsfwConfidence: nsfw,
         safeConfidence: safe,
-        category: 'explicit_content',
-        threshold: explicitContentFlagThreshold,
+        category: 'needs_review',
+        threshold: reviewThreshold,
+        personDetected: personDetected,
       );
     }
 
@@ -178,7 +199,8 @@ class PhotoModerationService {
       nsfwConfidence: nsfw,
       safeConfidence: safe,
       category: 'safe_image',
-      threshold: explicitContentFlagThreshold,
+      threshold: reviewThreshold,
+      personDetected: personDetected,
     );
   }
 
@@ -192,6 +214,29 @@ class PhotoModerationService {
       );
 
   static Future<bool> _detectHumanPresence(String path) async {
+    // The base object model has no "person" label: clothing reads as
+    // "fashion good" and close portraits often get no label, so a face also
+    // counts.
+    if (await _hasClothingLabel(path)) return true;
+    return _hasFace(path);
+  }
+
+  static Future<bool> _hasFace(String path) async {
+    final detector = FaceDetector(
+      options: FaceDetectorOptions(
+        performanceMode: FaceDetectorMode.accurate,
+        minFaceSize: 0.05,
+      ),
+    );
+    try {
+      final faces = await detector.processImage(InputImage.fromFilePath(path));
+      return faces.isNotEmpty;
+    } finally {
+      detector.close();
+    }
+  }
+
+  static Future<bool> _hasClothingLabel(String path) async {
     final detector = ObjectDetector(
       options: ObjectDetectorOptions(
         mode: DetectionMode.single,
