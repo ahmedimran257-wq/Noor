@@ -72,7 +72,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Explore members currently living in selected countries.':
         'اكتشف الأعضاء الذين يعيشون حاليًا في بلدان مختارة.',
     'Go to location step': 'انتقل إلى خطوة الموقع',
-    'Help keep SILARAH safe for everyone.':
+    'Help keep Silarah safe for everyone.':
         'ساعد في الحفاظ على SILARA آمنًا للجميع.',
     'Help keep the community safe. Your report is anonymous.':
         'ساعد في الحفاظ على سلامة المجتمع. تقريرك مجهول.',
@@ -146,7 +146,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Restore Purchase': 'استعادة الشراء',
     'Review every request individually. Access can be revoked whenever you choose.':
         'مراجعة كل طلب على حدة. يمكن إلغاء الوصول وقتما تشاء.',
-    'SILARAH Premium · Active': 'SILARAH بريميوم · نشط',
+    'Silarah Premium · Active': 'SILARAH بريميوم · نشط',
     'Say bismillah and begin a conversation.': 'قل بسم الله وابدأ المحادثة.',
     'Searching cities...': 'بحث المدن...',
     'Searching regions...': 'مناطق البحث...',
@@ -162,7 +162,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'This closes the match and prevents further messages.':
         'يؤدي هذا إلى إغلاق المباراة ومنع المزيد من الرسائل.',
     'This conversation is closed': 'هذه المحادثة مغلقة',
-    'This helps us improve SILARAH for others.':
+    'This helps us improve Silarah for others.':
         'وهذا يساعدنا على تحسين SILARAH للآخرين.',
     'This is only required before subscription purchase.':
         'هذا مطلوب فقط قبل شراء الاشتراك.',
@@ -179,7 +179,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Unable to load profiles. Please try again.':
         'غير قادر على تحميل الملفات الشخصية. يرجى المحاولة مرة أخرى.',
     'Unlock Chat': 'فتح الدردشة',
-    'Upgrade to SILARAH Premium': 'الترقية إلى SILARAH بريميوم',
+    'Upgrade to Silarah Premium': 'الترقية إلى SILARAH بريميوم',
     'Used for nearby matches. Your exact address is never shown.':
         'تستخدم للمباريات القريبة. لن يتم عرض عنوانك الدقيق أبدًا.',
     'Verification is unavailable until you are signed in.':
@@ -306,7 +306,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Explore members currently living in selected countries.':
         'বর্তমানে নির্বাচিত দেশে বসবাসকারী সদস্যদের অন্বেষণ করুন।',
     'Go to location step': 'অবস্থান ধাপে যান',
-    'Help keep SILARAH safe for everyone.':
+    'Help keep Silarah safe for everyone.':
         'SILARAH কে সবার জন্য নিরাপদ রাখতে সাহায্য করুন।',
     'Help keep the community safe. Your report is anonymous.':
         'কমিউনিটিকে নিরাপদ রাখতে সাহায্য করুন। আপনার রিপোর্ট বেনামী.',
@@ -380,7 +380,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Restore Purchase': 'ক্রয় পুনরুদ্ধার করুন',
     'Review every request individually. Access can be revoked whenever you choose.':
         'প্রতিটি অনুরোধ পৃথকভাবে পর্যালোচনা করুন। আপনি যখনই পছন্দ করেন তখনই অ্যাক্সেস প্রত্যাহার করা যেতে পারে।',
-    'SILARAH Premium · Active': 'SILARAH প্রিমিয়াম · সক্রিয়',
+    'Silarah Premium · Active': 'SILARAH প্রিমিয়াম · সক্রিয়',
     'Say bismillah and begin a conversation.':
         'বিসমিল্লাহ বলুন এবং কথোপকথন শুরু করুন।',
     'Searching cities...': 'শহর অনুসন্ধান করা হচ্ছে...',
@@ -397,7 +397,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'This closes the match and prevents further messages.':
         'এটি ম্যাচটি বন্ধ করে দেয় এবং আরও বার্তা প্রতিরোধ করে।',
     'This conversation is closed': 'এই কথোপকথন বন্ধ আছে',
-    'This helps us improve SILARAH for others.':
+    'This helps us improve Silarah for others.':
         'এটি আমাদের অন্যদের জন্য SILARAH উন্নত করতে সাহায্য করে।',
     'This is only required before subscription purchase.':
         'এটি শুধুমাত্র সাবস্ক্রিপশন ক্রয়ের আগে প্রয়োজন।',
@@ -413,7 +413,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Unable to load profiles. Please try again.':
         'প্রোফাইল লোড করতে অক্ষম. আবার চেষ্টা করুন.',
     'Unlock Chat': 'চ্যাট আনলক করুন',
-    'Upgrade to SILARAH Premium': 'SILARAH প্রিমিয়ামে আপগ্রেড করুন',
+    'Upgrade to Silarah Premium': 'SILARAH প্রিমিয়ামে আপগ্রেড করুন',
     'Used for nearby matches. Your exact address is never shown.':
         'কাছাকাছি ম্যাচের জন্য ব্যবহার করা হয়। আপনার সঠিক ঠিকানা কখনই দেখানো হয় না।',
     'Verification is unavailable until you are signed in.':
@@ -541,7 +541,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Explore members currently living in selected countries.':
         'Entdecken Sie Mitglieder, die derzeit in ausgewählten Ländern leben.',
     'Go to location step': 'Gehen Sie zum Standortschritt',
-    'Help keep SILARAH safe for everyone.':
+    'Help keep Silarah safe for everyone.':
         'Helfen Sie mit, dass SILARAH für alle sicher ist.',
     'Help keep the community safe. Your report is anonymous.':
         'Helfen Sie mit, die Gemeinschaft zu schützen. Ihre Meldung ist anonym.',
@@ -619,7 +619,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Restore Purchase': 'Kauf wiederherstellen',
     'Review every request individually. Access can be revoked whenever you choose.':
         'Überprüfen Sie jede Anfrage einzeln. Der Zugriff kann jederzeit widerrufen werden.',
-    'SILARAH Premium · Active': 'SILARAH Premium · Aktiv',
+    'Silarah Premium · Active': 'SILARAH Premium · Aktiv',
     'Say bismillah and begin a conversation.':
         'Sagen Sie Bismillah und beginnen Sie ein Gespräch.',
     'Searching cities...': 'Suche nach Städten...',
@@ -636,7 +636,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'This closes the match and prevents further messages.':
         'Dadurch wird die Übereinstimmung geschlossen und weitere Nachrichten verhindert.',
     'This conversation is closed': 'Dieses Gespräch ist geschlossen',
-    'This helps us improve SILARAH for others.':
+    'This helps us improve Silarah for others.':
         'Dies hilft uns, SILARAH für andere zu verbessern.',
     'This is only required before subscription purchase.':
         'Dies ist nur vor dem Kauf eines Abonnements erforderlich.',
@@ -654,7 +654,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Unable to load profiles. Please try again.':
         'Profile können nicht geladen werden. Bitte versuchen Sie es erneut.',
     'Unlock Chat': 'Chat entsperren',
-    'Upgrade to SILARAH Premium': 'Upgrade auf SILARAH Premium',
+    'Upgrade to Silarah Premium': 'Upgrade auf SILARAH Premium',
     'Used for nearby matches. Your exact address is never shown.':
         'Wird für Spiele in der Nähe verwendet. Ihre genaue Adresse wird nie angezeigt.',
     'Verification is unavailable until you are signed in.':
@@ -783,7 +783,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Explore members currently living in selected countries.':
         'Découvrez les membres vivant actuellement dans des pays sélectionnés.',
     'Go to location step': 'Aller à l\'étape de localisation',
-    'Help keep SILARAH safe for everyone.':
+    'Help keep Silarah safe for everyone.':
         'Aidez à assurer la sécurité de SILARAH pour tout le monde.',
     'Help keep the community safe. Your report is anonymous.':
         'Aidez à assurer la sécurité de la communauté. Votre signalement est anonyme.',
@@ -861,7 +861,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Restore Purchase': 'Restaurer l\'achat',
     'Review every request individually. Access can be revoked whenever you choose.':
         'Examinez chaque demande individuellement. L\'accès peut être révoqué à tout moment.',
-    'SILARAH Premium · Active': 'SILARAH Premium · Actif',
+    'Silarah Premium · Active': 'SILARAH Premium · Actif',
     'Say bismillah and begin a conversation.':
         'Dites bismillah et commencez une conversation.',
     'Searching cities...': 'Recherche de villes...',
@@ -879,7 +879,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'This closes the match and prevents further messages.':
         'Cela clôture la correspondance et empêche d’autres messages.',
     'This conversation is closed': 'Cette conversation est fermée',
-    'This helps us improve SILARAH for others.':
+    'This helps us improve Silarah for others.':
         'Cela nous aide à améliorer SILARAH pour les autres.',
     'This is only required before subscription purchase.':
         'Ceci n’est requis qu’avant l’achat de l’abonnement.',
@@ -896,7 +896,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Unable to load profiles. Please try again.':
         'Impossible de charger les profils. Veuillez réessayer.',
     'Unlock Chat': 'Déverrouiller le chat',
-    'Upgrade to SILARAH Premium': 'Mise à niveau vers SILARAH Premium',
+    'Upgrade to Silarah Premium': 'Mise à niveau vers SILARAH Premium',
     'Used for nearby matches. Your exact address is never shown.':
         'Utilisé pour les matchs à proximité. Votre adresse exacte n\'est jamais affichée.',
     'Verification is unavailable until you are signed in.':
@@ -1024,7 +1024,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Explore members currently living in selected countries.':
         'वर्तमान में चयनित देशों में रहने वाले सदस्यों का पता लगाएं।',
     'Go to location step': 'स्थान चरण पर जाएँ',
-    'Help keep SILARAH safe for everyone.':
+    'Help keep Silarah safe for everyone.':
         'सिलारा को सभी के लिए सुरक्षित रखने में मदद करें।',
     'Help keep the community safe. Your report is anonymous.':
         'समुदाय को सुरक्षित रखने में मदद करें. आपकी रिपोर्ट गुमनाम है.',
@@ -1099,7 +1099,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Restore Purchase': 'पुनःस्थापन क्रय',
     'Review every request individually. Access can be revoked whenever you choose.':
         'प्रत्येक अनुरोध की व्यक्तिगत रूप से समीक्षा करें. जब भी आप चाहें पहुंच रद्द की जा सकती है।',
-    'SILARAH Premium · Active': 'सिलाराह प्रीमियम · सक्रिय',
+    'Silarah Premium · Active': 'सिलाराह प्रीमियम · सक्रिय',
     'Say bismillah and begin a conversation.':
         'बिस्मिल्लाह कहें और बातचीत शुरू करें।',
     'Searching cities...': 'शहर खोज रहे हैं...',
@@ -1116,7 +1116,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'This closes the match and prevents further messages.':
         'यह मैच को बंद कर देता है और आगे के संदेशों को रोकता है।',
     'This conversation is closed': 'यह बातचीत बंद है',
-    'This helps us improve SILARAH for others.':
+    'This helps us improve Silarah for others.':
         'इससे हमें दूसरों के लिए SILARAH को बेहतर बनाने में मदद मिलती है।',
     'This is only required before subscription purchase.':
         'यह केवल सदस्यता खरीद से पहले आवश्यक है।',
@@ -1133,7 +1133,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Unable to load profiles. Please try again.':
         'प्रोफ़ाइल लोड करने में असमर्थ. कृपया पुन: प्रयास करें।',
     'Unlock Chat': 'चैट अनलॉक करें',
-    'Upgrade to SILARAH Premium': 'सिलाराह प्रीमियम में अपग्रेड करें',
+    'Upgrade to Silarah Premium': 'सिलाराह प्रीमियम में अपग्रेड करें',
     'Used for nearby matches. Your exact address is never shown.':
         'आस-पास के मैचों के लिए उपयोग किया जाता है. आपका सटीक पता कभी नहीं दिखाया जाता.',
     'Verification is unavailable until you are signed in.':
@@ -1260,7 +1260,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Explore members currently living in selected countries.':
         'Jelajahi anggota yang saat ini tinggal di negara-negara tertentu.',
     'Go to location step': 'Pergi ke langkah lokasi',
-    'Help keep SILARAH safe for everyone.':
+    'Help keep Silarah safe for everyone.':
         'Membantu menjaga SILARAH tetap aman untuk semua orang.',
     'Help keep the community safe. Your report is anonymous.':
         'Membantu menjaga komunitas tetap aman. Laporan Anda bersifat anonim.',
@@ -1334,7 +1334,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Restore Purchase': 'Kembalikan Pembelian',
     'Review every request individually. Access can be revoked whenever you choose.':
         'Tinjau setiap permintaan satu per satu. Akses dapat dicabut kapan pun Anda mau.',
-    'SILARAH Premium · Active': 'SILARAH Premium · Aktif',
+    'Silarah Premium · Active': 'SILARAH Premium · Aktif',
     'Say bismillah and begin a conversation.':
         'Ucapkan bismillah dan mulailah percakapan.',
     'Searching cities...': 'Mencari kota...',
@@ -1351,7 +1351,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'This closes the match and prevents further messages.':
         'Ini menutup pertandingan dan mencegah pesan lebih lanjut.',
     'This conversation is closed': 'Percakapan ini ditutup',
-    'This helps us improve SILARAH for others.':
+    'This helps us improve Silarah for others.':
         'Hal ini membantu kami meningkatkan SILARAH bagi sesama.',
     'This is only required before subscription purchase.':
         'Ini hanya diperlukan sebelum pembelian langganan.',
@@ -1368,7 +1368,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Unable to load profiles. Please try again.':
         'Tidak dapat memuat profil. Silakan coba lagi.',
     'Unlock Chat': 'Buka kunci Obrolan',
-    'Upgrade to SILARAH Premium': 'Tingkatkan ke SILARAH Premium',
+    'Upgrade to Silarah Premium': 'Tingkatkan ke SILARAH Premium',
     'Used for nearby matches. Your exact address is never shown.':
         'Digunakan untuk pertandingan terdekat. Alamat persis Anda tidak pernah ditampilkan.',
     'Verification is unavailable until you are signed in.':
@@ -1495,7 +1495,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Explore members currently living in selected countries.':
         'Teroka ahli yang kini tinggal di negara terpilih.',
     'Go to location step': 'Pergi ke langkah lokasi',
-    'Help keep SILARAH safe for everyone.':
+    'Help keep Silarah safe for everyone.':
         'Bantu pastikan SILARAH selamat untuk semua orang.',
     'Help keep the community safe. Your report is anonymous.':
         'Bantu menjaga keselamatan komuniti. Laporan anda adalah tanpa nama.',
@@ -1571,7 +1571,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Restore Purchase': 'Pulihkan Pembelian',
     'Review every request individually. Access can be revoked whenever you choose.':
         'Semak setiap permintaan secara individu. Akses boleh dibatalkan bila-bila masa anda memilih.',
-    'SILARAH Premium · Active': 'SILARAH Premium · Aktif',
+    'Silarah Premium · Active': 'SILARAH Premium · Aktif',
     'Say bismillah and begin a conversation.':
         'Ucap bismillah dan mulakan perbualan.',
     'Searching cities...': 'Mencari bandar...',
@@ -1588,7 +1588,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'This closes the match and prevents further messages.':
         'Ini menutup perlawanan dan menghalang mesej selanjutnya.',
     'This conversation is closed': 'Perbualan ini ditutup',
-    'This helps us improve SILARAH for others.':
+    'This helps us improve Silarah for others.':
         'Ini membantu kita meningkatkan SILARAH untuk orang lain.',
     'This is only required before subscription purchase.':
         'Ini hanya diperlukan sebelum pembelian langganan.',
@@ -1605,7 +1605,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Unable to load profiles. Please try again.':
         'Tidak dapat memuatkan profil. Sila cuba lagi.',
     'Unlock Chat': 'Buka kunci Sembang',
-    'Upgrade to SILARAH Premium': 'Naik taraf kepada SILARAH Premium',
+    'Upgrade to Silarah Premium': 'Naik taraf kepada SILARAH Premium',
     'Used for nearby matches. Your exact address is never shown.':
         'Digunakan untuk perlawanan berhampiran. Alamat tepat anda tidak pernah ditunjukkan.',
     'Verification is unavailable until you are signed in.':
@@ -1732,7 +1732,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Explore members currently living in selected countries.':
         'Şu anda seçili ülkelerde yaşayan üyeleri keşfedin.',
     'Go to location step': 'Konum adımına git',
-    'Help keep SILARAH safe for everyone.':
+    'Help keep Silarah safe for everyone.':
         'SILARAH\'ı herkes için güvende tutmaya yardımcı olun.',
     'Help keep the community safe. Your report is anonymous.':
         'Topluluğun güvende kalmasına yardımcı olun. Raporunuz anonimdir.',
@@ -1806,7 +1806,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Restore Purchase': 'Satın Alma İşlemini Geri Yükle',
     'Review every request individually. Access can be revoked whenever you choose.':
         'Her isteği ayrı ayrı inceleyin. Erişim istediğiniz zaman iptal edilebilir.',
-    'SILARAH Premium · Active': 'SILARAH Premium · Aktif',
+    'Silarah Premium · Active': 'SILARAH Premium · Aktif',
     'Say bismillah and begin a conversation.':
         'Bismillah deyin ve sohbete başlayın.',
     'Searching cities...': 'Şehirler aranıyor...',
@@ -1824,7 +1824,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'This closes the match and prevents further messages.':
         'Bu, eşleşmeyi kapatır ve daha fazla mesaj gönderilmesini engeller.',
     'This conversation is closed': 'Bu görüşme kapalı',
-    'This helps us improve SILARAH for others.':
+    'This helps us improve Silarah for others.':
         'Bu, başkaları için SILARAH\'ı geliştirmemize yardımcı olur.',
     'This is only required before subscription purchase.':
         'Bu yalnızca abonelik satın alınmadan önce gereklidir.',
@@ -1841,7 +1841,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Unable to load profiles. Please try again.':
         'Profiller yüklenemiyor. Lütfen tekrar deneyin.',
     'Unlock Chat': 'Sohbetin Kilidini Aç',
-    'Upgrade to SILARAH Premium': 'SILARAH Premium\'a yükseltme',
+    'Upgrade to Silarah Premium': 'SILARAH Premium\'a yükseltme',
     'Used for nearby matches. Your exact address is never shown.':
         'Yakındaki maçlar için kullanılır. Tam adresiniz asla gösterilmez.',
     'Verification is unavailable until you are signed in.':
@@ -1967,7 +1967,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Explore members currently living in selected countries.':
         'فی الحال منتخب ممالک میں مقیم اراکین کو دریافت کریں۔',
     'Go to location step': 'مقام کے مرحلے پر جائیں۔',
-    'Help keep SILARAH safe for everyone.':
+    'Help keep Silarah safe for everyone.':
         'SILARAH کو سب کے لیے محفوظ رکھنے میں مدد کریں۔',
     'Help keep the community safe. Your report is anonymous.':
         'کمیونٹی کو محفوظ رکھنے میں مدد کریں۔ آپ کی رپورٹ گمنام ہے۔',
@@ -2043,7 +2043,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Restore Purchase': 'خریداری کو بحال کریں۔',
     'Review every request individually. Access can be revoked whenever you choose.':
         'ہر درخواست کا انفرادی طور پر جائزہ لیں۔ جب بھی آپ انتخاب کریں رسائی کو منسوخ کیا جا سکتا ہے۔',
-    'SILARAH Premium · Active': 'SILARAH پریمیم · فعال',
+    'Silarah Premium · Active': 'SILARAH پریمیم · فعال',
     'Say bismillah and begin a conversation.':
         'بسم اللہ کہو اور گفتگو شروع کرو۔',
     'Searching cities...': 'شہر تلاش کر رہے ہیں...',
@@ -2060,7 +2060,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'This closes the match and prevents further messages.':
         'یہ میچ بند کر دیتا ہے اور مزید پیغامات کو روکتا ہے۔',
     'This conversation is closed': 'یہ گفتگو بند ہے۔',
-    'This helps us improve SILARAH for others.':
+    'This helps us improve Silarah for others.':
         'اس سے ہمیں دوسروں کے لیے SILARAH کو بہتر بنانے میں مدد ملتی ہے۔',
     'This is only required before subscription purchase.':
         'یہ صرف سبسکرپشن کی خریداری سے پہلے درکار ہے۔',
@@ -2076,7 +2076,7 @@ const supplementalUiCopy = <String, Map<String, String>>{
     'Unable to load profiles. Please try again.':
         'پروفائلز لوڈ کرنے سے قاصر۔ براہ کرم دوبارہ کوشش کریں۔',
     'Unlock Chat': 'چیٹ کو غیر مقفل کریں۔',
-    'Upgrade to SILARAH Premium': 'SILARAH پریمیم میں اپ گریڈ کریں۔',
+    'Upgrade to Silarah Premium': 'SILARAH پریمیم میں اپ گریڈ کریں۔',
     'Used for nearby matches. Your exact address is never shown.':
         'قریبی میچوں کے لیے استعمال کیا جاتا ہے۔ آپ کا صحیح پتہ کبھی نہیں دکھایا گیا ہے۔',
     'Verification is unavailable until you are signed in.':

@@ -1901,7 +1901,7 @@ class _SubscriptionCard extends StatelessWidget {
                     ? context.uiCopy('Test Premium is active')
                     : referralOnly
                         ? l10n.referral_premiumActiveTitle
-                        : 'SILARAH Premium · Active',
+                        : 'Silarah Premium · Active',
                 style: AppTypography.bodyMedium
                     .copyWith(color: AppColors.verifiedTeal)),
             if (expiry != null)
@@ -1971,7 +1971,7 @@ class _SubscriptionCard extends StatelessWidget {
               child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              UiText('Upgrade to SILARAH Premium',
+              UiText('Upgrade to Silarah Premium',
                   style: AppTypography.bodyMedium
                       .copyWith(color: AppColors.champagneGold)),
               UiText(context.uiCopy('Unlock messaging and profile boosts'),

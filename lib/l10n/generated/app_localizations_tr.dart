@@ -12,12 +12,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get guide_optional_details => 'Ek bilgiler (isteğe bağlı)';
 
   @override
-  String get guide_optional_details_body =>
-      'Bu bilgileri daha sonra profilinizden tamamlayabilirsiniz.';
+  String get guide_optional_details_body => 'Bu bilgileri daha sonra profilinizden tamamlayabilirsiniz.';
 
   @override
-  String get guide_profile_ownership =>
-      'Bu profil evlenmek isteyen kişiyi tanıtır. Görüşmelere nezaret etmesi için daha sonra ayrı bir Vasi davet edilebilir.';
+  String get guide_profile_ownership => 'Bu profil evlenmek isteyen kişiyi tanıtır. Görüşmelere nezaret etmesi için daha sonra ayrı bir Vasi davet edilebilir.';
 
   @override
   String get about_button_later => 'Bunu daha sonra yapacağım';
@@ -80,8 +78,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get auth_label_changeNumber => 'Yanlış numara mı? Değiştir onu';
 
   @override
-  String get auth_label_enterOtp =>
-      'Gönderilen 6 haneli doğrulama kodunu girin';
+  String get auth_label_enterOtp => 'Gönderilen 6 haneli doğrulama kodunu girin';
 
   @override
   String get auth_label_resendCode => 'Doğrulama kodunu yeniden gönder';
@@ -97,12 +94,10 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get auth_label_sentCodeTo =>
-      '6 haneli doğrulama kodunu şu adrese gönderdik:';
+  String get auth_label_sentCodeTo => '6 haneli doğrulama kodunu şu adrese gönderdik:';
 
   @override
-  String get auth_subtitle_verifyOtp =>
-      'Tek seferlik bir kodla doğrulayacağız.';
+  String get auth_subtitle_verifyOtp => 'Tek seferlik bir kodla doğrulayacağız.';
 
   @override
   String get auth_title_enterCode => 'Doğrulama kodunuzu girin';
@@ -123,8 +118,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get background_edu_doctorate => 'Doktora / Doktora';
 
   @override
-  String get background_edu_higher_secondary =>
-      'Daha Yüksek Ortaokul / A-Seviyesi';
+  String get background_edu_higher_secondary => 'Daha Yüksek Ortaokul / A-Seviyesi';
 
   @override
   String get background_edu_masters => 'Yüksek lisans';
@@ -138,8 +132,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get background_edu_subtitle_self =>
-      'Profesyonel olarak uyumlu eşleşmeler bulmanıza yardımcı olur.';
+  String get background_edu_subtitle_self => 'Profesyonel olarak uyumlu eşleşmeler bulmanıza yardımcı olur.';
 
   @override
   String get background_edu_title_guardian => 'Geçmişleri';
@@ -160,8 +153,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get background_emp_student => 'Öğrenci';
 
   @override
-  String get background_income_subtitle =>
-      'Pek çok kişi bunu atlıyor; bu tamamen isteğe bağlı.';
+  String get background_income_subtitle => 'Pek çok kişi bunu atlıyor; bu tamamen isteğe bağlı.';
 
   @override
   String get background_label_eduLevel => 'EĞİTİM SEVİYESİ';
@@ -190,8 +182,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get background_vis_everyone => 'Braketi herkese göster';
 
   @override
-  String get background_vis_mutual =>
-      'Yalnızca karşılıklı ilgiden sonra göster';
+  String get background_vis_mutual => 'Yalnızca karşılıklı ilgiden sonra göster';
 
   @override
   String get background_vis_private => 'Gizli kal';
@@ -200,31 +191,25 @@ class AppLocalizationsTr extends AppLocalizations {
   String get ceremony_text_blessing => 'Allah bunu hayırla mübarek kılsın';
 
   @override
-  String get chat_closure_1 =>
-      'Selamun Aleyküm. Düşündükten sonra bunun bizim için doğru eşleşme olmayabileceğini hissettim. Size içtenlikle başarılar diliyor ve Allah\'ın size harika bir ortak vermesini diliyorum. CezakAllah hayr.';
+  String get chat_closure_1 => 'Selamun Aleyküm. Düşündükten sonra bunun bizim için doğru eşleşme olmayabileceğini hissettim. Size içtenlikle başarılar diliyor ve Allah\'ın size harika bir ortak vermesini diliyorum. CezakAllah hayr.';
 
   @override
-  String get chat_closure_2 =>
-      'Selamun Aleyküm. Sana karşı dürüst ve saygılı olmak istedim. Doğru eşleşme olduğumuzu düşünmüyorum ama Allah\'ın size daha iyi kapılar açmasını diliyorum. Size en iyisini diliyorum.';
+  String get chat_closure_2 => 'Selamun Aleyküm. Sana karşı dürüst ve saygılı olmak istedim. Doğru eşleşme olduğumuzu düşünmüyorum ama Allah\'ın size daha iyi kapılar açmasını diliyorum. Size en iyisini diliyorum.';
 
   @override
-  String get chat_closure_3 =>
-      'Selamun Aleyküm. Samimi bir değerlendirmeden sonra uyumlu olamayacağımızı hissediyorum. Umarım senin için gerçekten doğru birini bulursun. Allah işlerinizi kolaylaştırsın. Zaman ayırdığınız için JazakAllah hayr.';
+  String get chat_closure_3 => 'Selamun Aleyküm. Samimi bir değerlendirmeden sonra uyumlu olamayacağımızı hissediyorum. Umarım senin için gerçekten doğru birini bulursun. Allah işlerinizi kolaylaştırsın. Zaman ayırdığınız için JazakAllah hayr.';
 
   @override
-  String get chat_closure_4 =>
-      'Selamun Aleyküm. Konuşmalarımızı düşündüm ve bu maçı şu anda bitirmenin en iyisi olduğunu düşünüyorum. Size saygıdan başka bir şeyim yok ve Allah\'ın sizi en iyi şekilde kutsaması için dua ediyorum.';
+  String get chat_closure_4 => 'Selamun Aleyküm. Konuşmalarımızı düşündüm ve bu maçı şu anda bitirmenin en iyisi olduğunu düşünüyorum. Size saygıdan başka bir şeyim yok ve Allah\'ın sizi en iyi şekilde kutsaması için dua ediyorum.';
 
   @override
-  String get chat_closure_5 =>
-      'Selamun Aleyküm. Seninle kaybolmak yerine şeffaf olmak istedim. Bunun daha fazla ilerlediğini görmüyorum, ancak zaman ayırdığınız için gerçekten minnettarım ve size mutluluklar diliyorum. Allah sizden razı olsun.';
+  String get chat_closure_5 => 'Selamun Aleyküm. Seninle kaybolmak yerine şeffaf olmak istedim. Bunun daha fazla ilerlediğini görmüyorum, ancak zaman ayırdığınız için gerçekten minnettarım ve size mutluluklar diliyorum. Allah sizden razı olsun.';
 
   @override
   String get chat_endMatch_button => 'Eşleşmeyi Gönder ve Bitir';
 
   @override
-  String get chat_endMatch_subtitle =>
-      'Bu konuşmayı kapatmak için saygılı bir mesaj seçin. Diğer kişiye bilgi verilecektir.';
+  String get chat_endMatch_subtitle => 'Bu konuşmayı kapatmak için saygılı bir mesaj seçin. Diğer kişiye bilgi verilecektir.';
 
   @override
   String get chat_endMatch_title => 'Bu maçı bitir';
@@ -235,23 +220,19 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get chat_label_subscribeToMessage =>
-      'Mesajlaşmanın kilidini açmak için abone olun. Kadınlar Silarah üzerinden her zaman ücretsiz mesaj atar.';
+  String get chat_label_subscribeToMessage => 'Mesajlaşmanın kilidini açmak için abone olun. Kadınlar Silarah üzerinden her zaman ücretsiz mesaj atar.';
 
   @override
   String get chat_matchClosed_banner => 'Bu maç saygıyla kapatıldı.';
 
   @override
-  String get chat_opener_1 =>
-      'Selamun Aleyküm! Profilinize rastladım ve gerçekten etkilendim. Kendimi tanıtabilir miyim?';
+  String get chat_opener_1 => 'Selamun Aleyküm! Profilinize rastladım ve gerçekten etkilendim. Kendimi tanıtabilir miyim?';
 
   @override
-  String get chat_opener_2 =>
-      'Bismillah. Profiliniz dikkatimi çekti. Senin hakkında daha fazlasını öğrenmeyi çok isterim.';
+  String get chat_opener_2 => 'Bismillah. Profiliniz dikkatimi çekti. Senin hakkında daha fazlasını öğrenmeyi çok isterim.';
 
   @override
-  String get chat_opener_3 =>
-      'Selamun Aleyküm. Benzer değerleri paylaştığımıza inanıyorum. Birbirinizi tanımaya açık mısınız?';
+  String get chat_opener_3 => 'Selamun Aleyküm. Benzer değerleri paylaştığımıza inanıyorum. Birbirinizi tanımaya açık mısınız?';
 
   @override
   String get chat_placeholder_typeMessage => 'Bir mesaj yazın…';
@@ -281,12 +262,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get common_button_submit => 'Göndermek';
 
   @override
-  String get common_error_generic =>
-      'Bir şeyler ters gitti. Lütfen tekrar deneyin.';
+  String get common_error_generic => 'Bir şeyler ters gitti. Lütfen tekrar deneyin.';
 
   @override
-  String get common_error_noInternet =>
-      'İnternet bağlantısı yok. Lütfen bağlantınızı kontrol edin.';
+  String get common_error_noInternet => 'İnternet bağlantısı yok. Lütfen bağlantınızı kontrol edin.';
 
   @override
   String get common_label_optional => 'İsteğe bağlı';
@@ -310,15 +289,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get copy_hijab_sibling => 'Kız kardeşiniz başörtüsüne uyuyor mu?';
 
   @override
-  String get copy_prayer_parent =>
-      'Çocuğunuz günde beş vakit namaz kılıyor mu?';
+  String get copy_prayer_parent => 'Çocuğunuz günde beş vakit namaz kılıyor mu?';
 
   @override
   String get copy_prayer_self => 'Günde beş vakit namaz kılıyor musunuz?';
 
   @override
-  String get copy_prayer_sibling =>
-      'Kardeşiniz günde beş vakit namaz kılıyor mu?';
+  String get copy_prayer_sibling => 'Kardeşiniz günde beş vakit namaz kılıyor mu?';
 
   @override
   String get deleteAccount_title => 'Hesabı Sil';
@@ -340,29 +317,25 @@ class AppLocalizationsTr extends AppLocalizations {
   String get discovery_completeness_button => 'Profili Tamamla';
 
   @override
-  String get discovery_completeness_subtitle =>
-      '%40\'ın üzerindeki profiller 3 kat daha fazla ilgi görüyor.\nGöz atmaya başlamak için profilinizi tamamlayın.';
+  String get discovery_completeness_subtitle => '%40\'ın üzerindeki profiller 3 kat daha fazla ilgi görüyor.\nGöz atmaya başlamak için profilinizi tamamlayın.';
 
   @override
   String get discovery_completeness_title => 'Profilinizi Tamamlayın';
 
   @override
-  String get discovery_empty_subtitle =>
-      'Arama filtrelerinizi genişletmeyi deneyin\nveya yarın tekrar kontrol edin.';
+  String get discovery_empty_subtitle => 'Arama filtrelerinizi genişletmeyi deneyin\nveya yarın tekrar kontrol edin.';
 
   @override
   String get discovery_empty_title => 'Yakındaki herkesi gördün';
 
   @override
-  String get discovery_handoff_interest_subtitle =>
-      'Aktif isteği olan profiller, beklerken veya yanıt verirken İlgiler bölümüne taşınır.';
+  String get discovery_handoff_interest_subtitle => 'Aktif isteği olan profiller, beklerken veya yanıt verirken İlgiler bölümüne taşınır.';
 
   @override
   String get discovery_handoff_interest_title => 'İlginiz devam ediyor';
 
   @override
-  String get discovery_handoff_match_subtitle =>
-      'Eşleşen profiller Sohbet\'e taşınır ve Keşfet\'te tekrar gösterilmez.';
+  String get discovery_handoff_match_subtitle => 'Eşleşen profiller Sohbet\'e taşınır ve Keşfet\'te tekrar gösterilmez.';
 
   @override
   String get discovery_handoff_match_title => 'Bağlantınız hazır';
@@ -391,8 +364,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get discovery_limit_button => 'Şimdi Yükselt';
 
   @override
-  String get discovery_limit_subtitle =>
-      'Bugün 15 profile göz attınız.\nSınırsız taramanın kilidini açmak için yükseltin.';
+  String get discovery_limit_subtitle => 'Bugün 15 profile göz attınız.\nSınırsız taramanın kilidini açmak için yükseltin.';
 
   @override
   String get discovery_limit_title => 'Günlük sınıra ulaşıldı';
@@ -424,12 +396,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get family_label_parents => 'EBEVEYNLERİN MEDENİ DURUMU';
 
   @override
-  String get family_label_polygamy_female_self =>
-      'ÇOK eşliliğin kabulü (İsteğe bağlı)';
+  String get family_label_polygamy_female_self => 'ÇOK eşliliğin kabulü (İsteğe bağlı)';
 
   @override
-  String get family_label_polygamy_male_self =>
-      'ÇOKEŞLİLİK DURUMU (İsteğe Bağlı)';
+  String get family_label_polygamy_male_self => 'ÇOKEŞLİLİK DURUMU (İsteğe Bağlı)';
 
   @override
   String get family_label_prev_married => 'DAHA ÖNCE EVLİ MİYDİNİZ?';
@@ -490,8 +460,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get family_polygamy_male_sub_self =>
-      'Şu anda evli misiniz ve ek bir eş mi arıyorsunuz?';
+  String get family_polygamy_male_sub_self => 'Şu anda evli misiniz ve ek bir eş mi arıyorsunuz?';
 
   @override
   String get family_polygamy_option_first => 'Hayır, bu benim ilkim';
@@ -523,8 +492,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get family_relocate_subtitle_self =>
-      'Evlilik için şehir değiştirir misiniz?';
+  String get family_relocate_subtitle_self => 'Evlilik için şehir değiştirir misiniz?';
 
   @override
   String get family_relocate_yes => 'Evet';
@@ -535,8 +503,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get family_subtitle_self =>
-      'Aile uyumu kalıcı evliliklerin merkezinde yer alır.';
+  String get family_subtitle_self => 'Aile uyumu kalıcı evliliklerin merkezinde yer alır.';
 
   @override
   String get family_title_guardian => 'Aile geçmişi';
@@ -563,8 +530,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get filter_label_motherTongue => 'Ana dil';
 
   @override
-  String get guardian_details_candidate_female =>
-      'Kadın aday • Kadınlara mesaj ücretsiz';
+  String get guardian_details_candidate_female => 'Kadın aday • Kadınlara mesaj ücretsiz';
 
   @override
   String get guardian_details_candidate_label => 'PROFİL OLUŞTURUYORUZ';
@@ -581,8 +547,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get guardian_details_involvement => 'KORUYUCU KATILIMI';
 
   @override
-  String get guardian_details_involvement_subtitle =>
-      'Konuşmalara ne kadar dahil olmak istiyorsunuz?';
+  String get guardian_details_involvement_subtitle => 'Konuşmalara ne kadar dahil olmak istiyorsunuz?';
 
   @override
   String guardian_details_mode_active_sub(Object relation) {
@@ -604,8 +569,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get guardian_details_name_hint => 'Ad Soyad';
 
   @override
-  String get guardian_details_name_subtitle =>
-      'Koruyucu olarak adınız. Bu eşleşmelere gösterilir.';
+  String get guardian_details_name_subtitle => 'Koruyucu olarak adınız. Bu eşleşmelere gösterilir.';
 
   @override
   String guardian_details_notice(Object relation) {
@@ -619,8 +583,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get guardian_details_select_code => 'Ülke kodunu seçin';
 
   @override
-  String get guardian_details_subtitle =>
-      'Bize koruyucu olarak kendinizden bahsedin.';
+  String get guardian_details_subtitle => 'Bize koruyucu olarak kendinizden bahsedin.';
 
   @override
   String get guardian_details_title => 'Vasi ayrıntılarınız';
@@ -950,35 +913,28 @@ class AppLocalizationsTr extends AppLocalizations {
   String get legal_button_continue => 'Devam etmek';
 
   @override
-  String get legal_checkbox_age =>
-      '18 yaşında veya daha büyük olduğumu onaylıyorum';
+  String get legal_checkbox_age => '18 yaşında veya daha büyük olduğumu onaylıyorum';
 
   @override
-  String get legal_checkbox_terms =>
-      'Hizmet Şartlarını ve Gizlilik Politikasını kabul ediyorum';
+  String get legal_checkbox_terms => 'Hizmet Şartlarını ve Gizlilik Politikasını kabul ediyorum';
 
   @override
   String get legal_subtitle => 'Lütfen okuyun ve devam etmeyi kabul edin.';
 
   @override
-  String get legal_summary_1 =>
-      'Verileriniz şifrelenir ve asla üçüncü şahıslara satılmaz.';
+  String get legal_summary_1 => 'Verileriniz şifrelenir ve asla üçüncü şahıslara satılmaz.';
 
   @override
-  String get legal_summary_2 =>
-      'Her fotoğraf güvenlik kontrolünden geçer ve ekibimiz yeni fotoğrafları inceler.';
+  String get legal_summary_2 => 'Her fotoğraf güvenlik kontrolünden geçer ve ekibimiz yeni fotoğrafları inceler.';
 
   @override
-  String get legal_summary_3 =>
-      'Taciz, sahte profiller ve dolandırıcılık, kalıcı yasaklamalarla sonuçlanır.';
+  String get legal_summary_3 => 'Taciz, sahte profiller ve dolandırıcılık, kalıcı yasaklamalarla sonuçlanır.';
 
   @override
-  String get legal_summary_4 =>
-      'Bu platform yalnızca evlilik niyetleri içindir. Onur standarttır.';
+  String get legal_summary_4 => 'Bu platform yalnızca evlilik niyetleri içindir. Onur standarttır.';
 
   @override
-  String get legal_summary_5 =>
-      'Hesabınızı ve tüm verilerinizi istediğiniz zaman silebilirsiniz.';
+  String get legal_summary_5 => 'Hesabınızı ve tüm verilerinizi istediğiniz zaman silebilirsiniz.';
 
   @override
   String get legal_title => 'Başlamadan önce';
@@ -1007,12 +963,10 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get onboarding_basicIdentity_subtitle_guardian =>
-      'Başkalarının profillerinde göreceği şey budur.';
+  String get onboarding_basicIdentity_subtitle_guardian => 'Başkalarının profillerinde göreceği şey budur.';
 
   @override
-  String get onboarding_basicIdentity_subtitle_self =>
-      'Bu, başkalarının profilinizde göreceği şeydir.';
+  String get onboarding_basicIdentity_subtitle_self => 'Bu, başkalarının profilinizde göreceği şeydir.';
 
   @override
   String get onboarding_basicIdentity_title => 'Bize kendinizden bahsedin';
@@ -1047,20 +1001,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get onboarding_diet_zabihaStrict => 'Katı Zabiha';
 
   @override
-  String get onboarding_error_bioContactInfo =>
-      'Lütfen iletişim bilgilerinizi biyografinizden kaldırın. Güvenliğiniz için harici iletişim bilgilerine izin verilmez.';
+  String get onboarding_error_bioContactInfo => 'Lütfen iletişim bilgilerinizi biyografinizden kaldırın. Güvenliğiniz için harici iletişim bilgilerine izin verilmez.';
 
   @override
-  String get onboarding_error_multipleFaces =>
-      'Grup fotoğrafları birincil fotoğrafınız olamaz.';
+  String get onboarding_error_multipleFaces => 'Grup fotoğrafları birincil fotoğrafınız olamaz.';
 
   @override
-  String get onboarding_error_noFace =>
-      'Lütfen yüzünüzün açıkça görülebileceği bir fotoğraf kullanın.';
+  String get onboarding_error_noFace => 'Lütfen yüzünüzün açıkça görülebileceği bir fotoğraf kullanın.';
 
   @override
-  String get onboarding_error_under18 =>
-      'Silarah 18 yaş ve üzeri içindir. Topluluğumuzdaki herkesi korumak için bu zorunluluğu getirdik.';
+  String get onboarding_error_under18 => 'Silarah 18 yaş ve üzeri içindir. Topluluğumuzdaki herkesi korumak için bu zorunluluğu getirdik.';
 
   @override
   String onboarding_error_under18_guardian(String relation) {
@@ -1068,8 +1018,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get onboarding_error_under18_self =>
-      'Silarah\'ı kullanabilmek için 18 yaşında veya daha büyük olmanız gerekir. O zaman sizi ağırlamayı sabırsızlıkla bekliyoruz.';
+  String get onboarding_error_under18_self => 'Silarah\'ı kullanabilmek için 18 yaşında veya daha büyük olmanız gerekir. O zaman sizi ağırlamayı sabırsızlıkla bekliyoruz.';
 
   @override
   String get onboarding_habit_frequently => 'Sıklıkla';
@@ -1096,15 +1045,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get onboarding_hint_bio => 'Kendinizi dürüstlük ve onurla tanımlayın.';
 
   @override
-  String get onboarding_hint_profession =>
-      'örneğin Yazılım Mühendisi, Öğretmen, Doktor';
+  String get onboarding_hint_profession => 'örneğin Yazılım Mühendisi, Öğretmen, Doktor';
 
   @override
   String get onboarding_hint_searchCity => 'Şehrinizi arayın…';
 
   @override
-  String get onboarding_hint_selectCommunity =>
-      'Topluluğu seçin (isteğe bağlı)';
+  String get onboarding_hint_selectCommunity => 'Topluluğu seçin (isteğe bağlı)';
 
   @override
   String get onboarding_hint_selectCountry => 'Ülke seçin';
@@ -1116,8 +1063,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get onboarding_hint_selectLanguage => 'Dil seçin';
 
   @override
-  String get onboarding_islamicIdentity_subtitle =>
-      'Bu, uyumlu biriyle eşleşmenize yardımcı olur.';
+  String get onboarding_islamicIdentity_subtitle => 'Bu, uyumlu biriyle eşleşmenize yardımcı olur.';
 
   @override
   String get onboarding_islamicIdentity_title => 'İslami Kimliğiniz';
@@ -1161,8 +1107,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get onboarding_label_debtStatus => 'Borç Durumu';
 
   @override
-  String get onboarding_label_debtStatusQuestion =>
-      'Mevcut mali yükümlülükleriniz.';
+  String get onboarding_label_debtStatusQuestion => 'Mevcut mali yükümlülükleriniz.';
 
   @override
   String get onboarding_label_deenLevel => 'Din Seviyesi';
@@ -1207,8 +1152,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get onboarding_label_housing => 'Konut';
 
   @override
-  String get onboarding_label_housingQuestion =>
-      'Ayrı bir yaşam alanı sağlayabilir misiniz?';
+  String get onboarding_label_housingQuestion => 'Ayrı bir yaşam alanı sağlayabilir misiniz?';
 
   @override
   String get onboarding_label_lastName => 'Soy isim';
@@ -1217,40 +1161,34 @@ class AppLocalizationsTr extends AppLocalizations {
   String get onboarding_label_leadership => 'Dini Liderlik';
 
   @override
-  String get onboarding_label_leadershipQuestion =>
-      'Cemaatle namaz kıldırabilir misiniz?';
+  String get onboarding_label_leadershipQuestion => 'Cemaatle namaz kıldırabilir misiniz?';
 
   @override
   String get onboarding_label_lifestyleDiet => 'Yaşam Tarzı ve Diyet';
 
   @override
-  String get onboarding_label_lifestyleDietSub =>
-      'Bunlar birçok aile için anlaşmayı bozan alanlardır. Lütfen dürüstçe cevap verin.';
+  String get onboarding_label_lifestyleDietSub => 'Bunlar birçok aile için anlaşmayı bozan alanlardır. Lütfen dürüstçe cevap verin.';
 
   @override
-  String get onboarding_label_livingExpectation =>
-      'Evlilik sonrası yaşam beklentileri';
+  String get onboarding_label_livingExpectation => 'Evlilik sonrası yaşam beklentileri';
 
   @override
   String get onboarding_label_mahrBudget => 'Mahr Bütçesi';
 
   @override
-  String get onboarding_label_mahrBudgetQuestion =>
-      'Hangi mahr serisini sunmaya hazırsınız?';
+  String get onboarding_label_mahrBudgetQuestion => 'Hangi mahr serisini sunmaya hazırsınız?';
 
   @override
   String get onboarding_label_mahrExpectation => 'Mahr Beklentisi';
 
   @override
-  String get onboarding_label_mahrExpectationQuestion =>
-      'Mahr\'dan beklentiniz nedir?';
+  String get onboarding_label_mahrExpectationQuestion => 'Mahr\'dan beklentiniz nedir?';
 
   @override
   String get onboarding_label_maintenance => 'Finansal Bakım';
 
   @override
-  String get onboarding_label_maintenanceQuestion =>
-      'Eşinizin geçimini maddi olarak sağlayabiliyor musunuz?';
+  String get onboarding_label_maintenanceQuestion => 'Eşinizin geçimini maddi olarak sağlayabiliyor musunuz?';
 
   @override
   String get onboarding_label_male => 'Erkek';
@@ -1259,8 +1197,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get onboarding_label_marriageTimeline => 'Evlilik Zaman Çizelgesi';
 
   @override
-  String get onboarding_label_marriageTimelineQuestion =>
-      'Ne zaman evlenmeyi düşünüyorsun?';
+  String get onboarding_label_marriageTimelineQuestion => 'Ne zaman evlenmeyi düşünüyorsun?';
 
   @override
   String get onboarding_label_moderate => 'Ilıman';
@@ -1337,8 +1274,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get onboarding_label_workAfterMarriage => 'Evlendikten Sonra Çalışmak';
 
   @override
-  String get onboarding_label_workAfterMarriageQuestion =>
-      'Evlendikten sonra çalışmak ister misiniz?';
+  String get onboarding_label_workAfterMarriageQuestion => 'Evlendikten sonra çalışmak ister misiniz?';
 
   @override
   String get onboarding_leadership_leads => 'Duaya Yol Açar';
@@ -1353,22 +1289,19 @@ class AppLocalizationsTr extends AppLocalizations {
   String get onboarding_living_openToDiscussion => 'Tartışmaya Açık';
 
   @override
-  String get onboarding_living_openToDiscussionSub =>
-      'Esnekim ve her ikisi için de neyin işe yaradığını tartışmaktan mutluyum.';
+  String get onboarding_living_openToDiscussionSub => 'Esnekim ve her ikisi için de neyin işe yaradığını tartışmaktan mutluyum.';
 
   @override
   String get onboarding_living_separate => 'Ayrı Ev';
 
   @override
-  String get onboarding_living_separateSub =>
-      'Kendi bağımsız evimizin olmasını tercih ederim.';
+  String get onboarding_living_separateSub => 'Kendi bağımsız evimizin olmasını tercih ederim.';
 
   @override
   String get onboarding_living_withInlaws => 'Kayınvalidem ile';
 
   @override
-  String get onboarding_living_withInlawsSub =>
-      'Eşimin ya da kendi ailemin yanında yaşamayı düşünüyorum.';
+  String get onboarding_living_withInlawsSub => 'Eşimin ya da kendi ailemin yanında yaşamayı düşünüyorum.';
 
   @override
   String get onboarding_location_confirmed => 'Onaylanmış Konum';
@@ -1389,12 +1322,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get onboarding_mahr_toDiscuss => 'tartışmak';
 
   @override
-  String get onboarding_marriageDeen_privacyNotice =>
-      'Bu ayrıntılar genel profilinizde gösterilmez. Kabul aşamasında özel olarak paylaşılır.';
+  String get onboarding_marriageDeen_privacyNotice => 'Bu ayrıntılar genel profilinizde gösterilmez. Kabul aşamasında özel olarak paylaşılır.';
 
   @override
-  String get onboarding_marriageDeen_subtitle =>
-      'Yolculuğunuzu ve hazırlık durumunuzu anlamamıza yardımcı olun.';
+  String get onboarding_marriageDeen_subtitle => 'Yolculuğunuzu ve hazırlık durumunuzu anlamamıza yardımcı olun.';
 
   @override
   String get onboarding_marriageDeen_title => 'Evlilik ve Din';
@@ -1409,8 +1340,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get onboarding_niqab_wear => 'Peçe takıyorum';
 
   @override
-  String get onboarding_photo_subtitle =>
-      'En az bir fotoğraf gereklidir. Ana fotoğrafınız yüzünüzü açıkça içermelidir.';
+  String get onboarding_photo_subtitle => 'En az bir fotoğraf gereklidir. Ana fotoğrafınız yüzünüzü açıkça içermelidir.';
 
   @override
   String get onboarding_photo_title => 'Fotoğraflarınızı ekleyin';
@@ -1419,29 +1349,25 @@ class AppLocalizationsTr extends AppLocalizations {
   String get onboarding_photo_verifySelfie => 'Doğrulama Selfisi';
 
   @override
-  String get onboarding_photo_verifySelfieHint =>
-      'Gerçek olduğunuzu doğrulamak için canlı bir fotoğraf çekin';
+  String get onboarding_photo_verifySelfieHint => 'Gerçek olduğunuzu doğrulamak için canlı bir fotoğraf çekin';
 
   @override
   String get onboarding_preferredLiving_noPreference => 'Tercih Yok';
 
   @override
-  String get onboarding_profileForWhom_creatingFor =>
-      'Bunu benim için yaratıyorum…';
+  String get onboarding_profileForWhom_creatingFor => 'Bunu benim için yaratıyorum…';
 
   @override
   String get onboarding_profileForWhom_guardian => 'Oğlum veya kızım';
 
   @override
-  String get onboarding_profileForWhom_guardianCardSub =>
-      'Bu profili birisi için oluşturuyorum';
+  String get onboarding_profileForWhom_guardianCardSub => 'Bu profili birisi için oluşturuyorum';
 
   @override
   String get onboarding_profileForWhom_guardianCardTitle => 'Gardiyan';
 
   @override
-  String get onboarding_profileForWhom_guardianSub =>
-      'Ben bir ebeveynim veya vasiyim';
+  String get onboarding_profileForWhom_guardianSub => 'Ben bir ebeveynim veya vasiyim';
 
   @override
   String get onboarding_profileForWhom_myself => 'Kendim';
@@ -1462,23 +1388,19 @@ class AppLocalizationsTr extends AppLocalizations {
   String get onboarding_profileForWhom_relation_son => 'Oğul';
 
   @override
-  String get onboarding_profileForWhom_selectOne =>
-      'Devam etmek için birini seçin';
+  String get onboarding_profileForWhom_selectOne => 'Devam etmek için birini seçin';
 
   @override
-  String get onboarding_profileForWhom_selectRelation =>
-      'Devam etmek için bir ilişki seçin';
+  String get onboarding_profileForWhom_selectRelation => 'Devam etmek için bir ilişki seçin';
 
   @override
   String get onboarding_profileForWhom_sibling => 'Kardeşim veya kız kardeşim';
 
   @override
-  String get onboarding_profileForWhom_siblingSub =>
-      'Kardeşimin eş bulmasına yardım ediyorum';
+  String get onboarding_profileForWhom_siblingSub => 'Kardeşimin eş bulmasına yardım ediyorum';
 
   @override
-  String get onboarding_profileForWhom_subtitle =>
-      'Bunu daha sonra ayarlardan güncelleyebilirsiniz.';
+  String get onboarding_profileForWhom_subtitle => 'Bunu daha sonra ayarlardan güncelleyebilirsiniz.';
 
   @override
   String get onboarding_profileForWhom_title => 'Bu profil kimin için?';
@@ -1487,12 +1409,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get onboarding_profileForWhom_ward => 'Benim koğuşum';
 
   @override
-  String get onboarding_profileForWhom_wardSub =>
-      'Bu profili yöneten bir vasiyim';
+  String get onboarding_profileForWhom_wardSub => 'Bu profili yöneten bir vasiyim';
 
   @override
-  String get onboarding_providerQuote =>
-      '\"Sizin en hayırlınız, eşlerinize karşı en hayırlı olanınızdır.\" — Hz.Muhammed ﷺ\n\nHazır olup olmadığınız konusunda dürüst olmak, güçlü bir temel oluşturmanıza yardımcı olur.';
+  String get onboarding_providerQuote => '\"Sizin en hayırlınız, eşlerinize karşı en hayırlı olanınızdır.\" — Hz.Muhammed ﷺ\n\nHazır olup olmadığınız konusunda dürüst olmak, güçlü bir temel oluşturmanıza yardımcı olur.';
 
   @override
   String get onboarding_quran_hafiz => 'Hafız / Hafıza';
@@ -1534,16 +1454,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get onboarding_timeline_notSure => 'Henüz emin değilim';
 
   @override
-  String get onboarding_tooltip_cultural =>
-      'Kendini Müslüman olarak tanımlar, etkinlikleri kutlar, düzenli olarak dua etmeyebilir';
+  String get onboarding_tooltip_cultural => 'Kendini Müslüman olarak tanımlar, etkinlikleri kutlar, düzenli olarak dua etmeyebilir';
 
   @override
-  String get onboarding_tooltip_moderate =>
-      'İslami ilkelere değer verir ve namaz kılar, ancak her zaman günde beş vakit değil';
+  String get onboarding_tooltip_moderate => 'İslami ilkelere değer verir ve namaz kılar, ancak her zaman günde beş vakit değil';
 
   @override
-  String get onboarding_tooltip_practicing =>
-      'Beş şartın hepsine uyuyor, düzenli olarak dua ediyor, helal yaşam tarzı';
+  String get onboarding_tooltip_practicing => 'Beş şartın hepsine uyuyor, düzenli olarak dua ediyor, helal yaşam tarzı';
 
   @override
   String get onboarding_work_no => 'Hayır, yapmamayı tercih ederim';
@@ -1561,8 +1478,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get photo_banner_text => 'Açık içerikli fotoğraflara izin verilmez';
 
   @override
-  String get photo_error_no_face_detected =>
-      'Yüz görünmüyor — lütfen net bir yüz fotoğrafıyla tekrar deneyin';
+  String get photo_error_no_face_detected => 'Yüz görünmüyor — lütfen net bir yüz fotoğrafıyla tekrar deneyin';
 
   @override
   String photo_error_pick_failed(Object error) {
@@ -1591,8 +1507,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get photo_privacy_everyone => 'Herkes görebilir';
 
   @override
-  String get photo_privacy_everyone_sub =>
-      'Fotoğraflarınızı tüm üyeler görebilir.';
+  String get photo_privacy_everyone_sub => 'Fotoğraflarınızı tüm üyeler görebilir.';
 
   @override
   String get photo_privacy_label => 'FOTOĞRAF GİZLİLİĞİ';
@@ -1601,15 +1516,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get photo_privacy_mutual => 'Karşılıklı ilgiden sonra görünür';
 
   @override
-  String get photo_privacy_mutual_sub =>
-      'Fotoğraflar yalnızca her iki taraf da ilgi gösterdiğinde ortaya çıkar.';
+  String get photo_privacy_mutual_sub => 'Fotoğraflar yalnızca her iki taraf da ilgi gösterdiğinde ortaya çıkar.';
 
   @override
   String get photo_privacy_request => 'Görüntüleme isteği';
 
   @override
-  String get photo_privacy_request_sub =>
-      'Siz bir isteği onaylayana kadar fotoğraflar bulanıklaştırılır.';
+  String get photo_privacy_request_sub => 'Siz bir isteği onaylayana kadar fotoğraflar bulanıklaştırılır.';
 
   @override
   String get photo_sheet_camera => 'Kamera';
@@ -1629,8 +1542,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get photo_subtitle_self =>
-      'En az bir fotoğraf gereklidir. Maksimum dört.';
+  String get photo_subtitle_self => 'En az bir fotoğraf gereklidir. Maksimum dört.';
 
   @override
   String get photo_title_guardian => 'Fotoğraflarını ekleyin';
@@ -1748,8 +1660,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get preferences_subtitle_self =>
-      'Bunlar tercihlerdir, sert filtreler değil.';
+  String get preferences_subtitle_self => 'Bunlar tercihlerdir, sert filtreler değil.';
 
   @override
   String get preferences_title => 'İş ortağı tercihleri';
@@ -1818,12 +1729,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get preview_name_label => 'İsim';
 
   @override
-  String get preview_notice_guardian =>
-      'Başkaları da profillerini tam olarak bu şekilde görecek.';
+  String get preview_notice_guardian => 'Başkaları da profillerini tam olarak bu şekilde görecek.';
 
   @override
-  String get preview_notice_self =>
-      'Başkaları profilinizi tam olarak bu şekilde görecek.';
+  String get preview_notice_self => 'Başkaları profilinizi tam olarak bu şekilde görecek.';
 
   @override
   String get preview_polygamy_label => 'Çok eşlilik';
@@ -1879,8 +1788,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get profile_nudge_completeness =>
-      '%80+ tamlığa sahip profiller 3 kat daha fazla ilgi görür.';
+  String get profile_nudge_completeness => '%80+ tamlığa sahip profiller 3 kat daha fazla ilgi görür.';
 
   @override
   String get settings_brand_credit => 'Silarah (سيلارا) · Allah rızası için';
@@ -1892,8 +1800,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settings_guardian_mirror => 'Ayna Mesajları';
 
   @override
-  String get settings_guardian_mirror_sub =>
-      'Tüm mesajların kopyalarını veliye gönder';
+  String get settings_guardian_mirror_sub => 'Tüm mesajların kopyalarını veliye gönder';
 
   @override
   String get settings_guardian_name_hint => 'Veli Adı';
@@ -1914,8 +1821,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settings_guardian_saved => 'Kaydedildi';
 
   @override
-  String get settings_guardian_sub =>
-      'Mesajlaşma için Wali gözetimini etkinleştirin';
+  String get settings_guardian_sub => 'Mesajlaşma için Wali gözetimini etkinleştirin';
 
   @override
   String get settings_guardian_title => 'Gözetmen Modu';
@@ -1932,8 +1838,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settings_label_blocked_none => 'Hiçbiri';
 
   @override
-  String get settings_label_deleteGrace =>
-      'Profiliniz hemen gizlenecek. Verileriniz 30 gün sonra kalıcı olarak silinecektir.';
+  String get settings_label_deleteGrace => 'Profiliniz hemen gizlenecek. Verileriniz 30 gün sonra kalıcı olarak silinecektir.';
 
   @override
   String get settings_label_editProfile => 'Profili Düzenle';
@@ -1948,8 +1853,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settings_label_rate => 'Değerlendir Silarah';
 
   @override
-  String get settings_label_rate_snackbar =>
-      'Derecelendirme, Silarah uygulama mağazasında kullanıma sunulduğunda kullanıma sunulacak.';
+  String get settings_label_rate_snackbar => 'Derecelendirme, Silarah uygulama mağazasında kullanıma sunulduğunda kullanıma sunulacak.';
 
   @override
   String get settings_label_reports => 'Rapor Geçmişi';
@@ -1975,15 +1879,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settings_notify_activityNudges => 'Etkinlik Dürtülemeleri';
 
   @override
-  String get settings_notify_activityNudgesSub =>
-      '7+ gün boyunca işlem yapılmadığında hatırlat';
+  String get settings_notify_activityNudgesSub => '7+ gün boyunca işlem yapılmadığında hatırlat';
 
   @override
   String get settings_notify_boostReminders => 'Hatırlatıcıları Artırın';
 
   @override
-  String get settings_notify_boostRemindersSub =>
-      'Haftalık takviyeniz hazır olduğunda hatırlatın';
+  String get settings_notify_boostRemindersSub => 'Haftalık takviyeniz hazır olduğunda hatırlatın';
 
   @override
   String get settings_notify_interestAccepted => 'Faiz Kabul Edildi';
@@ -2001,8 +1903,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settings_notify_quietHours => 'Sessiz Saatler';
 
   @override
-  String get settings_photo_privacy_accepted_interests =>
-      'Yalnızca kabul edilen ilgi alanları';
+  String get settings_photo_privacy_accepted_interests => 'Yalnızca kabul edilen ilgi alanları';
 
   @override
   String get settings_photo_privacy_after_acceptance => 'Kabul Sonrası';
@@ -2020,8 +1921,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settings_photo_privacy_request_to_view => 'Görüntüleme isteği';
 
   @override
-  String get settings_privacy_download_body =>
-      'Hesabınızı, profilinizi, fotoğraflarınızı, ilgi alanlarınızı, eşleşmelerinizi, mesajlarınızı, ayarlarınızı, onaylarınızı ve abonelik geçmişinizi içeren özel bir ZIP arşivini şimdi oluşturun. Cihazınızın güvenli paylaşım sayfasıyla kaydedin.';
+  String get settings_privacy_download_body => 'Hesabınızı, profilinizi, fotoğraflarınızı, ilgi alanlarınızı, eşleşmelerinizi, mesajlarınızı, ayarlarınızı, onaylarınızı ve abonelik geçmişinizi içeren özel bir ZIP arşivini şimdi oluşturun. Cihazınızın güvenli paylaşım sayfasıyla kaydedin.';
 
   @override
   String get settings_privacy_download_btn => 'Güvenli arşiv oluştur';
@@ -2030,19 +1930,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settings_privacy_download_label => 'Verilerimi indir';
 
   @override
-  String get settings_privacy_download_sub =>
-      'Silarah verilerinizin makine tarafından okunabilir bir kopyasını kaydedin';
+  String get settings_privacy_download_sub => 'Silarah verilerinizin makine tarafından okunabilir bir kopyasını kaydedin';
 
   @override
-  String get settings_privacy_export_body =>
-      'Özel arşiviniz hazır. Güvenle kaydetmek için paylaşım sayfasını kullanın.';
+  String get settings_privacy_export_body => 'Özel arşiviniz hazır. Güvenle kaydetmek için paylaşım sayfasını kullanın.';
 
   @override
   String get settings_privacy_export_btn_close => 'Anlaşıldı';
 
   @override
-  String get settings_privacy_export_subbody =>
-      'Bu arşiv özel mesajlar ve iletişim bilgileri içerebilir. Güvenle saklayın ve yalnızca güvendiğiniz kişilerle paylaşın.';
+  String get settings_privacy_export_subbody => 'Bu arşiv özel mesajlar ve iletişim bilgileri içerebilir. Güvenle saklayın ve yalnızca güvendiğiniz kişilerle paylaşın.';
 
   @override
   String get settings_privacy_export_title => 'Arşiv hazır';
@@ -2051,8 +1948,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settings_privacy_online_label => 'ÇEVRİMİÇİ DURUM';
 
   @override
-  String get settings_privacy_online_sub =>
-      'En son ne zaman aktif olduğunuzu gösterin';
+  String get settings_privacy_online_sub => 'En son ne zaman aktif olduğunuzu gösterin';
 
   @override
   String get settings_privacy_pause_label => 'PROFİLİ DURAKLAT';
@@ -2061,8 +1957,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settings_privacy_pause_sub => 'Profilinizi aramadan gizleyin';
 
   @override
-  String get settings_privacy_pause_warning =>
-      'Profiliniz gizlendi. Kimse seni bulamaz.';
+  String get settings_privacy_pause_warning => 'Profiliniz gizlendi. Kimse seni bulamaz.';
 
   @override
   String get settings_privacy_photo_label => 'FOTOĞRAF GÖRÜNÜRLÜĞÜ';
@@ -2077,8 +1972,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settings_privacy_visibility_label => 'PROFİLİMİ KİMLER GÖREBİLİR';
 
   @override
-  String get settings_privacy_visibility_sub =>
-      'Profilinize kimlerin göz atabileceğini kontrol eder';
+  String get settings_privacy_visibility_sub => 'Profilinize kimlerin göz atabileceğini kontrol eder';
 
   @override
   String get settings_privacy_visibility_subscribers => 'Yalnızca aboneler';
@@ -2123,8 +2017,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settings_section_safety => 'Emniyet';
 
   @override
-  String get settings_support_body =>
-      'Her türlü soru, endişe veya geri bildirim için:';
+  String get settings_support_body => 'Her türlü soru, endişe veya geri bildirim için:';
 
   @override
   String get settings_support_btn_close => 'Kapalı';
@@ -2133,8 +2026,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settings_support_contact => 'Destek Ekibiyle İletişime Geçin';
 
   @override
-  String get settings_support_note =>
-      '48 saat içinde yanıt vermeyi hedefliyoruz.';
+  String get settings_support_note => '48 saat içinde yanıt vermeyi hedefliyoruz.';
 
   @override
   String get settings_title => 'Ayarlar';
@@ -2146,8 +2038,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get splash_button_signIn => 'Oturum aç';
 
   @override
-  String get splash_intention_subtitle =>
-      'Özel tanışmalar, özenle değerlendirilen uyum ve aileyi gözeten bağlar.';
+  String get splash_intention_subtitle => 'Özel tanışmalar, özenle değerlendirilen uyum ve aileyi gözeten bağlar.';
 
   @override
   String get splash_intention_title => 'Evliliğe, niyetle yaklaşın.';
@@ -2159,19 +2050,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get splash_referral_hint => 'örneğin MİTHAQXX';
 
   @override
-  String get splash_referral_invalid =>
-      'Lütfen 6 karakterlik geçerli bir kod girin.';
+  String get splash_referral_invalid => 'Lütfen 6 karakterlik geçerli bir kod girin.';
 
   @override
   String get splash_referral_question => 'Referans kodunuz var mı?';
 
   @override
-  String get splash_referral_saved =>
-      'Tavsiye kodu kaydedildi! Giriş yaptıktan sonra uygulanacaktır.';
+  String get splash_referral_saved => 'Tavsiye kodu kaydedildi! Giriş yaptıktan sonra uygulanacaktır.';
 
   @override
-  String get splash_referral_subtitle =>
-      'Bir arkadaşınız sizi Silarah\'a davet ettiyse 6 karakterli tavsiye kodunu aşağıya girin.';
+  String get splash_referral_subtitle => 'Bir arkadaşınız sizi Silarah\'a davet ettiyse 6 karakterli tavsiye kodunu aşağıya girin.';
 
   @override
   String get splash_referral_title => 'Referans Kodunu Girin';
@@ -2190,26 +2078,22 @@ class AppLocalizationsTr extends AppLocalizations {
   String get subscription_label_bestValue => 'En İyi Değer';
 
   @override
-  String get subscription_subtitle =>
-      'Kadınlar ücretsiz mesaj atar. Erkekler bağlanmak için abone olurlar.';
+  String get subscription_subtitle => 'Kadınlar ücretsiz mesaj atar. Erkekler bağlanmak için abone olurlar.';
 
   @override
   String get subscription_title => 'Silarah kilidini açın';
 
   @override
-  String get startup_connectivity_preparing_title =>
-      'Özel alanınız hazırlanıyor';
+  String get startup_connectivity_preparing_title => 'Özel alanınız hazırlanıyor';
 
   @override
-  String get startup_connectivity_preparing_body =>
-      'Silarah ile güvenli bağlantı kuruluyor.';
+  String get startup_connectivity_preparing_body => 'Silarah ile güvenli bağlantı kuruluyor.';
 
   @override
   String get startup_connectivity_offline_title => 'Bağlantı kullanılamıyor';
 
   @override
-  String get startup_connectivity_offline_body =>
-      'Silarah\'taki yeriniz güvende. Ağ geri döner dönmez devam edeceğiz.';
+  String get startup_connectivity_offline_body => 'Silarah\'taki yeriniz güvende. Ağ geri döner dönmez devam edeceğiz.';
 
   @override
   String get startup_connectivity_verifying => 'BAĞLANTI DOĞRULANIYOR';
@@ -2239,15 +2123,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settings_notify_profileViews => 'Profil görüntülemeleri';
 
   @override
-  String get settings_notify_profileViewsSub =>
-      'Birisi profilinizi açtığında özel bildirim';
+  String get settings_notify_profileViewsSub => 'Birisi profilinizi açtığında özel bildirim';
 
   @override
   String get settings_notify_profileLive => 'Profil yayına alındı';
 
   @override
-  String get settings_notify_profileLiveSub =>
-      'Profiliniz görünür olduğunda onay';
+  String get settings_notify_profileLiveSub => 'Profiliniz görünür olduğunda onay';
 
   @override
   String get settings_appearance => 'Görünüm';
@@ -2262,30 +2144,25 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settings_grievanceOfficer => 'Şikâyet Sorumlusu';
 
   @override
-  String get settings_grievanceResponse =>
-      '24 saat içinde alındı onayı; çoğu şikâyet 7 gün içinde çözülür';
+  String get settings_grievanceResponse => '24 saat içinde alındı onayı; çoğu şikâyet 7 gün içinde çözülür';
 
   @override
-  String get settings_grievanceIndiaNotice =>
-      'Hindistan\'daki şikâyet işlemleri, değiştirildiği şekliyle Bilgi Teknolojileri (Aracı Kuruluş Yönergeleri ve Dijital Medya Etik Kodu) Kurallarına tabidir. Acil yasa dışı veya mahrem içerik şikâyetlerinde daha kısa yasal süreler uygulanır.';
+  String get settings_grievanceIndiaNotice => 'Hindistan\'daki şikâyet işlemleri, değiştirildiği şekliyle Bilgi Teknolojileri (Aracı Kuruluş Yönergeleri ve Dijital Medya Etik Kodu) Kurallarına tabidir. Acil yasa dışı veya mahrem içerik şikâyetlerinde daha kısa yasal süreler uygulanır.';
 
   @override
   String get settings_managePhotoRequests => 'Fotoğraf isteklerini yönet';
 
   @override
-  String get settings_managePhotoRequestsSub =>
-      'Erişimi onaylayın, istekleri reddedin veya paylaşımı kaldırın';
+  String get settings_managePhotoRequestsSub => 'Erişimi onaylayın, istekleri reddedin veya paylaşımı kaldırın';
 
   @override
   String get settings_theme_chooseTitle => 'Atmosferini seç';
 
   @override
-  String get settings_theme_chooseSubtitle =>
-      'Yalnızca bir renk filtresi değil, eksiksiz bir görsel kimlik. Tüm yüzeyler, alanlar ve sistem kontrolleri birlikte değişir.';
+  String get settings_theme_chooseSubtitle => 'Yalnızca bir renk filtresi değil, eksiksiz bir görsel kimlik. Tüm yüzeyler, alanlar ve sistem kontrolleri birlikte değişir.';
 
   @override
-  String get settings_theme_applied =>
-      'Anında uygulandı · bu cihaza kaydedildi';
+  String get settings_theme_applied => 'Anında uygulandı · bu cihaza kaydedildi';
 
   @override
   String get settings_reportPending => 'İnceleme bekliyor';
@@ -2300,8 +2177,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get legal_document_community => 'Topluluk Kuralları';
 
   @override
-  String get legal_specialCategoryConsent =>
-      'Uyumluluk eşleştirmesi için Silarah’ın dini bilgilerimi (mezhep, namaz uygulaması ve İslami kimlik) işlemesine açıkça izin veriyorum. Sözleşmeli hizmet sağlayıcılar bu bilgileri yalnızca Silarah’ı işletmek için kullanır; davranışsal reklamcılık için kullanmaz.';
+  String get legal_specialCategoryConsent => 'Uyumluluk eşleştirmesi için Silarah’ın dini bilgilerimi (mezhep, namaz uygulaması ve İslami kimlik) işlemesine açıkça izin veriyorum. Sözleşmeli hizmet sağlayıcılar bu bilgileri yalnızca Silarah’ı işletmek için kullanır; davranışsal reklamcılık için kullanmaz.';
 
   @override
   String get onboarding_complexion_fair => 'Açık';
@@ -2343,37 +2219,31 @@ class AppLocalizationsTr extends AppLocalizations {
   String get onboarding_label_stateRegion => 'Eyalet / Bölge';
 
   @override
-  String get onboarding_specialNeeds_privacy =>
-      'Yalnızca karşılıklı ilgi sonrasında paylaşılır.';
+  String get onboarding_specialNeeds_privacy => 'Yalnızca karşılıklı ilgi sonrasında paylaşılır.';
 
   @override
   String get settings_theme_blackWhite => 'Siyah ve Beyaz';
 
   @override
-  String get settings_theme_blackWhiteDesc =>
-      'Saf beyaz, mutlak siyah, renksiz';
+  String get settings_theme_blackWhiteDesc => 'Saf beyaz, mutlak siyah, renksiz';
 
   @override
   String get settings_theme_oled => 'OLED Gece';
 
   @override
-  String get settings_theme_oledDesc =>
-      'OLED ekranlar için ayarlanmış gerçek siyah';
+  String get settings_theme_oledDesc => 'OLED ekranlar için ayarlanmış gerçek siyah';
 
   @override
   String get settings_theme_ivory => 'Fildişi ve Zümrüt';
 
   @override
-  String get settings_theme_ivoryDesc =>
-      'Sıcak fildişi, derin zümrüt ve antik altın';
+  String get settings_theme_ivoryDesc => 'Sıcak fildişi, derin zümrüt ve antik altın';
 
   @override
-  String get settings_guardian_backendRequired =>
-      'Veli ayarları için güvenli bağlantı gerekir.';
+  String get settings_guardian_backendRequired => 'Veli ayarları için güvenli bağlantı gerekir.';
 
   @override
-  String get settings_guardian_saveError =>
-      'Veli ayarları kaydedilemedi. Lütfen tekrar deneyin.';
+  String get settings_guardian_saveError => 'Veli ayarları kaydedilemedi. Lütfen tekrar deneyin.';
 
   @override
   String get common_openSettings => 'Ayarları Aç';
@@ -2385,19 +2255,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get media_cameraUnavailable => 'Kamera kullanılamıyor';
 
   @override
-  String get media_cameraAccessBody =>
-      'Ayarlardan kamera erişimine izin verin, ardından net bir fotoğraf çekmek için geri dönün.';
+  String get media_cameraAccessBody => 'Ayarlardan kamera erişimine izin verin, ardından net bir fotoğraf çekmek için geri dönün.';
 
   @override
-  String get media_cameraUnavailableBody =>
-      'Kamera açılamadı. Lütfen tekrar deneyin.';
+  String get media_cameraUnavailableBody => 'Kamera açılamadı. Lütfen tekrar deneyin.';
 
   @override
   String get media_photoAccessOff => 'Fotoğraf erişimi kapalı';
 
   @override
-  String get media_photoAccessBody =>
-      'Ayarlardan kamera veya fotoğraf erişimine izin verin, ardından fotoğraf eklemek için geri dönün.';
+  String get media_photoAccessBody => 'Ayarlardan kamera veya fotoğraf erişimine izin verin, ardından fotoğraf eklemek için geri dönün.';
 
   @override
   String get chat_searchHint => 'Mesajlarda ara';
@@ -2406,15 +2273,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get chat_noConversationsFound => 'Konuşma bulunamadı';
 
   @override
-  String get chat_noConversationsFoundBody =>
-      'Başka bir ad deneyin veya aramayı temizleyin.';
+  String get chat_noConversationsFoundBody => 'Başka bir ad deneyin veya aramayı temizleyin.';
 
   @override
   String get chat_noConversationsYet => 'Henüz konuşma yok';
 
   @override
-  String get chat_noConversationsYetBody =>
-      'Bir konuşma başlatmak için bir ilgiyi kabul edin veya ilginizin kabul edilmesini bekleyin.';
+  String get chat_noConversationsYetBody => 'Bir konuşma başlatmak için bir ilgiyi kabul edin veya ilginizin kabul edilmesini bekleyin.';
 
   @override
   String get referral_title => 'Arkadaşını Davet Et';
@@ -2426,8 +2291,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get referral_heading => 'Haberi yay, Premium kazan!';
 
   @override
-  String get referral_body =>
-      'Uygun olan herhangi bir arkadaşını SILARAH’a davet et. Her hesap ömür boyu bir kez 3 günlük referans Premium ödülü alabilir. Sen ödülünü aldıysan arkadaşın yine de kendi ödülünü alabilir.';
+  String get referral_body => 'Uygun olan herhangi bir arkadaşını Silarah’a davet et. Her hesap ömür boyu bir kez 3 günlük referans Premium ödülü alabilir. Sen ödülünü aldıysan arkadaşın yine de kendi ödülünü alabilir.';
 
   @override
   String get referral_premiumActiveTitle => 'Referans Premium etkin';
@@ -2456,12 +2320,10 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get referral_premiumNoPayment =>
-      'Tüm Premium özellikler açık. Ödeme alınmadı ve bu ödül otomatik yenilenmez.';
+  String get referral_premiumNoPayment => 'Tüm Premium özellikler açık. Ödeme alınmadı ve bu ödül otomatik yenilenmez.';
 
   @override
-  String get referral_premiumPlansAfter =>
-      'Kalan ücretsiz süreniz boşa gitmesin diye abonelik planları ödülünüz bittikten sonra açılır.';
+  String get referral_premiumPlansAfter => 'Kalan ücretsiz süreniz boşa gitmesin diye abonelik planları ödülünüz bittikten sonra açılır.';
 
   @override
   String get referral_premiumBackToProfile => 'Profile dön';
@@ -2499,11 +2361,11 @@ class AppLocalizationsTr extends AppLocalizations {
   String get referral_copied => 'Davet kodu kopyalandı!';
 
   @override
-  String get referral_shareSubject => 'SILARAH’a Katıl';
+  String get referral_shareSubject => 'Silarah’a Katıl';
 
   @override
   String referral_shareText(String code) {
-    return 'Güvenilir Müslüman evlilik uygulaması SILARAH’a katıl. Davet kodumu kullan: $code\n\nİndir: https://silarah.com/r/$code';
+    return 'Güvenilir Müslüman evlilik uygulaması Silarah’a katıl. Davet kodumu kullan: $code\n\nİndir: https://silarah.com/r/$code';
   }
 
   @override
@@ -2638,8 +2500,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get ui_onePhotoUnlock =>
-      'İkiniz de ilgilendiğinizi ifade ettiğinizde 1 fotoğrafın kilidi otomatik olarak açılacaktır.';
+  String get ui_onePhotoUnlock => 'İkiniz de ilgilendiğinizi ifade ettiğinizde 1 fotoğrafın kilidi otomatik olarak açılacaktır.';
 
   @override
   String ui_manyPhotosUnlock(int count) {
@@ -2647,8 +2508,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get ui_askOnePhoto =>
-      '1 fotoğrafı görüntülemek için sahibinden izin isteyin.';
+  String get ui_askOnePhoto => '1 fotoğrafı görüntülemek için sahibinden izin isteyin.';
 
   @override
   String ui_askManyPhotos(int count) {
@@ -2694,15 +2554,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settings_notify_compatibleProfiles => 'Uyumlu profil bildirimleri';
 
   @override
-  String get settings_notify_compatibleProfilesSub =>
-      'Boş Keşfet akışına yeni sonuçlar geldiğinde';
+  String get settings_notify_compatibleProfilesSub => 'Boş Keşfet akışına yeni sonuçlar geldiğinde';
 
   @override
   String get settings_notify_discoveryDigest => 'Keşfet özeti';
 
   @override
-  String get settings_notify_digestHelp =>
-      'İsteğe bağlı özetler; boş akışa gelen yeni sonuç bildirimleri anında kalır.';
+  String get settings_notify_digestHelp => 'İsteğe bağlı özetler; boş akışa gelen yeni sonuç bildirimleri anında kalır.';
 
   @override
   String get settings_notify_digestOff => 'Kapalı';

@@ -452,11 +452,11 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   Future<void> _handleShare() async {
     HapticFeedback.selectionClick();
     // TD4: Copy a share link to clipboard
-    final shareText = 'Check out ${widget.profile.firstName} on SILARAH — '
+    final shareText = 'Check out ${widget.profile.firstName} on Silarah — '
         'silarah.com/profile/${widget.profile.id}';
     await PlatformActionService.instance.shareText(
       text: shareText,
-      subject: 'SILARAH profile',
+      subject: 'Silarah profile',
     );
   }
 

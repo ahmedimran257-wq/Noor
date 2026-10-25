@@ -2430,7 +2430,7 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get referral_body =>
-      'SILARAH-এ যেকোনো যোগ্য বন্ধুকে আমন্ত্রণ জানান। প্রতিটি অ্যাকাউন্ট জীবনে একবার ৩ দিনের রেফারেল প্রিমিয়াম পেতে পারে। আপনি নিজের পুরস্কার পেয়ে থাকলেও আপনার বন্ধু তার পুরস্কার পেতে পারবেন।';
+      'Silarah-এ যেকোনো যোগ্য বন্ধুকে আমন্ত্রণ জানান। প্রতিটি অ্যাকাউন্ট জীবনে একবার ৩ দিনের রেফারেল প্রিমিয়াম পেতে পারে। আপনি নিজের পুরস্কার পেয়ে থাকলেও আপনার বন্ধু তার পুরস্কার পেতে পারবেন।';
 
   @override
   String get referral_premiumActiveTitle => 'রেফারেল প্রিমিয়াম সক্রিয়';
@@ -2503,11 +2503,11 @@ class AppLocalizationsBn extends AppLocalizations {
   String get referral_copied => 'রেফারেল কোড কপি হয়েছে!';
 
   @override
-  String get referral_shareSubject => 'SILARAH-এ যোগ দিন';
+  String get referral_shareSubject => 'Silarah-এ যোগ দিন';
 
   @override
   String referral_shareText(String code) {
-    return 'বিশ্বস্ত মুসলিম বিবাহ অ্যাপ SILARAH-এ যোগ দিন। আমার রেফারেল কোড ব্যবহার করুন: $code\n\nডাউনলোড: https://silarah.com/r/$code';
+    return 'বিশ্বস্ত মুসলিম বিবাহ অ্যাপ Silarah-এ যোগ দিন। আমার রেফারেল কোড ব্যবহার করুন: $code\n\nডাউনলোড: https://silarah.com/r/$code';
   }
 
   @override

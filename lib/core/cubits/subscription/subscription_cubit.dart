@@ -159,7 +159,7 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
           info,
           generation: generation,
           isLoading: false,
-          successMessage: 'JazakAllah khair - SILARAH Premium is now active!',
+          successMessage: 'JazakAllah khair - Silarah Premium is now active!',
         );
         return _isCurrentSession(generation) && state.isSubscribed;
       }
@@ -172,7 +172,7 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
             generation: generation,
             isLoading: false,
             successMessage:
-                'Your existing SILARAH Premium subscription is active.',
+                'Your existing Silarah Premium subscription is active.',
           );
           return _isCurrentSession(generation) && state.isSubscribed;
         }

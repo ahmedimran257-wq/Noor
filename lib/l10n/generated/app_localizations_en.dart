@@ -2422,7 +2422,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get referral_body =>
-      'Invite any eligible friend to SILARAH. Each account can claim one 3-day referral Premium reward in its lifetime. If you already claimed yours, your friend can still claim theirs.';
+      'Invite any eligible friend to Silarah. Each account can claim one 3-day referral Premium reward in its lifetime. If you already claimed yours, your friend can still claim theirs.';
 
   @override
   String get referral_premiumActiveTitle => 'Referral Premium is active';
@@ -2495,11 +2495,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get referral_copied => 'Referral code copied to clipboard!';
 
   @override
-  String get referral_shareSubject => 'Join SILARAH';
+  String get referral_shareSubject => 'Join Silarah';
 
   @override
   String referral_shareText(String code) {
-    return 'Join SILARAH—the trusted Muslim matrimony app. Use my referral code: $code\n\nDownload: https://silarah.com/r/$code';
+    return 'Join Silarah—the trusted Muslim matrimony app. Use my referral code: $code\n\nDownload: https://silarah.com/r/$code';
   }
 
   @override

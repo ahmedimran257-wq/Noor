@@ -269,7 +269,7 @@ class _Step2 extends StatelessWidget {
   final VoidCallback onContinue;
 
   static const _reasons = [
-    'Found my match on SILARAH',
+    'Found my match on Silarah',
     'Found match elsewhere',
     'Taking a break',
     'Privacy concerns',
@@ -288,7 +288,7 @@ class _Step2 extends StatelessWidget {
           UiText(context.uiCopy('Why are you leaving?'),
               style: AppTypography.screenTitle.copyWith(fontSize: 22)),
           const SizedBox(height: AppDimensions.space8),
-          UiText('This helps us improve SILARAH for others.',
+          UiText('This helps us improve Silarah for others.',
               style: AppTypography.bodyMuted),
           const SizedBox(height: AppDimensions.space24),
           Container(

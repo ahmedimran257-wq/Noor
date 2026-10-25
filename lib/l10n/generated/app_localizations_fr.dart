@@ -2448,7 +2448,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get referral_body =>
-      'Invitez toute personne éligible sur SILARAH. Chaque compte peut recevoir une seule récompense de parrainage Premium de 3 jours. Si vous avez déjà reçu la vôtre, votre ami peut toujours recevoir la sienne.';
+      'Invitez toute personne éligible sur Silarah. Chaque compte peut recevoir une seule récompense de parrainage Premium de 3 jours. Si vous avez déjà reçu la vôtre, votre ami peut toujours recevoir la sienne.';
 
   @override
   String get referral_premiumActiveTitle =>
@@ -2522,11 +2522,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get referral_copied => 'Code de parrainage copié !';
 
   @override
-  String get referral_shareSubject => 'Rejoignez SILARAH';
+  String get referral_shareSubject => 'Rejoignez Silarah';
 
   @override
   String referral_shareText(String code) {
-    return 'Rejoignez SILARAH, l’application matrimoniale musulmane de confiance. Utilisez mon code : $code\n\nTéléchargement : https://silarah.com/r/$code';
+    return 'Rejoignez Silarah, l’application matrimoniale musulmane de confiance. Utilisez mon code : $code\n\nTéléchargement : https://silarah.com/r/$code';
   }
 
   @override

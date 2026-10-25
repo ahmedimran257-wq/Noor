@@ -4545,7 +4545,7 @@ abstract class AppLocalizations {
   /// No description provided for @referral_body.
   ///
   /// In en, this message translates to:
-  /// **'Invite any eligible friend to SILARAH. Each account can claim one 3-day referral Premium reward in its lifetime. If you already claimed yours, your friend can still claim theirs.'**
+  /// **'Invite any eligible friend to Silarah. Each account can claim one 3-day referral Premium reward in its lifetime. If you already claimed yours, your friend can still claim theirs.'**
   String get referral_body;
 
   /// No description provided for @referral_premiumActiveTitle.
@@ -4665,13 +4665,13 @@ abstract class AppLocalizations {
   /// No description provided for @referral_shareSubject.
   ///
   /// In en, this message translates to:
-  /// **'Join SILARAH'**
+  /// **'Join Silarah'**
   String get referral_shareSubject;
 
   /// No description provided for @referral_shareText.
   ///
   /// In en, this message translates to:
-  /// **'Join SILARAH—the trusted Muslim matrimony app. Use my referral code: {code}\n\nDownload: https://silarah.com/r/{code}'**
+  /// **'Join Silarah—the trusted Muslim matrimony app. Use my referral code: {code}\n\nDownload: https://silarah.com/r/{code}'**
   String referral_shareText(String code);
 
   /// No description provided for @profile_share.

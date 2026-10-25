@@ -91,7 +91,7 @@ class ReferralService {
   /// Gets the referral share text with the user's code.
   Future<String> getShareText() async {
     final code = await getOrCreateCode();
-    return 'Join SILARAH — the most trusted Muslim matrimony app. '
+    return 'Join Silarah — the most trusted Muslim matrimony app. '
         'Use my referral code: $code\n\n'
         'Download: https://silarah.com/r/$code';
   }

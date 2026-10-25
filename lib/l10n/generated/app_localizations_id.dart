@@ -12,12 +12,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get guide_optional_details => 'Detail tambahan (opsional)';
 
   @override
-  String get guide_optional_details_body =>
-      'Anda dapat melengkapi detail ini nanti melalui profil Anda.';
+  String get guide_optional_details_body => 'Anda dapat melengkapi detail ini nanti melalui profil Anda.';
 
   @override
-  String get guide_profile_ownership =>
-      'Profil ini menjelaskan orang yang ingin menikah. Wali terpisah dapat diundang nanti untuk mengawasi percakapan.';
+  String get guide_profile_ownership => 'Profil ini menjelaskan orang yang ingin menikah. Wali terpisah dapat diundang nanti untuk mengawasi percakapan.';
 
   @override
   String get about_button_later => 'Aku akan melakukannya nanti';
@@ -28,8 +26,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get about_hint_bio_self =>
-      'Gambarkan diri Anda dengan jujur ​​dan bermartabat.';
+  String get about_hint_bio_self => 'Gambarkan diri Anda dengan jujur ​​dan bermartabat.';
 
   @override
   String get about_label_bio_guardian => 'BIO MEREKA';
@@ -81,8 +78,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get auth_label_changeNumber => 'Nomor yang salah? Ubah itu';
 
   @override
-  String get auth_label_enterOtp =>
-      'Masukkan 6 digit kode verifikasi yang dikirimkan ke';
+  String get auth_label_enterOtp => 'Masukkan 6 digit kode verifikasi yang dikirimkan ke';
 
   @override
   String get auth_label_resendCode => 'Kirim ulang kode verifikasi';
@@ -98,12 +94,10 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get auth_label_sentCodeTo =>
-      'Kami mengirimkan kode verifikasi 6 digit ke';
+  String get auth_label_sentCodeTo => 'Kami mengirimkan kode verifikasi 6 digit ke';
 
   @override
-  String get auth_subtitle_verifyOtp =>
-      'Kami akan memverifikasinya dengan kode satu kali.';
+  String get auth_subtitle_verifyOtp => 'Kami akan memverifikasinya dengan kode satu kali.';
 
   @override
   String get auth_title_enterCode => 'Masukkan kode verifikasi Anda';
@@ -124,8 +118,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get background_edu_doctorate => 'Doktor/PhD';
 
   @override
-  String get background_edu_higher_secondary =>
-      'Sekolah Menengah Atas / A-Level';
+  String get background_edu_higher_secondary => 'Sekolah Menengah Atas / A-Level';
 
   @override
   String get background_edu_masters => 'Gelar Master';
@@ -139,8 +132,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get background_edu_subtitle_self =>
-      'Membantu menemukan kecocokan yang kompatibel secara profesional.';
+  String get background_edu_subtitle_self => 'Membantu menemukan kecocokan yang kompatibel secara profesional.';
 
   @override
   String get background_edu_title_guardian => 'Latar belakang mereka';
@@ -161,8 +153,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get background_emp_student => 'Murid';
 
   @override
-  String get background_income_subtitle =>
-      'Banyak orang melewatkan ini — ini sepenuhnya opsional.';
+  String get background_income_subtitle => 'Banyak orang melewatkan ini — ini sepenuhnya opsional.';
 
   @override
   String get background_label_eduLevel => 'TINGKAT PENDIDIKAN';
@@ -191,42 +182,34 @@ class AppLocalizationsId extends AppLocalizations {
   String get background_vis_everyone => 'Tunjukkan braket kepada semua orang';
 
   @override
-  String get background_vis_mutual =>
-      'Tampilkan hanya setelah kepentingan bersama';
+  String get background_vis_mutual => 'Tampilkan hanya setelah kepentingan bersama';
 
   @override
   String get background_vis_private => 'Tetap pribadi';
 
   @override
-  String get ceremony_text_blessing =>
-      'Semoga Allah memberkati ini dengan kebaikan';
+  String get ceremony_text_blessing => 'Semoga Allah memberkati ini dengan kebaikan';
 
   @override
-  String get chat_closure_1 =>
-      'Assalamu alaikum. Setelah refleksi yang matang, saya merasa ini mungkin bukan pasangan yang tepat untuk kami. Saya dengan tulus mendoakan yang terbaik untuk Anda dan berdoa semoga Allah memberkati Anda dengan pasangan yang luar biasa. Jazakillah khair.';
+  String get chat_closure_1 => 'Assalamu alaikum. Setelah refleksi yang matang, saya merasa ini mungkin bukan pasangan yang tepat untuk kami. Saya dengan tulus mendoakan yang terbaik untuk Anda dan berdoa semoga Allah memberkati Anda dengan pasangan yang luar biasa. Jazakillah khair.';
 
   @override
-  String get chat_closure_2 =>
-      'Assalamu alaikum. Saya ingin jujur ​​dan menghormati Anda. Menurutku kita bukan pasangan yang cocok, tapi aku berdoa semoga Allah membukakan pintu yang lebih baik untukmu. Semoga Anda mendapatkan yang terbaik.';
+  String get chat_closure_2 => 'Assalamu alaikum. Saya ingin jujur ​​dan menghormati Anda. Menurutku kita bukan pasangan yang cocok, tapi aku berdoa semoga Allah membukakan pintu yang lebih baik untukmu. Semoga Anda mendapatkan yang terbaik.';
 
   @override
-  String get chat_closure_3 =>
-      'Assalamu alaikum. Setelah mempertimbangkan dengan tulus, saya merasa kami mungkin tidak cocok. Saya harap Anda menemukan seseorang yang benar-benar tepat untuk Anda. Semoga Allah memudahkanmu. JazakAllah khair atas waktunya.';
+  String get chat_closure_3 => 'Assalamu alaikum. Setelah mempertimbangkan dengan tulus, saya merasa kami mungkin tidak cocok. Saya harap Anda menemukan seseorang yang benar-benar tepat untuk Anda. Semoga Allah memudahkanmu. JazakAllah khair atas waktunya.';
 
   @override
-  String get chat_closure_4 =>
-      'Assalamu alaikum. Saya telah merenungkan percakapan kami dan merasa yang terbaik adalah menutup pertandingan ini saat ini. Saya hanya menghormati Anda dan saya berdoa agar Allah memberkati Anda dengan yang terbaik.';
+  String get chat_closure_4 => 'Assalamu alaikum. Saya telah merenungkan percakapan kami dan merasa yang terbaik adalah menutup pertandingan ini saat ini. Saya hanya menghormati Anda dan saya berdoa agar Allah memberkati Anda dengan yang terbaik.';
 
   @override
-  String get chat_closure_5 =>
-      'Assalamu alaikum. Aku ingin bersikap transparan padamu daripada menghilang. Saya tidak melihat kemajuan ini lebih jauh, namun saya sangat menghargai waktu Anda dan mendoakan Anda bahagia. Semoga Allah memberkati Anda.';
+  String get chat_closure_5 => 'Assalamu alaikum. Aku ingin bersikap transparan padamu daripada menghilang. Saya tidak melihat kemajuan ini lebih jauh, namun saya sangat menghargai waktu Anda dan mendoakan Anda bahagia. Semoga Allah memberkati Anda.';
 
   @override
   String get chat_endMatch_button => 'Kirim & Akhiri Pertandingan';
 
   @override
-  String get chat_endMatch_subtitle =>
-      'Pilih pesan yang penuh hormat untuk menutup percakapan ini. Orang lain akan diberitahu.';
+  String get chat_endMatch_subtitle => 'Pilih pesan yang penuh hormat untuk menutup percakapan ini. Orang lain akan diberitahu.';
 
   @override
   String get chat_endMatch_title => 'Akhiri pertandingan ini';
@@ -237,24 +220,19 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get chat_label_subscribeToMessage =>
-      'Berlangganan untuk membuka kunci perpesanan. Wanita selalu mengirim pesan gratis di Silarah.';
+  String get chat_label_subscribeToMessage => 'Berlangganan untuk membuka kunci perpesanan. Wanita selalu mengirim pesan gratis di Silarah.';
 
   @override
-  String get chat_matchClosed_banner =>
-      'Pertandingan ini telah ditutup dengan hormat.';
+  String get chat_matchClosed_banner => 'Pertandingan ini telah ditutup dengan hormat.';
 
   @override
-  String get chat_opener_1 =>
-      'Assalamu Alaikum! Saya menemukan profil Anda dan benar-benar terkesan. Bolehkah saya memperkenalkan diri?';
+  String get chat_opener_1 => 'Assalamu Alaikum! Saya menemukan profil Anda dan benar-benar terkesan. Bolehkah saya memperkenalkan diri?';
 
   @override
-  String get chat_opener_2 =>
-      'Bismillah. Profil Anda menarik perhatian saya. Saya ingin mengetahui lebih banyak tentang Anda.';
+  String get chat_opener_2 => 'Bismillah. Profil Anda menarik perhatian saya. Saya ingin mengetahui lebih banyak tentang Anda.';
 
   @override
-  String get chat_opener_3 =>
-      'Assalamu alaikum. Saya yakin kami memiliki nilai-nilai yang sama. Apakah Anda terbuka untuk mengenal satu sama lain?';
+  String get chat_opener_3 => 'Assalamu alaikum. Saya yakin kami memiliki nilai-nilai yang sama. Apakah Anda terbuka untuk mengenal satu sama lain?';
 
   @override
   String get chat_placeholder_typeMessage => 'Ketik pesan…';
@@ -287,8 +265,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get common_error_generic => 'Ada yang tidak beres. Silakan coba lagi.';
 
   @override
-  String get common_error_noInternet =>
-      'Tidak ada koneksi internet. Silakan periksa koneksi Anda.';
+  String get common_error_noInternet => 'Tidak ada koneksi internet. Silakan periksa koneksi Anda.';
 
   @override
   String get common_label_optional => 'Opsional';
@@ -318,8 +295,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get copy_prayer_self => 'Apakah Anda berdoa lima kali sehari?';
 
   @override
-  String get copy_prayer_sibling =>
-      'Apakah saudaramu shalat lima waktu sehari?';
+  String get copy_prayer_sibling => 'Apakah saudaramu shalat lima waktu sehari?';
 
   @override
   String get deleteAccount_title => 'Hapus Akun';
@@ -341,30 +317,25 @@ class AppLocalizationsId extends AppLocalizations {
   String get discovery_completeness_button => 'Profil Lengkap';
 
   @override
-  String get discovery_completeness_subtitle =>
-      'Profil di atas 40% mendapatkan minat 3× lebih banyak.\nLengkapi profil Anda untuk mulai menjelajah.';
+  String get discovery_completeness_subtitle => 'Profil di atas 40% mendapatkan minat 3× lebih banyak.\nLengkapi profil Anda untuk mulai menjelajah.';
 
   @override
   String get discovery_completeness_title => 'Lengkapi Profil Anda';
 
   @override
-  String get discovery_empty_subtitle =>
-      'Coba perluas filter pencarian Anda\natau periksa kembali besok.';
+  String get discovery_empty_subtitle => 'Coba perluas filter pencarian Anda\natau periksa kembali besok.';
 
   @override
-  String get discovery_empty_title =>
-      'Anda telah melihat semua orang di sekitar';
+  String get discovery_empty_title => 'Anda telah melihat semua orang di sekitar';
 
   @override
-  String get discovery_handoff_interest_subtitle =>
-      'Profil dengan permintaan aktif berpindah ke Minat selama Anda menunggu atau merespons.';
+  String get discovery_handoff_interest_subtitle => 'Profil dengan permintaan aktif berpindah ke Minat selama Anda menunggu atau merespons.';
 
   @override
   String get discovery_handoff_interest_title => 'Minat Anda sedang diproses';
 
   @override
-  String get discovery_handoff_match_subtitle =>
-      'Profil yang cocok berpindah ke Chat sehingga tidak ditampilkan lagi di Temukan.';
+  String get discovery_handoff_match_subtitle => 'Profil yang cocok berpindah ke Chat sehingga tidak ditampilkan lagi di Temukan.';
 
   @override
   String get discovery_handoff_match_title => 'Koneksi Anda sudah siap';
@@ -382,8 +353,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get discovery_label_interestSent => 'Bunga Terkirim ✓';
 
   @override
-  String get discovery_label_outsidePrefs =>
-      'Seseorang yang mungkin terhubung dengan Anda';
+  String get discovery_label_outsidePrefs => 'Seseorang yang mungkin terhubung dengan Anda';
 
   @override
   String discovery_label_profilesRemaining(int count) {
@@ -394,8 +364,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get discovery_limit_button => 'Tingkatkan Sekarang';
 
   @override
-  String get discovery_limit_subtitle =>
-      'Anda telah menjelajahi 15 profil hari ini.\nTingkatkan untuk membuka kunci penjelajahan tanpa batas.';
+  String get discovery_limit_subtitle => 'Anda telah menjelajahi 15 profil hari ini.\nTingkatkan untuk membuka kunci penjelajahan tanpa batas.';
 
   @override
   String get discovery_limit_title => 'Batas harian tercapai';
@@ -406,8 +375,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get discovery_wildcard_label =>
-      'Seseorang yang mungkin terhubung dengan Anda';
+  String get discovery_wildcard_label => 'Seseorang yang mungkin terhubung dengan Anda';
 
   @override
   String get family_children_no => 'TIDAK';
@@ -428,8 +396,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get family_label_parents => 'STATUS PERKAWINAN ORANG TUA';
 
   @override
-  String get family_label_polygamy_female_self =>
-      'PENERIMAAN POLIGAMI (Opsional)';
+  String get family_label_polygamy_female_self => 'PENERIMAAN POLIGAMI (Opsional)';
 
   @override
   String get family_label_polygamy_male_self => 'STATUS POLIGAMI (Opsional)';
@@ -474,8 +441,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get family_polygamy_female_no => 'TIDAK';
 
   @override
-  String get family_polygamy_female_prefer_not =>
-      'Memilih untuk tidak mengatakannya';
+  String get family_polygamy_female_prefer_not => 'Memilih untuk tidak mengatakannya';
 
   @override
   String family_polygamy_female_sub_guardian(Object relation) {
@@ -483,8 +449,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get family_polygamy_female_sub_self =>
-      'Apakah Anda mempertimbangkan untuk menjadi rekan istri?';
+  String get family_polygamy_female_sub_self => 'Apakah Anda mempertimbangkan untuk menjadi rekan istri?';
 
   @override
   String get family_polygamy_female_yes => 'Ya';
@@ -495,8 +460,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get family_polygamy_male_sub_self =>
-      'Apakah Anda saat ini sudah menikah dan sedang mencari pasangan tambahan?';
+  String get family_polygamy_male_sub_self => 'Apakah Anda saat ini sudah menikah dan sedang mencari pasangan tambahan?';
 
   @override
   String get family_polygamy_option_first => 'Tidak, ini yang pertama bagiku';
@@ -505,8 +469,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get family_polygamy_option_married => 'Ya, saat ini sudah menikah';
 
   @override
-  String get family_polygamy_option_prefer_not =>
-      'Memilih untuk tidak mengatakannya';
+  String get family_polygamy_option_prefer_not => 'Memilih untuk tidak mengatakannya';
 
   @override
   String get family_prev_divorced => 'Cerai';
@@ -529,8 +492,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get family_relocate_subtitle_self =>
-      'Apakah Anda akan pindah untuk menikah?';
+  String get family_relocate_subtitle_self => 'Apakah Anda akan pindah untuk menikah?';
 
   @override
   String get family_relocate_yes => 'Ya';
@@ -541,8 +503,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get family_subtitle_self =>
-      'Kecocokan keluarga adalah inti dari pernikahan yang langgeng.';
+  String get family_subtitle_self => 'Kecocokan keluarga adalah inti dari pernikahan yang langgeng.';
 
   @override
   String get family_title_guardian => 'Latar belakang keluarga';
@@ -569,8 +530,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get filter_label_motherTongue => 'Bahasa ibu';
 
   @override
-  String get guardian_details_candidate_female =>
-      'Kandidat perempuan • Pesan perempuan gratis';
+  String get guardian_details_candidate_female => 'Kandidat perempuan • Pesan perempuan gratis';
 
   @override
   String get guardian_details_candidate_label => 'MEMBUAT PROFIL UNTUK';
@@ -587,8 +547,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get guardian_details_involvement => 'KETERLIBATAN PENJAGA';
 
   @override
-  String get guardian_details_involvement_subtitle =>
-      'Seberapa besar keterlibatan Anda dalam percakapan?';
+  String get guardian_details_involvement_subtitle => 'Seberapa besar keterlibatan Anda dalam percakapan?';
 
   @override
   String guardian_details_mode_active_sub(Object relation) {
@@ -610,8 +569,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get guardian_details_name_hint => 'Nama lengkap';
 
   @override
-  String get guardian_details_name_subtitle =>
-      'Nama Anda sebagai wali. Ini ditunjukkan pada pertandingan.';
+  String get guardian_details_name_subtitle => 'Nama Anda sebagai wali. Ini ditunjukkan pada pertandingan.';
 
   @override
   String guardian_details_notice(Object relation) {
@@ -625,8 +583,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get guardian_details_select_code => 'Pilih kode negara';
 
   @override
-  String get guardian_details_subtitle =>
-      'Ceritakan kepada kami tentang diri Anda sebagai wali.';
+  String get guardian_details_subtitle => 'Ceritakan kepada kami tentang diri Anda sebagai wali.';
 
   @override
   String get guardian_details_title => 'Detail wali Anda';
@@ -956,42 +913,34 @@ class AppLocalizationsId extends AppLocalizations {
   String get legal_button_continue => 'Melanjutkan';
 
   @override
-  String get legal_checkbox_age =>
-      'Saya mengonfirmasi bahwa saya berusia 18 tahun ke atas';
+  String get legal_checkbox_age => 'Saya mengonfirmasi bahwa saya berusia 18 tahun ke atas';
 
   @override
-  String get legal_checkbox_terms =>
-      'Saya menyetujui Ketentuan Layanan dan Kebijakan Privasi';
+  String get legal_checkbox_terms => 'Saya menyetujui Ketentuan Layanan dan Kebijakan Privasi';
 
   @override
   String get legal_subtitle => 'Silakan baca dan setuju untuk melanjutkan.';
 
   @override
-  String get legal_summary_1 =>
-      'Data Anda dienkripsi dan tidak pernah dijual kepada pihak ketiga.';
+  String get legal_summary_1 => 'Data Anda dienkripsi dan tidak pernah dijual kepada pihak ketiga.';
 
   @override
-  String get legal_summary_2 =>
-      'Setiap foto diperiksa keamanannya, dan tim kami meninjau foto baru.';
+  String get legal_summary_2 => 'Setiap foto diperiksa keamanannya, dan tim kami meninjau foto baru.';
 
   @override
-  String get legal_summary_3 =>
-      'Pelecehan, profil palsu, dan penipuan mengakibatkan pemblokiran permanen.';
+  String get legal_summary_3 => 'Pelecehan, profil palsu, dan penipuan mengakibatkan pemblokiran permanen.';
 
   @override
-  String get legal_summary_4 =>
-      'Platform ini hanya untuk niat pernikahan. Martabat adalah standarnya.';
+  String get legal_summary_4 => 'Platform ini hanya untuk niat pernikahan. Martabat adalah standarnya.';
 
   @override
-  String get legal_summary_5 =>
-      'Anda dapat menghapus akun dan semua data Anda kapan saja.';
+  String get legal_summary_5 => 'Anda dapat menghapus akun dan semua data Anda kapan saja.';
 
   @override
   String get legal_title => 'Sebelum Anda mulai';
 
   @override
-  String get notifications_empty_subtitle =>
-      'Tidak ada pemberitahuan baru saat ini.';
+  String get notifications_empty_subtitle => 'Tidak ada pemberitahuan baru saat ini.';
 
   @override
   String get notifications_empty_title => 'Anda semua terjebak';
@@ -1014,16 +963,13 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get onboarding_basicIdentity_subtitle_guardian =>
-      'Inilah yang akan dilihat orang lain di profil mereka.';
+  String get onboarding_basicIdentity_subtitle_guardian => 'Inilah yang akan dilihat orang lain di profil mereka.';
 
   @override
-  String get onboarding_basicIdentity_subtitle_self =>
-      'Inilah yang akan dilihat orang lain di profil Anda.';
+  String get onboarding_basicIdentity_subtitle_self => 'Inilah yang akan dilihat orang lain di profil Anda.';
 
   @override
-  String get onboarding_basicIdentity_title =>
-      'Ceritakan kepada kami tentang diri Anda';
+  String get onboarding_basicIdentity_title => 'Ceritakan kepada kami tentang diri Anda';
 
   @override
   String onboarding_basicIdentity_title_guardian(String relation) {
@@ -1055,20 +1001,16 @@ class AppLocalizationsId extends AppLocalizations {
   String get onboarding_diet_zabihaStrict => 'Zabiha yang ketat';
 
   @override
-  String get onboarding_error_bioContactInfo =>
-      'Harap hapus informasi kontak dari bio Anda. Detail kontak eksternal tidak diperbolehkan demi keselamatan Anda.';
+  String get onboarding_error_bioContactInfo => 'Harap hapus informasi kontak dari bio Anda. Detail kontak eksternal tidak diperbolehkan demi keselamatan Anda.';
 
   @override
-  String get onboarding_error_multipleFaces =>
-      'Foto grup tidak boleh menjadi foto utama Anda.';
+  String get onboarding_error_multipleFaces => 'Foto grup tidak boleh menjadi foto utama Anda.';
 
   @override
-  String get onboarding_error_noFace =>
-      'Silakan gunakan foto yang wajah Anda terlihat jelas.';
+  String get onboarding_error_noFace => 'Silakan gunakan foto yang wajah Anda terlihat jelas.';
 
   @override
-  String get onboarding_error_under18 =>
-      'Silarah ditujukan untuk mereka yang berusia 18 tahun ke atas. Kami membuat persyaratan ini untuk melindungi semua orang di komunitas kami.';
+  String get onboarding_error_under18 => 'Silarah ditujukan untuk mereka yang berusia 18 tahun ke atas. Kami membuat persyaratan ini untuk melindungi semua orang di komunitas kami.';
 
   @override
   String onboarding_error_under18_guardian(String relation) {
@@ -1076,8 +1018,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get onboarding_error_under18_self =>
-      'Anda harus berusia 18 tahun ke atas untuk menggunakan Silarah. Kami menantikan kedatangan Anda pada saat itu.';
+  String get onboarding_error_under18_self => 'Anda harus berusia 18 tahun ke atas untuk menggunakan Silarah. Kami menantikan kedatangan Anda pada saat itu.';
 
   @override
   String get onboarding_habit_frequently => 'Sering';
@@ -1089,8 +1030,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get onboarding_habit_occasionally => 'Kadang-kadang';
 
   @override
-  String get onboarding_habit_preferNotToSay =>
-      'Memilih untuk tidak mengatakannya';
+  String get onboarding_habit_preferNotToSay => 'Memilih untuk tidak mengatakannya';
 
   @override
   String get onboarding_hijab_always => 'Selalu';
@@ -1102,12 +1042,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get onboarding_hijab_sometimes => 'Kadang-kadang';
 
   @override
-  String get onboarding_hint_bio =>
-      'Gambarkan diri Anda dengan jujur ​​dan bermartabat.';
+  String get onboarding_hint_bio => 'Gambarkan diri Anda dengan jujur ​​dan bermartabat.';
 
   @override
-  String get onboarding_hint_profession =>
-      'misalnya Insinyur Perangkat Lunak, Guru, Dokter';
+  String get onboarding_hint_profession => 'misalnya Insinyur Perangkat Lunak, Guru, Dokter';
 
   @override
   String get onboarding_hint_searchCity => 'Telusuri kota Anda…';
@@ -1125,8 +1063,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get onboarding_hint_selectLanguage => 'Pilih bahasa';
 
   @override
-  String get onboarding_islamicIdentity_subtitle =>
-      'Ini membantu mencocokkan Anda dengan seseorang yang kompatibel.';
+  String get onboarding_islamicIdentity_subtitle => 'Ini membantu mencocokkan Anda dengan seseorang yang kompatibel.';
 
   @override
   String get onboarding_islamicIdentity_title => 'Identitas Islam Anda';
@@ -1170,8 +1107,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get onboarding_label_debtStatus => 'Status Hutang';
 
   @override
-  String get onboarding_label_debtStatusQuestion =>
-      'Kewajiban keuangan Anda saat ini.';
+  String get onboarding_label_debtStatusQuestion => 'Kewajiban keuangan Anda saat ini.';
 
   @override
   String get onboarding_label_deenLevel => 'Tingkat Dien';
@@ -1216,8 +1152,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get onboarding_label_housing => 'Perumahan';
 
   @override
-  String get onboarding_label_housingQuestion =>
-      'Bisakah Anda menyediakan tempat tinggal terpisah?';
+  String get onboarding_label_housingQuestion => 'Bisakah Anda menyediakan tempat tinggal terpisah?';
 
   @override
   String get onboarding_label_lastName => 'Nama belakang';
@@ -1226,40 +1161,34 @@ class AppLocalizationsId extends AppLocalizations {
   String get onboarding_label_leadership => 'Kepemimpinan Agama';
 
   @override
-  String get onboarding_label_leadershipQuestion =>
-      'Bolehkah memimpin salat berjamaah?';
+  String get onboarding_label_leadershipQuestion => 'Bolehkah memimpin salat berjamaah?';
 
   @override
   String get onboarding_label_lifestyleDiet => 'Gaya Hidup & Pola Makan';
 
   @override
-  String get onboarding_label_lifestyleDietSub =>
-      'Ini adalah ladang pelanggar bagi banyak keluarga. Tolong jawab dengan jujur.';
+  String get onboarding_label_lifestyleDietSub => 'Ini adalah ladang pelanggar bagi banyak keluarga. Tolong jawab dengan jujur.';
 
   @override
-  String get onboarding_label_livingExpectation =>
-      'Harapan hidup pasca menikah';
+  String get onboarding_label_livingExpectation => 'Harapan hidup pasca menikah';
 
   @override
   String get onboarding_label_mahrBudget => 'Anggaran Mahr';
 
   @override
-  String get onboarding_label_mahrBudgetQuestion =>
-      'Berapa kisaran mahar yang siap Anda tawarkan?';
+  String get onboarding_label_mahrBudgetQuestion => 'Berapa kisaran mahar yang siap Anda tawarkan?';
 
   @override
   String get onboarding_label_mahrExpectation => 'Harapan Mahr';
 
   @override
-  String get onboarding_label_mahrExpectationQuestion =>
-      'Apa harapanmu terhadap mahar?';
+  String get onboarding_label_mahrExpectationQuestion => 'Apa harapanmu terhadap mahar?';
 
   @override
   String get onboarding_label_maintenance => 'Pemeliharaan Keuangan';
 
   @override
-  String get onboarding_label_maintenanceQuestion =>
-      'Apakah Anda mampu menafkahi pasangan secara finansial?';
+  String get onboarding_label_maintenanceQuestion => 'Apakah Anda mampu menafkahi pasangan secara finansial?';
 
   @override
   String get onboarding_label_male => 'Pria';
@@ -1268,8 +1197,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get onboarding_label_marriageTimeline => 'Garis Waktu Pernikahan';
 
   @override
-  String get onboarding_label_marriageTimelineQuestion =>
-      'Kapan Anda ingin menikah?';
+  String get onboarding_label_marriageTimelineQuestion => 'Kapan Anda ingin menikah?';
 
   @override
   String get onboarding_label_moderate => 'Sedang';
@@ -1287,12 +1215,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get onboarding_label_praysFiveDaily => 'Saya berdoa lima kali sehari';
 
   @override
-  String get onboarding_label_preferNotToSay =>
-      'Memilih untuk tidak mengatakannya';
+  String get onboarding_label_preferNotToSay => 'Memilih untuk tidak mengatakannya';
 
   @override
-  String get onboarding_label_preferredLiving =>
-      'Preferensi pengaturan tempat tinggal';
+  String get onboarding_label_preferredLiving => 'Preferensi pengaturan tempat tinggal';
 
   @override
   String get onboarding_label_profession => 'Profesi';
@@ -1307,15 +1233,13 @@ class AppLocalizationsId extends AppLocalizations {
   String get onboarding_label_religiousEducation => 'Pendidikan agama';
 
   @override
-  String get onboarding_label_residencyStatus =>
-      'Status Tempat Tinggal (Opsional)';
+  String get onboarding_label_residencyStatus => 'Status Tempat Tinggal (Opsional)';
 
   @override
   String get onboarding_label_revert => 'Kembalikan / Konversi (Opsional)';
 
   @override
-  String get onboarding_label_revertQuestion =>
-      'Apakah Anda seorang yang masuk Islam (mualaf)?';
+  String get onboarding_label_revertQuestion => 'Apakah Anda seorang yang masuk Islam (mualaf)?';
 
   @override
   String get onboarding_label_sect => 'Sekte';
@@ -1350,8 +1274,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get onboarding_label_workAfterMarriage => 'Bekerja Setelah Menikah';
 
   @override
-  String get onboarding_label_workAfterMarriageQuestion =>
-      'Apakah Anda ingin bekerja setelah menikah?';
+  String get onboarding_label_workAfterMarriageQuestion => 'Apakah Anda ingin bekerja setelah menikah?';
 
   @override
   String get onboarding_leadership_leads => 'Memimpin Doa';
@@ -1366,22 +1289,19 @@ class AppLocalizationsId extends AppLocalizations {
   String get onboarding_living_openToDiscussion => 'Terbuka untuk Diskusi';
 
   @override
-  String get onboarding_living_openToDiscussionSub =>
-      'Saya fleksibel dan senang mendiskusikan apa yang cocok untuk keduanya.';
+  String get onboarding_living_openToDiscussionSub => 'Saya fleksibel dan senang mendiskusikan apa yang cocok untuk keduanya.';
 
   @override
   String get onboarding_living_separate => 'Rumah Terpisah';
 
   @override
-  String get onboarding_living_separateSub =>
-      'Saya lebih suka kita memiliki rumah mandiri sendiri.';
+  String get onboarding_living_separateSub => 'Saya lebih suka kita memiliki rumah mandiri sendiri.';
 
   @override
   String get onboarding_living_withInlaws => 'Dengan Mertua';
 
   @override
-  String get onboarding_living_withInlawsSub =>
-      'Saya berharap untuk tinggal bersama pasangan saya atau keluarga saya sendiri.';
+  String get onboarding_living_withInlawsSub => 'Saya berharap untuk tinggal bersama pasangan saya atau keluarga saya sendiri.';
 
   @override
   String get onboarding_location_confirmed => 'Lokasi Terkonfirmasi';
@@ -1402,12 +1322,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get onboarding_mahr_toDiscuss => 'Untuk berdiskusi';
 
   @override
-  String get onboarding_marriageDeen_privacyNotice =>
-      'Detail ini tidak ditampilkan di profil publik Anda. Mereka dibagikan secara pribadi selama tahap penerimaan.';
+  String get onboarding_marriageDeen_privacyNotice => 'Detail ini tidak ditampilkan di profil publik Anda. Mereka dibagikan secara pribadi selama tahap penerimaan.';
 
   @override
-  String get onboarding_marriageDeen_subtitle =>
-      'Bantu kami memahami perjalanan dan kesiapan Anda.';
+  String get onboarding_marriageDeen_subtitle => 'Bantu kami memahami perjalanan dan kesiapan Anda.';
 
   @override
   String get onboarding_marriageDeen_title => 'Pernikahan & Dien';
@@ -1422,8 +1340,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get onboarding_niqab_wear => 'Saya memakai niqab';
 
   @override
-  String get onboarding_photo_subtitle =>
-      'Setidaknya satu foto diperlukan. Foto utama Anda harus mencantumkan wajah Anda dengan jelas.';
+  String get onboarding_photo_subtitle => 'Setidaknya satu foto diperlukan. Foto utama Anda harus mencantumkan wajah Anda dengan jelas.';
 
   @override
   String get onboarding_photo_title => 'Tambahkan foto Anda';
@@ -1432,8 +1349,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get onboarding_photo_verifySelfie => 'Selfie Verifikasi';
 
   @override
-  String get onboarding_photo_verifySelfieHint =>
-      'Ambil foto langsung untuk memverifikasi bahwa Anda asli';
+  String get onboarding_photo_verifySelfieHint => 'Ambil foto langsung untuk memverifikasi bahwa Anda asli';
 
   @override
   String get onboarding_preferredLiving_noPreference => 'Tidak Ada Preferensi';
@@ -1445,15 +1361,13 @@ class AppLocalizationsId extends AppLocalizations {
   String get onboarding_profileForWhom_guardian => 'Putra atau putri saya';
 
   @override
-  String get onboarding_profileForWhom_guardianCardSub =>
-      'Saya membuat profil ini untuk seseorang';
+  String get onboarding_profileForWhom_guardianCardSub => 'Saya membuat profil ini untuk seseorang';
 
   @override
   String get onboarding_profileForWhom_guardianCardTitle => 'Wali';
 
   @override
-  String get onboarding_profileForWhom_guardianSub =>
-      'Saya adalah orang tua atau wali';
+  String get onboarding_profileForWhom_guardianSub => 'Saya adalah orang tua atau wali';
 
   @override
   String get onboarding_profileForWhom_myself => 'Saya sendiri';
@@ -1474,23 +1388,19 @@ class AppLocalizationsId extends AppLocalizations {
   String get onboarding_profileForWhom_relation_son => 'Putra';
 
   @override
-  String get onboarding_profileForWhom_selectOne =>
-      'Pilih satu untuk melanjutkan';
+  String get onboarding_profileForWhom_selectOne => 'Pilih satu untuk melanjutkan';
 
   @override
-  String get onboarding_profileForWhom_selectRelation =>
-      'Pilih hubungan untuk melanjutkan';
+  String get onboarding_profileForWhom_selectRelation => 'Pilih hubungan untuk melanjutkan';
 
   @override
   String get onboarding_profileForWhom_sibling => 'Kakak atau adikku';
 
   @override
-  String get onboarding_profileForWhom_siblingSub =>
-      'Saya membantu saudara saya menemukan kecocokan';
+  String get onboarding_profileForWhom_siblingSub => 'Saya membantu saudara saya menemukan kecocokan';
 
   @override
-  String get onboarding_profileForWhom_subtitle =>
-      'Anda dapat memperbaruinya nanti dari pengaturan.';
+  String get onboarding_profileForWhom_subtitle => 'Anda dapat memperbaruinya nanti dari pengaturan.';
 
   @override
   String get onboarding_profileForWhom_title => 'Untuk siapa profil ini?';
@@ -1499,12 +1409,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get onboarding_profileForWhom_ward => 'Bangsal saya';
 
   @override
-  String get onboarding_profileForWhom_wardSub =>
-      'Saya seorang wali yang mengelola profil ini';
+  String get onboarding_profileForWhom_wardSub => 'Saya seorang wali yang mengelola profil ini';
 
   @override
-  String get onboarding_providerQuote =>
-      '“Sebaik-baik kalian adalah yang terbaik terhadap istri kalian.” — Nabi Muhammad ﷺ\n\nJujur tentang kesiapan Anda membantu membangun landasan yang kuat.';
+  String get onboarding_providerQuote => '“Sebaik-baik kalian adalah yang terbaik terhadap istri kalian.” — Nabi Muhammad ﷺ\n\nJujur tentang kesiapan Anda membantu membangun landasan yang kuat.';
 
   @override
   String get onboarding_quran_hafiz => 'Hafiz / Hafiza';
@@ -1546,20 +1454,16 @@ class AppLocalizationsId extends AppLocalizations {
   String get onboarding_timeline_notSure => 'Belum yakin';
 
   @override
-  String get onboarding_tooltip_cultural =>
-      'Mengidentifikasi sebagai Muslim, merayakan acara-acara, mungkin tidak berdoa secara teratur';
+  String get onboarding_tooltip_cultural => 'Mengidentifikasi sebagai Muslim, merayakan acara-acara, mungkin tidak berdoa secara teratur';
 
   @override
-  String get onboarding_tooltip_moderate =>
-      'Menjunjung prinsip Islam dan salat, meski tidak selalu lima waktu sehari';
+  String get onboarding_tooltip_moderate => 'Menjunjung prinsip Islam dan salat, meski tidak selalu lima waktu sehari';
 
   @override
-  String get onboarding_tooltip_practicing =>
-      'Mengikuti kelima rukun, shalat teratur, gaya hidup halal';
+  String get onboarding_tooltip_practicing => 'Mengikuti kelima rukun, shalat teratur, gaya hidup halal';
 
   @override
-  String get onboarding_work_no =>
-      'Tidak, saya memilih untuk tidak melakukannya';
+  String get onboarding_work_no => 'Tidak, saya memilih untuk tidak melakukannya';
 
   @override
   String get onboarding_work_yes => 'Ya, saya berencana untuk bekerja';
@@ -1571,12 +1475,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get photo_add_photo => 'Tambahkan foto';
 
   @override
-  String get photo_banner_text =>
-      'Foto dengan konten eksplisit tidak diperbolehkan';
+  String get photo_banner_text => 'Foto dengan konten eksplisit tidak diperbolehkan';
 
   @override
-  String get photo_error_no_face_detected =>
-      'Tidak ada wajah yang terlihat — coba lagi dengan foto wajah yang jelas';
+  String get photo_error_no_face_detected => 'Tidak ada wajah yang terlihat — coba lagi dengan foto wajah yang jelas';
 
   @override
   String photo_error_pick_failed(Object error) {
@@ -1605,8 +1507,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get photo_privacy_everyone => 'Terlihat oleh semua orang';
 
   @override
-  String get photo_privacy_everyone_sub =>
-      'Semua anggota dapat melihat foto Anda.';
+  String get photo_privacy_everyone_sub => 'Semua anggota dapat melihat foto Anda.';
 
   @override
   String get photo_privacy_label => 'PRIVASI FOTO';
@@ -1615,15 +1516,13 @@ class AppLocalizationsId extends AppLocalizations {
   String get photo_privacy_mutual => 'Terlihat setelah kepentingan bersama';
 
   @override
-  String get photo_privacy_mutual_sub =>
-      'Foto hanya terungkap ketika kedua belah pihak menyatakan minat.';
+  String get photo_privacy_mutual_sub => 'Foto hanya terungkap ketika kedua belah pihak menyatakan minat.';
 
   @override
   String get photo_privacy_request => 'Permintaan untuk melihat';
 
   @override
-  String get photo_privacy_request_sub =>
-      'Foto diburamkan sampai Anda menyetujui permintaan.';
+  String get photo_privacy_request_sub => 'Foto diburamkan sampai Anda menyetujui permintaan.';
 
   @override
   String get photo_sheet_camera => 'Kamera';
@@ -1643,8 +1542,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get photo_subtitle_self =>
-      'Setidaknya satu foto diperlukan. Maksimal empat.';
+  String get photo_subtitle_self => 'Setidaknya satu foto diperlukan. Maksimal empat.';
 
   @override
   String get photo_title_guardian => 'Tambahkan foto mereka';
@@ -1736,16 +1634,13 @@ class AppLocalizationsId extends AppLocalizations {
   String get preferences_location_same_country => 'Negara yang sama';
 
   @override
-  String get preferences_open_children =>
-      'Terbuka untuk seseorang yang memiliki anak';
+  String get preferences_open_children => 'Terbuka untuk seseorang yang memiliki anak';
 
   @override
-  String get preferences_open_divorced =>
-      'Terbuka untuk seseorang yang sebelumnya bercerai';
+  String get preferences_open_divorced => 'Terbuka untuk seseorang yang sebelumnya bercerai';
 
   @override
-  String get preferences_open_widowed =>
-      'Terbuka untuk seseorang yang sebelumnya menjanda';
+  String get preferences_open_widowed => 'Terbuka untuk seseorang yang sebelumnya menjanda';
 
   @override
   String get preferences_sect_any => 'Setiap';
@@ -1765,8 +1660,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get preferences_subtitle_self =>
-      'Ini adalah preferensi, bukan filter keras.';
+  String get preferences_subtitle_self => 'Ini adalah preferensi, bukan filter keras.';
 
   @override
   String get preferences_title => 'Preferensi mitra';
@@ -1835,12 +1729,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get preview_name_label => 'Nama';
 
   @override
-  String get preview_notice_guardian =>
-      'Ini adalah bagaimana orang lain akan melihat profil mereka.';
+  String get preview_notice_guardian => 'Ini adalah bagaimana orang lain akan melihat profil mereka.';
 
   @override
-  String get preview_notice_self =>
-      'Ini adalah cara orang lain melihat profil Anda.';
+  String get preview_notice_self => 'Ini adalah cara orang lain melihat profil Anda.';
 
   @override
   String get preview_polygamy_label => 'Poligami';
@@ -1896,8 +1788,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get profile_nudge_completeness =>
-      'Profil dengan kelengkapan 80%+ menerima minat 3× lebih banyak.';
+  String get profile_nudge_completeness => 'Profil dengan kelengkapan 80%+ menerima minat 3× lebih banyak.';
 
   @override
   String get settings_brand_credit => 'Silarah (سيلارا) · Demi Allah';
@@ -1909,8 +1800,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get settings_guardian_mirror => 'Pesan Cermin';
 
   @override
-  String get settings_guardian_mirror_sub =>
-      'Kirim salinan semua pesan ke wali';
+  String get settings_guardian_mirror_sub => 'Kirim salinan semua pesan ke wali';
 
   @override
   String get settings_guardian_name_hint => 'Nama Wali';
@@ -1922,8 +1812,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get settings_guardian_reply => 'Izinkan Wali untuk Membalas';
 
   @override
-  String get settings_guardian_reply_sub =>
-      'Wali dapat berpartisipasi dalam percakapan';
+  String get settings_guardian_reply_sub => 'Wali dapat berpartisipasi dalam percakapan';
 
   @override
   String get settings_guardian_save => 'Simpan Pengaturan Wali';
@@ -1932,8 +1821,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get settings_guardian_saved => 'Disimpan';
 
   @override
-  String get settings_guardian_sub =>
-      'Aktifkan pengawasan Wali untuk pengiriman pesan';
+  String get settings_guardian_sub => 'Aktifkan pengawasan Wali untuk pengiriman pesan';
 
   @override
   String get settings_guardian_title => 'Modus Penjaga';
@@ -1950,8 +1838,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get settings_label_blocked_none => 'Tidak ada';
 
   @override
-  String get settings_label_deleteGrace =>
-      'Profil Anda akan segera disembunyikan. Data Anda akan dihapus secara permanen setelah 30 hari.';
+  String get settings_label_deleteGrace => 'Profil Anda akan segera disembunyikan. Data Anda akan dihapus secara permanen setelah 30 hari.';
 
   @override
   String get settings_label_editProfile => 'Sunting Profil';
@@ -1966,8 +1853,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get settings_label_rate => 'Nilai <merek0/>';
 
   @override
-  String get settings_label_rate_snackbar =>
-      'Peringkat akan tersedia setelah Silarah diluncurkan di app store.';
+  String get settings_label_rate_snackbar => 'Peringkat akan tersedia setelah Silarah diluncurkan di app store.';
 
   @override
   String get settings_label_reports => 'Laporan Sejarah';
@@ -1993,15 +1879,13 @@ class AppLocalizationsId extends AppLocalizations {
   String get settings_notify_activityNudges => 'Dorongan Aktivitas';
 
   @override
-  String get settings_notify_activityNudgesSub =>
-      'Ingatkan ketika tidak aktif selama 7+ hari';
+  String get settings_notify_activityNudgesSub => 'Ingatkan ketika tidak aktif selama 7+ hari';
 
   @override
   String get settings_notify_boostReminders => 'Tingkatkan Pengingat';
 
   @override
-  String get settings_notify_boostRemindersSub =>
-      'Ingatkan kapan peningkatan mingguan Anda siap';
+  String get settings_notify_boostRemindersSub => 'Ingatkan kapan peningkatan mingguan Anda siap';
 
   @override
   String get settings_notify_interestAccepted => 'Bunga Diterima';
@@ -2019,8 +1903,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get settings_notify_quietHours => 'Jam Tenang';
 
   @override
-  String get settings_photo_privacy_accepted_interests =>
-      'Hanya kepentingan yang diterima';
+  String get settings_photo_privacy_accepted_interests => 'Hanya kepentingan yang diterima';
 
   @override
   String get settings_photo_privacy_after_acceptance => 'Setelah Penerimaan';
@@ -2035,12 +1918,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get settings_photo_privacy_request_only => 'Hanya Permintaan';
 
   @override
-  String get settings_photo_privacy_request_to_view =>
-      'Permintaan untuk melihat';
+  String get settings_photo_privacy_request_to_view => 'Permintaan untuk melihat';
 
   @override
-  String get settings_privacy_download_body =>
-      'Buat sekarang arsip ZIP pribadi berisi akun, profil, foto, minat, kecocokan, pesan, pengaturan, persetujuan, dan riwayat langganan Anda. Simpan melalui lembar berbagi aman di perangkat.';
+  String get settings_privacy_download_body => 'Buat sekarang arsip ZIP pribadi berisi akun, profil, foto, minat, kecocokan, pesan, pengaturan, persetujuan, dan riwayat langganan Anda. Simpan melalui lembar berbagi aman di perangkat.';
 
   @override
   String get settings_privacy_download_btn => 'Buat arsip aman';
@@ -2049,19 +1930,16 @@ class AppLocalizationsId extends AppLocalizations {
   String get settings_privacy_download_label => 'Unduh data saya';
 
   @override
-  String get settings_privacy_download_sub =>
-      'Simpan salinan data Silarah yang dapat dibaca mesin';
+  String get settings_privacy_download_sub => 'Simpan salinan data Silarah yang dapat dibaca mesin';
 
   @override
-  String get settings_privacy_export_body =>
-      'Arsip pribadi Anda siap. Gunakan lembar berbagi untuk menyimpannya dengan aman.';
+  String get settings_privacy_export_body => 'Arsip pribadi Anda siap. Gunakan lembar berbagi untuk menyimpannya dengan aman.';
 
   @override
   String get settings_privacy_export_btn_close => 'Dipahami';
 
   @override
-  String get settings_privacy_export_subbody =>
-      'Arsip ini mungkin berisi pesan pribadi dan detail kontak. Simpan dengan aman dan bagikan hanya kepada orang yang Anda percaya.';
+  String get settings_privacy_export_subbody => 'Arsip ini mungkin berisi pesan pribadi dan detail kontak. Simpan dengan aman dan bagikan hanya kepada orang yang Anda percaya.';
 
   @override
   String get settings_privacy_export_title => 'Arsip siap';
@@ -2070,19 +1948,16 @@ class AppLocalizationsId extends AppLocalizations {
   String get settings_privacy_online_label => 'STATUS ONLINE';
 
   @override
-  String get settings_privacy_online_sub =>
-      'Tunjukkan kapan Anda terakhir aktif';
+  String get settings_privacy_online_sub => 'Tunjukkan kapan Anda terakhir aktif';
 
   @override
   String get settings_privacy_pause_label => 'PROFIL JEDA';
 
   @override
-  String get settings_privacy_pause_sub =>
-      'Sembunyikan profil Anda dari pencarian';
+  String get settings_privacy_pause_sub => 'Sembunyikan profil Anda dari pencarian';
 
   @override
-  String get settings_privacy_pause_warning =>
-      'Profil Anda disembunyikan. Tidak ada yang bisa menemukanmu.';
+  String get settings_privacy_pause_warning => 'Profil Anda disembunyikan. Tidak ada yang bisa menemukanmu.';
 
   @override
   String get settings_privacy_photo_label => 'VISIBILITAS FOTO';
@@ -2094,12 +1969,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get settings_privacy_visibility_all => 'Semua pengguna terdaftar';
 
   @override
-  String get settings_privacy_visibility_label =>
-      'SIAPA YANG DAPAT MELIHAT PROFIL SAYA';
+  String get settings_privacy_visibility_label => 'SIAPA YANG DAPAT MELIHAT PROFIL SAYA';
 
   @override
-  String get settings_privacy_visibility_sub =>
-      'Mengontrol siapa yang dapat menelusuri profil Anda';
+  String get settings_privacy_visibility_sub => 'Mengontrol siapa yang dapat menelusuri profil Anda';
 
   @override
   String get settings_privacy_visibility_subscribers => 'Hanya pelanggan';
@@ -2144,8 +2017,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get settings_section_safety => 'Keamanan';
 
   @override
-  String get settings_support_body =>
-      'Untuk pertanyaan, kekhawatiran, atau masukan apa pun:';
+  String get settings_support_body => 'Untuk pertanyaan, kekhawatiran, atau masukan apa pun:';
 
   @override
   String get settings_support_btn_close => 'Menutup';
@@ -2154,8 +2026,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get settings_support_contact => 'Hubungi Dukungan';
 
   @override
-  String get settings_support_note =>
-      'Kami bertujuan untuk merespons dalam waktu 48 jam.';
+  String get settings_support_note => 'Kami bertujuan untuk merespons dalam waktu 48 jam.';
 
   @override
   String get settings_title => 'Pengaturan';
@@ -2167,8 +2038,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get splash_button_signIn => 'Masuk';
 
   @override
-  String get splash_intention_subtitle =>
-      'Perkenalan privat, kecocokan yang dipertimbangkan, dan koneksi yang menghargai keluarga.';
+  String get splash_intention_subtitle => 'Perkenalan privat, kecocokan yang dipertimbangkan, dan koneksi yang menghargai keluarga.';
 
   @override
   String get splash_intention_title => 'Pernikahan, dijalani dengan niat.';
@@ -2180,19 +2050,16 @@ class AppLocalizationsId extends AppLocalizations {
   String get splash_referral_hint => 'misalnya SILARAHXX';
 
   @override
-  String get splash_referral_invalid =>
-      'Silakan masukkan kode 6 karakter yang valid.';
+  String get splash_referral_invalid => 'Silakan masukkan kode 6 karakter yang valid.';
 
   @override
   String get splash_referral_question => 'Punya kode referral?';
 
   @override
-  String get splash_referral_saved =>
-      'Kode referensi disimpan! Ini akan diterapkan setelah Anda masuk.';
+  String get splash_referral_saved => 'Kode referensi disimpan! Ini akan diterapkan setelah Anda masuk.';
 
   @override
-  String get splash_referral_subtitle =>
-      'Jika seorang teman mengundang Anda ke Silarah, masukkan kode referensi 6 karakter mereka di bawah.';
+  String get splash_referral_subtitle => 'Jika seorang teman mengundang Anda ke Silarah, masukkan kode referensi 6 karakter mereka di bawah.';
 
   @override
   String get splash_referral_title => 'Masukkan Kode Referensi';
@@ -2211,26 +2078,22 @@ class AppLocalizationsId extends AppLocalizations {
   String get subscription_label_bestValue => 'Nilai Terbaik';
 
   @override
-  String get subscription_subtitle =>
-      'Pesan wanita gratis. Pria berlangganan untuk terhubung.';
+  String get subscription_subtitle => 'Pesan wanita gratis. Pria berlangganan untuk terhubung.';
 
   @override
   String get subscription_title => 'Buka kunci Silarah';
 
   @override
-  String get startup_connectivity_preparing_title =>
-      'Menyiapkan ruang pribadi Anda';
+  String get startup_connectivity_preparing_title => 'Menyiapkan ruang pribadi Anda';
 
   @override
-  String get startup_connectivity_preparing_body =>
-      'Membangun koneksi aman ke Silarah.';
+  String get startup_connectivity_preparing_body => 'Membangun koneksi aman ke Silarah.';
 
   @override
   String get startup_connectivity_offline_title => 'Koneksi tidak tersedia';
 
   @override
-  String get startup_connectivity_offline_body =>
-      'Tempat Anda di Silarah aman. Kami akan melanjutkan saat jaringan kembali.';
+  String get startup_connectivity_offline_body => 'Tempat Anda di Silarah aman. Kami akan melanjutkan saat jaringan kembali.';
 
   @override
   String get startup_connectivity_verifying => 'MEMERIKSA KONEKSI';
@@ -2260,15 +2123,13 @@ class AppLocalizationsId extends AppLocalizations {
   String get settings_notify_profileViews => 'Kunjungan profil';
 
   @override
-  String get settings_notify_profileViewsSub =>
-      'Pemberitahuan pribadi saat seseorang membuka profil Anda';
+  String get settings_notify_profileViewsSub => 'Pemberitahuan pribadi saat seseorang membuka profil Anda';
 
   @override
   String get settings_notify_profileLive => 'Profil mulai tayang';
 
   @override
-  String get settings_notify_profileLiveSub =>
-      'Konfirmasi saat profil Anda mulai terlihat';
+  String get settings_notify_profileLiveSub => 'Konfirmasi saat profil Anda mulai terlihat';
 
   @override
   String get settings_appearance => 'Tampilan';
@@ -2283,30 +2144,25 @@ class AppLocalizationsId extends AppLocalizations {
   String get settings_grievanceOfficer => 'Petugas Pengaduan';
 
   @override
-  String get settings_grievanceResponse =>
-      'Diterima dalam 24 jam; sebagian besar keluhan selesai dalam 7 hari';
+  String get settings_grievanceResponse => 'Diterima dalam 24 jam; sebagian besar keluhan selesai dalam 7 hari';
 
   @override
-  String get settings_grievanceIndiaNotice =>
-      'Penanganan keluhan di India mengikuti Peraturan Teknologi Informasi (Pedoman Perantara dan Kode Etik Media Digital) sebagaimana diubah. Keluhan mendesak tentang konten melanggar hukum atau intim mengikuti tenggat hukum yang lebih singkat.';
+  String get settings_grievanceIndiaNotice => 'Penanganan keluhan di India mengikuti Peraturan Teknologi Informasi (Pedoman Perantara dan Kode Etik Media Digital) sebagaimana diubah. Keluhan mendesak tentang konten melanggar hukum atau intim mengikuti tenggat hukum yang lebih singkat.';
 
   @override
   String get settings_managePhotoRequests => 'Kelola permintaan foto';
 
   @override
-  String get settings_managePhotoRequestsSub =>
-      'Setujui akses, tolak permintaan, atau cabut berbagi';
+  String get settings_managePhotoRequestsSub => 'Setujui akses, tolak permintaan, atau cabut berbagi';
 
   @override
   String get settings_theme_chooseTitle => 'Pilih suasana Anda';
 
   @override
-  String get settings_theme_chooseSubtitle =>
-      'Identitas visual yang menyeluruh, bukan sekadar filter warna. Semua permukaan, kolom, dan kontrol sistem berubah bersama.';
+  String get settings_theme_chooseSubtitle => 'Identitas visual yang menyeluruh, bukan sekadar filter warna. Semua permukaan, kolom, dan kontrol sistem berubah bersama.';
 
   @override
-  String get settings_theme_applied =>
-      'Langsung diterapkan · disimpan di perangkat ini';
+  String get settings_theme_applied => 'Langsung diterapkan · disimpan di perangkat ini';
 
   @override
   String get settings_reportPending => 'Menunggu tinjauan';
@@ -2321,8 +2177,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get legal_document_community => 'Pedoman Komunitas';
 
   @override
-  String get legal_specialCategoryConsent =>
-      'Saya secara tegas menyetujui Silarah memproses informasi agama saya (mazhab, praktik salat, dan identitas Islam) untuk pencocokan kompatibilitas. Penyedia layanan yang dikontrak hanya menggunakannya untuk mengoperasikan Silarah, bukan untuk iklan berbasis perilaku.';
+  String get legal_specialCategoryConsent => 'Saya secara tegas menyetujui Silarah memproses informasi agama saya (mazhab, praktik salat, dan identitas Islam) untuk pencocokan kompatibilitas. Penyedia layanan yang dikontrak hanya menggunakannya untuk mengoperasikan Silarah, bukan untuk iklan berbasis perilaku.';
 
   @override
   String get onboarding_complexion_fair => 'Cerah';
@@ -2364,37 +2219,31 @@ class AppLocalizationsId extends AppLocalizations {
   String get onboarding_label_stateRegion => 'Provinsi / Wilayah';
 
   @override
-  String get onboarding_specialNeeds_privacy =>
-      'Hanya dibagikan setelah ada minat bersama.';
+  String get onboarding_specialNeeds_privacy => 'Hanya dibagikan setelah ada minat bersama.';
 
   @override
   String get settings_theme_blackWhite => 'Hitam & Putih';
 
   @override
-  String get settings_theme_blackWhiteDesc =>
-      'Putih murni, hitam pekat, tanpa warna';
+  String get settings_theme_blackWhiteDesc => 'Putih murni, hitam pekat, tanpa warna';
 
   @override
   String get settings_theme_oled => 'Malam OLED';
 
   @override
-  String get settings_theme_oledDesc =>
-      'Hitam sejati yang disesuaikan untuk layar OLED';
+  String get settings_theme_oledDesc => 'Hitam sejati yang disesuaikan untuk layar OLED';
 
   @override
   String get settings_theme_ivory => 'Gading & Zamrud';
 
   @override
-  String get settings_theme_ivoryDesc =>
-      'Gading hangat, zamrud tua, dan emas antik';
+  String get settings_theme_ivoryDesc => 'Gading hangat, zamrud tua, dan emas antik';
 
   @override
-  String get settings_guardian_backendRequired =>
-      'Pengaturan wali memerlukan koneksi aman.';
+  String get settings_guardian_backendRequired => 'Pengaturan wali memerlukan koneksi aman.';
 
   @override
-  String get settings_guardian_saveError =>
-      'Pengaturan wali tidak dapat disimpan. Coba lagi.';
+  String get settings_guardian_saveError => 'Pengaturan wali tidak dapat disimpan. Coba lagi.';
 
   @override
   String get common_openSettings => 'Buka Pengaturan';
@@ -2406,19 +2255,16 @@ class AppLocalizationsId extends AppLocalizations {
   String get media_cameraUnavailable => 'Kamera tidak tersedia';
 
   @override
-  String get media_cameraAccessBody =>
-      'Izinkan akses kamera di Pengaturan, lalu kembali untuk mengambil foto yang jelas.';
+  String get media_cameraAccessBody => 'Izinkan akses kamera di Pengaturan, lalu kembali untuk mengambil foto yang jelas.';
 
   @override
-  String get media_cameraUnavailableBody =>
-      'Kamera tidak dapat dibuka. Coba lagi.';
+  String get media_cameraUnavailableBody => 'Kamera tidak dapat dibuka. Coba lagi.';
 
   @override
   String get media_photoAccessOff => 'Akses foto dinonaktifkan';
 
   @override
-  String get media_photoAccessBody =>
-      'Izinkan akses kamera atau foto di Pengaturan, lalu kembali untuk menambahkan foto.';
+  String get media_photoAccessBody => 'Izinkan akses kamera atau foto di Pengaturan, lalu kembali untuk menambahkan foto.';
 
   @override
   String get chat_searchHint => 'Cari pesan';
@@ -2427,15 +2273,13 @@ class AppLocalizationsId extends AppLocalizations {
   String get chat_noConversationsFound => 'Percakapan tidak ditemukan';
 
   @override
-  String get chat_noConversationsFoundBody =>
-      'Coba nama lain atau hapus pencarian.';
+  String get chat_noConversationsFoundBody => 'Coba nama lain atau hapus pencarian.';
 
   @override
   String get chat_noConversationsYet => 'Belum ada percakapan';
 
   @override
-  String get chat_noConversationsYetBody =>
-      'Terima minat atau tunggu minat Anda diterima untuk memulai percakapan.';
+  String get chat_noConversationsYetBody => 'Terima minat atau tunggu minat Anda diterima untuk memulai percakapan.';
 
   @override
   String get referral_title => 'Ajak Teman';
@@ -2447,8 +2291,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get referral_heading => 'Sebarkan kabar, dapatkan Premium!';
 
   @override
-  String get referral_body =>
-      'Undang teman mana pun yang memenuhi syarat ke SILARAH. Setiap akun hanya dapat menerima satu hadiah Premium referral 3 hari. Jika Anda sudah menerima hadiah, teman Anda tetap dapat menerima hadiahnya.';
+  String get referral_body => 'Undang teman mana pun yang memenuhi syarat ke Silarah. Setiap akun hanya dapat menerima satu hadiah Premium referral 3 hari. Jika Anda sudah menerima hadiah, teman Anda tetap dapat menerima hadiahnya.';
 
   @override
   String get referral_premiumActiveTitle => 'Premium referral aktif';
@@ -2477,12 +2320,10 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get referral_premiumNoPayment =>
-      'Semua fitur Premium terbuka. Tidak ada pembayaran dan hadiah ini tidak diperpanjang otomatis.';
+  String get referral_premiumNoPayment => 'Semua fitur Premium terbuka. Tidak ada pembayaran dan hadiah ini tidak diperpanjang otomatis.';
 
   @override
-  String get referral_premiumPlansAfter =>
-      'Paket langganan tersedia setelah hadiah gratis berakhir agar sisa waktu gratis Anda tidak terbuang.';
+  String get referral_premiumPlansAfter => 'Paket langganan tersedia setelah hadiah gratis berakhir agar sisa waktu gratis Anda tidak terbuang.';
 
   @override
   String get referral_premiumBackToProfile => 'Kembali ke profil';
@@ -2520,11 +2361,11 @@ class AppLocalizationsId extends AppLocalizations {
   String get referral_copied => 'Kode referal disalin!';
 
   @override
-  String get referral_shareSubject => 'Bergabung dengan SILARAH';
+  String get referral_shareSubject => 'Bergabung dengan Silarah';
 
   @override
   String referral_shareText(String code) {
-    return 'Bergabunglah dengan SILARAH, aplikasi pernikahan Muslim tepercaya. Gunakan kode referal saya: $code\n\nUnduh: https://silarah.com/r/$code';
+    return 'Bergabunglah dengan Silarah, aplikasi pernikahan Muslim tepercaya. Gunakan kode referal saya: $code\n\nUnduh: https://silarah.com/r/$code';
   }
 
   @override
@@ -2659,8 +2500,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get ui_onePhotoUnlock =>
-      '1 foto akan terbuka secara otomatis setelah Anda berdua menyatakan minat.';
+  String get ui_onePhotoUnlock => '1 foto akan terbuka secara otomatis setelah Anda berdua menyatakan minat.';
 
   @override
   String ui_manyPhotosUnlock(int count) {
@@ -2668,8 +2508,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get ui_askOnePhoto =>
-      'Minta izin kepada pemilik untuk melihat 1 foto.';
+  String get ui_askOnePhoto => 'Minta izin kepada pemilik untuk melihat 1 foto.';
 
   @override
   String ui_askManyPhotos(int count) {
@@ -2712,19 +2551,16 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get settings_notify_compatibleProfiles =>
-      'Peringatan profil yang cocok';
+  String get settings_notify_compatibleProfiles => 'Peringatan profil yang cocok';
 
   @override
-  String get settings_notify_compatibleProfilesSub =>
-      'Saat umpan Temukan yang kosong memiliki hasil baru';
+  String get settings_notify_compatibleProfilesSub => 'Saat umpan Temukan yang kosong memiliki hasil baru';
 
   @override
   String get settings_notify_discoveryDigest => 'Ringkasan Temukan';
 
   @override
-  String get settings_notify_digestHelp =>
-      'Ringkasan opsional; peringatan hasil baru setelah umpan kosong tetap langsung.';
+  String get settings_notify_digestHelp => 'Ringkasan opsional; peringatan hasil baru setelah umpan kosong tetap langsung.';
 
   @override
   String get settings_notify_digestOff => 'Nonaktif';

@@ -277,7 +277,7 @@ class _SilarahReportSheetState extends State<SilarahReportSheet> {
   Widget build(BuildContext context) {
     return SilarahBottomSheet(
       title: 'Report Profile',
-      subtitle: 'Help keep SILARAH safe for everyone.',
+      subtitle: 'Help keep Silarah safe for everyone.',
       padding: EdgeInsets.zero,
       primaryAction: _selected != null
           ? BottomSheetAction(

@@ -663,7 +663,7 @@ class _Header extends StatelessWidget {
         ),
         SizedBox(height: isSmallScreen ? 12 : 20),
         UiText(
-          isFemale ? 'Unlock Premium' : 'Unlock SILARAH',
+          isFemale ? 'Unlock Premium' : 'Unlock Silarah',
           style: AppTypography.screenTitle.copyWith(
             fontSize: isSmallScreen ? 22 : 28,
           ),
