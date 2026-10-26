@@ -2065,7 +2065,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Profiliniz gizlendi. Kimse seni bulamaz.';
 
   @override
-  String get settings_privacy_photo_label => 'FOTOĞRAF GÖRÜNÜRLÜĞÜ';
+  String get settings_privacy_photo_label => 'Fotoğraf görünürlüğü';
 
   @override
   String get settings_privacy_photo_sub => 'Fotoğraflarınızı kimler görebilir?';

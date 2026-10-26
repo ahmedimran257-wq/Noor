@@ -2082,7 +2082,7 @@ class AppLocalizationsDe extends AppLocalizations {
       'Ihr Profil ist ausgeblendet. Niemand kann dich finden.';
 
   @override
-  String get settings_privacy_photo_label => 'FOTOSICHTBARKEIT';
+  String get settings_privacy_photo_label => 'Fotosichtbarkeit';
 
   @override
   String get settings_privacy_photo_sub => 'Wer kann Ihre Fotos sehen?';

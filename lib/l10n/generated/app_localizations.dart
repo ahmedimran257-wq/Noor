@@ -3891,7 +3891,7 @@ abstract class AppLocalizations {
   /// No description provided for @settings_privacy_photo_label.
   ///
   /// In en, this message translates to:
-  /// **'PHOTO VISIBILITY'**
+  /// **'Photo visibility'**
   String get settings_privacy_photo_label;
 
   /// No description provided for @settings_privacy_photo_sub.

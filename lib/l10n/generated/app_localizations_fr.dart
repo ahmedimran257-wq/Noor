@@ -2084,7 +2084,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Votre profil est masqué. Personne ne peut vous trouver.';
 
   @override
-  String get settings_privacy_photo_label => 'VISIBILITÉ DES PHOTOS';
+  String get settings_privacy_photo_label => 'Visibilité des photos';
 
   @override
   String get settings_privacy_photo_sub => 'Qui peut voir vos photos';

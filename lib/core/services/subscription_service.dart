@@ -44,8 +44,8 @@ class DisplayPricing {
         : 0;
 
     return DisplayPricing(
-      monthlyPrice: monthlyProduct.priceString,
-      threeMonthPrice: threeMonthProduct.priceString,
+      monthlyPrice: wholePriceLabel(monthlyProduct.priceString),
+      threeMonthPrice: wholePriceLabel(threeMonthProduct.priceString),
       savingsPercent: savings,
       source: PricingSource.revenueCat,
       countryCode: countryCode,
@@ -463,3 +463,8 @@ class _PricingContext {
   final String? pricingTier;
   final String? email;
 }
+
+/// Google Play formats ₹299 as "₹299.00". Drop zero minor units so whole
+/// prices read as "₹299"; any real paise ("₹299.50") is kept as-is.
+String wholePriceLabel(String storePrice) =>
+    storePrice.replaceFirst(RegExp(r'([.,])00(?!\d)'), '');

@@ -1844,7 +1844,9 @@ class _PreviewModeTitle extends StatelessWidget {
       child: UiText(
         context.uiCopy('YOUR PROFILE'),
         style: AppTypography.sectionLabel.copyWith(
-          color: AppColors.champagneLight,
+          // Sits on a dark scrim over the photo: always white, since the
+          // accent is near-black in Black & White and green in Ivory.
+          color: AppColors.onMedia,
           fontSize: 10,
           letterSpacing: 1.4,
         ),

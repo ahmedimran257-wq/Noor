@@ -2062,7 +2062,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your profile is hidden. No one can find you.';
 
   @override
-  String get settings_privacy_photo_label => 'PHOTO VISIBILITY';
+  String get settings_privacy_photo_label => 'Photo visibility';
 
   @override
   String get settings_privacy_photo_sub => 'Who can see your photos';

@@ -2085,7 +2085,7 @@ class AppLocalizationsId extends AppLocalizations {
       'Profil Anda disembunyikan. Tidak ada yang bisa menemukanmu.';
 
   @override
-  String get settings_privacy_photo_label => 'VISIBILITAS FOTO';
+  String get settings_privacy_photo_label => 'Visibilitas foto';
 
   @override
   String get settings_privacy_photo_sub => 'Siapa yang dapat melihat foto Anda';
