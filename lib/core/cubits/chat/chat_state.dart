@@ -207,10 +207,15 @@ class ChatState extends Equatable {
     return null;
   }
 
-  /// Sorted: newest message first
+  /// Sorted: open conversations before ended ones, then newest message first.
+  /// A just-made match has no messages yet; without the open-first rule it
+  /// sank below months-old ended conversations.
   List<Conversation> get sortedConversations {
     final sorted = List<Conversation>.from(conversations);
     sorted.sort((a, b) {
+      if (a.isMatchClosed != b.isMatchClosed) {
+        return a.isMatchClosed ? 1 : -1;
+      }
       final aTime = a.lastMessage?.sentAt ?? DateTime(0);
       final bTime = b.lastMessage?.sentAt ?? DateTime(0);
       return bTime.compareTo(aTime);

@@ -4821,7 +4821,7 @@ abstract class AppLocalizations {
   /// No description provided for @ui_daysAgo.
   ///
   /// In en, this message translates to:
-  /// **'{count} days ago'**
+  /// **'{count, plural, =1{1 day ago} other{{count} days ago}}'**
   String ui_daysAgo(int count);
 
   /// No description provided for @ui_renewsAt.

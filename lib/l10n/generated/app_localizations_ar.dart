@@ -2593,7 +2593,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String ui_daysAgo(int count) {
-    return '$count منذ أيام';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'منذ $count يومًا',
+      few: 'منذ $count أيام',
+      two: 'منذ يومين',
+      one: 'منذ يوم واحد',
+    );
+    return '$_temp0';
   }
 
   @override

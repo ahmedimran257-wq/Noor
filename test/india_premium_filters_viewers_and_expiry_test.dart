@@ -52,7 +52,8 @@ void main() {
       () {
     expect(viewersScreen, contains('AuthorizedProfileService.load'));
     expect(viewersScreen, contains('getAuthorizedPhotoUrls'));
-    expect(viewersScreen, contains("context.push('/profile/\${p.id}')"));
+    // The formatter may wrap `context` and `.push(...)` onto separate lines.
+    expect(viewersScreen, contains(".push('/profile/\${p.id}')"));
     expect(migration, contains('recent_view.viewer_profile_id = p.id'));
     expect(migration, contains('recent_view.viewer_profile_id = owner.id'));
   });

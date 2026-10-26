@@ -1535,7 +1535,7 @@
   "@ui_minutesAgo": {"placeholders":{"count":{"type":"int"}}},
   "ui_hoursAgo": "{count} منذ ساعة",
   "@ui_hoursAgo": {"placeholders":{"count":{"type":"int"}}},
-  "ui_daysAgo": "{count} منذ أيام",
+  "ui_daysAgo": "{count, plural, =1{منذ يوم واحد} =2{منذ يومين} few{منذ {count} أيام} other{منذ {count} يومًا}}",
   "@ui_daysAgo": {"placeholders":{"count":{"type":"int"}}},
   "ui_renewsAt": "يتم التجديد في {time}",
   "@ui_renewsAt": {"placeholders":{"time":{"type":"String"}}},

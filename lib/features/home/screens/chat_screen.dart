@@ -3,6 +3,7 @@
 //   • _EndMatchSheet: 5 pre-written Islamic closure messages
 //   • Closed conversation shows banner + disables input
 import 'package:silarah/l10n/ui_copy.dart';
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -14,6 +15,8 @@ import '../../../core/cubits/chat/chat_cubit.dart';
 import '../../../core/cubits/chat/chat_state.dart';
 import '../../../core/cubits/discovery/discovery_feed_cubit.dart';
 import '../../../core/cubits/interests/interests_cubit.dart';
+import '../../../core/cubits/notifications/notifications_cubit.dart';
+import '../../../core/cubits/subscription/subscription_cubit.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/router/notification_navigation.dart';
 import '../../../core/theme/app_colors.dart';
@@ -67,6 +70,17 @@ class _ChatScreenState extends State<ChatScreen>
   bool _profileOpening = false;
   int _openGeneration = 0;
 
+  // A store purchase reaches the server through the RevenueCat webhook a few
+  // seconds later; until then the server still says subscription_required.
+  static const _maxActivationAttempts = 20;
+  Timer? _activationRetry;
+  int _activationAttempts = 0;
+
+  bool get _storePurchaseActive =>
+      context.read<SubscriptionCubit>().state.isSubscribed;
+
+  bool get _activationSlow => _activationAttempts >= _maxActivationAttempts;
+
   bool _showSuggestedOpeners = true;
   late final AnimationController _openersAnim;
   late final Animation<double> _openersSize;
@@ -100,13 +114,45 @@ class _ChatScreenState extends State<ChatScreen>
     final decision = await _chatCubit.checkChatAccess(conversationId);
     if (!mounted || generation != _openGeneration) return;
     setState(() => _accessDecision = decision);
+    if (decision.reason == ChatAccessReason.subscriptionRequired &&
+        _storePurchaseActive) {
+      _scheduleActivationRetry();
+      return;
+    }
+    _activationAttempts = 0;
     if (!decision.allowed) return;
     await _chatCubit.loadMessages(conversationId, activate: true);
     if (!mounted || generation != _openGeneration) return;
     await _chatCubit.markRead(conversationId);
     if (!mounted || generation != _openGeneration) return;
+    final matchId = _chatCubit.state.conversations
+        .where((c) => c.id == conversationId)
+        .firstOrNull
+        ?.matchId;
+    final links = {
+      'silarah://chat/$conversationId',
+      if (matchId != null) 'silarah://chat/$matchId',
+    };
+    try {
+      context.read<NotificationsCubit>().markHandled(
+            (n) =>
+                n.type == 'new_message' && links.contains(n.deepLink?.trim()),
+          );
+    } catch (_) {
+      // Embedded or test hosts may not provide notifications.
+    }
     _scrollToBottom();
     await _loadOpenersDismissed();
+  }
+
+  void _scheduleActivationRetry() {
+    if (_activationSlow) return;
+    _activationRetry?.cancel();
+    _activationRetry = Timer(const Duration(seconds: 3), () {
+      if (!mounted) return;
+      setState(() => _activationAttempts++);
+      _authorizeAndOpen();
+    });
   }
 
   @override
@@ -156,6 +202,7 @@ class _ChatScreenState extends State<ChatScreen>
 
   @override
   void dispose() {
+    _activationRetry?.cancel();
     _openGeneration++;
     _chatCubit.updateTyping(widget.conversationId, isTyping: false);
     _chatCubit.leaveConversation(widget.conversationId);
@@ -429,6 +476,9 @@ class _ChatScreenState extends State<ChatScreen>
     if (!access.allowed) {
       return _ChatAccessGate(
         decision: access,
+        activating: access.reason == ChatAccessReason.subscriptionRequired &&
+            _storePurchaseActive,
+        activationSlow: _activationSlow,
         onRetry: _authorizeAndOpen,
         onViewPlans: () => PaywallGateSheet.show(context),
         onBack: _close,
@@ -485,6 +535,8 @@ class _ChatScreenState extends State<ChatScreen>
             decision: const ChatAccessDecision(
               ChatAccessReason.subscriptionRequired,
             ),
+            activating: _storePurchaseActive,
+            activationSlow: _activationSlow,
             onRetry: _authorizeAndOpen,
             onViewPlans: () => PaywallGateSheet.show(context),
             onBack: _close,
@@ -1029,20 +1081,33 @@ class _ChatAccessGate extends StatelessWidget {
     required this.onRetry,
     required this.onViewPlans,
     required this.onBack,
+    this.activating = false,
+    this.activationSlow = false,
   });
 
   final ChatAccessDecision decision;
+
+  /// The store reports an active purchase the server has not recorded yet.
+  final bool activating;
+  final bool activationSlow;
   final VoidCallback onRetry;
   final VoidCallback onViewPlans;
   final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
-    final needsPremium = decision.requiresSubscription;
+    final needsPremium = decision.requiresSubscription && !activating;
     final returnsToInbox = decision.reason == ChatAccessReason.notFound ||
         decision.reason == ChatAccessReason.closed ||
         decision.reason == ChatAccessReason.accountRestricted;
     final (title, body, icon) = switch (decision.reason) {
+      ChatAccessReason.subscriptionRequired when activating => (
+          'Activating your Premium',
+          activationSlow
+              ? 'This is taking longer than usual. Tap Refresh access, or restore your purchase from the Premium screen.'
+              : 'Google Play confirmed your purchase. Messaging opens in a few seconds.',
+          Icons.hourglass_top_rounded,
+        ),
       ChatAccessReason.subscriptionRequired => (
           'Messaging with Premium',
           'Men unlock conversations with Silarah Premium. Your existing matches stay safely here.',
@@ -1127,7 +1192,9 @@ class _ChatAccessGate extends StatelessWidget {
                         ? 'View Premium'
                         : returnsToInbox
                             ? 'Back to messages'
-                            : 'Try again',
+                            : activating
+                                ? 'Refresh access'
+                                : 'Try again',
                     onTap: needsPremium
                         ? onViewPlans
                         : returnsToInbox
@@ -1147,7 +1214,9 @@ class _ChatAccessGate extends StatelessWidget {
                             ? 'View Premium'
                             : returnsToInbox
                                 ? 'Back to messages'
-                                : 'Try again',
+                                : activating
+                                    ? 'Refresh access'
+                                    : 'Try again',
                         style: AppTypography.button,
                       ),
                     ),

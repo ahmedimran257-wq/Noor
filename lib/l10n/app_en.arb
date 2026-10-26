@@ -1553,7 +1553,7 @@
   "@ui_minutesAgo": {"placeholders":{"count":{"type":"int"}}},
   "ui_hoursAgo": "{count} hr ago",
   "@ui_hoursAgo": {"placeholders":{"count":{"type":"int"}}},
-  "ui_daysAgo": "{count} days ago",
+  "ui_daysAgo": "{count, plural, =1{1 day ago} other{{count} days ago}}",
   "@ui_daysAgo": {"placeholders":{"count":{"type":"int"}}},
   "ui_renewsAt": "Renews at {time}",
   "@ui_renewsAt": {"placeholders":{"time":{"type":"String"}}},

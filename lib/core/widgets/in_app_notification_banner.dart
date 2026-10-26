@@ -111,123 +111,131 @@ class _InAppNotificationBannerHostState
             top: 0,
             left: AppDimensions.space12,
             right: AppDimensions.space12,
-            child: SafeArea(
-              bottom: false,
-              child: AnimatedSlide(
-                duration:
-                    reduceMotion ? Duration.zero : AppDimensions.durationReveal,
-                curve: AppCurves.reveal,
-                offset: _visible ? Offset.zero : const Offset(0, -.16),
-                child: AnimatedOpacity(
+            // The host sits above the navigator, outside any Material, so
+            // without this the banner text renders with debug underlines.
+            child: Material(
+              type: MaterialType.transparency,
+              child: SafeArea(
+                bottom: false,
+                child: AnimatedSlide(
                   duration: reduceMotion
                       ? Duration.zero
-                      : AppDimensions.durationTransition,
-                  curve: AppCurves.transition,
-                  opacity: _visible ? 1 : 0,
-                  child: Dismissible(
-                    key: ValueKey('in_app_notification_${item.id}'),
-                    direction: DismissDirection.horizontal,
-                    onDismissed: (_) => _dismissImmediately(),
-                    child: SilarahPressable(
-                      haptic: false,
-                      semanticLabel: item.title,
-                      onTap: () {
-                        _dismiss();
-                        widget.onTap(item);
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceElevated,
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: AppColors.cardBorder),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(
-                                alpha: AppColors.active.mode.isDark ? .4 : .14,
+                      : AppDimensions.durationReveal,
+                  curve: AppCurves.reveal,
+                  offset: _visible ? Offset.zero : const Offset(0, -.16),
+                  child: AnimatedOpacity(
+                    duration: reduceMotion
+                        ? Duration.zero
+                        : AppDimensions.durationTransition,
+                    curve: AppCurves.transition,
+                    opacity: _visible ? 1 : 0,
+                    child: Dismissible(
+                      key: ValueKey('in_app_notification_${item.id}'),
+                      direction: DismissDirection.horizontal,
+                      onDismissed: (_) => _dismissImmediately(),
+                      child: SilarahPressable(
+                        haptic: false,
+                        semanticLabel: item.title,
+                        onTap: () {
+                          _dismiss();
+                          widget.onTap(item);
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceElevated,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: AppColors.cardBorder),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(
+                                  alpha:
+                                      AppColors.active.mode.isDark ? .4 : .14,
+                                ),
+                                blurRadius: 26,
+                                offset: const Offset(0, 12),
                               ),
-                              blurRadius: 26,
-                              offset: const Offset(0, 12),
-                            ),
-                          ],
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: Stack(
-                          children: [
-                            PositionedDirectional(
-                              start: 0,
-                              top: 10,
-                              bottom: 10,
-                              child: Container(
-                                width: 2,
-                                decoration: BoxDecoration(
-                                  color: AppColors.champagneGold,
-                                  borderRadius: BorderRadius.circular(2),
+                            ],
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: Stack(
+                            children: [
+                              PositionedDirectional(
+                                start: 0,
+                                top: 10,
+                                bottom: 10,
+                                child: Container(
+                                  width: 2,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.champagneGold,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
                                 ),
                               ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 38,
-                                    height: 38,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.goldGlow,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: AppColors.goldBorder,
+                              Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 12, 8, 12),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 38,
+                                      height: 38,
+                                      decoration: BoxDecoration(
+                                        color: AppColors.goldGlow,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: AppColors.goldBorder,
+                                        ),
+                                      ),
+                                      child: Icon(
+                                        Icons.notifications_none_rounded,
+                                        color: AppColors.champagneGold,
+                                        size: 20,
                                       ),
                                     ),
-                                    child: Icon(
-                                      Icons.notifications_none_rounded,
-                                      color: AppColors.champagneGold,
-                                      size: 20,
+                                    const SizedBox(
+                                      width: AppDimensions.space12,
                                     ),
-                                  ),
-                                  const SizedBox(
-                                    width: AppDimensions.space12,
-                                  ),
-                                  Expanded(
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        UiText(
-                                          item.title,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: AppTypography.bodyMedium,
-                                        ),
-                                        const SizedBox(
-                                          height: AppDimensions.space4,
-                                        ),
-                                        UiText(
-                                          item.body,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: AppTypography.caption,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Semantics(
-                                    label: 'Dismiss notification',
-                                    button: true,
-                                    child: IconButton(
-                                      onPressed: _dismiss,
-                                      icon: Icon(
-                                        Icons.close_rounded,
-                                        color: AppColors.slateMist,
-                                        size: 19,
+                                    Expanded(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          UiText(
+                                            item.title,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: AppTypography.bodyMedium,
+                                          ),
+                                          const SizedBox(
+                                            height: AppDimensions.space4,
+                                          ),
+                                          UiText(
+                                            item.body,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: AppTypography.caption,
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                  ),
-                                ],
+                                    Semantics(
+                                      label: 'Dismiss notification',
+                                      button: true,
+                                      child: IconButton(
+                                        onPressed: _dismiss,
+                                        icon: Icon(
+                                          Icons.close_rounded,
+                                          color: AppColors.slateMist,
+                                          size: 19,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),

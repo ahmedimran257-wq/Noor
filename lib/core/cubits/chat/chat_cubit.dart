@@ -279,6 +279,16 @@ class ChatCubit extends Cubit<ChatState> {
     });
   }
 
+  /// True when a push deep link points at the conversation already on
+  /// screen, so the in-app banner would only repeat what the member sees.
+  bool isViewingConversationLink(String? deepLink) {
+    final active = _activeConversationId;
+    if (active == null || !_isForeground || deepLink == null) return false;
+    final conversation = _findConversation(active);
+    final ids = {active, conversation?.matchId}.whereType<String>();
+    return ids.any((id) => deepLink.trim() == 'silarah://chat/$id');
+  }
+
   Future<void> _reconcileInboxAndActiveConversation() async {
     final activeConversationId = _activeConversationId;
     await loadConversations(showLoading: false, force: true);
@@ -391,9 +401,23 @@ class ChatCubit extends Cubit<ChatState> {
 
     if (!_isRealMode) return '';
     // A cached closed cycle is not proof that no active rematch exists. Force
-    // one bounded inbox reconciliation before resolving the current match.
-    await loadConversations(force: true).timeout(const Duration(seconds: 5));
-    return state.activeConversationWith(otherUserId)?.id ?? '';
+    // a bounded inbox reconciliation before resolving the current match. The
+    // first pass can join an in-flight load that predates a just-accepted
+    // match, so a second fresh pass runs if the match is still missing. A
+    // slow phone must get the "still being prepared" message, never an
+    // uncaught timeout that leaves the button silently doing nothing.
+    for (var attempt = 0; attempt < 2; attempt++) {
+      try {
+        await loadConversations(force: true)
+            .timeout(const Duration(seconds: 12));
+      } on TimeoutException {
+        debugPrint('ChatCubit: inbox reconciliation timed out');
+        return '';
+      }
+      final found = state.activeConversationWith(otherUserId);
+      if (found != null) return found.id;
+    }
+    return '';
   }
 
   Future<bool> sendMessage(String conversationId, String text) async {

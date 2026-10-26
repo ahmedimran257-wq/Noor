@@ -327,6 +327,19 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     }
   }
 
+  /// Marks unread notifications read once the member has handled what they
+  /// point to elsewhere (opened the chat, viewed received interests), so the
+  /// bell does not keep advertising work that is already done.
+  void markHandled(bool Function(NotificationItem item) handled) {
+    final ids = state.items
+        .where((n) => !n.isRead && handled(n))
+        .map((n) => n.id)
+        .toList(growable: false);
+    for (final id in ids) {
+      unawaited(markRead(id));
+    }
+  }
+
   /// Reconciles local notification history after the dedicated profile-view
   /// read cursor has been advanced server-side.
   void reconcileProfileViewsSeen() {

@@ -20,7 +20,7 @@ class ThemeSelectionState {
 class ThemeCubit extends Cubit<ThemeSelectionState> {
   ThemeCubit({SilarahThemeMode? initialMode})
       : super(ThemeSelectionState(
-          activeMode: initialMode ?? SilarahThemeMode.blackWhite,
+          activeMode: initialMode ?? SilarahThemeMode.ivoryEmerald,
         )) {
     _applySystemIdentity(state.activeMode);
     _ready = initialMode == null ? _load() : Future<void>.value();

@@ -1535,7 +1535,7 @@
   "@ui_minutesAgo": {"placeholders":{"count":{"type":"int"}}},
   "ui_hoursAgo": "Il y a {count} heure",
   "@ui_hoursAgo": {"placeholders":{"count":{"type":"int"}}},
-  "ui_daysAgo": "Il y a {count} jours",
+  "ui_daysAgo": "{count, plural, =1{Il y a 1 jour} other{Il y a {count} jours}}",
   "@ui_daysAgo": {"placeholders":{"count":{"type":"int"}}},
   "ui_renewsAt": "Renouvelle à {time}",
   "@ui_renewsAt": {"placeholders":{"time":{"type":"String"}}},

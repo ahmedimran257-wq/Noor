@@ -23,6 +23,7 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/silarah_compute.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/widgets/loaders/silarah_shimmer.dart';
 
 // Viewer row model
 class _Viewer {
@@ -44,8 +45,20 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
   bool _isLoading = false;
   bool _hasLoaded = false;
 
+  // The store can report Premium seconds before the RevenueCat webhook lets
+  // the server agree; retry instead of showing an empty list.
+  bool _awaitingServerPremium = false;
+  int _premiumRetries = 0;
+  Timer? _premiumRetry;
+
   void _close() {
     popOrGoToFallback(GoRouter.of(context), '${AppRoutes.home}?tab=3');
+  }
+
+  @override
+  void dispose() {
+    _premiumRetry?.cancel();
+    super.dispose();
   }
 
   @override
@@ -129,14 +142,25 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
           _loadedViewers = viewersList;
           _isLoading = false;
           _hasLoaded = true;
+          _awaitingServerPremium = false;
         });
       }
     } catch (e) {
       debugPrint('[ProfileViewsScreen] Error loading views: $e');
+      final pendingPremium = e.toString().contains('premium_required');
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _hasLoaded = true;
+          _hasLoaded = !pendingPremium || _premiumRetries >= 20;
+          _awaitingServerPremium = pendingPremium;
+        });
+      }
+      if (pendingPremium && _premiumRetries < 20) {
+        _premiumRetry?.cancel();
+        _premiumRetry = Timer(const Duration(seconds: 3), () {
+          if (!mounted) return;
+          _premiumRetries++;
+          _loadViews();
         });
       }
     }
@@ -199,117 +223,126 @@ class _ProfileViewsScreenState extends State<ProfileViewsScreen> {
                       )
                     : _isLoading
                         ? const _ShimmerLoader()
-                        : _loadedViewers.isEmpty
-                            ? const _EmptyState()
-                            : Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.fromLTRB(
-                                        24, 8, 24, 16),
-                                    child: UiText(
-                                      '${_loadedViewers.length} people viewed your profile this week',
-                                      style: AppTypography.screenTitle
-                                          .copyWith(fontSize: 18),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: ListView.separated(
-                                      padding: const EdgeInsets.fromLTRB(
-                                          24, 0, 24, 40),
-                                      itemCount: _loadedViewers.length,
-                                      separatorBuilder: (_, __) =>
-                                          const SizedBox(
-                                              height: AppDimensions.space8),
-                                      itemBuilder: (context, i) {
-                                        final viewer = _loadedViewers[i];
-                                        final p = viewer.profile;
-                                        final sent =
-                                            interests.interactionWith(p.id) !=
+                        : _loadedViewers.isEmpty && _awaitingServerPremium
+                            ? const _PremiumActivatingState()
+                            : _loadedViewers.isEmpty
+                                ? const _EmptyState()
+                                : Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                            24, 8, 24, 16),
+                                        child: UiText(
+                                          '${_loadedViewers.length} people viewed your profile this week',
+                                          style: AppTypography.screenTitle
+                                              .copyWith(fontSize: 18),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: ListView.separated(
+                                          padding: const EdgeInsets.fromLTRB(
+                                              24, 0, 24, 40),
+                                          itemCount: _loadedViewers.length,
+                                          separatorBuilder: (_, __) =>
+                                              const SizedBox(
+                                                  height: AppDimensions.space8),
+                                          itemBuilder: (context, i) {
+                                            final viewer = _loadedViewers[i];
+                                            final p = viewer.profile;
+                                            final sent = interests
+                                                    .interactionWith(p.id) !=
                                                 ProfileInteractionState.none;
-                                        return _ViewerTile(
-                                          photoUrl: p.photoUrl,
-                                          displayName: p.displayName,
-                                          age: p.age,
-                                          city: p.cityName,
-                                          timeLabel: _timeLabel(
-                                              context, viewer.viewedAt),
-                                          isVerified: p.isVerified,
-                                          isInterestSent: sent,
-                                          onOpen: () =>
-                                              context.push('/profile/${p.id}'),
-                                          onSendInterest: sent
-                                              ? null
-                                              : () async {
-                                                  HapticFeedback.mediumImpact();
-                                                  final sent = await context
-                                                      .read<InterestsCubit>()
-                                                      .sendInterest(p);
-                                                  if (!context.mounted) return;
-                                                  if (!sent) {
-                                                    ScaffoldMessenger.of(
-                                                        context)
-                                                      ..clearSnackBars()
-                                                      ..showSnackBar(
-                                                        SnackBar(
-                                                          content: UiText(
-                                                            context.uiCopy(
-                                                                'Interest could not be sent. Check your limit and try again.'),
-                                                          ),
-                                                        ),
-                                                      );
-                                                    return;
-                                                  }
-                                                  ScaffoldMessenger.of(context)
-                                                    ..clearSnackBars()
-                                                    ..showSnackBar(
-                                                      SnackBar(
-                                                        content: Row(children: [
-                                                          Icon(
-                                                              Icons
-                                                                  .favorite_rounded,
-                                                              color: AppColors
-                                                                  .champagneGold,
-                                                              size: 16),
-                                                          const SizedBox(
-                                                              width: 8),
-                                                          UiText(
-                                                              'Interest sent to ${p.firstName}',
-                                                              style:
-                                                                  AppTypography
+                                            return _ViewerTile(
+                                              photoUrl: p.photoUrl,
+                                              displayName: p.displayName,
+                                              age: p.age,
+                                              city: p.cityName,
+                                              timeLabel: _timeLabel(
+                                                  context, viewer.viewedAt),
+                                              isVerified: p.isVerified,
+                                              isInterestSent: sent,
+                                              onOpen: () => context
+                                                  .push('/profile/${p.id}'),
+                                              onSendInterest: sent
+                                                  ? null
+                                                  : () async {
+                                                      HapticFeedback
+                                                          .mediumImpact();
+                                                      final sent = await context
+                                                          .read<
+                                                              InterestsCubit>()
+                                                          .sendInterest(p);
+                                                      if (!context.mounted) {
+                                                        return;
+                                                      }
+                                                      if (!sent) {
+                                                        ScaffoldMessenger.of(
+                                                            context)
+                                                          ..clearSnackBars()
+                                                          ..showSnackBar(
+                                                            SnackBar(
+                                                              content: UiText(
+                                                                context.uiCopy(
+                                                                    'Interest could not be sent. Check your limit and try again.'),
+                                                              ),
+                                                            ),
+                                                          );
+                                                        return;
+                                                      }
+                                                      ScaffoldMessenger.of(
+                                                          context)
+                                                        ..clearSnackBars()
+                                                        ..showSnackBar(
+                                                          SnackBar(
+                                                            content:
+                                                                Row(children: [
+                                                              Icon(
+                                                                  Icons
+                                                                      .favorite_rounded,
+                                                                  color: AppColors
+                                                                      .champagneGold,
+                                                                  size: 16),
+                                                              const SizedBox(
+                                                                  width: 8),
+                                                              UiText(
+                                                                  'Interest sent to ${p.firstName}',
+                                                                  style: AppTypography
                                                                       .body
                                                                       .copyWith(
-                                                                color: AppColors
-                                                                    .readableOn(
-                                                                  AppColors
-                                                                      .surfaceGlassHover,
-                                                                ),
-                                                              )),
-                                                        ]),
-                                                        backgroundColor: AppColors
-                                                            .surfaceGlassHover,
-                                                        behavior:
-                                                            SnackBarBehavior
-                                                                .floating,
-                                                        shape:
-                                                            RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                  AppDimensions
-                                                                      .radiusButton),
-                                                        ),
-                                                        duration:
-                                                            const Duration(
-                                                                seconds: 2),
-                                                      ),
-                                                    );
-                                                },
-                                        );
-                                      },
-                                    ),
+                                                                    color: AppColors
+                                                                        .readableOn(
+                                                                      AppColors
+                                                                          .surfaceGlassHover,
+                                                                    ),
+                                                                  )),
+                                                            ]),
+                                                            backgroundColor:
+                                                                AppColors
+                                                                    .surfaceGlassHover,
+                                                            behavior:
+                                                                SnackBarBehavior
+                                                                    .floating,
+                                                            shape:
+                                                                RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                      AppDimensions
+                                                                          .radiusButton),
+                                                            ),
+                                                            duration:
+                                                                const Duration(
+                                                                    seconds: 2),
+                                                          ),
+                                                        );
+                                                    },
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
           ),
         );
       },
@@ -642,6 +675,38 @@ class _ViewerTile extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PremiumActivatingState extends StatelessWidget {
+  const _PremiumActivatingState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppDimensions.space32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SilarahPulseLoader(size: 40),
+            const SizedBox(height: AppDimensions.space20),
+            UiText(
+              context.uiCopy('Activating your Premium'),
+              textAlign: TextAlign.center,
+              style: AppTypography.screenTitle.copyWith(fontSize: 20),
+            ),
+            const SizedBox(height: AppDimensions.space8),
+            UiText(
+              context.uiCopy(
+                  'Your viewers appear here in a few seconds, as soon as Google Play confirms your purchase.'),
+              textAlign: TextAlign.center,
+              style: AppTypography.bodyMuted,
+            ),
+          ],
         ),
       ),
     );

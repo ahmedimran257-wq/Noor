@@ -242,6 +242,10 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
         ),
         behavior: SnackBarBehavior.floating,
+        // Floating messages only avoid Scaffold's own bottom bar. Onboarding
+        // Continue buttons and sticky action bars are custom, so lift every
+        // message clear of them app-wide instead of per call site.
+        insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
       ),
 
       bottomSheetTheme: BottomSheetThemeData(

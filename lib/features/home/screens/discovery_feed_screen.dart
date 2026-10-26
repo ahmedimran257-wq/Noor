@@ -450,7 +450,13 @@ class _DiscoveryFeedScreenState extends State<DiscoveryFeedScreen>
                   isBookmarked: _bookmarked.contains(p.id),
                   interestActionLabel: action.label,
                   isInterestActionEnabled: action.onTap != null,
-                  previousMatchLabel: p.previousMatchAt == null
+                  // A past match is history only while there is no
+                  // current one; "Previously matched" beside Open Chat is
+                  // contradictory.
+                  previousMatchLabel: p.previousMatchAt == null ||
+                          interests.interactionWith(p.id) ==
+                              ProfileInteractionState.matched ||
+                          p.relationshipState == 'matched'
                       ? null
                       : AppLocalizations.of(context).discovery_previous_match(
                           MaterialLocalizations.of(context).formatMediumDate(

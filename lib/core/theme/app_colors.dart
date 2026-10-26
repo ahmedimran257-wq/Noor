@@ -31,6 +31,8 @@ enum SilarahThemeMode {
   bool get isChromatic => false;
 
   static SilarahThemeMode fromStorage(String? value) => switch (value) {
+        // A fresh install has no preference: open on the brand identity.
+        null => SilarahThemeMode.ivoryEmerald,
         'ivory_emerald' => SilarahThemeMode.ivoryEmerald,
         // Prism Luxe was a dark identity. Migrate it to OLED so an existing
         // member is not unexpectedly moved from dark mode to a light canvas.
@@ -285,7 +287,7 @@ class SilarahPalette {
 /// facade makes the migration atomic: every existing screen responds to a
 /// palette change, while new code can use [SilarahPalette] explicitly.
 abstract final class AppColors {
-  static SilarahPalette _active = SilarahPalette.blackWhite;
+  static SilarahPalette _active = SilarahPalette.ivoryEmerald;
 
   static SilarahPalette get active => _active;
 

@@ -380,10 +380,10 @@ class _LanguageTile extends StatelessWidget {
               _LanguageMark(mark: language.mark, selected: isSelected),
               const SizedBox(width: AppDimensions.space16),
               Expanded(
+                // Every row starts at the same edge; Arabic and Urdu names
+                // still render right-to-left within their own text run.
                 child: Column(
-                  crossAxisAlignment: language.isRtl
-                      ? CrossAxisAlignment.end
-                      : CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       language.nativeName,

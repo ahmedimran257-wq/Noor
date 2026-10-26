@@ -584,11 +584,14 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
               // Profile content
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(
+                padding: EdgeInsets.fromLTRB(
                   AppDimensions.space24,
                   AppDimensions.space24,
                   AppDimensions.space24,
-                  120, // room for the sticky CTA bar
+                  // The sticky bar is ~92dp plus the system navigation area;
+                  // a fixed gap let the last section slide under it on
+                  // phones with button navigation.
+                  116 + MediaQuery.paddingOf(context).bottom,
                 ),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
@@ -1657,7 +1660,12 @@ class _NameBlock extends StatelessWidget {
           const SizedBox(height: AppDimensions.space10),
           const _GuardianManagedDetailPill(),
         ],
-        if (profile.previousMatchAt != null) ...[
+        // History only: hidden while the two members are matched again.
+        if (profile.previousMatchAt != null &&
+            profile.relationshipState != 'matched' &&
+            context.select<InterestsCubit, bool>((cubit) =>
+                cubit.state.interactionWith(profile.id) !=
+                ProfileInteractionState.matched)) ...[
           const SizedBox(height: AppDimensions.space10),
           Row(
             children: [
@@ -2361,7 +2369,7 @@ class _DetailTile extends StatelessWidget {
         children: [
           UiText(item.label, style: AppTypography.sectionLabel),
           const SizedBox(height: AppDimensions.space4),
-          UiText(item.value, style: AppTypography.bodyMedium),
+          UiText(_displayValue(item.value), style: AppTypography.bodyMedium),
         ],
       ),
     );
@@ -2755,4 +2763,23 @@ class _SheetAction extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Stored values arrive as enum names ("never", "SUNNI", "once_a_week");
+/// detail tiles show them as readable labels without touching data.
+String _displayValue(String raw) {
+  final spaced = raw.replaceAll('_', ' ').trim();
+  if (spaced.isEmpty) return raw;
+  final hasLetters = spaced.contains(RegExp(r'[A-Za-z]'));
+  if (hasLetters && spaced == spaced.toUpperCase()) {
+    return spaced
+        .toLowerCase()
+        .split(' ')
+        .map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1))
+        .join(' ');
+  }
+  if (hasLetters && spaced == spaced.toLowerCase()) {
+    return spaced[0].toUpperCase() + spaced.substring(1);
+  }
+  return spaced;
 }

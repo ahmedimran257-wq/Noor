@@ -1535,7 +1535,7 @@
   "@ui_minutesAgo": {"placeholders":{"count":{"type":"int"}}},
   "ui_hoursAgo": "Vor {count} Stunden",
   "@ui_hoursAgo": {"placeholders":{"count":{"type":"int"}}},
-  "ui_daysAgo": "Vor {count} Tagen",
+  "ui_daysAgo": "{count, plural, =1{Vor 1 Tag} other{Vor {count} Tagen}}",
   "@ui_daysAgo": {"placeholders":{"count":{"type":"int"}}},
   "ui_renewsAt": "Verlängert um {time}",
   "@ui_renewsAt": {"placeholders":{"time":{"type":"String"}}},

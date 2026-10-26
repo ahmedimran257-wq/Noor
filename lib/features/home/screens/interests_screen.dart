@@ -738,6 +738,9 @@ class _ReceivedTile extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
+                      // Same height as Accept; the two themes differ.
+                      minimumSize: const Size.fromHeight(48),
+                      maximumSize: const Size.fromHeight(48),
                       side: BorderSide(color: AppColors.cardBorder),
                       foregroundColor: AppColors.slateMist,
                       shape: RoundedRectangleBorder(
@@ -760,6 +763,8 @@ class _ReceivedTile extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      maximumSize: const Size.fromHeight(48),
                       backgroundColor: AppColors.champagneGold,
                       foregroundColor: AppColors.obsidianNight,
                       shape: RoundedRectangleBorder(

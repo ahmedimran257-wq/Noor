@@ -2,6 +2,8 @@
 // IndexedStack with 4 tabs + SilarahBottomNav.
 // Preserves scroll state across tab switches.
 import 'package:silarah/l10n/ui_copy.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +13,9 @@ import '../../core/cubits/chat/chat_cubit.dart';
 import '../../core/cubits/discovery/discovery_feed_cubit.dart';
 import '../../core/cubits/interests/interests_cubit.dart';
 import '../../core/cubits/interests/interests_state.dart';
+import '../../core/cubits/notifications/notifications_cubit.dart';
+import '../../core/cubits/subscription/subscription_cubit.dart';
+import '../../core/cubits/subscription/subscription_state.dart';
 import '../../core/router/app_router.dart';
 import '../../core/router/notification_navigation.dart';
 import '../../core/services/connectivity_service.dart';
@@ -120,6 +125,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    for (final timer in _entitlementReloads) {
+      timer.cancel();
+    }
     CoachMarkService.replayRevision.removeListener(_replayCoachMarks);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -183,6 +191,12 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         // Selecting Interests is an explicit freshness boundary. This performs
         // one tiny revision check and reloads the bounded lists only on change.
         context.read<InterestsCubit>().refreshIfChanged(forceCheck: true);
+        // Seeing the Interests tab handles "new interest" / "accepted" alerts.
+        context.read<NotificationsCubit>().markHandled(
+              (n) =>
+                  n.type == 'interest_received' ||
+                  n.type == 'interest_accepted',
+            );
       case 2:
         context.read<ChatCubit>().refreshIfChanged();
     }
@@ -197,111 +211,140 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     };
   }
 
+  final _entitlementReloads = <Timer>[];
+
+  /// Locked inbox previews and message gates come from the server. When
+  /// Premium switches on (a purchase) or off (expiry), reload them now and
+  /// again after the RevenueCat webhook has had time to reach the server.
+  void _reloadForEntitlementChange() {
+    for (final timer in _entitlementReloads) {
+      timer.cancel();
+    }
+    _entitlementReloads.clear();
+    void reload() {
+      if (!mounted) return;
+      context
+          .read<ChatCubit>()
+          .loadConversations(showLoading: false, force: true);
+    }
+
+    reload();
+    for (final delay in const [Duration(seconds: 4), Duration(seconds: 12)]) {
+      _entitlementReloads.add(Timer(delay, reload));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return HomeTabBackScope(
       currentTab: _currentTab,
       onReturnToPrimaryTab: () => _selectTab(0),
-      child: BlocListener<InterestsCubit, InterestsState>(
+      child: BlocListener<SubscriptionCubit, SubscriptionState>(
         listenWhen: (previous, current) =>
-            (!previous.limitError && current.limitError) ||
-            (!previous.quotaUnavailable && current.quotaUnavailable),
-        listener: (context, quota) {
-          if (quota.limitError) {
-            InterestQuotaSheet.show(context, quota: quota);
-            context.read<InterestsCubit>().clearLimitError();
-            return;
-          }
-          ScaffoldMessenger.of(context)
-            ..clearSnackBars()
-            ..showSnackBar(SnackBar(
-              content: UiText(
-                context.uiCopy(
-                    'We could not verify your daily allowance. Check your connection and try again.'),
-              ),
-              behavior: SnackBarBehavior.floating,
-            ));
-          context.read<InterestsCubit>().clearQuotaUnavailable();
-        },
-        child: Scaffold(
-          backgroundColor: AppColors.obsidianNight,
-          body: SafeArea(
-            bottom: false,
-            child: Column(
-              children: [
-                const _ConnectivityStatusBanner(),
-                BlocBuilder<AccountStandingCubit, AccountStandingState>(
-                  buildWhen: (previous, current) =>
-                      previous.kind != current.kind ||
-                      previous.updating != current.updating ||
-                      previous.errorMessage != current.errorMessage,
-                  builder: (context, standing) => AnimatedSwitcher(
-                    duration: reduceMotion
-                        ? Duration.zero
-                        : AppDimensions.durationReveal,
-                    switchInCurve: AppCurves.reveal,
-                    switchOutCurve: AppCurves.dismiss,
-                    // The Profile tab (index 3) shows the same standing in its
-                    // own card with a Resume action, so the banner would repeat.
-                    child: standing.showsPersistentNotice && _currentTab != 3
-                        ? _PersistentStandingBanner(
-                            key: ValueKey(standing.kind),
-                            standing: standing,
-                          )
-                        : const SizedBox.shrink(
-                            key: ValueKey('standing-clear')),
-                  ),
+            previous.isSubscribed != current.isSubscribed,
+        listener: (_, __) => _reloadForEntitlementChange(),
+        child: BlocListener<InterestsCubit, InterestsState>(
+          listenWhen: (previous, current) =>
+              (!previous.limitError && current.limitError) ||
+              (!previous.quotaUnavailable && current.quotaUnavailable),
+          listener: (context, quota) {
+            if (quota.limitError) {
+              InterestQuotaSheet.show(context, quota: quota);
+              context.read<InterestsCubit>().clearLimitError();
+              return;
+            }
+            ScaffoldMessenger.of(context)
+              ..clearSnackBars()
+              ..showSnackBar(SnackBar(
+                content: UiText(
+                  context.uiCopy(
+                      'We could not verify your daily allowance. Check your connection and try again.'),
                 ),
-                Expanded(
-                  child: IndexedStack(
-                    index: _currentTab,
-                    children: List.generate(
-                      _tabCount,
-                      (index) => TickerMode(
-                        enabled: index == _currentTab,
-                        child: ExcludeSemantics(
-                          excluding: index != _currentTab,
-                          child: RepaintBoundary(
-                            child: _tabCache[index] ?? const SizedBox.shrink(),
+                behavior: SnackBarBehavior.floating,
+              ));
+            context.read<InterestsCubit>().clearQuotaUnavailable();
+          },
+          child: Scaffold(
+            backgroundColor: AppColors.obsidianNight,
+            body: SafeArea(
+              bottom: false,
+              child: Column(
+                children: [
+                  const _ConnectivityStatusBanner(),
+                  BlocBuilder<AccountStandingCubit, AccountStandingState>(
+                    buildWhen: (previous, current) =>
+                        previous.kind != current.kind ||
+                        previous.updating != current.updating ||
+                        previous.errorMessage != current.errorMessage,
+                    builder: (context, standing) => AnimatedSwitcher(
+                      duration: reduceMotion
+                          ? Duration.zero
+                          : AppDimensions.durationReveal,
+                      switchInCurve: AppCurves.reveal,
+                      switchOutCurve: AppCurves.dismiss,
+                      // The Profile tab (index 3) shows the same standing in its
+                      // own card with a Resume action, so the banner would repeat.
+                      child: standing.showsPersistentNotice && _currentTab != 3
+                          ? _PersistentStandingBanner(
+                              key: ValueKey(standing.kind),
+                              standing: standing,
+                            )
+                          : const SizedBox.shrink(
+                              key: ValueKey('standing-clear')),
+                    ),
+                  ),
+                  Expanded(
+                    child: IndexedStack(
+                      index: _currentTab,
+                      children: List.generate(
+                        _tabCount,
+                        (index) => TickerMode(
+                          enabled: index == _currentTab,
+                          child: ExcludeSemantics(
+                            excluding: index != _currentTab,
+                            child: RepaintBoundary(
+                              child:
+                                  _tabCache[index] ?? const SizedBox.shrink(),
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
+                ],
+              ),
+            ),
+            bottomNavigationBar: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // A dedicated dock cannot obscure bookmark, interest, or chat
+                // actions. Large-text tips scroll independently above navigation.
+                if (_coachTab case final int tab)
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: 560,
+                      maxHeight: MediaQuery.sizeOf(context).height * .34,
+                    ),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                      child: SilarahCoachMark(
+                        icon: _coachTips[tab].icon,
+                        title: context.uiCopy(_coachTips[tab].title),
+                        message: context.uiCopy(_coachTips[tab].message),
+                        onDismiss: _dismissCoachMark,
+                        onDisableAll: _disableCoachMarks,
+                      ),
+                    ),
+                  ),
+                SilarahBottomNav(
+                  currentIndex: _currentTab,
+                  onTabSelected: _selectTab,
                 ),
               ],
             ),
+            resizeToAvoidBottomInset: false,
           ),
-          bottomNavigationBar: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // A dedicated dock cannot obscure bookmark, interest, or chat
-              // actions. Large-text tips scroll independently above navigation.
-              if (_coachTab case final int tab)
-                ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: 560,
-                    maxHeight: MediaQuery.sizeOf(context).height * .34,
-                  ),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-                    child: SilarahCoachMark(
-                      icon: _coachTips[tab].icon,
-                      title: context.uiCopy(_coachTips[tab].title),
-                      message: context.uiCopy(_coachTips[tab].message),
-                      onDismiss: _dismissCoachMark,
-                      onDisableAll: _disableCoachMarks,
-                    ),
-                  ),
-                ),
-              SilarahBottomNav(
-                currentIndex: _currentTab,
-                onTabSelected: _selectTab,
-              ),
-            ],
-          ),
-          resizeToAvoidBottomInset: false,
         ),
       ),
     );

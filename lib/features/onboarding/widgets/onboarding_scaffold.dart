@@ -98,14 +98,28 @@ class OnboardingScaffold extends StatelessWidget {
                   ),
                 ),
                 Expanded(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppDimensions.space24,
-                    ),
-                    child: SilarahEntrance(
-                      key: ValueKey('onboarding-body-$resolvedStep'),
-                      child: body,
+                  // Fade content into the header instead of cutting labels
+                  // off at a hard edge while scrolling.
+                  child: ShaderMask(
+                    blendMode: BlendMode.dstIn,
+                    shaderCallback: (bounds) => const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.transparent, Colors.black],
+                      stops: [0, 0.04],
+                    ).createShader(bounds),
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(
+                        AppDimensions.space24,
+                        AppDimensions.space8,
+                        AppDimensions.space24,
+                        AppDimensions.space16,
+                      ),
+                      child: SilarahEntrance(
+                        key: ValueKey('onboarding-body-$resolvedStep'),
+                        child: body,
+                      ),
                     ),
                   ),
                 ),

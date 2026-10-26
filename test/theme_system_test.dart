@@ -29,6 +29,11 @@ void main() {
       reason: 'The retired dark identity migrates without a bright flash.',
     );
     expect(
+      SilarahThemeMode.fromStorage(null),
+      SilarahThemeMode.ivoryEmerald,
+      reason: 'A fresh install opens on the brand identity.',
+    );
+    expect(
       SilarahThemeMode.fromStorage('unknown'),
       SilarahThemeMode.blackWhite,
     );

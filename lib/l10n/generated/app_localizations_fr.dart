@@ -2647,7 +2647,13 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String ui_daysAgo(int count) {
-    return 'Il y a $count jours';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Il y a $count jours',
+      one: 'Il y a 1 jour',
+    );
+    return '$_temp0';
   }
 
   @override

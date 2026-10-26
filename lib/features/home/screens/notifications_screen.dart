@@ -274,8 +274,12 @@ class _NotificationTile extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusButton),
           side: BorderSide(
-            color: item.isRead ? AppColors.cardBorder : AppColors.champagneGold,
-            width: item.isRead ? 1 : 1.5,
+            // Unread is carried by the dot and a faint accent edge; a full
+            // dark outline on every card read as harsh, not premium.
+            color: item.isRead
+                ? AppColors.cardBorder
+                : AppColors.champagneGold.withValues(alpha: 0.35),
+            width: 1,
           ),
         ),
         clipBehavior: Clip.antiAlias,
@@ -383,8 +387,20 @@ class _NotificationTile extends StatelessWidget {
       case 'account_suspended':
       case 'account_banned':
         return Icons.block_rounded;
+      case 'subscription_active':
+      case 'subscription_renewed':
+      case 'subscription_updated':
+        return Icons.workspace_premium_rounded;
+      case 'subscription_cancelled':
+      case 'subscription_expired':
+      case 'subscription_refunded':
+        return Icons.workspace_premium_outlined;
+      case 'billing_issue':
+        return Icons.credit_card_off_rounded;
+      case 'profile_view':
+        return Icons.visibility_rounded;
       default:
-        return Icons.lightbulb_outline_rounded;
+        return Icons.notifications_none_rounded;
     }
   }
 

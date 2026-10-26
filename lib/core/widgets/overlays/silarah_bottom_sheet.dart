@@ -72,13 +72,17 @@ Future<T?> showSilarahBottomSheet<T>({
   );
   final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
 
+  // A transparent sheet hosts its own floating card; the theme's bordered
+  // sheet shape would otherwise draw a second outline around that card.
+  final floatingCard = backgroundColor == Colors.transparent;
+
   return navigator.push<T>(
     SilarahBottomSheetRoute<T>(
       builder: builder,
       capturedThemes: capturedThemes,
       backgroundColor: backgroundColor,
-      elevation: elevation,
-      shape: shape,
+      elevation: elevation ?? (floatingCard ? 0 : null),
+      shape: shape ?? (floatingCard ? const RoundedRectangleBorder() : null),
       clipBehavior: clipBehavior,
       constraints: constraints,
       modalBarrierColor: barrierColor ?? AppColors.overlayBlack55,

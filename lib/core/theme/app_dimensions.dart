@@ -73,6 +73,10 @@ abstract final class AppDimensions {
   /// Tallest the card may grow on long phones before space is left free.
   static const double cardTallestAspectRatio = 9 / 16;
 
+  /// Squarest the card may get on short phones before it stops filling the
+  /// width.
+  static const double cardSquarestAspectRatio = 0.85;
+
   // Animation Durations
   /// Content entrance: fast response followed by a quiet settle.
   static const Duration durationReveal = Duration(milliseconds: 300);

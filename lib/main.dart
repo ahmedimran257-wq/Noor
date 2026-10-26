@@ -545,6 +545,12 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
       navigateFromPushNotification(_router, path);
     };
     FcmService.instance.onForegroundMessage = (message) {
+      final deepLink = message.data['deep_link']?.toString();
+      // The open chat already shows the new message live; skip the banner.
+      if (_chatCubit.isViewingConversationLink(deepLink)) {
+        unawaited(_notificationsCubit.loadNotifications(force: true));
+        return;
+      }
       _notificationsCubit.reconcileForegroundPush(
         type: message.data['type']?.toString() ?? 'general',
         notificationId: message.data['notification_id']?.toString(),

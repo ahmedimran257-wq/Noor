@@ -2,9 +2,14 @@ import 'package:flutter/widgets.dart';
 
 import '../../theme/app_dimensions.dart';
 
-/// Sizes a discovery card: the editorial 7:10 portrait where space is tight,
-/// growing into the free height on tall phones (up to
-/// [AppDimensions.cardTallestAspectRatio]) so no dead band sits under it.
+/// Sizes a discovery card to the space it is given.
+///
+/// - Tall phones: grows from the editorial 7:10 portrait up to
+///   [AppDimensions.cardTallestAspectRatio] so no dead band sits under it.
+/// - Short (16:9) phones: keeps the full width and uses the available height,
+///   down to [AppDimensions.cardSquarestAspectRatio]. Holding 7:10 there made
+///   the card narrower than the screen and pushed it to one side.
+/// - Anything shorter still: keeps the squarest shape, centred.
 class ProfileCardBox extends StatelessWidget {
   const ProfileCardBox({super.key, required this.child});
 
@@ -15,19 +20,27 @@ class ProfileCardBox extends StatelessWidget {
     return LayoutBuilder(builder: (context, constraints) {
       final width = constraints.maxWidth;
       final maxHeight = constraints.maxHeight;
-      if (!width.isFinite ||
-          !maxHeight.isFinite ||
-          maxHeight <= width / AppDimensions.cardAspectRatio) {
+      if (!width.isFinite || !maxHeight.isFinite) {
         return AspectRatio(
           aspectRatio: AppDimensions.cardAspectRatio,
           child: child,
         );
       }
+
       final tallest = width / AppDimensions.cardTallestAspectRatio;
-      return SizedBox(
-        width: width,
-        height: maxHeight < tallest ? maxHeight : tallest,
-        child: child,
+      final squarest = width / AppDimensions.cardSquarestAspectRatio;
+      if (maxHeight >= squarest) {
+        return SizedBox(
+          width: width,
+          height: maxHeight < tallest ? maxHeight : tallest,
+          child: child,
+        );
+      }
+      return Center(
+        child: AspectRatio(
+          aspectRatio: AppDimensions.cardSquarestAspectRatio,
+          child: child,
+        ),
       );
     });
   }

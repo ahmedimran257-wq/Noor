@@ -72,6 +72,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
   bool _loadingExisting = false;
   String? _existingLoadError;
   PhotoPrivacy _privacy = PhotoPrivacy.publicAll;
+  final _privacyChoicesKey = GlobalKey();
   int? _activeSlot;
   String? _operationTitle;
   String? _operationDetail;
@@ -725,7 +726,24 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: AppDimensions.space16),
-              PhotoAudienceSummary(privacy: _privacy),
+              // Women choose their photo audience at the end of this step;
+              // the summary card takes them straight to those choices.
+              GestureDetector(
+                onTap: _gender != Gender.female
+                    ? null
+                    : () {
+                        final target = _privacyChoicesKey.currentContext;
+                        if (target != null) {
+                          Scrollable.ensureVisible(
+                            target,
+                            duration: AppDimensions.durationTransition,
+                            curve: Curves.easeOutCubic,
+                            alignment: 0.1,
+                          );
+                        }
+                      },
+                child: PhotoAudienceSummary(privacy: _privacy),
+              ),
               const SizedBox(height: AppDimensions.space32),
               StepHeader(
                 title: widget.returnToPreviousOnSave
@@ -840,7 +858,7 @@ class _PhotoUploadScreenState extends State<PhotoUploadScreen> {
               if (_gender == Gender.female) ...[
                 const SizedBox(height: AppDimensions.space24),
                 UiText(l10n.photo_privacy_label,
-                    style: AppTypography.sectionLabel),
+                    key: _privacyChoicesKey, style: AppTypography.sectionLabel),
                 const SizedBox(height: AppDimensions.space12),
                 _PrivacyToggle(
                   current: _privacy,
