@@ -1,6 +1,10 @@
 /// Profile and settings copy introduced by the pre-launch polish pass.
 const accountPolishUiCopy = <String, Map<String, String>>{
   'ar': {
+    "Verify your profile photo": "تحقق من صورة ملفك الشخصي",
+    "Three quick steps: look at the camera, smile, then blink. A trained reviewer compares them with your main photo. Hijab, niqab and glasses can stay on.":
+        "ثلاث خطوات سريعة: انظر إلى الكاميرا، ثم ابتسم، ثم ارمش. يقارنها مراجع مدرّب بصورتك الرئيسية. يمكنك إبقاء الحجاب والنقاب والنظارات.",
+    "Start camera": "تشغيل الكاميرا",
     'Just now': "الآن",
     "Activating your Premium": "جارٍ تفعيل اشتراكك المميز",
     "Google Play confirmed your purchase. Messaging opens in a few seconds.":
@@ -12,6 +16,10 @@ const accountPolishUiCopy = <String, Map<String, String>>{
     'Help Center, contact and grievances': 'مركز المساعدة والتواصل والشكاوى'
   },
   'bn': {
+    "Verify your profile photo": "আপনার প্রোফাইল ছবি যাচাই করুন",
+    "Three quick steps: look at the camera, smile, then blink. A trained reviewer compares them with your main photo. Hijab, niqab and glasses can stay on.":
+        "তিনটি দ্রুত ধাপ: ক্যামেরার দিকে তাকান, হাসুন, তারপর চোখ পিটপিট করুন। একজন প্রশিক্ষিত পর্যালোচক এগুলো আপনার প্রধান ছবির সাথে মিলিয়ে দেখবেন। হিজাব, নিকাব ও চশমা পরে থাকতে পারেন।",
+    "Start camera": "ক্যামেরা চালু করুন",
     'Just now': "এইমাত্র",
     "Activating your Premium": "আপনার Premium চালু হচ্ছে",
     "Google Play confirmed your purchase. Messaging opens in a few seconds.":
@@ -23,6 +31,10 @@ const accountPolishUiCopy = <String, Map<String, String>>{
     'Help Center, contact and grievances': 'সহায়তা কেন্দ্র, যোগাযোগ ও অভিযোগ'
   },
   'de': {
+    "Verify your profile photo": "Profilfoto bestätigen",
+    "Three quick steps: look at the camera, smile, then blink. A trained reviewer compares them with your main photo. Hijab, niqab and glasses can stay on.":
+        "Drei kurze Schritte: in die Kamera schauen, lächeln, dann blinzeln. Eine geschulte Prüferin oder ein geschulter Prüfer vergleicht sie mit Ihrem Hauptfoto. Hidschab, Nikab und Brille dürfen bleiben.",
+    "Start camera": "Kamera starten",
     'Just now': "Gerade eben",
     "Activating your Premium": "Ihr Premium wird aktiviert",
     "Google Play confirmed your purchase. Messaging opens in a few seconds.":
@@ -34,6 +46,10 @@ const accountPolishUiCopy = <String, Map<String, String>>{
     'Help Center, contact and grievances': 'Hilfe, Kontakt und Beschwerden'
   },
   'fr': {
+    "Verify your profile photo": "Vérifier votre photo de profil",
+    "Three quick steps: look at the camera, smile, then blink. A trained reviewer compares them with your main photo. Hijab, niqab and glasses can stay on.":
+        "Trois étapes rapides : regardez la caméra, souriez, puis clignez des yeux. Un vérificateur formé les compare à votre photo principale. Hijab, niqab et lunettes peuvent rester.",
+    "Start camera": "Démarrer la caméra",
     'Just now': "À l’instant",
     "Activating your Premium": "Activation de votre Premium",
     "Google Play confirmed your purchase. Messaging opens in a few seconds.":
@@ -45,6 +61,10 @@ const accountPolishUiCopy = <String, Map<String, String>>{
     'Help Center, contact and grievances': 'Aide, contact et réclamations'
   },
   'hi': {
+    "Verify your profile photo": "अपनी प्रोफ़ाइल फ़ोटो सत्यापित करें",
+    "Three quick steps: look at the camera, smile, then blink. A trained reviewer compares them with your main photo. Hijab, niqab and glasses can stay on.":
+        "तीन आसान चरण: कैमरे की ओर देखें, मुस्कुराएँ, फिर पलक झपकाएँ। एक प्रशिक्षित समीक्षक इन्हें आपकी मुख्य फ़ोटो से मिलाते हैं। हिजाब, नक़ाब और चश्मा पहने रह सकते हैं।",
+    "Start camera": "कैमरा शुरू करें",
     'Just now': "अभी-अभी",
     "Activating your Premium": "आपका Premium चालू हो रहा है",
     "Google Play confirmed your purchase. Messaging opens in a few seconds.":
@@ -56,6 +76,10 @@ const accountPolishUiCopy = <String, Map<String, String>>{
     'Help Center, contact and grievances': 'सहायता केंद्र, संपर्क और शिकायतें'
   },
   'id': {
+    "Verify your profile photo": "Verifikasi foto profil Anda",
+    "Three quick steps: look at the camera, smile, then blink. A trained reviewer compares them with your main photo. Hijab, niqab and glasses can stay on.":
+        "Tiga langkah cepat: lihat kamera, tersenyum, lalu berkedip. Peninjau terlatih membandingkannya dengan foto utama Anda. Hijab, cadar, dan kacamata boleh tetap dipakai.",
+    "Start camera": "Mulai kamera",
     'Just now': "Baru saja",
     "Activating your Premium": "Mengaktifkan Premium Anda",
     "Google Play confirmed your purchase. Messaging opens in a few seconds.":
@@ -68,6 +92,10 @@ const accountPolishUiCopy = <String, Map<String, String>>{
         'Pusat bantuan, kontak, dan pengaduan'
   },
   'ms': {
+    "Verify your profile photo": "Sahkan gambar profil anda",
+    "Three quick steps: look at the camera, smile, then blink. A trained reviewer compares them with your main photo. Hijab, niqab and glasses can stay on.":
+        "Tiga langkah pantas: lihat kamera, senyum, kemudian kelip mata. Penyemak terlatih membandingkannya dengan gambar utama anda. Tudung, niqab dan cermin mata boleh kekal dipakai.",
+    "Start camera": "Mulakan kamera",
     'Just now': "Baru sahaja",
     "Activating your Premium": "Mengaktifkan Premium anda",
     "Google Play confirmed your purchase. Messaging opens in a few seconds.":
@@ -79,6 +107,10 @@ const accountPolishUiCopy = <String, Map<String, String>>{
     'Help Center, contact and grievances': 'Pusat bantuan, hubungi dan aduan'
   },
   'tr': {
+    "Verify your profile photo": "Profil fotoğrafınızı doğrulayın",
+    "Three quick steps: look at the camera, smile, then blink. A trained reviewer compares them with your main photo. Hijab, niqab and glasses can stay on.":
+        "Üç kısa adım: kameraya bakın, gülümseyin, sonra göz kırpın. Eğitimli bir inceleyici bunları ana fotoğrafınızla karşılaştırır. Başörtüsü, peçe ve gözlük takılı kalabilir.",
+    "Start camera": "Kamerayı başlat",
     'Just now': "Az önce",
     "Activating your Premium": "Premium’unuz etkinleştiriliyor",
     "Google Play confirmed your purchase. Messaging opens in a few seconds.":
@@ -91,6 +123,10 @@ const accountPolishUiCopy = <String, Map<String, String>>{
         'Yardım merkezi, iletişim ve şikayetler'
   },
   'ur': {
+    "Verify your profile photo": "اپنی پروفائل تصویر کی تصدیق کریں",
+    "Three quick steps: look at the camera, smile, then blink. A trained reviewer compares them with your main photo. Hijab, niqab and glasses can stay on.":
+        "تین آسان مراحل: کیمرے کی طرف دیکھیں، مسکرائیں، پھر پلک جھپکائیں۔ ایک تربیت یافتہ جائزہ کار انہیں آپ کی مرکزی تصویر سے ملاتا ہے۔ حجاب، نقاب اور چشمہ پہنے رکھ سکتے ہیں۔",
+    "Start camera": "کیمرہ شروع کریں",
     'Just now': "ابھی ابھی",
     "Activating your Premium": "آپ کا Premium فعال ہو رہا ہے",
     "Google Play confirmed your purchase. Messaging opens in a few seconds.":

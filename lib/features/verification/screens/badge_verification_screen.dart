@@ -16,7 +16,15 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/buttons/silarah_pressable.dart';
 import '../../../core/widgets/loaders/silarah_shimmer.dart';
 
-enum _ScreenState { loading, guiding, uploading, pending, approved, failed }
+enum _ScreenState {
+  loading,
+  intro,
+  guiding,
+  uploading,
+  pending,
+  approved,
+  failed
+}
 
 enum _GuideStep { neutral, smile, blink }
 
@@ -84,7 +92,9 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
         });
         return;
       }
-      await _initializeCamera();
+      // Explain the check before Android asks for the camera; a cold system
+      // permission prompt gives no reason and gets declined.
+      setState(() => _state = _ScreenState.intro);
     } catch (error) {
       _showFailure(_message(error));
     }
@@ -170,8 +180,13 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
         final left = face.leftEyeOpenProbability;
         final right = face.rightEyeOpenProbability;
         final smile = face.smilingProbability;
+        final framing = _framingFor(face, image);
         if (prominence < 0.16) {
           guidance = 'Move a little closer';
+        } else if (framing != null) {
+          // Auto-capture fires only for a face fully inside the oval and
+          // facing the camera; a passer-by or half-turned face never counts.
+          guidance = framing;
         } else {
           switch (_step) {
             case _GuideStep.neutral:
@@ -216,6 +231,34 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
     } finally {
       _processingFrame = false;
     }
+  }
+
+  /// Returns guidance when the face is not ready to capture, else null.
+  String? _framingFor(Face face, CameraImage image) {
+    final sensor = _camera?.description.sensorOrientation ?? 0;
+    // ML Kit reports boxes in the upright frame; a quarter-turned sensor
+    // swaps the frame's width and height.
+    final quarterTurn = (sensor ~/ 90).isOdd;
+    final width = (quarterTurn ? image.height : image.width).toDouble();
+    final height = (quarterTurn ? image.width : image.height).toDouble();
+    if (width <= 0 || height <= 0) return 'Center your face inside the guide';
+    final box = face.boundingBox;
+    final fullyVisible = box.left >= -width * 0.02 &&
+        box.top >= -height * 0.02 &&
+        box.right <= width * 1.02 &&
+        box.bottom <= height * 1.02;
+    final cx = box.center.dx / width;
+    final cy = box.center.dy / height;
+    final centered = (cx - 0.5).abs() <= 0.16 && (cy - 0.46).abs() <= 0.18;
+    if (!fullyVisible || !centered) return 'Center your face inside the guide';
+    final yaw = face.headEulerAngleY;
+    final roll = face.headEulerAngleZ;
+    final limit = _step == _GuideStep.neutral ? 12.0 : 20.0;
+    if ((yaw != null && yaw.abs() > limit) ||
+        (roll != null && roll.abs() > limit)) {
+      return 'Look straight at the camera';
+    }
+    return null;
   }
 
   void _scheduleCapture() {
@@ -395,6 +438,15 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
             message:
                 'Your profile photo check is approved. The badge confirms only that your temporary captures matched your current profile photo.',
             color: AppColors.verifiedTeal,
+          ),
+        _ScreenState.intro => _resultView(
+            icon: Icons.face_retouching_natural_rounded,
+            title: 'Verify your profile photo',
+            message:
+                'Three quick steps: look at the camera, smile, then blink. A trained reviewer compares them with your main photo. Hijab, niqab and glasses can stay on.',
+            color: AppColors.champagneGold,
+            actionLabel: 'Start camera',
+            onAction: () => unawaited(_initializeCamera()),
           ),
         _ScreenState.failed => _failedView(),
         _ScreenState.uploading => _uploadingView(),

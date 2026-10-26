@@ -6,6 +6,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
+import 'package:google_mlkit_image_labeling/google_mlkit_image_labeling.dart';
 import 'package:google_mlkit_object_detection/google_mlkit_object_detection.dart';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
@@ -22,6 +23,7 @@ class PhotoModerationResult {
     required this.category,
     required this.threshold,
     this.personDetected = true,
+    this.swimwearConfidence = 0,
     this.error,
   });
 
@@ -35,6 +37,10 @@ class PhotoModerationResult {
   /// False when neither a face nor clothing was found. Covered photos (niqab,
   /// burqa) can land here, so the picker asks the member instead of rejecting.
   final bool personDetected;
+
+  /// ML Kit's "Swimwear" label confidence. OpenNSFW2 scores swimwear as
+  /// safe (0.00-0.17 measured), so this is the signal that holds it.
+  final double swimwearConfidence;
   final String? error;
 
   bool get isSafe => decision == PhotoModerationDecision.approved;
@@ -46,10 +52,17 @@ class PhotoModerationResult {
         'policy_version': PhotoModerationService.policyVersion,
         'status': decision.name,
         'is_nsfw': category == 'explicit_content',
+        // The upload function holds anything above 0.50 for staff review.
+        // A swimwear hold must reach that queue even when nudity is low.
+        'nsfw_confidence': decision == PhotoModerationDecision.flagged
+            ? math.max(
+                nsfwConfidence, PhotoModerationService.reviewThreshold + 0.01)
+            : nsfwConfidence,
+        'raw_nsfw_confidence': nsfwConfidence,
+        'swimwear_confidence': swimwearConfidence,
         'requires_review': decision == PhotoModerationDecision.flagged,
         'person_detected': personDetected,
         'confidence': confidence,
-        'nsfw_confidence': nsfwConfidence,
         'safe_confidence': safeConfidence,
         'category': category,
         'threshold': threshold,
@@ -66,6 +79,7 @@ class NsfwScores {
 
 typedef HumanPresenceScanner = Future<bool> Function(String path);
 typedef NsfwScanner = Future<NsfwScores> Function(String path);
+typedef SwimwearScanner = Future<double> Function(String path);
 
 /// Runs profile-photo moderation completely on-device.
 ///
@@ -80,12 +94,14 @@ class PhotoModerationService {
   PhotoModerationService({
     HumanPresenceScanner? humanPresenceScanner,
     NsfwScanner? nsfwScanner,
+    SwimwearScanner? swimwearScanner,
   })  : _humanPresenceScanner = humanPresenceScanner ?? _detectHumanPresence,
-        _nsfwScanner = nsfwScanner ?? _runNsfw;
+        _nsfwScanner = nsfwScanner ?? _runNsfw,
+        _swimwearScanner = swimwearScanner ?? _detectSwimwear;
 
   static final PhotoModerationService instance = PhotoModerationService();
 
-  static const int policyVersion = 4;
+  static const int policyVersion = 5;
 
   /// Above this the photo is blocked on the device and never uploaded.
   static const double explicitContentBlockThreshold = 0.85;
@@ -93,6 +109,11 @@ class PhotoModerationService {
   /// Above this (up to the block threshold) the photo is held for staff
   /// review instead of publishing. Mirrors finalize_profile_photo_upload.
   static const double reviewThreshold = 0.50;
+
+  /// Swimwear label confidence that holds a photo for staff review. Measured
+  /// 0.63-0.98 on swimwear and never present on hijab/niqab/burqa photos.
+  /// Held, not blocked: a burkini is swimwear and a reviewer approves it.
+  static const double swimwearReviewThreshold = 0.60;
   static const double confidenceThreshold = explicitContentBlockThreshold;
   static const String modelAssetPath = 'assets/models/opennsfw2_float16.tflite';
   static const String modelSource = 'bhky/opennsfw2';
@@ -129,6 +150,7 @@ class PhotoModerationService {
 
   final HumanPresenceScanner _humanPresenceScanner;
   final NsfwScanner _nsfwScanner;
+  final SwimwearScanner _swimwearScanner;
 
   static Future<void> warmUp() => _ensureClassifierReady();
 
@@ -140,9 +162,19 @@ class PhotoModerationService {
       }
 
       final hasHuman = await _humanPresenceScanner(path);
+      final scores = await _nsfwScanner(path);
+      // The swimwear signal is advisory; a labeler failure must not block a
+      // member, and the nudity check above still applies.
+      var swimwear = 0.0;
+      try {
+        swimwear = await _swimwearScanner(path);
+      } catch (error) {
+        debugPrint('[PhotoModerationService] swimwear label failed: $error');
+      }
       return evaluateScores(
-        await _nsfwScanner(path),
+        scores,
         personDetected: hasHuman,
+        swimwearConfidence: swimwear,
       );
     } on FormatException catch (error) {
       debugPrint('[PhotoModerationService] invalid image: $error');
@@ -164,7 +196,9 @@ class PhotoModerationService {
   static PhotoModerationResult evaluateScores(
     NsfwScores rawScores, {
     bool personDetected = true,
+    double swimwearConfidence = 0,
   }) {
+    final swimwear = swimwearConfidence.clamp(0.0, 1.0).toDouble();
     final nsfw = rawScores.nsfw.clamp(0.0, 1.0).toDouble();
     final safe = rawScores.safe.clamp(0.0, 1.0).toDouble();
 
@@ -179,6 +213,7 @@ class PhotoModerationService {
         category: 'explicit_content',
         threshold: explicitContentBlockThreshold,
         personDetected: personDetected,
+        swimwearConfidence: swimwear,
       );
     }
     if (nsfw > reviewThreshold) {
@@ -190,6 +225,19 @@ class PhotoModerationService {
         category: 'needs_review',
         threshold: reviewThreshold,
         personDetected: personDetected,
+        swimwearConfidence: swimwear,
+      );
+    }
+    if (swimwear >= swimwearReviewThreshold) {
+      return PhotoModerationResult(
+        decision: PhotoModerationDecision.flagged,
+        confidence: swimwear,
+        nsfwConfidence: nsfw,
+        safeConfidence: safe,
+        category: 'swimwear_review',
+        threshold: swimwearReviewThreshold,
+        personDetected: personDetected,
+        swimwearConfidence: swimwear,
       );
     }
 
@@ -201,6 +249,7 @@ class PhotoModerationService {
       category: 'safe_image',
       threshold: reviewThreshold,
       personDetected: personDetected,
+      swimwearConfidence: swimwear,
     );
   }
 
@@ -219,6 +268,20 @@ class PhotoModerationService {
     // counts.
     if (await _hasClothingLabel(path)) return true;
     return _hasFace(path);
+  }
+
+  static Future<double> _detectSwimwear(String path) async {
+    final labeler = ImageLabeler(
+      options: ImageLabelerOptions(confidenceThreshold: 0.3),
+    );
+    try {
+      final labels = await labeler.processImage(InputImage.fromFilePath(path));
+      return labels
+          .where((label) => label.label.toLowerCase() == 'swimwear')
+          .fold<double>(0, (best, label) => math.max(best, label.confidence));
+    } finally {
+      labeler.close();
+    }
   }
 
   static Future<bool> _hasFace(String path) async {

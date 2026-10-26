@@ -8,6 +8,7 @@ import 'package:silarah/core/services/photo_moderation_service.dart';
 
 PhotoModerationService serviceFor({
   bool hasHuman = true,
+  double swimwear = 0,
   NsfwScores scores = const NsfwScores(
     nsfw: 0.01,
     safe: 0.98,
@@ -16,6 +17,7 @@ PhotoModerationService serviceFor({
 }) {
   return PhotoModerationService(
     humanPresenceScanner: (_) async => hasHuman,
+    swimwearScanner: (_) async => swimwear,
     nsfwScanner: (_) async {
       if (scanError != null) throw scanError;
       return scores;
@@ -109,13 +111,53 @@ void main() {
       expect(result.category, 'safe_image');
     });
 
+    test('swimwear is held for review, never blocked or published', () async {
+      // Measured on device: OpenNSFW2 scored bikinis 0.001-0.172 (safe), so
+      // only the ML Kit Swimwear label (0.63-0.98) catches them.
+      final file = await _writeSyntheticPhoto();
+      addTearDown(() => file.deleteSync());
+
+      final bikini = await serviceFor(
+        swimwear: 0.95,
+        scores: const NsfwScores(nsfw: 0.12, safe: 0.88),
+      ).scanFile(file.path);
+
+      expect(bikini.decision, PhotoModerationDecision.flagged);
+      expect(bikini.category, 'swimwear_review');
+      // Held, not blocked: a burkini is swimwear and staff can approve it.
+      expect(bikini.canUpload, isTrue);
+      // The upload function holds anything above 0.50.
+      expect(bikini.toValidationPayload()['nsfw_confidence'] as double,
+          greaterThan(PhotoModerationService.reviewThreshold));
+      expect(bikini.toValidationPayload()['raw_nsfw_confidence'], 0.12);
+    });
+
+    test('modest photos carry no swimwear signal and publish', () async {
+      final file = await _writeSyntheticPhoto();
+      addTearDown(() => file.deleteSync());
+      final hijab = await serviceFor(swimwear: 0).scanFile(file.path);
+      expect(hijab.decision, PhotoModerationDecision.approved);
+      expect(hijab.toValidationPayload()['nsfw_confidence'], lessThan(0.5));
+    });
+
+    test('a swimwear labeler failure does not block the upload', () async {
+      final file = await _writeSyntheticPhoto();
+      addTearDown(() => file.deleteSync());
+      final result = await PhotoModerationService(
+        humanPresenceScanner: (_) async => true,
+        nsfwScanner: (_) async => const NsfwScores(nsfw: 0.02, safe: 0.98),
+        swimwearScanner: (_) async => throw StateError('labeler unavailable'),
+      ).scanFile(file.path);
+      expect(result.decision, PhotoModerationDecision.approved);
+    });
+
     test('validation payload carries NSFW scores and policy version', () {
       final result = PhotoModerationService.evaluateScores(
         const NsfwScores(nsfw: 0.92, safe: 0.08),
       );
       final payload = result.toValidationPayload();
 
-      expect(payload['policy_version'], 4);
+      expect(payload['policy_version'], 5);
       expect(payload['nsfw_confidence'], 0.92);
       expect(payload['safe_confidence'], 0.08);
       expect(payload['is_nsfw'], isTrue);
