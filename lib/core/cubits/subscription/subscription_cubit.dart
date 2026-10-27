@@ -108,6 +108,16 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
 
   Future<bool> _purchase(String productId, int generation) async {
     if (!_isCurrentSession(generation)) return false;
+    // A second tap while the store sheet is opening must not start another
+    // purchase flow.
+    if (state.isLoading) return false;
+    if (state.hasPaidPremium) {
+      emit(state.copyWith(
+        error:
+            'Your Premium subscription is already active. Manage or change plans in Google Play.',
+      ));
+      return false;
+    }
     if (!_storeIdentityReady) {
       await _loginUser(_loggedInUserId!, generation);
       if (!_isCurrentSession(generation)) return false;

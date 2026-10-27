@@ -198,6 +198,24 @@ class SubscriptionService {
       };
       if (package == null) throw Exception('Package not available');
 
+      // Monthly and 3-month are separate Play subscriptions: buying one while
+      // the other is active starts a second subscription and charges twice.
+      // The paywall hides plans from subscribers, but its state can be stale
+      // (offline start, purchase on another device), so ask the store live.
+      final current = await Purchases.getCustomerInfo();
+      if (generation != _sessionGeneration) {
+        return const SubscriptionPurchaseResult(
+            outcome: SubscriptionPurchaseOutcome.failed);
+      }
+      if (SubscriptionEntitlements.isPremiumActive(current)) {
+        _customerInfo = current;
+        _isSubscribed = true;
+        return SubscriptionPurchaseResult(
+          outcome: SubscriptionPurchaseOutcome.alreadyPurchased,
+          customerInfo: current,
+        );
+      }
+
       final result = await Purchases.purchase(
         PurchaseParams.package(package),
       );

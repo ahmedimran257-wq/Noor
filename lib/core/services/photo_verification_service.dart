@@ -76,11 +76,47 @@ class PhotoVerificationService {
   static final instance = PhotoVerificationService._();
   static const _bucket = 'photo-verification-captures';
 
-  Future<PhotoVerificationStatus> fetchStatus() async {
-    if (!SupabaseService.isInitialized ||
-        SupabaseService.currentUserId == null) {
-      return const PhotoVerificationStatus.notStarted();
+  // The Profile tab asks for this from two widgets in the same refresh; one
+  // shared request and a short cache serve both.
+  Future<PhotoVerificationStatus>? _statusInFlight;
+  PhotoVerificationStatus? _cachedStatus;
+  String? _cachedFor;
+  DateTime? _cachedAt;
+  static const _statusFreshness = Duration(seconds: 30);
+
+  Future<PhotoVerificationStatus> fetchStatus({bool force = false}) {
+    final userId =
+        SupabaseService.isInitialized ? SupabaseService.currentUserId : null;
+    if (userId == null) {
+      return Future.value(const PhotoVerificationStatus.notStarted());
     }
+    final cached = _cachedStatus;
+    final cachedAt = _cachedAt;
+    if (!force &&
+        cached != null &&
+        _cachedFor == userId &&
+        cachedAt != null &&
+        DateTime.now().difference(cachedAt) < _statusFreshness) {
+      return Future.value(cached);
+    }
+    final pending = _statusInFlight;
+    if (pending != null && !force) return pending;
+    final request = _loadStatus().then((status) {
+      _cachedStatus = status;
+      _cachedFor = userId;
+      _cachedAt = DateTime.now();
+      return status;
+    }).whenComplete(() => _statusInFlight = null);
+    _statusInFlight = request;
+    return request;
+  }
+
+  void invalidateStatus() {
+    _cachedStatus = null;
+    _cachedAt = null;
+  }
+
+  Future<PhotoVerificationStatus> _loadStatus() async {
     final response =
         await SupabaseService.client.rpc('get_my_photo_verification_status');
     final row = switch (response) {
@@ -187,6 +223,7 @@ class PhotoVerificationService {
         submitted,
         'Unable to submit photo verification for review.',
       );
+      invalidateStatus();
       return _date(payload['review_deadline']) ?? session.reviewDeadline;
     } catch (_) {
       if (session != null) {

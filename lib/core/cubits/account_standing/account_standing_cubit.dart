@@ -36,16 +36,22 @@ class AccountStandingCubit extends Cubit<AccountStandingState> {
     if (userId == null || !SupabaseService.isInitialized) return;
     final version = ++_loadVersion;
     try {
-      final profile = await SupabaseService.client
-          .from('my_profile_private')
-          .select('id, visibility')
-          .eq('user_id', userId)
-          .maybeSingle();
-      final user = await SupabaseService.client
-          .from('users')
-          .select('is_banned')
-          .eq('id', userId)
-          .maybeSingle();
+      // Independent reads run together; sequential awaits tripled latency
+      // on every resume and reconnect.
+      final reads = await Future.wait<Map<String, dynamic>?>([
+        SupabaseService.client
+            .from('my_profile_private')
+            .select('id, visibility')
+            .eq('user_id', userId)
+            .maybeSingle(),
+        SupabaseService.client
+            .from('users')
+            .select('is_banned')
+            .eq('id', userId)
+            .maybeSingle(),
+      ]);
+      final profile = reads[0];
+      final user = reads[1];
 
       var hasPublishedPhoto = false;
       final profileId = profile?['id']?.toString();

@@ -79,7 +79,7 @@ class _BadgeVerificationScreenState extends State<BadgeVerificationScreen>
 
   Future<void> _start() async {
     try {
-      final status = await _service.fetchStatus();
+      final status = await _service.fetchStatus(force: true);
       if (!mounted) return;
       if (status.isApproved) {
         setState(() => _state = _ScreenState.approved);
