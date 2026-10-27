@@ -31,6 +31,7 @@ export const areaRoles = {
   audit: everyone,
   photoChecks: trust,
   moderation: trust,
+  memberReview: trust,
   campaigns: publishing,
   content: publishing,
   stories: publishing,

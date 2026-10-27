@@ -34,13 +34,12 @@ export default async function DashboardPage() {
   ];
   const attention = candidates.filter((item) => canAccess(admin.role, item.area));
   const waiting = attention.filter((item) => item.count > 0);
-  const firstName = admin.email.split("@")[0];
 
   return (
     <div className="stack-lg">
       <PageHeader
         eyebrow={new Intl.DateTimeFormat("en-IN", { weekday: "long", day: "numeric", month: "long", timeZone: "Asia/Kolkata" }).format(new Date())}
-        title={`${greeting()}, ${firstName}`}
+        title={`${greeting()}`}
         lede={waiting.length === 0
           ? "Every queue is clear. Nothing needs a decision right now."
           : `${waiting.length === 1 ? "One queue needs" : `${waiting.length} queues need`} your attention. Oldest items are shown first on each page.`}

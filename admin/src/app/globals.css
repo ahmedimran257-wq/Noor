@@ -331,7 +331,8 @@ details.disclosure > summary::-webkit-details-marker { display: none; }
 .popover-form { display: grid; gap: 10px; margin-top: 10px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-sunk); }
 
 /* ---------- Tabs ---------- */
-.tabs { display: flex; gap: 4px; padding: 4px; margin-bottom: 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); width: fit-content; max-width: 100%; overflow-x: auto; }
+/* Tabs wrap onto a second line instead of showing a scrollbar. */
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; margin-bottom: 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); width: fit-content; max-width: 100%; }
 .tab { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 13px; border-radius: 8px; color: var(--muted); font-weight: 600; font-size: 13px; white-space: nowrap; transition: background-color 140ms, color 140ms; }
 .tab:hover { color: var(--ink); background: var(--surface-sunk); }
 .tab.is-active { background: var(--emerald-soft); color: var(--emerald-deep); }
@@ -375,6 +376,10 @@ details.disclosure > summary::-webkit-details-marker { display: none; }
 .evidence h4 { font-size: 12.5px; color: var(--ink-soft); }
 .evidence a, .evidence .photo-frame { border-radius: 12px; }
 .evidence .photo-frame { aspect-ratio: 1; }
+.review-photos { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+.review-photos .photo-frame { aspect-ratio: 4 / 5; }
+.review-photos figcaption { margin-top: 2px; }
+.kv dd { overflow-wrap: anywhere; }
 
 /* ---------- Feedback ---------- */
 .notice { display: flex; gap: 12px; align-items: flex-start; padding: 13px 16px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-soft); font-size: 13.5px; }
@@ -470,10 +475,13 @@ details.disclosure > summary::-webkit-details-marker { display: none; }
   .shell { grid-template-columns: 1fr; }
   .sidebar {
     position: fixed; z-index: 50; left: 0; top: 0; bottom: 0; width: min(290px, 86vw);
-    transform: translateX(-102%); transition: transform 240ms var(--ease);
+    transform: translateX(-102%);
+    /* Hidden off-screen links must not take keyboard focus. */
+    visibility: hidden;
+    transition: transform 240ms var(--ease), visibility 0s linear 240ms;
     box-shadow: var(--shadow-lift);
   }
-  .sidebar.is-open { transform: none; }
+  .sidebar.is-open { transform: none; visibility: visible; transition: transform 240ms var(--ease); }
   .scrim { display: block; position: fixed; inset: 0; z-index: 40; border: 0; background: rgb(27 42 35 / 32%); }
   .menu-button { display: inline-flex; }
   .topbar { padding: 0 16px; }

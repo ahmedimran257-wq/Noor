@@ -134,6 +134,33 @@ export async function getPhotos(): Promise<PhotoRow[]> {
   }));
 }
 
+// One audited RPC, then one batched storage call to sign every photo.
+export async function getMemberReview(userId: string, reportId: string | null): Promise<MemberReview | null> {
+  const review = await rpc<MemberReview | null>("admin_member_review", {
+    p_user_id: userId,
+    p_report_id: reportId,
+  });
+  if (!review || review.photos.length === 0) return review;
+
+  const adminClient = createAdminClient();
+  const { data, error } = await adminClient.storage
+    .from("profile-photos")
+    .createSignedUrls(review.photos.map((photo) => photo.storagePath), signedUrlSeconds);
+  const signedByPath = new Map(
+    (data ?? []).map((entry) => [entry.path, entry.signedUrl ?? null]),
+  );
+  return {
+    ...review,
+    photos: review.photos.map((photo) => ({
+      ...photo,
+      previewUrl: signedByPath.get(photo.storagePath) ?? null,
+    })),
+    previewError: error ? "Photo previews are temporarily unavailable." : null,
+  };
+}
+
+export const getCampaignCountries = () => rpc<CampaignCountry[]>("admin_campaign_countries");
+
 export const getMatchMetrics = () => rpc<DashboardMetrics>("admin_match_metrics");
 export const getMatches = () => rpc<MatchRow[]>("admin_active_matches", { p_limit: 100 });
 export const getSubscribers = () => rpc<SubscriberRow[]>("admin_subscribers", { p_limit: 100 });
@@ -200,3 +227,17 @@ export type LiveOperationsSnapshot = { generatedAt:number; traffic:LiveBucket; e
 export type OnlineUserRow = { user_id:string; profile_id:string|null; name:string; email:string|null; country_code:string|null; gender:string|null; last_seen_at:string; app_state:string; platform:string|null; visibility:string; verification_status:string; subscription_status:string };
 export type AuditRow = { audit_id:string; admin_id:string; admin_email:string|null; actor_role:string|null; action_type:string; target_user_id:string|null; details:Record<string, unknown>|null; created_at:string };
 export type AdminNotificationRow = { notification_id:string; type:string; message:string; related_user_id:string|null; is_read:boolean; created_at:string };
+export type MemberReviewPhoto = { id:string; storagePath:string; orderIndex:number; status:string; adminApproved:boolean; nsfwCleared:boolean; nsfwScore:number|null; nsfwCategory:string|null; moderationStatus:string|null; moderationReason:string|null; createdAt:string; previewUrl?:string|null };
+export type MemberReviewReport = { id:string; reason:string; description:string|null; status:string; created_at:string; reporterTrust:number|null };
+export type MemberReview = {
+  userId:string; profileId:string; displayName:string; age:number|null; gender:string|null; countryCode:string|null; city:string|null; region:string|null;
+  bio:string|null; profession:string|null; employmentStatus:string|null; educationLevel:string|null; fieldOfStudy:string|null; sect:string|null; deenLevel:string|null;
+  praysFiveDaily:boolean|null; heightCm:number|null; motherTongue:string|null; languages:string[]|null; interests:string[]|null; previouslyMarried:string|null;
+  childrenCount:number|null; marriageTimeline:string|null; profileCreatedBy:string|null; guardianMode:string|null; visibility:string; suspendedReason:string|null;
+  onboardingCompleted:boolean; completenessScore:number|null; approvedAt:string|null; hasVerificationBadge:boolean; photoVerifiedAt:string|null; lastActiveAt:string|null;
+  joinedAt:string; email:string|null; isBanned:boolean; isShadowbanned:boolean; deletedAt:string|null; subscriptionStatus:string|null;
+  photos:MemberReviewPhoto[]; reportsAgainst:MemberReviewReport[];
+  reportCounts:{ total:number; pending:number; filedByMember:number; messageReports:number; messageReportsPending:number };
+  previewError?:string|null;
+};
+export type CampaignCountry = { iso_code:string; name:string; members:number };

@@ -2,8 +2,9 @@ import { Megaphone, Send } from "lucide-react";
 import { LocalDateTimeInput, SubmitButton } from "@/components/client-ui";
 import { EmptyState, NoAccess, PageHeader, StatusPill, formatDateTime } from "@/components/ui";
 import { requireArea } from "@/lib/auth";
-import { getCampaigns } from "@/lib/operations";
+import { getCampaignCountries, getCampaigns } from "@/lib/operations";
 import { createCampaign, queueCampaign } from "../actions";
+import { CampaignAudience } from "./campaign-audience";
 
 export const metadata = { title: "Campaigns" };
 
@@ -17,7 +18,8 @@ const audiences: Record<string, string> = {
 export default async function CampaignsPage() {
   const { allowed } = await requireArea("campaigns");
   if (!allowed) return <NoAccess area="Campaigns" />;
-  const campaigns = await getCampaigns();
+  const [campaigns, countries] = await Promise.all([getCampaigns(), getCampaignCountries()]);
+  const countryName = new Map(countries.map((country) => [country.iso_code, country.name]));
 
   return (
     <div className="stack-lg">
@@ -40,7 +42,7 @@ export default async function CampaignsPage() {
                     <h3>{campaign.title} <StatusPill status={campaign.status} /></h3>
                     <p>{campaign.body}</p>
                     <div className="meta">
-                      <span>{audiences[campaign.audience] ?? campaign.audience}{campaign.country_code ? ` · ${campaign.country_code}` : ""}</span>
+                      <span>{audiences[campaign.audience] ?? campaign.audience}{campaign.country_code ? ` · ${countryName.get(campaign.country_code) ?? campaign.country_code}` : ""}</span>
                       <span>for {formatDateTime(campaign.scheduled_at)}</span>
                       {campaign.queued_count > 0 ? <span>{campaign.queued_count.toLocaleString("en-IN")} queued</span> : null}
                       {campaign.deep_link ? <span className="mono">{campaign.deep_link}</span> : null}
@@ -69,14 +71,7 @@ export default async function CampaignsPage() {
             <input type="hidden" name="returnTo" value="/campaigns" />
             <label className="field">Title<input name="title" className="input" required minLength={3} maxLength={80} placeholder="A gentle reminder" /></label>
             <label className="field">Message<textarea name="body" className="textarea" required minLength={3} maxLength={220} rows={3} placeholder="Short, warm and respectful. 220 characters at most." /></label>
-            <div className="form-grid">
-              <label className="field">Audience
-                <select name="audience" className="select" defaultValue="all">
-                  {Object.entries(audiences).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                </select>
-              </label>
-              <label className="field">Country code<input name="countryCode" className="input" maxLength={2} placeholder="IN" pattern="[A-Za-z]{2}" /><small>Only for one-country campaigns</small></label>
-            </div>
+            <CampaignAudience audiences={audiences} countries={countries} />
             <LocalDateTimeInput name="scheduledAt" label="Send at" />
             <label className="field">Open in app<input name="deepLink" className="input" placeholder="silarah://subscription" pattern="silarah://.*" /><small>Optional. Leave blank to open the home screen.</small></label>
             <div className="form-actions"><SubmitButton className="btn btn-primary">Save draft</SubmitButton></div>

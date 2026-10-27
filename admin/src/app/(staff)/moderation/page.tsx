@@ -1,4 +1,4 @@
-import { Camera, CircleCheck, Eye, Flag, MessageSquareWarning, SearchCheck } from "lucide-react";
+import { Camera, CircleCheck, Eye, Flag, MessageSquareWarning, SearchCheck, UserRoundSearch } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 import { SearchField, SubmitButton } from "@/components/client-ui";
@@ -100,6 +100,9 @@ async function ReportsQueue({ returnTo }: { returnTo: string }) {
                 </div>
               </div>
               <div className="aside">
+                <Link href={`/users/${report.reported_user_id}?report=${report.report_id}`} prefetch={false} className="btn btn-sm btn-primary">
+                  <UserRoundSearch size={14} /> Review profile
+                </Link>
                 <form action={resolveReport}>
                   <Hidden returnTo={returnTo} fields={{ reportId: report.report_id, action: "dismissed" }} />
                   <SubmitButton className="btn btn-sm">Dismiss</SubmitButton>
@@ -137,6 +140,9 @@ async function MessagesQueue({ returnTo }: { returnTo: string }) {
                 </div>
               </div>
               <div className="aside">
+                <Link href={`/users/${report.reported_user_id}`} prefetch={false} className="btn btn-sm">
+                  <UserRoundSearch size={14} /> Sender profile
+                </Link>
                 <form action={resolveMessageReport}>
                   <Hidden returnTo={returnTo} fields={{ reportId: report.report_id, action: "dismissed" }} />
                   <SubmitButton className="btn btn-sm">Dismiss</SubmitButton>
@@ -191,7 +197,7 @@ async function PhotosQueue({ returnTo }: { returnTo: string }) {
               </div>
               <div className="card-body">
                 <div>
-                  <span className="cell-main">{photo.name || "Member photo"}</span>
+                  <Link href={`/users/${photo.user_id}`} prefetch={false} className="cell-main link">{photo.name || "Member photo"}</Link>
                   <span className="cell-sub">
                     {photo.nsfw_category ?? "Unclassified"} · score {photo.nsfw_score === null ? "—" : Number(photo.nsfw_score).toFixed(2)} · {formatDateTime(photo.created_at)}
                   </span>

@@ -176,10 +176,11 @@ function returnTarget(path: string, formData?: FormData) {
   const raw = formData ? formString(formData, "returnTo") : "";
   if (!raw.startsWith(path) || raw.startsWith("//") || /[\r\n\\]/.test(raw)) return { path, query: new URLSearchParams() };
   const url = new URL(raw, "https://admin.invalid");
-  if (url.pathname !== path) return { path, query: new URLSearchParams() };
+  // Same page or one of its sub-pages (e.g. /users/<id> after a decision).
+  if (url.pathname !== path && !url.pathname.startsWith(`${path}/`)) return { path, query: new URLSearchParams() };
   url.searchParams.delete("admin_error");
   url.searchParams.delete("admin_success");
-  return { path, query: url.searchParams };
+  return { path: url.pathname, query: url.searchParams };
 }
 
 function withNotice(

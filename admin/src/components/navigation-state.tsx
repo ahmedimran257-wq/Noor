@@ -49,6 +49,15 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [router]);
 
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   const value = useMemo<NavigationState>(() => ({
     open,
     setOpen,

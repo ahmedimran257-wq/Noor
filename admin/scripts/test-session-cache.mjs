@@ -139,7 +139,7 @@ vm.runInNewContext(accessCode, { exports: access });
 const actionCode = ts.transpileModule(readFileSync(
   new URL("../src/app/(staff)/actions.ts", import.meta.url), "utf8",
 ), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
-for (const scenario of ["rpc-error", "auth-error", "invalid-form", "success", "redirect", "role-denied"]) {
+for (const scenario of ["rpc-error", "auth-error", "invalid-form", "success", "redirect", "role-denied", "member-page", "path-escape"]) {
   const exports = {};
   const revalidated = [];
   let writes = 0;
@@ -165,7 +165,9 @@ for (const scenario of ["rpc-error", "auth-error", "invalid-form", "success", "r
   form.set("userId", "11111111-1111-4111-8111-111111111111");
   form.set("action", "suspend");
   if (scenario === "invalid-form") form.set("reason", "x".repeat(501));
-  form.set("returnTo", "/users?q=kept&admin_error=stale");
+  form.set("returnTo", scenario === "member-page"
+    ? "/users/11111111-1111-4111-8111-111111111111?report=r1"
+    : scenario === "path-escape" ? "/users/../dashboard?x=1" : "/users?q=kept&admin_error=stale");
   await assert.rejects(exports.accountAction(form), (error) => {
     assert.equal(error.digest, "NEXT_REDIRECT");
     const url = new URL(error.url, "https://admin.example.invalid");
@@ -176,13 +178,22 @@ for (const scenario of ["rpc-error", "auth-error", "invalid-form", "success", "r
       assert.equal(url.searchParams.get("q"), "kept", "the operator's search survives the decision");
       assert.equal(url.searchParams.get("admin_error"), null, "stale notices are dropped");
     }
+    else if (scenario === "member-page") {
+      assert.equal(url.pathname, "/users/11111111-1111-4111-8111-111111111111", "a decision on a review page returns to it");
+      assert.equal(url.searchParams.get("report"), "r1");
+    }
+    else if (scenario === "path-escape") {
+      assert.equal(url.pathname, "/users", "dot segments cannot leave the action's own page");
+      assert.equal(url.searchParams.get("x"), null);
+    }
     else if (scenario === "role-denied") assert.equal(url.searchParams.get("admin_error"), "Your staff role cannot perform this action.");
     else if (scenario === "invalid-form") assert.match(url.searchParams.get("admin_error"), /500/);
     else assert.equal(url.searchParams.get("admin_error"), "The action could not be completed. Refresh and try again.");
     return true;
   });
-  assert.equal(writes, ["rpc-error", "success"].includes(scenario) ? 1 : 0);
-  assert.deepEqual(revalidated, scenario === "success" ? ["/users"] : []);
+  const succeeded = ["success", "member-page", "path-escape"].includes(scenario);
+  assert.equal(writes, scenario === "rpc-error" || succeeded ? 1 : 0);
+  assert.deepEqual(revalidated, succeeded ? ["/users"] : []);
 }
 console.log("PASS: staff failures hide backend diagnostics; validation, authorization, redirects and success are preserved.");
 

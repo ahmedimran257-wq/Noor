@@ -113,6 +113,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                             <details className="disclosure">
                               <summary className="btn btn-ghost btn-sm btn-icon" aria-label={`Actions for ${user.name}`}><MoreHorizontal size={16} /></summary>
                               <div className="popover-form">
+                                <Link href={`/users/${user.user_id}`} prefetch={false} className="btn btn-sm">Review profile</Link>
                                 <form action={accountAction} className="action-row">
                                   <input type="hidden" name="userId" value={user.user_id} />
                                   <input type="hidden" name="returnTo" value={returnTo} />
