@@ -49,7 +49,7 @@ interface SubscriptionEmailCopy {
   tone?: "standard" | "attention";
 }
 
-const APP_URL = "https://silarah.com/app/";
+const APP_URL = "https://app.silarah.com/";
 
 const PREMIUM_BENEFITS: [string, string][] = [
   [
