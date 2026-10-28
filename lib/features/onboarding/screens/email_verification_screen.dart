@@ -624,6 +624,17 @@ class _OtpViewState extends State<_OtpView>
               ),
             ),
           ),
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: UiText(
+              'No code yet? Check your Spam or Junk folder.',
+              textAlign: TextAlign.center,
+              style: AppTypography.caption.copyWith(
+                color: AppColors.slateMist,
+              ),
+            ),
+          ),
           const SizedBox(height: 12),
           SilarahPressable(
             onTap: widget.onChangeEmail,

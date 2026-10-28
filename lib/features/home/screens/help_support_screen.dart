@@ -537,6 +537,11 @@ class _EmailTrustNotice extends StatelessWidget {
                   'Account and security messages use @mail.silarah.com. Product updates use @news.silarah.com. We never ask for passwords or verification codes.',
                   style: AppTypography.caption,
                 ),
+                const SizedBox(height: AppDimensions.space8),
+                UiText(
+                  'Support replies come from support@silarah.com. If you are waiting for one, please check Spam or Junk and mark it “Not spam”.',
+                  style: AppTypography.caption,
+                ),
               ],
             ),
           ),

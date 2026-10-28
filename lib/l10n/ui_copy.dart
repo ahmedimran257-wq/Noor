@@ -12,6 +12,7 @@ import 'package:silarah/l10n/premium_relationship_ui_copy.dart';
 import 'package:silarah/l10n/pricing_ui_copy.dart';
 import 'package:silarah/l10n/product_guide_ui_copy.dart';
 import 'package:silarah/l10n/trust_ui_copy.dart';
+import 'package:silarah/l10n/email_delivery_ui_copy.dart';
 import 'package:silarah/l10n/email_guardian_ui_copy.dart';
 import 'package:silarah/l10n/guardian_ui_copy.dart';
 import 'package:silarah/l10n/ui_copy_supplement.dart';
@@ -38,6 +39,7 @@ class UiCopy {
         pricingUiCopy[languageCode]?[source] ??
         productGuideUiCopy[languageCode]?[source] ??
         trustUiCopy[languageCode]?[source] ??
+        emailDeliveryUiCopy[languageCode]?[source] ??
         emailGuardianUiCopy[languageCode]?[source] ??
         guardianUiCopy[languageCode]?[source] ??
         supplementalUiCopy[languageCode]?[source] ??
@@ -58,6 +60,7 @@ class UiCopy {
       pricingUiCopy[languageCode]?.containsKey(source) == true ||
       productGuideUiCopy[languageCode]?.containsKey(source) == true ||
       trustUiCopy[languageCode]?.containsKey(source) == true ||
+      emailDeliveryUiCopy[languageCode]?.containsKey(source) == true ||
       emailGuardianUiCopy[languageCode]?.containsKey(source) == true ||
       guardianUiCopy[languageCode]?.containsKey(source) == true ||
       supplementalUiCopy[languageCode]?.containsKey(source) == true ||
