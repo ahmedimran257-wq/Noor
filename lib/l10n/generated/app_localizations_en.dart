@@ -2726,4 +2726,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settings_quietHoursEnd => 'Quiet hours end';
+
+  @override
+  String get settings_notify_festivalGreetings => 'Festival greetings';
+
+  @override
+  String get settings_notify_festivalGreetingsSub =>
+      'Ramadan and Eid wishes, about five a year';
 }

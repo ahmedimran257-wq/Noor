@@ -2725,4 +2725,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get settings_quietHoursEnd => 'Sessiz saatlerin sonu';
+
+  @override
+  String get settings_notify_festivalGreetings => 'Bayram tebrikleri';
+
+  @override
+  String get settings_notify_festivalGreetingsSub =>
+      'Ramazan ve bayram tebrikleri, yılda yaklaşık beş kez';
 }

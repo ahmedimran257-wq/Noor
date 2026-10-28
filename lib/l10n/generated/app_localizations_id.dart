@@ -2747,4 +2747,11 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get settings_quietHoursEnd => 'Jam tenang berakhir';
+
+  @override
+  String get settings_notify_festivalGreetings => 'Ucapan hari raya';
+
+  @override
+  String get settings_notify_festivalGreetingsSub =>
+      'Ucapan Ramadan dan Idulfitri, sekitar lima kali setahun';
 }

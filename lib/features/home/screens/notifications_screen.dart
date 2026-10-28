@@ -399,6 +399,8 @@ class _NotificationTile extends StatelessWidget {
         return Icons.credit_card_off_rounded;
       case 'profile_view':
         return Icons.visibility_rounded;
+      case 'festival_greeting':
+        return Icons.nightlight_round;
       default:
         return Icons.notifications_none_rounded;
     }
@@ -437,6 +439,8 @@ class _NotificationTile extends StatelessWidget {
       case 'account_suspended':
       case 'account_banned':
         return AppColors.errorRed;
+      case 'festival_greeting':
+        return AppColors.champagneGold;
       default:
         return AppColors.slateMist;
     }

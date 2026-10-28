@@ -1582,5 +1582,7 @@
   "settings_quietHoursStart": "Début des heures calmes",
   "@settings_quietHoursStart": {},
   "settings_quietHoursEnd": "Fin des heures calmes",
-  "@settings_quietHoursEnd": {}
+  "@settings_quietHoursEnd": {},
+  "settings_notify_festivalGreetings": "Vœux des fêtes",
+  "settings_notify_festivalGreetingsSub": "Vœux du Ramadan et de l'Aïd, environ cinq par an"
 }

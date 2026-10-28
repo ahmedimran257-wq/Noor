@@ -2751,4 +2751,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get settings_quietHoursEnd => 'Ende der Ruhezeit';
+
+  @override
+  String get settings_notify_festivalGreetings => 'Festtagsgrüße';
+
+  @override
+  String get settings_notify_festivalGreetingsSub =>
+      'Grüße zu Ramadan und Eid, etwa fünfmal im Jahr';
 }

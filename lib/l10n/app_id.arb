@@ -1582,5 +1582,7 @@
   "settings_quietHoursStart": "Jam tenang dimulai",
   "@settings_quietHoursStart": {},
   "settings_quietHoursEnd": "Jam tenang berakhir",
-  "@settings_quietHoursEnd": {}
+  "@settings_quietHoursEnd": {},
+  "settings_notify_festivalGreetings": "Ucapan hari raya",
+  "settings_notify_festivalGreetingsSub": "Ucapan Ramadan dan Idulfitri, sekitar lima kali setahun"
 }

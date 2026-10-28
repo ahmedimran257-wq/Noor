@@ -2,7 +2,7 @@
 //
 //   new_interest, interest_accepted, new_message,
 //   profile_live, interest_expiring, inactive_nudge,
-//   boost_available + quiet_start / quiet_end (23:00–08:00)
+//   boost_available, festival_greetings + quiet_start / quiet_end (23:00–08:00)
 //
 // Step 12: replace toggles with Supabase UPSERT on change.
 import 'package:equatable/equatable.dart';
@@ -37,6 +37,7 @@ class NotificationPrefsState extends Equatable {
   final bool interestExpiring;
   final bool inactiveNudge;
   final bool boostAvailable;
+  final bool festivalGreetings;
 
   /// Quiet hours — 23:00 to 08:00 (database defaults)
   final int quietStartHour; // 23
@@ -57,6 +58,7 @@ class NotificationPrefsState extends Equatable {
     this.interestExpiring = true,
     this.inactiveNudge = true,
     this.boostAvailable = true,
+    this.festivalGreetings = true,
     this.quietStartHour = 23,
     this.quietEndHour = 8,
     this.isLoaded = false,
@@ -76,6 +78,7 @@ class NotificationPrefsState extends Equatable {
     bool? interestExpiring,
     bool? inactiveNudge,
     bool? boostAvailable,
+    bool? festivalGreetings,
     int? quietStartHour,
     int? quietEndHour,
     bool? isLoaded,
@@ -96,6 +99,7 @@ class NotificationPrefsState extends Equatable {
       interestExpiring: interestExpiring ?? this.interestExpiring,
       inactiveNudge: inactiveNudge ?? this.inactiveNudge,
       boostAvailable: boostAvailable ?? this.boostAvailable,
+      festivalGreetings: festivalGreetings ?? this.festivalGreetings,
       quietStartHour: quietStartHour ?? this.quietStartHour,
       quietEndHour: quietEndHour ?? this.quietEndHour,
       isLoaded: isLoaded ?? this.isLoaded,
@@ -119,6 +123,7 @@ class NotificationPrefsState extends Equatable {
         interestExpiring,
         inactiveNudge,
         boostAvailable,
+        festivalGreetings,
         quietStartHour,
         quietEndHour,
         isLoaded,

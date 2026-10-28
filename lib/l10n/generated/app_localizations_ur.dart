@@ -2725,4 +2725,11 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get settings_quietHoursEnd => 'خاموش اوقات کا اختتام';
+
+  @override
+  String get settings_notify_festivalGreetings => 'تہوار کی مبارکباد';
+
+  @override
+  String get settings_notify_festivalGreetingsSub =>
+      'رمضان اور عید کی مبارکباد، سال میں تقریباً پانچ بار';
 }

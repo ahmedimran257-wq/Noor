@@ -2732,4 +2732,11 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get settings_quietHoursEnd => 'शांत समय समाप्त';
+
+  @override
+  String get settings_notify_festivalGreetings => 'त्योहार की मुबारकबाद';
+
+  @override
+  String get settings_notify_festivalGreetingsSub =>
+      'रमज़ान और ईद की मुबारकबाद, साल में लगभग पाँच बार';
 }

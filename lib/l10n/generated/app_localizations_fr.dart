@@ -2755,4 +2755,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get settings_quietHoursEnd => 'Fin des heures calmes';
+
+  @override
+  String get settings_notify_festivalGreetings => 'Vœux des fêtes';
+
+  @override
+  String get settings_notify_festivalGreetingsSub =>
+      'Vœux du Ramadan et de l\'Aïd, environ cinq par an';
 }

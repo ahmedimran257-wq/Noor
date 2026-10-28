@@ -1600,5 +1600,9 @@
   "settings_quietHoursStart": "Quiet hours start",
   "@settings_quietHoursStart": {},
   "settings_quietHoursEnd": "Quiet hours end",
-  "@settings_quietHoursEnd": {}
+  "@settings_quietHoursEnd": {},
+  "settings_notify_festivalGreetings": "Festival greetings",
+  "settings_notify_festivalGreetingsSub": "Ramadan and Eid wishes, about five a year",
+  "@settings_notify_festivalGreetings": {},
+  "@settings_notify_festivalGreetingsSub": {}
 }

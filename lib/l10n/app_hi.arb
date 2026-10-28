@@ -1582,5 +1582,7 @@
   "settings_quietHoursStart": "शांत समय शुरू",
   "@settings_quietHoursStart": {},
   "settings_quietHoursEnd": "शांत समय समाप्त",
-  "@settings_quietHoursEnd": {}
+  "@settings_quietHoursEnd": {},
+  "settings_notify_festivalGreetings": "त्योहार की मुबारकबाद",
+  "settings_notify_festivalGreetingsSub": "रमज़ान और ईद की मुबारकबाद, साल में लगभग पाँच बार"
 }

@@ -1582,5 +1582,7 @@
   "settings_quietHoursStart": "خاموش اوقات کا آغاز",
   "@settings_quietHoursStart": {},
   "settings_quietHoursEnd": "خاموش اوقات کا اختتام",
-  "@settings_quietHoursEnd": {}
+  "@settings_quietHoursEnd": {},
+  "settings_notify_festivalGreetings": "تہوار کی مبارکباد",
+  "settings_notify_festivalGreetingsSub": "رمضان اور عید کی مبارکباد، سال میں تقریباً پانچ بار"
 }

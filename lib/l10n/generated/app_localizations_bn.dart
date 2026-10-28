@@ -2729,4 +2729,11 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get settings_quietHoursEnd => 'নীরব সময় শেষ';
+
+  @override
+  String get settings_notify_festivalGreetings => 'উৎসবের শুভেচ্ছা';
+
+  @override
+  String get settings_notify_festivalGreetingsSub =>
+      'রমজান ও ঈদের শুভেচ্ছা, বছরে প্রায় পাঁচবার';
 }

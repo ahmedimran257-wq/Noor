@@ -1582,5 +1582,7 @@
   "settings_quietHoursStart": "Sessiz saatlerin başlangıcı",
   "@settings_quietHoursStart": {},
   "settings_quietHoursEnd": "Sessiz saatlerin sonu",
-  "@settings_quietHoursEnd": {}
+  "@settings_quietHoursEnd": {},
+  "settings_notify_festivalGreetings": "Bayram tebrikleri",
+  "settings_notify_festivalGreetingsSub": "Ramazan ve bayram tebrikleri, yılda yaklaşık beş kez"
 }

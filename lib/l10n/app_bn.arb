@@ -1582,5 +1582,7 @@
   "settings_quietHoursStart": "নীরব সময় শুরু",
   "@settings_quietHoursStart": {},
   "settings_quietHoursEnd": "নীরব সময় শেষ",
-  "@settings_quietHoursEnd": {}
+  "@settings_quietHoursEnd": {},
+  "settings_notify_festivalGreetings": "উৎসবের শুভেচ্ছা",
+  "settings_notify_festivalGreetingsSub": "রমজান ও ঈদের শুভেচ্ছা, বছরে প্রায় পাঁচবার"
 }

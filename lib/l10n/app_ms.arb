@@ -1582,5 +1582,7 @@
   "settings_quietHoursStart": "Waktu tenang bermula",
   "@settings_quietHoursStart": {},
   "settings_quietHoursEnd": "Waktu tenang berakhir",
-  "@settings_quietHoursEnd": {}
+  "@settings_quietHoursEnd": {},
+  "settings_notify_festivalGreetings": "Ucapan perayaan",
+  "settings_notify_festivalGreetingsSub": "Ucapan Ramadan dan Hari Raya, kira-kira lima kali setahun"
 }

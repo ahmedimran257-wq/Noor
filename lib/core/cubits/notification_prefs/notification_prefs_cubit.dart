@@ -37,7 +37,7 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
             'new_interest, interest_accepted, new_message, profile_view, profile_live, '
             'new_compatible_profiles, discovery_digest_frequency, '
             'interest_expiring, inactive_nudge, boost_available, '
-            'quiet_start, quiet_end',
+            'festival_greetings, quiet_start, quiet_end',
           )
           .eq('user_id', userId)
           .maybeSingle();
@@ -58,6 +58,7 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
           interestExpiring: (data['interest_expiring'] as bool?) ?? true,
           inactiveNudge: (data['inactive_nudge'] as bool?) ?? true,
           boostAvailable: (data['boost_available'] as bool?) ?? true,
+          festivalGreetings: (data['festival_greetings'] as bool?) ?? true,
           quietStartHour: _timeToHour(data['quiet_start'] as String?, 23),
           quietEndHour: _timeToHour(data['quiet_end'] as String?, 8),
           isLoaded: true,
@@ -128,6 +129,10 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
     _emitChange(state.copyWith(boostAvailable: value));
   }
 
+  void toggleFestivalGreetings(bool value) {
+    _emitChange(state.copyWith(festivalGreetings: value));
+  }
+
   // Quiet hours
   void setQuietHours({required int startHour, required int endHour}) {
     _emitChange(state.copyWith(
@@ -192,6 +197,7 @@ class NotificationPrefsCubit extends Cubit<NotificationPrefsState> {
         'interest_expiring': snapshot.interestExpiring,
         'inactive_nudge': snapshot.inactiveNudge,
         'boost_available': snapshot.boostAvailable,
+        'festival_greetings': snapshot.festivalGreetings,
         'quiet_start':
             '${snapshot.quietStartHour.toString().padLeft(2, '0')}:00',
         'quiet_end': '${snapshot.quietEndHour.toString().padLeft(2, '0')}:00',

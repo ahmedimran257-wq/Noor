@@ -303,6 +303,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       .toggleBoostAvailable(v),
                 ),
                 _Divider(),
+                _ToggleTile(
+                  icon: Icons.auto_awesome_outlined,
+                  label: l10n.settings_notify_festivalGreetings,
+                  caption: l10n.settings_notify_festivalGreetingsSub,
+                  value: prefs.festivalGreetings,
+                  onChanged: (v) => context
+                      .read<NotificationPrefsCubit>()
+                      .toggleFestivalGreetings(v),
+                ),
+                _Divider(),
                 _NavTile(
                   icon: Icons.bedtime_outlined,
                   label: l10n.settings_notify_quietHours,

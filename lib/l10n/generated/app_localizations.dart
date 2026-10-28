@@ -4967,6 +4967,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Quiet hours end'**
   String get settings_quietHoursEnd;
+
+  /// No description provided for @settings_notify_festivalGreetings.
+  ///
+  /// In en, this message translates to:
+  /// **'Festival greetings'**
+  String get settings_notify_festivalGreetings;
+
+  /// No description provided for @settings_notify_festivalGreetingsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Ramadan and Eid wishes, about five a year'**
+  String get settings_notify_festivalGreetingsSub;
 }
 
 class _AppLocalizationsDelegate

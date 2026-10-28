@@ -142,6 +142,7 @@ String? notificationDestinationPath({
     case 'inactive_nudge':
       return '/home?tab=0';
     case 'admin_announcement':
+    case 'festival_greeting':
       return '/notifications';
     case 'profile_live':
     case 'account_restored':

@@ -1582,5 +1582,7 @@
   "settings_quietHoursStart": "بداية ساعات الهدوء",
   "@settings_quietHoursStart": {},
   "settings_quietHoursEnd": "نهاية ساعات الهدوء",
-  "@settings_quietHoursEnd": {}
+  "@settings_quietHoursEnd": {},
+  "settings_notify_festivalGreetings": "تهاني المناسبات",
+  "settings_notify_festivalGreetingsSub": "تهاني رمضان والعيد، نحو خمس مرات في السنة"
 }
