@@ -67,7 +67,8 @@ enum _BootstrapStage { loading, ready, failed }
 final ValueNotifier<_BootstrapStage> _bootstrapStage =
     ValueNotifier(_BootstrapStage.loading);
 String _bootstrapInitialLocation = AppRoutes.boot;
-SilarahThemeMode _bootstrapInitialTheme = SilarahThemeMode.blackWhite;
+SilarahThemeMode _bootstrapInitialTheme = SilarahThemeMode.ivoryEmerald;
+bool _bootstrapFollowSystemTheme = false;
 
 /// Firebase launches this callback in a separate Dart isolate for background
 /// data messages. Android renders notification payloads itself, so the handler
@@ -168,8 +169,13 @@ void main() async {
     _bootstrapInitialLocation =
         introCompleted ? AppRoutes.boot : AppRoutes.languageSelect;
     final storedTheme = prefs.getString(ThemeCubit.preferenceKey);
-    _bootstrapInitialTheme = SilarahThemeMode.fromStorage(storedTheme);
-    if (storedTheme != _bootstrapInitialTheme.storageValue) {
+    _bootstrapFollowSystemTheme =
+        storedTheme == ThemeCubit.automaticStorageValue;
+    _bootstrapInitialTheme = _bootstrapFollowSystemTheme
+        ? ThemeCubit.systemMode()
+        : SilarahThemeMode.fromStorage(storedTheme);
+    if (!_bootstrapFollowSystemTheme &&
+        storedTheme != _bootstrapInitialTheme.storageValue) {
       await prefs.setString(
         ThemeCubit.preferenceKey,
         _bootstrapInitialTheme.storageValue,
@@ -313,6 +319,7 @@ class _SilarahBootstrapState extends State<_SilarahBootstrap> {
                   _BootstrapStage.ready => SilarahApp(
                       initialLocation: _bootstrapInitialLocation,
                       initialTheme: _bootstrapInitialTheme,
+                      followSystemTheme: _bootstrapFollowSystemTheme,
                       startupStartedAt: widget.startupStartedAt,
                       onStartupGateResolved: _resolveStartupGate,
                     ),
@@ -422,13 +429,15 @@ class SilarahApp extends StatefulWidget {
     super.key,
     required this.initialLocation,
     this.startupStartedAt,
-    this.initialTheme = SilarahThemeMode.blackWhite,
+    this.initialTheme = SilarahThemeMode.ivoryEmerald,
+    this.followSystemTheme = false,
     this.onStartupGateResolved,
   });
 
   final String initialLocation;
   final DateTime? startupStartedAt;
   final SilarahThemeMode initialTheme;
+  final bool followSystemTheme;
   final VoidCallback? onStartupGateResolved;
 
   @override
@@ -493,7 +502,10 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
     _notificationPrefsCubit = NotificationPrefsCubit();
     _notificationsCubit = NotificationsCubit();
     _localeCubit = LocaleCubit();
-    _themeCubit = ThemeCubit(initialMode: widget.initialTheme);
+    _themeCubit = ThemeCubit(
+      initialMode: widget.initialTheme,
+      followSystem: widget.followSystemTheme,
+    );
     _accountStandingCubit = AccountStandingCubit();
 
     var entitlementFingerprint =

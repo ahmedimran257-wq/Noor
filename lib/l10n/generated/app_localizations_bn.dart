@@ -2351,11 +2351,18 @@ class AppLocalizationsBn extends AppLocalizations {
       'এটি শুধু পারস্পরিক আগ্রহের পরে শেয়ার করা হয়।';
 
   @override
-  String get settings_theme_blackWhite => 'সাদা ও কালো';
+  String get settings_theme_automatic => 'স্বয়ংক্রিয়';
 
   @override
-  String get settings_theme_blackWhiteDesc =>
-      'বিশুদ্ধ সাদা, সম্পূর্ণ কালো, কোনো রঙ নয়';
+  String get settings_theme_automaticDesc =>
+      'দিনে হাতির দাঁত ও পান্না, ফোন ডার্ক মোডে থাকলে OLED রাত';
+
+  @override
+  String get settings_theme_rose => 'গোলাপ ও গাঁদা';
+
+  @override
+  String get settings_theme_roseDesc =>
+      'কোমল গোলাপি আভা, গাঢ় গোলাপ ও গাঁদা সোনালি';
 
   @override
   String get settings_theme_oled => 'OLED রাত';

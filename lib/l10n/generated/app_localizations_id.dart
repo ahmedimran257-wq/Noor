@@ -2368,11 +2368,18 @@ class AppLocalizationsId extends AppLocalizations {
       'Hanya dibagikan setelah ada minat bersama.';
 
   @override
-  String get settings_theme_blackWhite => 'Hitam & Putih';
+  String get settings_theme_automatic => 'Otomatis';
 
   @override
-  String get settings_theme_blackWhiteDesc =>
-      'Putih murni, hitam pekat, tanpa warna';
+  String get settings_theme_automaticDesc =>
+      'Gading & Zamrud di siang hari, Malam OLED saat ponsel dalam mode gelap';
+
+  @override
+  String get settings_theme_rose => 'Mawar & Marigold';
+
+  @override
+  String get settings_theme_roseDesc =>
+      'Merah muda lembut dengan mawar tua dan emas marigold';
 
   @override
   String get settings_theme_oled => 'Malam OLED';

@@ -2355,11 +2355,18 @@ class AppLocalizationsHi extends AppLocalizations {
       'यह केवल परस्पर रुचि के बाद साझा किया जाता है।';
 
   @override
-  String get settings_theme_blackWhite => 'काला और सफ़ेद';
+  String get settings_theme_automatic => 'स्वचालित';
 
   @override
-  String get settings_theme_blackWhiteDesc =>
-      'शुद्ध सफ़ेद, पूर्ण काला, बिना रंग';
+  String get settings_theme_automaticDesc =>
+      'दिन में आइवरी और एमराल्ड, फ़ोन डार्क मोड में हो तो OLED नाइट';
+
+  @override
+  String get settings_theme_rose => 'गुलाब और गेंदा';
+
+  @override
+  String get settings_theme_roseDesc =>
+      'कोमल गुलाबी आभा, गहरा गुलाब और गेंदे जैसा सुनहरा';
 
   @override
   String get settings_theme_oled => 'OLED नाइट';

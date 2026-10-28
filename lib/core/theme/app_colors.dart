@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 /// Storage values are explicit so renaming a display label never invalidates a
 /// member's saved preference.
 enum SilarahThemeMode {
-  blackWhite(
-    'black_white',
-    'Black & White',
-    'Pure white, absolute black, no colour',
+  roseMarigold(
+    'rose_marigold',
+    'Rose & Marigold',
+    'Soft blush with deep rose and marigold gold',
   ),
   oled('oled', 'Pure OLED', 'Absolute black and precision contrast'),
   ivoryEmerald(
@@ -38,12 +38,11 @@ enum SilarahThemeMode {
         // member is not unexpectedly moved from dark mode to a light canvas.
         'prism_luxe' => SilarahThemeMode.oled,
         'oled' => SilarahThemeMode.oled,
-        'black_white' => SilarahThemeMode.blackWhite,
-        // Removed light identities and unknown values migrate to the new
-        // monochrome signature instead of leaving an unsupported preference.
-        'porcelain' => SilarahThemeMode.blackWhite,
-        'floral_pink' => SilarahThemeMode.blackWhite,
-        _ => SilarahThemeMode.blackWhite,
+        'rose_marigold' => SilarahThemeMode.roseMarigold,
+        // Retired light identities (Black & White among them) and unknown
+        // values migrate to the brand identity instead of an unsupported
+        // preference.
+        _ => SilarahThemeMode.ivoryEmerald,
       };
 }
 
@@ -130,51 +129,6 @@ class SilarahPalette {
   /// A rigorous light identity with no chromatic colour. Pure white and
   /// absolute black establish the hierarchy; carefully spaced neutral greys
   /// retain depth, states and accessibility without diluting the concept.
-  static const blackWhite = SilarahPalette(
-    mode: SilarahThemeMode.blackWhite,
-    background: Color(0xFFFFFFFF),
-    backgroundDeep: Color(0xFFF3F3F3),
-    accent: Color(0xFF000000),
-    accentHighlight: Color(0xFF2A2A2A),
-    accentPressed: Color(0xFF151515),
-    complementary: Color(0xFF303030),
-    decorativeDepth: Color(0xFFE9E9E9),
-    contentPrimary: Color(0xFF080808),
-    contentSecondary: Color(0xFF565656),
-    surface: Color(0xFFFFFFFF),
-    surfaceInteractive: Color(0xFFF4F4F4),
-    input: Color(0xFFFAFAFA),
-    border: Color(0xFFD9D9D9),
-    accentBorder: Color(0x99000000),
-    accentGlow: Color(0x18000000),
-    success: Color(0xFF202020),
-    danger: Color(0xFF000000),
-    messageReceived: Color(0xFFF1F1F1),
-    progressTrack: Color(0xFFD6D6D6),
-    divider: Color(0xFFE6E6E6),
-    surfaceElevated: Color(0xFFFFFFFF),
-    surfaceMid: Color(0xFFF8F8F8),
-    surfaceDark: Color(0xFFEDEDED),
-    surfacePressed: Color(0xFFE2E2E2),
-    surfacePanelTop: Color(0xFFFCFCFC),
-    premium: Color(0xFF111111),
-    online: Color(0xFF242424),
-    message: Color(0xFF343434),
-    warning: Color(0xFF2A2A2A),
-    gradientCore: Color(0xFFECECEC),
-    dropdown: Color(0xFFFFFFFF),
-    snackbar: Color(0xFF090909),
-    navBar: Color(0xFCFFFFFF),
-    navBorder: Color(0xFFDCDCDC),
-    spectrum: [
-      Color(0xFF000000),
-      Color(0xFF1A1A1A),
-      Color(0xFF333333),
-      Color(0xFF505050),
-      Color(0xFF727272),
-      Color(0xFF969696),
-    ],
-  );
 
   /// A true emissive-display identity. The primary canvas and navigation
   /// surfaces are literal black so OLED pixels can switch off; restrained
@@ -274,8 +228,57 @@ class SilarahPalette {
     ],
   );
 
+  /// Cheerful, festive light identity: henna-blush canvas, deep rose for
+  /// actions, marigold for small celebratory touches. Text and action
+  /// colours keep at least 4.5:1 contrast on the blush canvas.
+  static const roseMarigold = SilarahPalette(
+    mode: SilarahThemeMode.roseMarigold,
+    background: Color(0xFFFFF6F3),
+    backgroundDeep: Color(0xFFFBEAE5),
+    accent: Color(0xFFAD2450),
+    accentHighlight: Color(0xFFC23A64),
+    accentPressed: Color(0xFF8C1A3F),
+    complementary: Color(0xFFD9921A),
+    decorativeDepth: Color(0xFFF2D4CB),
+    contentPrimary: Color(0xFF2A1A1F),
+    contentSecondary: Color(0xFF6B5459),
+    surface: Color(0xFFFFFCFB),
+    surfaceInteractive: Color(0xFFF8E9E5),
+    input: Color(0xFFFFF9F7),
+    border: Color(0xFFEBD3CD),
+    accentBorder: Color(0xB3AD2450),
+    accentGlow: Color(0x24AD2450),
+    success: Color(0xFF2E7D5B),
+    danger: Color(0xFFA8321F),
+    messageReceived: Color(0xFFF7E6E1),
+    progressTrack: Color(0xFFEFD9D3),
+    divider: Color(0xFFF2E1DC),
+    surfaceElevated: Color(0xFFFFFFFF),
+    surfaceMid: Color(0xFFFDF1ED),
+    surfaceDark: Color(0xFFF5E2DC),
+    surfacePressed: Color(0xFFEFD6CF),
+    surfacePanelTop: Color(0xFFFFFAF8),
+    premium: Color(0xFF9A5F06),
+    online: Color(0xFF2E7D5B),
+    message: Color(0xFF6A4C93),
+    warning: Color(0xFF9A5F06),
+    gradientCore: Color(0xFFF6D9CF),
+    dropdown: Color(0xFFFFFCFB),
+    snackbar: Color(0xFF3A1622),
+    navBar: Color(0xFCFFFCFB),
+    navBorder: Color(0xFFEDD5CF),
+    spectrum: [
+      Color(0xFFAD2450),
+      Color(0xFFC23A64),
+      Color(0xFF9A5F06),
+      Color(0xFF6B5459),
+      Color(0xFF6A4C93),
+      Color(0xFFD9921A),
+    ],
+  );
+
   static SilarahPalette forMode(SilarahThemeMode mode) => switch (mode) {
-        SilarahThemeMode.blackWhite => blackWhite,
+        SilarahThemeMode.roseMarigold => roseMarigold,
         SilarahThemeMode.oled => oled,
         SilarahThemeMode.ivoryEmerald => ivoryEmerald,
       };

@@ -16,14 +16,14 @@ Widget _detail() => const Scaffold(
     );
 
 void main() {
-  tearDown(() => AppColors.activate(SilarahThemeMode.blackWhite));
+  tearDown(() => AppColors.activate(SilarahThemeMode.ivoryEmerald));
 
   for (final direction in TextDirection.values) {
     testWidgets('opaque push/pop is continuous in $direction', (tester) async {
       final navigator = GlobalKey<NavigatorState>();
       await tester.pumpWidget(MaterialApp(
         navigatorKey: navigator,
-        theme: AppTheme.forMode(SilarahThemeMode.blackWhite),
+        theme: AppTheme.forMode(SilarahThemeMode.ivoryEmerald),
         builder: (_, child) =>
             Directionality(textDirection: direction, child: child!),
         home: const Scaffold(body: Text('Home')),
@@ -123,7 +123,7 @@ void main() {
     final navigator = GlobalKey<NavigatorState>();
     await tester.pumpWidget(MaterialApp(
       navigatorKey: navigator,
-      theme: AppTheme.forMode(SilarahThemeMode.blackWhite),
+      theme: AppTheme.forMode(SilarahThemeMode.ivoryEmerald),
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(disableAnimations: true),
         child: child!,

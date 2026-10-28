@@ -50,16 +50,16 @@ const _kLanguages = LocaleCubit.supportedLanguages;
 
 String _themeLabel(AppLocalizations l10n, SilarahThemeMode mode) =>
     switch (mode) {
-      SilarahThemeMode.blackWhite => l10n.settings_theme_blackWhite,
       SilarahThemeMode.oled => l10n.settings_theme_oled,
       SilarahThemeMode.ivoryEmerald => l10n.settings_theme_ivory,
+      SilarahThemeMode.roseMarigold => l10n.settings_theme_rose,
     };
 
 String _themeDescription(AppLocalizations l10n, SilarahThemeMode mode) =>
     switch (mode) {
-      SilarahThemeMode.blackWhite => l10n.settings_theme_blackWhiteDesc,
       SilarahThemeMode.oled => l10n.settings_theme_oledDesc,
       SilarahThemeMode.ivoryEmerald => l10n.settings_theme_ivoryDesc,
+      SilarahThemeMode.roseMarigold => l10n.settings_theme_roseDesc,
     };
 
 // Guardian prefs keys
@@ -328,7 +328,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 builder: (context, themeState) => _NavTile(
                   icon: Icons.palette_outlined,
                   label: l10n.settings_appearance,
-                  value: _themeLabel(l10n, themeState.activeMode),
+                  value: themeState.followSystem
+                      ? l10n.settings_theme_automatic
+                      : _themeLabel(l10n, themeState.activeMode),
                   onTap: () => _showThemeSheet(context),
                 ),
               ),
@@ -1999,18 +2001,35 @@ class _ThemePickerSheet extends StatelessWidget {
                 style: AppTypography.bodyMuted,
               ),
               const SizedBox(height: 24),
+              _ThemePreviewCard(
+                label: l10n.settings_theme_automatic,
+                description: l10n.settings_theme_automaticDesc,
+                miniature: const _AutomaticThemeMiniature(),
+                selected: themeState.followSystem,
+                onTap: () async {
+                  if (themeState.followSystem) return;
+                  HapticFeedback.selectionClick();
+                  await context.read<ThemeCubit>().applyAutomatic();
+                },
+              ),
               for (final mode in SilarahThemeMode.values) ...[
+                const SizedBox(height: 12),
                 _ThemePreviewCard(
-                  mode: mode,
-                  selected: mode == themeState.selectedMode,
+                  label: _themeLabel(l10n, mode),
+                  description: _themeDescription(l10n, mode),
+                  miniature:
+                      _ThemeMiniature(palette: SilarahPalette.forMode(mode)),
+                  selected: !themeState.followSystem &&
+                      mode == themeState.selectedMode,
                   onTap: () async {
-                    if (mode == themeState.selectedMode) return;
+                    if (!themeState.followSystem &&
+                        mode == themeState.selectedMode) {
+                      return;
+                    }
                     HapticFeedback.selectionClick();
                     await context.read<ThemeCubit>().applyMode(mode);
                   },
                 ),
-                if (mode != SilarahThemeMode.values.last)
-                  const SizedBox(height: 12),
               ],
               const SizedBox(height: 20),
               Row(
@@ -2038,21 +2057,21 @@ class _ThemePickerSheet extends StatelessWidget {
 
 class _ThemePreviewCard extends StatelessWidget {
   const _ThemePreviewCard({
-    required this.mode,
+    required this.label,
+    required this.description,
+    required this.miniature,
     required this.selected,
     required this.onTap,
   });
 
-  final SilarahThemeMode mode;
+  final String label;
+  final String description;
+  final Widget miniature;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final palette = SilarahPalette.forMode(mode);
-    final label = _themeLabel(l10n, mode);
-    final description = _themeDescription(l10n, mode);
     return Semantics(
       button: true,
       selected: selected,
@@ -2074,7 +2093,7 @@ class _ThemePreviewCard extends StatelessWidget {
           ),
           child: Row(
             children: [
-              _ThemeMiniature(palette: palette),
+              miniature,
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -2121,6 +2140,38 @@ class _ThemePreviewCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Ivory & Emerald on the left, Pure OLED on the right: the two identities
+/// Automatic switches between with the phone's light or dark setting.
+class _AutomaticThemeMiniature extends StatelessWidget {
+  const _AutomaticThemeMiniature();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      width: 72,
+      height: 82,
+      child: Stack(
+        children: [
+          _ThemeMiniature(palette: SilarahPalette.ivoryEmerald),
+          Positioned(
+            top: 0,
+            right: 0,
+            bottom: 0,
+            child: ClipRRect(
+              borderRadius: BorderRadius.horizontal(right: Radius.circular(13)),
+              child: Align(
+                alignment: Alignment.centerRight,
+                widthFactor: .5,
+                child: _ThemeMiniature(palette: SilarahPalette.oled),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

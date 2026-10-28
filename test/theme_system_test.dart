@@ -16,12 +16,12 @@ import 'package:silarah/core/theme/app_theme.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  tearDown(() => AppColors.activate(SilarahThemeMode.blackWhite));
+  tearDown(() => AppColors.activate(SilarahThemeMode.ivoryEmerald));
 
   test('theme modes have stable persistence identities', () {
     expect(
       SilarahThemeMode.values.map((mode) => mode.storageValue).toSet(),
-      {'black_white', 'oled', 'ivory_emerald'},
+      {'rose_marigold', 'oled', 'ivory_emerald'},
     );
     expect(
       SilarahThemeMode.fromStorage('prism_luxe'),
@@ -35,24 +35,33 @@ void main() {
     );
     expect(
       SilarahThemeMode.fromStorage('unknown'),
-      SilarahThemeMode.blackWhite,
+      SilarahThemeMode.ivoryEmerald,
     );
     expect(
       SilarahThemeMode.fromStorage('obsidian'),
-      SilarahThemeMode.blackWhite,
-      reason: 'Removed identities migrate safely to Black & White.',
+      SilarahThemeMode.ivoryEmerald,
+      reason: 'Removed identities migrate safely to the brand identity.',
+    );
+    expect(
+      SilarahThemeMode.fromStorage('black_white'),
+      SilarahThemeMode.ivoryEmerald,
+      reason: 'Black & White was retired; its members land on Ivory.',
+    );
+    expect(
+      SilarahThemeMode.fromStorage('rose_marigold'),
+      SilarahThemeMode.roseMarigold,
     );
     expect(
       SilarahThemeMode.fromStorage('rose'),
-      SilarahThemeMode.blackWhite,
+      SilarahThemeMode.ivoryEmerald,
     );
     expect(
       SilarahThemeMode.fromStorage('floral_pink'),
-      SilarahThemeMode.blackWhite,
+      SilarahThemeMode.ivoryEmerald,
     );
     expect(
       SilarahThemeMode.fromStorage('porcelain'),
-      SilarahThemeMode.blackWhite,
+      SilarahThemeMode.ivoryEmerald,
     );
   });
 
@@ -84,13 +93,56 @@ void main() {
     });
     final cubit = ThemeCubit();
     await cubit.ready;
-    expect(cubit.state.activeMode, SilarahThemeMode.blackWhite);
+    expect(cubit.state.activeMode, SilarahThemeMode.ivoryEmerald);
     expect(
       (await SharedPreferences.getInstance())
           .getString(ThemeCubit.preferenceKey),
-      'black_white',
+      'ivory_emerald',
     );
     await cubit.close();
+  });
+
+  test('Automatic follows the phone and is saved as its own choice', () async {
+    SharedPreferences.setMockInitialValues({});
+    final dispatcher = TestWidgetsFlutterBinding.instance.platformDispatcher;
+    addTearDown(dispatcher.clearPlatformBrightnessTestValue);
+    dispatcher.platformBrightnessTestValue = Brightness.light;
+
+    final cubit = ThemeCubit();
+    await cubit.applyAutomatic();
+    expect(cubit.state.followSystem, isTrue);
+    expect(cubit.state.activeMode, SilarahThemeMode.ivoryEmerald);
+    expect(
+      (await SharedPreferences.getInstance())
+          .getString(ThemeCubit.preferenceKey),
+      ThemeCubit.automaticStorageValue,
+    );
+
+    dispatcher.platformBrightnessTestValue = Brightness.dark;
+    expect(cubit.state.activeMode, SilarahThemeMode.oled);
+    expect(AppColors.active.mode, SilarahThemeMode.oled);
+
+    await cubit.applyMode(SilarahThemeMode.oled);
+    expect(cubit.state.followSystem, isFalse,
+        reason: 'Picking a theme by hand stops following the phone.');
+    dispatcher.platformBrightnessTestValue = Brightness.light;
+    expect(cubit.state.activeMode, SilarahThemeMode.oled);
+    await cubit.close();
+
+    SharedPreferences.setMockInitialValues({
+      ThemeCubit.preferenceKey: ThemeCubit.automaticStorageValue,
+    });
+    final restored = ThemeCubit();
+    await restored.ready;
+    expect(restored.state.followSystem, isTrue);
+    expect(restored.state.activeMode, SilarahThemeMode.ivoryEmerald);
+    expect(
+      (await SharedPreferences.getInstance())
+          .getString(ThemeCubit.preferenceKey),
+      ThemeCubit.automaticStorageValue,
+      reason: 'Loading must not overwrite Automatic with a resolved mode.',
+    );
+    await restored.close();
   });
 
   test('preloaded startup theme applies atomically before first frame',
@@ -111,15 +163,11 @@ void main() {
       expect(theme.scaffoldBackgroundColor, palette.background);
       expect(theme.colorScheme.primary, palette.accent);
     }
+    expect(SilarahThemeMode.roseMarigold.isDark, isFalse);
     expect(
-      SilarahPalette.blackWhite.background,
-      const Color(0xFFFFFFFF),
-      reason: 'Black & White is intentionally a true-white theme.',
-    );
-    expect(
-      SilarahPalette.blackWhite.accent,
-      const Color(0xFF000000),
-      reason: 'Black & White uses absolute black for primary actions.',
+      SilarahPalette.roseMarigold.spectrum.toSet(),
+      hasLength(6),
+      reason: 'Rose & Marigold keeps six distinct semantic accents.',
     );
     expect(
       SilarahPalette.oled.background,
@@ -142,51 +190,6 @@ void main() {
       SilarahPalette.ivoryEmerald.spectrum.toSet(),
       hasLength(6),
       reason: 'Semantic accents remain distinct without becoming rainbow UI.',
-    );
-    const monochrome = SilarahPalette.blackWhite;
-    final monochromeColors = <Color>[
-      monochrome.background,
-      monochrome.backgroundDeep,
-      monochrome.accent,
-      monochrome.accentHighlight,
-      monochrome.accentPressed,
-      monochrome.complementary,
-      monochrome.decorativeDepth,
-      monochrome.contentPrimary,
-      monochrome.contentSecondary,
-      monochrome.surface,
-      monochrome.surfaceInteractive,
-      monochrome.input,
-      monochrome.border,
-      monochrome.accentBorder,
-      monochrome.accentGlow,
-      monochrome.success,
-      monochrome.danger,
-      monochrome.messageReceived,
-      monochrome.progressTrack,
-      monochrome.divider,
-      monochrome.surfaceElevated,
-      monochrome.surfaceMid,
-      monochrome.surfaceDark,
-      monochrome.surfacePressed,
-      monochrome.surfacePanelTop,
-      monochrome.premium,
-      monochrome.online,
-      monochrome.message,
-      monochrome.warning,
-      monochrome.gradientCore,
-      monochrome.dropdown,
-      monochrome.snackbar,
-      monochrome.navBar,
-      monochrome.navBorder,
-      ...monochrome.spectrum,
-    ];
-    expect(
-      monochromeColors.every(
-        (color) => color.r == color.g && color.g == color.b,
-      ),
-      isTrue,
-      reason: 'Black & White must contain no chromatic colour values.',
     );
   });
 

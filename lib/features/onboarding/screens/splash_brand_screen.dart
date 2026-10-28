@@ -508,7 +508,7 @@ class _SplashBrandScreenState extends State<SplashBrandScreen>
                                             maxLines: 2,
                                             style: AppTypography.captionMedium
                                                 .copyWith(
-                                              color: AppColors.pearlWhite,
+                                              color: AppColors.champagneGold,
                                               decoration: TextDecoration.none,
                                             ),
                                           ),
@@ -633,12 +633,76 @@ class _IntentionalUnionHero extends StatelessWidget {
                       ),
                     ),
                   ),
+                  SizedBox(height: compact ? 18 : 28),
+                  // Quiet reassurance for families deciding whether to trust
+                  // the app; it fades in with the hero copy.
+                  Opacity(
+                    opacity: Curves.easeOut.transform(
+                      ((reveal.value - .55) / .45).clamp(0.0, 1.0),
+                    ),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 340),
+                      child: _TrustLine(
+                        text: context.uiCopy(
+                          'Photo-checked members · Guardian-friendly · Private by design',
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Three short trust phrases that wrap as whole units, never mid-phrase.
+class _TrustLine extends StatelessWidget {
+  const _TrustLine({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = AppTypography.caption.copyWith(
+      color: AppColors.slateMist,
+      fontSize: 12,
+      height: 1.4,
+    );
+    final phrases = text.split(' · ');
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      runSpacing: 4,
+      children: [
+        for (var i = 0; i < phrases.length; i++)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (i == 0) ...[
+                Icon(
+                  Icons.verified_user_outlined,
+                  size: 13,
+                  color: AppColors.champagneGold,
+                ),
+                const SizedBox(width: 5),
+              ],
+              // A phrase breaks internally only when it cannot fit a line
+              // on its own (very large text on a narrow phone).
+              Flexible(
+                child: UiText.verbatim(
+                  phrases[i],
+                  textAlign: TextAlign.center,
+                  style: style,
+                ),
+              ),
+              if (i < phrases.length - 1) UiText.verbatim(' · ', style: style),
+            ],
+          ),
+      ],
     );
   }
 }

@@ -4404,17 +4404,29 @@ abstract class AppLocalizations {
   /// **'Shared only after mutual interest.'**
   String get onboarding_specialNeeds_privacy;
 
-  /// No description provided for @settings_theme_blackWhite.
+  /// No description provided for @settings_theme_automatic.
   ///
   /// In en, this message translates to:
-  /// **'Black & White'**
-  String get settings_theme_blackWhite;
+  /// **'Automatic'**
+  String get settings_theme_automatic;
 
-  /// No description provided for @settings_theme_blackWhiteDesc.
+  /// No description provided for @settings_theme_automaticDesc.
   ///
   /// In en, this message translates to:
-  /// **'Pure white, absolute black, no colour'**
-  String get settings_theme_blackWhiteDesc;
+  /// **'Ivory & Emerald by day, OLED Night when your phone is dark'**
+  String get settings_theme_automaticDesc;
+
+  /// No description provided for @settings_theme_rose.
+  ///
+  /// In en, this message translates to:
+  /// **'Rose & Marigold'**
+  String get settings_theme_rose;
+
+  /// No description provided for @settings_theme_roseDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Soft blush with deep rose and marigold gold'**
+  String get settings_theme_roseDesc;
 
   /// No description provided for @settings_theme_oled.
   ///

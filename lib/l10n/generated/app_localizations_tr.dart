@@ -2347,11 +2347,18 @@ class AppLocalizationsTr extends AppLocalizations {
       'Yalnızca karşılıklı ilgi sonrasında paylaşılır.';
 
   @override
-  String get settings_theme_blackWhite => 'Siyah ve Beyaz';
+  String get settings_theme_automatic => 'Otomatik';
 
   @override
-  String get settings_theme_blackWhiteDesc =>
-      'Saf beyaz, mutlak siyah, renksiz';
+  String get settings_theme_automaticDesc =>
+      'Gündüz Fildişi ve Zümrüt, telefon karanlık moddayken OLED Gece';
+
+  @override
+  String get settings_theme_rose => 'Gül ve Kadife';
+
+  @override
+  String get settings_theme_roseDesc =>
+      'Yumuşak pembe, koyu gül ve kadife çiçeği altını';
 
   @override
   String get settings_theme_oled => 'OLED Gece';

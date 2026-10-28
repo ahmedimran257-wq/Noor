@@ -7,7 +7,7 @@ import 'package:silarah/core/widgets/cards/silarah_profile_card.dart';
 import 'package:silarah/core/widgets/loaders/silarah_shimmer.dart';
 
 void main() {
-  tearDown(() => AppColors.activate(SilarahThemeMode.blackWhite));
+  tearDown(() => AppColors.activate(SilarahThemeMode.ivoryEmerald));
 
   test('filter refresh keeps one stable PageView controller attachment', () {
     final source = File(
@@ -34,7 +34,7 @@ void main() {
 
   testWidgets('bookmark control is high contrast and reflects saved state',
       (tester) async {
-    AppColors.activate(SilarahThemeMode.blackWhite);
+    AppColors.activate(SilarahThemeMode.ivoryEmerald);
 
     Future<void> pumpCard({required bool saved}) async {
       await tester.pumpWidget(
@@ -132,7 +132,7 @@ void main() {
   testWidgets(
       'premium card keeps media copy readable and explains identity trust',
       (tester) async {
-    AppColors.activate(SilarahThemeMode.blackWhite);
+    AppColors.activate(SilarahThemeMode.ivoryEmerald);
 
     await tester.pumpWidget(
       const MaterialApp(

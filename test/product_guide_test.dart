@@ -64,7 +64,7 @@ class _SeededOnboarding extends OnboardingCubit {
 }
 
 void main() {
-  tearDown(() => AppColors.activate(SilarahThemeMode.blackWhite));
+  tearDown(() => AppColors.activate(SilarahThemeMode.ivoryEmerald));
 
   test('every guide locale includes every sentence', () {
     final keys = productGuideUiCopy['ar']!.keys.toSet();
@@ -134,7 +134,7 @@ void main() {
   testWidgets('photo audience follows the selected policy', (tester) async {
     for (final privacy in PhotoPrivacy.values) {
       await tester.pumpWidget(_app(
-          mode: SilarahThemeMode.blackWhite,
+          mode: SilarahThemeMode.ivoryEmerald,
           home: Scaffold(body: PhotoAudienceSummary(privacy: privacy))));
       await tester.pumpAndSettle();
       final l10n = AppLocalizations.of(
@@ -195,7 +195,7 @@ void main() {
     addTearDown(auth.close);
     addTearDown(onboarding.close);
     await tester.pumpWidget(_app(
-      mode: SilarahThemeMode.blackWhite,
+      mode: SilarahThemeMode.ivoryEmerald,
       home: MultiBlocProvider(providers: [
         BlocProvider<AuthCubit>.value(value: auth),
         BlocProvider<OnboardingCubit>.value(value: onboarding),

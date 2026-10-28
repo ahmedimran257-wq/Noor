@@ -20,7 +20,7 @@ void main() {
 
   testWidgets('rapid Premium gate requests render only one modal',
       (tester) async {
-    AppColors.activate(SilarahThemeMode.blackWhite);
+    AppColors.activate(SilarahThemeMode.ivoryEmerald);
     final auth = _SeededAuthCubit('male');
     addTearDown(auth.close);
 

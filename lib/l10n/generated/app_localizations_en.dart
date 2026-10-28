@@ -2343,11 +2343,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Shared only after mutual interest.';
 
   @override
-  String get settings_theme_blackWhite => 'Black & White';
+  String get settings_theme_automatic => 'Automatic';
 
   @override
-  String get settings_theme_blackWhiteDesc =>
-      'Pure white, absolute black, no colour';
+  String get settings_theme_automaticDesc =>
+      'Ivory & Emerald by day, OLED Night when your phone is dark';
+
+  @override
+  String get settings_theme_rose => 'Rose & Marigold';
+
+  @override
+  String get settings_theme_roseDesc =>
+      'Soft blush with deep rose and marigold gold';
 
   @override
   String get settings_theme_oled => 'OLED Night';

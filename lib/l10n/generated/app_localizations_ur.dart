@@ -2349,11 +2349,18 @@ class AppLocalizationsUr extends AppLocalizations {
       'یہ صرف باہمی دلچسپی کے بعد شیئر کیا جاتا ہے۔';
 
   @override
-  String get settings_theme_blackWhite => 'سیاہ و سفید';
+  String get settings_theme_automatic => 'خودکار';
 
   @override
-  String get settings_theme_blackWhiteDesc =>
-      'خالص سفید، مکمل سیاہ، کوئی رنگ نہیں';
+  String get settings_theme_automaticDesc =>
+      'دن میں ہاتھی دانت اور زمرد، فون ڈارک موڈ میں ہو تو OLED رات';
+
+  @override
+  String get settings_theme_rose => 'گلاب اور گیندا';
+
+  @override
+  String get settings_theme_roseDesc =>
+      'نرم گلابی رنگت، گہرا گلاب اور گیندے جیسا سنہرا';
 
   @override
   String get settings_theme_oled => 'OLED رات';

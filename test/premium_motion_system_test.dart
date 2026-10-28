@@ -9,7 +9,7 @@ import 'package:silarah/core/widgets/loaders/silarah_shimmer.dart';
 import 'package:silarah/features/home/widgets/interest_ceremony_overlay.dart';
 
 void main() {
-  tearDown(() => AppColors.activate(SilarahThemeMode.blackWhite));
+  tearDown(() => AppColors.activate(SilarahThemeMode.ivoryEmerald));
 
   test('feature UI cannot bypass the shared premium motion system', () {
     final sourceFiles = Directory('lib')

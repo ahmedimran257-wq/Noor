@@ -2368,11 +2368,18 @@ class AppLocalizationsFr extends AppLocalizations {
       'Partagé uniquement après un intérêt mutuel.';
 
   @override
-  String get settings_theme_blackWhite => 'Noir et blanc';
+  String get settings_theme_automatic => 'Automatique';
 
   @override
-  String get settings_theme_blackWhiteDesc =>
-      'Blanc pur, noir absolu, sans couleur';
+  String get settings_theme_automaticDesc =>
+      'Ivoire et émeraude le jour, Nuit OLED quand votre téléphone est en mode sombre';
+
+  @override
+  String get settings_theme_rose => 'Rose et souci';
+
+  @override
+  String get settings_theme_roseDesc =>
+      'Rose poudré, rose profond et or de souci';
 
   @override
   String get settings_theme_oled => 'Nuit OLED';

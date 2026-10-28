@@ -474,9 +474,7 @@ class _GradientOverlay extends StatelessWidget {
 class _VerifiedBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final trustColor = AppColors.active.mode == SilarahThemeMode.blackWhite
-        ? AppColors.onMedia
-        : AppColors.verifiedTeal;
+    final trustColor = AppColors.verifiedTeal;
 
     return Semantics(
       label: context.uiCopy('Profile photo verified'),
@@ -524,9 +522,7 @@ class _GuardianManagedPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = AppColors.active.mode == SilarahThemeMode.blackWhite
-        ? AppColors.onMedia
-        : AppColors.champagneLight;
+    final color = AppColors.champagneLight;
     return Semantics(
       label: context.uiCopy('Guardian-managed profile'),
       excludeSemantics: true,
@@ -930,9 +926,7 @@ class _LastActivePill extends StatelessWidget {
   Widget build(BuildContext context) {
     final isOnline = label == 'Online now';
     final activeColor = isOnline
-        ? (AppColors.active.mode == SilarahThemeMode.blackWhite
-            ? AppColors.onMedia
-            : AppColors.onlineGreen)
+        ? AppColors.onlineGreen
         : AppColors.onMedia.withValues(alpha: 0.58);
     return Container(
       padding: const EdgeInsets.symmetric(

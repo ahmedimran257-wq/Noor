@@ -8,7 +8,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   tearDown(() {
-    AppColors.activate(SilarahThemeMode.blackWhite);
+    AppColors.activate(SilarahThemeMode.ivoryEmerald);
   });
 
   testWidgets('policy reminder is complete and overflow-free in every theme',

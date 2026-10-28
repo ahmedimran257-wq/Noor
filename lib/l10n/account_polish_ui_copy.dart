@@ -1,6 +1,8 @@
 /// Profile and settings copy introduced by the pre-launch polish pass.
 const accountPolishUiCopy = <String, Map<String, String>>{
   'ar': {
+    "Photo-checked members · Guardian-friendly · Private by design":
+        "أعضاء بصور موثّقة · مناسب للولي · خصوصية من الأساس",
     "Verify your profile photo": "تحقق من صورة ملفك الشخصي",
     "Three quick steps: look at the camera, smile, then blink. A trained reviewer compares them with your main photo. Hijab, niqab and glasses can stay on.":
         "ثلاث خطوات سريعة: انظر إلى الكاميرا، ثم ابتسم، ثم ارمش. يقارنها مراجع مدرّب بصورتك الرئيسية. يمكنك إبقاء الحجاب والنقاب والنظارات.",
@@ -16,6 +18,8 @@ const accountPolishUiCopy = <String, Map<String, String>>{
     'Help Center, contact and grievances': 'مركز المساعدة والتواصل والشكاوى'
   },
   'bn': {
+    "Photo-checked members · Guardian-friendly · Private by design":
+        "ছবি-যাচাই করা সদস্য · অভিভাবক-বান্ধব · শুরু থেকেই গোপনীয়",
     "Verify your profile photo": "আপনার প্রোফাইল ছবি যাচাই করুন",
     "Three quick steps: look at the camera, smile, then blink. A trained reviewer compares them with your main photo. Hijab, niqab and glasses can stay on.":
         "তিনটি দ্রুত ধাপ: ক্যামেরার দিকে তাকান, হাসুন, তারপর চোখ পিটপিট করুন। একজন প্রশিক্ষিত পর্যালোচক এগুলো আপনার প্রধান ছবির সাথে মিলিয়ে দেখবেন। হিজাব, নিকাব ও চশমা পরে থাকতে পারেন।",
@@ -31,6 +35,8 @@ const accountPolishUiCopy = <String, Map<String, String>>{
     'Help Center, contact and grievances': 'সহায়তা কেন্দ্র, যোগাযোগ ও অভিযোগ'
   },
   'de': {
+    "Photo-checked members · Guardian-friendly · Private by design":
+        "Fotogeprüfte Mitglieder · Vormund-freundlich · Privat von Grund auf",
     "Verify your profile photo": "Profilfoto bestätigen",
     "Three quick steps: look at the camera, smile, then blink. A trained reviewer compares them with your main photo. Hijab, niqab and glasses can stay on.":
         "Drei kurze Schritte: in die Kamera schauen, lächeln, dann blinzeln. Eine geschulte Prüferin oder ein geschulter Prüfer vergleicht sie mit Ihrem Hauptfoto. Hidschab, Nikab und Brille dürfen bleiben.",
@@ -46,6 +52,8 @@ const accountPolishUiCopy = <String, Map<String, String>>{
     'Help Center, contact and grievances': 'Hilfe, Kontakt und Beschwerden'
   },
   'fr': {
+    "Photo-checked members · Guardian-friendly · Private by design":
+        "Membres aux photos vérifiées · Adapté au tuteur · Privé par conception",
     "Verify your profile photo": "Vérifier votre photo de profil",
     "Three quick steps: look at the camera, smile, then blink. A trained reviewer compares them with your main photo. Hijab, niqab and glasses can stay on.":
         "Trois étapes rapides : regardez la caméra, souriez, puis clignez des yeux. Un vérificateur formé les compare à votre photo principale. Hijab, niqab et lunettes peuvent rester.",
@@ -61,6 +69,8 @@ const accountPolishUiCopy = <String, Map<String, String>>{
     'Help Center, contact and grievances': 'Aide, contact et réclamations'
   },
   'hi': {
+    "Photo-checked members · Guardian-friendly · Private by design":
+        "फ़ोटो-जाँचे सदस्य · अभिभावक के अनुकूल · शुरू से ही निजी",
     "Verify your profile photo": "अपनी प्रोफ़ाइल फ़ोटो सत्यापित करें",
     "Three quick steps: look at the camera, smile, then blink. A trained reviewer compares them with your main photo. Hijab, niqab and glasses can stay on.":
         "तीन आसान चरण: कैमरे की ओर देखें, मुस्कुराएँ, फिर पलक झपकाएँ। एक प्रशिक्षित समीक्षक इन्हें आपकी मुख्य फ़ोटो से मिलाते हैं। हिजाब, नक़ाब और चश्मा पहने रह सकते हैं।",
@@ -76,6 +86,8 @@ const accountPolishUiCopy = <String, Map<String, String>>{
     'Help Center, contact and grievances': 'सहायता केंद्र, संपर्क और शिकायतें'
   },
   'id': {
+    "Photo-checked members · Guardian-friendly · Private by design":
+        "Anggota dengan foto terverifikasi · Ramah wali · Privat sejak awal",
     "Verify your profile photo": "Verifikasi foto profil Anda",
     "Three quick steps: look at the camera, smile, then blink. A trained reviewer compares them with your main photo. Hijab, niqab and glasses can stay on.":
         "Tiga langkah cepat: lihat kamera, tersenyum, lalu berkedip. Peninjau terlatih membandingkannya dengan foto utama Anda. Hijab, cadar, dan kacamata boleh tetap dipakai.",
@@ -92,6 +104,8 @@ const accountPolishUiCopy = <String, Map<String, String>>{
         'Pusat bantuan, kontak, dan pengaduan'
   },
   'ms': {
+    "Photo-checked members · Guardian-friendly · Private by design":
+        "Ahli dengan foto disemak · Mesra penjaga · Peribadi sejak asas",
     "Verify your profile photo": "Sahkan gambar profil anda",
     "Three quick steps: look at the camera, smile, then blink. A trained reviewer compares them with your main photo. Hijab, niqab and glasses can stay on.":
         "Tiga langkah pantas: lihat kamera, senyum, kemudian kelip mata. Penyemak terlatih membandingkannya dengan gambar utama anda. Tudung, niqab dan cermin mata boleh kekal dipakai.",
@@ -107,6 +121,8 @@ const accountPolishUiCopy = <String, Map<String, String>>{
     'Help Center, contact and grievances': 'Pusat bantuan, hubungi dan aduan'
   },
   'tr': {
+    "Photo-checked members · Guardian-friendly · Private by design":
+        "Fotoğrafı kontrol edilmiş üyeler · Veli dostu · Tasarımdan gizli",
     "Verify your profile photo": "Profil fotoğrafınızı doğrulayın",
     "Three quick steps: look at the camera, smile, then blink. A trained reviewer compares them with your main photo. Hijab, niqab and glasses can stay on.":
         "Üç kısa adım: kameraya bakın, gülümseyin, sonra göz kırpın. Eğitimli bir inceleyici bunları ana fotoğrafınızla karşılaştırır. Başörtüsü, peçe ve gözlük takılı kalabilir.",
@@ -123,6 +139,8 @@ const accountPolishUiCopy = <String, Map<String, String>>{
         'Yardım merkezi, iletişim ve şikayetler'
   },
   'ur': {
+    "Photo-checked members · Guardian-friendly · Private by design":
+        "تصویر سے جانچے گئے اراکین · سرپرست کے موافق · بنیاد سے نجی",
     "Verify your profile photo": "اپنی پروفائل تصویر کی تصدیق کریں",
     "Three quick steps: look at the camera, smile, then blink. A trained reviewer compares them with your main photo. Hijab, niqab and glasses can stay on.":
         "تین آسان مراحل: کیمرے کی طرف دیکھیں، مسکرائیں، پھر پلک جھپکائیں۔ ایک تربیت یافتہ جائزہ کار انہیں آپ کی مرکزی تصویر سے ملاتا ہے۔ حجاب، نقاب اور چشمہ پہنے رکھ سکتے ہیں۔",

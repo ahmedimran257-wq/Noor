@@ -12,12 +12,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get guide_optional_details => 'تفاصيل إضافية (اختيارية)';
 
   @override
-  String get guide_optional_details_body =>
-      'يمكنك إكمال هذه التفاصيل لاحقًا من ملفك الشخصي.';
+  String get guide_optional_details_body => 'يمكنك إكمال هذه التفاصيل لاحقًا من ملفك الشخصي.';
 
   @override
-  String get guide_profile_ownership =>
-      'يصف هذا الملف الشخص الذي يبحث عن الزواج. ويمكن دعوة ولي منفصل لاحقًا للإشراف على المحادثات.';
+  String get guide_profile_ownership => 'يصف هذا الملف الشخص الذي يبحث عن الزواج. ويمكن دعوة ولي منفصل لاحقًا للإشراف على المحادثات.';
 
   @override
   String get about_button_later => 'سأفعل هذا لاحقا';
@@ -80,8 +78,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get auth_label_changeNumber => 'رقم خاطئ؟ تغييره';
 
   @override
-  String get auth_label_enterOtp =>
-      'أدخل رمز التحقق المكون من 6 أرقام المرسل إليه';
+  String get auth_label_enterOtp => 'أدخل رمز التحقق المكون من 6 أرقام المرسل إليه';
 
   @override
   String get auth_label_resendCode => 'إعادة إرسال رمز التحقق';
@@ -100,8 +97,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get auth_label_sentCodeTo => 'أرسلنا رمز التحقق المكون من 6 أرقام إلى';
 
   @override
-  String get auth_subtitle_verifyOtp =>
-      'سوف نقوم بالتحقق من ذلك باستخدام رمز لمرة واحدة.';
+  String get auth_subtitle_verifyOtp => 'سوف نقوم بالتحقق من ذلك باستخدام رمز لمرة واحدة.';
 
   @override
   String get auth_title_enterCode => 'أدخل رمز التحقق الخاص بك';
@@ -136,8 +132,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get background_edu_subtitle_self =>
-      'يساعد في العثور على التطابقات المتوافقة بشكل احترافي.';
+  String get background_edu_subtitle_self => 'يساعد في العثور على التطابقات المتوافقة بشكل احترافي.';
 
   @override
   String get background_edu_title_guardian => 'خلفيتهم';
@@ -158,8 +153,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get background_emp_student => 'طالب';
 
   @override
-  String get background_income_subtitle =>
-      'يتخطّى العديد من الأشخاص هذا الأمر، فهو اختياري تمامًا.';
+  String get background_income_subtitle => 'يتخطّى العديد من الأشخاص هذا الأمر، فهو اختياري تمامًا.';
 
   @override
   String get background_label_eduLevel => 'المستوى التعليمي';
@@ -197,31 +191,25 @@ class AppLocalizationsAr extends AppLocalizations {
   String get ceremony_text_blessing => 'جزاكم الله هذا الخير';
 
   @override
-  String get chat_closure_1 =>
-      'السلام عليكم. بعد تفكير عميق، أشعر أن هذا قد لا يكون الخيار المناسب لنا. أتمنى لك من كل قلبي كل التوفيق وأدعو الله أن يرزقك بشريك رائع. جزاك الله خيرا.';
+  String get chat_closure_1 => 'السلام عليكم. بعد تفكير عميق، أشعر أن هذا قد لا يكون الخيار المناسب لنا. أتمنى لك من كل قلبي كل التوفيق وأدعو الله أن يرزقك بشريك رائع. جزاك الله خيرا.';
 
   @override
-  String get chat_closure_2 =>
-      'السلام عليكم. أردت أن أكون صادقًا ومحترمًا معك. لا أعتقد أننا الشخص المناسب، ولكن أدعو الله أن يفتح لك أبوابًا أفضل. أتمنى لكم كل التوفيق.';
+  String get chat_closure_2 => 'السلام عليكم. أردت أن أكون صادقًا ومحترمًا معك. لا أعتقد أننا الشخص المناسب، ولكن أدعو الله أن يفتح لك أبوابًا أفضل. أتمنى لكم كل التوفيق.';
 
   @override
-  String get chat_closure_3 =>
-      'السلام عليكم. بعد دراسة صادقة، أشعر أننا قد لا نكون متوافقين. أتمنى أن تجد الشخص المناسب لك حقًا. الله يسهل عليك. جزاك الله خيرا على وقتك.';
+  String get chat_closure_3 => 'السلام عليكم. بعد دراسة صادقة، أشعر أننا قد لا نكون متوافقين. أتمنى أن تجد الشخص المناسب لك حقًا. الله يسهل عليك. جزاك الله خيرا على وقتك.';
 
   @override
-  String get chat_closure_4 =>
-      'السلام عليكم. لقد فكرت في محادثاتنا وأشعر أنه من الأفضل إغلاق هذه المباراة في هذا الوقت. ليس لدي سوى الاحترام لك وأدعو الله أن يجزيك الأفضل.';
+  String get chat_closure_4 => 'السلام عليكم. لقد فكرت في محادثاتنا وأشعر أنه من الأفضل إغلاق هذه المباراة في هذا الوقت. ليس لدي سوى الاحترام لك وأدعو الله أن يجزيك الأفضل.';
 
   @override
-  String get chat_closure_5 =>
-      'السلام عليكم. أردت أن أكون شفافًا معك بدلاً من التلاشي. لا أرى أن هذا يتقدم أكثر من ذلك، لكنني أقدر حقًا وقتك وأتمنى لك كل السعادة. بارك الله فيكم.';
+  String get chat_closure_5 => 'السلام عليكم. أردت أن أكون شفافًا معك بدلاً من التلاشي. لا أرى أن هذا يتقدم أكثر من ذلك، لكنني أقدر حقًا وقتك وأتمنى لك كل السعادة. بارك الله فيكم.';
 
   @override
   String get chat_endMatch_button => 'إرسال وإنهاء المباراة';
 
   @override
-  String get chat_endMatch_subtitle =>
-      'اختر رسالة محترمة لإغلاق هذه المحادثة. سيتم إخطار الشخص الآخر.';
+  String get chat_endMatch_subtitle => 'اختر رسالة محترمة لإغلاق هذه المحادثة. سيتم إخطار الشخص الآخر.';
 
   @override
   String get chat_endMatch_title => 'إنهاء هذه المباراة';
@@ -232,23 +220,19 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get chat_label_subscribeToMessage =>
-      'اشترك لفتح الرسائل. تراسل النساء دائمًا مجانًا على سيلارا.';
+  String get chat_label_subscribeToMessage => 'اشترك لفتح الرسائل. تراسل النساء دائمًا مجانًا على سيلارا.';
 
   @override
   String get chat_matchClosed_banner => 'لقد تم إغلاق هذه المباراة بكل احترام.';
 
   @override
-  String get chat_opener_1 =>
-      'السلام عليكم! لقد صادفت ملفك الشخصي وأعجبت به حقًا. هل لي أن أقدم نفسي؟';
+  String get chat_opener_1 => 'السلام عليكم! لقد صادفت ملفك الشخصي وأعجبت به حقًا. هل لي أن أقدم نفسي؟';
 
   @override
-  String get chat_opener_2 =>
-      'بسم الله. الملف الشخصي الخاص بك لفت انتباهي. أحب أن أعرف المزيد عنك.';
+  String get chat_opener_2 => 'بسم الله. الملف الشخصي الخاص بك لفت انتباهي. أحب أن أعرف المزيد عنك.';
 
   @override
-  String get chat_opener_3 =>
-      'السلام عليكم. أعتقد أننا نتقاسم قيمًا مماثلة. هل ستكون منفتحًا للتعرف على بعضكما البعض؟';
+  String get chat_opener_3 => 'السلام عليكم. أعتقد أننا نتقاسم قيمًا مماثلة. هل ستكون منفتحًا للتعرف على بعضكما البعض؟';
 
   @override
   String get chat_placeholder_typeMessage => 'اكتب رسالة...';
@@ -281,8 +265,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get common_error_generic => 'حدث خطأ ما. يرجى المحاولة مرة أخرى.';
 
   @override
-  String get common_error_noInternet =>
-      'لا يوجد اتصال بالإنترنت. يرجى التحقق من الاتصال الخاص بك.';
+  String get common_error_noInternet => 'لا يوجد اتصال بالإنترنت. يرجى التحقق من الاتصال الخاص بك.';
 
   @override
   String get common_label_optional => 'خياري';
@@ -334,29 +317,25 @@ class AppLocalizationsAr extends AppLocalizations {
   String get discovery_completeness_button => 'الملف الشخصي الكامل';
 
   @override
-  String get discovery_completeness_subtitle =>
-      'الملفات الشخصية التي تزيد عن 40% تحصل على 3 أضعاف الاهتمامات.\nأكمل ملفك الشخصي لبدء التصفح.';
+  String get discovery_completeness_subtitle => 'الملفات الشخصية التي تزيد عن 40% تحصل على 3 أضعاف الاهتمامات.\nأكمل ملفك الشخصي لبدء التصفح.';
 
   @override
   String get discovery_completeness_title => 'أكمل ملفك الشخصي';
 
   @override
-  String get discovery_empty_subtitle =>
-      'حاول توسيع مرشحات البحث الخاصة بك\nأو التحقق مرة أخرى غدا.';
+  String get discovery_empty_subtitle => 'حاول توسيع مرشحات البحث الخاصة بك\nأو التحقق مرة أخرى غدا.';
 
   @override
   String get discovery_empty_title => 'لقد رأيت الجميع في مكان قريب';
 
   @override
-  String get discovery_handoff_interest_subtitle =>
-      'تنتقل الملفات ذات الطلب النشط إلى الاهتمامات أثناء انتظارك أو ردّك.';
+  String get discovery_handoff_interest_subtitle => 'تنتقل الملفات ذات الطلب النشط إلى الاهتمامات أثناء انتظارك أو ردّك.';
 
   @override
   String get discovery_handoff_interest_title => 'اهتمامك قيد المتابعة';
 
   @override
-  String get discovery_handoff_match_subtitle =>
-      'تنتقل الملفات المتطابقة إلى الدردشة، لذلك لن تظهر مرة أخرى في الاستكشاف.';
+  String get discovery_handoff_match_subtitle => 'تنتقل الملفات المتطابقة إلى الدردشة، لذلك لن تظهر مرة أخرى في الاستكشاف.';
 
   @override
   String get discovery_handoff_match_title => 'اتصالك جاهز';
@@ -385,8 +364,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get discovery_limit_button => 'الترقية الآن';
 
   @override
-  String get discovery_limit_subtitle =>
-      'لقد تصفحت 15 ملفًا شخصيًا اليوم.\nقم بالترقية لفتح تصفح غير محدود.';
+  String get discovery_limit_subtitle => 'لقد تصفحت 15 ملفًا شخصيًا اليوم.\nقم بالترقية لفتح تصفح غير محدود.';
 
   @override
   String get discovery_limit_title => 'تم الوصول إلى الحد اليومي';
@@ -471,8 +449,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get family_polygamy_female_sub_self =>
-      'هل تفكرين في أن تكوني زوجة مشتركة؟';
+  String get family_polygamy_female_sub_self => 'هل تفكرين في أن تكوني زوجة مشتركة؟';
 
   @override
   String get family_polygamy_female_yes => 'نعم';
@@ -483,8 +460,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get family_polygamy_male_sub_self =>
-      'هل أنت متزوج حاليًا وتبحث عن زوج إضافي؟';
+  String get family_polygamy_male_sub_self => 'هل أنت متزوج حاليًا وتبحث عن زوج إضافي؟';
 
   @override
   String get family_polygamy_option_first => 'لا، هذه هي المرة الأولى لي';
@@ -571,8 +547,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get guardian_details_involvement => 'مشاركة الوصي';
 
   @override
-  String get guardian_details_involvement_subtitle =>
-      'إلى أي مدى تريد أن تكون مشاركًا في المحادثات؟';
+  String get guardian_details_involvement_subtitle => 'إلى أي مدى تريد أن تكون مشاركًا في المحادثات؟';
 
   @override
   String guardian_details_mode_active_sub(Object relation) {
@@ -947,20 +922,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get legal_subtitle => 'يرجى القراءة والموافقة على الاستمرار.';
 
   @override
-  String get legal_summary_1 =>
-      'يتم تشفير بياناتك ولا يتم بيعها أبدًا لأطراف ثالثة.';
+  String get legal_summary_1 => 'يتم تشفير بياناتك ولا يتم بيعها أبدًا لأطراف ثالثة.';
 
   @override
-  String get legal_summary_2 =>
-      'تخضع كل صورة لفحص أمان، ويراجع فريقنا الصور الجديدة.';
+  String get legal_summary_2 => 'تخضع كل صورة لفحص أمان، ويراجع فريقنا الصور الجديدة.';
 
   @override
-  String get legal_summary_3 =>
-      'تؤدي المضايقات والملفات الشخصية المزيفة وعمليات الاحتيال إلى الحظر الدائم.';
+  String get legal_summary_3 => 'تؤدي المضايقات والملفات الشخصية المزيفة وعمليات الاحتيال إلى الحظر الدائم.';
 
   @override
-  String get legal_summary_4 =>
-      'هذه المنصة مخصصة لنوايا الزواج فقط. الكرامة هي المعيار.';
+  String get legal_summary_4 => 'هذه المنصة مخصصة لنوايا الزواج فقط. الكرامة هي المعيار.';
 
   @override
   String get legal_summary_5 => 'يمكنك حذف حسابك وجميع البيانات في أي وقت.';
@@ -969,8 +940,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get legal_title => 'قبل أن تبدأ';
 
   @override
-  String get notifications_empty_subtitle =>
-      'لا توجد إشعارات جديدة في الوقت الحالي.';
+  String get notifications_empty_subtitle => 'لا توجد إشعارات جديدة في الوقت الحالي.';
 
   @override
   String get notifications_empty_title => 'أنتم جميعًا محاصرون';
@@ -993,12 +963,10 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get onboarding_basicIdentity_subtitle_guardian =>
-      'هذا ما سيراه الآخرون في ملفهم الشخصي.';
+  String get onboarding_basicIdentity_subtitle_guardian => 'هذا ما سيراه الآخرون في ملفهم الشخصي.';
 
   @override
-  String get onboarding_basicIdentity_subtitle_self =>
-      'هذا ما سيراه الآخرون في ملفك الشخصي.';
+  String get onboarding_basicIdentity_subtitle_self => 'هذا ما سيراه الآخرون في ملفك الشخصي.';
 
   @override
   String get onboarding_basicIdentity_title => 'أخبرنا عن نفسك';
@@ -1033,20 +1001,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_diet_zabihaStrict => 'ذبيحة صارمة';
 
   @override
-  String get onboarding_error_bioContactInfo =>
-      'يرجى إزالة معلومات الاتصال من سيرتك الذاتية. لا يُسمح بتفاصيل الاتصال الخارجية حفاظًا على سلامتك.';
+  String get onboarding_error_bioContactInfo => 'يرجى إزالة معلومات الاتصال من سيرتك الذاتية. لا يُسمح بتفاصيل الاتصال الخارجية حفاظًا على سلامتك.';
 
   @override
-  String get onboarding_error_multipleFaces =>
-      'لا يمكن أن تكون الصور الجماعية هي صورتك الأساسية.';
+  String get onboarding_error_multipleFaces => 'لا يمكن أن تكون الصور الجماعية هي صورتك الأساسية.';
 
   @override
-  String get onboarding_error_noFace =>
-      'يرجى استخدام صورة يظهر فيها وجهك بوضوح.';
+  String get onboarding_error_noFace => 'يرجى استخدام صورة يظهر فيها وجهك بوضوح.';
 
   @override
-  String get onboarding_error_under18 =>
-      'سيلارا مخصص لمن يبلغون 18 عامًا أو أكثر. لقد وضعنا هذا المطلب لحماية الجميع في مجتمعنا.';
+  String get onboarding_error_under18 => 'سيلارا مخصص لمن يبلغون 18 عامًا أو أكثر. لقد وضعنا هذا المطلب لحماية الجميع في مجتمعنا.';
 
   @override
   String onboarding_error_under18_guardian(String relation) {
@@ -1054,8 +1018,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get onboarding_error_under18_self =>
-      'يجب أن يكون عمرك 18 عامًا أو أكثر لاستخدام سيلارا. ونحن نتطلع إلى الترحيب بك بعد ذلك.';
+  String get onboarding_error_under18_self => 'يجب أن يكون عمرك 18 عامًا أو أكثر لاستخدام سيلارا. ونحن نتطلع إلى الترحيب بك بعد ذلك.';
 
   @override
   String get onboarding_habit_frequently => 'مرارًا';
@@ -1082,8 +1045,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_hint_bio => 'صف نفسك بالصدق والكرامة.';
 
   @override
-  String get onboarding_hint_profession =>
-      'على سبيل المثال مهندس برمجيات، مدرس، دكتور';
+  String get onboarding_hint_profession => 'على سبيل المثال مهندس برمجيات، مدرس، دكتور';
 
   @override
   String get onboarding_hint_searchCity => 'ابحث في مدينتك...';
@@ -1101,8 +1063,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_hint_selectLanguage => 'اختر اللغة';
 
   @override
-  String get onboarding_islamicIdentity_subtitle =>
-      'يساعد هذا في التوفيق بينك وبين شخص متوافق.';
+  String get onboarding_islamicIdentity_subtitle => 'يساعد هذا في التوفيق بينك وبين شخص متوافق.';
 
   @override
   String get onboarding_islamicIdentity_title => 'هويتك الإسلامية';
@@ -1146,8 +1107,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_label_debtStatus => 'حالة الديون';
 
   @override
-  String get onboarding_label_debtStatusQuestion =>
-      'التزاماتك المالية الحالية.';
+  String get onboarding_label_debtStatusQuestion => 'التزاماتك المالية الحالية.';
 
   @override
   String get onboarding_label_deenLevel => 'مستوى الدين';
@@ -1192,8 +1152,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_label_housing => 'السكن';
 
   @override
-  String get onboarding_label_housingQuestion =>
-      'هل يمكنك توفير مساحة معيشة منفصلة؟';
+  String get onboarding_label_housingQuestion => 'هل يمكنك توفير مساحة معيشة منفصلة؟';
 
   @override
   String get onboarding_label_lastName => 'اسم العائلة';
@@ -1202,15 +1161,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_label_leadership => 'القيادة الدينية';
 
   @override
-  String get onboarding_label_leadershipQuestion =>
-      'هل يجوز لك أن تؤم صلاة الجماعة؟';
+  String get onboarding_label_leadershipQuestion => 'هل يجوز لك أن تؤم صلاة الجماعة؟';
 
   @override
   String get onboarding_label_lifestyleDiet => 'نمط الحياة والنظام الغذائي';
 
   @override
-  String get onboarding_label_lifestyleDietSub =>
-      'هذه هي مجالات كسر الصفقات للعديد من العائلات. يرجى الإجابة بصدق.';
+  String get onboarding_label_lifestyleDietSub => 'هذه هي مجالات كسر الصفقات للعديد من العائلات. يرجى الإجابة بصدق.';
 
   @override
   String get onboarding_label_livingExpectation => 'توقعات الحياة بعد الزواج';
@@ -1219,8 +1176,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_label_mahrBudget => 'ميزانية المهر';
 
   @override
-  String get onboarding_label_mahrBudgetQuestion =>
-      'ما هي مجموعة المهر التي أنت على استعداد لتقديمها؟';
+  String get onboarding_label_mahrBudgetQuestion => 'ما هي مجموعة المهر التي أنت على استعداد لتقديمها؟';
 
   @override
   String get onboarding_label_mahrExpectation => 'توقع المهر';
@@ -1232,8 +1188,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_label_maintenance => 'الصيانة المالية';
 
   @override
-  String get onboarding_label_maintenanceQuestion =>
-      'هل أنت قادر على إعالة الزوج ماليا؟';
+  String get onboarding_label_maintenanceQuestion => 'هل أنت قادر على إعالة الزوج ماليا؟';
 
   @override
   String get onboarding_label_male => 'ذكر';
@@ -1284,8 +1239,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_label_revert => 'العودة / التحويل (اختياري)';
 
   @override
-  String get onboarding_label_revertQuestion =>
-      'هل أنت من العودة (تحويل) إلى الإسلام؟';
+  String get onboarding_label_revertQuestion => 'هل أنت من العودة (تحويل) إلى الإسلام؟';
 
   @override
   String get onboarding_label_sect => 'طائفة';
@@ -1314,15 +1268,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_label_sunni => 'سني';
 
   @override
-  String get onboarding_label_vaping =>
-      'السجائر الإلكترونية / السجائر الإلكترونية';
+  String get onboarding_label_vaping => 'السجائر الإلكترونية / السجائر الإلكترونية';
 
   @override
   String get onboarding_label_workAfterMarriage => 'العمل بعد الزواج';
 
   @override
-  String get onboarding_label_workAfterMarriageQuestion =>
-      'هل ترغبين في العمل بعد الزواج؟';
+  String get onboarding_label_workAfterMarriageQuestion => 'هل ترغبين في العمل بعد الزواج؟';
 
   @override
   String get onboarding_leadership_leads => 'يؤدي الصلاة';
@@ -1337,22 +1289,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_living_openToDiscussion => 'مفتوح للمناقشة';
 
   @override
-  String get onboarding_living_openToDiscussionSub =>
-      'أنا مرن وسعيد لمناقشة ما يصلح لكليهما.';
+  String get onboarding_living_openToDiscussionSub => 'أنا مرن وسعيد لمناقشة ما يصلح لكليهما.';
 
   @override
   String get onboarding_living_separate => 'منزل منفصل';
 
   @override
-  String get onboarding_living_separateSub =>
-      'أفضّل أن يكون لدينا منزل مستقل خاص بنا.';
+  String get onboarding_living_separateSub => 'أفضّل أن يكون لدينا منزل مستقل خاص بنا.';
 
   @override
   String get onboarding_living_withInlaws => 'مع الأصهار';
 
   @override
-  String get onboarding_living_withInlawsSub =>
-      'أتوقع أن أعيش مع زوجتي أو عائلتي.';
+  String get onboarding_living_withInlawsSub => 'أتوقع أن أعيش مع زوجتي أو عائلتي.';
 
   @override
   String get onboarding_location_confirmed => 'الموقع المؤكد';
@@ -1373,12 +1322,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_mahr_toDiscuss => 'للمناقشة';
 
   @override
-  String get onboarding_marriageDeen_privacyNotice =>
-      'لا تظهر هذه التفاصيل في ملفك الشخصي العام. تتم مشاركتها بشكل خاص خلال مرحلة القبول.';
+  String get onboarding_marriageDeen_privacyNotice => 'لا تظهر هذه التفاصيل في ملفك الشخصي العام. تتم مشاركتها بشكل خاص خلال مرحلة القبول.';
 
   @override
-  String get onboarding_marriageDeen_subtitle =>
-      'ساعدنا على فهم رحلتك واستعدادك.';
+  String get onboarding_marriageDeen_subtitle => 'ساعدنا على فهم رحلتك واستعدادك.';
 
   @override
   String get onboarding_marriageDeen_title => 'الزواج والدين';
@@ -1393,8 +1340,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_niqab_wear => 'أرتدي النقاب';
 
   @override
-  String get onboarding_photo_subtitle =>
-      'مطلوب صورة واحدة على الأقل. يجب أن تتضمن صورتك الأساسية وجهك بوضوح.';
+  String get onboarding_photo_subtitle => 'مطلوب صورة واحدة على الأقل. يجب أن تتضمن صورتك الأساسية وجهك بوضوح.';
 
   @override
   String get onboarding_photo_title => 'أضف صورك';
@@ -1403,8 +1349,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_photo_verifySelfie => 'التحقق من الصورة الشخصية';
 
   @override
-  String get onboarding_photo_verifySelfieHint =>
-      'التقط صورة حية للتحقق من أنك حقيقي';
+  String get onboarding_photo_verifySelfieHint => 'التقط صورة حية للتحقق من أنك حقيقي';
 
   @override
   String get onboarding_preferredLiving_noPreference => 'لا يوجد تفضيل';
@@ -1416,15 +1361,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_profileForWhom_guardian => 'ابني أو ابنتي';
 
   @override
-  String get onboarding_profileForWhom_guardianCardSub =>
-      'أقوم بإنشاء هذا الملف الشخصي لشخص ما';
+  String get onboarding_profileForWhom_guardianCardSub => 'أقوم بإنشاء هذا الملف الشخصي لشخص ما';
 
   @override
   String get onboarding_profileForWhom_guardianCardTitle => 'الوصي';
 
   @override
-  String get onboarding_profileForWhom_guardianSub =>
-      'أنا أحد الوالدين أو الوصي';
+  String get onboarding_profileForWhom_guardianSub => 'أنا أحد الوالدين أو الوصي';
 
   @override
   String get onboarding_profileForWhom_myself => 'نفسي';
@@ -1454,12 +1397,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_profileForWhom_sibling => 'أخي أو أختي';
 
   @override
-  String get onboarding_profileForWhom_siblingSub =>
-      'أنا أساعد أخي في العثور على شريك';
+  String get onboarding_profileForWhom_siblingSub => 'أنا أساعد أخي في العثور على شريك';
 
   @override
-  String get onboarding_profileForWhom_subtitle =>
-      'يمكنك تحديث هذا لاحقًا من الإعدادات.';
+  String get onboarding_profileForWhom_subtitle => 'يمكنك تحديث هذا لاحقًا من الإعدادات.';
 
   @override
   String get onboarding_profileForWhom_title => 'لمن هذا الملف الشخصي؟';
@@ -1468,12 +1409,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_profileForWhom_ward => 'جناحي';
 
   @override
-  String get onboarding_profileForWhom_wardSub =>
-      'أنا الوصي الذي يدير هذا الملف الشخصي';
+  String get onboarding_profileForWhom_wardSub => 'أنا الوصي الذي يدير هذا الملف الشخصي';
 
   @override
-  String get onboarding_providerQuote =>
-      '«خيركم خياركم لنسائكم». - النبي محمد صلي الله عليه وسلم\n\nإن الصدق بشأن استعدادك يساعد في بناء أساس قوي.';
+  String get onboarding_providerQuote => '«خيركم خياركم لنسائكم». - النبي محمد صلي الله عليه وسلم\n\nإن الصدق بشأن استعدادك يساعد في بناء أساس قوي.';
 
   @override
   String get onboarding_quran_hafiz => 'حافظ / حفيظة';
@@ -1515,16 +1454,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_timeline_notSure => 'لست متأكدا بعد';
 
   @override
-  String get onboarding_tooltip_cultural =>
-      'يُعرف بأنه مسلم، ويحتفل بالمناسبات، وقد لا يصلي بانتظام';
+  String get onboarding_tooltip_cultural => 'يُعرف بأنه مسلم، ويحتفل بالمناسبات، وقد لا يصلي بانتظام';
 
   @override
-  String get onboarding_tooltip_moderate =>
-      'يقدّر المبادئ الإسلامية ويصلي، وإن لم يكن دائمًا خمس مرات في اليوم';
+  String get onboarding_tooltip_moderate => 'يقدّر المبادئ الإسلامية ويصلي، وإن لم يكن دائمًا خمس مرات في اليوم';
 
   @override
-  String get onboarding_tooltip_practicing =>
-      'يتبع جميع الركائز الخمس، يصلي بانتظام، وأسلوب الحياة الحلال';
+  String get onboarding_tooltip_practicing => 'يتبع جميع الركائز الخمس، يصلي بانتظام، وأسلوب الحياة الحلال';
 
   @override
   String get onboarding_work_no => 'لا، أفضل ألا أفعل ذلك';
@@ -1542,8 +1478,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get photo_banner_text => 'لا يُسمح بالصور التي تحتوي على محتوى صريح';
 
   @override
-  String get photo_error_no_face_detected =>
-      'لا يوجد وجه مرئي - يرجى إعادة المحاولة باستخدام صورة وجه واضحة';
+  String get photo_error_no_face_detected => 'لا يوجد وجه مرئي - يرجى إعادة المحاولة باستخدام صورة وجه واضحة';
 
   @override
   String photo_error_pick_failed(Object error) {
@@ -1572,8 +1507,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get photo_privacy_everyone => 'مرئية للجميع';
 
   @override
-  String get photo_privacy_everyone_sub =>
-      'يمكن لجميع الأعضاء رؤية الصور الخاصة بك.';
+  String get photo_privacy_everyone_sub => 'يمكن لجميع الأعضاء رؤية الصور الخاصة بك.';
 
   @override
   String get photo_privacy_label => 'خصوصية الصورة';
@@ -1582,15 +1516,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get photo_privacy_mutual => 'مرئية بعد الاهتمام المتبادل';
 
   @override
-  String get photo_privacy_mutual_sub =>
-      'لا تكشف الصور إلا عندما يعبر الطرفان عن اهتمامهما.';
+  String get photo_privacy_mutual_sub => 'لا تكشف الصور إلا عندما يعبر الطرفان عن اهتمامهما.';
 
   @override
   String get photo_privacy_request => 'طلب المشاهدة';
 
   @override
-  String get photo_privacy_request_sub =>
-      'تكون الصور غير واضحة حتى توافق على الطلب.';
+  String get photo_privacy_request_sub => 'تكون الصور غير واضحة حتى توافق على الطلب.';
 
   @override
   String get photo_sheet_camera => 'آلة تصوير';
@@ -1610,8 +1542,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get photo_subtitle_self =>
-      'مطلوب صورة واحدة على الأقل. الحد الأقصى أربعة.';
+  String get photo_subtitle_self => 'مطلوب صورة واحدة على الأقل. الحد الأقصى أربعة.';
 
   @override
   String get photo_title_guardian => 'أضف صورهم';
@@ -1798,12 +1729,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get preview_name_label => 'اسم';
 
   @override
-  String get preview_notice_guardian =>
-      'هذا هو بالضبط كيف سيرى الآخرون ملفهم الشخصي.';
+  String get preview_notice_guardian => 'هذا هو بالضبط كيف سيرى الآخرون ملفهم الشخصي.';
 
   @override
-  String get preview_notice_self =>
-      'هذا هو بالضبط كيف سيرى الآخرون ملفك الشخصي.';
+  String get preview_notice_self => 'هذا هو بالضبط كيف سيرى الآخرون ملفك الشخصي.';
 
   @override
   String get preview_polygamy_label => 'تعدد الزوجات';
@@ -1859,8 +1788,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get profile_nudge_completeness =>
-      'الملفات الشخصية التي تبلغ نسبة اكتمالها 80%+ تحصل على 3 أضعاف الاهتمامات.';
+  String get profile_nudge_completeness => 'الملفات الشخصية التي تبلغ نسبة اكتمالها 80%+ تحصل على 3 أضعاف الاهتمامات.';
 
   @override
   String get settings_brand_credit => 'Silarah (سيلارا) · في سبيل الله';
@@ -1872,8 +1800,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings_guardian_mirror => 'رسائل المرآة';
 
   @override
-  String get settings_guardian_mirror_sub =>
-      'إرسال نسخ من جميع الرسائل إلى ولي الأمر';
+  String get settings_guardian_mirror_sub => 'إرسال نسخ من جميع الرسائل إلى ولي الأمر';
 
   @override
   String get settings_guardian_name_hint => 'اسم الوصي';
@@ -1911,8 +1838,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings_label_blocked_none => 'لا أحد';
 
   @override
-  String get settings_label_deleteGrace =>
-      'سيتم إخفاء ملفك الشخصي على الفور. سيتم حذف بياناتك نهائيًا بعد 30 يومًا.';
+  String get settings_label_deleteGrace => 'سيتم إخفاء ملفك الشخصي على الفور. سيتم حذف بياناتك نهائيًا بعد 30 يومًا.';
 
   @override
   String get settings_label_editProfile => 'تحرير الملف الشخصي';
@@ -1927,8 +1853,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings_label_rate => 'قيّم سيلارا';
 
   @override
-  String get settings_label_rate_snackbar =>
-      'سيكون التقييم متاحًا بمجرد إطلاق سيلارا في متجر التطبيقات.';
+  String get settings_label_rate_snackbar => 'سيكون التقييم متاحًا بمجرد إطلاق سيلارا في متجر التطبيقات.';
 
   @override
   String get settings_label_reports => 'تقرير التاريخ';
@@ -1954,15 +1879,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings_notify_activityNudges => 'تنبيهات النشاط';
 
   @override
-  String get settings_notify_activityNudgesSub =>
-      'تذكير عندما يكون غير نشط لمدة 7+ أيام';
+  String get settings_notify_activityNudgesSub => 'تذكير عندما يكون غير نشط لمدة 7+ أيام';
 
   @override
   String get settings_notify_boostReminders => 'تعزيز التذكيرات';
 
   @override
-  String get settings_notify_boostRemindersSub =>
-      'ذكّر عندما يكون التعزيز الأسبوعي الخاص بك جاهزًا';
+  String get settings_notify_boostRemindersSub => 'ذكّر عندما يكون التعزيز الأسبوعي الخاص بك جاهزًا';
 
   @override
   String get settings_notify_interestAccepted => 'الفائدة مقبولة';
@@ -1980,8 +1903,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings_notify_quietHours => 'ساعات هادئة';
 
   @override
-  String get settings_photo_privacy_accepted_interests =>
-      'الاهتمامات المقبولة فقط';
+  String get settings_photo_privacy_accepted_interests => 'الاهتمامات المقبولة فقط';
 
   @override
   String get settings_photo_privacy_after_acceptance => 'بعد القبول';
@@ -1999,8 +1921,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings_photo_privacy_request_to_view => 'طلب المشاهدة';
 
   @override
-  String get settings_privacy_download_body =>
-      'أنشئ الآن أرشيف ZIP خاصًا يتضمن حسابك وملفك وصورك واهتماماتك ومطابقاتك ورسائلك وإعداداتك وسجل الموافقات والاشتراك. احفظه عبر نافذة المشاركة الآمنة في جهازك.';
+  String get settings_privacy_download_body => 'أنشئ الآن أرشيف ZIP خاصًا يتضمن حسابك وملفك وصورك واهتماماتك ومطابقاتك ورسائلك وإعداداتك وسجل الموافقات والاشتراك. احفظه عبر نافذة المشاركة الآمنة في جهازك.';
 
   @override
   String get settings_privacy_download_btn => 'إنشاء أرشيف آمن';
@@ -2009,19 +1930,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings_privacy_download_label => 'تنزيل بياناتي';
 
   @override
-  String get settings_privacy_download_sub =>
-      'احفظ نسخة قابلة للقراءة آليًا من بيانات Silarah الخاصة بك';
+  String get settings_privacy_download_sub => 'احفظ نسخة قابلة للقراءة آليًا من بيانات Silarah الخاصة بك';
 
   @override
-  String get settings_privacy_export_body =>
-      'أرشيفك الخاص جاهز. استخدم نافذة المشاركة لحفظه بأمان.';
+  String get settings_privacy_export_body => 'أرشيفك الخاص جاهز. استخدم نافذة المشاركة لحفظه بأمان.';
 
   @override
   String get settings_privacy_export_btn_close => 'مفهوم';
 
   @override
-  String get settings_privacy_export_subbody =>
-      'قد يحتوي الأرشيف على رسائل خاصة وبيانات اتصال. خزّنه بأمان ولا تشاركه إلا مع من تثق بهم.';
+  String get settings_privacy_export_subbody => 'قد يحتوي الأرشيف على رسائل خاصة وبيانات اتصال. خزّنه بأمان ولا تشاركه إلا مع من تثق بهم.';
 
   @override
   String get settings_privacy_export_title => 'الأرشيف جاهز';
@@ -2036,12 +1954,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings_privacy_pause_label => 'وقفة الملف الشخصي';
 
   @override
-  String get settings_privacy_pause_sub =>
-      'إخفاء ملف التعريف الخاص بك من البحث';
+  String get settings_privacy_pause_sub => 'إخفاء ملف التعريف الخاص بك من البحث';
 
   @override
-  String get settings_privacy_pause_warning =>
-      'ملفك الشخصي مخفي. لا أحد يستطيع العثور عليك.';
+  String get settings_privacy_pause_warning => 'ملفك الشخصي مخفي. لا أحد يستطيع العثور عليك.';
 
   @override
   String get settings_privacy_photo_label => 'رؤية الصورة';
@@ -2056,8 +1972,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings_privacy_visibility_label => 'من يمكنه رؤية ملفي الشخصي';
 
   @override
-  String get settings_privacy_visibility_sub =>
-      'التحكم في من يمكنه تصفح ملفك الشخصي';
+  String get settings_privacy_visibility_sub => 'التحكم في من يمكنه تصفح ملفك الشخصي';
 
   @override
   String get settings_privacy_visibility_subscribers => 'المشتركين فقط';
@@ -2123,8 +2038,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get splash_button_signIn => 'تسجيل الدخول';
 
   @override
-  String get splash_intention_subtitle =>
-      'تعارف خاص، وتوافق مدروس، وتواصل يراعي الأسرة.';
+  String get splash_intention_subtitle => 'تعارف خاص، وتوافق مدروس، وتواصل يراعي الأسرة.';
 
   @override
   String get splash_intention_title => 'الزواج، بنية صادقة.';
@@ -2142,12 +2056,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get splash_referral_question => 'هل لديك رمز الإحالة؟';
 
   @override
-  String get splash_referral_saved =>
-      'تم حفظ رمز الإحالة! سيتم تطبيقه بعد تسجيل الدخول.';
+  String get splash_referral_saved => 'تم حفظ رمز الإحالة! سيتم تطبيقه بعد تسجيل الدخول.';
 
   @override
-  String get splash_referral_subtitle =>
-      'إذا دعاك أحد الأصدقاء إلى سيلارا، فأدخل رمز الإحالة المكون من 6 أحرف أدناه.';
+  String get splash_referral_subtitle => 'إذا دعاك أحد الأصدقاء إلى سيلارا، فأدخل رمز الإحالة المكون من 6 أحرف أدناه.';
 
   @override
   String get splash_referral_title => 'أدخل رمز الإحالة';
@@ -2166,8 +2078,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get subscription_label_bestValue => 'أفضل قيمة';
 
   @override
-  String get subscription_subtitle =>
-      'رسائل نسائية مجانية. الرجال الاشتراك للاتصال.';
+  String get subscription_subtitle => 'رسائل نسائية مجانية. الرجال الاشتراك للاتصال.';
 
   @override
   String get subscription_title => 'فتح سيلارا';
@@ -2176,15 +2087,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get startup_connectivity_preparing_title => 'نُهيّئ مساحتك الخاصة';
 
   @override
-  String get startup_connectivity_preparing_body =>
-      'جارٍ إنشاء اتصال آمن بسيلارا.';
+  String get startup_connectivity_preparing_body => 'جارٍ إنشاء اتصال آمن بسيلارا.';
 
   @override
   String get startup_connectivity_offline_title => 'الاتصال غير متاح';
 
   @override
-  String get startup_connectivity_offline_body =>
-      'مكانك في سيلارا محفوظ بأمان. سنواصل فور عودة الشبكة.';
+  String get startup_connectivity_offline_body => 'مكانك في سيلارا محفوظ بأمان. سنواصل فور عودة الشبكة.';
 
   @override
   String get startup_connectivity_verifying => 'جارٍ التحقق من الاتصال';
@@ -2214,15 +2123,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings_notify_profileViews => 'مشاهدات الملف الشخصي';
 
   @override
-  String get settings_notify_profileViewsSub =>
-      'تنبيه خاص عندما يفتح شخص ملفك الشخصي';
+  String get settings_notify_profileViewsSub => 'تنبيه خاص عندما يفتح شخص ملفك الشخصي';
 
   @override
   String get settings_notify_profileLive => 'نشر الملف الشخصي';
 
   @override
-  String get settings_notify_profileLiveSub =>
-      'تأكيد عندما يصبح ملفك الشخصي مرئيًا';
+  String get settings_notify_profileLiveSub => 'تأكيد عندما يصبح ملفك الشخصي مرئيًا';
 
   @override
   String get settings_appearance => 'المظهر';
@@ -2237,26 +2144,22 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings_grievanceOfficer => 'مسؤول الشكاوى';
 
   @override
-  String get settings_grievanceResponse =>
-      'تأكيد الاستلام خلال 24 ساعة؛ حل معظم الشكاوى خلال 7 أيام';
+  String get settings_grievanceResponse => 'تأكيد الاستلام خلال 24 ساعة؛ حل معظم الشكاوى خلال 7 أيام';
 
   @override
-  String get settings_grievanceIndiaNotice =>
-      'تتبع معالجة الشكاوى في الهند قواعد تقنية المعلومات (إرشادات الوسطاء ومدونة أخلاقيات الوسائط الرقمية) بصيغتها المعدلة. تخضع شكاوى المحتوى غير القانوني أو الحميم العاجلة للمواعيد القانونية الأقصر.';
+  String get settings_grievanceIndiaNotice => 'تتبع معالجة الشكاوى في الهند قواعد تقنية المعلومات (إرشادات الوسطاء ومدونة أخلاقيات الوسائط الرقمية) بصيغتها المعدلة. تخضع شكاوى المحتوى غير القانوني أو الحميم العاجلة للمواعيد القانونية الأقصر.';
 
   @override
   String get settings_managePhotoRequests => 'إدارة طلبات الصور';
 
   @override
-  String get settings_managePhotoRequestsSub =>
-      'الموافقة على الوصول أو رفض الطلبات أو إلغاء المشاركة';
+  String get settings_managePhotoRequestsSub => 'الموافقة على الوصول أو رفض الطلبات أو إلغاء المشاركة';
 
   @override
   String get settings_theme_chooseTitle => 'اختر أجواءك';
 
   @override
-  String get settings_theme_chooseSubtitle =>
-      'هوية بصرية متكاملة وليست مجرد مرشح ألوان. تتغير جميع الأسطح والحقول وعناصر النظام معًا.';
+  String get settings_theme_chooseSubtitle => 'هوية بصرية متكاملة وليست مجرد مرشح ألوان. تتغير جميع الأسطح والحقول وعناصر النظام معًا.';
 
   @override
   String get settings_theme_applied => 'يُطبّق فورًا · محفوظ على هذا الجهاز';
@@ -2274,8 +2177,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get legal_document_community => 'إرشادات المجتمع';
 
   @override
-  String get legal_specialCategoryConsent =>
-      'أوافق صراحةً على معالجة Silarah لمعلوماتي الدينية (المذهب والصلاة والهوية الإسلامية) لمطابقة التوافق. يستخدمها مزودو الخدمة المتعاقدون فقط لتشغيل سيلارا، وليس للإعلانات السلوكية.';
+  String get legal_specialCategoryConsent => 'أوافق صراحةً على معالجة Silarah لمعلوماتي الدينية (المذهب والصلاة والهوية الإسلامية) لمطابقة التوافق. يستخدمها مزودو الخدمة المتعاقدون فقط لتشغيل سيلارا، وليس للإعلانات السلوكية.';
 
   @override
   String get onboarding_complexion_fair => 'فاتحة';
@@ -2317,14 +2219,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboarding_label_stateRegion => 'الولاية / المنطقة';
 
   @override
-  String get onboarding_specialNeeds_privacy =>
-      'تتم مشاركة هذه المعلومة فقط بعد الاهتمام المتبادل.';
+  String get onboarding_specialNeeds_privacy => 'تتم مشاركة هذه المعلومة فقط بعد الاهتمام المتبادل.';
 
   @override
-  String get settings_theme_blackWhite => 'أبيض وأسود';
+  String get settings_theme_automatic => 'تلقائي';
 
   @override
-  String get settings_theme_blackWhiteDesc => 'أبيض نقي وأسود مطلق بلا ألوان';
+  String get settings_theme_automaticDesc => 'عاجي وزمردي نهارًا، وليل OLED عند الوضع الداكن في هاتفك';
+
+  @override
+  String get settings_theme_rose => 'وردي وقطيفة';
+
+  @override
+  String get settings_theme_roseDesc => 'وردي ناعم مع ورد عميق وذهبي القطيفة';
 
   @override
   String get settings_theme_oled => 'ليل OLED';
@@ -2339,12 +2246,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings_theme_ivoryDesc => 'عاجي دافئ مع زمردي عميق وذهبي عتيق';
 
   @override
-  String get settings_guardian_backendRequired =>
-      'تتطلب إعدادات الولي اتصالًا آمنًا.';
+  String get settings_guardian_backendRequired => 'تتطلب إعدادات الولي اتصالًا آمنًا.';
 
   @override
-  String get settings_guardian_saveError =>
-      'تعذر حفظ إعدادات الولي. حاول مرة أخرى.';
+  String get settings_guardian_saveError => 'تعذر حفظ إعدادات الولي. حاول مرة أخرى.';
 
   @override
   String get common_openSettings => 'فتح الإعدادات';
@@ -2356,8 +2261,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get media_cameraUnavailable => 'الكاميرا غير متاحة';
 
   @override
-  String get media_cameraAccessBody =>
-      'اسمح بالوصول إلى الكاميرا من الإعدادات، ثم عد لالتقاط صورة واضحة.';
+  String get media_cameraAccessBody => 'اسمح بالوصول إلى الكاميرا من الإعدادات، ثم عد لالتقاط صورة واضحة.';
 
   @override
   String get media_cameraUnavailableBody => 'تعذر فتح الكاميرا. حاول مرة أخرى.';
@@ -2366,8 +2270,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get media_photoAccessOff => 'الوصول إلى الصور متوقف';
 
   @override
-  String get media_photoAccessBody =>
-      'اسمح بالوصول إلى الكاميرا أو الصور من الإعدادات، ثم عد لإضافة صورتك.';
+  String get media_photoAccessBody => 'اسمح بالوصول إلى الكاميرا أو الصور من الإعدادات، ثم عد لإضافة صورتك.';
 
   @override
   String get chat_searchHint => 'البحث في الرسائل';
@@ -2382,8 +2285,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get chat_noConversationsYet => 'لا توجد محادثات بعد';
 
   @override
-  String get chat_noConversationsYetBody =>
-      'اقبل اهتمامًا أو انتظر قبول اهتمامك لبدء محادثة.';
+  String get chat_noConversationsYetBody => 'اقبل اهتمامًا أو انتظر قبول اهتمامك لبدء محادثة.';
 
   @override
   String get referral_title => 'ادعُ صديقًا';
@@ -2395,8 +2297,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get referral_heading => 'انشر الخبر واربح المزايا المميزة!';
 
   @override
-  String get referral_body =>
-      'ادعُ أي صديق مؤهل إلى سيلاراه. يمكن لكل حساب الحصول على مكافأة إحالة واحدة فقط لمدة 3 أيام. إذا حصلت على مكافأتك بالفعل، فلا يزال بإمكان صديقك الحصول على مكافأته.';
+  String get referral_body => 'ادعُ أي صديق مؤهل إلى سيلاراه. يمكن لكل حساب الحصول على مكافأة إحالة واحدة فقط لمدة 3 أيام. إذا حصلت على مكافأتك بالفعل، فلا يزال بإمكان صديقك الحصول على مكافأته.';
 
   @override
   String get referral_premiumActiveTitle => 'مكافأة الإحالة المميزة نشطة';
@@ -2425,12 +2326,10 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get referral_premiumNoPayment =>
-      'جميع المزايا المميزة مفتوحة. لم يتم تحصيل أي مبلغ ولن تتجدد هذه المكافأة تلقائيًا.';
+  String get referral_premiumNoPayment => 'جميع المزايا المميزة مفتوحة. لم يتم تحصيل أي مبلغ ولن تتجدد هذه المكافأة تلقائيًا.';
 
   @override
-  String get referral_premiumPlansAfter =>
-      'تتوفر خطط الاشتراك بعد انتهاء مكافأتك المجانية حتى لا تفقد أي وقت مجاني متبقٍ.';
+  String get referral_premiumPlansAfter => 'تتوفر خطط الاشتراك بعد انتهاء مكافأتك المجانية حتى لا تفقد أي وقت مجاني متبقٍ.';
 
   @override
   String get referral_premiumBackToProfile => 'العودة إلى الملف الشخصي';
@@ -2615,8 +2514,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get ui_onePhotoUnlock =>
-      'سيتم فتح صورة واحدة تلقائيًا بمجرد إبداء اهتمامكما.';
+  String get ui_onePhotoUnlock => 'سيتم فتح صورة واحدة تلقائيًا بمجرد إبداء اهتمامكما.';
 
   @override
   String ui_manyPhotosUnlock(int count) {
@@ -2667,19 +2565,16 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get settings_notify_compatibleProfiles =>
-      'تنبيهات الملفات الشخصية المتوافقة';
+  String get settings_notify_compatibleProfiles => 'تنبيهات الملفات الشخصية المتوافقة';
 
   @override
-  String get settings_notify_compatibleProfilesSub =>
-      'عندما تظهر نتائج جديدة في صفحة استكشاف كانت فارغة';
+  String get settings_notify_compatibleProfilesSub => 'عندما تظهر نتائج جديدة في صفحة استكشاف كانت فارغة';
 
   @override
   String get settings_notify_discoveryDigest => 'ملخص الاستكشاف';
 
   @override
-  String get settings_notify_digestHelp =>
-      'ملخصات اختيارية؛ تظل تنبيهات ظهور نتائج بعد فراغ الصفحة فورية.';
+  String get settings_notify_digestHelp => 'ملخصات اختيارية؛ تظل تنبيهات ظهور نتائج بعد فراغ الصفحة فورية.';
 
   @override
   String get settings_notify_digestOff => 'إيقاف';

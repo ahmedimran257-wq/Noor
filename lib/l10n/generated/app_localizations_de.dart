@@ -2365,11 +2365,18 @@ class AppLocalizationsDe extends AppLocalizations {
       'Wird erst nach gegenseitigem Interesse geteilt.';
 
   @override
-  String get settings_theme_blackWhite => 'Schwarz & Weiß';
+  String get settings_theme_automatic => 'Automatisch';
 
   @override
-  String get settings_theme_blackWhiteDesc =>
-      'Reines Weiß, absolutes Schwarz, keine Farbe';
+  String get settings_theme_automaticDesc =>
+      'Tagsüber Elfenbein & Smaragd, OLED-Nacht im dunklen Modus des Telefons';
+
+  @override
+  String get settings_theme_rose => 'Rose & Ringelblume';
+
+  @override
+  String get settings_theme_roseDesc =>
+      'Zartes Rosé mit tiefem Rosenrot und Ringelblumengold';
 
   @override
   String get settings_theme_oled => 'OLED-Nacht';

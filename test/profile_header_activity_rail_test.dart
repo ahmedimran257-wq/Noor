@@ -26,7 +26,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   tearDown(() {
-    AppColors.activate(SilarahThemeMode.blackWhite);
+    AppColors.activate(SilarahThemeMode.ivoryEmerald);
   });
 
   test('profile-view alerts are partitioned from the bell count', () {
@@ -123,7 +123,7 @@ void main() {
       BlocProvider<NotificationsCubit>.value(
         value: notifications,
         child: MaterialApp(
-          theme: AppTheme.forMode(SilarahThemeMode.blackWhite),
+          theme: AppTheme.forMode(SilarahThemeMode.ivoryEmerald),
           home: ProfileHeaderActionRail(
             unseenViewCount: 0,
             onProfileViews: () {},
