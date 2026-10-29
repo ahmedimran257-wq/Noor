@@ -10,20 +10,20 @@ Date: 29 October 2026. Branch `release/42045`, starting at `fe1343d`.
   - all SQL migrations, cross-checked against the live staging catalog (grants, RLS policies, SECURITY DEFINER functions, `search_path`);
   - all edge functions, both in source and as deployed;
   - the admin panel's server-key use.
-- **Verification.** Every finding was reproduced on staging (`ykmgkrveucslglxvcyss`) inside a transaction that was rolled back, so no test data was left behind. The same checks were re-run after the fix. Production (`jukpscfxzwttgtxvrbmj`) was only read: function permissions and definitions, and the list of deployed functions. The affected functions there are byte-identical to staging, so the same gaps exist in production today.
+- **Verification.** Every finding was reproduced on staging (`ykmgkrveucslglxvcyss`) inside a transaction that was rolled back, so no test data was left behind. The same checks were re-run after the fix. Production (`jukpscfxzwttgtxvrbmj`) was only read: function permissions and definitions, and the list of deployed functions. The affected functions there are byte-identical to staging, so the same gaps existed in production until `280` was applied there (see below).
 
 ## Findings
 
 | # | Severity | What was wrong (plain words) | Where | Status |
 |---|---|---|---|---|
-| 1 | Medium | After you block someone, they could still load your photos through an old interest, a closed match, a bookmark or an earlier photo grant. | `get_authorized_photo_paths` (used by `get-signed-url`) | Fixed in `280`, verified on staging, **needs production OK** |
-| 2 | Medium | Any signed-in member could ask "can member X see member Y's private photos?" for any two people. That reveals whether two other members are matched or have shared photos. | `can_view_photo` | Fixed in `280`, verified on staging, **needs production OK** |
-| 3 | Low | A blocked member could keep sending you photo-access requests, and each request notified you. | `request_photo_access` | Fixed in `280`, verified on staging, **needs production OK** |
-| 4 | Low | A billing-email worker function was callable by members. Anyone who knew a RevenueCat event id could read that email's purchase details (product, price, expiry) and hold the email back from sending. The event id is hard to guess, which keeps this Low. | `claim_transactional_email` | Fixed in `280`, verified on staging, **needs production OK** |
-| 5 | Low | Any member could read a "reporter trust score" for any other member. The score partly reflects how many open reports exist against that person. | `compute_reporter_trust_score` | Fixed in `280`, verified on staging, **needs production OK** |
-| 6 | Informational | Root cause of #4 and #5: Supabase gives signed-in members execute rights on every new function. The old migrations only removed the PUBLIC grant, so 15 more worker functions stayed callable by members. Each of those checks `service_role` inside, so none could be misused. | 17 functions listed in `280` | Member access removed in `280`, verified on staging, **needs production OK** |
-| 7 | Informational | The chat-topic check trusted a caller-supplied user id (an attacker would also need a match id). | `can_access_chat_realtime_topic` | Bound to the caller in `280`, **needs production OK** |
-| 8 | Low (cleanup) | Production still runs `verify-firebase-phone`. Its code was deleted from the repo and the database functions it needs no longer exist, so every call fails. It is dead code and should be removed. | production edge functions | **Needs your OK** to delete |
+| 1 | Medium | After you block someone, they could still load your photos through an old interest, a closed match, a bookmark or an earlier photo grant. | `get_authorized_photo_paths` (used by `get-signed-url`) | Fixed in `280`, verified on staging, applied to production 29 Oct |
+| 2 | Medium | Any signed-in member could ask "can member X see member Y's private photos?" for any two people. That reveals whether two other members are matched or have shared photos. | `can_view_photo` | Fixed in `280`, verified on staging, applied to production 29 Oct |
+| 3 | Low | A blocked member could keep sending you photo-access requests, and each request notified you. | `request_photo_access` | Fixed in `280`, verified on staging, applied to production 29 Oct |
+| 4 | Low | A billing-email worker function was callable by members. Anyone who knew a RevenueCat event id could read that email's purchase details (product, price, expiry) and hold the email back from sending. The event id is hard to guess, which keeps this Low. | `claim_transactional_email` | Fixed in `280`, verified on staging, applied to production 29 Oct |
+| 5 | Low | Any member could read a "reporter trust score" for any other member. The score partly reflects how many open reports exist against that person. | `compute_reporter_trust_score` | Fixed in `280`, verified on staging, applied to production 29 Oct |
+| 6 | Informational | Root cause of #4 and #5: Supabase gives signed-in members execute rights on every new function. The old migrations only removed the PUBLIC grant, so 15 more worker functions stayed callable by members. Each of those checks `service_role` inside, so none could be misused. | 17 functions listed in `280` | Member access removed in `280`, verified on staging, applied to production 29 Oct |
+| 7 | Informational | The chat-topic check trusted a caller-supplied user id (an attacker would also need a match id). | `can_access_chat_realtime_topic` | Bound to the caller in `280`, applied to production 29 Oct |
+| 8 | Low (cleanup) | Production still runs `verify-firebase-phone`. Its code was deleted from the repo and the database functions it needs no longer exist, so every call fails. It is dead code and should be removed. | production edge functions | Deleted from production 29 Oct |
 
 The fix is in `supabase/migrations/280_security_audit_hardening.sql`. The regression test is `test/security_audit_2026_10_test.dart`. Among other things, the test fails if a future migration grants a function only to `service_role` without also removing member access.
 
@@ -38,11 +38,10 @@ The fix is in `supabase/migrations/280_security_audit_hardening.sql`. The regres
 - **Finding 3 (photo requests).** A blocked member's photo request is now refused with the normal "not accepting requests" message, so the block is not revealed. An unblocked member's request still goes through (`pending`).
 - **Supabase security advisor.** No new errors. The only ERROR is still `spatial_ref_sys`, which you are raising with Supabase support.
 
-## What needs your OK (production)
+## Production (approved and done, 29 October)
 
-1. Apply migration `280` to production with the same steps used on staging: run the file, then `INSERT INTO supabase_migrations.schema_migrations(version, name) VALUES ('280', 'security_audit_hardening')`. This fixes findings 1–7. It changes only function bodies and permissions, not data.
-2. Delete the orphaned production function (finding 8):
-   `npx supabase functions delete verify-firebase-phone --project-ref jukpscfxzwttgtxvrbmj`
+1. Migration `280` was applied to production, and `schema_migrations` now shows version 280. A fingerprint of every changed function's definition and permissions is identical on production and staging. The only three of those functions members can still call are the caller-checked ones: `can_view_photo`, `can_access_chat_realtime_topic` and `request_photo_access`.
+2. `verify-firebase-phone` was deleted from production and no longer appears in the function list.
 
 ## Hardening notes (not vulnerabilities, no change made)
 
