@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'my_account_snapshot.dart';
 import 'supabase_service.dart';
 
 class DisplayPricing {
@@ -414,11 +415,7 @@ class SubscriptionService {
 
     if (SupabaseService.isInitialized) {
       try {
-        final user = await SupabaseService.client
-            .from('users')
-            .select('email, country_code')
-            .eq('id', userId)
-            .maybeSingle();
+        final user = await MyAccountSnapshot.instance.user(userId);
         countryCode = (user?['country_code'] as String?)?.toUpperCase();
         email = user?['email'] as String?;
       } catch (e) {
@@ -427,11 +424,7 @@ class SubscriptionService {
 
       if (countryCode == null || countryCode.isEmpty) {
         try {
-          final profile = await SupabaseService.client
-              .from('my_profile_private')
-              .select('country_code')
-              .eq('user_id', userId)
-              .maybeSingle();
+          final profile = await MyAccountSnapshot.instance.profile(userId);
           countryCode = (profile?['country_code'] as String?)?.toUpperCase();
         } catch (e) {
           debugPrint('[SubscriptionService] profile context error: $e');

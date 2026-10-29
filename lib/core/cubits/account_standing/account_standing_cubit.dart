@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../services/my_account_snapshot.dart';
 import '../../services/supabase_service.dart';
 import '../../services/connectivity_service.dart';
 import 'account_standing_state.dart';
@@ -28,10 +29,14 @@ class AccountStandingCubit extends Cubit<AccountStandingState> {
     // Account changes are reconciled after publication, foreground FCM,
     // reconnect and app resume. Avoiding an always-on database channel keeps
     // idle members from consuming scarce Realtime connections.
-    await refresh();
+    // The first load for a session joins the account rows auth is already
+    // fetching; every later refresh reads them from the server.
+    await _refresh(force: false);
   }
 
-  Future<void> refresh() async {
+  Future<void> refresh() => _refresh(force: true);
+
+  Future<void> _refresh({required bool force}) async {
     final userId = _userId;
     if (userId == null || !SupabaseService.isInitialized) return;
     final version = ++_loadVersion;
@@ -39,16 +44,8 @@ class AccountStandingCubit extends Cubit<AccountStandingState> {
       // Independent reads run together; sequential awaits tripled latency
       // on every resume and reconnect.
       final reads = await Future.wait<Map<String, dynamic>?>([
-        SupabaseService.client
-            .from('my_profile_private')
-            .select('id, visibility')
-            .eq('user_id', userId)
-            .maybeSingle(),
-        SupabaseService.client
-            .from('users')
-            .select('is_banned')
-            .eq('id', userId)
-            .maybeSingle(),
+        MyAccountSnapshot.instance.profile(userId, force: force),
+        MyAccountSnapshot.instance.user(userId, force: force),
       ]);
       final profile = reads[0];
       final user = reads[1];

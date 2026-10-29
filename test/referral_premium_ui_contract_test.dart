@@ -23,7 +23,16 @@ void main() {
 
   test('reward events and app resume refresh promotional access', () {
     expect(mainSource, contains("item.type == 'referral_reward'"));
-    expect(mainSource, contains('refreshEntitlement()'));
+    // A reward must reach the server; only resume and reconnect may reuse a
+    // grant read moments earlier.
+    expect(
+      mainSource,
+      contains('unawaited(_refreshPremiumEntitlement(refreshDiscovery: true));'),
+    );
+    expect(
+      mainSource,
+      contains('refreshEntitlement(allowRecent: allowRecent)'),
+    );
     expect(mainSource, contains('AppLifecycleState.resumed'));
   });
 

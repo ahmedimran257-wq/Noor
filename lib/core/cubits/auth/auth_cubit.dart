@@ -12,6 +12,7 @@ import '../../services/referral_service.dart';
 import '../../services/email_address_validation.dart';
 import '../../services/fcm_service.dart';
 import '../../services/legal_consent_service.dart';
+import '../../services/my_account_snapshot.dart';
 import '../../services/otp_request_coalescer.dart';
 import '../../services/supabase_service.dart';
 import '../../services/wali_mode_service.dart';
@@ -50,6 +51,8 @@ class AuthCubit extends Cubit<AuthState> {
   StreamSubscription<supabase.AuthState>? _authSubscription;
   String? _hydratedSessionUserId;
   String? _deletionRecoveryUserId;
+  Future<void>? _deletionRecoveryInFlight;
+  String? _deletionRecoveryInFlightFor;
   bool _checkingSession = false;
 
   @override
@@ -700,12 +703,9 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       Map<String, dynamic>? userRow;
       try {
-        userRow = await SupabaseService.client
-            .from('users')
-            .select(
-                'gender, onboarding_step, is_guardian_path, profile_owner_type, onboarding_completed, account_role')
-            .eq('id', userId)
-            .maybeSingle();
+        // Billing, chat and onboarding read the same rows during startup;
+        // the shared snapshot sends each once.
+        userRow = await MyAccountSnapshot.instance.user(userId);
       } catch (e) {
         if (!_isMissingResumeColumnError(e)) rethrow;
         // Older databases may not have the resume-marker columns yet. Fall back
@@ -731,12 +731,7 @@ class AuthCubit extends Cubit<AuthState> {
         accountRole = userRow['account_role'] as String? ?? 'member';
       }
 
-      final profileRow = await SupabaseService.client
-          .from('my_profile_private')
-          .select(
-              'onboarding_step, profile_owner_type, gender, onboarding_completed')
-          .eq('user_id', userId)
-          .maybeSingle();
+      final profileRow = await MyAccountSnapshot.instance.profile(userId);
 
       if (profileRow != null) {
         hasProfileRow = true;
@@ -767,8 +762,26 @@ class AuthCubit extends Cubit<AuthState> {
     );
   }
 
-  Future<void> _recoverPendingDeletionForSession(String userId) async {
-    if (_deletionRecoveryUserId == userId) return;
+  Future<void> _recoverPendingDeletionForSession(String userId) {
+    if (_deletionRecoveryUserId == userId) return Future.value();
+    // The startup session check and the auth listener can hydrate the same
+    // session together; both wait on one recovery request.
+    final pending = _deletionRecoveryInFlight;
+    if (pending != null && _deletionRecoveryInFlightFor == userId) {
+      return pending;
+    }
+    late final Future<void> request;
+    request = _recoverPendingDeletion(userId).whenComplete(() {
+      if (identical(_deletionRecoveryInFlight, request)) {
+        _deletionRecoveryInFlight = null;
+      }
+    });
+    _deletionRecoveryInFlight = request;
+    _deletionRecoveryInFlightFor = userId;
+    return request;
+  }
+
+  Future<void> _recoverPendingDeletion(String userId) async {
     try {
       await SupabaseService.client.rpc('cancel_my_account_deletion');
       _deletionRecoveryUserId = userId;

@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/onboarding_data.dart';
 import 'photo_moderation_service.dart';
+import 'my_account_snapshot.dart';
 import 'supabase_service.dart';
 
 enum PhotoSyncStage {
@@ -67,11 +68,7 @@ class ProfilePhotoService {
     if (userId == null) {
       throw StateError('Please sign in again to manage your photos.');
     }
-    final row = await SupabaseService.client
-        .from('my_profile_private')
-        .select('photo_privacy')
-        .eq('user_id', userId)
-        .maybeSingle();
+    final row = await MyAccountSnapshot.instance.profile(userId);
     return switch (row?['photo_privacy']?.toString()) {
       'mutual_only' => PhotoPrivacy.mutualOnly,
       'request_only' => PhotoPrivacy.requestOnly,
@@ -445,11 +442,7 @@ class ProfilePhotoService {
     final userId = SupabaseService.currentUserId;
     if (userId == null) return null;
 
-    final profile = await SupabaseService.client
-        .from('my_profile_private')
-        .select('id')
-        .eq('user_id', userId)
-        .maybeSingle();
+    final profile = await MyAccountSnapshot.instance.profile(userId);
 
     return profile?['id'] as String?;
   }

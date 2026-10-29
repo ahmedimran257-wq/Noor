@@ -22,6 +22,7 @@ import '../../../core/router/app_router.dart';
 import '../../../core/services/bookmark_service.dart';
 import '../../../core/services/billing_portal_service.dart';
 import '../../../core/services/connectivity_service.dart';
+import '../../../core/services/my_account_snapshot.dart';
 import '../../../core/services/authorized_profile_service.dart';
 import '../../../core/services/incognito_service.dart';
 import '../../../core/services/photo_verification_service.dart';
@@ -475,11 +476,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     try {
       final myUserId = await SupabaseService.currentUserIdOrRefresh();
       if (myUserId == null) return;
-      final profile = await SupabaseService.client
-          .from('my_profile_private')
-          .select('id')
-          .eq('user_id', myUserId)
-          .maybeSingle();
+      final profile = await MyAccountSnapshot.instance.profile(myUserId);
       final profileId = profile?['id']?.toString();
       if (profileId == null || profileId.isEmpty) return;
       final rows = await SupabaseService.client
@@ -1418,13 +1415,7 @@ class _BoostSectionState extends State<_BoostSection> {
   Future<void> _loadBoostState() async {
     final userId = await SupabaseService.currentUserIdOrRefresh();
     if (SupabaseService.isInitialized && userId != null) {
-      final row = await SupabaseService.client
-          .from('my_profile_private')
-          .select(
-            'is_boosted, boost_expires_at, boost_last_activated_at',
-          )
-          .eq('user_id', userId)
-          .maybeSingle();
+      final row = await MyAccountSnapshot.instance.profile(userId);
       final expiresAt = row?['boost_expires_at'] == null
           ? null
           : DateTime.tryParse(row!['boost_expires_at'] as String)?.toLocal();

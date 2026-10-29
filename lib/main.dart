@@ -23,6 +23,7 @@ import 'core/config/app_config.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/app_dimensions.dart';
 import 'core/services/supabase_service.dart';
+import 'core/services/my_account_snapshot.dart';
 import 'core/services/connectivity_service.dart';
 import 'core/services/subscription_service.dart';
 import 'core/services/wali_mode_service.dart';
@@ -643,7 +644,10 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
       if (SupabaseService.currentUserId != null) {
         unawaited(_accountStandingCubit.refresh());
         unawaited(_notificationsCubit.loadNotifications());
-        unawaited(_refreshPremiumEntitlement(refreshDiscovery: false));
+        unawaited(_refreshPremiumEntitlement(
+          refreshDiscovery: false,
+          allowRecent: true,
+        ));
         unawaited(_discoveryFeedCubit.refreshIfChanged(forceCheck: true));
         unawaited(_interestsCubit.refreshIfChanged(forceCheck: true));
         unawaited(_chatCubit.refreshIfChanged(forceCheck: true));
@@ -739,7 +743,10 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
       unawaited(_notificationsCubit.loadNotifications());
       final identity = _authCubit.state;
       if (identity is! AuthAuthenticated || identity.isGuardianOnly) return;
-      unawaited(_refreshPremiumEntitlement(refreshDiscovery: false));
+      unawaited(_refreshPremiumEntitlement(
+        refreshDiscovery: false,
+        allowRecent: true,
+      ));
       unawaited(_discoveryFeedCubit.refreshIfChanged());
       // A lightweight revision RPC on resume closes the gap where Realtime or
       // FCM was suspended in the background. A full interests reload still
@@ -758,8 +765,9 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
 
   Future<void> _refreshPremiumEntitlement({
     required bool refreshDiscovery,
+    bool allowRecent = false,
   }) async {
-    await _subscriptionCubit.refreshEntitlement();
+    await _subscriptionCubit.refreshEntitlement(allowRecent: allowRecent);
     if (!mounted || !refreshDiscovery) return;
     await _discoveryFeedCubit.refreshIfChanged(forceCheck: true);
   }
@@ -787,6 +795,7 @@ class _SilarahAppState extends State<SilarahApp> with WidgetsBindingObserver {
     String? departingUserId,
     bool logoutStoreIdentity = false,
   }) {
+    MyAccountSnapshot.invalidate();
     BookmarkService.clearCache();
     CompatibilityService.instance.clearCache();
     IncognitoService.instance.clearCache();

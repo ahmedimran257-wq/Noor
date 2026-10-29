@@ -13,6 +13,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/discovery_profile.dart';
+import '../../services/my_account_snapshot.dart';
 import '../../services/supabase_service.dart';
 import '../../services/profile_write_service.dart';
 import '../../services/location_service.dart';
@@ -187,6 +188,9 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   /// This is an event-driven, once-per-signup handoff; normal tab changes keep
   /// using the inexpensive revision token instead of reloading the feed.
   Future<void> refreshAfterViewerPublication() async {
+    // Approval is recorded by the server, so the shared account rows are
+    // re-read rather than reused.
+    MyAccountSnapshot.invalidate();
     _readyViewerId = null;
     _viewerReadyAt = null;
     _loadedRevisionToken = null;
@@ -883,11 +887,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         DateTime.now().difference(readyAt) < _viewerReadinessFreshness) {
       return;
     }
-    final profile = await SupabaseService.client
-        .from('my_profile_private')
-        .select('id, visibility, onboarding_completed, approved_at')
-        .eq('user_id', currentUserId)
-        .maybeSingle();
+    final profile = await MyAccountSnapshot.instance.profile(currentUserId);
 
     if (profile == null) {
       throw StateError('Complete your profile before browsing discovery.');

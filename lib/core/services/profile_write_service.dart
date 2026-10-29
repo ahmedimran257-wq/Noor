@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/onboarding_data.dart';
 import '../onboarding/onboarding_flow.dart';
+import 'my_account_snapshot.dart';
 import 'operational_telemetry_service.dart';
 import 'supabase_service.dart';
 
@@ -20,30 +21,12 @@ class ProfileWriteService {
   /// Current authenticated user ID, or null.
   static String? get _userId => SupabaseService.currentUserId;
 
-  static const _profileRestoreColumns = '''
-    id, profile_owner_type, profile_creator_relation, guardian_mode,
-    guardian_user_id, ward_relationship, relationship_to_ward, date_of_birth, gender,
-    complexion, sect, deen_level, employment_status, family_type,
-    previously_married, first_name, last_name, city_id, country_code,
-    height_cm, mother_tongue, community, residency_status, sub_sect,
-    prays_five_daily, hijab, beard, diet_type, smoking_habit, vaping_habit,
-    hookah_habit, education_rank, education_level, field_of_study, profession,
-    income_bracket, income_visibility, sibling_count, is_eldest_child,
-    parents_status, children_count, living_expectation, bio, interests,
-    languages, photo_privacy, quran_memorization, religious_education,
-    marriage_timeline, willing_to_relocate, niqab_preference, mahr_expectation,
-    willing_to_work_after_marriage, mahr_budget, can_provide_housing,
-    can_provide_maintenance, debt_status, religious_leadership, guardian_name,
-    guardian_email, guardian_authority_scope,
-    is_revert, polygamy_status, polygamy_acceptance, special_needs
-  ''';
-
-  static const _userRestoreColumns = '''
-    email, country_code, is_guardian_path, profile_owner_type,
-    onboarding_profile_for, onboarding_profile_creator_relation, onboarding_city_id,
-    onboarding_city_name, onboarding_state_name, onboarding_postal_code,
-    onboarding_lat, onboarding_lng
-  ''';
+  // Onboarding, Discovery and app resume each restore the profile; one
+  // shared preference read serves the startup burst. Writes invalidate it.
+  static final _preferences = AccountScopedRead<Object?>(
+    freshness: MyAccountSnapshot.freshness,
+    load: (_) => SupabaseService.client.rpc('get_my_profile_preferences'),
+  );
 
   // Step-based partial upsert
   /// Persists the fields modified in [step] to Supabase.
@@ -952,21 +935,14 @@ class ProfileWriteService {
 
     try {
       // 1. Fetch users row first: early onboarding data exists before profiles.
+      final userId = _userId!;
       Map<String, dynamic>? userRes;
       try {
-        userRes = await SupabaseService.client
-            .from('users')
-            .select(_userRestoreColumns)
-            .eq('id', _userId!)
-            .maybeSingle();
+        userRes = await MyAccountSnapshot.instance.user(userId);
       } catch (_) {}
 
       // 2. Fetch profiles table row
-      final profileRes = await SupabaseService.client
-          .from('my_profile_private')
-          .select(_profileRestoreColumns)
-          .eq('user_id', _userId!)
-          .maybeSingle();
+      final profileRes = await MyAccountSnapshot.instance.profile(userId);
 
       if (profileRes == null) return _mapUserResumeToOnboardingData(userRes);
 
@@ -974,8 +950,7 @@ class ProfileWriteService {
       // DEFINER read boundary. Direct table reads are intentionally revoked;
       // an RLS policy that joins profiles cannot work without re-granting the
       // wider profiles table, which would weaken the member privacy boundary.
-      final preferenceResponse =
-          await SupabaseService.client.rpc('get_my_profile_preferences');
+      final preferenceResponse = await _preferences.read(userId);
       final prefRes = preferenceResponse is Map
           ? Map<String, dynamic>.from(preferenceResponse)
           : null;

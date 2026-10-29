@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
+import '../../services/my_account_snapshot.dart';
 import '../../services/subscription_service.dart';
 import '../../services/supabase_service.dart';
 import 'subscription_state.dart';
@@ -88,14 +89,16 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
     // RevenueCat is unavailable so a valid referral reward never shows a
     // paywall merely because the store SDK is offline.
     await _refreshEffectiveEntitlement(customerInfo,
-        generation: generation, isLoading: false);
+        generation: generation, isLoading: false, allowRecent: true);
 
     if (_storeIdentityReady && _isCurrentSession(generation)) {
       _customerInfoListener = (_) {
         if (!_isCurrentSession(generation)) return;
         // Listener registration replays a cached native event, which may
         // belong to the previous account. Read the current SDK identity.
-        unawaited(refreshEntitlement());
+        // RevenueCat answers for store purchases, so the server's grant
+        // read moments ago at login is still current.
+        unawaited(refreshEntitlement(allowRecent: true));
       };
       Purchases.addCustomerInfoUpdateListener(_customerInfoListener!);
     }
@@ -327,7 +330,14 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
   /// Refreshes paid and promotional access without requiring a new login.
   /// Referral rewards can arrive while the app is already open, so login-only
   /// entitlement hydration is not sufficient.
-  Future<void> refreshEntitlement({bool showLoading = false}) async {
+  ///
+  /// [allowRecent] lets routine reconciliation (resume, reconnect) reuse a
+  /// server grant read in the last 30 seconds. Purchases, restores,
+  /// referral rewards and user-initiated refreshes always ask the server.
+  Future<void> refreshEntitlement({
+    bool showLoading = false,
+    bool allowRecent = false,
+  }) async {
     if (!SupabaseService.isInitialized) return;
     final generation = _sessionGeneration;
     await _identityInFlight;
@@ -346,7 +356,7 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
       debugPrint('[SubscriptionCubit] RevenueCat refresh error: $e');
     }
     await _refreshEffectiveEntitlement(customerInfo,
-        generation: generation, isLoading: false);
+        generation: generation, isLoading: false, allowRecent: allowRecent);
   }
 
   void clear() {
@@ -386,6 +396,7 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
     required int generation,
     bool? isLoading,
     String? successMessage,
+    bool allowRecent = false,
   }) async {
     if (!_isCurrentSession(generation)) return;
     final refreshId = ++_entitlementRefreshId;
@@ -399,7 +410,7 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
           )
         : null;
 
-    final server = await _loadServerEntitlement();
+    final server = await _loadServerEntitlement(allowRecent: allowRecent);
     if (!_isCurrentSession(generation) || refreshId != _entitlementRefreshId) {
       return;
     }
@@ -453,10 +464,19 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
     );
   }
 
-  Future<_ServerPremiumEntitlement> _loadServerEntitlement() async {
+  // Login and the listener replay at startup used to read this twice.
+  static final _serverGrant = AccountScopedRead<Object?>(
+    freshness: MyAccountSnapshot.freshness,
+    load: (_) => SupabaseService.client.rpc('get_my_premium_entitlement'),
+  );
+
+  Future<_ServerPremiumEntitlement> _loadServerEntitlement({
+    required bool allowRecent,
+  }) async {
+    final userId = _loggedInUserId;
+    if (userId == null) return const _ServerPremiumEntitlement();
     try {
-      final response =
-          await SupabaseService.client.rpc('get_my_premium_entitlement');
+      final response = await _serverGrant.read(userId, force: !allowRecent);
       final Map<String, dynamic>? row = switch (response) {
         final List<dynamic> rows when rows.isNotEmpty =>
           Map<String, dynamic>.from(rows.first as Map),

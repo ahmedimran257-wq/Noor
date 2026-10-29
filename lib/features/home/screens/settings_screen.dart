@@ -39,6 +39,7 @@ import '../../../core/models/onboarding_data.dart';
 import '../../../core/services/profile_photo_service.dart';
 import '../../../core/services/personal_data_export_service.dart';
 import '../../../core/services/incognito_service.dart';
+import '../../../core/services/my_account_snapshot.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/services/wali_mode_service.dart';
 import '../../../core/legal/legal_documents.dart';
@@ -1242,11 +1243,7 @@ class _PrivacySectionState extends State<_PrivacySection> {
     final userId = await SupabaseService.currentUserIdOrRefresh();
     if (SupabaseService.isInitialized && userId != null) {
       try {
-        final row = await SupabaseService.client
-            .from('my_profile_private')
-            .select('id, photo_privacy, visibility, onboarding_completed')
-            .eq('user_id', userId)
-            .maybeSingle();
+        final row = await MyAccountSnapshot.instance.profile(userId);
         final dbPhotoPrivacy = row?['photo_privacy'] as String?;
         final dbVisibility = row?['visibility'] as String?;
         photoVisibility = _photoVisibilityFromDb(dbPhotoPrivacy);

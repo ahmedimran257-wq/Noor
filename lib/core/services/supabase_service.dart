@@ -3,6 +3,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/app_config.dart';
+import 'my_account_snapshot.dart';
 
 enum SessionRecoveryStatus {
   authenticated,
@@ -184,6 +185,7 @@ class SupabaseService {
         // listener would bypass its allowlist and race the one-time code.
         detectSessionInUri: false,
       ),
+      httpClient: AccountSnapshotInvalidatingClient(),
     );
     _client = Supabase.instance.client;
     _isInitialized = true;
@@ -201,6 +203,7 @@ class SupabaseService {
     _client = null;
     _isInitialized = false;
     _sessionRecoveryInFlight = null;
+    MyAccountSnapshot.invalidate();
   }
 
   static bool get _hasUsableConfig {

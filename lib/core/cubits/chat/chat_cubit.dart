@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../services/my_account_snapshot.dart';
 import '../../services/supabase_service.dart';
 import '../../services/relationship_revision_service.dart';
 import '../../services/profile_photo_service.dart';
@@ -171,12 +172,10 @@ class ChatCubit extends Cubit<ChatState> {
         return;
       }
 
+      // The suspension date is display-only here: chat RPCs enforce it on
+      // the server, so the shared account snapshot is fresh enough.
       final results = await Future.wait<dynamic>([
-        SupabaseService.client
-            .from('users')
-            .select('messaging_suspended_until')
-            .eq('id', me)
-            .maybeSingle(),
+        MyAccountSnapshot.instance.user(me),
         SupabaseService.client.rpc(
           'get_chat_inbox',
           params: {'p_limit': 50},
