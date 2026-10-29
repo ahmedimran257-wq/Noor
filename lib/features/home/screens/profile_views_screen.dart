@@ -4,6 +4,7 @@ import 'package:silarah/l10n/ui_copy.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/widgets/loaders/silarah_blur_image.dart';
 import '../../../core/cubits/interests/interests_cubit.dart';
 import '../../../core/cubits/interests/interests_state.dart';
 import '../../../core/cubits/auth/auth_cubit.dart';
@@ -574,16 +575,10 @@ class _ViewerTile extends StatelessWidget {
                               color: AppColors.slateMist,
                               size: 24,
                             )
-                          : Image.network(
-                              photoUrl!,
+                          : SilarahBlurImage(
+                              imageUrl: photoUrl!,
                               width: 52,
                               height: 52,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Icon(
-                                Icons.person_outline_rounded,
-                                color: AppColors.slateMist,
-                                size: 24,
-                              ),
                             ),
                     ),
                   ),

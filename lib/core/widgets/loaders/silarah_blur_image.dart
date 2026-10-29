@@ -32,13 +32,35 @@ class SilarahBlurImage extends StatefulWidget {
 }
 
 class _SilarahBlurImageState extends State<SilarahBlurImage> {
+  // Photos are stored up to 720 px wide; decoding wider buys nothing.
+  static const _maxDecodeWidth = 720;
+  // Scrolling lists rebuild the same rows repeatedly. Keep decoded blurhash
+  // placeholders so each one is computed once per app session.
+  static const _placeholderCacheLimit = 200;
+  static final _placeholderCache = <String, Uint8List>{};
+
   Uint8List? _placeholderBytes;
   bool _reportedImageError = false;
 
   @override
   void initState() {
     super.initState();
-    _decodePlaceholder();
+    _placeholderBytes = _cachedPlaceholder(widget.blurhash);
+    if (_placeholderBytes == null) _decodePlaceholder();
+  }
+
+  static Uint8List? _cachedPlaceholder(String? blurhash) {
+    if (blurhash == null || blurhash.isEmpty) return null;
+    final cached = _placeholderCache.remove(blurhash);
+    if (cached != null) _placeholderCache[blurhash] = cached;
+    return cached;
+  }
+
+  static void _rememberPlaceholder(String blurhash, Uint8List bytes) {
+    _placeholderCache[blurhash] = bytes;
+    if (_placeholderCache.length > _placeholderCacheLimit) {
+      _placeholderCache.remove(_placeholderCache.keys.first);
+    }
   }
 
   @override
@@ -48,7 +70,12 @@ class _SilarahBlurImageState extends State<SilarahBlurImage> {
       _reportedImageError = false;
     }
     if (oldWidget.blurhash != widget.blurhash) {
-      _decodePlaceholder();
+      final cached = _cachedPlaceholder(widget.blurhash);
+      if (cached != null) {
+        setState(() => _placeholderBytes = cached);
+      } else {
+        _decodePlaceholder();
+      }
     }
   }
 
@@ -67,14 +94,17 @@ class _SilarahBlurImageState extends State<SilarahBlurImage> {
     }
 
     try {
+      final hash = widget.blurhash!;
       final bytes = await Future.microtask(() {
-        final blurHash = BlurHash.decode(widget.blurhash!);
-        // Using small resolution for faster decoding and memory efficiency
+        final blurHash = BlurHash.decode(hash);
+        // Using small resolution for faster decoding and memory efficiency.
+        // BMP skips JPEG compression work on the UI thread.
         final image = blurHash.toImage(32, 32);
-        return Uint8List.fromList(img.encodeJpg(image));
+        return Uint8List.fromList(img.encodeBmp(image));
       });
+      _rememberPlaceholder(hash, bytes);
 
-      if (mounted) {
+      if (mounted && widget.blurhash == hash) {
         setState(() {
           _placeholderBytes = bytes;
         });
@@ -107,8 +137,38 @@ class _SilarahBlurImageState extends State<SilarahBlurImage> {
       );
     }
 
+    final width = widget.width;
+    final height = widget.height;
+    if (width != null && height != null) {
+      return _network(placeholder, _decodeWidth(context, width, height));
+    }
+    return LayoutBuilder(
+      builder: (context, constraints) => _network(
+        placeholder,
+        _decodeWidth(
+          context,
+          width ?? constraints.maxWidth,
+          height ?? constraints.maxHeight,
+        ),
+      ),
+    );
+  }
+
+  /// Decode avatars and cards at the size they are drawn, not at the stored
+  /// 720x1280. Uses the larger side so portrait photos stay sharp under
+  /// BoxFit.cover in square or tall boxes.
+  int? _decodeWidth(BuildContext context, double width, double height) {
+    final side = [width, height].where((v) => v.isFinite && v > 0);
+    if (side.isEmpty) return null;
+    final logical = side.reduce((a, b) => a > b ? a : b);
+    final pixels = (logical * MediaQuery.devicePixelRatioOf(context)).ceil();
+    return pixels >= _maxDecodeWidth ? null : pixels;
+  }
+
+  Widget _network(Widget placeholder, int? decodeWidth) {
     return CachedNetworkImage(
       imageUrl: widget.imageUrl,
+      memCacheWidth: decodeWidth,
       // Supabase rotates signed query tokens. The underlying object path only
       // changes when a photo is replaced, so it is the stable cache identity.
       cacheKey: _stableObjectCacheKey(widget.imageUrl),

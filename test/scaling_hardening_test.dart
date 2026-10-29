@@ -30,6 +30,15 @@ void main() {
       expect(imageWidget, contains('cacheKey: _stableObjectCacheKey'));
       expect(imageWidget, contains("/storage/v1/object/sign/"));
       expect(imageWidget, contains('maxWidthDiskCache: 720'));
+      // Avatars decode at their drawn size and placeholders are cached, so
+      // long lists do not decode 720x1280 photos for 50 px circles.
+      expect(imageWidget, contains('memCacheWidth: decodeWidth'));
+      expect(imageWidget, contains('_placeholderCache'));
+      expect(
+        File('lib/features/home/screens/profile_views_screen.dart')
+            .readAsStringSync(),
+        isNot(contains('Image.network(')),
+      );
     });
 
     test('database migration removes fixed work and bounds hot paths', () {
