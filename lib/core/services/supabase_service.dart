@@ -191,6 +191,13 @@ class SupabaseService {
     _isInitialized = true;
   }
 
+  /// Pass to every `functions.invoke` so edge functions run beside the
+  /// database. Null (no pinning) when the build does not set the region.
+  static String? get functionsRegion {
+    final region = AppConfig.supabaseFunctionsRegion.trim();
+    return region.isEmpty ? null : region;
+  }
+
   /// Installs an isolated client for tests without contacting live services.
   @visibleForTesting
   static void initializeForTesting(SupabaseClient client) {

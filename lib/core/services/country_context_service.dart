@@ -439,6 +439,7 @@ class CountryContextService {
     if (!SupabaseService.isInitialized) return const [];
     final response = await SupabaseService.client.functions.invoke(
       'location-search',
+      region: SupabaseService.functionsRegion,
       body: {
         'query': query,
         'country_code': countryCode,

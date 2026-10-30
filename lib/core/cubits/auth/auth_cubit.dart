@@ -166,7 +166,6 @@ class AuthCubit extends Cubit<AuthState> {
 
     final prefs = await SharedPreferences.getInstance();
     final countryCode = prefs.getString('user_country_code');
-    await _recoverPendingDeletionForSession(userId);
     final authData = await _loadUserProfile(userId);
     final guardianInvitationPending =
         await WaliModeService.instance.pendingInvitation() != null;
@@ -701,13 +700,18 @@ class AuthCubit extends Cubit<AuthState> {
     String accountRole = 'member';
 
     try {
+      // The two rows are independent, so they load together. Billing, chat
+      // and onboarding read the same rows during startup; the shared
+      // snapshot sends each once.
+      final profileLoad = MyAccountSnapshot.instance.profile(userId);
       Map<String, dynamic>? userRow;
       try {
-        // Billing, chat and onboarding read the same rows during startup;
-        // the shared snapshot sends each once.
         userRow = await MyAccountSnapshot.instance.user(userId);
       } catch (e) {
-        if (!_isMissingResumeColumnError(e)) rethrow;
+        if (!_isMissingResumeColumnError(e)) {
+          unawaited(profileLoad.then((_) {}, onError: (_) {}));
+          rethrow;
+        }
         // Older databases may not have the resume-marker columns yet. Fall back
         // to the original minimal user read so authentication still works.
         debugPrint('AuthCubit: user resume columns unavailable: $e');
@@ -716,6 +720,15 @@ class AuthCubit extends Cubit<AuthState> {
             .select('gender')
             .eq('id', userId)
             .maybeSingle();
+      }
+
+      // Signing back in within 30 days restores an account awaiting deletion.
+      // Only that account needs the restore call; everyone else skips a
+      // database write and a network round trip on every launch. The restore
+      // touches only deletion_* columns on users, so the profile read that is
+      // already in flight stays valid.
+      if (userRow?['deletion_status'] == 'pending_deletion') {
+        await _recoverPendingDeletionForSession(userId);
       }
 
       if (userRow != null) {
@@ -731,7 +744,7 @@ class AuthCubit extends Cubit<AuthState> {
         accountRole = userRow['account_role'] as String? ?? 'member';
       }
 
-      final profileRow = await MyAccountSnapshot.instance.profile(userId);
+      final profileRow = await profileLoad;
 
       if (profileRow != null) {
         hasProfileRow = true;

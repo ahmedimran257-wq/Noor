@@ -88,7 +88,8 @@ void main() {
       expect(write('POST', '/rest/v1/rpc/register_my_fcm_token'), isFalse);
       expect(write('POST', '/auth/v1/token'), isFalse);
 
-      expect(write('POST', '/rest/v1/rpc/cancel_my_account_deletion'), isFalse);
+      // The snapshot holds deletion_status, which this RPC changes.
+      expect(write('POST', '/rest/v1/rpc/cancel_my_account_deletion'), isTrue);
       expect(write('POST', '/rest/v1/rpc/patch_my_user'), isTrue);
       expect(write('POST', '/rest/v1/rpc/save_my_profile_bundle'), isTrue);
       expect(write('POST', '/rest/v1/rpc/set_profile_pause'), isTrue);
@@ -106,8 +107,7 @@ void main() {
 
       expect(patch({'preferred_language': 'en', 'timezone': 'Asia/Kolkata'}),
           isFalse);
-      expect(patch({'preferred_language': 'en', 'country_code': 'IN'}),
-          isTrue);
+      expect(patch({'preferred_language': 'en', 'country_code': 'IN'}), isTrue);
       expect(patch({'onboarding_completed': true}), isTrue);
       expect(patch({}), isTrue);
     });
@@ -142,6 +142,7 @@ void main() {
   test('Supabase traffic goes through the invalidating client', () {
     final service =
         File('lib/core/services/supabase_service.dart').readAsStringSync();
-    expect(service, contains('httpClient: AccountSnapshotInvalidatingClient()'));
+    expect(
+        service, contains('httpClient: AccountSnapshotInvalidatingClient()'));
   });
 }

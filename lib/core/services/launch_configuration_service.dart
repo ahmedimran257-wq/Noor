@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'supabase_service.dart';
 
 class LaunchConfiguration {
@@ -21,9 +25,17 @@ class LaunchConfiguration {
 class LaunchConfigurationService {
   LaunchConfigurationService._();
 
+  static const _prefsCountries = 'launch_config_enabled_countries_v1';
+  static const _prefsDefault = 'launch_config_default_country_v1';
+
   static LaunchConfiguration? _cached;
   static DateTime? _cachedAt;
+  static Future<LaunchConfiguration>? _refresh;
 
+  /// Returns the launch markets. A value remembered from the previous session
+  /// is served at once on cold start and refreshed in the background, so
+  /// Discovery does not wait a round trip for a setting that rarely changes.
+  /// The server applies the same markets to every feed row regardless.
   static Future<LaunchConfiguration> load({bool force = false}) async {
     final cached = _cached;
     final cachedAt = _cachedAt;
@@ -33,6 +45,43 @@ class LaunchConfigurationService {
         DateTime.now().difference(cachedAt) < const Duration(minutes: 15)) {
       return cached;
     }
+    if (!force && cached == null) {
+      final remembered = await _readRemembered();
+      if (remembered != null) {
+        _cached = remembered;
+        unawaited(_refreshOnce());
+        return remembered;
+      }
+    }
+    return _refreshOnce();
+  }
+
+  static Future<LaunchConfiguration> _refreshOnce() =>
+      _refresh ??= _fetch().whenComplete(() => _refresh = null);
+
+  static Future<LaunchConfiguration?> _readRemembered() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final countries = prefs.getStringList(_prefsCountries);
+      if (countries == null || countries.isEmpty) return null;
+      return LaunchConfiguration(
+        enabledCountries: countries,
+        defaultCountry: prefs.getString(_prefsDefault) ?? countries.first,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<void> _remember(LaunchConfiguration config) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(_prefsCountries, config.enabledCountries);
+      await prefs.setString(_prefsDefault, config.defaultCountry);
+    } catch (_) {}
+  }
+
+  static Future<LaunchConfiguration> _fetch() async {
     if (!SupabaseService.isInitialized) return LaunchConfiguration.india;
     try {
       final response =
@@ -57,6 +106,7 @@ class LaunchConfigurationService {
       );
       _cached = config;
       _cachedAt = DateTime.now();
+      unawaited(_remember(config));
       return config;
     } catch (_) {
       // Fail closed to the announced India launch instead of exposing a

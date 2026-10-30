@@ -12,9 +12,11 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 import '../../models/discovery_profile.dart';
 import '../../services/my_account_snapshot.dart';
 import '../../services/supabase_service.dart';
+import '../../utils/perf_log.dart';
 import '../../services/profile_write_service.dart';
 import '../../services/location_service.dart';
 import '../../services/profile_photo_service.dart';
@@ -55,6 +57,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   String? _lastInventoryFingerprint;
   DateTime? _lastInventorySyncAt;
   static const _viewerReadinessFreshness = Duration(minutes: 10);
+  bool _feedPageAvailable = true;
   static const _revisionCheckFreshness = Duration(seconds: 90);
 
   // Public API
@@ -81,18 +84,17 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       clearFailure: true,
     ));
 
-    // Local filter restoration and the viewer projection are independent.
-    // Starting them together avoids putting device I/O behind a database read.
-    final initialData = await Future.wait<dynamic>([
-      _getViewerProfile(),
-      _loadFilterFromPrefs(),
-      LaunchConfigurationService.load(),
-    ]);
+    perfMark('discovery: load start');
+    // The saved filter is device-local. The viewer profile is only needed to
+    // derive a first-run default, so returning members skip that network read.
+    final launchLoad = LaunchConfigurationService.load();
+    final savedFilter = await _loadFilterFromPrefs();
+    final viewerProfile =
+        savedFilter == null ? await _getViewerProfile() : null;
+    final launch = await launchLoad;
     if (!_isCurrentRequest(requestVersion)) return;
-    final viewerProfile = initialData[0] as OnboardingData?;
-    final savedFilter = initialData[1] as DiscoveryFilter?;
+    perfMark('discovery: filter ready (saved=${savedFilter != null})');
     DiscoveryFilter filter = savedFilter ?? state.activeFilter;
-    final launch = initialData[2] as LaunchConfiguration;
 
     if (savedFilter == null && viewerProfile != null) {
       filter = DiscoveryFilter(
@@ -140,26 +142,25 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         throw StateError('Please sign in to view discovery profiles.');
       }
 
-      // These three server reads are independent. Keeping them concurrent cuts
-      // cold-start latency without adding requests, and readiness remains
-      // cached for pagination and subsequent filter changes.
+      // The daily quota only labels the UI; get_discovery_feed enforces the
+      // limit itself, so the quota read runs beside the feed instead of in
+      // front of it. The revision token arrives with the first page.
+      final quotaLoad = _Outcome.of(_loadServerViewQuota());
       final pendingRevision = _pendingRevisionToken;
-      final prerequisites = await Future.wait<dynamic>([
-        pendingRevision != null
-            ? Future<String?>.value(pendingRevision)
-            : _readDiscoveryRevisionToken(filter),
-        _loadServerViewQuota(),
-        _assertViewerDiscoveryReady(currentUserId),
-      ]);
-      final revisionAtStart = prerequisites[0] as String?;
-      final quota = prerequisites[1] as _ProfileViewQuota;
       _pendingRevisionToken = null;
       _lastRevisionCheckAt = DateTime.now();
-      if (!_isCurrentRequest(requestVersion)) return;
+      String? revisionAtStart = pendingRevision;
       _resetCursors();
-      final profiles =
-          await _getPool(filter: filter, requestVersion: requestVersion);
+      final profiles = await _getPool(
+        filter: filter,
+        requestVersion: requestVersion,
+        onRevisionToken:
+            pendingRevision == null ? (token) => revisionAtStart = token : null,
+      );
       if (!_isCurrentRequest(requestVersion)) return;
+      final quota = (await quotaLoad).valueOrThrow;
+      if (!_isCurrentRequest(requestVersion)) return;
+      perfMark('discovery: ${profiles.length} cards ready');
       final batch = _toFeedProfiles(profiles, offset: 0);
       if (!isClosed) {
         if (revisionAtStart != null) {
@@ -331,14 +332,13 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       await _saveFilterToPrefs(effectiveFilter);
       if (!_isCurrentRequest(requestVersion)) return;
 
-      final revisionAtStart =
-          await _readDiscoveryRevisionToken(effectiveFilter);
+      String? revisionAtStart;
       _lastRevisionCheckAt = DateTime.now();
-      if (!_isCurrentRequest(requestVersion)) return;
       _resetCursors();
       final profiles = await _getPool(
         filter: effectiveFilter,
         requestVersion: requestVersion,
+        onRevisionToken: (token) => revisionAtStart = token,
       );
       if (!_isCurrentRequest(requestVersion)) return;
       final batch = _toFeedProfiles(profiles, offset: 0);
@@ -746,9 +746,13 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
   }
 
   /// Fetches real candidates and their stated compatibility preferences.
+  ///
+  /// [onRevisionToken] asks for the revision token in the same round trip;
+  /// the server reads it before the page so it is never newer than the rows.
   Future<List<DiscoveryProfile>> _getPool({
     DiscoveryFilter? filter,
     required int requestVersion,
+    ValueChanged<String?>? onRevisionToken,
   }) async {
     if (!SupabaseService.isInitialized) {
       throw StateError('Discovery requires a Supabase connection.');
@@ -760,8 +764,10 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
 
     try {
       final timings = Stopwatch()..start();
-      await _assertViewerDiscoveryReady(currentUserId);
-      if (!_isCurrentRequest(requestVersion)) return const [];
+      // The feed RPC returns nothing for a viewer who is not yet live, so
+      // readiness only turns that into a specific message. It runs beside the
+      // RPC and its message takes priority over the RPC's result or error.
+      final readiness = _Outcome.of(_assertViewerDiscoveryReady(currentUserId));
 
       final payload =
           filter != null ? _mapFilterToJson(filter) : <String, dynamic>{};
@@ -770,21 +776,23 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         await LocationService.refreshDiscoveryLocation();
         _discoveryLocationPrepared = true;
       }
-      final response = await SupabaseService.client.rpc(
-        'get_discovery_feed',
-        params: {
-          'p_viewer_id': currentUserId,
-          'p_cursor_score': _backendCursorScore,
-          'p_cursor_id': _backendCursorId,
-          'p_page_size': _batchSize,
-          'p_filters': payload,
-        },
-      );
+      final List<Map<String, dynamic>> rows;
+      try {
+        rows = await _fetchFeedRows(
+          viewerId: currentUserId,
+          payload: payload,
+          filter: filter ?? state.activeFilter,
+          onRevisionToken: onRevisionToken,
+        );
+      } catch (_) {
+        (await readiness).throwIfFailed();
+        rethrow;
+      }
+      (await readiness).throwIfFailed();
+      if (!_isCurrentRequest(requestVersion)) return const [];
 
-      final rows = (response as List<dynamic>)
-          .map((row) => Map<String, dynamic>.from(row as Map))
-          .toList();
       final feedMs = timings.elapsedMilliseconds;
+      perfMark('discovery: feed rpc ${feedMs}ms');
       // Race fix: stale discovery responses must not advance the shared cursor
       // or overwrite a newer filter/load request.
       if (!_isCurrentRequest(requestVersion)) return const [];
@@ -832,6 +840,7 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
         }
       }
       final contextMs = timings.elapsedMilliseconds - feedMs;
+      perfMark('discovery: photo links, context, trust ${contextMs}ms');
       if (!_isCurrentRequest(requestVersion)) return const [];
       final profiles = await compute(parseProfilesInBackground, rows);
       final parseMs = timings.elapsedMilliseconds - feedMs - contextMs;
@@ -849,6 +858,52 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       debugPrint('DiscoveryFeedCubit: Supabase discovery failed: $e');
       rethrow;
     }
+  }
+
+  /// One round trip for a page and, when asked, its revision token. Falls
+  /// back to the two-call path while a database without
+  /// get_discovery_feed_page is still being served during a rollout.
+  Future<List<Map<String, dynamic>>> _fetchFeedRows({
+    required String viewerId,
+    required Map<String, dynamic> payload,
+    required DiscoveryFilter filter,
+    ValueChanged<String?>? onRevisionToken,
+  }) async {
+    final params = <String, dynamic>{
+      'p_viewer_id': viewerId,
+      'p_cursor_score': _backendCursorScore,
+      'p_cursor_id': _backendCursorId,
+      'p_page_size': _batchSize,
+      'p_filters': payload,
+    };
+    if (_feedPageAvailable) {
+      try {
+        final response = await SupabaseService.client.rpc(
+          'get_discovery_feed_page',
+          params: {...params, 'p_include_revision': onRevisionToken != null},
+        );
+        final page = Map<String, dynamic>.from(response as Map);
+        final token = page['revision_token']?.toString();
+        onRevisionToken?.call(token == null || token.isEmpty ? null : token);
+        return (page['rows'] as List<dynamic>)
+            .map((row) => Map<String, dynamic>.from(row as Map))
+            .toList();
+      } on PostgrestException catch (error) {
+        // PGRST202: function not found in the schema cache.
+        if (error.code != 'PGRST202') rethrow;
+        _feedPageAvailable = false;
+      }
+    }
+    if (onRevisionToken != null) {
+      onRevisionToken(await _readDiscoveryRevisionToken(filter));
+    }
+    final response = await SupabaseService.client.rpc(
+      'get_discovery_feed',
+      params: params,
+    );
+    return (response as List<dynamic>)
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList();
   }
 
   Future<Map<String, Map<String, bool>>> _loadTrustSummaries(
@@ -1137,5 +1192,31 @@ class DiscoveryFeedCubit extends Cubit<DiscoveryFeedState> {
       default:
         return null;
     }
+  }
+}
+
+/// Holds a future's value or error so it can run alongside other work and be
+/// inspected later without an unhandled-error report in between.
+class _Outcome<T> {
+  const _Outcome._(this._value, this._error, this._stackTrace);
+
+  final T? _value;
+  final Object? _error;
+  final StackTrace? _stackTrace;
+
+  static Future<_Outcome<T>> of<T>(Future<T> future) => future.then(
+        (value) => _Outcome<T>._(value, null, null),
+        onError: (Object error, StackTrace stackTrace) =>
+            _Outcome<T>._(null, error, stackTrace),
+      );
+
+  void throwIfFailed() {
+    final error = _error;
+    if (error != null) Error.throwWithStackTrace(error, _stackTrace!);
+  }
+
+  T get valueOrThrow {
+    throwIfFailed();
+    return _value as T;
   }
 }

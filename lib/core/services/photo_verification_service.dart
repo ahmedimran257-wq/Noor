@@ -145,6 +145,7 @@ class PhotoVerificationService {
   }) async {
     final response = await SupabaseService.client.functions.invoke(
       'photo-verification',
+      region: SupabaseService.functionsRegion,
       body: {
         'action': 'start',
         'guidance_mode': accessibilityFallback
@@ -217,6 +218,7 @@ class PhotoVerificationService {
       }
       final submitted = await SupabaseService.client.functions.invoke(
         'photo-verification',
+        region: SupabaseService.functionsRegion,
         body: {'action': 'submit', 'submission_id': session.submissionId},
       );
       final payload = _payload(
@@ -237,6 +239,7 @@ class PhotoVerificationService {
     try {
       await SupabaseService.client.functions.invoke(
         'photo-verification',
+        region: SupabaseService.functionsRegion,
         body: {'action': 'abandon', 'submission_id': submissionId},
       );
     } catch (_) {

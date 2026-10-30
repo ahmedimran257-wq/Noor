@@ -2,6 +2,7 @@
 // "Begin with bismillah"
 // Step 4: GoRouter + MultiBlocProvider wired up.
 //         Auth-gated routing with Supabase email OTP.
+import 'core/utils/perf_log.dart';
 import 'dart:async';
 import 'dart:io' show Platform;
 import 'dart:ui' as ui;
@@ -128,6 +129,7 @@ Future<void> _installCrashReporting() async {
 }
 
 void main() async {
+  perfStart();
   WidgetsFlutterBinding.ensureInitialized();
   // Flutter Inspector paint toggles can persist for the lifetime of a debug
   // process and draw colored text baselines over otherwise-correct UI. Always
@@ -163,6 +165,7 @@ void main() async {
       // verify those files against config/prod.local.json before compilation.
       Firebase.initializeApp(),
     ]);
+    perfMark('startup: prefs and firebase');
     final prefs = startupDependencies.first as SharedPreferences;
     await _installCrashReporting();
     await _activateFirebaseAppCheck();
@@ -185,7 +188,9 @@ void main() async {
 
     // Supabase Initialization
     // Initialize Supabase client
+    perfMark('startup: crash reporting, app check, theme');
     await SupabaseService.initialize();
+    perfMark('startup: supabase');
     await AuthCallbackService.instance.initialize();
   } catch (error, stack) {
     debugPrint('[main] Critical startup configuration error: $error\n$stack');

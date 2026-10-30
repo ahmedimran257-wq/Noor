@@ -36,6 +36,7 @@ abstract final class LocationService {
       }
       final response = await SupabaseService.client.functions.invoke(
         'location-search',
+        region: SupabaseService.functionsRegion,
         body: {
           'mode': 'resolve',
           'resolution_token': token,

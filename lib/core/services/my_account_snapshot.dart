@@ -28,7 +28,7 @@ class MyAccountSnapshot {
   static const userColumns = '''
     gender, onboarding_step, is_guardian_path, profile_owner_type,
     onboarding_completed, account_role, email, country_code, is_banned,
-    messaging_suspended_until, onboarding_profile_for,
+    deletion_status, messaging_suspended_until, onboarding_profile_for,
     onboarding_profile_creator_relation, onboarding_city_id,
     onboarding_city_name, onboarding_state_name, onboarding_postal_code,
     onboarding_lat, onboarding_lng
@@ -184,8 +184,6 @@ class AccountSnapshotInvalidatingClient extends http.BaseClient {
 
   static const _readOnlyRpcPrefixes = ['get_', 'can_', 'search_', 'email_'];
   static const _accountNeutralRpcs = {
-    // Only clears deletion_* columns, none of which the snapshot holds.
-    'cancel_my_account_deletion',
     'record_user_presence',
     'record_discovery_inventory',
     'record_profile_view',

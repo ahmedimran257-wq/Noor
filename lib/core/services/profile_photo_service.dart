@@ -150,6 +150,7 @@ class ProfilePhotoService {
       report(PhotoSyncStage.preparingUpload);
       final signed = await SupabaseService.client.functions.invoke(
         'get-signed-url',
+        region: SupabaseService.functionsRegion,
         body: {
           'order_index': orderIndex,
           'file_extension': 'jpg',
@@ -232,6 +233,7 @@ class ProfilePhotoService {
 
     final response = await SupabaseService.client.functions.invoke(
       'get-signed-url',
+      region: SupabaseService.functionsRegion,
       body: {
         'purpose': 'read_profile_gallery',
         'owner_user_id': ownerUserId,
@@ -269,6 +271,7 @@ class ProfilePhotoService {
     }
     final response = await SupabaseService.client.functions.invoke(
       'get-signed-url',
+      region: SupabaseService.functionsRegion,
       body: {
         'purpose': 'delete_profile_photo',
         'order_index': orderIndex,
@@ -334,6 +337,7 @@ class ProfilePhotoService {
   }) async {
     final response = await SupabaseService.client.functions.invoke(
       'get-signed-url',
+      region: SupabaseService.functionsRegion,
       body: {
         'purpose': 'read_profile_photo',
         'owner_user_id': ownerUserId,
@@ -384,6 +388,7 @@ class ProfilePhotoService {
 
     final response = await SupabaseService.client.functions.invoke(
       'get-signed-url',
+      region: SupabaseService.functionsRegion,
       body: {
         'purpose': 'read_profile_photos',
         'owner_user_ids': missingOwnerIds,
@@ -453,6 +458,7 @@ class ProfilePhotoService {
   ) async {
     final response = await SupabaseService.client.functions.invoke(
       'validate-photo-upload',
+      region: SupabaseService.functionsRegion,
       body: {
         'storage_path': storagePath,
         'moderation': moderation.toValidationPayload(),
