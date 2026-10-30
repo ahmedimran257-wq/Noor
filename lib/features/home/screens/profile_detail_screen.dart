@@ -14,6 +14,7 @@ import 'package:silarah/l10n/premium_relationship_ui_copy.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -85,6 +86,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   String? _photoAccessError;
   final Set<int> _refreshingPhotoIndexes = <int>{};
   final Set<int> _refreshedPhotoIndexes = <int>{};
+  // The full-screen viewer is a separate route. It listens to this instead of
+  // copying the URL list, so slots that finish loading after it opens appear.
+  late final ValueNotifier<_GallerySnapshot> _gallery;
   Timer? _rematchCountdownTimer;
 
   int get _totalPhotos => _photoUrls.length;
@@ -105,6 +109,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     super.initState();
     _photoController = PageController();
     _photoUrls = _initialPhotoUrls(widget.profile);
+    _gallery = ValueNotifier(_snapshotGallery());
     if (!widget.isOwnProfile) {
       unawaited(ProfileViewService.instance.record(widget.profile.id));
     }
@@ -147,6 +152,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
           );
         }
       });
+      _publishGallery();
       if (context.canView) await _loadAuthorizedGallery();
     } catch (_) {
       if (!mounted) return;
@@ -214,6 +220,14 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     }
   }
 
+  _GallerySnapshot _snapshotGallery() => _GallerySnapshot(
+        urls: List<String?>.unmodifiable(_photoUrls),
+        isLoading: _isGalleryLoading,
+        loadFailed: _galleryLoadFailed,
+      );
+
+  void _publishGallery() => _gallery.value = _snapshotGallery();
+
   List<String?> _initialPhotoUrls(DiscoveryProfile profile) {
     final urls = profile.orderedPhotoUrls;
     final total = math.max(profile.photoCount, urls.length).clamp(1, 4);
@@ -230,6 +244,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
       _isGalleryLoading = true;
       _galleryLoadFailed = false;
     });
+    _publishGallery();
     try {
       final slots = await ProfilePhotoService.instance.getVisiblePhotoSlots(
         ownerUserId: widget.profile.id,
@@ -248,12 +263,14 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
         );
         _isGalleryLoading = false;
       });
+      _publishGallery();
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _isGalleryLoading = false;
         _galleryLoadFailed = true;
       });
+      _publishGallery();
     }
   }
 
@@ -276,6 +293,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
       );
       if (!mounted || refreshed == null || refreshed.isEmpty) return;
       setState(() => _photoUrls[index] = refreshed);
+      _publishGallery();
     } finally {
       _refreshingPhotoIndexes.remove(index);
     }
@@ -285,6 +303,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   void dispose() {
     _rematchCountdownTimer?.cancel();
     _photoController.dispose();
+    _gallery.dispose();
     super.dispose();
   }
 
@@ -577,6 +596,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                       loadFailed: _galleryLoadFailed,
                       onRetry: _loadAuthorizedGallery,
                       onPhotoLoadError: _refreshExpiredPhoto,
+                      gallery: _gallery,
                     ),
                   ),
                 ),
@@ -905,6 +925,7 @@ class _PhotoCarousel extends StatelessWidget {
     required this.loadFailed,
     required this.onRetry,
     required this.onPhotoLoadError,
+    required this.gallery,
   });
 
   final DiscoveryProfile profile;
@@ -926,6 +947,7 @@ class _PhotoCarousel extends StatelessWidget {
   final bool loadFailed;
   final VoidCallback onRetry;
   final ValueChanged<int> onPhotoLoadError;
+  final ValueListenable<_GallerySnapshot> gallery;
 
   @override
   Widget build(BuildContext context) {
@@ -942,7 +964,7 @@ class _PhotoCarousel extends StatelessWidget {
             profile: profile,
             index: i,
             photoUrl: i < photoUrls.length ? photoUrls[i] : null,
-            photoUrls: photoUrls,
+            gallery: gallery,
             canViewPhotos: canViewPhotos,
             privacy: privacy,
             requestStatus: requestStatus,
@@ -1063,7 +1085,7 @@ class _SinglePhotoSlide extends StatelessWidget {
     required this.profile,
     required this.index,
     required this.photoUrl,
-    required this.photoUrls,
+    required this.gallery,
     required this.canViewPhotos,
     required this.privacy,
     required this.requestStatus,
@@ -1081,7 +1103,7 @@ class _SinglePhotoSlide extends StatelessWidget {
   final DiscoveryProfile profile;
   final int index;
   final String? photoUrl;
-  final List<String?> photoUrls;
+  final ValueListenable<_GallerySnapshot> gallery;
   final bool canViewPhotos;
   final ProfilePhotoPrivacy privacy;
   final String? requestStatus;
@@ -1146,8 +1168,10 @@ class _SinglePhotoSlide extends StatelessWidget {
           child: _FullScreenPhotoViewer(
             profile: profile,
             initialIndex: index,
-            photoUrls: photoUrls,
+            gallery: gallery,
             canViewPhotos: canViewPhotos,
+            onRetry: onRetry,
+            onPhotoLoadError: onPhotoLoadError,
           ),
         ),
       ),
@@ -1435,17 +1459,36 @@ class _PersonPlaceholder extends StatelessWidget {
 }
 
 // Full-Screen Photo Viewer
+@immutable
+class _GallerySnapshot {
+  const _GallerySnapshot({
+    required this.urls,
+    required this.isLoading,
+    required this.loadFailed,
+  });
+
+  final List<String?> urls;
+  final bool isLoading;
+  final bool loadFailed;
+}
+
+/// Media viewer: always dark regardless of theme, like any photo viewer, so
+/// its controls use the theme-independent media colours.
 class _FullScreenPhotoViewer extends StatefulWidget {
   const _FullScreenPhotoViewer({
     required this.profile,
     required this.initialIndex,
-    required this.photoUrls,
+    required this.gallery,
     required this.canViewPhotos,
+    required this.onRetry,
+    required this.onPhotoLoadError,
   });
   final DiscoveryProfile profile;
   final int initialIndex;
-  final List<String?> photoUrls;
+  final ValueListenable<_GallerySnapshot> gallery;
   final bool canViewPhotos;
+  final VoidCallback onRetry;
+  final ValueChanged<int> onPhotoLoadError;
 
   @override
   State<_FullScreenPhotoViewer> createState() => _FullScreenPhotoViewerState();
@@ -1470,111 +1513,188 @@ class _FullScreenPhotoViewerState extends State<_FullScreenPhotoViewer> {
 
   @override
   Widget build(BuildContext context) {
-    final totalPhotos = widget.photoUrls.length;
+    final isPrivate = widget.profile.isPhotoPrivate && !widget.canViewPhotos;
 
-    return Stack(
-      children: [
-        // Dismissible background
-        GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(color: Colors.transparent),
-        ),
-        PageView.builder(
-          controller: _controller,
-          physics: const BouncingScrollPhysics(),
-          itemCount: totalPhotos,
-          onPageChanged: (value) => setState(() => _page = value),
-          itemBuilder: (_, index) {
-            final isPrivate =
-                widget.profile.isPhotoPrivate && !widget.canViewPhotos;
-            final photoUrl = widget.photoUrls[index];
-            return Center(
-              child: InteractiveViewer(
-                minScale: 1,
-                maxScale: 4,
-                child: Container(
-                  width: double.infinity,
-                  height: MediaQuery.of(context).size.height * 0.8,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        AppColors.obsidianDeep,
-                        AppColors.obsidianNight,
+    // A route pushed with PageRouteBuilder has no Material of its own; without
+    // one, text falls back to the debug style (yellow double underline). Its
+    // scrim over the route barrier makes the backdrop near-black, so the
+    // profile page behind does not show through the photo.
+    return Material(
+      color: AppColors.overlayBlack87,
+      child: ValueListenableBuilder<_GallerySnapshot>(
+        valueListenable: widget.gallery,
+        builder: (context, gallery, _) {
+          final totalPhotos = gallery.urls.length;
+          return Stack(
+            children: [
+              PageView.builder(
+                controller: _controller,
+                physics: const BouncingScrollPhysics(),
+                itemCount: totalPhotos,
+                onPageChanged: (value) => setState(() => _page = value),
+                itemBuilder: (_, index) => _ViewerPhoto(
+                  url: gallery.urls[index],
+                  blurhash: index == 0 ? widget.profile.blurhash : null,
+                  isPrivate: isPrivate,
+                  isLoading: gallery.isLoading,
+                  loadFailed: gallery.loadFailed,
+                  onRetry: widget.onRetry,
+                  onImageError: () => widget.onPhotoLoadError(index),
+                ),
+              ),
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppDimensions.space12,
+                    vertical: AppDimensions.space8,
+                  ),
+                  child: SizedBox(
+                    height: 48,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: _ViewerCloseButton(
+                            onTap: () => Navigator.pop(context),
+                          ),
+                        ),
+                        if (totalPhotos > 1)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppDimensions.space12,
+                              vertical: AppDimensions.space6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.overlayBlack55,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color:
+                                    AppColors.onMedia.withValues(alpha: 0.24),
+                              ),
+                            ),
+                            child: UiText(
+                              '${_page + 1} / $totalPhotos',
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.onMedia,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
-                  child: isPrivate
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.lock_outline_rounded,
-                                  color: AppColors.slateMist, size: 60),
-                              const SizedBox(height: 12),
-                              UiText(context.uiCopy('Locked'),
-                                  style: AppTypography.bodyMuted),
-                            ],
-                          ),
-                        )
-                      : photoUrl != null
-                          ? SilarahBlurImage(
-                              imageUrl: photoUrl,
-                              blurhash:
-                                  index == 0 ? widget.profile.blurhash : null,
-                              fit: BoxFit.contain,
-                            )
-                          : const _PersonPlaceholder(),
                 ),
               ),
-            );
-          },
-        ),
-        SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(AppDimensions.space16),
-            child: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceGlass,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.cardBorder),
-                ),
-                child: const Icon(Icons.close_rounded,
-                    color: AppColors.onMedia, size: 20),
-              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _ViewerPhoto extends StatelessWidget {
+  const _ViewerPhoto({
+    required this.url,
+    required this.blurhash,
+    required this.isPrivate,
+    required this.isLoading,
+    required this.loadFailed,
+    required this.onRetry,
+    required this.onImageError,
+  });
+
+  final String? url;
+  final String? blurhash;
+  final bool isPrivate;
+  final bool isLoading;
+  final bool loadFailed;
+  final VoidCallback onRetry;
+  final VoidCallback onImageError;
+
+  @override
+  Widget build(BuildContext context) {
+    if (isPrivate) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.lock_outline_rounded,
+                color: AppColors.onMedia, size: 56),
+            const SizedBox(height: 12),
+            UiText(
+              context.uiCopy('Locked'),
+              style: AppTypography.bodyMuted.copyWith(color: AppColors.onMedia),
             ),
+          ],
+        ),
+      );
+    }
+    final photoUrl = url;
+    if (photoUrl != null) {
+      return InteractiveViewer(
+        minScale: 1,
+        maxScale: 4,
+        child: SizedBox.expand(
+          child: SilarahBlurImage(
+            imageUrl: photoUrl,
+            blurhash: blurhash,
+            fit: BoxFit.contain,
+            onImageError: onImageError,
           ),
         ),
-        if (totalPhotos > 1)
-          SafeArea(
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: Container(
-                margin: const EdgeInsets.only(top: AppDimensions.space20),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppDimensions.space12,
-                  vertical: AppDimensions.space6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.overlayBlack55,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.cardBorder),
-                ),
-                child: UiText(
-                  '${_page + 1} / $totalPhotos',
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.onMedia,
-                  ),
-                ),
-              ),
+      );
+    }
+    if (isLoading) {
+      return const Center(
+        child: SilarahActivityIndicator(size: 30, color: AppColors.onMedia),
+      );
+    }
+    if (loadFailed) {
+      return Center(
+        child: TextButton.icon(
+          onPressed: onRetry,
+          style: TextButton.styleFrom(foregroundColor: AppColors.onMedia),
+          icon: const Icon(Icons.refresh_rounded),
+          label: UiText(context.uiCopy('Reload photo')),
+        ),
+      );
+    }
+    return const Center(
+      child: Icon(Icons.person_outline_rounded,
+          color: AppColors.onMedia, size: 80),
+    );
+  }
+}
+
+class _ViewerCloseButton extends StatelessWidget {
+  const _ViewerCloseButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: MaterialLocalizations.of(context).closeButtonTooltip,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: AppColors.overlayBlack55,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: AppColors.onMedia.withValues(alpha: 0.24),
             ),
           ),
-      ],
+          child: const Icon(Icons.close_rounded,
+              color: AppColors.onMedia, size: 22),
+        ),
+      ),
     );
   }
 }
