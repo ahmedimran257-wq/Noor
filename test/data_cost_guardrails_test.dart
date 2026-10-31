@@ -98,10 +98,13 @@ void main() {
     expect(discovery, contains('Duration(seconds: 90)'));
     expect(discovery, contains("'get_my_discovery_revision'"));
     expect(discovery, contains("'p_filters': _mapFilterToJson(filter)"));
-    // The live feed follows the 15-minute metrics snapshot and only runs in
-    // a visible tab; pages refresh on demand, never on a background timer.
-    expect(cockpit, contains('const snapshotEveryMs = 15 * 60 * 1000'));
+    // The cockpit reads "Online now" live (one indexed count), so it may
+    // refresh at most once a minute and only in a visible tab; the heavy
+    // figures still come from the 15-minute metrics snapshot. Other pages
+    // refresh on demand, never on a background timer.
+    expect(cockpit, contains('const liveEveryMs = 60 * 1000;'));
     expect(cockpit, contains('if (document.hidden)'));
+    expect(cockpit, contains('window.clearInterval(timer)'));
     expect(adminRefresh, contains('const staleAfterMs = 5 * 60 * 1000'));
     expect(adminRefresh, isNot(contains('setInterval')));
     expect(adminSidebar, contains('prefetch={false}'));
