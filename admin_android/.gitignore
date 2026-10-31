@@ -3,3 +3,4 @@ build/
 app/build/
 local.properties
 *.apk
+tool/icon_preview_*.png

@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Silarah Admin</string>
-    <!-- Dark tile so the admin icon is easy to tell from the member app. -->
-    <color name="ic_launcher_background">#1E2B26</color>
+    <!-- Deep emerald tile with a champagne mark, so the admin icon reads
+         clearly and is easy to tell from the member app's white one. -->
+    <color name="ic_launcher_background">#123E30</color>
+    <color name="admin_icon_mark">#E8D3A2</color>
     <color name="admin_canvas">#F7F3EA</color>
 
     <style name="AdminTheme" parent="android:Theme.Material.Light.NoActionBar">
