@@ -35,6 +35,19 @@ void main() {
     expect(migration, contains('v_stale_due > 0'));
   });
 
+  test('online now is live and means the app is open', () {
+    final online =
+        File('supabase/migrations/284_live_online_count.sql').readAsStringSync();
+    final cockpit = File('admin/src/components/live-operations-cockpit.tsx')
+        .readAsStringSync();
+    expect(online, contains("AND app_state = 'foreground'"));
+    expect(online, contains("'{traffic,onlineNow}'"));
+    expect(online, contains('to_jsonb(private.count_online_members())'));
+    // Polls only while the dashboard is visible.
+    expect(cockpit, contains('const liveEveryMs = 60 * 1000;'));
+    expect(cockpit, contains('if (document.hidden)'));
+  });
+
   test('admin app stays on the admin host and hides staff screens', () {
     expect(shell, contains('private const val HOST = "admin.silarah.com"'));
     expect(shell, contains('uri.scheme == "https" && uri.host == HOST'));

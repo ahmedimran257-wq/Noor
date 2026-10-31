@@ -4,11 +4,10 @@ import { BadgeCheck, Heart, MessageCircle, Radio, Sparkles, Users } from "lucide
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { DashboardOverview } from "@/lib/operations";
 
-// private.refresh_admin_metric_snapshots runs every 15 minutes. Fetching more
-// often only re-reads the same row, so the next fetch is scheduled for just
-// after the next snapshot, and only while the tab is visible.
-const snapshotEveryMs = 15 * 60 * 1000;
-const snapshotGraceMs = 45 * 1000;
+// "Online now" and the online list are read live; the other figures come from
+// the 15-minute snapshot. Refresh once a minute, only while the page is
+// visible, so a closed or backgrounded dashboard sends nothing.
+const liveEveryMs = 60 * 1000;
 
 function n(value: number | undefined) {
   return Number(value ?? 0).toLocaleString("en-IN");
@@ -46,27 +45,25 @@ export function LiveOperationsCockpit({ initial }: { initial: DashboardOverview 
 
   useEffect(() => {
     let timer: number | undefined;
-    const schedule = () => {
-      window.clearTimeout(timer);
-      if (document.hidden) return;
-      const due = (generatedAtMs || Date.now()) + snapshotEveryMs + snapshotGraceMs;
-      timer = window.setTimeout(() => void refresh(), Math.max(due - Date.now(), 30_000));
+    const start = () => {
+      window.clearInterval(timer);
+      timer = window.setInterval(() => void refresh(), liveEveryMs);
     };
     const onVisibility = () => {
       if (document.hidden) {
-        window.clearTimeout(timer);
+        window.clearInterval(timer);
         return;
       }
-      if (Date.now() >= generatedAtMs + snapshotEveryMs + snapshotGraceMs) void refresh();
-      else schedule();
+      void refresh();
+      start();
     };
-    schedule();
+    if (!document.hidden) start();
     document.addEventListener("visibilitychange", onVisibility);
     return () => {
-      window.clearTimeout(timer);
+      window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [generatedAtMs, refresh]);
+  }, [refresh]);
 
   const live = data.live;
   const traffic = live?.traffic ?? {};
@@ -100,7 +97,7 @@ export function LiveOperationsCockpit({ initial }: { initial: DashboardOverview 
             {status === "error" ? (
               <span className="pill warn plain">Live figures could not refresh</span>
             ) : (
-              <span>Snapshot {updated}</span>
+              <span>Online now is live · other figures {updated}</span>
             )}
             <button type="button" className="btn btn-ghost btn-sm" onClick={() => void refresh()} disabled={status === "refreshing"}>
               {status === "refreshing" ? "Updating…" : "Update"}
