@@ -225,6 +225,12 @@ progress.meter { width: 100%; height: 6px; appearance: none; border: 0; border-r
 progress.meter::-webkit-progress-bar { background: var(--canvas-deep); border-radius: 999px; }
 progress.meter::-webkit-progress-value { background: var(--emerald); border-radius: 999px; }
 progress.meter::-moz-progress-bar { background: var(--emerald); border-radius: 999px; }
+.meter-row.is-warning strong { color: var(--warning); }
+.meter-row.is-warning progress.meter::-webkit-progress-value { background: var(--warning); }
+.meter-row.is-warning progress.meter::-moz-progress-bar { background: var(--warning); }
+.meter-row.is-danger strong { color: var(--danger); }
+.meter-row.is-danger progress.meter::-webkit-progress-value { background: var(--danger); }
+.meter-row.is-danger progress.meter::-moz-progress-bar { background: var(--danger); }
 
 /* ---------- Tables ---------- */
 .table-wrap { overflow-x: auto; }

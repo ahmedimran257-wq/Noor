@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Silarah Admin</string>
+    <!-- Dark tile so the admin icon is easy to tell from the member app. -->
+    <color name="ic_launcher_background">#1E2B26</color>
+    <color name="admin_canvas">#F7F3EA</color>
+
+    <style name="AdminTheme" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/admin_canvas</item>
+        <item name="android:statusBarColor">@color/admin_canvas</item>
+        <item name="android:navigationBarColor">@color/admin_canvas</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>
